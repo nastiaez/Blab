@@ -1,0 +1,149 @@
+<h2>Language picker — design + copy</h2>
+<p class="subtitle">Research: Apple Settings, Duolingo, WhatsApp, Notion. Back button with proper padding. 3 directions.</p>
+
+<div class="cards">
+
+  <!-- A: Checkmark pattern (Apple Settings style) -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <!-- Nav header -->
+      <div style="background:white;padding:12px 20px 10px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;color:#5B4FE8;cursor:pointer;font-weight:600;">‹ Back</span>
+        <span style="font-size:15px;font-weight:700;color:#111;flex:1;text-align:center;">Language</span>
+        <span style="font-size:14px;color:#5B4FE8;font-weight:600;cursor:pointer;">Done</span>
+      </div>
+      <!-- Search -->
+      <div style="padding:10px 16px;background:white;border-bottom:1px solid #f5f5f5;">
+        <div style="background:#f2f2f7;border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span style="font-size:13px;color:#aaa;">Search</span>
+        </div>
+      </div>
+      <!-- List with checkmark -->
+      <div style="background:white;">
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:12px;">🇬🇧</span>
+          <span style="font-size:14px;color:#111;flex:1;">English</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:12px;">🇺🇦</span>
+          <span style="font-size:14px;color:#888;flex:1;">Ukrainian</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:12px;">🇪🇸</span>
+          <span style="font-size:14px;color:#888;flex:1;">Spanish</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:12px;">🇫🇷</span>
+          <span style="font-size:14px;color:#888;flex:1;">French</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;">
+          <span style="font-size:18px;margin-right:12px;">🇩🇪</span>
+          <span style="font-size:14px;color:#888;flex:1;">German</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Checkmark (Apple Settings / WhatsApp)</h3>
+      <p>Selected language gets a ✓ on the right, no background fill. Cleaner — no confusion about "focused vs selected". Navigation bar style header: back left, title center, Done right. Search uses the iOS pill style.</p>
+      <p style="margin-top:8px;font-style:italic;color:#888;font-size:13px;">Copy: title "Language", no subtitle needed — context clear from screen.</p>
+    </div>
+  </div>
+
+  <!-- B: Current selection chip at top -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <!-- Back button with good padding -->
+      <div style="background:white;padding:12px 20px 10px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;">
+        <span style="font-size:16px;color:#5B4FE8;cursor:pointer;font-weight:600;">‹ Back</span>
+      </div>
+      <!-- Title + subtitle with real breathing room -->
+      <div style="background:white;padding:16px 20px 12px;border-bottom:1px solid #f0f0f0;">
+        <div style="font-size:17px;font-weight:800;color:#111;margin-bottom:3px;">What language do you speak?</div>
+        <div style="font-size:12px;color:#aaa;">Parlo's interface will appear in this language.</div>
+      </div>
+      <!-- Search -->
+      <div style="padding:10px 16px;background:#f7f7fb;">
+        <input style="width:100%;background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;" placeholder="🔍  Search…">
+      </div>
+      <!-- Current selection chip -->
+      <div style="padding:4px 16px 8px;background:#f7f7fb;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#f0eeff;border-radius:20px;padding:5px 12px;border:1px solid #d4c8ff;">
+          <span style="font-size:14px;">🇬🇧</span>
+          <span style="font-size:12px;font-weight:600;color:#5B4FE8;">English · current</span>
+        </div>
+      </div>
+      <!-- List — no selected state on rows -->
+      <div style="background:white;">
+        <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:16px;margin-right:12px;">🇬🇧</span><span style="font-size:13px;color:#111;font-weight:600;">English</span><svg style="margin-left:auto;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:16px;margin-right:12px;">🇺🇦</span><span style="font-size:13px;color:#888;">Ukrainian</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:16px;margin-right:12px;">🇪🇸</span><span style="font-size:13px;color:#888;">Spanish</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:10px 16px;">
+          <span style="font-size:16px;margin-right:12px;">🇫🇷</span><span style="font-size:13px;color:#888;">French</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Current selection chip above list</h3>
+      <p>Selected language shown as a purple chip above the list, not inside it. List rows are never "active looking" — checkmark still used to mark current. Question-style title feels more human.</p>
+      <p style="margin-top:8px;font-style:italic;color:#888;font-size:13px;">Copy: "What language do you speak?" + "Parlo's interface will appear in this language."</p>
+    </div>
+  </div>
+
+  <!-- C: Minimal — no subtitle, search prominent -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <!-- Back with proper padding -->
+      <div style="background:white;padding:14px 20px 0;">
+        <span style="font-size:16px;color:#5B4FE8;cursor:pointer;font-weight:600;">‹ Back</span>
+      </div>
+      <!-- Title only, no subtitle -->
+      <div style="background:white;padding:10px 20px 14px;border-bottom:1px solid #f0f0f0;">
+        <div style="font-size:20px;font-weight:800;color:#111;">Your language</div>
+      </div>
+      <!-- Search very prominent -->
+      <div style="padding:12px 16px;background:#f7f7fb;">
+        <input style="width:100%;background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px 14px;font-size:14px;font-family:inherit;outline:none;" placeholder="🔍  Search languages…">
+      </div>
+      <!-- List — checkmark, no fill -->
+      <div style="background:white;overflow:hidden;">
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:14px;">🇬🇧</span>
+          <span style="font-size:15px;color:#111;font-weight:600;flex:1;">English</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:14px;">🇺🇦</span>
+          <span style="font-size:15px;color:#888;flex:1;">Ukrainian</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:18px;margin-right:14px;">🇪🇸</span>
+          <span style="font-size:15px;color:#888;flex:1;">Spanish</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:12px 16px;">
+          <span style="font-size:18px;margin-right:14px;">🇫🇷</span>
+          <span style="font-size:15px;color:#888;flex:1;">French</span>
+        </div>
+      </div>
+      <!-- Done button at bottom -->
+      <div style="padding:12px 16px 16px;background:#f7f7fb;">
+        <div style="background:#5B4FE8;border-radius:10px;padding:12px;text-align:center;font-size:13px;color:white;font-weight:700;">Done</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Minimal, no subtitle (Recommended)</h3>
+      <p>Title "Your language" — short, clear, no explanation needed. No subtitle. Search prominent. Checkmark for selection — no purple fills. Back on its own line with breathing room. Done button at bottom. Clean as Apple Settings but keeps Parlo's style.</p>
+      <p style="margin-top:8px;font-style:italic;color:#888;font-size:13px;">Copy: just "Your language". Selection confirmed by checkmark + Done.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">All 3 fix: back button padding (20px from edge), checkmark replaces purple row fill (no "focused" confusion), search uses consistent border. Difference is copy and whether to show a current-selection chip.</p>

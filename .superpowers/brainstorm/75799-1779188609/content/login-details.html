@@ -1,0 +1,115 @@
+<h2>Forgot password placement + password reveal</h2>
+<p class="subtitle">Password reveal is a must — just pick where "Forgot password?" lives.</p>
+
+<div class="cards">
+
+  <!-- A: Below CTA button -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;padding:16px;font-family:-apple-system,sans-serif;">
+      <div style="background:white;border-radius:12px;padding:16px;max-width:280px;margin:0 auto;">
+        <!-- Tab -->
+        <div style="display:flex;background:#f2f2f7;border-radius:9px;padding:2px;margin-bottom:16px;">
+          <div style="flex:1;padding:6px;text-align:center;font-size:11px;color:#888;">Sign up</div>
+          <div style="flex:1;background:white;border-radius:7px;padding:6px;text-align:center;font-size:11px;font-weight:700;color:#111;box-shadow:0 1px 2px rgba(0,0,0,0.08);">Log in</div>
+        </div>
+        <!-- SSO -->
+        <div style="border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:11px;color:#555;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#111"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple
+        </div>
+        <div style="border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:11px;color:#555;display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+          <svg width="12" height="12" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;"><div style="flex:1;height:1px;background:#eee;"></div><span style="font-size:10px;color:#ccc;">or</span><div style="flex:1;height:1px;background:#eee;"></div></div>
+        <!-- Email -->
+        <div style="border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:11px;color:#888;margin-bottom:7px;">Email</div>
+        <!-- Password + eye icon only -->
+        <div style="position:relative;margin-bottom:12px;">
+          <div style="border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 36px 9px 12px;font-size:11px;color:#888;">••••••••</div>
+          <!-- Eye icon only, no "Forgot" here -->
+          <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#bbb;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+        </div>
+        <!-- CTA -->
+        <div style="background:#5B4FE8;border-radius:9px;padding:10px;text-align:center;font-size:11px;color:white;font-weight:700;margin-bottom:8px;">Log in →</div>
+        <!-- Forgot BELOW button — clean, separate -->
+        <div style="text-align:center;font-size:11px;color:#5B4FE8;cursor:pointer;">Forgot password?</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Below the button (Recommended)</h3>
+      <p>Eye icon in password field. "Forgot password?" lives below the Log in button as its own text link. Clean separation: form above, escape hatch below. Instagram, Threads, Slack all do this.</p>
+    </div>
+  </div>
+
+  <!-- B: Only after failed attempt -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;padding:16px;font-family:-apple-system,sans-serif;display:flex;gap:10px;">
+
+      <!-- Default state -->
+      <div style="flex:1;">
+        <div style="font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Default</div>
+        <div style="background:white;border-radius:10px;padding:12px;">
+          <div style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 10px;font-size:10px;color:#888;margin-bottom:5px;">Email</div>
+          <div style="position:relative;margin-bottom:10px;">
+            <div style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 30px 7px 10px;font-size:10px;color:#888;">••••••••</div>
+            <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div style="background:#5B4FE8;border-radius:7px;padding:7px;text-align:center;font-size:10px;color:white;font-weight:700;">Log in →</div>
+          <!-- No forgot yet -->
+        </div>
+      </div>
+
+      <!-- After failed attempt -->
+      <div style="flex:1;">
+        <div style="font-size:9px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">After wrong password</div>
+        <div style="background:white;border-radius:10px;padding:12px;">
+          <div style="border:1.5px solid #e0e0e0;border-radius:7px;padding:7px 10px;font-size:10px;color:#888;margin-bottom:5px;">nastia@example.com</div>
+          <div style="position:relative;margin-bottom:4px;">
+            <div style="border:1.5px solid #FF3B30;border-radius:7px;padding:7px 30px 7px 10px;font-size:10px;color:#FF3B30;">••••••••</div>
+            <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#FF3B30;margin-bottom:6px;">Wrong password. <span style="color:#5B4FE8;cursor:pointer;text-decoration:underline;">Forgot it?</span></div>
+          <div style="background:#5B4FE8;border-radius:7px;padding:7px;text-align:center;font-size:10px;color:white;font-weight:700;">Try again →</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Only after failed attempt</h3>
+      <p>Default state has no "Forgot password?" at all — maximum minimalism. Wrong password → field turns red + error message appears with inline "Forgot it?" link. Most contextual: shown exactly when needed.</p>
+    </div>
+  </div>
+
+  <!-- C: Inside field as suffix -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;padding:16px;font-family:-apple-system,sans-serif;">
+      <div style="background:white;border-radius:12px;padding:16px;max-width:240px;margin:0 auto;">
+        <div style="border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 12px;font-size:11px;color:#888;margin-bottom:7px;">Email</div>
+        <!-- Password field: eye left, forgot right -->
+        <div style="position:relative;margin-bottom:12px;">
+          <div style="border:1.5px solid #e0e0e0;border-radius:9px;padding:9px 70px 9px 36px;font-size:11px;color:#888;">••••••••</div>
+          <!-- Eye left -->
+          <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <!-- Forgot right, very muted -->
+          <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:9px;color:#bbb;cursor:pointer;white-space:nowrap;">Forgot?</div>
+        </div>
+        <div style="background:#5B4FE8;border-radius:9px;padding:10px;text-align:center;font-size:11px;color:white;font-weight:700;">Log in →</div>
+        <div style="font-size:9px;color:#ccc;text-align:center;margin-top:6px;">Very condensed. But two actions in one field risks misclicks.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Both inside the field</h3>
+      <p>Eye icon on left, "Forgot?" condensed text on right of the password input. Saves vertical space but two interactive elements inside one field. Risk of misclicks on small screens. Not recommended.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;"><strong>Password reveal</strong> goes in all options — eye icon inside the field, right side (or left in C). Standard in 2024, Apple/Google both recommend it.</p>

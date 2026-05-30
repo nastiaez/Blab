@@ -1,0 +1,153 @@
+<h2>Minimal auth — 3 directions</h2>
+<p class="subtitle">No back button. "Log in" throughout. Question: how minimal is right?</p>
+
+<div class="cards">
+
+  <!-- OPTION A: Label-free -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;padding:12px;display:flex;gap:10px;font-family:-apple-system,sans-serif;">
+
+      <!-- Sign up -->
+      <div style="flex:1;background:white;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:26px;height:26px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;">💬</div>
+            <span style="font-size:14px;font-weight:800;color:#111;">Parlo</span>
+          </div>
+          <span style="font-size:9px;background:#f5f5f5;padding:2px 6px;border-radius:8px;color:#555;">🌐 EN</span>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:12px;">Create account</div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:7px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:5px;">🍎 <span style="font-weight:600;">Continue with Apple</span></div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:7px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:10px;"><span style="font-size:9px;font-weight:800;color:#4285F4;">G</span> <span style="font-weight:600;">Continue with Google</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;"><div style="flex:1;height:1px;background:#eee;"></div><span style="font-size:8px;color:#ccc;">or</span><div style="flex:1;height:1px;background:#eee;"></div></div>
+        <!-- No labels, just inputs -->
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:5px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Your name">
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:5px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Email">
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:10px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Password">
+        <div style="background:#5B4FE8;border-radius:8px;padding:8px;text-align:center;font-size:9px;color:white;font-weight:700;">Create account →</div>
+        <div style="text-align:center;font-size:8px;color:#888;margin-top:8px;">Already have an account? <span style="color:#5B4FE8;font-weight:600;">Log in</span></div>
+      </div>
+
+      <!-- Log in -->
+      <div style="flex:1;background:white;border-radius:10px;padding:14px;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;">💬</div>
+          <span style="font-size:14px;font-weight:800;color:#111;">Parlo</span>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:12px;">Log in</div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:7px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:5px;">🍎 <span style="font-weight:600;">Continue with Apple</span></div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:7px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:10px;"><span style="font-size:9px;font-weight:800;color:#4285F4;">G</span> <span style="font-weight:600;">Continue with Google</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;"><div style="flex:1;height:1px;background:#eee;"></div><span style="font-size:8px;color:#ccc;">or</span><div style="flex:1;height:1px;background:#eee;"></div></div>
+        <!-- No labels -->
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:5px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Email">
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:4px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Password">
+        <div style="text-align:right;font-size:8px;color:#5B4FE8;margin-bottom:10px;cursor:pointer;">Forgot password?</div>
+        <div style="background:#5B4FE8;border-radius:8px;padding:8px;text-align:center;font-size:9px;color:white;font-weight:700;">Log in →</div>
+        <div style="text-align:center;font-size:8px;color:#888;margin-top:8px;">No account? <span style="color:#5B4FE8;font-weight:600;">Sign up</span></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Label-free</h3>
+      <p>Drop all field labels. Placeholders do the job. No back button — bottom toggle navigates between screens. "or" divider with no text. Very clean, slightly harder for accessibility.</p>
+    </div>
+  </div>
+
+  <!-- OPTION B: Single screen, mode toggle at top -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;padding:12px;display:flex;gap:10px;font-family:-apple-system,sans-serif;">
+
+      <!-- Sign up state -->
+      <div style="flex:1;background:white;border-radius:10px;padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:26px;height:26px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;">💬</div>
+            <span style="font-size:14px;font-weight:800;color:#111;">Parlo</span>
+          </div>
+          <span style="font-size:9px;background:#f5f5f5;padding:2px 6px;border-radius:8px;color:#555;">🌐 EN</span>
+        </div>
+        <!-- Tab toggle at top -->
+        <div style="display:flex;background:#f5f5f5;border-radius:9px;padding:2px;margin-bottom:14px;">
+          <div style="flex:1;background:white;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:700;color:#111;box-shadow:0 1px 3px rgba(0,0,0,0.08);">Sign up</div>
+          <div style="flex:1;padding:5px;text-align:center;font-size:9px;color:#888;">Log in</div>
+        </div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:4px;">🍎 <span style="font-weight:600;">Continue with Apple</span></div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:9px;"><span style="font-size:9px;font-weight:800;color:#4285F4;">G</span> <span style="font-weight:600;">Continue with Google</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;"><div style="flex:1;height:1px;background:#eee;"></div><span style="font-size:8px;color:#ccc;">or</span><div style="flex:1;height:1px;background:#eee;"></div></div>
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:4px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Your name">
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:4px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Email">
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:9px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Password">
+        <div style="background:#5B4FE8;border-radius:8px;padding:7px;text-align:center;font-size:9px;color:white;font-weight:700;">Create account →</div>
+      </div>
+
+      <!-- Log in state -->
+      <div style="flex:1;background:white;border-radius:10px;padding:14px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;">💬</div>
+          <span style="font-size:14px;font-weight:800;color:#111;">Parlo</span>
+        </div>
+        <!-- Tab toggle — Log in active -->
+        <div style="display:flex;background:#f5f5f5;border-radius:9px;padding:2px;margin-bottom:14px;">
+          <div style="flex:1;padding:5px;text-align:center;font-size:9px;color:#888;">Sign up</div>
+          <div style="flex:1;background:white;border-radius:7px;padding:5px;text-align:center;font-size:9px;font-weight:700;color:#111;box-shadow:0 1px 3px rgba(0,0,0,0.08);">Log in</div>
+        </div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:4px;">🍎 <span style="font-weight:600;">Continue with Apple</span></div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:9px;"><span style="font-size:9px;font-weight:800;color:#4285F4;">G</span> <span style="font-weight:600;">Continue with Google</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;"><div style="flex:1;height:1px;background:#eee;"></div><span style="font-size:8px;color:#ccc;">or</span><div style="flex:1;height:1px;background:#eee;"></div></div>
+        <!-- Name field gone -->
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:4px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Email">
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:9px;margin-bottom:3px;font-family:inherit;background:#fafafa;outline:none;" placeholder="Password">
+        <div style="text-align:right;font-size:8px;color:#5B4FE8;margin-bottom:9px;">Forgot password?</div>
+        <div style="background:#5B4FE8;border-radius:8px;padding:7px;text-align:center;font-size:9px;color:white;font-weight:700;">Log in →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — One screen, tab toggle (Recommended)</h3>
+      <p>Single screen with a pill toggle at top: [Sign up] [Log in]. No back button, no navigation — just switching modes. Name field appears/disappears. Cleanest of all — no page transitions, no confusion about where you are.</p>
+    </div>
+  </div>
+
+  <!-- OPTION C: SSO-only default, email collapsed -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;padding:12px;display:flex;gap:10px;font-family:-apple-system,sans-serif;">
+
+      <!-- Default state: SSO only -->
+      <div style="flex:1;background:white;border-radius:10px;padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:26px;height:26px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:7px;font-size:12px;display:flex;align-items:center;justify-content:center;">💬</div>
+            <span style="font-size:14px;font-weight:800;color:#111;">Parlo</span>
+          </div>
+          <span style="font-size:9px;background:#f5f5f5;padding:2px 6px;border-radius:8px;color:#555;">🌐 EN</span>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:4px;">Get started</div>
+        <div style="font-size:9px;color:#888;margin-bottom:16px;">Log in or create account</div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:10px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:6px;">🍎 <span style="font-weight:600;">Continue with Apple</span></div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:10px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:14px;"><span style="font-size:9px;font-weight:800;color:#4285F4;">G</span> <span style="font-weight:600;">Continue with Google</span></div>
+        <div style="text-align:center;font-size:9px;color:#5B4FE8;cursor:pointer;font-weight:500;">Use email instead ↓</div>
+        <div style="font-size:8px;color:#aaa;text-align:center;margin-top:28px;line-height:1.4;">SSO detects existing account<br>automatically</div>
+      </div>
+
+      <!-- Expanded email state -->
+      <div style="flex:1;background:white;border-radius:10px;padding:14px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:20px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:7px;font-size:12px;display:flex;align-items:center;justify-content:center;">💬</div>
+          <span style="font-size:14px;font-weight:800;color:#111;">Parlo</span>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#111;margin-bottom:4px;">Get started</div>
+        <div style="font-size:9px;color:#888;margin-bottom:16px;">Log in or create account</div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:7px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:4px;opacity:0.6;">🍎 <span style="font-weight:600;">Continue with Apple</span></div>
+        <div style="border:1.5px solid #ddd;border-radius:8px;padding:7px 8px;font-size:9px;color:#555;display:flex;align-items:center;gap:4px;margin-bottom:8px;opacity:0.6;"><span style="font-size:9px;font-weight:800;color:#4285F4;">G</span> <span style="font-weight:600;">Continue with Google</span></div>
+        <!-- Email expands below -->
+        <input style="width:100%;padding:7px 9px;border:1.5px solid #5B4FE8;border-radius:7px;font-size:9px;margin-bottom:4px;font-family:inherit;background:#fff;outline:none;" placeholder="Email" value="nastia@example.com">
+        <div style="background:#5B4FE8;border-radius:7px;padding:7px;text-align:center;font-size:9px;color:white;font-weight:700;margin-bottom:4px;">Continue →</div>
+        <div style="font-size:8px;color:#aaa;text-align:center;">We'll detect if you have<br>an account already</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — SSO-first, email collapsed</h3>
+      <p>Default shows only Apple + Google. "Use email instead" expands a single email field. Then Parlo detects: existing account → ask password. New email → ask name + password. One flow, no sign up / log in split at all.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;">B removes the back button problem entirely. C is most radical but requires backend email-detection logic.</p>

@@ -1,0 +1,132 @@
+<h2>Tap-state highlight — blue variants</h2>
+<p class="subtitle">Each row shows the same option on incoming (pale blue) and outgoing (terracotta) bubbles. Tapped word is "கப்பி" / "добре".</p>
+
+<style>
+  .bubble-pair {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    align-items: flex-start;
+  }
+  .b-col {
+    background: #EFEBE2;
+    padding: 16px;
+    border-radius: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .b-col-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #9A9490;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; text-align: left; font-family: -apple-system, sans-serif; }
+  .bubble-in { background: #D6E2E7; color: #2C2C2C; border-bottom-left-radius: 4px; align-self: flex-start; }
+  .bubble-out { background: #D4694A; color: #FFFFFF; border-bottom-right-radius: 4px; align-self: flex-end; }
+
+  /* A: Slate fill, cream text */
+  .tap-A-in  { background: #1F3340; color: #EFEBE2; padding: 1px 5px; border-radius: 5px; }
+  .tap-A-out { background: #1F3340; color: #EFEBE2; padding: 1px 5px; border-radius: 5px; }
+
+  /* B: Slate-blue mid fill */
+  .tap-B-in  { background: #3B5F73; color: #FFFFFF; padding: 1px 5px; border-radius: 5px; }
+  .tap-B-out { background: #3B5F73; color: #FFFFFF; padding: 1px 5px; border-radius: 5px; }
+
+  /* C: Pale blue fill + slate text + slate ring */
+  .tap-C-in  { background: #FFFFFF; color: #1F3340; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 2px #1F3340; }
+  .tap-C-out { background: #D6E2E7; color: #1F3340; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 2px #1F3340; }
+
+  /* D: Underline only, slate */
+  .tap-D-in  { color: #1F3340; border-bottom: 2px solid #1F3340; padding-bottom: 1px; font-weight: 600; }
+  .tap-D-out { color: #D6E2E7; border-bottom: 2px solid #D6E2E7; padding-bottom: 1px; font-weight: 600; }
+</style>
+
+<div class="section">
+  <span class="label">A · Slate fill + cream text</span>
+  <p style="font-size:13px;color:#666;margin:4px 0 0;">Strongest. Same treatment on both bubbles. Reads as a confident "this one." Most architectural.</p>
+  <div class="bubble-pair">
+    <div class="b-col">
+      <div class="b-col-label">Incoming</div>
+      <div class="bubble bubble-in">நான் <span class="tap-A-in">கப்பி</span> குடிக்கிறேன் ☕</div>
+    </div>
+    <div class="b-col">
+      <div class="b-col-label">Outgoing</div>
+      <div class="bubble bubble-out">Я <span class="tap-A-out">добре</span>, дякую!</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">B · Mid slate-blue fill + white text</span>
+  <p style="font-size:13px;color:#666;margin:4px 0 0;">Lighter than A, still confident. Softer dialog between bubble and tap-state.</p>
+  <div class="bubble-pair">
+    <div class="b-col">
+      <div class="b-col-label">Incoming</div>
+      <div class="bubble bubble-in">நான் <span class="tap-B-in">கப்பி</span> குடிக்கிறேன் ☕</div>
+    </div>
+    <div class="b-col">
+      <div class="b-col-label">Outgoing</div>
+      <div class="bubble bubble-out">Я <span class="tap-B-out">добре</span>, дякую!</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">C · Pale fill + slate text + slate ring</span>
+  <p style="font-size:13px;color:#666;margin:4px 0 0;">Inverted. The tapped word becomes a small white/blue pill with a slate outline. Most "card-like" — visually echoes the popup it triggers.</p>
+  <div class="bubble-pair">
+    <div class="b-col">
+      <div class="b-col-label">Incoming</div>
+      <div class="bubble bubble-in">நான் <span class="tap-C-in">கப்பி</span> குடிக்கிறேன் ☕</div>
+    </div>
+    <div class="b-col">
+      <div class="b-col-label">Outgoing</div>
+      <div class="bubble bubble-out">Я <span class="tap-C-out">добре</span>, дякую!</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">D · Underline + bold (no fill)</span>
+  <p style="font-size:13px;color:#666;margin:4px 0 0;">Quietest. No background change, just an underline + weight boost. Most respectful of the bubble content.</p>
+  <div class="bubble-pair">
+    <div class="b-col">
+      <div class="b-col-label">Incoming</div>
+      <div class="bubble bubble-in">நான் <span class="tap-D-in">கப்பி</span> குடிக்கிறேன் ☕</div>
+    </div>
+    <div class="b-col">
+      <div class="b-col-label">Outgoing</div>
+      <div class="bubble bubble-out">Я <span class="tap-D-out">добре</span>, дякую!</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">My read</span>
+  <p><b>A (slate fill)</b> is the strongest and most consistent across both bubbles. <b>C (pale pill with ring)</b> is the most editorial — the tapped word visually becomes "a thing you can read about," echoing the popup. <b>B</b> is the safe middle. <b>D</b> is quietest but might disappear on a busy screen.</p>
+  <p style="margin-top:8px;">My pick: <b>A</b> for clarity, or <b>C</b> for personality.</p>
+</div>
+
+<div class="options" style="margin-top:24px;">
+  <div class="option" data-choice="tap-A" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Slate fill + cream text</h3></div>
+  </div>
+  <div class="option" data-choice="tap-B" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Mid-blue fill + white text</h3></div>
+  </div>
+  <div class="option" data-choice="tap-C" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Pale pill + slate ring</h3></div>
+  </div>
+  <div class="option" data-choice="tap-D" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content"><h3>Underline + bold only</h3></div>
+  </div>
+</div>

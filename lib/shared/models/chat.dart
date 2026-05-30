@@ -1,0 +1,41 @@
+import '../data/languages.dart';
+
+class Chat {
+  const Chat({
+    required this.id,
+    required this.partnerName,
+    required this.partnerInitial,
+    required this.learningLanguage,
+    required this.partnerNativeLanguage,
+    required this.partnerLearningLanguage,
+    required this.lastMessage,
+    required this.lastMessageTranslation,
+    required this.timestamp,
+    required this.unreadCount,
+    this.isNewInvite = false,
+    this.startedAt,
+  });
+
+  final String id;
+  final String partnerName;
+  final String partnerInitial;
+
+  /// What the local user is learning from the partner (= partner's native).
+  final BlabLanguage learningLanguage;
+
+  /// Partner's native language (what they teach you).
+  final BlabLanguage partnerNativeLanguage;
+
+  /// What the partner is currently learning from the local user.
+  final BlabLanguage partnerLearningLanguage;
+
+  final String lastMessage;
+  final String lastMessageTranslation;
+  final DateTime timestamp;
+  final int unreadCount;
+  final bool isNewInvite;
+
+  /// When this chat was first started. Used for the "Started X ago" line on
+  /// the partner profile sheet. Falls back to [timestamp] when null.
+  final DateTime? startedAt;
+}

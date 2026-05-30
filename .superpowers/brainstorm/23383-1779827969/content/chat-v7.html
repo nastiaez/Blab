@@ -1,0 +1,122 @@
+<h2>Chat v7 — warmer terracotta ring + speaker icon back to A</h2>
+<p class="subtitle">Swapped the terracotta ring to a warmer rust. Speaker icon swapped back to A (speaker + waves). Side-by-side comparison so you can confirm the warmer ring.</p>
+
+<style>
+  .bubble-pair { display: flex; gap: 16px; margin-top: 8px; }
+  .b-col { background: #EFEBE2; padding: 16px; border-radius: 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .b-col-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: #9A9490; font-weight: 600; margin-bottom: 4px; }
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; text-align: left; font-family: -apple-system, sans-serif; }
+  .bubble-out { background: #D4694A; color: #FFFFFF; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .tap-out-old   { background: #B85638; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 2px #6F2E18; }
+  .tap-out-new   { background: #B85638; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 2px #A04428; }
+  .tap-out-newer { background: #B85638; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 2px #8A3920; }
+</style>
+
+<div class="section">
+  <span class="label">Compare three terracotta rings</span>
+  <p style="font-size:13px;color:#666;margin:4px 0 12px;">Same fill (<code>#B85638</code>). Ring varies. Pick the warmest one that still reads as an outline.</p>
+  <div class="bubble-pair">
+    <div class="b-col">
+      <div class="b-col-label">Old · #6F2E18 (too dark, not warm)</div>
+      <div class="bubble bubble-out">Я <span class="tap-out-old">добре</span>, дякую!</div>
+    </div>
+    <div class="b-col">
+      <div class="b-col-label">A · #A04428 (warmer rust)</div>
+      <div class="bubble bubble-out">Я <span class="tap-out-new">добре</span>, дякую!</div>
+    </div>
+    <div class="b-col">
+      <div class="b-col-label">B · #8A3920 (mid-warm)</div>
+      <div class="bubble bubble-out">Я <span class="tap-out-newer">добре</span>, дякую!</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">Full chat — using A (#A04428) + speaker+waves icon</span>
+</div>
+
+<style>
+  .phone-wrap { display: flex; justify-content: center; padding: 24px; background: #E5E0D3; border-radius: 16px; margin-top: 8px; }
+  .phone { width: 360px; background: #EFEBE2; border-radius: 36px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif; color: #2C2C2C; position: relative; }
+  .status-bar { height: 28px; background: #EFEBE2; }
+  .nav-header { background: #EFEBE2; padding: 12px 16px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(154, 148, 144, 0.18); }
+  .nav-back { font-size: 28px; color: #D4694A; font-weight: 300; line-height: 1; padding: 0 4px; }
+  .nav-avatar { width: 36px; height: 36px; background: #D4694A; color: #EFEBE2; border-radius: 50% 50% 50% 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+  .nav-title { font-weight: 600; font-size: 17px; line-height: 1.2; text-align: left; flex: 1; }
+  .nav-icons { font-size: 22px; color: #9A9490; padding: 0 4px; }
+  .chat-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 360px; position: relative; }
+  .bubble-in { background: #D6E2E7; color: #2C2C2C; border-bottom-left-radius: 4px; align-self: flex-start; max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; text-align: left; border-radius: 18px 18px 18px 4px; }
+  .translation { font-size: 12px; color: #9A9490; margin-top: 4px; line-height: 1.3; text-align: left; }
+  .translation-out { color: #FFE3D9; }
+  .tap-in  { background: #A8C1CC; padding: 1px 5px; border-radius: 5px; box-shadow: 0 0 0 2px #3B5F73; }
+  .timestamp { font-size: 11px; color: #9A9490; align-self: center; margin: 4px 0; }
+  .composer { background: #FFFFFF; padding: 10px 14px; margin: 8px 12px 14px; border-radius: 24px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .composer-input { flex: 1; font-size: 14px; color: #9A9490; text-align: left; }
+  .composer-send { width: 32px; height: 32px; background: #D4694A; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; }
+  .home-indicator { height: 16px; display: flex; justify-content: center; align-items: center; }
+  .home-indicator::after { content: ''; width: 120px; height: 4px; background: #2C2C2C; border-radius: 2px; }
+  .word-popup { position: absolute; background: #FFFFFF; padding: 12px 14px; border-radius: 14px; width: 200px; box-shadow: 0 8px 20px rgba(31, 51, 64, 0.18), 0 1px 4px rgba(31, 51, 64, 0.08); text-align: left; z-index: 10; }
+  .word-popup::after { content: ''; position: absolute; top: -6px; left: 28px; width: 12px; height: 12px; background: #FFFFFF; transform: rotate(45deg); box-shadow: -1px -1px 2px rgba(31, 51, 64, 0.06); }
+  .word-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wp-word { font-size: 18px; font-weight: 600; color: #2C2C2C; }
+  .wp-speaker { color: #D4694A; cursor: pointer; display: flex; align-items: center; }
+  .wp-translit { font-size: 13px; color: #9A9490; margin-top: 4px; }
+  .wp-meaning { font-size: 15px; color: #2C2C2C; margin-top: 8px; }
+</style>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"></div>
+    <div class="nav-header">
+      <div class="nav-back">‹</div>
+      <div class="nav-avatar">A</div>
+      <div class="nav-title">Aswin</div>
+      <div class="nav-icons">⋯</div>
+    </div>
+    <div class="chat-body">
+      <div class="timestamp">Today, 14:32</div>
+      <div class="bubble bubble-in">
+        வணக்கம் நாஸ்தியா! எப்படி இருக்கீங்க?
+        <div class="translation">Hello Nastia! How are you?</div>
+      </div>
+      <div class="bubble bubble-out">
+        Я добре, дякую! А ти?
+        <div class="translation translation-out">I'm good, thanks! And you?</div>
+      </div>
+      <div class="bubble bubble-in" style="position:relative;">
+        நான் <span class="tap-in">கப்பி</span> குடிக்கிறேன் ☕
+        <div class="translation">I'm drinking coffee ☕</div>
+        <div class="word-popup" style="top:38px; left:38px;">
+          <div class="word-row">
+            <div class="wp-word">கப்பி</div>
+            <div class="wp-speaker">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4694A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+            </div>
+          </div>
+          <div class="wp-translit">kāppi</div>
+          <div class="wp-meaning">coffee</div>
+        </div>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="composer-input">Type in Ukrainian…</div>
+      <div class="composer-send">↑</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:24px;">
+  <div class="option" data-choice="ring-A" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Ring A · #A04428 (warmer rust)</h3></div>
+  </div>
+  <div class="option" data-choice="ring-B" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Ring B · #8A3920 (mid-warm)</h3></div>
+  </div>
+  <div class="option" data-choice="ring-other" onclick="toggleSelect(this)">
+    <div class="letter">+</div>
+    <div class="content"><h3>Try something else</h3><p>Tell me in terminal.</p></div>
+  </div>
+</div>

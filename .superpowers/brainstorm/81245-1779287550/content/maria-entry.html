@@ -1,0 +1,86 @@
+<h2>Maria opens app from invite link — what does she see first?</h2>
+<p class="subtitle">She has no Parlo account yet. She tapped "Open in Parlo" from the browser.</p>
+
+<div class="cards">
+
+  <!-- A: Invite-first screen -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <div style="background:white;padding:20px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;border-bottom:1px solid #f0f0f0;">
+        <div style="font-size:32px;">💬</div>
+        <div style="font-size:16px;font-weight:800;color:#111;">Nastia invited you to Parlo</div>
+        <div style="font-size:11px;color:#888;text-align:center;">Learn Ukrainian together through real conversations.</div>
+        <!-- Nastia's chip -->
+        <div style="display:flex;align-items:center;gap:8px;background:#f0eeff;border-radius:20px;padding:6px 14px;border:1px solid #d4c8ff;">
+          <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:9px;">N</div>
+          <span style="font-size:11px;font-weight:600;color:#5B4FE8;">Nastia</span>
+        </div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;">
+        <div style="background:#5B4FE8;border-radius:10px;padding:11px;text-align:center;font-size:12px;color:white;font-weight:700;">Create account →</div>
+        <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:10px;text-align:center;font-size:12px;color:#111;font-weight:600;">I already have an account</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Invite first, then choose</h3>
+      <p>Maria sees the invite context immediately. Two clear CTAs: create account or log in. Invite stays visible through auth. Most welcoming.</p>
+    </div>
+  </div>
+
+  <!-- B: Standard auth, invite context at top -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <!-- Invite banner -->
+      <div style="background:#f0eeff;padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #d4c8ff;">
+        <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:8px;">N</div>
+        <span style="font-size:11px;color:#5B4FE8;font-weight:600;">Nastia invited you — sign up to connect</span>
+      </div>
+      <!-- Normal auth form -->
+      <div style="padding:14px 16px;">
+        <div style="display:flex;background:#f2f2f7;border-radius:8px;padding:2px;margin-bottom:12px;">
+          <div style="flex:1;background:white;border-radius:6px;padding:6px;text-align:center;font-size:10px;font-weight:700;color:#111;box-shadow:0 1px 2px rgba(0,0,0,0.08);">Sign up</div>
+          <div style="flex:1;padding:6px;text-align:center;font-size:10px;color:#888;">Log in</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:10px;color:#888;">Name</div>
+          <div style="border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:10px;color:#888;">Email</div>
+          <div style="border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:10px;color:#888;">Password</div>
+        </div>
+        <div style="background:#5B4FE8;border-radius:8px;padding:9px;text-align:center;font-size:10px;color:white;font-weight:700;margin-top:10px;">Sign up →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Standard auth with invite banner</h3>
+      <p>Parlo's normal sign up / log in screen, but with a purple banner at top showing who invited her. Consistent with Nastia's experience. Invite context is secondary.</p>
+    </div>
+  </div>
+
+  <!-- C: Auth first, no invite visible until after -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <div style="padding:16px;">
+        <div style="text-align:center;margin-bottom:14px;">
+          <div style="font-size:28px;margin-bottom:6px;">💬</div>
+          <div style="font-size:15px;font-weight:800;color:#111;">Parlo</div>
+        </div>
+        <div style="display:flex;background:#f2f2f7;border-radius:8px;padding:2px;margin-bottom:12px;">
+          <div style="flex:1;background:white;border-radius:6px;padding:6px;text-align:center;font-size:10px;font-weight:700;color:#111;box-shadow:0 1px 2px rgba(0,0,0,0.08);">Sign up</div>
+          <div style="flex:1;padding:6px;text-align:center;font-size:10px;color:#888;">Log in</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:10px;color:#888;">Name</div>
+          <div style="border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:10px;color:#888;">Email</div>
+          <div style="border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:10px;color:#888;">Password</div>
+        </div>
+        <div style="background:#5B4FE8;border-radius:8px;padding:9px;text-align:center;font-size:10px;color:white;font-weight:700;margin-top:10px;">Sign up →</div>
+        <div style="font-size:9px;color:#aaa;text-align:center;margin-top:8px;">Invite auto-applies after sign up</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Standard auth, invite applies after</h3>
+      <p>Exactly the same as Nastia's sign-up experience. Invite link is stored in the background, chat appears automatically once account is created. No special UI needed.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;">After auth is complete in all 3: Nastia's chat appears in the list automatically. No separate "Accept" step needed.</p>

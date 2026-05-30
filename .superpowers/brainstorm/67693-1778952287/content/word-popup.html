@@ -1,0 +1,74 @@
+<h2>Word popup card — layout options</h2>
+<p class="subtitle">Tap a Tamil word → this card appears. Which layout feels right?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1c1c1e;border-radius:14px;padding:16px 18px;font-family:-apple-system,sans-serif;min-height:120px;display:flex;flex-direction:column;gap:10px;">
+      <!-- Tamil word + audio on same line -->
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:white;line-height:1.1;">காலை</div>
+          <div style="font-size:12px;color:#888;margin-top:2px;">Kālai</div>
+        </div>
+        <div style="width:36px;height:36px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        </div>
+      </div>
+      <!-- Divider -->
+      <div style="border-top:1px solid #2c2c2e;"></div>
+      <!-- Translation -->
+      <div style="font-size:16px;font-weight:600;color:white;">Morning</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Word + audio top, translation below</h3>
+      <p>Tamil word (big) + romanisation underneath. Audio button right side. Clean divider. Translation below in a second section.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1c1c1e;border-radius:14px;padding:16px 18px;font-family:-apple-system,sans-serif;min-height:120px;display:flex;flex-direction:column;gap:8px;">
+      <!-- Translation first (big) -->
+      <div style="font-size:13px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:0.05em;">Translation</div>
+      <div style="font-size:20px;font-weight:800;color:white;">Morning</div>
+      <!-- Tamil word -->
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#a78bfa;">காலை</div>
+          <div style="font-size:12px;color:#666;">Kālai</div>
+        </div>
+        <div style="margin-left:auto;width:32px;height:32px;background:#2c2c2e;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Translation primary, word secondary</h3>
+      <p>Translation is the main thing you want to know. Word + romanisation smaller below. Audio subtle.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1c1c1e;border-radius:14px;padding:16px 18px;font-family:-apple-system,sans-serif;min-height:120px;display:flex;flex-direction:column;gap:0;">
+      <!-- Row 1: word big + play icon -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-size:24px;font-weight:800;color:white;line-height:1;">காலை</div>
+        <div style="display:flex;align-items:center;gap:4px;background:#2c2c2e;border-radius:20px;padding:4px 10px;cursor:pointer;margin-top:2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#a78bfa"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+          <span style="font-size:11px;color:#a78bfa;font-weight:600;">Play</span>
+        </div>
+      </div>
+      <!-- Row 2: romanisation -->
+      <div style="font-size:12px;color:#666;margin-bottom:10px;">Kālai</div>
+      <!-- Divider -->
+      <div style="border-top:1px solid #2c2c2e;margin-bottom:10px;"></div>
+      <!-- Row 3: translation -->
+      <div style="font-size:18px;font-weight:700;color:white;">Morning</div>
+    </div>
+    <div class="card-body">
+      <h3>C — Word biggest, play pill, romanisation small, translation bold</h3>
+      <p>Tamil word largest. Play as a small pill (icon + "Play") next to word. Romanisation muted below word. Divider. Translation bold underneath.</p>
+    </div>
+  </div>
+
+</div>

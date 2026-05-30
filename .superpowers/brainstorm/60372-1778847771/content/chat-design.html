@@ -1,0 +1,89 @@
+<h2>App Design — LinguaChat MVP</h2>
+<p class="subtitle">Core architecture and screens. Let me know if anything needs adjusting.</p>
+
+<div class="section">
+  <h3>1. Accounts & Setup</h3>
+  <ul>
+    <li>Sign up with email + password</li>
+    <li>Pick <strong>interface language</strong> (what you type in / UI language)</li>
+    <li>Pick <strong>language to learn</strong></li>
+    <li>Invite partner via link or username</li>
+    <li>Partner accepts → shared chat room created</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>2. Message Storage</h3>
+  <p>Each message stores exactly <strong>2 things</strong>:</p>
+  <ul>
+    <li><strong>Original text</strong> — as typed, never modified</li>
+    <li><strong>Translation</strong> — into partner's learning language (generated once on send)</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>3. What Each User Sees</h3>
+  <div class="mockup">
+    <div class="mockup-header">Nastia's view (learns Tamil, interface: English)</div>
+    <div class="mockup-body" style="font-family: sans-serif; padding: 12px;">
+      <div style="margin-bottom: 16px;">
+        <div style="text-align: right; margin-bottom: 4px;">
+          <div style="display: inline-block; background: #4f46e5; color: white; border-radius: 12px 12px 2px 12px; padding: 8px 12px; max-width: 260px;">
+            <div style="font-size: 14px;">நான் உன்னை நேசிக்கிறேன்</div>
+            <div style="font-size: 11px; opacity: 0.75; margin-top: 4px;">I love you</div>
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 10px; color: #888;">You (original)</div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div style="text-align: left; margin-bottom: 4px;">
+          <div style="display: inline-block; background: #f3f4f6; color: #111; border-radius: 12px 12px 12px 2px; padding: 8px 12px; max-width: 260px;">
+            <div style="font-size: 14px;">Я тебе кохаю</div>
+            <div style="font-size: 11px; color: #666; margin-top: 4px;">I love you</div>
+          </div>
+        </div>
+        <div style="text-align: left; font-size: 10px; color: #888;">Aswin (translation to Tamil → Ukrainian shown to him)</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="subtitle" style="margin-top: 8px; font-size: 12px;">* Nastia sees her own message in Tamil (learning) + English (original she typed). Aswin's message shows in Ukrainian (his translation) + English (his original).</p>
+</div>
+
+<div class="section">
+  <h3>4. Tap-a-Word Popup</h3>
+  <ul>
+    <li>Tap any word in any message</li>
+    <li>Popup shows: <strong>word</strong> → translation in interface language + transliteration + audio button</li>
+    <li>Works on both the learning-language line and original line</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>5. Translation Toggle</h3>
+  <ul>
+    <li>Toggle in chat header: <strong>Show translations ON/OFF</strong></li>
+    <li>OFF = only learning-language line visible (challenge mode)</li>
+    <li>Per-chat setting, persists across sessions</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>6. Input Mode</h3>
+  <ul>
+    <li>Default: type in interface language → auto-translated on send</li>
+    <li>Button next to input field: switch to <strong>"Write in [learning language]"</strong> mode</li>
+    <li>In learning mode: message sent as-is, reverse-translated back to partner's interface language for their subtitle</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>Out of scope for v1</h3>
+  <ul style="color: #888;">
+    <li>Group chats</li>
+    <li>Voice messages</li>
+    <li>Word saving / vocabulary lists</li>
+    <li>Push notifications (basic ones only)</li>
+    <li>Multiple partners / chat rooms</li>
+  </ul>
+</div>

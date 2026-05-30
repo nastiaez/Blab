@@ -1,0 +1,2617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blab — Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f0f5;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 32px 24px;
+    min-height: 100vh;
+    flex-wrap: wrap;
+  }
+
+  /* ── Phone shell ── */
+  .phone {
+    width: 375px;
+    height: 780px;
+    background: #fff;
+    border-radius: 44px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .phone-label {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    height: 44px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #111;
+    flex-shrink: 0;
+  }
+  .status-bar .time { font-size: 15px; font-weight: 700; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-icons svg { width: 16px; height: 16px; }
+
+  /* ── Screens ── */
+  .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* ── Nav / header ── */
+  .nav-header {
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    padding: 10px 16px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .nav-back {
+    font-size: 17px;
+    color: #007AFF;
+    cursor: pointer;
+    padding: 4px 8px 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .nav-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .nav-info { flex: 1; }
+  .nav-name { font-size: 16px; font-weight: 600; color: #111; }
+  .nav-lang { font-size: 12px; color: #888; }
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #555;
+  }
+  .toggle-switch {
+    width: 36px; height: 20px;
+    background: #34C759;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch.off { background: #ccc; }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch.off::after { left: 2px; }
+  .toggle-switch:not(.off)::after { left: 18px; }
+
+  /* ── Messages ── */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #f7f7fb;
+  }
+
+  .date-divider {
+    text-align: center;
+    font-size: 11px;
+    color: #aaa;
+    margin: 4px 0;
+    font-weight: 500;
+  }
+
+  .msg-row {
+    display: flex;
+    flex-direction: column;
+  }
+  .msg-row.outgoing { align-items: flex-end; }
+  .msg-row.incoming { align-items: flex-start; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 9px 13px;
+    border-radius: 18px;
+    position: relative;
+    cursor: pointer;
+  }
+  .outgoing .bubble {
+    background: #5B4FE8;
+    border-radius: 18px 18px 4px 18px;
+  }
+  .incoming .bubble {
+    background: #fff;
+    border-radius: 18px 18px 18px 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .bubble-main {
+    font-size: 15px;
+    line-height: 1.4;
+    color: inherit;
+    word-break: break-word;
+  }
+  .outgoing .bubble-main { color: #fff; }
+  .incoming .bubble-main { color: #111; }
+
+  .bubble-sub {
+    font-size: 11.5px;
+    line-height: 1.3;
+    margin-top: 4px;
+    word-break: break-word;
+  }
+  .outgoing .bubble-sub { color: rgba(255,255,255,0.65); }
+  .incoming .bubble-sub { color: #aaa; }
+
+  .bubble-sub.hidden { display: none; }
+
+  .msg-time {
+    font-size: 10px;
+    color: #bbb;
+    margin-top: 3px;
+    padding: 0 2px;
+  }
+
+  /* ── Social buttons ── */
+  .btn-social {
+    width: 100%; padding: 13px 16px;
+    background: #fff; color: #111;
+    border: 1.5px solid #ddd; border-radius: 14px;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s;
+  }
+  .btn-social:hover { background: #f7f7f7; }
+
+  /* ── Language list rows ── */
+  .lang-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 14px; border-radius: 12px;
+    border: 1.5px solid #eee; background: #fafafa;
+    font-size: 15px; color: #111; cursor: pointer;
+    transition: all 0.12s;
+  }
+  .lang-row:hover { background: #f0eeff; border-color: #c4b9f7; }
+  .lang-row.selected { background: #f0eeff; border-color: #5B4FE8; font-weight: 600; color: #5B4FE8; }
+  .lang-row span:first-child { font-size: 20px; }
+
+  /* ── Flat list style — design A (Apple Settings) ── */
+  .lang-list-flat { background: white; border-radius: 14px; overflow: hidden; }
+  .lang-list-flat .lang-row { border: none; border-radius: 0; margin: 0; padding: 13px 16px; gap: 14px; border-bottom: 1px solid #f5f5f5; background: white; }
+  .lang-list-flat .lang-row:last-child { border-bottom: none; }
+  .lang-list-flat .lang-row:hover { background: #fafafa; border-color: transparent; }
+  .lang-list-flat .lang-row.selected { background: #f0eeff; font-weight: 600; color: #111; border-color: transparent; }
+  .lang-list-flat .lang-row .check-svg { visibility: hidden; margin-left: auto; flex-shrink: 0; }
+  .lang-list-flat .lang-row.selected .check-svg { visibility: visible; }
+  .lang-list-flat .lang-row span:first-child { font-size: 18px; }
+  .lang-list-flat .lang-row span:nth-child(2) { flex: 1; font-size: 15px; color: #111; }
+  .lang-section-label { padding: 10px 16px 6px; font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; background: #f7f7fb; border-bottom: 1px solid #f0f0f0; }
+  .lang-search-wrap { background: #f2f2f7; border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .lang-search-wrap input { background: none; border: none; outline: none; font-size: 14px; color: #111; width: 100%; font-family: inherit; }
+
+  /* ── Tappable word ── */
+  .tappable {
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(255,255,255,0.5);
+    cursor: pointer;
+  }
+  .incoming .tappable { border-bottom-color: rgba(91,79,232,0.4); }
+
+  /* ── Edited label ── */
+  .edited-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 3px;
+    font-style: italic;
+  }
+
+  /* ── Word popup ── */
+  .word-popup {
+    position: absolute;
+    background: #1c1c1e;
+    color: #fff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    width: 200px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    z-index: 100;
+    display: none;
+    pointer-events: auto;
+  }
+  .word-popup.show { display: block; }
+  .popup-word { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+  .popup-translation { font-size: 13px; color: #a0a0b0; margin-bottom: 2px; }
+  .popup-roman { font-size: 12px; color: #888; font-style: italic; margin-bottom: 8px; }
+  .popup-audio:hover { border-color: #5B4FE8 !important; }
+  .popup-close {
+    position: absolute; top: 8px; right: 10px;
+    font-size: 16px; color: #555; cursor: pointer; line-height: 1;
+  }
+
+  /* ── Input area ── */
+  .input-area {
+    background: #fff;
+    border-top: 1px solid #eee;
+    padding: 10px 12px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .input-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #888;
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
+    transition: all 0.15s;
+  }
+  .input-mode-toggle.learning {
+    color: #5B4FE8; border-color: #5B4FE8; background: #f0eeff;
+  }
+  .input-mode-toggle .flag { font-size: 13px; }
+  .input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .input-box {
+    flex: 1;
+    min-height: 38px;
+    max-height: 90px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 9px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    color: #111;
+    line-height: 1.35;
+    background: #fafafa;
+    transition: border-color 0.15s;
+  }
+  .input-box:focus { border-color: #5B4FE8; background: #fff; }
+  .send-btn {
+    width: 38px; height: 38px;
+    background: #5B4FE8;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+  .send-btn:active { transform: scale(0.93); }
+  .send-btn svg { width: 18px; height: 18px; fill: white; margin-left: 2px; }
+
+  /* ── Chat list screen ── */
+  .screen-header {
+    padding: 16px 20px 12px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+  }
+  .screen-title { font-size: 22px; font-weight: 700; color: #111; }
+  .screen-subtitle { font-size: 13px; color: #888; margin-top: 2px; }
+
+  .chat-list { flex: 1; overflow-y: auto; background: #fff; }
+  .chat-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f2f2f2;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .chat-item:active { background: #f7f7f7; }
+  .chat-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 18px; color: white;
+    flex-shrink: 0;
+  }
+  .chat-info { flex: 1; min-width: 0; }
+  .chat-name { font-size: 16px; font-weight: 600; color: #111; }
+  .chat-preview { font-size: 13px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-meta { text-align: right; }
+  .chat-time { font-size: 11px; color: #aaa; }
+  .chat-badge {
+    width: 20px; height: 20px; background: #5B4FE8;
+    border-radius: 50%; color: white; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 4px 0 0 auto;
+  }
+
+  /* ── Bottom tab bar ── */
+  .tab-bar {
+    height: 56px;
+    background: #fff;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; cursor: pointer; padding: 6px 0;
+  }
+  .tab svg { width: 22px; height: 22px; }
+  .tab span { font-size: 10px; font-weight: 500; }
+  .tab.active span { color: #5B4FE8; }
+  .tab.active svg { stroke: #5B4FE8; }
+  .tab:not(.active) span { color: #aaa; }
+  .tab:not(.active) svg { stroke: #aaa; }
+
+  /* ── Onboarding screens ── */
+  .onboarding {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 32px 24px 40px; background: #fff;
+    overflow-y: auto;
+  }
+  .onboard-logo {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, #5B4FE8, #a78bfa);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 24px;
+  }
+  .onboard-title { font-size: 26px; font-weight: 800; color: #111; line-height: 1.2; margin-bottom: 8px; }
+  .onboard-subtitle { font-size: 15px; color: #666; line-height: 1.5; margin-bottom: 32px; }
+
+  .field-label { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .field-input {
+    width: 100%; padding: 13px 16px;
+    border: 1.5px solid #e0e0e0; border-radius: 12px;
+    font-size: 15px; font-family: inherit; color: #111;
+    outline: none; background: #fafafa; margin-bottom: 16px;
+  }
+  .field-input:focus { border-color: #5B4FE8; background: #fff; }
+
+  .lang-picker {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+  }
+  .lang-option {
+    padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; transition: all 0.15s; background: #fafafa;
+  }
+  .lang-option.selected { border-color: #5B4FE8; background: #f0eeff; }
+  .lang-option .flag { font-size: 24px; }
+  .lang-option .name { font-size: 13px; font-weight: 500; color: #333; }
+
+  .btn-primary {
+    width: 100%; padding: 15px;
+    background: #5B4FE8; color: white;
+    border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 700; font-family: inherit;
+    cursor: pointer; margin-top: auto;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-link { text-align: center; color: #5B4FE8; font-size: 14px; margin-top: 14px; cursor: pointer; }
+
+  /* ── Invite screen ── */
+  .invite-card {
+    background: #f7f7fb; border-radius: 16px; padding: 20px;
+    text-align: center; margin: 20px 0;
+  }
+  .invite-code {
+    font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #5B4FE8;
+    font-family: monospace; margin: 10px 0;
+  }
+  .invite-hint { font-size: 13px; color: #888; }
+
+  /* ── Language settings picker (checkmark style, overrides lang-row) ── */
+  #langList .lang-row {
+    background: white; border: none; border-radius: 0;
+    border-bottom: 1px solid #f5f5f5;
+    padding: 13px 16px; margin: 0;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 15px; color: #111; transition: background 0.1s;
+  }
+  #langList .lang-row:hover { background: #fafafa; }
+  #langList .lang-row .check { visibility: hidden; margin-left: auto; flex-shrink: 0; }
+  #langList .lang-row.selected { background: #f7f7ff; font-weight: 600; }
+  #langList .lang-row.selected .check { visibility: visible; }
+  #langList .lang-row span:nth-child(2) { flex: 1; }
+  .lang-nav-header {
+    background: white; border-bottom: 1px solid #eee;
+    display: flex; align-items: center; padding: 10px 20px;
+    flex-shrink: 0;
+  }
+  .lang-search-wrap {
+    background: white; padding: 10px 16px 10px;
+    border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+  }
+  .lang-search-inner {
+    background: #f2f2f7; border-radius: 10px;
+    padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .lang-search-inner input {
+    border: none; background: transparent; outline: none;
+    font-size: 14px; font-family: inherit; flex: 1; color: #111;
+  }
+
+  /* ── Outer wrapper ── */
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; }
+  .nav-dots {
+    display: flex; gap: 6px; margin-top: 16px; justify-content: center;
+  }
+  .nav-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ccc; cursor: pointer; transition: background 0.2s;
+  }
+  .nav-dot.active { background: #5B4FE8; width: 22px; border-radius: 4px; }
+
+  h3.section-heading {
+    font-size: 11px; font-weight: 700; color: #aaa;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 14px 16px 6px;
+  }
+
+  /* ── Biometric / Login ── */
+  .biometric-card {
+    background: #f7f7fb; border-radius: 20px;
+    padding: 28px 20px; text-align: center; margin: 20px 0;
+  }
+  .biometric-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #5B4FE8, #a78bfa);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 32px;
+  }
+  .btn-biometric {
+    width: 100%; padding: 14px;
+    background: #5B4FE8; color: white;
+    border: none; border-radius: 14px;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity 0.15s;
+  }
+  .btn-biometric:hover { opacity: 0.9; }
+
+  /* ── Empty state ── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 32px; text-align: center; background: #fff;
+  }
+  .empty-title { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 8px; }
+  .empty-subtitle { font-size: 14px; color: #888; line-height: 1.5; margin-bottom: 28px; }
+
+  /* ── Phone 4 — Aswin's side ── */
+  .browser-bar {
+    background: #f2f2f7; padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #ddd; flex-shrink: 0;
+  }
+  .browser-url {
+    flex: 1; background: #e0e0e8; border-radius: 8px;
+    padding: 6px 10px; font-size: 12px; color: #555; font-weight: 500;
+  }
+  .invite-web-card {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px 24px; background: #fff; text-align: center;
+  }
+
+  /* ── Language bottom sheet ── */
+  #lang-sheet-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.35); z-index: 1000;
+    display: flex; align-items: flex-end;
+    border-radius: 44px;
+  }
+  #lang-sheet {
+    width: 100%; background: white;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+  }
+  #lang-sheet.open { transform: translateY(0); }
+  #lang-sheet .lang-row {
+    background: white; border: none; border-radius: 0;
+    border-bottom: 1px solid #f5f5f5;
+    padding: 14px 20px; margin: 0;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 16px; color: #111; cursor: pointer;
+  }
+  #lang-sheet .lang-row:last-child { border-bottom: none; }
+  #lang-sheet .lang-row.selected { background: #f7f7ff; font-weight: 600; }
+  #lang-sheet .lang-row .check { visibility: hidden; margin-left: auto; flex-shrink: 0; }
+  #lang-sheet .lang-row.selected .check { visibility: visible; }
+  #lang-sheet .lang-row span:nth-child(2) { flex: 1; }
+
+/* ── Read receipts ── */
+  .read-tick { display: inline-flex; align-items: center; margin-left: 3px; vertical-align: middle; }
+  .read-tick.delivered { color: #bbb; }
+  .read-tick.read { color: #5B4FE8; }
+
+/* ── Notification toast ── */
+  .toast {
+    position: absolute; bottom: 90px; left: 12px; right: 12px;
+    background: #1c1c1e; color: white;
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    z-index: 400; animation: slideUp 0.35s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .toast-app-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(135deg,#5B4FE8,#a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .toast-body { flex: 1; }
+  .toast-title { font-size: 13px; font-weight: 700; }
+  .toast-msg { font-size: 12px; color: #aaa; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════ -->
+<!--   PHONE 1 — Onboarding / Sign Up        -->
+<!-- ════════════════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Sign Up</div>
+  <div class="phone" id="phone1">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="2" height="8" fill="#111" rx="0.5"/><rect x="4.5" y="3.5" width="2" height="9.5" fill="#111" rx="0.5"/><rect x="8" y="2" width="2" height="11" fill="#111" rx="0.5"/><rect x="11.5" y="0.5" width="2" height="12.5" fill="#111" rx="0.5"/></svg>
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3C5.1 3 2.5 4.2 0.7 6.1L2.1 7.5C3.5 6 5.6 5 8 5s4.5 1 5.9 2.5l1.4-1.4C13.5 4.2 10.9 3 8 3z" fill="#111"/><path d="M8 7c-1.7 0-3.2.7-4.3 1.8L5.1 10.2C5.9 9.4 6.9 9 8 9s2.1.4 2.9 1.2l1.4-1.4C11.2 7.7 9.7 7 8 7z" fill="#111"/><circle cx="8" cy="13" r="1.5" fill="#111"/></svg>
+        <svg viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#111" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#111"/><path d="M23 4v4a2 2 0 000-4z" fill="#111" fill-opacity="0.4"/></svg>
+      </div>
+    </div>
+
+    <!-- ── Unified auth screen — Sign up / Log in tab toggle ── -->
+    <div class="screen active" id="s-signup">
+      <div class="onboarding" style="padding-top:28px;">
+
+        <!-- Top row: logo + globe -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="onboard-logo" style="margin-bottom:0;width:44px;height:44px;border-radius:13px;font-size:20px;">💬</div>
+            <div style="font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#111;">Blab</div>
+          </div>
+          <div onclick="showLangSetup()" style="display:flex;align-items:center;gap:5px;background:#f5f5f5;border-radius:20px;padding:5px 10px;cursor:pointer;">
+            <span style="font-size:13px;">🌐</span>
+            <span id="lang-label" style="font-size:12px;color:#555;font-weight:500;">EN</span>
+          </div>
+        </div>
+
+        <!-- Tab toggle -->
+        <div style="display:flex;background:#f2f2f7;border-radius:11px;padding:3px;margin-bottom:22px;">
+          <div id="tab-signup" onclick="authTab('signup')" style="flex:1;background:white;border-radius:8px;padding:8px;text-align:center;font-size:14px;font-weight:700;color:#111;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;transition:all 0.2s;">Sign up</div>
+          <div id="tab-login" onclick="authTab('login')" style="flex:1;padding:8px;text-align:center;font-size:14px;font-weight:600;color:#888;cursor:pointer;transition:all 0.2s;">Log in</div>
+        </div>
+
+        <!-- SSO buttons — identical for both modes, Apple hidden on Android -->
+        <button class="btn-social" style="border-color:#e0e0e0;margin-bottom:8px;" onclick="showPhone2()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="#111"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple
+        </button>
+        <button class="btn-social" style="border-color:#e0e0e0;" onclick="showPhone2()">
+          <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+
+        <div style="display:flex;align-items:center;gap:10px;margin:18px 0 16px;">
+          <div style="flex:1;height:1px;background:#eee;"></div>
+          <span id="auth-divider-text" style="font-size:12px;color:#bbb;">or sign up with email</span>
+          <div style="flex:1;height:1px;background:#eee;"></div>
+        </div>
+
+        <!-- Name field — sign up only -->
+        <input id="auth-name-field" class="field-input" type="text" placeholder="Your name" style="margin-bottom:6px;" oninput="this.style.borderColor='';document.getElementById('auth-name-error').style.display='none'">
+        <div id="auth-name-error" style="display:none;font-size:12px;color:#FF3B30;margin-bottom:8px;padding-left:2px;">Enter your name</div>
+
+        <!-- Shared fields -->
+        <input id="auth-email" class="field-input" type="email" placeholder="Email" style="margin-bottom:6px;" oninput="checkEmailInput(this)" onblur="checkEmailBlur(this)">
+        <div id="email-error" style="display:none;font-size:12px;color:#FF3B30;margin-bottom:8px;padding-left:2px;">Enter a valid email address</div>
+
+        <!-- Password field with eye toggle + strength bar -->
+        <div style="margin-bottom:16px;">
+          <div style="position:relative;">
+            <input id="auth-password" class="field-input" type="password" placeholder="Password" style="margin-bottom:0;padding-right:44px;" oninput="this.style.borderColor='';document.getElementById('auth-pw-error').style.display='none';checkPasswordStrength(this.value)">
+            <span onclick="togglePasswordVis()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;display:flex;align-items:center;">
+              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </span>
+          </div>
+          <!-- Empty password error -->
+          <div id="auth-pw-error" style="display:none;font-size:12px;color:#FF3B30;margin-top:6px;padding-left:2px;">Enter your password</div>
+          <!-- Strength bar — signup mode only -->
+          <div id="pw-strength" style="display:none;margin-top:8px;padding:0 2px;">
+            <div style="height:3px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:5px;">
+              <div id="pw-strength-bar" style="height:100%;border-radius:2px;width:0%;transition:width 0.25s,background 0.25s;"></div>
+            </div>
+            <div id="pw-strength-label" style="font-size:11px;color:#aaa;"></div>
+          </div>
+        </div>
+
+        <button id="auth-cta" class="btn-primary" onclick="handleAuthSubmit()">Create account →</button>
+
+        <!-- Forgot password — log in mode only, below CTA -->
+        <div id="forgot-link" onclick="showForgotPassword()" style="display:none;text-align:center;font-size:13px;color:#5B4FE8;font-weight:500;cursor:pointer;margin-top:14px;">Forgot password?</div>
+      </div>
+    </div>
+
+    <!-- Language setup step (shown when globe icon tapped) -->
+    <!-- Language setup — Apple Settings style, no Done, auto-save on tap -->
+    <!-- ── Forgot password screen ── -->
+    <div class="screen" id="s-forgot">
+      <div class="onboarding" style="padding-top:28px;">
+        <div onclick="authTab('login')" style="font-size:26px;color:#5B4FE8;cursor:pointer;margin-bottom:20px;line-height:1;">‹</div>
+        <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:6px;">Reset password</div>
+        <div style="font-size:14px;color:#888;line-height:1.5;margin-bottom:24px;">Enter your email and we'll send you a link to reset your password.</div>
+        <input class="field-input" type="email" placeholder="Email" value="nastia@example.com">
+        <button class="btn-primary" onclick="showScreen1('s-forgot-sent')">Send reset link →</button>
+      </div>
+    </div>
+
+    <!-- ── Forgot password — sent confirmation ── -->
+    <div class="screen" id="s-forgot-sent">
+      <div class="onboarding" style="padding-top:28px;align-items:center;justify-content:center;text-align:center;">
+        <div style="font-size:56px;margin-bottom:20px;">📬</div>
+        <div style="font-size:20px;font-weight:800;color:#111;margin-bottom:8px;">Check your email</div>
+        <div style="font-size:14px;color:#888;line-height:1.5;margin-bottom:32px;">We sent a reset link to<br><strong style="color:#111;">nastia@example.com</strong></div>
+        <div onclick="authTab('login')" style="font-size:14px;color:#5B4FE8;font-weight:600;cursor:pointer;">Back to log in</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-dots">
+    <div class="nav-dot active"></div>
+    <div class="nav-dot"></div>
+    <div class="nav-dot"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--   PHONE 2 — Chat List + New Chat        -->
+<!-- ════════════════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Chats</div>
+  <div class="phone" id="phone2" style="display:none;">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="2" height="8" fill="#111" rx="0.5"/><rect x="4.5" y="3.5" width="2" height="9.5" fill="#111" rx="0.5"/><rect x="8" y="2" width="2" height="11" fill="#111" rx="0.5"/><rect x="11.5" y="0.5" width="2" height="12.5" fill="#111" rx="0.5"/></svg>
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3C5.1 3 2.5 4.2 0.7 6.1L2.1 7.5C3.5 6 5.6 5 8 5s4.5 1 5.9 2.5l1.4-1.4C13.5 4.2 10.9 3 8 3z" fill="#111"/><path d="M8 7c-1.7 0-3.2.7-4.3 1.8L5.1 10.2C5.9 9.4 6.9 9 8 9s2.1.4 2.9 1.2l1.4-1.4C11.2 7.7 9.7 7 8 7z" fill="#111"/><circle cx="8" cy="13" r="1.5" fill="#111"/></svg>
+        <svg viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#111" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#111"/><path d="M23 4v4a2 2 0 000-4z" fill="#111" fill-opacity="0.4"/></svg>
+      </div>
+    </div>
+
+    <div class="screen active" id="screen-chats">
+      <div class="screen-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="screen-title">Chats</div>
+        <div onclick="showTab('newchat')" style="width:34px;height:34px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;font-weight:300;line-height:1;">+</div>
+      </div>
+
+      <div class="chat-list">
+        <div class="chat-item" onclick="showPhone3()">
+          <div class="chat-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2);">A</div>
+          <div class="chat-info">
+            <div class="chat-name">Aswin</div>
+            <div class="chat-preview">நான் உன்னை நேசிக்கிறேன் · I love you</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">9:38</div>
+            <div class="chat-badge">2</div>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <!-- New chat screen -->
+    <div class="screen" id="screen-newchat" style="flex-direction:column;background:#f7f7fb;">
+      <div class="nav-header">
+        <div class="nav-back" onclick="showTab('chats')" style="font-size:24px;padding-right:4px;">‹</div>
+        <div class="nav-info"><div class="nav-name">New chat</div></div>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:0;">
+        <div style="font-size:17px;font-weight:800;color:#111;margin-bottom:12px;">What do you want to learn?</div>
+
+        <div class="lang-search-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search languages…" oninput="filterNewChatLangs(this.value)" />
+        </div>
+
+        <!-- Language list (collapsed after selection) -->
+        <div id="newChatLangList" class="lang-list-flat" style="margin-bottom:12px;">
+          <div class="lang-row" data-name="Dutch" onclick="selectNewLang(this,'🇳🇱','Dutch')"><span>🇳🇱</span><span>Dutch</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="English" onclick="selectNewLang(this,'🇬🇧','English')"><span>🇬🇧</span><span>English</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="French" onclick="selectNewLang(this,'🇫🇷','French')"><span>🇫🇷</span><span>French</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="German" onclick="selectNewLang(this,'🇩🇪','German')"><span>🇩🇪</span><span>German</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Hindi" onclick="selectNewLang(this,'🇮🇳','Hindi')"><span>🇮🇳</span><span>Hindi</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Italian" onclick="selectNewLang(this,'🇮🇹','Italian')"><span>🇮🇹</span><span>Italian</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Portuguese" onclick="selectNewLang(this,'🇧🇷','Portuguese')"><span>🇧🇷</span><span>Portuguese</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Spanish" onclick="selectNewLang(this,'🇪🇸','Spanish')"><span>🇪🇸</span><span>Spanish</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Tamil" onclick="selectNewLang(this,'🇮🇳','Tamil')"><span>🇮🇳</span><span>Tamil</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Turkish" onclick="selectNewLang(this,'🇹🇷','Turkish')"><span>🇹🇷</span><span>Turkish</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Ukrainian" onclick="selectNewLang(this,'🇺🇦','Ukrainian')"><span>🇺🇦</span><span>Ukrainian</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+
+        <!-- Confirmed selection (hidden until language picked) -->
+        <div id="newChatLangConfirmed" style="display:none;background:white;border-radius:14px;padding:14px 16px;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="confirmedFlag" style="font-size:24px;"></span>
+            <div>
+              <div style="font-size:11px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Learning</div>
+              <div id="confirmedName" style="font-size:16px;font-weight:700;color:#111;"></div>
+            </div>
+          </div>
+          <div onclick="resetLangPicker()" style="font-size:13px;color:#5B4FE8;font-weight:600;cursor:pointer;">Change</div>
+        </div>
+
+        <!-- Link info (hidden until language picked) -->
+        <div id="newChatLinkInfo" style="display:none;background:#fff8e1;border-radius:14px;padding:14px 16px;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#444;">
+            <span style="font-size:18px;">👤</span>
+            <span>Only <strong style="color:#111;">one person</strong> can use this link</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#444;">
+            <span style="font-size:18px;">⏱</span>
+            <span>Valid for <strong style="color:#111;">48 hours</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px 32px;background:white;border-top:1px solid #eee;">
+        <button id="newChatShareBtn" disabled style="width:100%;padding:15px;background:#ccc;color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;font-family:inherit;cursor:not-allowed;">Share invite link</button>
+      </div>
+
+      <!-- Mock native share sheet -->
+      <div id="shareSheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:20px 16px 40px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);z-index:300;">
+        <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 20px;"></div>
+        <div style="font-size:13px;color:#888;text-align:center;margin-bottom:16px;">Share via</div>
+        <!-- App row -->
+        <div style="display:flex;justify-content:space-around;margin-bottom:20px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;" onclick="shareVia(this,'WhatsApp')">
+            <div class="share-app-icon" style="width:52px;height:52px;border-radius:14px;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:26px;transition:all 0.15s;">💬</div>
+            <span style="font-size:11px;color:#555;">WhatsApp</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;" onclick="shareVia(this,'iMessage')">
+            <div class="share-app-icon" style="width:52px;height:52px;border-radius:14px;background:#34C759;display:flex;align-items:center;justify-content:center;font-size:26px;transition:all 0.15s;">💬</div>
+            <span style="font-size:11px;color:#555;">Messages</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;" onclick="shareVia(this,'Telegram')">
+            <div class="share-app-icon" style="width:52px;height:52px;border-radius:14px;background:#2AABEE;display:flex;align-items:center;justify-content:center;font-size:26px;transition:all 0.15s;">✈️</div>
+            <span style="font-size:11px;color:#555;">Telegram</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;" onclick="shareVia(this,'Email')">
+            <div class="share-app-icon" style="width:52px;height:52px;border-radius:14px;background:#0084FF;display:flex;align-items:center;justify-content:center;font-size:26px;transition:all 0.15s;">✉️</div>
+            <span style="font-size:11px;color:#555;">Mail</span>
+          </div>
+        </div>
+        <!-- Copy link row -->
+        <div id="copyLinkRow" onclick="copyLink()" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#f7f7fb;border-radius:14px;cursor:pointer;transition:background 0.2s;">
+          <div id="copyLinkIcon" style="width:40px;height:40px;border-radius:10px;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:18px;">🔗</div>
+          <div>
+            <div id="copyLinkLabel" style="font-size:15px;color:#111;font-weight:500;">Copy link</div>
+            <div id="copyLinkHint" style="font-size:12px;color:#888;display:none;">Now paste it in a chat with your friend</div>
+          </div>
+        </div>
+        <div id="shareCancel" onclick="document.getElementById('shareSheet').style.display='none';document.getElementById('shareBackdrop').style.display='none';" style="margin-top:12px;text-align:center;font-size:15px;color:#5B4FE8;font-weight:600;cursor:pointer;padding:10px;">Cancel</div>
+      </div>
+      <!-- Backdrop -->
+      <div id="shareBackdrop" onclick="document.getElementById('shareSheet').style.display='none';document.getElementById('shareBackdrop').style.display='none';" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.3);z-index:299;border-radius:44px;"></div>
+    </div>
+
+<!-- ── Flow 2: Empty state (first-time user) ── -->
+    <div class="screen" id="screen-empty" style="flex-direction:column;background:#fff;">
+      <div class="screen-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="screen-title">Chats</div>
+        <div onclick="showTab('newchat')" style="width:34px;height:34px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:white;font-weight:300;line-height:1;">+</div>
+      </div>
+      <div class="empty-state">
+        <div style="font-size:72px;margin-bottom:20px;line-height:1;">💬</div>
+        <div class="empty-title">No chats yet</div>
+        <div class="empty-subtitle">Invite someone and start learning each other's language through real conversations.</div>
+        <button class="btn-primary" style="margin-top:0;width:100%;" onclick="showTab('newchat')">+ Invite someone</button>
+      </div>
+    </div>
+
+<!-- Profile screen (sibling of screen-chats) -->
+    <div class="screen" id="screen-profile" style="overflow-y:auto; flex-direction:column;">
+        <!-- Hero -->
+        <div style="background:linear-gradient(135deg,#5B4FE8,#a78bfa);padding:32px 20px 24px;text-align:center;flex-shrink:0;">
+          <div style="position:relative;width:80px;margin:0 auto 12px;">
+            <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:30px;">N</div>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:white;">Nastia</div>
+          <!-- Learning languages chips -->
+          <div style="margin-top:14px;">
+            <div style="font-size:11px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:7px;">Learning</div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+              <div style="background:rgba(255,255,255,0.2);border-radius:20px;padding:5px 14px;font-size:13px;color:white;font-weight:600;">🇮🇳 Tamil</div>
+              <div style="background:rgba(255,255,255,0.2);border-radius:20px;padding:5px 14px;font-size:13px;color:white;font-weight:600;">🇩🇪 German</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div style="padding:14px;background:#f7f7fb;flex:1;">
+          <div style="background:white;border-radius:14px;overflow:hidden;">
+            <div onclick="showLangSetup()" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f5f5f5;cursor:pointer;">
+              <span style="font-size:15px;color:#111;">Interface language</span>
+              <span style="font-size:15px;color:#5B4FE8;font-weight:600;white-space:nowrap;"><span id="profile-lang-label">English</span> ›</span>
+            </div>
+            <div onclick="showTab('editprofile')" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f5f5f5;cursor:pointer;">
+              <span style="font-size:15px;color:#111;">Edit profile</span>
+              <span style="color:#aaa;font-size:15px;">›</span>
+            </div>
+            <div onclick="showTab('changepassword')" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f5f5f5;cursor:pointer;">
+              <span style="font-size:15px;color:#111;">Change password</span>
+              <span style="color:#aaa;font-size:15px;">›</span>
+            </div>
+            <div onclick="showPhone1()" style="padding:14px 16px;cursor:pointer;">
+              <span style="font-size:15px;color:#FF3B30;">Log out</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- ── Flow 5: Edit profile ── -->
+      <div class="screen" id="screen-editprofile" style="flex-direction:column;background:#f7f7fb;">
+        <div class="nav-header">
+          <div class="nav-back" onclick="showTab('profile')" style="font-size:24px;padding-right:4px;">‹</div>
+          <div class="nav-info"><div class="nav-name">Edit profile</div></div>
+          <div onclick="showTab('profile')" style="font-size:15px;color:#5B4FE8;font-weight:600;cursor:pointer;">Save</div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px;">
+
+          <!-- Avatar edit -->
+          <div style="display:flex;flex-direction:column;align-items:center;padding:24px 0 8px;">
+            <div style="position:relative;width:90px;margin:0 auto 12px;">
+              <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:34px;">N</div>
+              <div onclick="openPhotoSheet()" style="position:absolute;bottom:0;right:0;width:30px;height:30px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+            </div>
+            <div onclick="openPhotoSheet()" style="font-size:13px;color:#5B4FE8;cursor:pointer;font-weight:500;">Change photo</div>
+          </div>
+
+          <!-- Photo picker sheet -->
+          <div id="photoSheetBackdrop" onclick="closePhotoSheet()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:300;border-radius:44px;"></div>
+          <div id="photoSheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;z-index:301;overflow:hidden;padding-bottom:24px;">
+            <div style="display:flex;justify-content:center;padding:12px 0 8px;">
+              <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;"></div>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:#888;text-align:center;padding:0 0 12px;letter-spacing:0.04em;text-transform:uppercase;">Profile photo</div>
+            <div onclick="closePhotoSheet()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span style="font-size:16px;color:#111;">Take photo</span>
+            </div>
+            <div onclick="closePhotoSheet()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span style="font-size:16px;color:#111;">Choose from library</span>
+            </div>
+            <div onclick="closePhotoSheet()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+              <span style="font-size:16px;color:#ef4444;">Remove photo</span>
+            </div>
+          </div>
+
+          <!-- Name field -->
+          <div>
+            <div class="field-label" style="margin-bottom:6px;">Display name</div>
+            <input class="field-input" type="text" value="Nastia" style="margin-bottom:0;" oninput="">
+          </div>
+
+        </div>
+      </div>
+
+<!-- ── Flow: Change password ── -->
+      <div class="screen" id="screen-changepassword" style="flex-direction:column;background:#f7f7fb;">
+        <div class="nav-header">
+          <div class="nav-back" onclick="showTab('profile')" style="font-size:24px;padding-right:4px;">‹</div>
+          <div class="nav-info"><div class="nav-name">Change password</div></div>
+          <div style="width:40px;"></div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:12px;">
+          <div style="background:white;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <div class="field-label" style="margin-bottom:6px;">Current password</div>
+              <div style="position:relative;">
+                <input class="field-input" type="password" id="cp-current" placeholder="Enter current password" style="padding-right:38px;margin-bottom:0;">
+                <span onclick="togglePw('cp-current',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;display:flex;align-items:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              </div>
+              <div onclick="showTab('forgotpw')" style="font-size:12px;color:#5B4FE8;font-weight:500;cursor:pointer;margin-top:6px;padding-left:2px;">Forgot password?</div>
+            </div>
+            <div>
+              <div class="field-label" style="margin-bottom:6px;">New password</div>
+              <div style="position:relative;">
+                <input class="field-input" type="password" id="cp-new" placeholder="Min 8 characters" style="padding-right:38px;margin-bottom:0;" oninput="checkCpPasswordStrength(this.value)">
+                <span onclick="togglePw('cp-new',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;display:flex;align-items:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              </div>
+              <div id="cp-pw-strength" style="display:none;margin-top:8px;padding:0 2px;">
+                <div style="height:3px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:5px;">
+                  <div id="cp-pw-strength-bar" style="height:100%;border-radius:2px;width:0%;transition:width 0.25s,background 0.25s;"></div>
+                </div>
+                <div id="cp-pw-strength-label" style="font-size:11px;color:#aaa;"></div>
+              </div>
+            </div>
+            <div>
+              <div class="field-label" style="margin-bottom:6px;">Confirm new password</div>
+              <div style="position:relative;">
+                <input class="field-input" type="password" id="cp-confirm" placeholder="Repeat new password" style="padding-right:38px;margin-bottom:0;">
+                <span onclick="togglePw('cp-confirm',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;display:flex;align-items:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+              </div>
+            </div>
+            <div id="cp-error" style="display:none;font-size:12px;color:#FF3B30;"></div>
+            <div id="cp-success" style="display:none;font-size:13px;color:#34C759;font-weight:500;">Password updated ✓</div>
+          </div>
+          <button class="btn-primary" onclick="savePassword()" style="margin-top:4px;">Save password</button>
+        </div>
+      </div>
+
+      <!-- ── Forgot password (from settings) ── -->
+      <div class="screen" id="screen-forgotpw" style="flex-direction:column;background:#f7f7fb;">
+        <div class="nav-header">
+          <div class="nav-back" onclick="showTab('changepassword')" style="font-size:24px;padding-right:4px;">‹</div>
+          <div class="nav-info"><div class="nav-name">Reset password</div></div>
+          <div style="width:40px;"></div>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:24px 16px;display:flex;flex-direction:column;">
+          <div style="font-size:14px;color:#888;line-height:1.5;margin-bottom:24px;">Enter your email and we'll send you a link to reset your password.</div>
+          <input class="field-input" type="email" placeholder="Email" value="nastia@example.com">
+          <button class="btn-primary" onclick="showTab('forgotpw-sent')" style="margin-top:8px;">Send reset link →</button>
+        </div>
+      </div>
+
+      <!-- ── Forgot password sent ── -->
+      <div class="screen" id="screen-forgotpw-sent" style="flex-direction:column;background:#f7f7fb;">
+        <div class="nav-header">
+          <div style="width:40px;"></div>
+          <div class="nav-info"><div class="nav-name">Reset password</div></div>
+          <div style="width:40px;"></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px 48px;text-align:center;">
+          <div style="font-size:56px;margin-bottom:20px;">📬</div>
+          <div style="font-size:20px;font-weight:800;color:#111;margin-bottom:8px;">Check your email</div>
+          <div style="font-size:14px;color:#888;line-height:1.5;margin-bottom:32px;">We sent a reset link to<br><strong style="color:#111;">nastia@example.com</strong></div>
+          <div onclick="showTab('profile')" style="font-size:14px;color:#5B4FE8;font-weight:600;cursor:pointer;">Back to profile</div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab active" id="tab-chats" onclick="showTab('chats')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>Chats</span>
+        </div>
+        <div class="tab" id="tab-profile" onclick="showTab('profile')">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span>Profile</span>
+        </div>
+      </div>
+
+      <!-- Interface language sheet (inside phone2) -->
+      <div id="lang-sheet-overlay" onclick="if(event.target===this)closeLangSheet()" style="display:none;">
+        <div id="lang-sheet">
+          <div style="display:flex;justify-content:center;padding:12px 0 4px;">
+            <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;"></div>
+          </div>
+          <div style="font-size:17px;font-weight:700;color:#111;text-align:center;padding:10px 20px 14px;">Language</div>
+          <div id="langList">
+            <div class="lang-row selected" onclick="selectLang(this)"><span>🇬🇧</span><span>English</span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="lang-row" onclick="selectLang(this)"><span>🇫🇷</span><span>French</span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="lang-row" onclick="selectLang(this)"><span>🇩🇪</span><span>German</span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="lang-row" onclick="selectLang(this)"><span>🇪🇸</span><span>Spanish</span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="lang-row" onclick="selectLang(this)"><span>🇺🇦</span><span>Ukrainian</span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div style="height:28px;"></div>
+        </div>
+      </div>
+  </div>
+  <div class="nav-dots" id="dots2" style="display:none;">
+    <div class="nav-dot"></div>
+    <div class="nav-dot active"></div>
+    <div class="nav-dot"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!--   PHONE 3 — Chat View (Nastia's POV)    -->
+<!-- ════════════════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Chat — Nastia's view (learning Tamil)</div>
+  <div class="phone" id="phone3" style="display:none;">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="2" height="8" fill="#111" rx="0.5"/><rect x="4.5" y="3.5" width="2" height="9.5" fill="#111" rx="0.5"/><rect x="8" y="2" width="2" height="11" fill="#111" rx="0.5"/><rect x="11.5" y="0.5" width="2" height="12.5" fill="#111" rx="0.5"/></svg>
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3C5.1 3 2.5 4.2 0.7 6.1L2.1 7.5C3.5 6 5.6 5 8 5s4.5 1 5.9 2.5l1.4-1.4C13.5 4.2 10.9 3 8 3z" fill="#111"/><path d="M8 7c-1.7 0-3.2.7-4.3 1.8L5.1 10.2C5.9 9.4 6.9 9 8 9s2.1.4 2.9 1.2l1.4-1.4C11.2 7.7 9.7 7 8 7z" fill="#111"/><circle cx="8" cy="13" r="1.5" fill="#111"/></svg>
+        <svg viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#111" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#111"/><path d="M23 4v4a2 2 0 000-4z" fill="#111" fill-opacity="0.4"/></svg>
+      </div>
+    </div>
+
+    <div class="screen active" style="position:relative;">
+      <div class="nav-header" style="position:relative;">
+        <div class="nav-back" onclick="backToList()" style="font-size:24px; padding-right:4px;">‹</div>
+        <div class="nav-avatar">A</div>
+        <div class="nav-info">
+          <div class="nav-name">Aswin</div>
+          <div class="nav-lang"><span style="color:#34C759;font-size:8px;">●</span> Online</div>
+        </div>
+        <div style="font-size:22px; color:#888; letter-spacing:2px; cursor:pointer; padding:4px 8px;" onclick="toggleChatMenu(event)">···</div>
+
+        <!-- Dropdown menu -->
+        <div id="chatMenu" style="display:none; position:absolute; top:54px; right:10px; background:white; border-radius:14px; box-shadow:0 4px 24px rgba(0,0,0,0.13); overflow:hidden; min-width:220px; width:max-content; z-index:200;">
+          <div style="padding:13px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f2f2f2;">
+            <span style="font-size:15px; color:#111;">Show translations</span>
+            <div class="toggle-switch" id="translToggle" onclick="toggleTranslations(); event.stopPropagation()"></div>
+          </div>
+          <div style="padding:13px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openChangeLang()">
+            <span style="font-size:15px; color:#111; white-space:nowrap;">Learning language</span>
+            <span id="learningLangLabel" style="font-size:15px; color:#5B4FE8; font-weight:600; white-space:nowrap; margin-left:16px;">Tamil ›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="messages" id="messageArea" onclick="hidePopup(event)">
+        <div class="date-divider">Today</div>
+
+        <!-- Aswin's message → Nastia sees Tamil + English translation. All Tamil words tappable. -->
+        <div class="msg-row incoming">
+          <div class="bubble" style="position:relative;" onmousedown="startLongPress(this)" onmouseup="cancelLongPress()" ontouchstart="startLongPress(this)" ontouchend="cancelLongPress()">
+            <div class="bubble-main">
+              <span class="tappable" onclick="showPopup(event,'காலை','Morning','Kālai')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">காலை</span>!
+              <span class="tappable" onclick="showPopup(event,'எப்படி','How','Yeppadi')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">எப்படி</span>
+              <span class="tappable" onclick="showPopup(event,'இருக்கீங்க','Are you','Irukkīṅka')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">இருக்கீங்க</span>?
+            </div>
+            <div class="bubble-sub transl-line">Good morning! How are you?</div>
+          </div>
+          <div class="msg-time">9:30</div>
+        </div>
+
+        <!-- Nastia's outgoing — Tamil words tappable, long-press bubble = edit -->
+        <div class="msg-row outgoing">
+          <div class="bubble" onmousedown="startLongPress(this)" onmouseup="cancelLongPress()" ontouchstart="startLongPress(this)" ontouchend="cancelLongPress()">
+            <div class="bubble-main">
+              <span class="tappable" onclick="showPopup(event,'நான்','I','Nān')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நான்</span>
+              <span class="tappable" onclick="showPopup(event,'நன்றாக','Well / Fine','Naṉṟāka')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நன்றாக</span>
+              <span class="tappable" onclick="showPopup(event,'இருக்கிறேன்','I am','Irukkiṟēn')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">இருக்கிறேன்</span>,
+              <span class="tappable" onclick="showPopup(event,'நன்றி','Thank you','Naṉṟi')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நன்றி</span>!
+              <span class="tappable" onclick="showPopup(event,'நீங்கள்','You','Nīṅkaḷ')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நீங்கள்</span>
+              <span class="tappable" onclick="showPopup(event,'எப்படி','How','Yeppadi')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">எப்படி</span>
+              <span class="tappable" onclick="showPopup(event,'இருக்கீங்க','Are you','Irukkīṅka')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">இருக்கீங்க</span>?
+            </div>
+            <div class="bubble-sub transl-line">I'm good, thanks! How about you?</div>
+          </div>
+          <div class="msg-time">9:31 <span class="read-tick read"><svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5L4 8.5L10.5 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 5L8.5 8.5L15 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+        </div>
+
+        <!-- Aswin again — all Tamil tappable -->
+        <div class="msg-row incoming">
+          <div class="bubble" onmousedown="startLongPress(this)" onmouseup="cancelLongPress()" ontouchstart="startLongPress(this)" ontouchend="cancelLongPress()">
+            <div class="bubble-main">
+              <span class="tappable" onclick="showPopup(event,'நானும்','I also','Nānum')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நானும்</span>
+              <span class="tappable" onclick="showPopup(event,'நன்றாக','Well / Fine','Naṉṟāka')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நன்றாக</span>
+              <span class="tappable" onclick="showPopup(event,'இருக்கிறேன்','I am','Irukkiṟēn')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">இருக்கிறேன்</span>.
+              <span class="tappable" onclick="showPopup(event,'இன்று','Today','Indru')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">இன்று</span>
+              <span class="tappable" onclick="showPopup(event,'என்ன','What','Enna')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">என்ன</span>
+              <span class="tappable" onclick="showPopup(event,'செய்கிறீர்கள்','Are you doing','Seykiṟīrkaḷ')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">செய்கிறீர்கள்</span>?
+            </div>
+            <div class="bubble-sub transl-line">I'm good too. What are you doing today?</div>
+          </div>
+          <div class="msg-time">9:33</div>
+        </div>
+
+        <!-- Nastia's outgoing — all Tamil tappable, long-press = edit -->
+        <div class="msg-row outgoing">
+          <div class="bubble" onmousedown="startLongPress(this)" onmouseup="cancelLongPress()" ontouchstart="startLongPress(this)" ontouchend="cancelLongPress()">
+            <div class="bubble-main">
+              <span class="tappable" onclick="showPopup(event,'நான்','I','Nān')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">நான்</span>
+              <span class="tappable" onclick="showPopup(event,'காபி','Coffee','Kāpi')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">காபி</span>
+              <span class="tappable" onclick="showPopup(event,'குடித்துக்கொண்டு','Drinking','Kuṭittukkoṇṭu')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">குடித்துக்கொண்டு</span>
+              <span class="tappable" onclick="showPopup(event,'உங்களுடன்','With you','Uṅkaḷuṭaṉ')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">உங்களுடன்</span>
+              <span class="tappable" onclick="showPopup(event,'அரட்டை','Chat','Araṭṭai')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">அரட்டை</span>
+              <span class="tappable" onclick="showPopup(event,'அடிக்கிறேன்','Having','Aṭikkiṟēṉ')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">அடிக்கிறேன்</span> 😊
+            </div>
+            <div class="bubble-sub transl-line">I'm having coffee and chatting with you 😊</div>
+          </div>
+          <div class="msg-time">9:38 <span class="read-tick read"><svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5L4 8.5L10.5 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 5L8.5 8.5L15 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+        </div>
+      </div>
+
+      <!-- Global word popup (positioned absolutely over messages) -->
+      <div id="globalPopup" style="position:absolute;display:none;background:white;border-radius:16px;padding:14px 16px;width:fit-content;max-width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:200;">
+        <!-- × always top-right -->
+        <span onclick="document.getElementById('globalPopup').style.display='none'" style="position:absolute;top:10px;right:12px;font-size:20px;color:#bbb;cursor:pointer;line-height:1;" onmouseover="this.style.color='#666'" onmouseout="this.style.color='#bbb'">×</span>
+        <div style="display:flex;align-items:flex-start;gap:12px;padding-right:20px;">
+          <!-- Audio circle — left column -->
+          <div onclick="playAudio()" class="popup-audio" style="width:34px;height:34px;border:1.5px solid #ddd;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:transparent;margin-top:2px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#5B4FE8"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+          </div>
+          <!-- Text column -->
+          <div>
+            <div id="gp-word" style="font-size:21px;font-weight:600;color:#111;line-height:1.25;white-space:nowrap;"></div>
+            <div id="gp-roman" style="font-size:14px;color:#888;margin:3px 0 6px;line-height:1.3;white-space:nowrap;"></div>
+            <div id="gp-transl" style="font-size:14px;font-weight:500;color:#111;line-height:1.3;white-space:nowrap;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div id="replyBar" style="display:none;padding:8px 12px 6px;">
+          <div style="display:flex;align-items:center;gap:8px;background:#f7f7fb;border-radius:10px;padding:8px 10px 8px 12px;border-left:3px solid #5B4FE8;">
+            <div style="flex:1;font-size:12px;color:#555;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" id="replyPreviewText"></div>
+            <div onclick="cancelReply()" style="font-size:20px;color:#aaa;cursor:pointer;line-height:1;flex-shrink:0;padding-left:4px;">×</div>
+          </div>
+        </div>
+        <div class="input-row">
+          <textarea class="input-box" id="msgInput" placeholder="English or Tamil…" rows="1"></textarea>
+          <div class="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Flow 4: Change learning language sheet ── -->
+      <div id="changeLangSheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:20px 16px 40px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);z-index:300;">
+        <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 20px;"></div>
+        <div style="font-size:17px;font-weight:700;color:#111;margin-bottom:16px;">Learning language</div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;">
+          <div class="lang-row" id="clRow-Dutch" onclick="changeLearningLang(this,'🇳🇱','Dutch')"><span>🇳🇱</span><span>Dutch</span></div>
+          <div class="lang-row" id="clRow-English" onclick="changeLearningLang(this,'🇬🇧','English')"><span>🇬🇧</span><span>English</span></div>
+          <div class="lang-row" id="clRow-French" onclick="changeLearningLang(this,'🇫🇷','French')"><span>🇫🇷</span><span>French</span></div>
+          <div class="lang-row" id="clRow-German" onclick="changeLearningLang(this,'🇩🇪','German')"><span>🇩🇪</span><span>German</span></div>
+          <div class="lang-row" id="clRow-Hindi" onclick="changeLearningLang(this,'🇮🇳','Hindi')"><span>🇮🇳</span><span>Hindi</span></div>
+          <div class="lang-row" id="clRow-Italian" onclick="changeLearningLang(this,'🇮🇹','Italian')"><span>🇮🇹</span><span>Italian</span></div>
+          <div class="lang-row" id="clRow-Portuguese" onclick="changeLearningLang(this,'🇧🇷','Portuguese')"><span>🇧🇷</span><span>Portuguese</span></div>
+          <div class="lang-row" id="clRow-Spanish" onclick="changeLearningLang(this,'🇪🇸','Spanish')"><span>🇪🇸</span><span>Spanish</span></div>
+          <div class="lang-row selected" id="clRow-Tamil" onclick="changeLearningLang(this,'🇮🇳','Tamil')"><span>🇮🇳</span><span>Tamil</span></div>
+          <div class="lang-row" id="clRow-Turkish" onclick="changeLearningLang(this,'🇹🇷','Turkish')"><span>🇹🇷</span><span>Turkish</span></div>
+          <div class="lang-row" id="clRow-Ukrainian" onclick="changeLearningLang(this,'🇺🇦','Ukrainian')"><span>🇺🇦</span><span>Ukrainian</span></div>
+        </div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="closeChangeLangSheet()">Done</button>
+      </div>
+      <div id="changeLangBackdrop" onclick="closeChangeLangSheet()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.3);z-index:299;border-radius:44px;"></div>
+
+      <!-- Message action sheet (inside phone3) -->
+      <div id="msgActionBackdrop" onclick="if(event.target===this)closeMsgAction()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:300;align-items:flex-end;border-radius:44px;">
+        <div onclick="event.stopPropagation()" style="width:100%;background:white;border-radius:20px 20px 0 0;overflow:hidden;padding-bottom:24px;">
+          <div style="display:flex;justify-content:center;padding:12px 0 8px;">
+            <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;"></div>
+          </div>
+          <div onclick="msgActionReply()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+            <span style="font-size:16px;color:#111;">Reply</span>
+          </div>
+          <div id="msgActionEditRow" onclick="msgActionEdit()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span style="font-size:16px;color:#111;">Edit</span>
+          </div>
+          <div onclick="msgActionCopy()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background=''">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            <span style="font-size:16px;color:#111;">Copy</span>
+          </div>
+          <div id="msgActionDeleteRow" onclick="msgActionDelete()" style="padding:15px 20px;display:flex;align-items:center;gap:16px;border-top:1px solid #f2f2f2;cursor:pointer;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            <span style="font-size:16px;color:#ef4444;">Delete</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit message sheet (inside phone3) -->
+      <div id="editMsgBackdrop" onclick="if(event.target===this)closeEditSheet()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:301;align-items:flex-end;border-radius:44px;">
+        <div onclick="event.stopPropagation()" style="width:100%;background:white;border-radius:20px 20px 0 0;padding:20px 16px 40px;">
+          <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 16px;"></div>
+          <div style="font-size:16px;font-weight:700;color:#111;margin-bottom:12px;">Edit message</div>
+          <textarea id="editMsgInput" rows="3" style="width:100%;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px;font-size:15px;font-family:inherit;outline:none;resize:none;box-sizing:border-box;"></textarea>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button onclick="closeEditSheet()" style="flex:1;padding:14px;background:#f2f2f7;color:#111;border:none;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;">Cancel</button>
+            <button onclick="saveEditedMsg()" style="flex:1;padding:14px;background:#5B4FE8;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-dots" id="dots3" style="display:none;">
+    <div class="nav-dot"></div>
+    <div class="nav-dot"></div>
+    <div class="nav-dot active"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--   PHONE 4 — Flow 3: Aswin accepting invite (new user, no app)   -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="phone-wrap">
+  <div class="phone-label">Flow 3 — Aswin's side</div>
+  <div class="phone" id="phone4">
+    <div class="status-bar" style="background:#f2f2f7;">
+      <span class="time">9:40</span>
+      <div class="status-icons">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="2" height="8" fill="#111" rx="0.5"/><rect x="4.5" y="3.5" width="2" height="9.5" fill="#111" rx="0.5"/><rect x="8" y="2" width="2" height="11" fill="#111" rx="0.5"/><rect x="11.5" y="0.5" width="2" height="12.5" fill="#111" rx="0.5"/></svg>
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3C5.1 3 2.5 4.2 0.7 6.1L2.1 7.5C3.5 6 5.6 5 8 5s4.5 1 5.9 2.5l1.4-1.4C13.5 4.2 10.9 3 8 3z" fill="#111"/><path d="M8 7c-1.7 0-3.2.7-4.3 1.8L5.1 10.2C5.9 9.4 6.9 9 8 9s2.1.4 2.9 1.2l1.4-1.4C11.2 7.7 9.7 7 8 7z" fill="#111"/><circle cx="8" cy="13" r="1.5" fill="#111"/></svg>
+        <svg viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#111" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#111"/><path d="M23 4v4a2 2 0 000-4z" fill="#111" fill-opacity="0.4"/></svg>
+      </div>
+    </div>
+
+    <!-- Step 1: Web browser — invite link landing page -->
+    <div class="screen active" id="m-web" style="flex-direction:column;background:#f2f2f7;">
+      <!-- Browser chrome -->
+      <div class="browser-bar">
+        <span style="font-size:18px;color:#888;">⟨</span>
+        <div class="browser-url">🔒 parlo.app/invite/n8x2k</div>
+        <span style="font-size:18px;color:#888;">⊙</span>
+      </div>
+      <!-- Web page content -->
+      <div class="invite-web-card">
+        <div style="font-size:56px;margin-bottom:16px;">💬</div>
+        <div style="font-size:24px;font-weight:800;color:#111;margin-bottom:8px;">Blab</div>
+        <div style="font-size:14px;color:#888;margin-bottom:24px;line-height:1.5;">Learn languages through real conversations with people you love.</div>
+
+        <div style="background:#f7f7fb;border-radius:16px;padding:16px 20px;margin-bottom:24px;width:100%;text-align:left;">
+          <div style="font-size:12px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Invite from</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;">N</div>
+            <div style="font-size:16px;font-weight:700;color:#111;">Nastia</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%;margin-bottom:10px;" onclick="mGoTo('m-signup')">Open in Blab →</button>
+        <div style="font-size:12px;color:#aaa;">Don't have Blab yet? <span style="color:#5B4FE8;cursor:pointer;">Download free</span></div>
+      </div>
+    </div>
+
+    <!-- Step 2: Sign up / Log in (matches Phone 1) -->
+    <div class="screen" id="m-signup" style="flex-direction:column;background:#fff;">
+      <div class="onboarding" style="padding-top:28px;">
+        <!-- Top row: logo + globe -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="onboard-logo" style="margin-bottom:0;width:44px;height:44px;border-radius:13px;font-size:20px;">💬</div>
+            <div style="font-size:26px;font-weight:800;letter-spacing:-0.5px;color:#111;">Blab</div>
+          </div>
+          <div onclick="showLangSetup()" style="display:flex;align-items:center;gap:5px;background:#f5f5f5;border-radius:20px;padding:5px 10px;cursor:pointer;">
+            <span style="font-size:13px;">🌐</span>
+            <span style="font-size:12px;color:#555;font-weight:500;">EN</span>
+          </div>
+        </div>
+        <!-- Tab toggle -->
+        <div style="display:flex;background:#f2f2f7;border-radius:11px;padding:3px;margin-bottom:22px;">
+          <div id="m-tab-signup" onclick="mAuthTab('signup')" style="flex:1;background:white;border-radius:8px;padding:8px;text-align:center;font-size:14px;font-weight:700;color:#111;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer;transition:all 0.2s;">Sign up</div>
+          <div id="m-tab-login" onclick="mAuthTab('login')" style="flex:1;padding:8px;text-align:center;font-size:14px;font-weight:600;color:#888;cursor:pointer;transition:all 0.2s;">Log in</div>
+        </div>
+        <!-- SSO -->
+        <button class="btn-social" style="border-color:#e0e0e0;margin-bottom:8px;" onclick="mGoTo('m-lang')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="#111"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple
+        </button>
+        <button class="btn-social" style="border-color:#e0e0e0;" onclick="mGoTo('m-lang')">
+          <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+        <div style="display:flex;align-items:center;gap:10px;margin:18px 0 16px;">
+          <div style="flex:1;height:1px;background:#eee;"></div>
+          <span id="m-auth-divider" style="font-size:12px;color:#bbb;">or sign up with email</span>
+          <div style="flex:1;height:1px;background:#eee;"></div>
+        </div>
+        <!-- Name — signup only -->
+        <div id="m-name-wrap">
+          <input id="m-auth-name" class="field-input" type="text" placeholder="Your name" style="margin-bottom:6px;" oninput="this.style.borderColor='';document.getElementById('m-name-error').style.display='none'">
+          <div id="m-name-error" style="display:none;font-size:12px;color:#FF3B30;margin-bottom:8px;padding-left:2px;">Enter your name</div>
+        </div>
+        <!-- Email -->
+        <input id="m-auth-email" class="field-input" type="email" placeholder="Email" style="margin-bottom:6px;" oninput="this.style.borderColor='';document.getElementById('m-email-error').style.display='none'">
+        <div id="m-email-error" style="display:none;font-size:12px;color:#FF3B30;margin-bottom:8px;padding-left:2px;">Enter a valid email address</div>
+        <!-- Password -->
+        <div style="margin-bottom:16px;">
+          <div style="position:relative;">
+            <input id="m-auth-password" class="field-input" type="password" placeholder="Password" style="margin-bottom:0;padding-right:44px;" oninput="document.getElementById('m-pw-error').style.display='none';checkMPasswordStrength(this.value)">
+            <span onclick="toggleMPw(this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;display:flex;align-items:center;">
+              <svg id="m-eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </span>
+          </div>
+          <div id="m-pw-error" style="display:none;font-size:12px;color:#FF3B30;margin-top:6px;padding-left:2px;">Enter your password</div>
+          <div id="m-pw-strength" style="display:none;margin-top:8px;padding:0 2px;">
+            <div style="height:3px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:5px;">
+              <div id="m-pw-strength-bar" style="height:100%;border-radius:2px;width:0%;transition:width 0.25s,background 0.25s;"></div>
+            </div>
+            <div id="m-pw-strength-label" style="font-size:11px;color:#aaa;"></div>
+          </div>
+        </div>
+        <button id="m-auth-cta" class="btn-primary" onclick="mHandleAuthSubmit()">Create account →</button>
+        <div id="m-forgot-link" onclick="mGoTo('m-forgot')" style="display:none;text-align:center;font-size:13px;color:#5B4FE8;font-weight:500;cursor:pointer;margin-top:14px;">Forgot password?</div>
+      </div>
+    </div>
+
+    <!-- Forgot password -->
+    <div class="screen" id="m-forgot" style="flex-direction:column;background:#fff;">
+      <div class="onboarding" style="padding-top:28px;">
+        <div onclick="mAuthTab('login')" style="font-size:26px;color:#5B4FE8;cursor:pointer;margin-bottom:20px;line-height:1;">‹</div>
+        <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:6px;">Reset password</div>
+        <div style="font-size:14px;color:#888;line-height:1.5;margin-bottom:24px;">Enter your email and we'll send you a link to reset your password.</div>
+        <input class="field-input" type="email" placeholder="Email">
+        <button class="btn-primary" onclick="mGoTo('m-forgot-sent')">Send reset link →</button>
+      </div>
+    </div>
+
+    <!-- Forgot password sent -->
+    <div class="screen" id="m-forgot-sent" style="flex-direction:column;background:#fff;">
+      <div class="onboarding" style="padding-top:28px;align-items:center;justify-content:center;text-align:center;">
+        <div style="font-size:56px;margin-bottom:20px;">📬</div>
+        <div style="font-size:20px;font-weight:800;color:#111;margin-bottom:8px;">Check your email</div>
+        <div style="font-size:14px;color:#888;line-height:1.5;margin-bottom:32px;">We sent a reset link to your email address.</div>
+        <div onclick="mAuthTab('login')" style="font-size:14px;color:#5B4FE8;font-weight:600;cursor:pointer;">Back to log in</div>
+      </div>
+    </div>
+
+    <!-- Step 3: Language picker — what does Aswin want to learn? -->
+    <div class="screen" id="m-lang" style="flex-direction:column;background:#f7f7fb;">
+      <div style="flex:1;overflow-y:auto;padding:20px 16px 16px;display:flex;flex-direction:column;">
+        <div style="font-size:22px;font-weight:800;color:#111;margin-bottom:4px;">What do you want to learn?</div>
+        <div style="font-size:14px;color:#888;margin-bottom:14px;">Pick a language to practice with Nastia.</div>
+        <div class="lang-search-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search languages…" oninput="filterAswinLangs(this.value)" />
+        </div>
+        <div id="aswinLangList" class="lang-list-flat" style="flex:1;">
+          <div class="lang-row" data-name="Dutch" onclick="aswinSelectLang(this)"><span>🇳🇱</span><span>Dutch</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="English" onclick="aswinSelectLang(this)"><span>🇬🇧</span><span>English</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="French" onclick="aswinSelectLang(this)"><span>🇫🇷</span><span>French</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="German" onclick="aswinSelectLang(this)"><span>🇩🇪</span><span>German</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Hindi" onclick="aswinSelectLang(this)"><span>🇮🇳</span><span>Hindi</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Italian" onclick="aswinSelectLang(this)"><span>🇮🇹</span><span>Italian</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Portuguese" onclick="aswinSelectLang(this)"><span>🇧🇷</span><span>Portuguese</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Spanish" onclick="aswinSelectLang(this)"><span>🇪🇸</span><span>Spanish</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Tamil" onclick="aswinSelectLang(this)"><span>🇮🇳</span><span>Tamil</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Turkish" onclick="aswinSelectLang(this)"><span>🇹🇷</span><span>Turkish</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="lang-row" data-name="Ukrainian" onclick="aswinSelectLang(this)"><span>🇺🇦</span><span>Ukrainian</span><svg class="check-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+      </div>
+      <div style="padding:12px 16px 32px;background:white;border-top:1px solid #eee;">
+        <button id="aswinStartBtn" disabled style="width:100%;padding:15px;background:#ccc;color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;font-family:inherit;cursor:not-allowed;">Start chatting →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Chat appeared — success state -->
+    <div class="screen" id="m-done" style="flex-direction:column;background:#fff;">
+      <div class="screen-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="screen-title">Chats</div>
+        <div style="width:34px;height:34px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:white;font-weight:300;">+</div>
+      </div>
+      <div class="chat-list" style="flex:1;">
+        <!-- Nastia's chat appeared -->
+        <div class="chat-item" style="background:#f0eeff;cursor:pointer;" onclick="mGoTo('m-chat')">
+          <div class="chat-avatar" style="background:linear-gradient(135deg,#5B4FE8,#a78bfa);">N</div>
+          <div class="chat-info">
+            <div class="chat-name">Nastia</div>
+            <div class="chat-preview" style="color:#5B4FE8;font-weight:500;">Chat just started ✨ Say hi!</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">Now</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Push notification toast (Nastia's device) -->
+      <div id="mariaDoneToast" style="display:none;" class="toast">
+        <div class="toast-app-icon">💬</div>
+        <div class="toast-body">
+          <div class="toast-title">Blab — on Nastia's phone</div>
+          <div class="toast-msg">Aswin joined! Start chatting. 🎉</div>
+        </div>
+      </div>
+
+      <!-- Tab bar — matches Phone 2 -->
+      <div class="tab-bar">
+        <div class="tab active">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>Chats</span>
+        </div>
+        <div class="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span>Profile</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: Aswin's chat view (his POV — learning Ukrainian) -->
+    <div class="screen" id="m-chat" style="flex-direction:column;background:#fff;position:relative;">
+      <!-- Header -->
+      <div class="nav-header" style="position:relative;">
+        <div class="nav-back" onclick="mGoTo('m-done')" style="font-size:24px;padding-right:4px;">‹</div>
+        <div class="nav-avatar" style="background:linear-gradient(135deg,#5B4FE8,#a78bfa);">N</div>
+        <div class="nav-info">
+          <div class="nav-name">Nastia</div>
+          <div class="nav-lang"><span style="color:#34C759;font-size:8px;">●</span> Online</div>
+        </div>
+        <div style="font-size:22px;color:#888;letter-spacing:2px;cursor:pointer;padding:4px 8px;" onclick="toggleAswinMenu(event)">···</div>
+        <!-- Dropdown menu -->
+        <div id="aswinChatMenu" style="display:none;position:absolute;top:54px;right:10px;background:white;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.13);overflow:hidden;min-width:220px;width:max-content;z-index:200;">
+          <div style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f2f2f2;">
+            <span style="font-size:15px;color:#111;">Show translations</span>
+            <div class="toggle-switch" id="aswinTranslToggle" onclick="toggleAswinTranslations();event.stopPropagation()"></div>
+          </div>
+          <div onclick="openAswinChangeLang();event.stopPropagation();" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+            <span style="font-size:15px;color:#111;white-space:nowrap;">Learning language</span>
+            <span style="font-size:15px;color:#5B4FE8;font-weight:600;white-space:nowrap;margin-left:16px;" id="aswinLearningLangLabel">Ukrainian ›</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages area -->
+      <div class="messages" id="aswinMessages" style="flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:12px;" onclick="hidePopup(event)">
+
+        <!-- Exchange card — centered, disappears on first message sent -->
+        <div id="aswinExchangeCard" style="margin:auto;width:100%;max-width:320px;background:#f7f7fb;border-radius:16px;padding:16px;">
+          <div style="display:flex;align-items:stretch;gap:8px;">
+            <div style="flex:1;background:white;border-radius:12px;padding:14px 8px;text-align:center;border:1px solid #f0f0f0;">
+              <div style="font-size:28px;margin-bottom:6px;">🇺🇦</div>
+              <div style="font-size:11px;font-weight:700;color:#111;line-height:1.4;">You learn<br>Ukrainian</div>
+            </div>
+            <div style="display:flex;align-items:center;color:#ccc;font-size:18px;padding:0 6px;">⇄</div>
+            <div style="flex:1;background:white;border-radius:12px;padding:14px 8px;text-align:center;border:1px solid #f0f0f0;">
+              <div style="font-size:28px;margin-bottom:6px;">🇮🇳</div>
+              <div style="font-size:11px;font-weight:700;color:#111;line-height:1.4;">Help Nastia<br>learn Tamil</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input -->
+      <div class="input-area">
+        <!-- Reply bar -->
+        <div id="aswinReplyBar" style="display:none;padding:8px 12px 6px;">
+          <div style="background:#f0eeff;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-left:3px solid #5B4FE8;">
+            <div id="aswinReplyPreview" style="font-size:12px;color:#5B4FE8;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;"></div>
+            <div onclick="cancelAswinReply()" style="font-size:18px;color:#aaa;cursor:pointer;padding-left:8px;line-height:1;">×</div>
+          </div>
+        </div>
+        <div class="input-row">
+          <textarea class="input-box" id="mariaInput" placeholder="English or Ukrainian…" rows="1"></textarea>
+          <div class="send-btn" onclick="mariaSendMessage()">
+            <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </div>
+        </div>
+      </div>
+      <!-- Aswin learning language sheet -->
+      <div id="aswinChangeLangSheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;padding:20px 16px 40px;box-shadow:0 -8px 40px rgba(0,0,0,0.18);z-index:300;">
+        <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 20px;"></div>
+        <div style="font-size:17px;font-weight:700;color:#111;margin-bottom:16px;">Learning language</div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;">
+          <div class="lang-row" id="aclRow-Dutch" onclick="changeAswinLearningLang(this,'🇳🇱','Dutch')"><span>🇳🇱</span><span>Dutch</span></div>
+          <div class="lang-row" id="aclRow-English" onclick="changeAswinLearningLang(this,'🇬🇧','English')"><span>🇬🇧</span><span>English</span></div>
+          <div class="lang-row" id="aclRow-French" onclick="changeAswinLearningLang(this,'🇫🇷','French')"><span>🇫🇷</span><span>French</span></div>
+          <div class="lang-row" id="aclRow-German" onclick="changeAswinLearningLang(this,'🇩🇪','German')"><span>🇩🇪</span><span>German</span></div>
+          <div class="lang-row" id="aclRow-Hindi" onclick="changeAswinLearningLang(this,'🇮🇳','Hindi')"><span>🇮🇳</span><span>Hindi</span></div>
+          <div class="lang-row" id="aclRow-Italian" onclick="changeAswinLearningLang(this,'🇮🇹','Italian')"><span>🇮🇹</span><span>Italian</span></div>
+          <div class="lang-row" id="aclRow-Portuguese" onclick="changeAswinLearningLang(this,'🇧🇷','Portuguese')"><span>🇧🇷</span><span>Portuguese</span></div>
+          <div class="lang-row" id="aclRow-Spanish" onclick="changeAswinLearningLang(this,'🇪🇸','Spanish')"><span>🇪🇸</span><span>Spanish</span></div>
+          <div class="lang-row" id="aclRow-Tamil" onclick="changeAswinLearningLang(this,'🇮🇳','Tamil')"><span>🇮🇳</span><span>Tamil</span></div>
+          <div class="lang-row" id="aclRow-Turkish" onclick="changeAswinLearningLang(this,'🇹🇷','Turkish')"><span>🇹🇷</span><span>Turkish</span></div>
+          <div class="lang-row selected" id="aclRow-Ukrainian" onclick="changeAswinLearningLang(this,'🇺🇦','Ukrainian')"><span>🇺🇦</span><span>Ukrainian</span></div>
+        </div>
+        <button class="btn-primary" style="margin-top:16px;" onclick="closeAswinChangeLang()">Done</button>
+      </div>
+      <div id="aswinChangeLangBackdrop" onclick="closeAswinChangeLang()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.3);z-index:299;border-radius:44px;"></div>
+  </div>
+  <div class="nav-dots" style="margin-top:12px;">
+    <div id="m-dot-web" class="nav-dot active"></div>
+    <div id="m-dot-signup" class="nav-dot"></div>
+    <div id="m-dot-lang" class="nav-dot"></div>
+    <div id="m-dot-done" class="nav-dot"></div>
+    <div id="m-dot-chat" class="nav-dot"></div>
+  </div>
+</div>
+
+<script>
+  function showTab(tab) {
+    ['chats','profile','newchat','empty','editprofile','changepassword','forgotpw','forgotpw-sent'].forEach(t => {
+      const el = document.getElementById('screen-' + t);
+      if (el) el.classList.toggle('active', t === tab);
+    });
+    document.getElementById('tab-chats').classList.toggle('active', tab === 'chats' || tab === 'empty');
+    document.getElementById('tab-profile').classList.toggle('active', tab === 'profile' || tab === 'editprofile' || tab === 'changepassword' || tab === 'forgotpw' || tab === 'forgotpw-sent');
+    if (tab === 'newchat') resetLangPicker();
+    if (tab === 'changepassword') {
+      ['cp-current','cp-new','cp-confirm'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.value = ''; el.style.borderColor = ''; }
+      });
+      document.getElementById('cp-error').style.display = 'none';
+      document.getElementById('cp-success').style.display = 'none';
+      document.getElementById('cp-pw-strength').style.display = 'none';
+    }
+  }
+
+  function openPhotoSheet() {
+    document.getElementById('photoSheet').style.display = 'block';
+    document.getElementById('photoSheetBackdrop').style.display = 'block';
+  }
+  function closePhotoSheet() {
+    document.getElementById('photoSheet').style.display = 'none';
+    document.getElementById('photoSheetBackdrop').style.display = 'none';
+  }
+
+  function showPhone1() {
+    document.getElementById('phone2').style.display = 'none';
+    document.getElementById('dots2').style.display = 'none';
+    document.getElementById('phone1').style.display = 'flex';
+    // Clear all auth fields on logout
+    ['auth-name-field','auth-email','auth-password'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.value = ''; el.style.borderColor = ''; el.type = id === 'auth-password' ? 'password' : el.type; }
+    });
+    authTab('signup');
+  }
+
+  function togglePw(id, span) {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    const showing = inp.type === 'text';
+    const svg = span.querySelector('svg');
+    svg.innerHTML = showing
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    svg.setAttribute('stroke', showing ? '#5B4FE8' : '#bbb');
+  }
+
+  function savePassword() {
+    const cur = document.getElementById('cp-current');
+    const nw = document.getElementById('cp-new');
+    const conf = document.getElementById('cp-confirm');
+    const err = document.getElementById('cp-error');
+    const succ = document.getElementById('cp-success');
+    let ok = true;
+    [cur, nw, conf].forEach(el => { if (el) el.style.borderColor = ''; });
+    err.style.display = 'none'; succ.style.display = 'none';
+    if (!cur.value) { cur.style.borderColor = '#FF3B30'; ok = false; }
+    if (!nw.value || nw.value.length < 8) { nw.style.borderColor = '#FF3B30'; err.textContent = 'New password must be at least 8 characters'; err.style.display = 'block'; ok = false; }
+    if (nw.value && conf.value !== nw.value) { conf.style.borderColor = '#FF3B30'; err.textContent = 'Passwords don\'t match'; err.style.display = 'block'; ok = false; }
+    if (!ok) return;
+    showTab('profile');
+    showProfileToast('Password updated ✓');
+  }
+
+  function showProfileToast(msg) {
+    let toast = document.getElementById('profileToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'profileToast';
+      toast.style.cssText = 'position:absolute;top:54px;left:0;right:0;padding:8px 12px;z-index:500;transition:opacity 0.3s;';
+      toast.innerHTML = `<div style="background:#34C759;border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="profileToastMsg" style="flex:1;font-size:13px;font-weight:600;color:white;"></span>
+        <span onclick="closeProfileToast()" style="font-size:18px;color:rgba(255,255,255,0.75);cursor:pointer;line-height:1;padding-left:4px;">×</span>
+      </div>`;
+      document.getElementById('phone2').appendChild(toast);
+    }
+    document.getElementById('profileToastMsg').textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+  }
+
+  function closeProfileToast() {
+    const toast = document.getElementById('profileToast');
+    if (toast) { clearTimeout(toast._t); toast.style.opacity = '0'; }
+  }
+
+  function selectNewLang(el, flag, name) {
+    // Flash selection, then collapse list
+    document.querySelectorAll('#newChatLangList .lang-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    setTimeout(() => { document.getElementById('newChatLangList').style.display = 'none'; }, 120);
+    document.getElementById('confirmedFlag').textContent = flag;
+    document.getElementById('confirmedName').textContent = name;
+    const confirmed = document.getElementById('newChatLangConfirmed');
+    confirmed.style.display = 'flex';
+    document.getElementById('newChatLinkInfo').style.display = 'flex';
+    const btn = document.getElementById('newChatShareBtn');
+    btn.disabled = false;
+    btn.style.background = '#5B4FE8';
+    btn.style.cursor = 'pointer';
+    btn.onclick = () => {
+      document.getElementById('shareSheet').style.display = 'block';
+      document.getElementById('shareBackdrop').style.display = 'block';
+    };
+  }
+
+  function shareVia(el, app) {
+    // Flash checkmark on icon
+    const icon = el.querySelector('.share-app-icon');
+    if (icon) {
+      const orig = icon.textContent;
+      const origBg = icon.style.background;
+      icon.textContent = '✓';
+      icon.style.background = '#34C759';
+      icon.style.color = 'white';
+      icon.style.fontSize = '22px';
+      setTimeout(() => {
+        document.getElementById('shareSheet').style.display = 'none';
+        document.getElementById('shareBackdrop').style.display = 'none';
+        showTab('chats');
+      }, 500);
+    }
+  }
+
+  function copyLink() {
+    const row = document.getElementById('copyLinkRow');
+    const icon = document.getElementById('copyLinkIcon');
+    const label = document.getElementById('copyLinkLabel');
+    const hint = document.getElementById('copyLinkHint');
+    const cancel = document.getElementById('shareCancel');
+    // Transform row to "Copied" state
+    row.style.background = '#e8f5e9';
+    row.style.cursor = 'default';
+    row.onclick = null;
+    icon.textContent = '✅';
+    icon.style.background = '#c8e6c9';
+    label.textContent = 'Link copied!';
+    label.style.color = '#2e7d32';
+    hint.style.display = 'block';
+    cancel.textContent = 'Done';
+  }
+
+  function resetLangPicker() {
+    document.getElementById('newChatLangList').style.display = '';
+    document.getElementById('newChatLangConfirmed').style.display = 'none';
+    document.getElementById('newChatLinkInfo').style.display = 'none';
+    // Reset search
+    const search = document.querySelector('#screen-newchat input[type="text"]');
+    if (search) { search.value = ''; filterNewChatLangs(''); }
+    // Reset share button
+    const btn = document.getElementById('newChatShareBtn');
+    btn.disabled = true;
+    btn.style.background = '#ccc';
+    btn.style.cursor = 'not-allowed';
+    btn.onclick = null;
+    // Reset copy link row
+    const row = document.getElementById('copyLinkRow');
+    if (row) {
+      row.style.background = '#f7f7fb';
+      row.style.cursor = 'pointer';
+      row.onclick = copyLink;
+      document.getElementById('copyLinkIcon').textContent = '🔗';
+      document.getElementById('copyLinkIcon').style.background = '#e0e0e0';
+      document.getElementById('copyLinkLabel').textContent = 'Copy link';
+      document.getElementById('copyLinkLabel').style.color = '#111';
+      document.getElementById('copyLinkHint').style.display = 'none';
+      document.getElementById('shareCancel').textContent = 'Cancel';
+    }
+  }
+
+  function filterNewChatLangs(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#newChatLangList .lang-row').forEach(r => {
+      r.style.display = (r.dataset.name || '').toLowerCase().includes(q) ? '' : 'none';
+    });
+    // Hide/show section labels based on visible rows
+    document.querySelectorAll('#newChatLangList .lang-section-label').forEach(label => {
+      let next = label.nextElementSibling;
+      let hasVisible = false;
+      while (next && !next.classList.contains('lang-section-label')) {
+        if (next.style.display !== 'none') hasVisible = true;
+        next = next.nextElementSibling;
+      }
+      label.style.display = hasVisible ? '' : 'none';
+    });
+  }
+
+  function filterAswinLangs(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('#aswinLangList .lang-row').forEach(r => {
+      r.style.display = (r.dataset.name || '').toLowerCase().includes(q) ? '' : 'none';
+    });
+    document.querySelectorAll('#aswinLangList .lang-section-label').forEach(label => {
+      let next = label.nextElementSibling;
+      let hasVisible = false;
+      while (next && !next.classList.contains('lang-section-label')) {
+        if (next.style.display !== 'none') hasVisible = true;
+        next = next.nextElementSibling;
+      }
+      label.style.display = hasVisible ? '' : 'none';
+    });
+  }
+
+  function toggleChatMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('chatMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function toggleAswinMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('aswinChatMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  }
+
+  let aswinTranslationsVisible = true;
+
+  function toggleAswinTranslations() {
+    aswinTranslationsVisible = !aswinTranslationsVisible;
+    const toggle = document.getElementById('aswinTranslToggle');
+    const lines = document.querySelectorAll('#aswinMessages .transl-line');
+    if (aswinTranslationsVisible) {
+      if (toggle) toggle.classList.remove('off');
+      lines.forEach(l => l.classList.remove('hidden'));
+    } else {
+      if (toggle) toggle.classList.add('off');
+      lines.forEach(l => l.classList.add('hidden'));
+    }
+    document.getElementById('aswinChatMenu').style.display = 'none';
+  }
+
+  function openAswinChangeLang() {
+    document.getElementById('aswinChatMenu').style.display = 'none';
+    document.getElementById('aswinChangeLangBackdrop').style.display = 'block';
+    document.getElementById('aswinChangeLangSheet').style.display = 'block';
+  }
+
+  function closeAswinChangeLang() {
+    document.getElementById('aswinChangeLangSheet').style.display = 'none';
+    document.getElementById('aswinChangeLangBackdrop').style.display = 'none';
+  }
+
+  function changeAswinLearningLang(el, flag, name) {
+    document.querySelectorAll('#aswinChangeLangSheet .lang-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('aswinLearningLangLabel').textContent = name + ' ›';
+    closeAswinChangeLang();
+  }
+
+  let currentInterfaceLang = 'English';
+
+  function getActivePhone() {
+    for (const id of ['phone1','phone2','phone3','phone4']) {
+      const el = document.getElementById(id);
+      if (el && el.style.display !== 'none') return el;
+    }
+    return document.getElementById('phone1');
+  }
+
+  function showLangSetup() {
+    // Move sheet into whichever phone is currently visible
+    const phone = getActivePhone();
+    const overlay = document.getElementById('lang-sheet-overlay');
+    if (overlay.parentElement !== phone) phone.appendChild(overlay);
+    // Show current selection
+    document.querySelectorAll('#langList .lang-row').forEach(r => {
+      const name = r.querySelector('span:last-of-type');
+      const isCurrent = name && name.textContent.trim() === currentInterfaceLang;
+      r.classList.toggle('selected', isCurrent);
+      const chk = r.querySelector('.check');
+      if (chk) chk.style.visibility = isCurrent ? 'visible' : 'hidden';
+    });
+    overlay.style.display = 'flex';
+    requestAnimationFrame(() => document.getElementById('lang-sheet').classList.add('open'));
+  }
+
+  function closeLangSheet() {
+    document.getElementById('lang-sheet').classList.remove('open');
+    document.getElementById('lang-sheet-overlay').style.display = 'none';
+  }
+
+  const LANG_CODES = { English:'EN', French:'FR', German:'DE', Spanish:'ES', Ukrainian:'UA' };
+
+  function selectLang(el) {
+    document.querySelectorAll('#langList .lang-row').forEach(r => {
+      r.classList.remove('selected');
+      const chk = r.querySelector('.check');
+      if (chk) chk.style.visibility = 'hidden';
+    });
+    el.classList.add('selected');
+    const chk = el.querySelector('.check');
+    if (chk) chk.style.visibility = 'visible';
+    const name = el.querySelector('span:last-of-type').textContent.trim();
+    currentInterfaceLang = name;
+    // Update globe button label (auth screen)
+    const label = document.getElementById('lang-label');
+    if (label) label.textContent = LANG_CODES[name] || name.slice(0,2).toUpperCase();
+    // Update profile labels
+    const pl = document.getElementById('profile-lang-label');
+    if (pl) pl.textContent = name;
+    closeLangSheet();
+  }
+
+  let translationsVisible = true;
+  let learningMode = false;
+
+  function showPhone2() {
+    document.getElementById('phone1').style.display = 'none';
+    document.getElementById('phone2').style.display = 'flex';
+    document.getElementById('dots2').style.display = 'flex';
+  }
+
+  function showPhone3() {
+    document.getElementById('phone2').style.display = 'none';
+    document.getElementById('dots2').style.display = 'none';
+    document.getElementById('phone3').style.display = 'flex';
+    document.getElementById('dots3').style.display = 'flex';
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('msgInput');
+    if (!input || !input.value.trim()) return;
+    const msgs = document.getElementById('messageArea');
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-row outgoing';
+    // Check if replying
+    const replyBar = document.getElementById('replyBar');
+    const replyText = document.getElementById('replyPreviewText').textContent;
+    let replyHTML = '';
+    if (replyBar.style.display !== 'none' && replyText) {
+      replyHTML = `<div style="border-left:3px solid rgba(255,255,255,0.5);padding-left:8px;font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:220px;">${replyText}</div>`;
+      cancelReply();
+    }
+    const tickId = 'tick-' + Date.now();
+    const lastMsg = msgs.lastElementChild;
+    const grouped = lastMsg && lastMsg.classList.contains('msg-row') && lastMsg.classList.contains('outgoing');
+    bubble.innerHTML = `<div class="bubble" onmousedown="startLongPress(this)" onmouseup="cancelLongPress()" ontouchstart="startLongPress(this)" ontouchend="cancelLongPress()"><div class="bubble-main">${replyHTML}${input.value.trim()}</div><div class="bubble-sub transl-line">${input.value.trim()}</div></div>${grouped ? '' : `<div class="msg-time">Now <span class="read-tick delivered" id="${tickId}"><svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5L4 8.5L10.5 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 5L8.5 8.5L15 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>`}`;
+    if (grouped) bubble.style.marginTop = '-4px';
+    msgs.appendChild(bubble);
+    setTimeout(() => { const t = document.getElementById(tickId); if (t) { t.classList.remove('delivered'); t.classList.add('read'); } }, 1500);
+    input.value = '';
+    const sendBtn = input.closest('.input-area').querySelector('.send-btn');
+    if (sendBtn) sendBtn.style.opacity = '0.4';
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function backToList() {
+    document.getElementById('phone3').style.display = 'none';
+    document.getElementById('dots3').style.display = 'none';
+    document.getElementById('phone2').style.display = 'flex';
+    document.getElementById('dots2').style.display = 'flex';
+  }
+
+  function toggleTranslations() {
+    translationsVisible = !translationsVisible;
+    const toggle = document.getElementById('translToggle');
+    const lines = document.querySelectorAll('#messageArea .transl-line');
+    if (translationsVisible) {
+      toggle.classList.remove('off');
+      lines.forEach(l => l.classList.remove('hidden'));
+    } else {
+      toggle.classList.add('off');
+      lines.forEach(l => l.classList.add('hidden'));
+    }
+    document.getElementById('chatMenu').style.display = 'none';
+  }
+
+  function showPopup(event, word, translation, roman) {
+    event.stopPropagation();
+    const popup = document.getElementById('globalPopup');
+    document.getElementById('gp-word').textContent = word;
+    document.getElementById('gp-transl').textContent = translation;
+    document.getElementById('gp-roman').textContent = roman;
+
+    const rect = event.target.getBoundingClientRect();
+    const popupW = popup.offsetWidth || 200;
+    const popupH = popup.offsetHeight || 110;
+    let top;
+    let left = rect.left;
+
+    // Clamp within phone3 bounds — prefer above, fall back to below
+    const pad = 12;
+    const phoneRect = document.getElementById('phone3').getBoundingClientRect();
+    top = rect.top - popupH - 6;
+    if (top < phoneRect.top + pad) top = rect.bottom + 6;
+    if (left + popupW > phoneRect.right - pad) left = phoneRect.right - popupW - pad;
+    if (left < phoneRect.left + pad) left = phoneRect.left + pad;
+
+    popup.style.top = top + 'px';
+    popup.style.left = left + 'px';
+    popup.style.display = 'block';
+
+    // Auto-play simulation
+    playAudio();
+  }
+
+  function hidePopup(event) {
+    const popup = document.getElementById('globalPopup');
+    if (!popup.contains(event.target)) {
+      popup.style.display = 'none';
+    }
+  }
+
+  function playAudio() {
+    // Visual feedback — flash border + tint on the circle button
+    const btn = document.querySelector('.popup-audio');
+    if (!btn) return;
+    btn.style.borderColor = '#5B4FE8';
+    btn.style.background = 'rgba(91,79,232,0.08)';
+    setTimeout(() => {
+      btn.style.borderColor = '#ddd';
+      btn.style.background = 'transparent';
+    }, 400);
+  }
+
+  // ── Long-press action sheet (all bubbles in phone3) ──────
+  let longPressTimer = null;
+  let longPressRow = null;
+  let longPressEnglishEl = null;
+
+  function startLongPress(el) {
+    longPressTimer = setTimeout(() => {
+      longPressTimer = null;
+      const row = el.closest('.msg-row');
+      if (!row) return;
+      const isIncoming = row.classList.contains('incoming');
+      const engEl = el.querySelector('.bubble-sub') || el.querySelector('.bubble-main');
+      if (!engEl) return;
+      longPressRow = row;
+      longPressEnglishEl = engEl;
+      document.getElementById('globalPopup').style.display = 'none';
+      // Show/hide outgoing-only actions
+      const editRow   = document.getElementById('msgActionEditRow');
+      const deleteRow = document.getElementById('msgActionDeleteRow');
+      if (editRow)   editRow.style.display   = isIncoming ? 'none' : '';
+      if (deleteRow) deleteRow.style.display = isIncoming ? 'none' : '';
+      document.getElementById('msgActionBackdrop').style.display = 'flex';
+    }, 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+  }
+
+  function closeMsgAction() {
+    document.getElementById('msgActionBackdrop').style.display = 'none';
+  }
+
+  function msgActionReply() {
+    if (!longPressEnglishEl) return;
+    const text = longPressEnglishEl.innerText.trim();
+    closeMsgAction();
+    document.getElementById('replyPreviewText').textContent = text;
+    document.getElementById('replyBar').style.display = 'block';
+    document.getElementById('msgInput').focus();
+  }
+
+  function msgActionEdit() {
+    if (!longPressEnglishEl) return;
+    closeMsgAction();
+    document.getElementById('editMsgInput').value = longPressEnglishEl.innerText.trim();
+    document.getElementById('editMsgBackdrop').style.display = 'flex';
+    setTimeout(() => document.getElementById('editMsgInput').focus(), 50);
+  }
+
+  function msgActionCopy() {
+    if (!longPressRow) return;
+    const isIncoming = longPressRow.classList.contains('incoming');
+    const copyEl = isIncoming
+      ? (longPressRow.querySelector('.bubble-main') || longPressEnglishEl)
+      : longPressEnglishEl;
+    const text = (copyEl || longPressEnglishEl).innerText.trim();
+    closeMsgAction();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+    showToast('Copied');
+    longPressRow = null; longPressEnglishEl = null;
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  function msgActionDelete() {
+    if (!longPressRow) return;
+    const row = longPressRow;
+    const parent = row.parentElement;
+    const next = row.nextSibling;
+    row.remove();
+    closeMsgAction();
+    longPressRow = null; longPressEnglishEl = null;
+    showUndoToast('Message deleted', () => {
+      if (next) parent.insertBefore(row, next);
+      else parent.appendChild(row);
+    });
+  }
+
+  function showUndoToast(msg, undoFn) {
+    let toast = document.getElementById('undoToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'undoToast';
+      toast.style.cssText = 'position:absolute;bottom:80px;left:12px;right:12px;background:#1c1c1e;color:white;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:600;transition:opacity 0.3s;';
+      document.getElementById('phone3').appendChild(toast);
+    }
+    clearTimeout(toast._t);
+    toast.innerHTML = `<span style="font-size:14px;">${msg}</span><span id="undoBtn" style="font-size:14px;font-weight:600;color:#a78bfa;cursor:pointer;padding-left:16px;">Undo</span>`;
+    toast.style.opacity = '1';
+    toast.style.display = 'flex';
+    document.getElementById('undoBtn').onclick = () => {
+      undoFn();
+      toast.style.opacity = '0';
+      clearTimeout(toast._t);
+      setTimeout(() => { toast.style.display = 'none'; }, 300);
+    };
+    toast._t = setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => { toast.style.display = 'none'; }, 300);
+    }, 3000);
+  }
+
+  function saveEditedMsg() {
+    if (!longPressEnglishEl) return;
+    const newText = document.getElementById('editMsgInput').value.trim();
+    if (newText) {
+      longPressEnglishEl.textContent = newText;
+      const bubble = longPressEnglishEl.closest('.bubble');
+      if (bubble && !bubble.querySelector('.edited-label')) {
+        const label = document.createElement('div');
+        label.className = 'edited-label';
+        label.textContent = 'edited';
+        bubble.appendChild(label);
+      }
+    }
+    closeEditSheet();
+  }
+
+  function closeEditSheet() {
+    document.getElementById('editMsgBackdrop').style.display = 'none';
+    longPressEnglishEl = null;
+  }
+
+  function cancelReply() {
+    document.getElementById('replyBar').style.display = 'none';
+    document.getElementById('replyPreviewText').textContent = '';
+  }
+
+  function showToast(msg) {
+    let toast = document.getElementById('globalToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'globalToast';
+      toast.style.cssText = 'position:absolute;bottom:80px;left:0;right:0;text-align:center;pointer-events:none;z-index:500;transition:opacity 0.3s;';
+      const inner = document.createElement('span');
+      inner.style.cssText = 'background:rgba(0,0,0,0.75);color:white;padding:8px 18px;border-radius:20px;font-size:13px;display:inline-block;';
+      toast.appendChild(inner);
+      document.getElementById('phone3').appendChild(toast);
+    }
+    toast.firstElementChild.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+  }
+
+  // ── Flow 1: Auth (unified screen) ─────────────────────────
+
+  const AUTH_SCREENS = ['s-signup','s-forgot','s-forgot-sent'];
+
+  function showScreen1(id) {
+    AUTH_SCREENS.forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.classList.toggle('active', s === id);
+    });
+  }
+
+  // Switch between Sign up / Log in tabs on the unified auth screen
+  let currentAuthTab = 'signup';
+  function authTab(mode) {
+    currentAuthTab = mode;
+    // Ensure auth screen is active, hide others
+    AUTH_SCREENS.forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.classList.toggle('active', s === 's-signup');
+    });
+
+    const isLogin = mode === 'login';
+    // Tab pill active state
+    const tsu = document.getElementById('tab-signup');
+    const tli = document.getElementById('tab-login');
+    if (tsu) {
+      tsu.style.background    = isLogin ? 'transparent' : 'white';
+      tsu.style.boxShadow     = isLogin ? 'none' : '0 1px 3px rgba(0,0,0,0.1)';
+      tsu.style.color         = isLogin ? '#888' : '#111';
+      tsu.style.fontWeight    = isLogin ? '600' : '700';
+    }
+    if (tli) {
+      tli.style.background    = isLogin ? 'white' : 'transparent';
+      tli.style.boxShadow     = isLogin ? '0 1px 3px rgba(0,0,0,0.1)' : 'none';
+      tli.style.color         = isLogin ? '#111' : '#888';
+      tli.style.fontWeight    = isLogin ? '700' : '600';
+    }
+    // Name field: visible only for sign up
+    const nameField = document.getElementById('auth-name-field');
+    if (nameField) nameField.style.display = isLogin ? 'none' : '';
+    // Divider text
+    const divTxt = document.getElementById('auth-divider-text');
+    if (divTxt) divTxt.textContent = isLogin ? 'or log in with email' : 'or sign up with email';
+    // CTA button
+    const cta = document.getElementById('auth-cta');
+    if (cta) {
+      cta.textContent = isLogin ? 'Log in →' : 'Create account →';
+      cta.onclick = handleAuthSubmit;
+    }
+    // Forgot password link
+    const forgot = document.getElementById('forgot-link');
+    if (forgot) forgot.style.display = isLogin ? 'inline' : 'none';
+    // Hide strength bar in login mode (no signup validation needed)
+    const pwStr = document.getElementById('pw-strength');
+    if (pwStr) pwStr.style.display = 'none';
+    // Clear email error on tab switch
+    const emailErr = document.getElementById('email-error');
+    const emailInp = document.getElementById('auth-email');
+    if (emailErr) emailErr.style.display = 'none';
+    if (emailInp) emailInp.style.borderColor = '';
+    // Clear password field
+    const pwInp = document.getElementById('auth-password');
+    if (pwInp) { pwInp.value = ''; pwInp.type = 'password'; pwInp.style.borderColor = ''; }
+    const pwErr = document.getElementById('auth-pw-error');
+    if (pwErr) pwErr.style.display = 'none';
+    // Clear name error
+    const nameErr = document.getElementById('auth-name-error');
+    const nameInp = document.getElementById('auth-name-field');
+    if (nameErr) nameErr.style.display = 'none';
+    if (nameInp) nameInp.style.borderColor = '';
+  }
+
+  function handleAuthSubmit() {
+    const isLogin = currentAuthTab === 'login';
+    let ok = true;
+
+    // ── Name (signup only) ──────────────────────────────────
+    if (!isLogin) {
+      const nameInp = document.getElementById('auth-name-field');
+      const nameErr = document.getElementById('auth-name-error');
+      if (nameInp && !nameInp.value.trim()) {
+        nameInp.style.borderColor = '#FF3B30';
+        if (nameErr) nameErr.style.display = 'block';
+        ok = false;
+      }
+    }
+
+    // ── Email ───────────────────────────────────────────────
+    const emailInp = document.getElementById('auth-email');
+    const emailErr = document.getElementById('email-error');
+    if (emailInp && emailErr) {
+      const val = emailInp.value.trim();
+      const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val);
+      if (!val) {
+        emailInp.style.borderColor = '#FF3B30';
+        emailErr.textContent = 'Enter your email';
+        emailErr.style.display = 'block';
+        ok = false;
+      } else if (!valid) {
+        emailInp.style.borderColor = '#FF3B30';
+        emailErr.textContent = 'Enter a valid email address';
+        emailErr.style.display = 'block';
+        ok = false;
+      }
+    }
+
+    // ── Password ────────────────────────────────────────────
+    const pwInp = document.getElementById('auth-password');
+    if (pwInp) {
+      const pw = pwInp.value;
+      const pwErr = document.getElementById('auth-pw-error');
+      if (!pw) {
+        pwInp.style.borderColor = '#FF3B30';
+        if (pwErr) pwErr.style.display = 'block';
+        ok = false;
+      } else if (!isLogin && pw.length < 8) {
+        pwInp.style.borderColor = '#FF3B30';
+        // Force strength bar visible with "Too short"
+        checkPasswordStrength(pw);
+        ok = false;
+      }
+    }
+
+    if (!ok) return;
+
+    // All valid — proceed
+    if (isLogin) {
+      showPhone2Empty();
+    } else {
+      showPhone2();
+    }
+  }
+
+  function showForgotPassword() { showScreen1('s-forgot'); }
+
+  function checkEmailInput(input) {
+    const error = document.getElementById('email-error');
+    if (!error || error.style.display === 'none') return;
+    // Already showing error — clear once valid
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(input.value.trim());
+    if (valid) {
+      input.style.borderColor = '';
+      error.style.display = 'none';
+    }
+  }
+
+  function checkEmailBlur(input) {
+    const error = document.getElementById('email-error');
+    if (!error) return;
+    const val = input.value.trim();
+    if (!val) return; // Don't yell at empty field
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val);
+    if (!valid) {
+      input.style.borderColor = '#FF3B30';
+      error.style.display = 'block';
+    } else {
+      input.style.borderColor = '';
+      error.style.display = 'none';
+    }
+  }
+
+  function checkCpPasswordStrength(val) {
+    const wrap  = document.getElementById('cp-pw-strength');
+    const bar   = document.getElementById('cp-pw-strength-bar');
+    const label = document.getElementById('cp-pw-strength-label');
+    if (!wrap || !bar || !label) return;
+    if (!val) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    if (val.length < 8) {
+      bar.style.width = '25%'; bar.style.background = '#FF3B30';
+      label.textContent = 'Too short — min 8 characters'; label.style.color = '#FF3B30';
+      return;
+    }
+    let variety = 0;
+    if (/[a-z]/.test(val)) variety++;
+    if (/[A-Z]/.test(val)) variety++;
+    if (/[0-9]/.test(val)) variety++;
+    if (/[^A-Za-z0-9]/.test(val)) variety++;
+    if (variety <= 1) {
+      bar.style.width = '45%'; bar.style.background = '#FF9500';
+      label.textContent = 'Weak — add numbers or capitals'; label.style.color = '#FF9500';
+    } else if (variety === 2) {
+      bar.style.width = '70%'; bar.style.background = '#FF9500';
+      label.textContent = 'Fair'; label.style.color = '#FF9500';
+    } else {
+      bar.style.width = '100%'; bar.style.background = '#34C759';
+      label.textContent = 'Strong'; label.style.color = '#34C759';
+    }
+  }
+
+  function checkPasswordStrength(val) {
+    const wrap  = document.getElementById('pw-strength');
+    const bar   = document.getElementById('pw-strength-bar');
+    const label = document.getElementById('pw-strength-label');
+    if (!wrap || !bar || !label) return;
+    // Strength bar only visible during signup
+    if (currentAuthTab !== 'signup' || !val) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    if (val.length < 8) {
+      bar.style.width = '25%'; bar.style.background = '#FF3B30';
+      label.textContent = 'Too short — min 8 characters'; label.style.color = '#FF3B30';
+      return;
+    }
+    let variety = 0;
+    if (/[a-z]/.test(val)) variety++;
+    if (/[A-Z]/.test(val)) variety++;
+    if (/[0-9]/.test(val)) variety++;
+    if (/[^A-Za-z0-9]/.test(val)) variety++;
+    if (variety <= 1) {
+      bar.style.width = '45%'; bar.style.background = '#FF9500';
+      label.textContent = 'Weak — add numbers or capitals'; label.style.color = '#FF9500';
+    } else if (variety === 2) {
+      bar.style.width = '70%'; bar.style.background = '#FF9500';
+      label.textContent = 'Fair'; label.style.color = '#FF9500';
+    } else {
+      bar.style.width = '100%'; bar.style.background = '#34C759';
+      label.textContent = 'Strong'; label.style.color = '#34C759';
+    }
+  }
+
+  function togglePasswordVis() {
+    const input = document.getElementById('auth-password');
+    const icon  = document.getElementById('eye-icon');
+    if (!input) return;
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    // Swap icon: open eye vs slashed eye
+    icon.innerHTML = showing
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    icon.setAttribute('stroke', showing ? '#bbb' : '#5B4FE8');
+  }
+
+  // ── Flow 2: Empty state ────────────────────────────────────
+
+  function showPhone2Empty() {
+    document.getElementById('phone1').style.display = 'none';
+    document.getElementById('phone2').style.display = 'flex';
+    document.getElementById('dots2').style.display = 'flex';
+    showTab('empty');
+  }
+
+  // ── Flow 3: Aswin's side ───────────────────────────────────
+
+  const mScreens = ['m-web','m-signup','m-forgot','m-forgot-sent','m-lang','m-done','m-chat'];
+
+  let mCurrentTab = 'signup';
+
+  function mAuthTab(tab) {
+    mCurrentTab = tab;
+    mGoTo('m-signup');
+    const isSignup = tab === 'signup';
+    // Tab pill
+    const ts = document.getElementById('m-tab-signup');
+    const tl = document.getElementById('m-tab-login');
+    if (ts) { ts.style.background = isSignup ? 'white' : 'transparent'; ts.style.fontWeight = isSignup ? '700' : '600'; ts.style.color = isSignup ? '#111' : '#888'; ts.style.boxShadow = isSignup ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'; }
+    if (tl) { tl.style.background = isSignup ? 'transparent' : 'white'; tl.style.fontWeight = isSignup ? '600' : '700'; tl.style.color = isSignup ? '#888' : '#111'; tl.style.boxShadow = isSignup ? 'none' : '0 1px 3px rgba(0,0,0,0.1)'; }
+    // Name field
+    const nw = document.getElementById('m-name-wrap');
+    if (nw) nw.style.display = isSignup ? 'block' : 'none';
+    // Divider text
+    const div = document.getElementById('m-auth-divider');
+    if (div) div.textContent = isSignup ? 'or sign up with email' : 'or log in with email';
+    // CTA text
+    const cta = document.getElementById('m-auth-cta');
+    if (cta) cta.textContent = isSignup ? 'Create account →' : 'Log in →';
+    // Forgot link
+    const fl = document.getElementById('m-forgot-link');
+    if (fl) fl.style.display = isSignup ? 'none' : 'block';
+    // Hide strength bar on tab switch
+    const str = document.getElementById('m-pw-strength');
+    if (str) str.style.display = 'none';
+  }
+
+  function mHandleAuthSubmit() {
+    const isSignup = mCurrentTab === 'signup';
+    let ok = true;
+    if (isSignup) {
+      const name = document.getElementById('m-auth-name');
+      if (name && !name.value.trim()) { name.style.borderColor = '#FF3B30'; document.getElementById('m-name-error').style.display = 'block'; ok = false; }
+    }
+    const email = document.getElementById('m-auth-email');
+    if (email && !email.value.includes('@')) { email.style.borderColor = '#FF3B30'; document.getElementById('m-email-error').style.display = 'block'; ok = false; }
+    const pw = document.getElementById('m-auth-password');
+    if (pw && !pw.value) { pw.style.borderColor = '#FF3B30'; document.getElementById('m-pw-error').style.display = 'block'; ok = false; }
+    if (ok) mGoTo('m-lang');
+  }
+
+  function toggleMPw(span) {
+    const inp = document.getElementById('m-auth-password');
+    if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    const showing = inp.type === 'text';
+    const svg = span.querySelector('svg');
+    svg.innerHTML = showing
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    svg.setAttribute('stroke', showing ? '#5B4FE8' : '#bbb');
+  }
+
+  function checkMPasswordStrength(val) {
+    const wrap  = document.getElementById('m-pw-strength');
+    const bar   = document.getElementById('m-pw-strength-bar');
+    const label = document.getElementById('m-pw-strength-label');
+    if (!wrap || !bar || !label) return;
+    if (mCurrentTab !== 'signup' || !val) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    if (val.length < 8) {
+      bar.style.width = '25%'; bar.style.background = '#FF3B30';
+      label.textContent = 'Too short — min 8 characters'; label.style.color = '#FF3B30';
+      return;
+    }
+    let variety = 0;
+    if (/[a-z]/.test(val)) variety++;
+    if (/[A-Z]/.test(val)) variety++;
+    if (/[0-9]/.test(val)) variety++;
+    if (/[^A-Za-z0-9]/.test(val)) variety++;
+    if (variety <= 1) {
+      bar.style.width = '45%'; bar.style.background = '#FF9500';
+      label.textContent = 'Weak — add numbers or capitals'; label.style.color = '#FF9500';
+    } else if (variety === 2) {
+      bar.style.width = '70%'; bar.style.background = '#FF9500';
+      label.textContent = 'Fair'; label.style.color = '#FF9500';
+    } else {
+      bar.style.width = '100%'; bar.style.background = '#34C759';
+      label.textContent = 'Strong'; label.style.color = '#34C759';
+    }
+  }
+  const mDots    = ['m-dot-web','m-dot-signup','m-dot-lang','m-dot-done','m-dot-chat'];
+  const mDotMap  = {
+    'm-web':         'm-dot-web',
+    'm-signup':      'm-dot-signup',
+    'm-forgot':      'm-dot-signup',
+    'm-forgot-sent': 'm-dot-signup',
+    'm-lang':        'm-dot-lang',
+    'm-done':        'm-dot-done',
+    'm-chat':        'm-dot-chat'
+  };
+
+  function mGoTo(id) {
+    mScreens.forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.classList.toggle('active', s === id);
+    });
+    const activeDot = mDotMap[id];
+    mDots.forEach(d => {
+      const el = document.getElementById(d);
+      if (el) {
+        el.classList.toggle('active', d === activeDot);
+        el.style.width = d === activeDot ? '22px' : '8px';
+      }
+    });
+    if (id === 'm-done') {
+      setTimeout(() => {
+        const toast = document.getElementById('mariaDoneToast');
+        if (toast) {
+          toast.style.display = 'flex';
+          setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+      }, 600);
+    }
+  }
+
+  function cancelAswinReply() {
+    document.getElementById('aswinReplyBar').style.display = 'none';
+    document.getElementById('aswinReplyPreview').textContent = '';
+  }
+
+  function mariaSendMessage() {
+    const input = document.getElementById('mariaInput');
+    if (!input || !input.value.trim()) return;
+    // Hide exchange card on first message
+    const card = document.getElementById('aswinExchangeCard');
+    if (card) card.style.display = 'none';
+    const msgs = document.getElementById('aswinMessages');
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-row outgoing';
+    const tickId = 'tick-' + Date.now();
+    const lastMsgA = msgs.lastElementChild;
+    const groupedA = lastMsgA && lastMsgA.classList.contains('msg-row') && lastMsgA.classList.contains('outgoing');
+    bubble.innerHTML = `<div class="bubble"><div class="bubble-main">${input.value.trim()}</div></div>${groupedA ? '' : `<div class="msg-time">Now <span class="read-tick delivered" id="${tickId}"><svg width="16" height="10" viewBox="0 0 16 10" fill="none"><path d="M1 5L4 8.5L10.5 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 5L8.5 8.5L15 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>`}`;
+    if (groupedA) bubble.style.marginTop = '-4px';
+    msgs.appendChild(bubble);
+    setTimeout(() => { const t = document.getElementById(tickId); if (t) { t.classList.remove('delivered'); t.classList.add('read'); } }, 1500);
+    input.value = '';
+    const btn = input.closest('.input-area').querySelector('.send-btn');
+    if (btn) btn.style.opacity = '0.4';
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function aswinSelectLang(el) {
+    document.querySelectorAll('#aswinLangList .lang-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    const btn = document.getElementById('aswinStartBtn');
+    if (btn) { btn.disabled = false; btn.style.background = '#5B4FE8'; btn.style.cursor = 'pointer'; btn.onclick = () => mGoTo('m-done'); }
+  }
+
+  // ── Flow 4: Change learning language ──────────────────────
+
+  function openChangeLang() {
+    // Close the ··· menu first
+    document.getElementById('chatMenu').style.display = 'none';
+    document.getElementById('changeLangSheet').style.display = 'block';
+    document.getElementById('changeLangBackdrop').style.display = 'block';
+  }
+
+  function closeChangeLangSheet() {
+    document.getElementById('changeLangSheet').style.display = 'none';
+    document.getElementById('changeLangBackdrop').style.display = 'none';
+  }
+
+  function changeLearningLang(el, flag, name) {
+    document.querySelectorAll('#changeLangSheet .lang-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    const lbl = document.getElementById('learningLangLabel');
+    if (lbl) lbl.textContent = name + ' ›';
+    closeChangeLangSheet();
+  }
+
+  // ── Word popup for Aswin's chat (phone4) ──────────────────
+  function showAswinPopup(event, word, translation, roman) {
+    event.stopPropagation();
+    const popup = document.getElementById('globalPopup');
+    document.getElementById('gp-word').textContent = word;
+    document.getElementById('gp-transl').textContent = translation;
+    document.getElementById('gp-roman').textContent = roman;
+    const rect = event.target.getBoundingClientRect();
+    const popupW = popup.offsetWidth || 200;
+    const popupH = popup.offsetHeight || 110;
+    const pad = 12;
+    const phoneRect = document.getElementById('phone4').getBoundingClientRect();
+    let top = rect.top - popupH - 6;
+    let left = rect.left;
+    if (top < phoneRect.top + pad) top = rect.bottom + 6;
+    if (left + popupW > phoneRect.right - pad) left = phoneRect.right - popupW - pad;
+    if (left < phoneRect.left + pad) left = phoneRect.left + pad;
+    popup.style.top = top + 'px';
+    popup.style.left = left + 'px';
+    popup.style.display = 'block';
+    playAudio();
+  }
+
+  // ── Close chat menus on outside click ─────────────────────
+  document.addEventListener('click', function(e) {
+    const menu3 = document.getElementById('chatMenu');
+    if (menu3 && menu3.style.display !== 'none' && !menu3.contains(e.target)) {
+      menu3.style.display = 'none';
+    }
+    const menu4 = document.getElementById('aswinChatMenu');
+    if (menu4 && menu4.style.display !== 'none' && !menu4.contains(e.target)) {
+      menu4.style.display = 'none';
+    }
+  });
+
+  // ── Send button dims when input is empty ──────────────────
+  ['msgInput','mariaInput'].forEach(id => {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    const btn = inp.closest('.input-area').querySelector('.send-btn');
+    if (!btn) return;
+    btn.style.opacity = '0.4';
+    inp.addEventListener('input', () => {
+      btn.style.opacity = inp.value.trim() ? '1' : '0.4';
+    });
+  });
+
+</script>
+
+
+</body>
+</html>

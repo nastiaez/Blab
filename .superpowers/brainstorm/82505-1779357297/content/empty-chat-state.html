@@ -1,0 +1,105 @@
+<h2>New chat — empty state design</h2>
+<p class="subtitle">Aswin just joined. First time opening the chat with Nastia. Research: WhatsApp, Telegram, Tandem, Duolingo, iMessage.</p>
+
+<div class="cards">
+
+  <!-- A: Completely empty -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:280px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <!-- Empty body -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:13px;color:#ccc;">No messages yet</span>
+      </div>
+      <!-- Input -->
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Message…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Just "No messages yet"</h3>
+      <p>iMessage / Telegram style. Completely empty, grey text in center. Ultra minimal. Nothing to explain — user figures it out. Works for power users, feels cold for a first-time connection.</p>
+    </div>
+  </div>
+
+  <!-- B: System event + hint card -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:280px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <!-- Body -->
+      <div style="flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;">
+        <!-- System event -->
+        <div style="font-size:11px;color:#aaa;text-align:center;padding:4px 12px;">Chat started · Today</div>
+        <!-- Hint card -->
+        <div style="background:#f7f7fb;border-radius:14px;padding:14px 16px;width:100%;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">🇺🇦</div>
+          <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px;">You're learning Ukrainian</div>
+          <div style="font-size:11px;color:#888;line-height:1.5;">Nastia will write in Ukrainian.<br>Translations appear below each message.</div>
+        </div>
+      </div>
+      <!-- Input -->
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Message…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — System event + hint card (Recommended)</h3>
+      <p>"Chat started · Today" divider, then a card explaining what language Aswin picked and how translations work. Warm, informative, disappears once first message sent. Tandem / WhatsApp Business pattern.</p>
+    </div>
+  </div>
+
+  <!-- C: Nastia's auto greeting -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:280px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <!-- Body — Nastia sent first message -->
+      <div style="flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:6px;">Today</div>
+        <!-- Nastia's message -->
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
+          <div style="background:#f2f2f7;border-radius:16px 16px 16px 4px;padding:10px 14px;max-width:85%;">
+            <div style="font-size:13px;color:#111;font-weight:500;">Привіт! Радий що ти приєднався 👋</div>
+            <div style="font-size:11px;color:#aaa;margin-top:3px;">Hi! Glad you joined 👋</div>
+          </div>
+          <div style="font-size:10px;color:#ccc;padding-left:4px;">9:41</div>
+        </div>
+      </div>
+      <!-- Input -->
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Message…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Nastia already sent a greeting</h3>
+      <p>Chat opens with Nastia's first Ukrainian message + translation already there. Feels alive, shows exactly how the product works. But implies real-time — in a real app Nastia would need to actually send it first.</p>
+      <p style="margin-top:8px;font-style:italic;color:#888;font-size:13px;">For the prototype this is fine — shows the translation mechanic immediately.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Same question applies to Nastia's side (Phone 3) — though hers already has messages so it's acting as the "active chat" demo. Aswin's is the "brand new" demo.</p>

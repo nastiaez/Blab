@@ -1,0 +1,64 @@
+<h2>Interface language override — how subtle can we go?</h2>
+<p class="subtitle">Device language used by default. These are options for users who need to override it.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;border-radius:12px;padding:24px 20px;font-family:-apple-system,sans-serif;border:1px solid #eee;position:relative;">
+      <!-- Globe corner -->
+      <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:5px;background:#f5f5f5;border-radius:20px;padding:5px 10px;cursor:pointer;">
+        <span style="font-size:14px;">🌐</span>
+        <span style="font-size:12px;color:#555;font-weight:500;">EN</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;margin-top:4px;">
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;">💬</div>
+        <div style="font-size:22px;font-weight:800;color:#111;">Parlo</div>
+      </div>
+      <div style="background:#f7f7f7;border-radius:10px;padding:11px;text-align:center;font-size:13px;color:#aaa;margin-bottom:8px;">🍎 Continue with Apple</div>
+      <div style="background:#f7f7f7;border-radius:10px;padding:11px;text-align:center;font-size:13px;color:#aaa;margin-bottom:10px;">G Continue with Google</div>
+      <div style="font-size:11px;color:#aaa;text-align:center;">— or sign up with email —</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Globe icon in corner</h3>
+      <p>Small 🌐 + current language code sits in top-right. Tapping opens language picker. Invisible to most users, discoverable for those who need it.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;border-radius:12px;padding:24px 20px;font-family:-apple-system,sans-serif;border:1px solid #eee;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;">💬</div>
+        <div style="font-size:22px;font-weight:800;color:#111;">Parlo</div>
+      </div>
+      <div style="background:#f7f7f7;border-radius:10px;padding:11px;text-align:center;font-size:13px;color:#aaa;margin-bottom:8px;">🍎 Continue with Apple</div>
+      <div style="background:#f7f7f7;border-radius:10px;padding:11px;text-align:center;font-size:13px;color:#aaa;margin-bottom:8px;">G Continue with Google</div>
+      <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:12px;">— or sign up with email —</div>
+      <!-- Bottom language link -->
+      <div style="text-align:center;font-size:12px;color:#bbb;">🌐 English · <span style="color:#5B4FE8;">Change language</span></div>
+    </div>
+    <div class="card-body">
+      <h3>B — "Change language" link at bottom</h3>
+      <p>Tiny text at the very bottom of the screen. Current language shown, tappable to change. Out of the way, still discoverable. Common in banking/utility apps.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fff;border-radius:12px;padding:24px 20px;font-family:-apple-system,sans-serif;border:1px solid #eee;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;">💬</div>
+        <div style="font-size:22px;font-weight:800;color:#111;">Parlo</div>
+      </div>
+      <div style="background:#f7f7f7;border-radius:10px;padding:11px;text-align:center;font-size:13px;color:#aaa;margin-bottom:8px;">🍎 Continue with Apple</div>
+      <div style="background:#f7f7f7;border-radius:10px;padding:11px;text-align:center;font-size:13px;color:#aaa;margin-bottom:8px;">G Continue with Google</div>
+      <div style="font-size:11px;color:#aaa;text-align:center;">— or sign up with email —</div>
+      <p class="subtitle" style="margin-top:12px;font-size:11px;text-align:center;color:#ddd;">No override. Change via Profile → Interface language after sign up.</p>
+    </div>
+    <div class="card-body">
+      <h3>C — No override on login screen</h3>
+      <p>Device language is final during signup. Users can change it in Profile settings afterwards. Zero clutter on the first screen. Works for 99% of users.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;">All 3 remove the separate language-picker step from onboarding entirely.</p>

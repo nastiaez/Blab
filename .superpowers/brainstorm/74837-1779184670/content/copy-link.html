@@ -1,0 +1,57 @@
+<h2>After tapping "Copy link" — what happens?</h2>
+<p class="subtitle">User copied the link and needs to paste it somewhere. What's the right feedback + next state?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;">
+      <!-- Share sheet collapses, toast appears -->
+      <div style="background:#1c1c1e;border-radius:10px;padding:10px 16px;margin:16px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;">✅</span>
+        <span style="font-size:14px;color:white;font-weight:500;">Link copied</span>
+      </div>
+      <div style="padding:0 16px 16px;font-size:13px;color:#888;text-align:center;">Sheet closes. Toast fades after 2s. User stays on invite screen to go back manually.</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Toast + stay on screen</h3>
+      <p>Dark toast "Link copied" appears, sheet closes, user stays on the invite screen. They go back whenever ready. Standard pattern (iOS, Android).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;">
+      <!-- Copy button changes state -->
+      <div style="padding:16px;">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:#e8f5e9;border-radius:14px;margin-bottom:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#34C759;display:flex;align-items:center;justify-content:center;font-size:18px;">✓</div>
+          <div>
+            <div style="font-size:15px;color:#111;font-weight:600;">Copied!</div>
+            <div style="font-size:12px;color:#888;">Paste it in a chat with your friend</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:#888;text-align:center;">Sheet stays open with changed state. "Cancel" becomes "Done".</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Copy button transforms to "Copied + hint"</h3>
+      <p>Row changes to green "Copied! · Paste it in a chat with your friend". Sheet stays open briefly, user taps Done to close. Gives clear next-step instruction.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;">
+      <!-- Full confirmation screen -->
+      <div style="padding:24px 16px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:10px;">🔗</div>
+        <div style="font-size:17px;font-weight:700;color:#111;margin-bottom:6px;">Link copied!</div>
+        <div style="font-size:13px;color:#888;line-height:1.5;margin-bottom:20px;">Paste it to your friend. They'll appear in your chats once they accept.</div>
+        <div style="background:#5B4FE8;color:white;border-radius:12px;padding:12px;font-size:15px;font-weight:700;">Back to chats</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Confirmation screen</h3>
+      <p>Sheet closes, invite screen transforms into a confirmation: "Link copied! Paste it to your friend. They'll appear once they accept." Button goes to chats. Sets clear expectations.</p>
+    </div>
+  </div>
+
+</div>

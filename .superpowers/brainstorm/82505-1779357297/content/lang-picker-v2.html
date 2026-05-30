@@ -1,0 +1,131 @@
+<h2>Language picker — 3 design directions</h2>
+<p class="subtitle">Research: Duolingo, Apple Settings, Google Translate, Babbel. No pre-selection. Button inactive until pick.</p>
+
+<div class="cards">
+
+  <!-- A: Apple Settings list — search + flag + checkmark -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <!-- Title -->
+      <div style="background:white;padding:14px 16px 10px;">
+        <div style="font-size:17px;font-weight:800;color:#111;margin-bottom:2px;">What do you want to learn?</div>
+      </div>
+      <!-- Search -->
+      <div style="padding:8px 12px;background:#f7f7fb;">
+        <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:7px 12px;display:flex;align-items:center;gap:7px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span style="font-size:12px;color:#aaa;">Search languages…</span>
+        </div>
+      </div>
+      <!-- Popular label -->
+      <div style="padding:6px 16px 4px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;background:#f7f7fb;">Popular</div>
+      <!-- Language list — no selection -->
+      <div style="background:white;margin:0 0 6px;">
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇺🇦</span><span style="font-size:14px;color:#111;flex:1;">Ukrainian</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇪🇸</span><span style="font-size:14px;color:#111;flex:1;">Spanish</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇫🇷</span><span style="font-size:14px;color:#111;flex:1;">French</span>
+        </div>
+        <!-- Selected state example -->
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;background:#f0eeff;">
+          <span style="font-size:17px;">🇩🇪</span><span style="font-size:14px;color:#111;flex:1;font-weight:600;">German</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;gap:12px;">
+          <span style="font-size:17px;">🇯🇵</span><span style="font-size:14px;color:#111;flex:1;">Japanese</span>
+        </div>
+      </div>
+      <!-- Button — active because something selected -->
+      <div style="padding:10px 12px 14px;background:#f7f7fb;">
+        <div style="background:#5B4FE8;border-radius:12px;padding:13px;text-align:center;font-size:13px;color:white;font-weight:700;">Continue →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — List + search + checkmark (Recommended)</h3>
+      <p>Apple Settings / WhatsApp pattern. Flag + name in a clean list. Search at top. Popular languages pinned first, rest alphabetical below. Checkmark + light purple row highlight on selection. Button grey (inactive) until pick — then purple.</p>
+      <p style="margin-top:8px;font-style:italic;color:#888;font-size:13px;">Same design on both "New chat" and Aswin's screen. Same component, same order, same search.</p>
+    </div>
+  </div>
+
+  <!-- B: Duolingo-style grid cards -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;padding:12px;">
+      <div style="font-size:14px;font-weight:800;color:#111;margin-bottom:10px;padding:0 4px;">What do you want to learn?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:white;border-radius:10px;padding:12px 8px;text-align:center;border:2px solid #e0e0e0;">
+          <div style="font-size:28px;margin-bottom:4px;">🇺🇦</div>
+          <div style="font-size:11px;font-weight:600;color:#111;">Ukrainian</div>
+        </div>
+        <div style="background:white;border-radius:10px;padding:12px 8px;text-align:center;border:2px solid #e0e0e0;">
+          <div style="font-size:28px;margin-bottom:4px;">🇪🇸</div>
+          <div style="font-size:11px;font-weight:600;color:#111;">Spanish</div>
+        </div>
+        <!-- Selected -->
+        <div style="background:#f0eeff;border-radius:10px;padding:12px 8px;text-align:center;border:2px solid #5B4FE8;">
+          <div style="font-size:28px;margin-bottom:4px;">🇩🇪</div>
+          <div style="font-size:11px;font-weight:600;color:#5B4FE8;">German</div>
+        </div>
+        <div style="background:white;border-radius:10px;padding:12px 8px;text-align:center;border:2px solid #e0e0e0;">
+          <div style="font-size:28px;margin-bottom:4px;">🇫🇷</div>
+          <div style="font-size:11px;font-weight:600;color:#111;">French</div>
+        </div>
+        <div style="background:white;border-radius:10px;padding:12px 8px;text-align:center;border:2px solid #e0e0e0;">
+          <div style="font-size:28px;margin-bottom:4px;">🇯🇵</div>
+          <div style="font-size:11px;font-weight:600;color:#111;">Japanese</div>
+        </div>
+        <div style="background:white;border-radius:10px;padding:12px 8px;text-align:center;border:2px solid #e0e0e0;">
+          <div style="font-size:28px;margin-bottom:4px;">🇰🇷</div>
+          <div style="font-size:11px;font-weight:600;color:#111;">Korean</div>
+        </div>
+      </div>
+      <div style="background:#5B4FE8;border-radius:10px;padding:11px;text-align:center;font-size:12px;color:white;font-weight:700;margin-top:10px;">Continue →</div>
+    </div>
+    <div class="card-body">
+      <h3>B — Duolingo grid cards</h3>
+      <p>2-column grid, big flag + name. Selected card gets purple border + tint. Visually engaging. No search — but hard to scale past 12 languages. Works great for small curated lists.</p>
+      <p style="margin-top:8px;font-style:italic;color:#888;font-size:13px;">Problem: "New chat" screen has 18+ languages — grid gets very long. No search.</p>
+    </div>
+  </div>
+
+  <!-- C: Minimal list, no flags, search prominent -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <div style="background:white;padding:14px 16px 10px;">
+        <div style="font-size:17px;font-weight:800;color:#111;">What do you want to learn?</div>
+      </div>
+      <!-- Big search -->
+      <div style="padding:10px 12px;background:white;border-bottom:1px solid #f0f0f0;">
+        <div style="background:#f2f2f7;border-radius:10px;padding:9px 14px;display:flex;align-items:center;gap:8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span style="font-size:13px;color:#aaa;">Search…</span>
+        </div>
+      </div>
+      <!-- Simple list, text only -->
+      <div style="background:white;">
+        <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Ukrainian</div>
+        <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Spanish</div>
+        <!-- Selected -->
+        <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;font-weight:600;color:#5B4FE8;display:flex;justify-content:space-between;align-items:center;">
+          German
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">French</div>
+        <div style="padding:13px 16px;font-size:14px;color:#111;">Japanese</div>
+      </div>
+      <div style="padding:10px 12px 14px;background:#f7f7fb;">
+        <div style="background:#5B4FE8;border-radius:12px;padding:13px;text-align:center;font-size:13px;color:white;font-weight:700;">Continue →</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Minimal, text only, no flags</h3>
+      <p>Google Translate approach — text list, search prominent. No flags (avoids flag-vs-language ambiguity). Clean, fast to scan. Slightly less warm/visual than A.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;"><strong>All options:</strong> no pre-selection, button grey until pick, same component used in both "New chat" (Phone 2) and Aswin's onboarding (Phone 4). Language order: top 8 popular pinned, rest alphabetical below a divider.</p>

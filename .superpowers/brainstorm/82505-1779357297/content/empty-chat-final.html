@@ -1,0 +1,116 @@
+<h2>New chat empty state — mutual pair card</h2>
+<p class="subtitle">No icebreaker. Shows the exchange. Placeholder hints which language to type.</p>
+
+<div class="cards">
+
+  <!-- A: Two-sided exchange, arrow visual -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:300px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <div style="flex:1;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-size:11px;color:#bbb;">Chat started · Today</div>
+        <div style="background:#f7f7fb;border-radius:16px;padding:16px;width:100%;">
+          <!-- Two sides of the exchange -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="flex:1;background:white;border-radius:12px;padding:10px 12px;text-align:center;border:1px solid #f0f0f0;">
+              <div style="font-size:22px;margin-bottom:4px;">🇺🇦</div>
+              <div style="font-size:10px;font-weight:700;color:#111;">She teaches you</div>
+              <div style="font-size:10px;color:#888;">Ukrainian</div>
+            </div>
+            <div style="font-size:16px;color:#ccc;">⇄</div>
+            <div style="flex:1;background:white;border-radius:12px;padding:10px 12px;text-align:center;border:1px solid #f0f0f0;">
+              <div style="font-size:22px;margin-bottom:4px;">🇮🇳</div>
+              <div style="font-size:10px;font-weight:700;color:#111;">You teach her</div>
+              <div style="font-size:10px;color:#888;">Tamil</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Type in English or Ukrainian…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Two cards side by side + ⇄</h3>
+      <p>Visual exchange: her flag left, your flag right, arrow between. Placeholder does the work: "Type in English or Ukrainian…"</p>
+    </div>
+  </div>
+
+  <!-- B: Stacked rows, cleaner -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:300px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <div style="flex:1;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-size:11px;color:#bbb;">Chat started · Today</div>
+        <div style="background:#f7f7fb;border-radius:16px;padding:14px 16px;width:100%;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:22px;">🇺🇦</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#111;">Nastia teaches you Ukrainian</div>
+              <div style="font-size:11px;color:#aaa;">You're the learner</div>
+            </div>
+          </div>
+          <div style="height:1px;background:#eee;"></div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:22px;">🇮🇳</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#111;">You teach Nastia Tamil</div>
+              <div style="font-size:11px;color:#aaa;">You're the teacher</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Type in English or Ukrainian…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Stacked rows, explicit roles (Recommended)</h3>
+      <p>"Nastia teaches you Ukrainian · You teach Nastia Tamil." Shows learner/teacher roles for each. Clearer reading than side-by-side. Placeholder does the language hint work.</p>
+    </div>
+  </div>
+
+  <!-- C: Single line, minimal card -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:300px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <div style="flex:1;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-size:11px;color:#bbb;">Chat started · Today</div>
+        <!-- Super minimal — just flags + one line -->
+        <div style="background:#f7f7fb;border-radius:16px;padding:14px 18px;width:100%;display:flex;align-items:center;gap:12px;">
+          <span style="font-size:28px;">🇺🇦</span>
+          <span style="font-size:20px;color:#ccc;">⇄</span>
+          <span style="font-size:28px;">🇮🇳</span>
+          <div style="flex:1;margin-left:4px;">
+            <div style="font-size:12px;font-weight:600;color:#111;">Ukrainian · Tamil</div>
+            <div style="font-size:11px;color:#aaa;">Learning together</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Type in English or Ukrainian…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Ultra minimal, flags + one line</h3>
+      <p>Both flags side by side + "Ukrainian · Tamil · Learning together." Almost no words. Let the visual carry it. Placeholder still does the language hint.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;">All 3: placeholder = "Type in English or Ukrainian…" — the key UX detail. Card disappears after first message sent.</p>

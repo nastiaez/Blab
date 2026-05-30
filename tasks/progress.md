@@ -1,0 +1,273 @@
+# Progress: Building Blab
+
+> **Purpose:** a step-by-step build plan. Each step ends in something **runnable and testable** on an Android device or emulator. No step claims completion without a verifiable outcome.
+>
+> **Inputs:** [`prd-blab.md`](./prd-blab.md) (the *what*), [`tech-spec.md`](./tech-spec.md) (the *how*).
+>
+> **Conventions:**
+> - Each step has: **Scope** (which PRD items), **Done when** (the test), **Out of scope** (what we are NOT doing in this step).
+> - Mark a step `[x]` only after the "Done when" rubric passes on a real Android device or emulator.
+> - One step at a time. No skipping ahead — Phase N depends on Phase N-1.
+> - "Test" = humans can actually use the feature, not just "code compiles".
+
+---
+
+## Phase 0 — Foundations
+
+### Step 0.1 — Flutter project bootstrap  `[x]`
+- **Scope:** create the Flutter project, configure Android target, set up lints.
+- **Done when:**
+  - `flutter run` launches the default counter app on an Android emulator
+  - `flutter analyze` returns 0 issues
+  - `.gitignore` ignores `build/`, `.dart_tool/`, `*.iml`, `.idea/`, `android/local.properties`
+- **Out of scope:** any app-specific UI, iOS configuration.
+
+### Step 0.2 — Theme + design tokens  `[x]`
+- **Scope:** strip the counter, replace with one blank `Scaffold`. Apply theme.
+- **Done when:**
+  - App background uses the prototype's neutral; primary color resolves to `#5B4FE8`
+  - System font stack used (no custom font yet — confirm Roboto on Android)
+  - One golden screenshot saved as baseline
+- **Out of scope:** screens, routing.
+
+### Step 0.3 — Routing skeleton  `[x]`
+- **Scope:** install `go_router`, define one placeholder route per PRD flow (auth, chats, chat, invite, profile).
+- **Done when:**
+  - Tapping debug buttons on a temporary "/dev" route navigates to each placeholder
+  - Each placeholder shows its name + the US range it will cover
+- **Out of scope:** real screens, deep links.
+
+---
+
+## Phase 1 — Static UI (no backend)
+
+### Step 1.1 — Auth screens UI  `[x]`
+- **Scope:** US-001, US-002, US-003, US-004, US-005 (UI only, mock submit).
+- **Done when:**
+  - Sign up / Log in tab toggle works; Name field hides on Log in
+  - Email validates on blur with inline error
+  - Password strength bar appears during signup
+  - Eye toggle shows/hides password
+  - Forgot password screen + sent confirmation screen render
+  - Language picker bottom sheet opens from globe icon
+  - All field-level errors visible (empty submit)
+- **Mock:** submit just navigates to the chats placeholder. No auth backend.
+
+### Step 1.2 — Chat list + empty state  `[x]`
+- **Scope:** US-006, US-007.
+- **Done when:**
+  - With seeded mock chats, list renders with avatar initial, name, last message, timestamp, unread badge
+  - Flipping a feature flag to "no chats" shows the empty state with "Invite someone" CTA
+  - "+" button navigates to New Chat placeholder
+
+### Step 1.3 — New chat + share sheet  `[x]`
+- **Scope:** US-008, US-009.
+- **Done when:**
+  - Language list scrollable, search filters in real time
+  - Selecting collapses list, shows confirmed card + Change link
+  - "Share invite link" button enables only after selection
+  - Mock share sheet (WhatsApp / iMessage / Telegram / Email / Copy link) renders; tapping app icons animates; Copy link shows hint
+
+### Step 1.4 — Profile + Edit profile + Change password  `[x]`
+- **Scope:** US-010, US-011, US-012, US-034.
+- **Done when:**
+  - Profile hero (avatar initial + name + Learning chip) renders
+  - Settings card: Interface language | Edit profile | Change password | Log out | Delete account (red)
+  - Edit profile: avatar with camera overlay, photo action sheet (Take photo / Choose / Remove / Cancel)
+  - Change password: 3 fields, strength bar on new, toast on save
+  - Log out returns to auth with all fields cleared
+
+### Step 1.5 — Chat view scaffold (header + messages + input)  `[x]`
+- **Scope:** US-013, US-014, US-015, US-016, US-017, US-023.
+- **Done when:**
+  - Chat header: back, avatar, name, "● Online" indicator, ··· menu
+  - ··· menu: Show translations toggle + Learning language ›
+  - Translations toggle hides/shows all `transl-line` rows in messages only
+  - Incoming bubbles (white, left) with translation subtitle render
+  - Outgoing bubbles (purple, right) with SVG double-tick (gray → purple after 1500ms)
+  - Consecutive outgoing messages grouped (reduced gap, timestamp only on last)
+  - Date divider "Today" above first message of the day
+  - Auto-growing input, send dims when empty
+- **Mock:** messages seeded in code; sending appends locally.
+
+### Step 1.6 — Tappable words + word popup  `[x]`
+- **Scope:** US-018, US-029, FR-12, FR-24.
+- **Done when:**
+  - Every content word in target-language messages is independently tappable
+  - Popup shows word, romanization, English, 🔊 button
+  - Popup positions above the tapped word, clamps to screen bounds
+  - 🔊 plays on-device TTS; disabled with tooltip if TTS missing for language
+  - Tap outside popup closes it; tapping a word does not also long-press the bubble
+
+### Step 1.7 — Long-press actions + reply bar  `[x]`
+- **Scope:** US-019, US-020, US-021.
+- **Done when:**
+  - Long-press (500ms) on outgoing → Reply / Edit / Copy / Delete
+  - Long-press on incoming → Reply / Copy only
+  - Reply bar with purple left border + quoted preview + × cancel
+  - Send threads the quoted block into the bubble
+  - Copy on outgoing copies English; copy on incoming copies original language
+  - Delete shows "Message deleted" toast with Undo for 3 seconds
+
+### Step 1.8 — Change learning language sheet  `[x]`
+- **Scope:** US-022.
+- **Done when:**
+  - Sheet opens from ··· menu and from "Change language" actions
+  - 11 languages, checkmark on current
+  - Selecting updates chat header + ··· menu labels
+  - Done button + backdrop tap both close
+
+### Step 1.9 — Invite landing + invitee signup + Aswin's chat  `[x]`
+- **Scope:** US-024, US-025, US-026, US-027, US-028, US-037.
+- **Done when:**
+  - Invite landing shows logo + "[name] invited you to learn [lang] together [flag]" + exchange card + Accept & join
+  - Signup form same validation as Flow 1
+  - On success: in-app banner "Aswin joined!" navigates to chat list
+  - Aswin sees Nastia's chat at top with "Now" timestamp + invite-state styling
+  - Empty chat shows exchange card centered; disappears on first message
+  - Expired link: "This invite has expired" page (no form)
+  - Used link: "This invite has already been claimed" page (no form)
+
+### Step 1.10 — Cross-cutting polish: loading, offline, length cap, accessibility  `[x]`
+- **Scope:** US-031, US-032, US-033, US-036.
+- **Done when:**
+  - Chat list and chat view show skeleton states on cold launch
+  - Connectivity-loss banner appears within 3s; recovery hides within 3s
+  - Pending messages render as clock icon; mock toggle simulates failure → ⚠ + retry sheet
+  - Message length: 2000 cap, counter at 1800+, send disabled over limit
+  - TalkBack reads through auth → chat list → chat view without dead ends
+  - Tap targets measured ≥ 44pt in dev tools overlay
+  - Font scaling at 200% does not clip critical UI
+
+**End of Phase 1: the entire app is navigable and demoable on an Android device with mock data. No backend.**
+
+---
+
+## Phase 2 — Backend wiring
+
+> Decisions in [`tech-spec.md`](./tech-spec.md) § Open Decisions #2, #3, #4, #6 must be made *before* starting Phase 2.
+
+### Step 2.1 — Auth backend  `[ ]` ← in progress
+- **Scope:** US-001…US-005, US-034, US-035 (delete account).
+- **Done when:** real signup, login, SSO (Apple + Google), password reset email send, delete account all work end-to-end with the chosen backend.
+- **Progress:**
+  - [x] `supabase_flutter` wired (URL + publishable key, `Supabase.initialize` in main).
+  - [x] `SupabaseAuthService` + Riverpod `authSessionProvider` + router redirect for unauthenticated.
+  - [x] Email signup, log in, password-reset email all hit Supabase Auth.
+  - [x] Log-out calls `signOut`; profile displays real session name.
+  - [x] End-to-end verification on Samsung S931B: email signup → chats, log out → log in, forgot password → email arrives → reset deep link → new-password screen → log in with new password, delete account (Google account) → bounce to login.
+  - [x] Google SSO configured (Google Cloud OAuth web + Android clients, Supabase Google provider, `google_sign_in` 6.x wired via `signInWithIdToken`). Verified end-to-end on Galaxy S25.
+  - [ ] Apple SSO — deferred to Phase 3 (iOS); requires Apple Developer membership.
+  - [x] Delete-account edge function + sheet wiring (deployed, verified end-to-end on Samsung S931B with a Google-auth account).
+
+### Step 2.2 — Chat persistence + real-time transport  `[ ]`
+- **Scope:** US-015, US-016, US-026. All message content stored as ciphertext per PRD § Security & Encryption — pair with Step 2.6.
+- **Done when:**
+  - Two devices logged in as Nastia and Aswin see each other's messages within 2 seconds
+  - Read receipts flip gray → purple based on partner's open state, not a timer
+  - Chats survive app restart, loaded from server cache + live sync
+  - Postgres rows for message bodies contain only ciphertext (verified by inspecting the table)
+
+### Step 2.3 — Invite link generation + validation  `[ ]`
+- **Scope:** US-024, US-025, US-037, FR-4.
+- **Done when:**
+  - Real invite URLs generated server-side, single-use, 48h TTL enforced
+  - Android App Link routes the URL into the installed app
+  - Expired and used states served from the same endpoint
+
+### Step 2.4 — Send-failure + offline queue  `[ ]`
+- **Scope:** US-030, US-031.
+- **Done when:**
+  - Force-airplane-mode → send → bubble shows clock → exit airplane → bubble flips to delivered
+  - Force a server 5xx → bubble shows ⚠ + retry sheet works
+  - Failed messages survive app restart
+
+### Step 2.5 — Push notifications  `[ ]`
+- **Scope:** US-038, FR-29.
+- **Done when:**
+  - Permission prompt fires after first chat open, not at launch
+  - Real push delivered to Android via FCM when partner sends a message and app is backgrounded
+  - Tapping the notification deep-links to the correct chat
+  - Push payload contains no message plaintext (title/body generic or client-decrypted post-delivery)
+
+### Step 2.6 — End-to-end encryption  `[ ]`
+- **Scope:** PRD § Security & Encryption. Cross-cuts Steps 2.1, 2.2, 2.5.
+- **Done when:**
+  - Per-device keypair generated on-device on first launch; public key uploaded to Supabase, private key in Android Keystore (iOS Keychain in Phase 3)
+  - Crypto library decided in tech-spec (`cryptography` vs `sodium`) and locked in Resolved Decisions
+  - Outgoing message: client generates random content key → encrypts payload (XChaCha20-Poly1305 or AES-GCM) → wraps content key for each recipient device (X25519 + HKDF or sealed box) → inserts ciphertext + wrapped keys
+  - Incoming message: client unwraps key with its private key → decrypts payload locally; server-side code path never observes plaintext
+  - RLS enabled on every table and Storage bucket; `service_role` key absent from the Flutter binary (verified by grep on the release APK)
+  - Edge Function logs and Sentry breadcrumbs contain no plaintext or key material (verified by triggering a send and inspecting logs)
+  - Key-loss / device-loss recovery policy written in tech-spec (even if v1 = "old messages unrecoverable")
+
+---
+
+## Phase 3 — iOS parity + release prep
+
+### Step 3.1 — iOS build  `[ ]`
+- **Done when:** every Phase 1 + Phase 2 step passes its "Done when" rubric on an iOS device or simulator.
+
+### Step 3.2 — Universal Links  `[ ]`
+- **Done when:** invite URLs route into the iOS app via Associated Domains.
+
+### Step 3.3 — App icons, splash, store assets  `[ ]`
+- **Done when:** Play Store internal track + TestFlight internal accept the build.
+
+### Step 3.4 — Pre-release audit  `[ ]`
+- **Done when:**
+  - Accessibility re-checked on both platforms (US-033)
+  - Crash-free sessions > 99% over 48h of internal use
+  - PRD § Open Questions resolved or explicitly deferred with a written note
+
+---
+
+## How to use this file
+
+1. Open the topmost unfinished step.
+2. Read its **Scope**, then re-read the linked US in `prd-blab.md`.
+3. Implement.
+4. Run the "Done when" rubric on a real device or emulator.
+5. Flip `[ ]` → `[x]` only after every bullet passes.
+6. Commit. Move to next step.
+
+Do not start Step N+1 until Step N is fully `[x]`.
+
+---
+
+## Changelog
+
+Append one line per non-trivial edit to this file (step added, scope changed, blocker logged, step split). Format: `YYYY-MM-DD — what changed and why`.
+
+- 2026-05-25 — initial plan created from PRD + tech-spec.
+- 2026-05-25 — tech-spec decisions locked: Riverpod, Supabase, Sentry. Backend-dependent steps in Phase 2 now have a concrete target (Supabase Auth, Postgres, Realtime, Storage; FCM via edge function).
+- 2026-05-25 — Step 0.1 complete. Flutter 3.41.9 project scaffolded (org `sh.aswin`, name `blab`, Android-only platforms). `minSdk` set to 24 per tech-spec § Platform Targets. AVD `blab_pixel` (Pixel 7, API 34, arm64-v8a) created. `flutter analyze` clean. Debug APK installed + launched on emulator-5554; counter app rendered (screenshot `/tmp/blab-step-0.1.png`). `.gitignore` covers build/, .dart_tool/, *.iml, .idea/; `android/.gitignore` covers local.properties.
+- 2026-05-25 — Step 0.2 complete. Counter app stripped. `lib/app/theme.dart` introduced with `BlabColors` tokens (brand `#5B4FE8`, app bg `#F0F0F5`, surface white, text + divider neutrals) and `blabTheme` (Material 3, ColorScheme.fromSeed). `lib/main.dart` now renders blank `Scaffold` via `BlabApp` + `_BlankHome`. Widget test rewritten — asserts theme tokens applied, no AppBar, no body. `flutter analyze` clean, `flutter test` green. Baseline screenshot saved at `docs/baselines/step-0.2-blank-themed-scaffold.png`. UI to be redesigned later per user note.
+- 2026-05-25 — Communication style rule added to CLAUDE.md: user is product owner not engineer; speak plain English in chat, decide tech things autonomously, log decisions in tech-spec, only ask about product/UX or for non-technical machine walkthroughs. Saved as persistent memory `feedback_communication_style.md`.
+- 2026-05-25 — Step 0.3 complete. `go_router 17.2.3` added. Routes defined: `/dev`, `/auth`, `/chats`, `/chat`, `/invite`, `/profile`. Each non-dev route renders a `FlowPlaceholder` (shared widget under `lib/features/_shared/`) with the screen name + matching user-story range. `DevMenu` at `/dev` lists 5 brand-purple buttons that `context.push` into each placeholder. `MaterialApp.router` wired in `BlabApp`. `flutter analyze` clean, two widget tests green (dev menu renders + navigation works). Verified live on emulator-5554: dev menu boots, tap "Open a chat" → chat placeholder shown with system back arrow. Baselines: `docs/baselines/step-0.3-dev-menu.png`, `docs/baselines/step-0.3-chat-placeholder.png`.
+- 2026-05-25 — Communication style updated in CLAUDE.md + memory: user is a designer — short responses, UX terms welcome, no code talk, end-of-step = screenshot + 1-2 sentences + design question.
+- 2026-05-25 — Step 1.3 complete. `NewChatScreen` replaces `/chats/new` placeholder. Heading "What do you want to learn?" + subcopy. Search field filters language list in real time. Selecting a language collapses the list and shows a purple-tinted "Learning [language]" card with flag + Change link, info card below ("Only one person can use this link", "Valid for 48 hours" with icons), pinned "Share invite link" CTA at the bottom. Share button opens `showShareInviteSheet` (modal bottom sheet) with WhatsApp / iMessage / Telegram / Email tiles (horizontal scroll, brand colors, tap = scale-down animation then close), Copy link row (clipboard, swaps to "Link copied" + "Now paste it in a chat" hint), and Cancel. Verified picked + info card states on emulator-5554; share sheet code in place (emulator OOM'd before final capture). Baselines: `docs/baselines/step-1.3-new-chat.png`, `docs/baselines/step-1.3-picked.png`.
+- 2026-05-25 — Step 1.2 complete. `Chat` model + `kMockChats` seed (Aswin/Tamil, María/Spanish, Lukas/German) + `relativeTime` helper. `ChatsScreen` renders list of `ChatListTile`s (gradient avatar, partner name + flag, last message preview, relative timestamp, purple unread badge) with thin dividers indented past avatar; tap routes to `/chat/:id`. Empty state shows 💬 + "No chats yet" + subtitle + purple "Invite someone" CTA. Bottom tab bar (Chats + Profile) wired — Profile tab navigates to `/profile`. Top-right `+` button routes to `/chats/new` (still a placeholder). Empty state toggleable via `?empty=1` query param + dev menu entry "Your chats — empty". `chats_placeholder.dart` removed. `flutter analyze` clean. Verified on emulator-5554 — populated list + empty state both render. Baselines: `docs/baselines/step-1.2-chats.png`, `docs/baselines/step-1.2-chats-empty.png`.
+- 2026-05-25 — PRD § Security & Encryption added (E2EE shape: Supabase Auth + RLS for access, on-device keys, ciphertext-at-rest, per-recipient key wrap, no plaintext in server compute; crypto recs: `cryptography`/`sodium`, XChaCha20-Poly1305 or AES-GCM, X25519+HKDF or sealed boxes; Signal/Matrix-style protocol for forward secrecy). Step 2.2 scope amended to require ciphertext-only message rows. New Step 2.6 — End-to-end encryption — added to Phase 2. Crypto-library pick + key-recovery policy still open in tech-spec.
+- 2026-05-25 — Step 1.4 complete. Profile screen with hero (gradient avatar + name "Nastia" + Learning chip for Tamil), settings card (Interface language with current language name in purple → opens language picker sheet, Edit profile, Change password, Log out), and separate red "Delete account" row. Bottom-tab nav reused — Chats tab routes back to /chats. Edit profile screen: large gradient avatar with white camera-icon overlay, "Change photo" link, both open photo action sheet (Take photo / Choose from library / Remove photo / Cancel). Display name field reuses BlabTextField. Save returns to /profile. Change password screen: three PasswordFields (current, new with PasswordStrengthBar, confirm), full-width purple Save button, "Forgot your password?" link to /auth/forgot. Validates non-empty + strength ≥ fair + matching confirm, posts "Password updated ✓" SnackBar then pops to /profile. Delete-account sheet: bulleted list (chats, profile, settings) with warning_amber accent, password field, red Delete forever + grey Cancel. Auth screen US-034: fine print "By creating an account you agree to our Terms and Privacy Policy" shown only in sign-up mode below CTA, with inline brand-purple underlined Terms / Privacy Policy links via RichText + TapGestureRecognizer, each opens a SnackBar placeholder. Routes added: /profile/edit, /profile/password. profile_placeholder.dart deleted. flutter analyze clean, tests green, debug APK builds.
+- 2026-05-25 — Step 1.5 complete. Chat view scaffold built — header (back arrow, gradient avatar, name, green-dot "Online", ··· menu), messages list (white incoming bubbles w/ translation subtitle, brand-purple outgoing bubbles, date dividers, 2-min grouping reducing gaps + suppressing timestamps, trailing timestamp + read-tick on last in group), and input bar (auto-growing TextField, dimmed circular send button, keyboard-inset aware). ··· menu opens a custom dropdown with a Material Switch (per-chat `showTranslationsProvider`) and a "Learning language ›" row stubbed with a SnackBar pointing at Step 1.8. Mock conversation seeded in `lib/shared/data/mock_messages.dart` (Aswin/Tamil chat only); other chat ids start empty. State layer = Riverpod 3.x `NotifierProvider.family` for both messages and translation visibility — `addOutgoing` appends a delivered message then flips to read after 1500ms. `chat_placeholder.dart` deleted; router rewired so both `/chat` and `/chat/:id` build `ChatScreen` (path param extracted, defaults to `aswin`). Verification: `flutter analyze` clean, `flutter test` 7/7 green (new `chat_state_test.dart` covers seeding, addOutgoing transition, whitespace guard, and per-chat translation toggle isolation), `flutter build apk --debug` succeeds.
+- 2026-05-25 — Step 1.6 complete. Content tokens in target-language bubbles are now individually tappable via `Text.rich` + per-word `TapGestureRecognizer`s (`lib/features/chat/widgets/message_text.dart`). Tap opens a white card popup (`lib/features/chat/widgets/word_popup.dart`) inserted into the root `Overlay`: word (22 w700) + optional romanization (13 italic muted) + row of `Icons.volume_up_outlined` + English gloss, with a downward triangle tail (CustomPainter) anchored to the word's center; popup clamps inside screen ±12 px and flips below the word when there isn't room above. Full-screen invisible barrier dismisses; only one popup at a time. On-device TTS routed through existing `TtsService` (Riverpod) — `isLanguageAvailable` gates the speaker (disabled + "Voice not available" tooltip when unsupported, muted while unknown), `stop()` + `speak()` on tap so replays restart cleanly. Chat screen wires the chat's `learningLanguage.code` (Aswin → `ta`) through `_MessageList` → `_MessageRow` → `_Bubble` → `MessageText`. `flutter analyze` clean, `flutter test` 12/12 green (added `tts_service_test.dart` for locale mapping + `word_popup_test.dart` for tap-opens-popup and tokens-null fallback), `flutter build apk --debug` succeeds.
+- 2026-05-25 — Step 1.7 complete. Long-press on bubbles (medium haptic) opens a modal bottom sheet (`lib/features/chat/widgets/message_action_sheet.dart`) with drag handle + Reply/Edit/Copy/Delete for outgoing, Reply/Copy for incoming. Reply mode pushes a `_ReplyBar` (purple left bar + "Replying to <name>" + ellipsised preview + ×) above the input, threading the quoted block as a tinted `_QuotedReply` inset inside the new bubble. Edit mode pre-fills the input from `originalText`, shows an orange `_EditBar`, and on send calls `editMessage` (new `ChatNotifier.editMessage`) which flips `Message.isEdited` (new field) → renders "· edited" 10 px muted in the meta row. Reply + edit modes are mutually exclusive (`replyingToProvider` / `editingProvider` clear one another). Copy → Clipboard + 1.5 s "Copied" SnackBar. Delete → `removeMessage` + 3 s SnackBar with brand-purple "Undo" that calls `insertMessage` to restore at the captured index. `flutter analyze` clean, `flutter test` 20/20 green (new `test/message_actions_test.dart` covers remove/insert/edit, replyTo wiring on `addOutgoing`, sheet contents for both directions, and send-with-reply attaching `replyTo`), `flutter build apk --debug` succeeds.
+- 2026-05-25 — Step 1.1 complete. `flutter_riverpod 3.x` added. Interface-language Riverpod provider added at `lib/shared/state/interface_language.dart`, sourced from new 11-language registry in `lib/shared/data/languages.dart`. Auth flow built: `AuthScreen` with sign-up/log-in tab toggle, SSO buttons (Apple hidden on Android per prototype), Blab wordmark + tagline, email validation on blur, password show/hide eye, password strength bar (sign-up only, weak/fair/strong), name field hides in log-in mode, forgot-password link only in log-in mode. `ForgotPasswordScreen` with email field + Send + Back-to-log-in. `ForgotPasswordSentScreen` with mailbox emoji + confirmation. Globe + interface-language code top-right opens `showLanguagePickerSheet` (modal bottom sheet, 11 languages, checkmark on current, auto-saves). Shared `BlabTextField` widget owns label + bordered input + error slot. Routes: `/auth`, `/auth/forgot`, `/auth/forgot/sent?email=…`. `auth_placeholder.dart` deleted. Submit is mocked — `Create account` / `Log in` / SSO buttons all navigate to `/chats`. Backend wiring deferred to Phase 2 (Supabase Auth). `flutter analyze` clean, tests green (boot + strength estimator). Live on emulator-5554: signup, login, forgot password flow w/ inline validation, "Check your email" confirmation showing "me@aswin.sh", language picker sheet — all verified. Baselines: `docs/baselines/step-1.1-{signup,login,forgot,forgot-sent,language-picker}.png`.
+- 2026-05-25 — Step 1.9 complete. Invite landing screen (`/invite`) renders three states via `?status=expired|used` query params (defaults to valid + `from=Nastia&learn=uk&teach=ta`): valid shows Blab wordmark + tagline + "Nastia invited you to learn Ukrainian together 🇺🇦" rich heading + reusable `ExchangeCard` (🇺🇦 "She teaches you Ukrainian" ⇄ 🇮🇳 "You teach her Tamil") + "Accept & join" full-width brand CTA → pushes `/invite/signup`; expired shows `Icons.timer_off_outlined` + "This invite has expired" + "Ask Nastia for a new link" + "Get the app" link; used shows `Icons.link_off` + "This invite has already been claimed" + "Get the app". Invitee sign-up screen (`/invite/signup`) mirrors `AuthScreen`'s sign-up form (Name + Email-with-blur-validation + Password + strength bar + SSO above + legal fine print); on success or SSO tap, slide-down "push-style" `OverlayEntry` banner ("Aswin joined! Start chatting.") shows for 2.5s then navigates to `/chats?as=aswin`. `ChatsScreen` now takes `asAswin`; when true, reads `kAswinMockChats` (single Nastia chat seeded with `isNewInvite: true`, `learningLanguage: Ukrainian`); `ChatListTile` renders a brand-purple `New` pill (8/2 padding, 8 radius) on the trailing edge in place of the timestamp + unread badge for invite-state rows. `findChat(id)` helper added to `mock_chats.dart` so `ChatScreen` resolves `nastia` across both POV lists; `_NastiaEmptyState` renders the same `ExchangeCard` (🇺🇦 "You learn Ukrainian" / 🇮🇳 "Help Nastia learn Tamil") centered when the message list is empty — sending the first message removes it. Chat input hint is now derived from the per-chat learning language ("English or <Name>…"). Dev menu's single "Invite landing" entry split into three QA variants + new "Aswin's chats" entry. `invite_placeholder.dart` deleted. `flutter analyze` clean (only pre-existing test-file warnings), `flutter test` 31/31 green (new `test/invite_landing_test.dart` covers all three states via the real `blabRouter`; new `test/aswin_chats_test.dart` covers single Nastia tile + "New" pill and the exchange-card → first-send transition), `flutter build apk --debug` succeeds.
+- 2026-05-25 — Step 1.10 complete. Phase 1 polish pass: `connectivity_plus`-backed `onlineProvider` (StreamProvider with 200 ms debounce + `forceOfflineProvider` dev override) drives a new dark-gray `OfflineBanner` mounted above the list in `ChatsScreen` and just under the chat header in `ChatScreen` (animated slide + a11y live region). Cold-open skeletons (`ChatListSkeleton` 3 rows, `ChatViewSkeleton` 5 mixed bubbles) gated by `late final Future<void> _ready` (600 ms chats, 400 ms chat view) using `package:shimmer`; pull-to-refresh wired with brand-purple `RefreshIndicator` and 600 ms mock onRefresh. Send-failure affordances (US-030): new `simulateFailureProvider` flips outgoing sends to `pending`→`failed` after 800 ms; failed bubbles render the red `Icons.error_outline` (already in the model from Step 1.5) and now have `onTap` that opens a new `showFailedMessageSheet` (Retry / Delete) — Retry calls a new `ChatNotifier.retryFailed(id)` which drops the failed bubble and re-fires `addOutgoing`. Message length cap (US-036): chat `TextField` now has `maxLength: 2000` + `buildCounter: (…) => null`, and a custom right-aligned counter row appears below at ≥1800 chars, switching to red at 2000; send button is disabled when length > 2000 in addition to empty. Accessibility (US-033): `BlabTextField` wraps its `TextField` in `Semantics(label: …, textField: true)`; chat header back / more buttons gained tooltips; the green online dot + label are now grouped in a `Semantics(label: 'Online')`; `_StatusIcon` wraps each delivery state with a `Semantics` label (`Sending` / `Delivered` / `Read` / `Failed to send. Tap to retry.`) so read receipts aren't color-only. Dev menu (now a `ConsumerWidget`) gained two toggle rows — "Toggle offline (on/off)" and "Toggle failed-send (on/off)" — rendered as outlined cards with a Switch that reflect + flip the provider state. Verification: `flutter analyze` clean (only the 2 pre-existing test warnings remain), `flutter test` 38/38 green (new `test/step_1_10_test.dart` covers counter thresholds 1800/2000, `forceOfflineProvider=true` rendering the banner inside `ChatsScreen`, a failed bubble showing `Icons.error_outline` and tapping it opening Retry/Delete, and `retryFailed` removing + re-queueing), `flutter build apk --debug` succeeds. Files added: `lib/shared/state/connectivity_state.dart`, `lib/shared/widgets/offline_banner.dart`, `lib/shared/widgets/skeletons.dart`, `lib/features/chat/widgets/failed_message_sheet.dart`, `test/step_1_10_test.dart`. Files changed: `pubspec.yaml` (+`connectivity_plus 7.1.1`, +`shimmer 3.0.0`), `lib/app/dev_menu.dart`, `lib/features/chats/chats_screen.dart`, `lib/features/chat/chat_screen.dart`, `lib/features/chat/state/chat_state.dart`, `lib/features/auth/widgets/blab_text_field.dart`.
+- 2026-05-25 — QA bugs fixed: 11 / 11 (BUG-001 through BUG-011). See tasks/qa-report.md.
+- 2026-05-25 — Step 2.1 started. Supabase project `bhzcexhebjszwyqvcsxs` linked via `lib/shared/data/supabase_config.dart` (URL + publishable key — public-safe, RLS protects data). `supabase_flutter 2.12.4` added; `Supabase.initialize` runs in `main` before `runApp`. New `SupabaseAuthService` (`lib/shared/services/supabase_auth_service.dart`) wraps `signUp` / `signInWithPassword` / `resetPasswordForEmail` / `signOut` with friendly error mapping. Riverpod providers in `lib/shared/state/auth_state.dart`: `supabaseClientProvider`, `supabaseAuthServiceProvider`, `authSessionProvider` (StreamProvider on `onAuthStateChange`), `isSignedInProvider`. Router gained redirect guard (any non-public path bounces to `/auth?mode=login` when no session) + `_AuthRefresh` ChangeNotifier listening to auth events for live redirect; both tolerate uninitialized Supabase (tests). `AuthScreen` + `ForgotPasswordScreen` now call the real backend with loading spinner + red-banner error pill. Profile log-out calls `signOut` and routes to `/auth?mode=login`. Profile hero pulls display name from session user metadata (falls back to email local-part). `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds. Still pending in Step 2.1: live emulator verification (real signup → confirm → log in → log out), Apple/Google SSO console setup, delete-account edge function.
+- 2026-05-27 — US-039 final fixes after second round of live testing on Samsung S931B. Two more bugs: (a) premature "Email changed ✓" snack — the previous implementation listened to `AuthChangeEvent.userUpdated`, but that event fires on both the initial `updateUser({email:})` call AND the deep-link consumption, so the snack appeared next to the "Check your inbox" screen. Removed that listener; the snack is now fired only from places we know correspond to actual confirmation. (b) Browser-swallowed deep link — Samsung Internet sometimes drops the `blab://` redirect from Supabase's verify response, so the app never receives the deep-link intent (verified by absence of `app_links` / `supabase.supabase_flutter: handle deeplink uri` lines in adb logcat right after a click). Two-pronged fix: (i) added `errorBuilder` to `blabRouter` that catches stray `blab://auth/email-changed#...` URIs, manually calls `auth.getSessionFromUrl` + `refreshSession`, then bounces to /chats with the snack; (ii) added a `WidgetsBindingObserver` to `BlabApp` that on every `AppLifecycleState.resumed` calls `auth.refreshSession()` and compares the resulting `user.email` to a cached `_knownEmail` — if different, fires the snack. The resume-listener path is the one that actually rescued the test (browser consumed the redirect, app foregrounded → refresh saw the new email → snack). Also added a shared `appMessengerKey` (`lib/app/app_messenger.dart`) + `showAppSnack()` helper wired into `MaterialApp.router(scaffoldMessengerKey:)`, so router callbacks and lifecycle observers can toast without a current `BuildContext`. Known issue (not in code): Supabase free-tier SMTP rate-limits ~4 emails/hour; during testing she hit it after a few sends, recovered after ~30 min wait or by using a gmail `+alias`. Recommendation logged: hook up Resend SMTP in Supabase before any external testers see this.
+- 2026-05-27 — US-039 verified end-to-end on Samsung S931B. Two fixes during live test: (a) Supabase "Secure email change" was ON by default — confirmation went to BOTH old and new addresses, which would block the typo-recovery use case (broken old inbox can't receive); turned OFF in dashboard → Authentication → Providers → Email, so confirmation now goes to the new address only. (b) After Supabase consumed the deep-link tokens, go_router still tried to match `/auth/email-changed` and crashed with "no routes for location"; added the path as a public route that redirects to /chats (or /auth?mode=login if unauthenticated) — the "Email changed ✓" snack is fired by the `userUpdated` listener in BlabApp before the redirect lands. Verified: Edit profile → Email → new address → Send → new inbox link → Blab opens → snack → /chats; logging in with the old email now fails (account email actually swapped).
+- 2026-05-27 — PRD US-039 (Change email) added under Flow 2 Profile, just after US-012 Change password. Motivation: signup is deliberately low-friction with no email-confirmation gate, so a typoed address survives signup; the Change-email flow is the deliberate fix-path. Implementation: new `lib/features/profile/change_email_screen.dart` (form → "Check your inbox" success state), new `SupabaseAuthService.updateEmail(newEmail)` wrapping `auth.updateUser(UserAttributes(email:), emailRedirectTo: 'blab://auth/email-changed')`, new public route `/profile/email`, new "Email" row in Edit profile under Display name showing current email + chevron. Confirmation deep link reuses the existing `blab://**` Redirect URLs wildcard (no dashboard change). `BlabApp` now also listens for `AuthChangeEvent.userUpdated` — when the email field actually changes, it shows a global "Email changed ✓" snack via a `ScaffoldMessengerState` key on `MaterialApp.router`. Built + installed to phone for testing.
+- 2026-05-27 — Step 2.1 progress: password-reset deep link wired and verified. `sendPasswordReset` now passes `redirectTo: 'blab://auth/reset'`. Android `AndroidManifest.xml` MainActivity gained a `<intent-filter>` for `<data android:scheme="blab"/>` (BROWSABLE + DEFAULT, autoVerify=false). Supabase dashboard → Authentication → URL Configuration → Redirect URLs allow-list now includes `blab://**` (wildcard; the dashboard rejects bare custom-scheme URLs). New `ResetPasswordScreen` at public route `/auth/reset` (added to `_publicPaths` so the unauth redirect doesn't fight it) — new password + confirm, reuses `PasswordField` + `PasswordStrengthBar`, calls `SupabaseAuthService.updatePassword(pw)` which delegates to `auth.updateUser(UserAttributes(password:))`, then routes to /chats with a "Password updated ✓" snack. Initial deep-link attempt used `app_links` + a manual `getSessionFromUrl(uri)` exchange but failed with `flow_state_not_found` — supabase_flutter has its own built-in deep-link consumer that already exchanges the PKCE code before any app-level handler can see a fresh URI. Fix: dropped `app_links` and the manual exchange; `BlabApp` now listens to `Supabase.instance.client.auth.onAuthStateChange` and routes to `/auth/reset` on `AuthChangeEvent.passwordRecovery`. Verified end-to-end on Samsung S931B: forgot-password screen → email arrives → tap link → app opens directly on the new "Set a new password" screen → Save → /chats. Decision recorded in tech-spec: signup uses no email-confirmation gate (low-friction); password reset = implicit verification of a real inbox; a future Change-email flow (US-039, deferred) will be the explicit fix-path for typoed signup addresses.
+- 2026-05-27 — Step 2.1 progress: delete-account verified end-to-end. `supabase functions deploy delete-account` succeeded against project `bhzcexhebjszwyqvcsxs`. Two follow-up fixes after live test on Samsung S931B (Android 16): (a) Google-only users have no email/password identity, so the sheet now branches on `SupabaseAuthService.hasPasswordIdentity` (checks `currentUser.identities` for the `email` provider) — password-identity users see the password field, Google-only users see "Type [email] to confirm" (case-insensitive exact-match guard before invoking the function); `deleteAccount({String? password})` now skips the `signInWithPassword` re-auth when password is null/empty (JWT validation in the edge function remains the actual security boundary). (b) Removed the explicit `Navigator.pop` + `context.go('/auth?mode=login')` from the success path — they raced the router's auth-session-stream redirect and threw `'!navigator._debugLocked': is not true.` after a successful delete; the redirect alone now handles the bounce to /auth. Verified flow on phone: sign in with Google → Profile → Delete account → type email → spinner → router auto-bounces to login → Supabase dashboard Users row gone.
+- 2026-05-27 — Step 2.1 progress: delete-account wired. `supabase init` scaffolded `supabase/` (config.toml + functions dir). New edge function `supabase/functions/delete-account/index.ts` verifies the caller's JWT via an anon-key user-context client, then calls `admin.auth.admin.deleteUser(user.id)` with a service-role client (URL + both keys auto-injected by the runtime). `SupabaseAuthService.deleteAccount({password})` re-authenticates via `signInWithPassword(email, password)` so a wrong password short-circuits before any server call, invokes the function, and `signOut`s on success. `delete_account_sheet.dart` upgraded to a `ConsumerStatefulWidget` with `_busy` state (spinner inside the red CTA, Cancel disabled mid-call), real error surfacing (wrong password → "Email or password is incorrect", network/function failures → "Couldn't delete your account. Try again."), and on success pops the sheet then `context.go('/auth?mode=login')`. `flutter analyze` clean (pre-existing test warnings only). Pending: `supabase functions deploy delete-account` from a logged-in CLI, then live emulator test.
+- 2026-05-28 — Privacy settings screen shipped (US-040 + US-041). New `/profile/privacy` route with `PrivacyScreen`: white settings-card containing two `Switch` rows ("Typing indicators" + "Read receipts"), each with a small grey caption explaining the symmetric off behavior. Below the card, a four-line muted paragraph reiterates the honest privacy promise (E2EE content, no analytics/ads/sale, these two toggles control what your phone sends). Profile card gains a "Privacy" row (shield_outlined icon, chevron) between Change password and Log out. State layer: `lib/shared/state/privacy_settings.dart` exposes `typingIndicatorsProvider` + `readReceiptsProvider` (Riverpod 3 `Notifier`s, both default `true`, hydrated from + persisted to `shared_preferences` 2.3.0 — keys `privacy_typing_indicators` / `privacy_read_receipts`). Hydration is async-fire-on-build so first frame uses the Signal default and snaps to the persisted value once disk read returns; toggles flush to disk on every change. Real enforcement (gating the realtime broadcast + receive paths) lands with Phase 2.2. Also wired log-out confirm dialog (US-010 update / Resolved Decision #15): tapping Log out now opens an `AlertDialog` titled "Log out?" with body "You'll need your email and password (or Google) to sign back in." and Cancel + Log out buttons; only Log out proceeds to `signOut` + route to `/auth?mode=login`. `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds, installed on Samsung S931B.
+- 2026-05-28 — All 10 PRD Open Questions resolved in one pass. Key calls: (1) multiple language exchanges per user — per-chat learning language; (2) interface-language switch re-renders existing translations immediately; (3) invite link valid until a single successful claim within 48h TTL; (4) exchange card disappears via 200 ms opacity fade; (5) Edit profile Save shows "Profile updated ✓" toast; (6) Log out shows confirm dialog before sign out (Signal-style); (7) TTS V1 = on-device only, disabled state = icon at 40% opacity, no tap/text/tooltip; (8) chat history V1 = ciphertext on server + key device-only + no key recovery → reinstall wipes history; (9) typing indicators ship as Signal-symmetric toggle (default ON, OFF = client never broadcasts AND user doesn't see partner's), **online presence feature dropped entirely** (not even a toggle); (10) Edit window 24h, Delete forever. Bonus: read receipts get the same Signal-symmetric toggle treatment (US-016 rewritten); Supabase region locked to EU (Frankfurt) for GDPR alignment with privacy positioning; Sealed Sender / Double Ratchet / X3DH / libsignal references added to tech-spec for Phase 2.6 study. PRD changes: § Open Questions → § Resolved Questions; new § Privacy posture lays out the honest external promise + technical commitments + what we explicitly don't claim; new US-040 (typing toggle) + US-041 (read receipts toggle); rewrites of US-005, US-010, US-011, US-013, US-016, US-019, US-024, US-027; FR-4 / FR-8 / FR-9 / FR-14 / FR-15 / FR-22 / FR-24 updated + new FR-30…FR-33. Tech-spec Resolved Decisions #8–#15 logged. Word popup also redesigned this session: speaker icon moved to the left of the target-word block (was beside the English translation, misleading affordance); romanization de-italicised; English now joins the same left-aligned column instead of sharing a row with the speaker; TTS-unavailable speaker dims to 40% opacity in place (US-011 / US-018 / FR-24 reflect this). `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds, installed on Samsung S931B.
+- 2026-05-28 — App icon + native splash shipped. Concept C ("b in a bubble") chosen — orange `#D4694A` bubble (round 3 corners + 22% radius on the bottom-left for the speech-bubble tail), white lowercase `b` glyph extracted directly from the `Logo Blab.svg` wordmark (last letter path) so the icon shares letterforms with the wordmark. White background. Source rendered at 1024×1024 via Chrome headless (`tools/render-icon.html` → `assets/icon/launcher_icon.png`, `tools/render-splash.html` → `assets/splash/blab_splash.png`). Generators wired: `flutter_launcher_icons` 0.14.4 (Android only — adaptive icon foreground = the bubble PNG with 18 px inset, background = white) and `flutter_native_splash` 2.4.6 (Android only — wordmark centered on white, Android 12+ splash uses the same image). iOS skipped — Phase 3. Tech-spec Resolved Decisions #6 (system fonts) and #7 (orange = long-term brand color, purple stays in-app until full guidelines swap) locked. `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds. Install on Samsung S931B pending — phone unplugged at install time.
+- 2026-05-27 — Photo actions cleanup. (a) "Remove photo" now only renders when a photo actually exists. `showPhotoSheet(context, {hasPhoto = false})` gates the third row; `_PhotoActionsCard` on Edit profile takes a matching `hasPhoto` bool — both default to `false` until Phase 2.2 wires real photo state. With no photo, the sheet collapses to two rows (Take / Choose); the inline card on Edit profile does the same. (b) Cancel button removed from the photo sheet — backdrop tap + swipe-down already dismiss; the redundant row was iOS-leftover. Real picker + Supabase Storage upload deferred to Phase 2.2. `flutter analyze` clean, `flutter test` 43/43 green, build + install on Samsung S931B succeeded.
+- 2026-05-27 — Edit-photo discoverability pass. (a) Profile hero avatar (96 px gradient circle on `/profile`) is now tappable — opens the existing `showPhotoSheet` (Take photo / Choose / Remove). Pressed state = scale 0.96 + opacity 0.85, 120 ms easeOut, via the new shared `PressableAvatar` widget at `lib/features/profile/widgets/pressable_avatar.dart`. (b) On Edit profile the photo sheet is gone — three photo actions now live inline directly under the avatar in a settings-card group (white rounded container, header "PROFILE PHOTO" in muted uppercase, three `_PhotoActionRow`s: Take photo / Choose from library / Remove photo (red), divided by hairlines, matching the existing settings-card pattern). Avatar on Edit profile is no longer tappable (purely visual) — actions are right there. Stubbed `_photoAction` shows a 1-second SnackBar per row until a real picker lands. `_PressableAvatar` local class on Edit profile removed (replaced by inline avatar). `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds, installed on Samsung S931B.
+- 2026-05-27 — Profile UX polish. (a) "Change email" promoted to a top-level row in the profile settings card, sitting between "Edit profile" and "Change password" (icon `Icons.alternate_email`); the old `_EmailRow` inside Edit profile was removed. Pattern matches consumer-app convention (WhatsApp/Telegram/Instagram keep credentials under Account, not Edit profile) and surfaces the typo-recovery path (US-039) one tap earlier. (b) Edit-profile avatar lost both the white camera badge and the "Change photo" link; tapping the avatar still opens the existing photo action sheet. New `_PressableAvatar` wrapper provides the only tap-affordance — `AnimatedScale` 1.0 → 0.96 + `AnimatedOpacity` 1.0 → 0.85 on press, 120 ms easeOut both ways. (c) Decision logged not to add a "Forgot email?" link to the login screen — SSO + the in-app Change email flow cover the realistic recovery path (saved to memory `project_email_typo_recovery.md`). `EditProfileScreen` downgraded from `ConsumerStatefulWidget` → `StatefulWidget` since the Riverpod watch was only feeding `_EmailRow`. `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds, installed on Samsung S931B (RFCY20SH9SF) for live verification.
+- 2026-05-25 — Step 1.8 complete. Per-chat learning language is now mutable via a new `learningLanguageProvider` (Riverpod `NotifierProvider.family`) in `lib/features/chat/state/chat_state.dart` — seeded from `kMockChats` (Aswin → Tamil, María → Spanish, Lukas → German), falls back to English for unknown ids. New bottom sheet `lib/features/chat/widgets/learning_language_sheet.dart` mirrors the interface-language picker (20 px rounded-top, drag-handle pill, flag + name rows, brand-purple check on current) and adds a pinned brand-purple "Done" button at the bottom; tap a row returns the picked language, Done / backdrop / drag return null. Chat header subtitle replaces the old "● Online" line with a single row holding name + online dot + a 12 px muted "Learning <Name> <flag>" subtitle that reacts to the provider. The ··· dropdown row "Learning language" now shows the current language name on the right in muted gray (auto-width, no wrap — FR-19) and opens the sheet; selecting a language updates header + menu label immediately. `flutter analyze` clean, `flutter test` 26/26 green (new `test/learning_language_test.dart`: provider seeding/fallback/set-isolation + widget test driving the full menu→sheet→pick flow + Done-cancels-noop), `flutter build apk --debug` succeeds.

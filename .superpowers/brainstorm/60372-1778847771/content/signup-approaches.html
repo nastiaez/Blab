@@ -1,0 +1,69 @@
+<h2>Sign Up — 3 Approaches</h2>
+<p class="subtitle">How should we simplify the cluttered sign-up screen? Pick one direction.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb; padding:16px; border-radius:8px; font-family:-apple-system,sans-serif;">
+      <!-- Step indicator -->
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;">
+        <div style="width:28px;height:5px;border-radius:3px;background:#5B4FE8;"></div>
+        <div style="width:28px;height:5px;border-radius:3px;background:#ddd;"></div>
+        <div style="width:28px;height:5px;border-radius:3px;background:#ddd;"></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:10px;">Step 1 of 3 — Create account</div>
+      <div style="background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;color:#aaa;margin-bottom:6px;">Your name</div>
+      <div style="background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;color:#aaa;margin-bottom:6px;">Email</div>
+      <div style="background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;color:#aaa;margin-bottom:10px;">Password</div>
+      <div style="background:#5B4FE8;color:white;border-radius:8px;padding:8px;font-size:12px;font-weight:700;text-align:center;">Continue →</div>
+      <div style="font-size:10px;color:#aaa;text-align:center;margin-top:8px;">Then: pick language · done</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Multi-step wizard</h3>
+      <p>Split into 3 short steps: credentials → interface language → done. Each screen has 1 job. Less overwhelming, easier to fill out.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb; padding:16px; border-radius:8px; font-family:-apple-system,sans-serif;">
+      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px;">Sign in with</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div style="flex:1;background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px;font-size:11px;text-align:center;">🍎 Apple</div>
+        <div style="flex:1;background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px;font-size:11px;text-align:center;">G Google</div>
+      </div>
+      <div style="font-size:10px;color:#aaa;text-align:center;margin-bottom:10px;">— or email —</div>
+      <div style="background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;color:#aaa;margin-bottom:6px;">Email</div>
+      <div style="background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;color:#aaa;margin-bottom:10px;">Password</div>
+      <div style="background:#5B4FE8;color:white;border-radius:8px;padding:8px;font-size:12px;font-weight:700;text-align:center;">Continue →</div>
+      <div style="font-size:10px;color:#aaa;text-align:center;margin-top:8px;">Language picked after account created</div>
+    </div>
+    <div class="card-body">
+      <h3>B — Social login first</h3>
+      <p>Apple / Google sign-in removes name + password entirely. Language setup happens after. Fastest path to the app — especially on mobile.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb; padding:16px; border-radius:8px; font-family:-apple-system,sans-serif;">
+      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:10px;">What's your app language?</div>
+      <div style="background:white;border:1.5px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;color:#aaa;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span>🔍 Search languages…</span><span style="color:#5B4FE8;">▾</span>
+      </div>
+      <div style="font-size:10px;color:#aaa;margin-bottom:6px;">Popular</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;">
+        <span style="background:#5B4FE8;color:white;padding:4px 8px;border-radius:20px;font-size:10px;">🇬🇧 English</span>
+        <span style="background:white;border:1px solid #ddd;padding:4px 8px;border-radius:20px;font-size:10px;">🇺🇦 Ukrainian</span>
+        <span style="background:white;border:1px solid #ddd;padding:4px 8px;border-radius:20px;font-size:10px;">🇪🇸 Spanish</span>
+        <span style="background:white;border:1px solid #ddd;padding:4px 8px;border-radius:20px;font-size:10px;">🇫🇷 French</span>
+        <span style="background:white;border:1px solid #ddd;padding:4px 8px;border-radius:20px;font-size:10px;">+90 more</span>
+      </div>
+      <div style="background:#5B4FE8;color:white;border-radius:8px;padding:8px;font-size:12px;font-weight:700;text-align:center;">Continue →</div>
+      <div style="font-size:10px;color:#aaa;text-align:center;margin-top:8px;">Then: email/password · done</div>
+    </div>
+    <div class="card-body">
+      <h3>C — Language first</h3>
+      <p>Pick your language before creating an account. Immediate personalisation — the app feels tailored from second one. Search covers all languages. Credentials come after.</p>
+    </div>
+  </div>
+
+</div>

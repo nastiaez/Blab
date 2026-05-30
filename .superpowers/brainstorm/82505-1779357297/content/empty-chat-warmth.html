@@ -1,0 +1,95 @@
+<h2>Hint card — copy + layout options</h2>
+<p class="subtitle">Same B layout. Varying warmth, accuracy, and focus. No mechanics overexplained.</p>
+
+<div class="cards">
+
+  <!-- A: Person-first, flag, minimal copy -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:300px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <div style="flex:1;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+        <div style="font-size:11px;color:#bbb;text-align:center;">Chat started · Today</div>
+        <div style="background:#f7f7fb;border-radius:16px;padding:18px 16px;width:100%;text-align:center;">
+          <!-- Nastia's avatar large -->
+          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;margin:0 auto 10px;">N</div>
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">You and Nastia are connected 🎉</div>
+          <div style="font-size:12px;color:#888;line-height:1.5;">Learning Ukrainian together.<br>Say hi to get started!</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Message…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Person-first, no mechanics</h3>
+      <p>Big avatar, name prominent. "You and Nastia are connected 🎉" — celebrates the moment. "Learning Ukrainian together" — honest (both are learning). Zero explanation of how translations work. Trust the product to show itself.</p>
+    </div>
+  </div>
+
+  <!-- B: Conversational, one-liner mechanic -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:300px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <div style="flex:1;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+        <div style="font-size:11px;color:#bbb;text-align:center;">Chat started · Today</div>
+        <div style="background:#f7f7fb;border-radius:16px;padding:16px;width:100%;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;flex-shrink:0;">N</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#111;">Nastia · 🇺🇦 Ukrainian</div>
+              <div style="font-size:11px;color:#888;">Your language partner</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#555;line-height:1.6;border-top:1px solid #eee;padding-top:10px;">Write in any language — messages are translated so you both always understand each other.</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Message…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Mini profile card + one honest line</h3>
+      <p>Shows Nastia as "your language partner" with her language. One accurate line: "Write in any language — messages are translated so you both always understand each other." No wrong assumptions about who writes what.</p>
+    </div>
+  </div>
+
+  <!-- C: Just the flag + invitation, no explanation -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:300px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5B4FE8,#a78bfa);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;">N</div>
+        <span style="font-size:15px;font-weight:600;color:#111;">Nastia</span>
+      </div>
+      <div style="flex:1;padding:16px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-size:11px;color:#bbb;text-align:center;">Chat started · Today</div>
+        <!-- Flag big, text minimal -->
+        <div style="text-align:center;">
+          <div style="font-size:44px;margin-bottom:8px;">🇺🇦</div>
+          <div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">Start your Ukrainian journey</div>
+          <div style="font-size:12px;color:#aaa;">with Nastia</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-top:1px solid #f0f0f0;display:flex;gap:8px;align-items:center;">
+        <div style="flex:1;background:#f2f2f7;border-radius:20px;padding:9px 14px;font-size:12px;color:#aaa;">Message…</div>
+        <div style="width:32px;height:32px;background:#5B4FE8;border-radius:50%;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Flag + mission statement, no mechanics at all</h3>
+      <p>"Start your Ukrainian journey with Nastia." Emotional, aspirational. Duolingo energy. Zero explanation of how the product works — that emerges naturally from first message. Very clean, very focused on motivation.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;">All 3 disappear once first message is sent. None say "Nastia will write in Ukrainian" — she can write however she wants.</p>

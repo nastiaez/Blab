@@ -1,0 +1,120 @@
+<h2>Login + App lock — two flows</h2>
+<p class="subtitle">Login = one-time on new device. App lock = optional privacy screen on every reopen.</p>
+
+<div class="cards">
+
+  <!-- FLOW A: No app lock (default) -->
+  <div class="card" data-choice="no-lock" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;padding:12px;display:flex;gap:8px;">
+
+      <!-- Sign up screen -->
+      <div style="flex:1;background:white;border-radius:10px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <div style="width:20px;height:20px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;">💬</div>
+          <span style="font-size:11px;font-weight:800;color:#111;">Parlo</span>
+          <span style="margin-left:auto;font-size:8px;background:#f5f5f5;padding:2px 5px;border-radius:8px;color:#555;">🌐 EN</span>
+        </div>
+        <div style="font-size:8px;font-weight:700;color:#111;margin-bottom:6px;">Create account</div>
+        <div style="background:#f5f5f5;border-radius:5px;padding:3px 6px;font-size:7px;color:#888;margin-bottom:3px;">Your name</div>
+        <div style="background:#f5f5f5;border-radius:5px;padding:3px 6px;font-size:7px;color:#888;margin-bottom:3px;">Email</div>
+        <div style="background:#f5f5f5;border-radius:5px;padding:3px 6px;font-size:7px;color:#888;margin-bottom:8px;">Password</div>
+        <div style="background:#5B4FE8;border-radius:6px;padding:4px;text-align:center;font-size:7px;color:white;font-weight:700;">Continue →</div>
+        <div style="text-align:center;font-size:7px;color:#5B4FE8;margin-top:5px;">Already have an account? Sign in</div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;align-items:center;font-size:14px;color:#ccc;">→</div>
+
+      <!-- Login screen -->
+      <div style="flex:1;background:white;border-radius:10px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <div style="width:20px;height:20px;background:linear-gradient(135deg,#5B4FE8,#a78bfa);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;">💬</div>
+          <span style="font-size:11px;font-weight:800;color:#111;">Parlo</span>
+        </div>
+        <div style="font-size:8px;font-weight:700;color:#111;margin-bottom:1px;">Welcome back 👋</div>
+        <div style="font-size:6px;color:#888;margin-bottom:8px;">Sign in to continue</div>
+        <div style="border:1px solid #eee;border-radius:6px;padding:4px 6px;font-size:7px;color:#555;font-weight:600;display:flex;align-items:center;gap:3px;margin-bottom:3px;"><span>🍎</span> Continue with Apple</div>
+        <div style="border:1px solid #eee;border-radius:6px;padding:4px 6px;font-size:7px;color:#555;font-weight:600;display:flex;align-items:center;gap:3px;margin-bottom:7px;"><span style="font-size:8px;">G</span> Continue with Google</div>
+        <div style="font-size:6px;color:#aaa;text-align:center;margin-bottom:6px;">— or —</div>
+        <div style="background:#f5f5f5;border-radius:5px;padding:3px 6px;font-size:7px;color:#888;margin-bottom:3px;">Email</div>
+        <div style="background:#f5f5f5;border-radius:5px;padding:3px 6px;font-size:7px;color:#888;margin-bottom:8px;">Password</div>
+        <div style="background:#5B4FE8;border-radius:6px;padding:4px;text-align:center;font-size:7px;color:white;font-weight:700;">Sign in →</div>
+      </div>
+
+      <!-- Arrow to chats -->
+      <div style="display:flex;align-items:center;font-size:14px;color:#ccc;">→</div>
+
+      <!-- Chats (no lock) -->
+      <div style="flex:1;background:white;border-radius:10px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:#111;margin-bottom:8px;">Chats</div>
+        <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid #f5f5f5;">
+          <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:7px;font-weight:700;">A</div>
+          <div style="flex:1;"><div style="font-size:7px;font-weight:600;color:#111;">Aswin</div><div style="font-size:6px;color:#888;">காலை! 👋</div></div>
+        </div>
+        <div style="font-size:6px;color:#aaa;text-align:center;margin-top:20px;">Opens directly<br>every time</div>
+        <div style="font-size:9px;text-align:center;margin-top:8px;">✅</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — No app lock (default)</h3>
+      <p>Signup has name + email + password. Login mirrors it: email + password only (+ Apple/Google). App opens straight to chats every time. Simple, zero friction. Most chat apps work this way.</p>
+    </div>
+  </div>
+
+  <!-- FLOW B: With app lock enabled -->
+  <div class="card" data-choice="with-lock" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;padding:12px;display:flex;gap:6px;">
+
+      <!-- Settings toggle -->
+      <div style="flex:1;background:white;border-radius:10px;padding:10px;">
+        <div style="font-size:8px;font-weight:700;color:#111;margin-bottom:8px;">Profile › Privacy</div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:8px;margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:7px;font-weight:600;color:#111;">App lock</div>
+              <div style="font-size:6px;color:#888;margin-top:1px;">Face ID on reopen</div>
+            </div>
+            <!-- toggle ON -->
+            <div style="width:22px;height:12px;background:#34C759;border-radius:6px;position:relative;">
+              <div style="position:absolute;right:2px;top:2px;width:8px;height:8px;background:white;border-radius:50%;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:6px;color:#aaa;padding:0 2px;">Lock after: <span style="color:#5B4FE8;font-weight:600;">1 minute ›</span></div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;align-items:center;font-size:12px;color:#ccc;">→</div>
+
+      <!-- App lock screen -->
+      <div style="flex:1.2;background:#1a1a2e;border-radius:10px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+        <div style="font-size:24px;margin-bottom:6px;">🔒</div>
+        <div style="font-size:9px;font-weight:700;color:white;margin-bottom:3px;">Parlo</div>
+        <div style="font-size:7px;color:rgba(255,255,255,0.5);margin-bottom:14px;">Locked for privacy</div>
+        <div style="background:rgba(255,255,255,0.1);border-radius:16px;padding:5px 12px;font-size:7px;color:white;font-weight:600;margin-bottom:6px;">👆 Use Touch ID</div>
+        <div style="font-size:6px;color:#5B4FE8;cursor:pointer;">Use password</div>
+      </div>
+
+      <!-- Arrow to chats -->
+      <div style="display:flex;align-items:center;font-size:12px;color:#ccc;">→</div>
+
+      <!-- Chats after unlock -->
+      <div style="flex:1;background:white;border-radius:10px;padding:10px;">
+        <div style="font-size:10px;font-weight:700;color:#111;margin-bottom:8px;">Chats</div>
+        <div style="display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid #f5f5f5;">
+          <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:7px;font-weight:700;">A</div>
+          <div style="flex:1;"><div style="font-size:7px;font-weight:600;color:#111;">Aswin</div><div style="font-size:6px;color:#888;">காலை! 👋</div></div>
+        </div>
+        <div style="font-size:6px;color:#aaa;text-align:center;margin-top:16px;">Unlocked after<br>biometric ✓</div>
+      </div>
+
+    </div>
+    <div class="card-body">
+      <h3>B — With app lock (opt-in)</h3>
+      <p>User enables "App lock" in Profile › Privacy. After 1 min in background, shows a lock screen (dark, minimal) with biometric prompt auto-triggering. Touch ID / Face ID, with password fallback. Same login as A — biometric is never part of login.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;">Both flows share the same login screen — only difference from signup is no name field. Biometrics only appear in Flow B, on <em>every reopen</em> once enabled.</p>

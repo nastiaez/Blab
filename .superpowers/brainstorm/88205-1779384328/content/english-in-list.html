@@ -1,0 +1,115 @@
+<h2>English in the language picker</h2>
+<p class="subtitle">Interface language = English. How should English appear in "What do you want to learn?"</p>
+
+<div class="cards">
+
+  <!-- A: Plain alphabetical, no special treatment -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <div style="background:white;padding:14px 16px 10px;">
+        <div style="font-size:16px;font-weight:800;color:#111;">What do you want to learn?</div>
+      </div>
+      <div style="padding:8px 12px;background:#f7f7fb;">
+        <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:7px 12px;display:flex;align-items:center;gap:7px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span style="font-size:12px;color:#aaa;">Search languages…</span>
+        </div>
+      </div>
+      <div style="background:white;">
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇳🇱</span><span style="font-size:14px;color:#111;flex:1;">Dutch</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇬🇧</span><span style="font-size:14px;color:#111;flex:1;">English</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇫🇷</span><span style="font-size:14px;color:#111;flex:1;">French</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇩🇪</span><span style="font-size:14px;color:#111;flex:1;">German</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;gap:12px;color:#aaa;font-size:12px;justify-content:center;">↓ more</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Plain alphabetical, no badge</h3>
+      <p>English sits between Dutch and French. No special treatment. Users self-select. Tandem / HelloTalk approach. Simplest. Works for both English and non-English interface users equally.</p>
+    </div>
+  </div>
+
+  <!-- B: English grayed out with tooltip when interface = English -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <div style="background:white;padding:14px 16px 10px;">
+        <div style="font-size:16px;font-weight:800;color:#111;">What do you want to learn?</div>
+      </div>
+      <div style="padding:8px 12px;background:#f7f7fb;">
+        <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:7px 12px;display:flex;align-items:center;gap:7px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span style="font-size:12px;color:#aaa;">Search languages…</span>
+        </div>
+      </div>
+      <div style="background:white;">
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇳🇱</span><span style="font-size:14px;color:#111;flex:1;">Dutch</span>
+        </div>
+        <!-- English grayed out -->
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;opacity:0.4;">
+          <span style="font-size:17px;">🇬🇧</span>
+          <div style="flex:1;">
+            <div style="font-size:14px;color:#111;">English</div>
+            <div style="font-size:11px;color:#888;">Same as your interface language</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇫🇷</span><span style="font-size:14px;color:#111;flex:1;">French</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇩🇪</span><span style="font-size:14px;color:#111;flex:1;">German</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;gap:12px;color:#aaa;font-size:12px;justify-content:center;">↓ more</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — English grayed out + hint when interface = English</h3>
+      <p>English stays in list but dimmed, not selectable. Shows "Same as your interface language." Duolingo-inspired. Honest — explains why. Changes dynamically: if user switches interface to Ukrainian, English becomes fully active.</p>
+    </div>
+  </div>
+
+  <!-- C: English hidden when interface = English -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;">
+      <div style="background:white;padding:14px 16px 10px;">
+        <div style="font-size:16px;font-weight:800;color:#111;">What do you want to learn?</div>
+      </div>
+      <div style="padding:8px 12px;background:#f7f7fb;">
+        <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:7px 12px;display:flex;align-items:center;gap:7px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span style="font-size:12px;color:#aaa;">Search languages…</span>
+        </div>
+      </div>
+      <div style="background:white;">
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇳🇱</span><span style="font-size:14px;color:#111;flex:1;">Dutch</span>
+        </div>
+        <!-- English not in list — jumps to French -->
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇫🇷</span><span style="font-size:14px;color:#111;flex:1;">French</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇩🇪</span><span style="font-size:14px;color:#111;flex:1;">German</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid #f5f5f5;gap:12px;">
+          <span style="font-size:17px;">🇮🇳</span><span style="font-size:14px;color:#111;flex:1;">Hindi</span>
+        </div>
+        <div style="display:flex;align-items:center;padding:11px 16px;gap:12px;color:#aaa;font-size:12px;justify-content:center;">↓ more</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — English hidden when interface = English</h3>
+      <p>Cleanest list for English interface users. English simply not shown. If user switches interface to Ukrainian, English appears. Duolingo's exact approach. Small complexity: prototype needs to track interface lang state to filter.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;">All 3: English = 🇬🇧 flag. A works for prototype today with zero logic. B/C need dynamic filtering based on interface language.</p>

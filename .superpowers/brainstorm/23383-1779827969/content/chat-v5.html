@@ -1,0 +1,209 @@
+<h2>Chat v5 — tweaks applied + speaker icon brainstorm</h2>
+<p class="subtitle">All 4 fixes in the chat. Below: 5 speaker icon options to replace 🔊 — same popup, swap one detail. Pick one.</p>
+
+<style>
+  .phone-wrap { display: flex; justify-content: center; padding: 24px; background: #E5E0D3; border-radius: 16px; }
+  .phone {
+    width: 360px;
+    background: #EFEBE2;
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    color: #2C2C2C;
+    position: relative;
+  }
+  .status-bar { height: 28px; background: #EFEBE2; }
+  .nav-header {
+    background: #EFEBE2;
+    padding: 12px 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(154, 148, 144, 0.18);
+  }
+  .nav-back { font-size: 28px; color: #D4694A; font-weight: 300; line-height: 1; padding: 0 4px; }
+  .nav-avatar {
+    width: 36px; height: 36px;
+    background: #D4694A; color: #EFEBE2;
+    border-radius: 50% 50% 50% 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0;
+  }
+  .nav-title { font-weight: 600; font-size: 17px; line-height: 1.2; text-align: left; flex: 1; }
+  .nav-icons { font-size: 22px; color: #9A9490; padding: 0 4px; }
+  .chat-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 320px; position: relative; }
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; text-align: left; }
+  .bubble-in { background: #D6E2E7; color: #2C2C2C; border-bottom-left-radius: 4px; align-self: flex-start; position: relative; }
+  .bubble-out { background: #D4694A; color: #FFFFFF; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .translation { font-size: 12px; color: #9A9490; margin-top: 4px; line-height: 1.3; text-align: left; }
+  .translation-out { color: #FFE3D9; }
+  .tap-state { background: #F4D5C5; padding: 0 4px; border-radius: 4px; box-shadow: 0 0 0 2px #D4694A; }
+  .timestamp { font-size: 11px; color: #9A9490; align-self: center; margin: 4px 0; }
+  .composer { background: #FFFFFF; padding: 10px 14px; margin: 8px 12px 14px; border-radius: 24px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .composer-input { flex: 1; font-size: 14px; color: #9A9490; text-align: left; }
+  .composer-send { width: 32px; height: 32px; background: #D4694A; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; }
+  .home-indicator { height: 16px; display: flex; justify-content: center; align-items: center; }
+  .home-indicator::after { content: ''; width: 120px; height: 4px; background: #2C2C2C; border-radius: 2px; }
+
+  .word-popup {
+    position: absolute;
+    background: #FFFFFF;
+    padding: 12px 14px;
+    border-radius: 14px;
+    width: 200px;
+    box-shadow: 0 8px 20px rgba(31, 51, 64, 0.18), 0 1px 4px rgba(31, 51, 64, 0.08);
+    text-align: left;
+    z-index: 10;
+  }
+  .word-popup::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 28px;
+    width: 12px; height: 12px;
+    background: #FFFFFF;
+    transform: rotate(45deg);
+    box-shadow: -1px -1px 2px rgba(31, 51, 64, 0.06);
+  }
+  .word-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wp-word { font-size: 18px; font-weight: 600; color: #2C2C2C; }
+  .wp-speaker { color: #D4694A; cursor: pointer; display: flex; align-items: center; }
+  .wp-translit { font-size: 13px; color: #9A9490; margin-top: 4px; }
+  .wp-meaning { font-size: 15px; color: #2C2C2C; margin-top: 8px; }
+
+  .icon-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .icon-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 16px;
+    flex: 1;
+    min-width: 150px;
+    text-align: center;
+    border: 2px solid transparent;
+    cursor: pointer;
+  }
+  .icon-card:hover { border-color: #D4694A; }
+  .icon-card .ico-display {
+    background: #F4D5C5;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px;
+  }
+  .icon-card .ico-label { font-weight: 600; font-size: 14px; color: #2C2C2C; }
+  .icon-card .ico-desc { font-size: 12px; color: #666; margin-top: 4px; line-height: 1.3; }
+</style>
+
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar"></div>
+    <div class="nav-header">
+      <div class="nav-back">‹</div>
+      <div class="nav-avatar">A</div>
+      <div class="nav-title">Aswin</div>
+      <div class="nav-icons">⋯</div>
+    </div>
+    <div class="chat-body">
+      <div class="timestamp">Today, 14:32</div>
+      <div class="bubble bubble-in">
+        வணக்கம் நாஸ்தியா! எப்படி இருக்கீங்க?
+        <div class="translation">Hello Nastia! How are you?</div>
+      </div>
+      <div class="bubble bubble-out">
+        Я добре, дякую! А ти?
+        <div class="translation translation-out">I'm good, thanks! And you?</div>
+      </div>
+      <div class="bubble bubble-in">
+        நான் <span class="tap-state">கப்பி</span> குடிக்கிறேன் ☕
+        <div class="translation">I'm drinking coffee ☕</div>
+        <div class="word-popup" style="top:38px; left:38px;">
+          <div class="word-row">
+            <div class="wp-word">கப்பி</div>
+            <div class="wp-speaker">
+              <!-- Lucide-style speaker (A) -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4694A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+            </div>
+          </div>
+          <div class="wp-translit">kāppi</div>
+          <div class="wp-meaning">coffee</div>
+        </div>
+      </div>
+    </div>
+    <div class="composer">
+      <div class="composer-input">Type in Ukrainian…</div>
+      <div class="composer-send">↑</div>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">Chat tweaks applied</span>
+  <ul>
+    <li>Popup: divider line removed between transliteration and meaning</li>
+    <li>Bubbles + translations: explicit <code>text-align: left</code></li>
+    <li>Input field: <code>text-align: left</code></li>
+    <li>Header: Aswin only, no Tamil/Ukrainian subtitle — language info now lives in the exchange-card on the chats list (we'll get there)</li>
+  </ul>
+</div>
+
+<h2 style="margin-top:32px;">Speaker icon — pick one</h2>
+<p class="subtitle">Each shown as it would appear in the popup. Same size, same color (terracotta). Yes — pick one and we replace every instance everywhere.</p>
+
+<div class="icon-row">
+
+  <div class="icon-card" data-choice="ico-lucide" onclick="toggleSelect(this)">
+    <div class="ico-display">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4694A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+    </div>
+    <div class="ico-label">A · Speaker + waves</div>
+    <div class="ico-desc">Classic. Universally legible. Lucide-style line icon.</div>
+  </div>
+
+  <div class="icon-card" data-choice="ico-waves" onclick="toggleSelect(this)">
+    <div class="ico-display">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4694A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 0 8"/><path d="M11 5a10 10 0 0 1 0 14"/><path d="M16 2a14 14 0 0 1 0 20"/></svg>
+    </div>
+    <div class="ico-label">B · Waves only</div>
+    <div class="ico-desc">Just the sound arcs. Quietest, most modern. Less literal.</div>
+  </div>
+
+  <div class="icon-card" data-choice="ico-play" onclick="toggleSelect(this)">
+    <div class="ico-display">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="none" stroke="#D4694A" stroke-width="2"/><polygon points="13,11 22,16 13,21" fill="#D4694A"/></svg>
+    </div>
+    <div class="ico-label">C · Play in circle</div>
+    <div class="ico-desc">Triangle in circle = universally "play this." Reads as a button.</div>
+  </div>
+
+  <div class="icon-card" data-choice="ico-mouth" onclick="toggleSelect(this)">
+    <div class="ico-display">
+      <svg width="32" height="28" viewBox="0 0 32 28" fill="none"><path d="M4 14 Q 16 4, 28 14 Q 16 24, 4 14 Z" fill="none" stroke="#D4694A" stroke-width="2" stroke-linejoin="round"/><circle cx="16" cy="14" r="3" fill="#D4694A"/></svg>
+    </div>
+    <div class="ico-label">D · "Say it" — mouth</div>
+    <div class="ico-desc">Lips shape. On-brand for a talk-app. More personality, less convention.</div>
+  </div>
+
+  <div class="icon-card" data-choice="ico-text-say" onclick="toggleSelect(this)">
+    <div class="ico-display" style="background:transparent; padding:0;">
+      <div style="font-family:-apple-system,sans-serif;font-weight:700;color:#D4694A;font-size:14px;border:1.5px solid #D4694A;padding:4px 10px;border-radius:999px;">say it</div>
+    </div>
+    <div class="ico-label">E · Text pill</div>
+    <div class="ico-desc">No icon — just "say it" in a pill. Most on-brand voice. Risks pushing the popup wider.</div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">My read</span>
+  <p><b>A (speaker + waves)</b> is the safest — every user already knows it means "audio." <b>B (waves only)</b> is the quietest and most modern — pairs best with the quiet-bold register. <b>D (mouth)</b> is the most ownable and on-brand for a <i>talk</i> app — risk is it's less instantly recognizable. <b>E (text pill)</b> is the most on-brand voice but takes more space.</p>
+</div>
+
+<div class="section" style="margin-top:8px;">
+  <span class="label">Note on "replace everywhere"</span>
+  <p>Yes — once locked, this icon becomes the only audio glyph in the app. Same SVG in the popup, message bubble (FR-13), profile pronunciation samples, anywhere TTS is offered. One source of truth — change once, change everywhere.</p>
+</div>

@@ -1,0 +1,160 @@
+<h2>Same warm base — four levels of "fun"</h2>
+<p class="subtitle">Cream + ink base stays. Accent changes. Each version shown as a real chat snippet so you can <i>feel</i> the energy, not just the swatch.</p>
+
+<style>
+  .mini-phone {
+    width: 100%;
+    background: #F4EFE6;
+    border-radius: 24px;
+    padding: 20px 16px;
+    font-family: -apple-system, system-ui, sans-serif;
+    color: #1A1814;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 240px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .bubble-in {
+    background: #FFFFFF;
+    padding: 10px 14px;
+    border-radius: 18px 18px 18px 4px;
+    max-width: 75%;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .bubble-out {
+    padding: 10px 14px;
+    border-radius: 18px 18px 4px 18px;
+    max-width: 75%;
+    font-size: 14px;
+    align-self: flex-end;
+    color: #1A1814;
+  }
+  .word-tap {
+    background: #FFE082;
+    padding: 0 3px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .mini-btn {
+    color: #FFF;
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    align-self: flex-start;
+    margin-top: auto;
+  }
+  .swatch-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .sw {
+    flex: 1;
+    height: 24px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+</style>
+
+<div class="cards">
+
+  <!-- A1: original -->
+  <div class="card" data-choice="a1-original" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan kaapi venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#C2410C;color:#FFF;">Got it. Saying it back?</div>
+        <div class="mini-btn" style="background:#C2410C;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#C2410C;">burnt</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A1 · Original</h3>
+      <p>Burnt orange. Editorial, serious. Closest to Aesop / On Running. Beautiful but maybe too quiet for chat.</p>
+    </div>
+  </div>
+
+  <!-- A2: coral -->
+  <div class="card" data-choice="a2-coral" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan kaapi venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#FF6B5B;color:#FFF;">Got it. Saying it back?</div>
+        <div class="mini-btn" style="background:#FF6B5B;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#FF6B5B;">coral</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A2 · Warmer coral</h3>
+      <p>Same warmth, more sociable. Coral has more "hello" in it than burnt orange. Friendlier. Still one accent.</p>
+    </div>
+  </div>
+
+  <!-- A3: duo accent -->
+  <div class="card" data-choice="a3-duo" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan <span class="word-tap">kaapi</span> venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#FF6B5B;color:#FFF;">Got it. Saying it back?</div>
+        <div class="mini-btn" style="background:#1A1814;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#FF6B5B;">coral</div>
+        <div class="sw" style="background:#FFE082;color:#1A1814;">honey</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A3 · Duo accent (coral + honey)</h3>
+      <p>Coral for action, honey-yellow for tappable words and highlights. Two accents = more play, still calm. Word-tap moments feel like little stickers.</p>
+    </div>
+  </div>
+
+  <!-- A4: surprise pop -->
+  <div class="card" data-choice="a4-pop" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan <span class="word-tap" style="background:#D6FF3D;">kaapi</span> venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#1A1814;color:#D6FF3D;">Got it. Saying it back?</div>
+        <div class="mini-btn" style="background:#D6FF3D;color:#1A1814;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#D6FF3D;color:#1A1814;">zest</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A4 · Surprise pop (lime-yellow)</h3>
+      <p>Cream + ink + one shocking electric yellow-green. Quietest base, boldest accent. Hardest to confuse with any other app. Most "now" energy.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">My read</span>
+  <p><b>A3 (duo)</b> is the sweet spot for "warm + fun" — coral does friendliness, honey-yellow makes word-tap moments feel like discovery. <b>A4 (pop)</b> is the most distinctive but might fight the "quiet" half of quiet-bold. <b>A2 (coral)</b> if you want to stay closest to the original A. <b>A1</b> if you want maximum restraint.</p>
+  <p>Click one. Or tell me which two are closest and we'll mash.</p>
+</div>

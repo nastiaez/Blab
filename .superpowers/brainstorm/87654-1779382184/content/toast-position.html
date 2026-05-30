@@ -1,0 +1,98 @@
+<h2>Password updated — toast design</h2>
+<p class="subtitle">Where should the confirmation appear? Does it need a close button?</p>
+
+<div class="cards">
+
+  <!-- A: Top banner, no close -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:320px;">
+      <!-- Nav -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:white;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <span style="font-size:15px;font-weight:600;color:#111;flex:1;">Profile</span>
+      </div>
+      <!-- Toast at top — full-width banner -->
+      <div style="background:#34C759;padding:11px 16px;display:flex;align-items:center;gap:8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span style="font-size:13px;font-weight:600;color:white;">Password updated</span>
+      </div>
+      <!-- Profile content -->
+      <div style="padding:16px;display:flex;flex-direction:column;gap:6px;">
+        <div style="background:white;border-radius:12px;overflow:hidden;">
+          <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Edit profile ›</div>
+          <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Change password ›</div>
+          <div style="padding:13px 16px;font-size:14px;color:#FF3B30;">Log out</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Top banner, no close</h3>
+      <p>Full-width green banner directly below nav header. Hard to miss. Auto-disappears after 2s. No close button — it's brief enough that dismissal isn't needed. Feels like a system notification.</p>
+    </div>
+  </div>
+
+  <!-- B: Top pill with close -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:320px;">
+      <!-- Nav -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:white;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <span style="font-size:15px;font-weight:600;color:#111;flex:1;">Profile</span>
+      </div>
+      <!-- Toast pill top with close -->
+      <div style="padding:8px 12px;">
+        <div style="background:#34C759;border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="font-size:13px;font-weight:600;color:white;flex:1;">Password updated</span>
+          <span style="font-size:17px;color:rgba(255,255,255,0.8);cursor:pointer;line-height:1;">×</span>
+        </div>
+      </div>
+      <!-- Profile content -->
+      <div style="padding:4px 16px;display:flex;flex-direction:column;gap:6px;">
+        <div style="background:white;border-radius:12px;overflow:hidden;">
+          <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Edit profile ›</div>
+          <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Change password ›</div>
+          <div style="padding:13px 16px;font-size:14px;color:#FF3B30;">Log out</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Top pill + close ×</h3>
+      <p>Rounded pill just below nav, stays in content area. Close × for users who want instant dismiss. Auto-disappears after 3s. More app-like. Takes a bit of space from content.</p>
+    </div>
+  </div>
+
+  <!-- C: Bottom pill — current behaviour, kept for reference -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="font-family:-apple-system,sans-serif;background:#f7f7fb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-height:320px;position:relative;">
+      <!-- Nav -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:white;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:18px;color:#5B4FE8;">‹</span>
+        <span style="font-size:15px;font-weight:600;color:#111;flex:1;">Profile</span>
+      </div>
+      <!-- Profile content -->
+      <div style="padding:16px;display:flex;flex-direction:column;gap:6px;flex:1;">
+        <div style="background:white;border-radius:12px;overflow:hidden;">
+          <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Edit profile ›</div>
+          <div style="padding:13px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;color:#111;">Change password ›</div>
+          <div style="padding:13px 16px;font-size:14px;color:#FF3B30;">Log out</div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div style="display:flex;border-top:1px solid #eee;background:white;padding:8px 0 12px;">
+        <div style="flex:1;text-align:center;font-size:11px;color:#888;">💬 Chats</div>
+        <div style="flex:1;text-align:center;font-size:11px;color:#5B4FE8;font-weight:600;">👤 Profile</div>
+      </div>
+      <!-- Bottom pill toast floating above tab bar -->
+      <div style="position:absolute;bottom:52px;left:0;right:0;text-align:center;">
+        <span style="background:#34C759;color:white;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;display:inline-block;">Password updated ✓</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Bottom pill (current)</h3>
+      <p>Current implementation. Floats above tab bar. Easy to miss if user's eye is on the content area after navigation. No close button. Auto-fades in 2s.</p>
+    </div>
+  </div>
+
+</div>
+<p class="subtitle" style="margin-top:16px;">All options auto-disappear. A and B are more visible — eye naturally goes to top after back-navigation. C risks being overlooked.</p>

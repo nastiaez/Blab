@@ -1,0 +1,146 @@
+<h2>Warm base, cool accent — three options</h2>
+<p class="subtitle">Cream stays — that's Blab's distinctive world. Accent shifts cool so it doesn't tire your eyes. Each shown in the same chat snippet for fair comparison.</p>
+
+<style>
+  .mini-phone {
+    width: 100%;
+    background: #F4EFE6;
+    border-radius: 24px;
+    padding: 20px 16px;
+    font-family: -apple-system, system-ui, sans-serif;
+    color: #1A1814;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 280px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .bubble-in {
+    background: #FFFFFF;
+    padding: 10px 14px;
+    border-radius: 18px 18px 18px 4px;
+    max-width: 75%;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .bubble-out {
+    padding: 10px 14px;
+    border-radius: 18px 18px 4px 18px;
+    max-width: 75%;
+    font-size: 14px;
+    align-self: flex-end;
+    color: #FFF;
+  }
+  .word-tap {
+    padding: 0 3px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .mini-btn {
+    color: #FFF;
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    align-self: flex-start;
+    margin-top: auto;
+  }
+  .swatch-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .sw {
+    flex: 1;
+    height: 24px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+</style>
+
+<div class="cards">
+
+  <!-- A5: dusty blue (postcard) -->
+  <div class="card" data-choice="a5-dusty" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan <span class="word-tap" style="background:#FFE3B0;color:#1A1814;">kaapi</span> venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#5D7FA3;">Got it. Saying it back?</div>
+        <div class="bubble-out" style="background:#5D7FA3;">Tap any word for meaning.</div>
+        <div class="mini-btn" style="background:#5D7FA3;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#5D7FA3;">dusty blue</div>
+        <div class="sw" style="background:#FFE3B0;color:#1A1814;">honey</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A5 · Dusty postcard blue</h3>
+      <p>Warm sand + dusty sky blue. Travel-evoking. Calm but human. Honey tint for word-tap discovery — never aggressive.</p>
+      <p><b>Vibe:</b> letters home, partner-from-elsewhere story.</p>
+    </div>
+  </div>
+
+  <!-- A6: sage teal -->
+  <div class="card" data-choice="a6-sage" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan <span class="word-tap" style="background:#FFE3B0;color:#1A1814;">kaapi</span> venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#3F7269;">Got it. Saying it back?</div>
+        <div class="bubble-out" style="background:#3F7269;">Tap any word for meaning.</div>
+        <div class="mini-btn" style="background:#3F7269;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#3F7269;">sage teal</div>
+        <div class="sw" style="background:#FFE3B0;color:#1A1814;">honey</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A6 · Sage teal</h3>
+      <p>Warmer than blue, cooler than green. The "smart-but-not-cold" middle. Pairs especially well with cream. Library-quiet but more alive.</p>
+      <p><b>Vibe:</b> intelligent, grown-up, slightly editorial.</p>
+    </div>
+  </div>
+
+  <!-- A7: deep ink-blue -->
+  <div class="card" data-choice="a7-navy" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:16px;background:#EAE3D5;">
+      <div class="mini-phone">
+        <div class="bubble-in">Nan <span class="word-tap" style="background:#FFE3B0;color:#1A1814;">kaapi</span> venum 🙏</div>
+        <div class="bubble-in" style="color:#666;font-size:12px;font-style:italic;">"I'd like a coffee."</div>
+        <div class="bubble-out" style="background:#1F3D5C;">Got it. Saying it back?</div>
+        <div class="bubble-out" style="background:#1F3D5C;">Tap any word for meaning.</div>
+        <div class="mini-btn" style="background:#1F3D5C;">Try the next word</div>
+      </div>
+      <div class="swatch-row">
+        <div class="sw" style="background:#F4EFE6;color:#1A1814;">cream</div>
+        <div class="sw" style="background:#1A1814;">ink</div>
+        <div class="sw" style="background:#1F3D5C;">deep blue</div>
+        <div class="sw" style="background:#FFE3B0;color:#1A1814;">honey</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A7 · Deep ink-blue</h3>
+      <p>Cream + a navy that reads almost as ink at a glance. Maximum restraint. The "confidence through reduction" play — wit lives in copy, not color.</p>
+      <p><b>Vibe:</b> bookstore-quiet, very grown-up.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">My read</span>
+  <p><b>A5 (dusty postcard blue)</b> tells the brand story best — warmth + travel + the partner-elsewhere thread, all in the color itself. <b>A6 (sage teal)</b> is the most distinctive — fewer apps own this zone. <b>A7 (deep blue)</b> is the safest / most restrained. All three are eye-friendly for long chats.</p>
+  <p><b>Note on word-tap:</b> the honey-yellow highlight stays tiny (one word at a time) — that's its job, brief discovery moments, not a vibe-killer.</p>
+</div>

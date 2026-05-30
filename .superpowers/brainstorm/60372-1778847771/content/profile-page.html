@@ -1,0 +1,109 @@
+<h2>Profile page — 3 layouts</h2>
+<p class="subtitle">What should live here, and how should it feel?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;">
+      <div style="background:white;padding:12px 16px;border-bottom:1px solid #eee;font-size:17px;font-weight:700;color:#111;">Profile</div>
+
+      <!-- Avatar + name -->
+      <div style="background:white;display:flex;align-items:center;gap:14px;padding:18px 16px;border-bottom:1px solid #f2f2f2;">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:22px;">N</div>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:#111;">Nastia</div>
+          <div style="font-size:13px;color:#888;">nastia@example.com</div>
+        </div>
+        <div style="margin-left:auto;color:#5B4FE8;font-size:13px;font-weight:600;">Edit</div>
+      </div>
+
+      <!-- Settings rows -->
+      <div style="background:white;margin-top:10px;">
+        <div style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f5f5f5;">
+          <span style="font-size:15px;color:#111;">Interface language</span>
+          <span style="font-size:15px;color:#5B4FE8;">English ›</span>
+        </div>
+        <div style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:15px;color:#111;">Change password</span>
+          <span style="color:#aaa;font-size:15px;">›</span>
+        </div>
+      </div>
+
+      <div style="background:white;margin-top:10px;">
+        <div style="padding:13px 16px;color:#FF3B30;font-size:15px;">Log out</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Settings list</h3>
+      <p>Standard iOS-style settings layout. Avatar + name at top, grouped rows below. Familiar pattern, easy to scan.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;">
+      <!-- Hero top -->
+      <div style="background:linear-gradient(135deg,#5B4FE8,#a78bfa);padding:28px 16px 20px;text-align:center;">
+        <div style="width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:26px;margin:0 auto 10px;">N</div>
+        <div style="font-size:19px;font-weight:800;color:white;">Nastia</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;">nastia@example.com</div>
+        <div style="display:inline-block;background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;margin-top:10px;font-size:12px;color:white;cursor:pointer;">🇬🇧 English interface</div>
+      </div>
+
+      <!-- Cards -->
+      <div style="padding:14px;display:flex;flex-direction:column;gap:8px;">
+        <div style="background:white;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:15px;color:#111;">Interface language</span>
+          <span style="font-size:15px;color:#5B4FE8;font-weight:600;">English ›</span>
+        </div>
+        <div style="background:white;border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;">
+          <span style="font-size:15px;color:#111;">Change password</span>
+          <span style="color:#aaa;">›</span>
+        </div>
+        <div style="background:white;border-radius:12px;padding:14px 16px;">
+          <span style="font-size:15px;color:#FF3B30;">Log out</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Coloured hero + cards</h3>
+      <p>Big avatar + name on a coloured header, settings below as individual cards. More personality, feels less like a settings page.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f7f7fb;border-radius:12px;overflow:hidden;font-family:-apple-system,sans-serif;">
+      <div style="background:white;padding:12px 16px;border-bottom:1px solid #eee;font-size:17px;font-weight:700;color:#111;">Profile</div>
+
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
+        <!-- Editable name field -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Name</div>
+          <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:11px 14px;font-size:15px;color:#111;display:flex;justify-content:space-between;">
+            Nastia <span style="color:#5B4FE8;font-size:13px;">Edit</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Email</div>
+          <div style="background:white;border:1.5px solid #e0e0e0;border-radius:10px;padding:11px 14px;font-size:15px;color:#aaa;">nastia@example.com</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Interface language</div>
+          <div style="background:white;border:1.5px solid #5B4FE8;border-radius:10px;padding:11px 14px;font-size:15px;color:#111;display:flex;justify-content:space-between;">
+            🇬🇧 English <span style="color:#5B4FE8;">Change ›</span>
+          </div>
+        </div>
+        <div style="margin-top:4px;display:flex;gap:8px;">
+          <div style="flex:1;background:white;border:1.5px solid #eee;border-radius:10px;padding:11px;text-align:center;font-size:14px;color:#555;">Change password</div>
+          <div style="flex:1;background:white;border:1.5px solid #FFCDD2;border-radius:10px;padding:11px;text-align:center;font-size:14px;color:#FF3B30;">Log out</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Form-style</h3>
+      <p>Editable fields layout — feels like filling in a form. More explicit about what's editable. Good if you want users to actively manage their profile.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;">All 3 include: name, email, interface language, change password, log out. Nothing more for v1.</p>

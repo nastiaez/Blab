@@ -1,0 +1,198 @@
+<h2>Chat screen — v4 (popup over word, no scrim, no italics)</h2>
+<p class="subtitle">Popup floats over the tapped word — rest of chat stays visible. Card left-aligned. Tamil word + speaker on top row. Transliteration then translation below, both normal weight. Translations under chat bubbles also normal (no italic).</p>
+
+<style>
+  .split-wrap { display: flex; gap: 20px; padding: 24px; background: #E5E0D3; border-radius: 16px; justify-content: center; flex-wrap: wrap; }
+  .phone {
+    width: 340px;
+    background: #EFEBE2;
+    border-radius: 36px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    color: #2C2C2C;
+    position: relative;
+  }
+  .status-bar { height: 28px; background: #EFEBE2; }
+  .nav-header {
+    background: #EFEBE2;
+    padding: 10px 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(154, 148, 144, 0.18);
+  }
+  .nav-back { font-size: 28px; color: #D4694A; font-weight: 300; line-height: 1; padding: 0 4px; }
+  .nav-avatar {
+    width: 40px; height: 40px;
+    background: #D4694A; color: #EFEBE2;
+    border-radius: 50% 50% 50% 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 17px; flex-shrink: 0;
+  }
+  .nav-title-block { flex: 1; min-width: 0; }
+  .nav-title { font-weight: 600; font-size: 17px; line-height: 1.2; }
+  .nav-sub { font-size: 12px; color: #9A9490; margin-top: 2px; }
+  .nav-sub b { color: #2C2C2C; font-weight: 600; }
+  .nav-sub .arrow { color: #D4694A; font-weight: 700; }
+  .nav-icons { font-size: 22px; color: #9A9490; padding: 0 4px; }
+  .chat-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 340px; position: relative; }
+  .bubble { max-width: 78%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; }
+  .bubble-in { background: #D6E2E7; color: #2C2C2C; border-bottom-left-radius: 4px; align-self: flex-start; position: relative; }
+  .bubble-out { background: #D4694A; color: #FFFFFF; border-bottom-right-radius: 4px; align-self: flex-end; }
+  .translation { font-size: 12px; color: #9A9490; margin-top: 4px; line-height: 1.3; }
+  .translation-out { color: #FFE3D9; }
+  .tap-state { background: #F4D5C5; padding: 0 4px; border-radius: 4px; box-shadow: 0 0 0 2px #D4694A; }
+  .timestamp { font-size: 11px; color: #9A9490; align-self: center; margin: 4px 0; }
+  .composer { background: #FFFFFF; padding: 10px 14px; margin: 8px 12px 14px; border-radius: 24px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .composer-input { flex: 1; font-size: 14px; color: #9A9490; }
+  .composer-send { width: 32px; height: 32px; background: #D4694A; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; }
+  .home-indicator { height: 16px; display: flex; justify-content: center; align-items: center; }
+  .home-indicator::after { content: ''; width: 120px; height: 4px; background: #2C2C2C; border-radius: 2px; }
+
+  .word-popup {
+    position: absolute;
+    background: #FFFFFF;
+    padding: 12px 14px;
+    border-radius: 14px;
+    width: 200px;
+    box-shadow: 0 8px 20px rgba(31, 51, 64, 0.18), 0 1px 4px rgba(31, 51, 64, 0.08);
+    text-align: left;
+    z-index: 10;
+  }
+  .word-popup::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 28px;
+    width: 12px; height: 12px;
+    background: #FFFFFF;
+    transform: rotate(45deg);
+    box-shadow: -1px -1px 2px rgba(31, 51, 64, 0.06);
+  }
+  .word-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wp-word { font-size: 18px; font-weight: 600; color: #2C2C2C; }
+  .wp-speaker { color: #D4694A; font-size: 18px; cursor: pointer; }
+  .wp-translit { font-size: 13px; color: #9A9490; margin-top: 4px; }
+  .wp-meaning { font-size: 15px; color: #2C2C2C; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(154, 148, 144, 0.18); }
+
+  .label-tag { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #9A9490; margin-bottom: 8px; font-weight: 600; }
+</style>
+
+<div class="split-wrap">
+
+  <div style="text-align:center;">
+    <span class="label-tag">Default — no italics anywhere</span>
+    <div class="phone">
+      <div class="status-bar"></div>
+      <div class="nav-header">
+        <div class="nav-back">‹</div>
+        <div class="nav-avatar">A</div>
+        <div class="nav-title-block">
+          <div class="nav-title">Aswin</div>
+          <div class="nav-sub"><b>Tamil</b> <span class="arrow">↔</span> <b>Ukrainian</b></div>
+        </div>
+        <div class="nav-icons">⋯</div>
+      </div>
+      <div class="chat-body">
+        <div class="timestamp">Today, 14:32</div>
+        <div class="bubble bubble-in">
+          வணக்கம் நாஸ்தியா! எப்படி இருக்கீங்க?
+          <div class="translation">Hello Nastia! How are you?</div>
+        </div>
+        <div class="bubble bubble-out">
+          Я добре, дякую! А ти?
+          <div class="translation translation-out">I'm good, thanks! And you?</div>
+        </div>
+        <div class="bubble bubble-in">
+          நான் கப்பி குடிக்கிறேன் ☕
+          <div class="translation">I'm drinking coffee ☕</div>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="composer-input">Type in Ukrainian…</div>
+        <div class="composer-send">↑</div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <div style="text-align:center;">
+    <span class="label-tag">On tap — popup floats over word, no scrim</span>
+    <div class="phone">
+      <div class="status-bar"></div>
+      <div class="nav-header">
+        <div class="nav-back">‹</div>
+        <div class="nav-avatar">A</div>
+        <div class="nav-title-block">
+          <div class="nav-title">Aswin</div>
+          <div class="nav-sub"><b>Tamil</b> <span class="arrow">↔</span> <b>Ukrainian</b></div>
+        </div>
+        <div class="nav-icons">⋯</div>
+      </div>
+      <div class="chat-body">
+        <div class="timestamp">Today, 14:32</div>
+        <div class="bubble bubble-in">
+          வணக்கம் நாஸ்தியா! எப்படி இருக்கீங்க?
+          <div class="translation">Hello Nastia! How are you?</div>
+        </div>
+        <div class="bubble bubble-out">
+          Я добре, дякую! А ти?
+          <div class="translation translation-out">I'm good, thanks! And you?</div>
+        </div>
+        <div class="bubble bubble-in" style="position:relative;">
+          நான் <span class="tap-state">கப்பி</span> குடிக்கிறேன் ☕
+          <div class="translation">I'm drinking coffee ☕</div>
+          <div class="word-popup" style="top:38px; left:38px;">
+            <div class="word-row">
+              <div class="wp-word">கப்பி</div>
+              <div class="wp-speaker">🔊</div>
+            </div>
+            <div class="wp-translit">kāppi</div>
+            <div class="wp-meaning">coffee</div>
+          </div>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="composer-input">Type in Ukrainian…</div>
+        <div class="composer-send">↑</div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:24px;">
+  <span class="label">Popup spec</span>
+  <ul>
+    <li><b>Trigger:</b> tap any word in either language</li>
+    <li><b>Position:</b> floats over the tapped word, tail-arrow points at it. Clamped to phone bounds (FR-12)</li>
+    <li><b>No scrim</b> — rest of chat stays readable</li>
+    <li><b>Layout (left-aligned):</b> top row = original word + speaker icon · transliteration line · divider · translation</li>
+    <li><b>Type:</b> all normal weight, no italics</li>
+    <li><b>Dismiss:</b> tap outside, or tap another word to move the popup</li>
+  </ul>
+</div>
+
+<div class="section" style="margin-top:16px;">
+  <span class="label">Where these decisions get saved</span>
+  <p>Once you say "lock," all this goes into <b>docs/superpowers/specs/2026-05-25-brand-foundation.md</b>: chat layout rules, popup spec, type rules. You can edit that file anytime. The mockups in <code>.superpowers/brainstorm/</code> are decision tools — delete whenever.</p>
+</div>
+
+<div class="options" style="margin-top:16px;">
+  <div class="option" data-choice="v4-lock" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Lock it</h3>
+      <p>Move to chats list (the screen users land on).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="v4-tweak" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>More tweaks</h3>
+      <p>Tell me where in the terminal.</p>
+    </div>
+  </div>
+</div>
