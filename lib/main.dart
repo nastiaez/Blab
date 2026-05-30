@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import 'app/app_messenger.dart';
 import 'app/router.dart';
@@ -11,6 +12,10 @@ import 'shared/data/supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Tighten the VisibilityDetector callback cadence so scroll-into-view
+  // read receipts (Step 2.2 Task 10) feel responsive.
+  VisibilityDetectorController.instance.updateInterval =
+      const Duration(milliseconds: 100);
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,

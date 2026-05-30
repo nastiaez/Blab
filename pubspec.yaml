@@ -42,6 +42,7 @@ dependencies:
   supabase_flutter: ^2.8.0
   google_sign_in: ^6.2.1
   shared_preferences: ^2.3.0
+  visibility_detector: ^0.4.0+2
 
 dev_dependencies:
   flutter_test:

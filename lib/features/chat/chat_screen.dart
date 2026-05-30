@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../app/theme.dart';
 import '../../shared/models/chat.dart';
@@ -12,6 +13,7 @@ import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
 import 'state/chat_state.dart';
+import 'state/message_reads_state.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_text.dart';
@@ -247,6 +249,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           loading: () => const ChatViewSkeleton(),
                           error: (_, _) => const ChatViewSkeleton(),
                           data: (messages) => _MessageList(
+                            chatId: widget.chatId,
                             messages: messages,
                             showTranslations: showTransl,
                             scrollController: _scroll,
@@ -590,6 +593,7 @@ class _ChatMenu extends ConsumerWidget {
 
 class _MessageList extends StatelessWidget {
   const _MessageList({
+    required this.chatId,
     required this.messages,
     required this.showTranslations,
     required this.scrollController,
@@ -599,6 +603,7 @@ class _MessageList extends StatelessWidget {
     this.emptyState,
   });
 
+  final String chatId;
   final List<Message> messages;
   final bool showTranslations;
   final ScrollController scrollController;
@@ -652,6 +657,7 @@ class _MessageList extends StatelessWidget {
         }
         if (item is _MessageItem) {
           return _MessageRow(
+            chatId: chatId,
             message: item.message,
             showTranslation: showTranslations,
             isFirstInGroup: item.isFirstInGroup,
@@ -758,8 +764,9 @@ class _DateDivider extends StatelessWidget {
 
 // ─────────────────────────── message row ─────────────────────────────────────
 
-class _MessageRow extends StatelessWidget {
+class _MessageRow extends ConsumerWidget {
   const _MessageRow({
+    required this.chatId,
     required this.message,
     required this.showTranslation,
     required this.isFirstInGroup,
@@ -769,6 +776,7 @@ class _MessageRow extends StatelessWidget {
     required this.onLongPress,
   });
 
+  final String chatId;
   final Message message;
   final bool showTranslation;
   final bool isFirstInGroup;
@@ -778,13 +786,13 @@ class _MessageRow extends StatelessWidget {
   final VoidCallback onLongPress;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
     final topGap = isFirstInGroup ? 10.0 : 2.0;
     final width = MediaQuery.sizeOf(context).width;
     final maxBubble = width * 0.78;
 
-    final bubble = GestureDetector(
+    Widget bubble = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: onLongPress,
       child: _Bubble(
@@ -796,6 +804,23 @@ class _MessageRow extends StatelessWidget {
       ),
     );
 
+    // Incoming bubbles report themselves as seen once they cross the 90 %
+    // visibility threshold; the batcher coalesces ids and flushes to the
+    // server. Step 2.2 Task 10 / PRD US-016.
+    if (!isOut) {
+      bubble = VisibilityDetector(
+        key: Key('msg-vis-${message.id}'),
+        onVisibilityChanged: (info) {
+          if (info.visibleFraction > 0.9) {
+            ref
+                .read(messageReadsProvider(chatId).notifier)
+                .reportVisible(message.id);
+          }
+        },
+        child: bubble,
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.fromLTRB(12, topGap, 12, 0),
       child: Column(
@@ -805,7 +830,7 @@ class _MessageRow extends StatelessWidget {
           bubble,
           if (isLastInGroup) ...[
             const SizedBox(height: 4),
-            _Meta(message: message),
+            _Meta(chatId: chatId, message: message),
           ],
         ],
       ),
@@ -914,7 +939,8 @@ class _Bubble extends StatelessWidget {
 }
 
 class _Meta extends StatelessWidget {
-  const _Meta({required this.message});
+  const _Meta({required this.chatId, required this.message});
+  final String chatId;
   final Message message;
 
   @override
@@ -941,7 +967,11 @@ class _Meta extends StatelessWidget {
     }
     if (message.isOutgoing) {
       children.add(const SizedBox(width: 4));
-      children.add(_StatusIcon(status: message.status));
+      children.add(_StatusIcon(
+        chatId: chatId,
+        messageId: message.id,
+        intrinsicStatus: message.status,
+      ));
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -956,12 +986,34 @@ class _Meta extends StatelessWidget {
   }
 }
 
-class _StatusIcon extends StatelessWidget {
-  const _StatusIcon({required this.status});
-  final MessageStatus status;
+class _StatusIcon extends ConsumerWidget {
+  const _StatusIcon({
+    required this.chatId,
+    required this.messageId,
+    required this.intrinsicStatus,
+  });
+
+  final String chatId;
+  final String messageId;
+  final MessageStatus intrinsicStatus;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Derive the displayed status from a combination of the message's own
+    // state (pending / failed take precedence) and whether the partner has
+    // read this message yet. Step 2.2 Task 10 / PRD US-016.
+    MessageStatus status = intrinsicStatus;
+    if (status == MessageStatus.delivered) {
+      final readsAsync = ref.watch(readsForChatProvider(chatId));
+      final reads = readsAsync.maybeWhen(
+        data: (s) => s,
+        orElse: () => const <String>{},
+      );
+      if (reads.contains(messageId)) {
+        status = MessageStatus.read;
+      }
+    }
+
     // Semantics labels paired with the icon — read receipts and online
     // indicators must not be color-only. PRD US-033.
     switch (status) {
