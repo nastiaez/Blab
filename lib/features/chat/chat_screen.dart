@@ -14,6 +14,8 @@ import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
+import 'state/pending_sends_state.dart';
+import 'widgets/failed_message_sheet.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_text.dart';
@@ -248,27 +250,55 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         return messagesAsync.when(
                           loading: () => const ChatViewSkeleton(),
                           error: (_, _) => const ChatViewSkeleton(),
-                          data: (messages) => _MessageList(
-                            chatId: widget.chatId,
-                            messages: messages,
-                            showTranslations: showTransl,
-                            scrollController: _scroll,
-                            languageCode: learningLang.code,
-                            // BUG-009: keep the word popup from drawing on
-                            // top of the chat header. Account for the
-                            // safe-area notch as well.
-                            popupTopInset: MediaQuery.paddingOf(context).top +
-                                kChatHeaderHeight,
-                            emptyState: _FirstMessageEmptyState(chat: chat),
-                            onLongPress: (m) {
-                              HapticFeedback.mediumImpact();
-                              showMessageActionSheet(
-                                context,
-                                message: m,
-                                onAction: (a) => _handleAction(m, a),
-                              );
-                            },
-                          ),
+                          data: (messages) {
+                            // Merge in any optimistic pending/failed sends
+                            // and sort chronologically. Step 2.2 Task 12.
+                            final pending =
+                                ref.watch(pendingSendsProvider(widget.chatId));
+                            final all = [...messages, ...pending]
+                              ..sort(
+                                  (a, b) => a.sentAt.compareTo(b.sentAt));
+                            return _MessageList(
+                              chatId: widget.chatId,
+                              messages: all,
+                              showTranslations: showTransl,
+                              scrollController: _scroll,
+                              languageCode: learningLang.code,
+                              // BUG-009: keep the word popup from drawing on
+                              // top of the chat header. Account for the
+                              // safe-area notch as well.
+                              popupTopInset:
+                                  MediaQuery.paddingOf(context).top +
+                                      kChatHeaderHeight,
+                              emptyState: _FirstMessageEmptyState(chat: chat),
+                              onLongPress: (m) {
+                                HapticFeedback.mediumImpact();
+                                showMessageActionSheet(
+                                  context,
+                                  message: m,
+                                  onAction: (a) => _handleAction(m, a),
+                                );
+                              },
+                              onFailedTap: (m) {
+                                final notifier = ref.read(
+                                  chatMessagesProvider(widget.chatId).notifier,
+                                );
+                                showFailedMessageSheet(
+                                  context,
+                                  onAction: (action) {
+                                    switch (action) {
+                                      case FailedMessageAction.retry:
+                                        notifier.retryFailed(m.id);
+                                        break;
+                                      case FailedMessageAction.delete:
+                                        notifier.dropPending(m.id);
+                                        break;
+                                    }
+                                  },
+                                );
+                              },
+                            );
+                          },
                         );
                       },
                     ),
@@ -600,6 +630,7 @@ class _MessageList extends StatelessWidget {
     required this.languageCode,
     required this.popupTopInset,
     required this.onLongPress,
+    required this.onFailedTap,
     this.emptyState,
   });
 
@@ -610,6 +641,7 @@ class _MessageList extends StatelessWidget {
   final String languageCode;
   final double popupTopInset;
   final void Function(Message) onLongPress;
+  final void Function(Message) onFailedTap;
   final Widget? emptyState;
 
   @override
@@ -665,6 +697,7 @@ class _MessageList extends StatelessWidget {
             languageCode: languageCode,
             popupTopInset: popupTopInset,
             onLongPress: () => onLongPress(item.message),
+            onFailedTap: () => onFailedTap(item.message),
           );
         }
         return const SizedBox.shrink();
@@ -774,6 +807,7 @@ class _MessageRow extends ConsumerWidget {
     required this.languageCode,
     required this.popupTopInset,
     required this.onLongPress,
+    required this.onFailedTap,
   });
 
   final String chatId;
@@ -784,6 +818,7 @@ class _MessageRow extends ConsumerWidget {
   final String languageCode;
   final double popupTopInset;
   final VoidCallback onLongPress;
+  final VoidCallback onFailedTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -791,10 +826,12 @@ class _MessageRow extends ConsumerWidget {
     final topGap = isFirstInGroup ? 10.0 : 2.0;
     final width = MediaQuery.sizeOf(context).width;
     final maxBubble = width * 0.78;
+    final isFailed = message.status == MessageStatus.failed;
 
     Widget bubble = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: onLongPress,
+      onTap: isFailed ? onFailedTap : null,
       child: _Bubble(
         message: message,
         showTranslation: showTranslation,

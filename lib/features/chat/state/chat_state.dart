@@ -5,6 +5,7 @@ import '../../../shared/data/chat_mappers.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/models/message.dart';
 import '../../../shared/state/chat_list_state.dart';
+import 'pending_sends_state.dart';
 
 /// Dev/QA toggle: when `true`, every outgoing send is simulated to fail
 /// (PRD US-030 affordances). Currently unwired pending Task 12 (optimistic
@@ -53,18 +54,64 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
   }
 
-  /// Send a new outgoing message. The realtime stream will deliver the
-  /// canonical row back. Task 12 will layer an optimistic pending bubble
-  /// on top of this. PRD US-016, US-021.
+  /// Send a new outgoing message. Lays an optimistic pending bubble into
+  /// [pendingSendsProvider], then awaits the real send. On success the
+  /// pending row is dropped (the realtime stream will deliver the canonical
+  /// row); on failure the row's status flips to [MessageStatus.failed] and
+  /// stays in the queue so the user can retry from the failed-message
+  /// sheet. Step 2.2 Task 12 / PRD US-016, US-021, US-030, US-031.
   Future<void> addOutgoing(String text, {Message? replyTo}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
-    await ref
-        .read(chatServiceProvider)
-        .sendMessage(chatId: chatId, body: trimmed);
-    // Refresh chat list so the tile's last-message preview updates
-    // immediately.
-    ref.read(chatListProvider.notifier).refresh();
+    final tempId = 'local-${DateTime.now().microsecondsSinceEpoch}';
+    final pending = Message(
+      id: tempId,
+      chatId: chatId,
+      isOutgoing: true,
+      originalText: trimmed,
+      translation: '',
+      sentAt: DateTime.now(),
+      status: MessageStatus.pending,
+      replyTo: replyTo,
+    );
+    ref.read(pendingSendsProvider(chatId).notifier).add(pending);
+    try {
+      await ref
+          .read(chatServiceProvider)
+          .sendMessage(chatId: chatId, body: trimmed);
+      ref.read(pendingSendsProvider(chatId).notifier).remove(tempId);
+      // Refresh chat list so the tile's last-message preview updates
+      // immediately.
+      ref.read(chatListProvider.notifier).refresh();
+    } catch (_) {
+      ref.read(pendingSendsProvider(chatId).notifier).update(
+            tempId,
+            (m) => m.copyWith(status: MessageStatus.failed),
+          );
+    }
+  }
+
+  /// Re-fire a previously failed send. Drops the failed row from the
+  /// queue, then routes back through [addOutgoing] (which lays down a
+  /// fresh pending row). PRD US-030.
+  Future<void> retryFailed(String localId) async {
+    final pendings = ref.read(pendingSendsProvider(chatId));
+    Message? target;
+    for (final m in pendings) {
+      if (m.id == localId) {
+        target = m;
+        break;
+      }
+    }
+    if (target == null) return;
+    ref.read(pendingSendsProvider(chatId).notifier).remove(localId);
+    await addOutgoing(target.originalText, replyTo: target.replyTo);
+  }
+
+  /// Drop a pending or failed message from the queue without retrying.
+  /// Used by the failed-message sheet's "Delete" action. PRD US-030.
+  void dropPending(String localId) {
+    ref.read(pendingSendsProvider(chatId).notifier).remove(localId);
   }
 
   /// Edit an existing outgoing message. PRD US-019.
