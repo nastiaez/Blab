@@ -152,13 +152,7 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/chats',
-      builder: (context, state) {
-        final q = state.uri.queryParameters;
-        return ChatsScreen(
-          empty: q['empty'] == '1',
-          asAswin: q['as'] == 'aswin',
-        );
-      },
+      builder: (context, state) => const ChatsScreen(),
     ),
     GoRoute(
       path: '/chats/new',

@@ -1,52 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../shared/data/mock_chats.dart';
-import '../../shared/models/chat.dart';
+import '../../shared/state/chat_list_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'widgets/chat_list_tile.dart';
 
 /// PRD US-006, US-007, US-026.
-class ChatsScreen extends StatefulWidget {
-  const ChatsScreen({
-    super.key,
-    this.empty = false,
-    this.asAswin = false,
-  });
-
-  final bool empty;
-
-  /// When true, render Aswin's POV — a single chat with Nastia in
-  /// invite-state styling. PRD US-026.
-  final bool asAswin;
+class ChatsScreen extends ConsumerWidget {
+  const ChatsScreen({super.key});
 
   @override
-  State<ChatsScreen> createState() => _ChatsScreenState();
-}
-
-class _ChatsScreenState extends State<ChatsScreen> {
-  /// Synthetic cold-open delay so the skeleton actually appears on first
-  /// paint. Cached so rebuilds don't re-trigger the delay. PRD US-032.
-  late final Future<void> _ready;
-
-  @override
-  void initState() {
-    super.initState();
-    _ready = Future<void>.delayed(const Duration(milliseconds: 600));
-  }
-
-  Future<void> _refresh() async {
-    // Mock — Step 2.2 will fetch from Supabase. PRD US-032.
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final List<Chat> chats = widget.empty
-        ? const []
-        : (widget.asAswin ? kAswinMockChats : kMockChats);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatsAsync = ref.watch(chatListProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -84,16 +52,15 @@ class _ChatsScreenState extends State<ChatsScreen> {
         children: [
           const OfflineBanner(),
           Expanded(
-            child: FutureBuilder<void>(
-              future: _ready,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const ChatListSkeleton();
-                }
+            child: chatsAsync.when(
+              loading: () => const ChatListSkeleton(),
+              error: (e, _) => const _ErrorState(),
+              data: (chats) {
                 if (chats.isEmpty) return const _EmptyState();
                 return RefreshIndicator(
                   color: BlabColors.brand,
-                  onRefresh: _refresh,
+                  onRefresh: () =>
+                      ref.read(chatListProvider.notifier).refresh(),
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: chats.length,
@@ -165,6 +132,27 @@ class _EmptyState extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 32),
+        child: Text(
+          "Couldn't load chats",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 15,
+            color: BlabColors.textMuted,
+          ),
         ),
       ),
     );

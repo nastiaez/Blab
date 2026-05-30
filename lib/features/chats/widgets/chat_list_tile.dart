@@ -32,9 +32,11 @@ class ChatListTile extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 chat.partnerName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: chat.unreadCount > 0
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                   color: BlabColors.textPrimary,
                                 ),
                                 overflow: TextOverflow.ellipsis,

@@ -12,7 +12,6 @@ class DevMenu extends ConsumerWidget {
   static const List<({String label, String path, String us})> _entries = [
     (label: 'Sign up / Log in', path: '/auth', us: 'US-001…US-005'),
     (label: 'Your chats', path: '/chats', us: 'US-006…US-012'),
-    (label: 'Your chats — empty', path: '/chats?empty=1', us: 'US-007'),
     (label: 'Open a chat', path: '/chat', us: 'US-013…US-023'),
     (
       label: 'Invite landing — valid',
@@ -28,11 +27,6 @@ class DevMenu extends ConsumerWidget {
       label: 'Invite landing — used',
       path: '/invite?status=used&from=Nastia',
       us: 'US-037',
-    ),
-    (
-      label: "Aswin's chats",
-      path: '/chats?as=aswin',
-      us: 'US-026',
     ),
     (label: 'Profile', path: '/profile', us: 'US-010…US-012, US-034, US-035'),
   ];
