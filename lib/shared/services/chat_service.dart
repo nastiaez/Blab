@@ -75,6 +75,15 @@ class ChatService {
         .eq('id', messageId);
   }
 
+  /// Undo a soft-delete by nulling `deleted_at`. Paired with [softDelete] to
+  /// implement the Undo SnackBar UX in the chat screen.
+  Future<void> restoreMessage(String messageId) async {
+    await _client
+        .from('messages')
+        .update({'deleted_at': null})
+        .eq('id', messageId);
+  }
+
   /// Chat list rows for the current user from the chat_list view.
   /// Note: `chat_list` is a view — Supabase Realtime can't stream it directly.
   /// Use the one-shot fetcher [fetchChatList] in a polling loop tied to the

@@ -4,15 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../shared/data/mock_chats.dart';
 import '../../shared/models/chat.dart';
 import '../../shared/models/message.dart';
+import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
 import 'state/chat_state.dart';
-import 'widgets/failed_message_sheet.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_text.dart';
@@ -82,10 +81,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.jumpTo(_scroll.position.maxScrollExtent);
   }
 
-  Chat _resolveChat() {
-    return findChat(widget.chatId) ?? kMockChats.first;
-  }
-
   void _send() {
     final text = _input.text;
     if (text.trim().isEmpty) return;
@@ -136,9 +131,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       case MessageAction.delete:
         final notifier =
             ref.read(chatMessagesProvider(widget.chatId).notifier);
-        final removed = message;
-        final removedIndex = notifier.removeMessage(message.id);
-        if (removedIndex < 0) return;
+        final removedId = message.id;
+        notifier.removeMessage(removedId);
         final messenger = ScaffoldMessenger.of(context);
         messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
@@ -149,31 +143,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               label: 'Undo',
               textColor: BlabColors.brand,
               onPressed: () {
-                notifier.insertMessage(removed, removedIndex);
+                notifier.restoreMessage(removedId);
               },
             ),
           ),
         );
         break;
     }
-  }
-
-  void _handleFailedTap(Message message) {
-    showFailedMessageSheet(
-      context,
-      onAction: (action) {
-        final notifier =
-            ref.read(chatMessagesProvider(widget.chatId).notifier);
-        switch (action) {
-          case FailedMessageAction.retry:
-            notifier.retryFailed(message.id);
-            break;
-          case FailedMessageAction.delete:
-            notifier.removeMessage(message.id);
-            break;
-        }
-      },
-    );
   }
 
   void _toggleMenu() => setState(() => _menuOpen = !_menuOpen);
@@ -184,8 +160,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chat = _resolveChat();
-    final messages = ref.watch(chatMessagesProvider(widget.chatId));
+    final chatListAsync = ref.watch(chatListProvider);
+    final chat = chatListAsync.maybeWhen(
+      data: (chats) {
+        for (final c in chats) {
+          if (c.id == widget.chatId) return c;
+        }
+        return null;
+      },
+      orElse: () => null,
+    );
+
+    if (chat == null) {
+      return const Scaffold(
+        backgroundColor: BlabColors.appBackground,
+        body: SafeArea(child: ChatViewSkeleton()),
+      );
+    }
+
+    final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
     final showTransl = ref.watch(showTranslationsProvider(widget.chatId));
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
@@ -250,28 +243,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             ConnectionState.done) {
                           return const ChatViewSkeleton();
                         }
-                        return _MessageList(
-                          messages: messages,
-                          showTranslations: showTransl,
-                          scrollController: _scroll,
-                          languageCode: learningLang.code,
-                          // BUG-009: keep the word popup from drawing on top
-                          // of the chat header. Account for the safe-area
-                          // notch as well.
-                          popupTopInset: MediaQuery.paddingOf(context).top +
-                              kChatHeaderHeight,
-                          emptyState: widget.chatId == 'nastia'
-                              ? const _NastiaEmptyState()
-                              : null,
-                          onLongPress: (m) {
-                            HapticFeedback.mediumImpact();
-                            showMessageActionSheet(
-                              context,
-                              message: m,
-                              onAction: (a) => _handleAction(m, a),
-                            );
-                          },
-                          onFailedTap: _handleFailedTap,
+                        return messagesAsync.when(
+                          loading: () => const ChatViewSkeleton(),
+                          error: (_, _) => const ChatViewSkeleton(),
+                          data: (messages) => _MessageList(
+                            messages: messages,
+                            showTranslations: showTransl,
+                            scrollController: _scroll,
+                            languageCode: learningLang.code,
+                            // BUG-009: keep the word popup from drawing on
+                            // top of the chat header. Account for the
+                            // safe-area notch as well.
+                            popupTopInset: MediaQuery.paddingOf(context).top +
+                                kChatHeaderHeight,
+                            emptyState: _FirstMessageEmptyState(chat: chat),
+                            onLongPress: (m) {
+                              HapticFeedback.mediumImpact();
+                              showMessageActionSheet(
+                                context,
+                                message: m,
+                                onAction: (a) => _handleAction(m, a),
+                              );
+                            },
+                          ),
                         );
                       },
                     ),
@@ -602,7 +596,6 @@ class _MessageList extends StatelessWidget {
     required this.languageCode,
     required this.popupTopInset,
     required this.onLongPress,
-    required this.onFailedTap,
     this.emptyState,
   });
 
@@ -612,7 +605,6 @@ class _MessageList extends StatelessWidget {
   final String languageCode;
   final double popupTopInset;
   final void Function(Message) onLongPress;
-  final void Function(Message) onFailedTap;
   final Widget? emptyState;
 
   @override
@@ -667,7 +659,6 @@ class _MessageList extends StatelessWidget {
             languageCode: languageCode,
             popupTopInset: popupTopInset,
             onLongPress: () => onLongPress(item.message),
-            onFailedTap: () => onFailedTap(item.message),
           );
         }
         return const SizedBox.shrink();
@@ -776,7 +767,6 @@ class _MessageRow extends StatelessWidget {
     required this.languageCode,
     required this.popupTopInset,
     required this.onLongPress,
-    required this.onFailedTap,
   });
 
   final Message message;
@@ -786,7 +776,6 @@ class _MessageRow extends StatelessWidget {
   final String languageCode;
   final double popupTopInset;
   final VoidCallback onLongPress;
-  final VoidCallback onFailedTap;
 
   @override
   Widget build(BuildContext context) {
@@ -794,13 +783,10 @@ class _MessageRow extends StatelessWidget {
     final topGap = isFirstInGroup ? 10.0 : 2.0;
     final width = MediaQuery.sizeOf(context).width;
     final maxBubble = width * 0.78;
-    final isFailed = isOut && message.status == MessageStatus.failed;
 
     final bubble = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: onLongPress,
-      // Tapping a failed bubble opens the Retry/Delete sheet. PRD US-030.
-      onTap: isFailed ? onFailedTap : null,
       child: _Bubble(
         message: message,
         showTranslation: showTranslation,
@@ -1312,10 +1298,12 @@ class _ReplyBar extends StatelessWidget {
 
 // ─────────────────────────── edit bar ────────────────────────────────────────
 
-/// Centered exchange card shown inside Aswin's empty chat with Nastia.
+/// Centered exchange card shown in any chat with no messages yet.
 /// PRD US-027.
-class _NastiaEmptyState extends StatelessWidget {
-  const _NastiaEmptyState();
+class _FirstMessageEmptyState extends StatelessWidget {
+  const _FirstMessageEmptyState({required this.chat});
+
+  final Chat chat;
 
   @override
   Widget build(BuildContext context) {
@@ -1323,10 +1311,11 @@ class _NastiaEmptyState extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: ExchangeCard(
-          topFlag: '🇺🇦',
-          topLabel: 'You learn Ukrainian',
-          bottomFlag: '🇮🇳',
-          bottomLabel: 'Help Nastia learn Tamil',
+          topFlag: chat.learningLanguage.flag,
+          topLabel: 'You learn ${chat.learningLanguage.name}',
+          bottomFlag: chat.partnerLearningLanguage.flag,
+          bottomLabel:
+              'Help ${chat.partnerName} learn ${chat.partnerLearningLanguage.name}',
         ),
       ),
     );
