@@ -41,6 +41,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _hasText = false;
   int _textLength = 0;
   double _lastBottomInset = 0;
+  int _lastMessageCount = 0;
+  bool _didInitialScroll = false;
 
   /// Hard cap from PRD US-036.
   static const int _maxMessageLength = 2000;
@@ -205,14 +207,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
     }
 
-    // Auto-scroll on message append.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients &&
-          _scroll.position.pixels < _scroll.position.maxScrollExtent - 200) {
-        return;
-      }
-      _scrollToBottom();
-    });
+    // Initial scroll: when the messages stream first emits data, jump
+    // to the bottom. ListView.builder is lazy, so maxScrollExtent grows
+    // as items render. Schedule the jump on the next two frames + a 50 ms
+    // and 200 ms fallback to catch the final layout. After that, the
+    // auto-append branch below handles ongoing appends.
+    final currentCount = messagesAsync.value?.length ?? 0;
+    if (!_didInitialScroll && currentCount > 0) {
+      _didInitialScroll = true;
+      _lastMessageCount = currentCount;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+        Future<void>.delayed(const Duration(milliseconds: 50), _scrollToBottom);
+        Future<void>.delayed(
+            const Duration(milliseconds: 200), _scrollToBottom);
+      });
+    } else if (_didInitialScroll && currentCount != _lastMessageCount) {
+      // Append (or removal) — keep the view glued to the bottom if the
+      // user was already near the bottom.
+      _lastMessageCount = currentCount;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scroll.hasClients &&
+            _scroll.position.pixels <
+                _scroll.position.maxScrollExtent - 200) {
+          return;
+        }
+        _scrollToBottom();
+      });
+    }
 
     // Auto-scroll to the latest message when the keyboard opens (or its
     // height changes) so the bubble the user just sent doesn't slide
