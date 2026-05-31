@@ -33,6 +33,7 @@ class BlabApp extends StatefulWidget {
 class _BlabAppState extends State<BlabApp> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSub;
   String? _knownEmail;
+  String? _knownUserId;
 
   @override
   void initState() {
@@ -41,14 +42,25 @@ class _BlabAppState extends State<BlabApp> with WidgetsBindingObserver {
     // Supabase may not be initialized in widget tests — guard so
     // BlabApp can still mount under flutter_test.
     try {
-      _knownEmail = Supabase.instance.client.auth.currentUser?.email;
+      final user = Supabase.instance.client.auth.currentUser;
+      _knownEmail = user?.email;
+      _knownUserId = user?.id;
       // supabase_flutter consumes the `blab://auth/reset?code=...`
       // deep link and exchanges it for a recovery session. We listen
       // for the resulting `passwordRecovery` event and route to the
-      // reset screen.
+      // reset screen. We also reset the email-change baseline on
+      // sign-in/sign-out so switching accounts doesn't trip the
+      // "Email changed ✓" snack.
       _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
         if (s.event == AuthChangeEvent.passwordRecovery) {
           blabRouter.go('/auth/reset');
+        }
+        if (s.event == AuthChangeEvent.signedIn ||
+            s.event == AuthChangeEvent.signedOut ||
+            s.event == AuthChangeEvent.tokenRefreshed) {
+          final u = Supabase.instance.client.auth.currentUser;
+          _knownEmail = u?.email;
+          _knownUserId = u?.id;
         }
       });
     } catch (_) {
@@ -76,12 +88,19 @@ class _BlabAppState extends State<BlabApp> with WidgetsBindingObserver {
     } catch (_) {
       return;
     }
-    final now = client.auth.currentUser?.email;
-    if (now != null && _knownEmail != null && now != _knownEmail) {
+    final user = client.auth.currentUser;
+    final now = user?.email;
+    final id = user?.id;
+    // Only fire the snack when the SAME user's email actually changed
+    // (i.e. they completed the change-email confirmation flow), not when
+    // they switched accounts.
+    final sameUser = id != null && id == _knownUserId;
+    if (sameUser && now != null && _knownEmail != null && now != _knownEmail) {
       _knownEmail = now;
       showAppSnack('Email changed ✓');
     } else {
       _knownEmail = now;
+      _knownUserId = id;
     }
   }
 

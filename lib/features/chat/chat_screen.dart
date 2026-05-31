@@ -40,6 +40,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _menuOpen = false;
   bool _hasText = false;
   int _textLength = 0;
+  double _lastBottomInset = 0;
 
   /// Hard cap from PRD US-036.
   static const int _maxMessageLength = 2000;
@@ -212,6 +213,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
       _scrollToBottom();
     });
+
+    // Auto-scroll to the latest message when the keyboard opens (or its
+    // height changes) so the bubble the user just sent doesn't slide
+    // under the keyboard. Matches WhatsApp / iMessage / Telegram.
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    if ((bottomInset - _lastBottomInset).abs() > 1) {
+      _lastBottomInset = bottomInset;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,

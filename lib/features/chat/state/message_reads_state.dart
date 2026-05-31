@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 
 typedef MarkReadFn = Future<void> Function(List<String> ids);
@@ -57,6 +58,10 @@ final messageReadsProvider =
 /// bubbles render as `read` when their id is in this set.
 final readsForChatProvider =
     StreamProvider.family<Set<String>, String>((ref, chatId) {
+  // Re-open the realtime subscription when the signed-in user changes,
+  // otherwise the channel keeps using the previous account's auth context
+  // and outgoing bubbles stay stuck on the gray double-tick.
+  ref.watch(authSessionProvider);
   final svc = ref.watch(chatServiceProvider);
   return svc.watchReads(chatId).map((rows) {
     final uid = Supabase.instance.client.auth.currentUser?.id;
