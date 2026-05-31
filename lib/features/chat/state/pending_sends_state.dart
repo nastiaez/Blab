@@ -70,6 +70,36 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
     _persist();
   }
 
+  /// Swap the temp id + sentAt for the server-assigned id + created_at, and
+  /// flip status to delivered. Used by the in-place upgrade flow so the
+  /// optimistic bubble keeps its widget identity while the clock icon turns
+  /// into the gray double-tick.
+  void upgrade({
+    required String tempId,
+    required String newId,
+    required DateTime newSentAt,
+  }) {
+    state = [
+      for (final m in state)
+        if (m.id == tempId)
+          Message(
+            id: newId,
+            chatId: m.chatId,
+            isOutgoing: m.isOutgoing,
+            originalText: m.originalText,
+            translation: m.translation,
+            tokens: m.tokens,
+            sentAt: newSentAt,
+            status: MessageStatus.delivered,
+            replyTo: m.replyTo,
+            isEdited: m.isEdited,
+          )
+        else
+          m,
+    ];
+    _persist();
+  }
+
   static Map<String, dynamic> _serialize(Message m) => {
         'id': m.id,
         'chatId': m.chatId,

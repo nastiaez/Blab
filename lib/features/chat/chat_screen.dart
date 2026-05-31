@@ -255,17 +255,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // and sort chronologically. Step 2.2 Task 12.
                             final pending =
                                 ref.watch(pendingSendsProvider(widget.chatId));
-                            // Drop any pending that already arrived from the
-                            // server (matched by body + outgoing within 10s)
-                            // to avoid a brief duplicate bubble flash.
-                            final pendingVisible = pending.where((p) {
-                              if (p.status == MessageStatus.failed) return true;
-                              return !messages.any((m) =>
-                                  m.isOutgoing &&
-                                  m.originalText == p.originalText &&
-                                  m.sentAt.difference(p.sentAt).abs() <
-                                      const Duration(seconds: 10));
-                            }).toList();
+                            // In-place upgrade: after the server confirms
+                            // a send, the pending bubble carries the server's
+                            // id + timestamp. As soon as the realtime stream
+                            // emits the canonical row the merge layer dedupes
+                            // by id, dropping the pending without a flicker.
+                            final messageIds =
+                                messages.map((m) => m.id).toSet();
+                            final pendingVisible = pending
+                                .where((p) => !messageIds.contains(p.id))
+                                .toList();
                             final all = [...messages, ...pendingVisible]
                               ..sort(
                                   (a, b) => a.sentAt.compareTo(b.sentAt));

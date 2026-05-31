@@ -80,10 +80,19 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     );
     ref.read(pendingSendsProvider(chatId).notifier).add(pending);
     try {
-      await ref
+      final server = await ref
           .read(chatServiceProvider)
           .sendMessage(chatId: chatId, body: trimmed);
-      ref.read(pendingSendsProvider(chatId).notifier).remove(tempId);
+      // In-place upgrade: swap the temp id + sentAt for the server's values
+      // and flip status to delivered. The bubble keeps its position; only
+      // the clock icon turns into a tick. When the realtime stream emits
+      // the canonical row, the merge layer dedupes by id and the pending
+      // entry quietly drops away with no visual jump.
+      ref.read(pendingSendsProvider(chatId).notifier).upgrade(
+            tempId: tempId,
+            newId: server.id,
+            newSentAt: server.createdAt,
+          );
       // Refresh chat list so the tile's last-message preview updates
       // immediately.
       ref.read(chatListProvider.notifier).refresh();

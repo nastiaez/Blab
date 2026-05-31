@@ -44,13 +44,20 @@ class ChatService {
         .eq('chat_id', chatId);
   }
 
-  Future<String> sendMessage({required String chatId, required String body}) async {
+  Future<({String id, DateTime createdAt})> sendMessage({
+    required String chatId,
+    required String body,
+  }) async {
     final row = await _client
         .from('messages')
         .insert({'chat_id': chatId, 'sender_id': _uid, 'body': body})
         .select()
         .single();
-    return row['id'] as String;
+    return (
+      id: row['id'] as String,
+      createdAt:
+          DateTime.parse(row['created_at'] as String).toLocal(),
+    );
   }
 
   Future<void> markRead({required String chatId, required List<String> messageIds}) async {
