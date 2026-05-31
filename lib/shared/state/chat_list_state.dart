@@ -59,7 +59,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
   /// counts without waiting for membership events.
   Future<void> refresh() async {
     final svc = ref.read(chatServiceProvider);
-    state = const AsyncValue.loading();
     try {
       final rows = await svc.fetchChatList();
       state = AsyncValue.data(rows.map(_rowToChat).toList());
