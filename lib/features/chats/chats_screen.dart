@@ -54,7 +54,7 @@ class ChatsScreen extends ConsumerWidget {
           Expanded(
             child: chatsAsync.when(
               loading: () => const ChatListSkeleton(),
-              error: (e, _) => const _ErrorState(),
+              error: (e, _) => _ErrorState(detail: e.toString()),
               data: (chats) {
                 if (chats.isEmpty) return const _EmptyState();
                 return RefreshIndicator(
@@ -139,20 +139,41 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState();
+  const _ErrorState({this.detail});
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 32),
-        child: Text(
-          "Couldn't load chats",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
-            color: BlabColors.textMuted,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Couldn't load chats",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: BlabColors.textMuted),
+            ),
+            if (detail != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  detail!,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: Color(0xFF991B1B),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
