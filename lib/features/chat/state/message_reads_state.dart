@@ -43,6 +43,9 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
     final fn = ref.read(markReadFnProvider(chatId));
     try {
       await fn(ids);
+      // Nudge the chat list so the unread badge updates immediately
+      // rather than waiting for the next tile rebuild.
+      ref.read(chatListProvider.notifier).refresh();
     } catch (_) {
       // Best-effort — silently drop. The next visibility tick will retry.
     }
