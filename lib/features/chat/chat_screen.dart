@@ -85,7 +85,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _scrollToBottom() {
     if (!_scroll.hasClients) return;
-    _scroll.jumpTo(_scroll.position.maxScrollExtent);
+    // Reverse: true list — position 0 is the visual bottom.
+    _scroll.jumpTo(0);
   }
 
   void _send() {
@@ -207,39 +208,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
     }
 
-    // Initial scroll: when the messages stream first emits data, jump
-    // to the bottom. ListView.builder is lazy, so maxScrollExtent grows
-    // as items render. Schedule the jump on the next two frames + a 50 ms
-    // and 200 ms fallback to catch the final layout. After that, the
-    // auto-append branch below handles ongoing appends.
+    // With a reverse:true ListView the visual bottom is scroll position 0,
+    // which is the natural starting state — no initial-scroll work needed.
+    // On message append, the list extends upward (index 0 = newest), so as
+    // long as the user is near position 0 we keep them pinned to the
+    // bottom; if they've scrolled up to read history, we leave them alone.
     final currentCount = messagesAsync.value?.length ?? 0;
-    if (!_didInitialScroll && currentCount > 0) {
-      _didInitialScroll = true;
+    if (currentCount != _lastMessageCount) {
       _lastMessageCount = currentCount;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom();
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-        Future<void>.delayed(const Duration(milliseconds: 50), _scrollToBottom);
-        Future<void>.delayed(
-            const Duration(milliseconds: 200), _scrollToBottom);
-      });
-    } else if (_didInitialScroll && currentCount != _lastMessageCount) {
-      // Append (or removal) — keep the view glued to the bottom if the
-      // user was already near the bottom.
-      _lastMessageCount = currentCount;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scroll.hasClients &&
-            _scroll.position.pixels <
-                _scroll.position.maxScrollExtent - 200) {
-          return;
-        }
+        if (!_scroll.hasClients) return;
+        if (_scroll.position.pixels > 200) return;
         _scrollToBottom();
       });
     }
 
-    // Auto-scroll to the latest message when the keyboard opens (or its
-    // height changes) so the bubble the user just sent doesn't slide
-    // under the keyboard. Matches WhatsApp / iMessage / Telegram.
+    // Snap back to the bottom when the keyboard opens, so the input field
+    // and the most-recent bubble stay co-visible.
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     if ((bottomInset - _lastBottomInset).abs() > 1) {
       _lastBottomInset = bottomInset;
@@ -721,12 +706,21 @@ class _MessageList extends StatelessWidget {
       ));
     }
 
+    // Reverse the items so the list can use `reverse: true` — the standard
+    // Flutter chat pattern. With reverse:true, scroll position 0 = bottom,
+    // index 0 of the array = newest = visually at the bottom. This eliminates
+    // a race between the message stream's progressive emissions and our
+    // jump-to-bottom logic: the bottom never moves regardless of how many
+    // items render.
+    final reversed = items.reversed.toList();
+
     return ListView.builder(
       controller: scrollController,
+      reverse: true,
       padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: items.length,
+      itemCount: reversed.length,
       itemBuilder: (context, i) {
-        final item = items[i];
+        final item = reversed[i];
         if (item is _DateDividerItem) {
           return _DateDivider(when: item.when);
         }
