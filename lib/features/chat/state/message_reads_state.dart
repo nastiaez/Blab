@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -31,6 +32,7 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
 
   void reportVisible(String id) {
     if (state.contains(id)) return;
+    debugPrint('[READS] reportVisible chat=$chatId id=${id.substring(0, 8)}');
     state = {...state, id};
     _flush?.cancel();
     _flush = Timer(const Duration(milliseconds: 250), _flushNow);
@@ -41,13 +43,15 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
     if (ids.isEmpty) return;
     state = <String>{};
     final fn = ref.read(markReadFnProvider(chatId));
+    debugPrint('[READS] flushNow chat=$chatId ids=${ids.length}');
     try {
       await fn(ids);
+      debugPrint('[READS] flush OK chat=$chatId ids=${ids.length}');
       // Nudge the chat list so the unread badge updates immediately
       // rather than waiting for the next tile rebuild.
       ref.read(chatListProvider.notifier).refresh();
-    } catch (_) {
-      // Best-effort — silently drop. The next visibility tick will retry.
+    } catch (e) {
+      debugPrint('[READS] flush FAIL chat=$chatId err=$e');
     }
   }
 }

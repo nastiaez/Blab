@@ -65,7 +65,12 @@ class ChatService {
     final rows = messageIds
         .map((id) => {'message_id': id, 'user_id': _uid, 'chat_id': chatId})
         .toList();
-    await _client.from('message_reads').upsert(rows);
+    // ON CONFLICT DO NOTHING — read receipts are insert-once. Using the
+    // default upsert (DO UPDATE) hit the missing UPDATE policy on
+    // message_reads and got rejected by RLS.
+    await _client
+        .from('message_reads')
+        .upsert(rows, ignoreDuplicates: true);
   }
 
   Future<void> editMessage({required String messageId, required String newBody}) async {
