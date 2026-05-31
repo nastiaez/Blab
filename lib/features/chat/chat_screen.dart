@@ -255,7 +255,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // and sort chronologically. Step 2.2 Task 12.
                             final pending =
                                 ref.watch(pendingSendsProvider(widget.chatId));
-                            final all = [...messages, ...pending]
+                            // Drop any pending that already arrived from the
+                            // server (matched by body + outgoing within 10s)
+                            // to avoid a brief duplicate bubble flash.
+                            final pendingVisible = pending.where((p) {
+                              if (p.status == MessageStatus.failed) return true;
+                              return !messages.any((m) =>
+                                  m.isOutgoing &&
+                                  m.originalText == p.originalText &&
+                                  m.sentAt.difference(p.sentAt).abs() <
+                                      const Duration(seconds: 10));
+                            }).toList();
+                            final all = [...messages, ...pendingVisible]
                               ..sort(
                                   (a, b) => a.sentAt.compareTo(b.sentAt));
                             return _MessageList(
