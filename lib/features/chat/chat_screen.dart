@@ -42,7 +42,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   int _textLength = 0;
   double _lastBottomInset = 0;
   int _lastMessageCount = 0;
-  bool _didInitialScroll = false;
 
   /// Hard cap from PRD US-036.
   static const int _maxMessageLength = 2000;
