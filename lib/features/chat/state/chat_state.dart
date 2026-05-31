@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/data/chat_mappers.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/models/message.dart';
+import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import 'pending_sends_state.dart';
 
@@ -39,6 +40,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   @override
   Stream<List<Message>> build() async* {
+    // Rebuild when the signed-in user changes so messages reflect the
+    // current account's perspective (isOutgoing, history scope).
+    ref.watch(authSessionProvider);
     final svc = ref.watch(chatServiceProvider);
     // Seed with history (already filters soft-deleted, ordered ascending).
     final history = await svc.fetchMessages(chatId);

@@ -41,6 +41,9 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
 
   @override
   Future<List<Chat>> build() async {
+    // Rebuild on auth changes so sign-out/sign-in returns fresh chats
+    // scoped to the new user.
+    ref.watch(authSessionProvider);
     final svc = ref.watch(chatServiceProvider);
 
     _membershipsSub?.cancel();
