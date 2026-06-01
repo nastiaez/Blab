@@ -167,23 +167,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final chatListAsync = ref.watch(chatListProvider);
-    final chat = chatListAsync.maybeWhen(
-      data: (chats) {
-        for (final c in chats) {
-          if (c.id == widget.chatId) return c;
+    // Resolve the chat via the last-known chat list. Using `.value` instead
+    // of `maybeWhen(data: …, orElse: null)` keeps the chat resolved even
+    // while the chat-list provider is briefly in AsyncLoading or AsyncError
+    // (e.g. during airplane mode, while a refresh is in flight). Otherwise
+    // a transient stream error blanks the whole screen to a skeleton.
+    final chats = ref.watch(chatListProvider).value;
+    Chat? resolved;
+    if (chats != null) {
+      for (final c in chats) {
+        if (c.id == widget.chatId) {
+          resolved = c;
+          break;
         }
-        return null;
-      },
-      orElse: () => null,
-    );
+      }
+    }
 
-    if (chat == null) {
+    if (resolved == null) {
       return const Scaffold(
         backgroundColor: BlabColors.appBackground,
         body: SafeArea(child: ChatViewSkeleton()),
       );
     }
+    final chat = resolved;
 
     final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
     final showTransl = ref.watch(showTranslationsProvider(widget.chatId));

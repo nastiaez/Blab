@@ -47,7 +47,13 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     final svc = ref.watch(chatServiceProvider);
 
     _membershipsSub?.cancel();
-    _membershipsSub = svc.watchMyMemberships().listen((_) => refresh());
+    // Subscribe to my chat_members changes so the list refreshes when a new
+    // chat is created or a member leaves. Errors (e.g. transient network
+    // drops) are swallowed — the next successful emission catches up.
+    _membershipsSub = svc.watchMyMemberships().listen(
+      (_) => refresh(),
+      onError: (Object _) {},
+    );
     ref.onDispose(() => _membershipsSub?.cancel());
 
     final rows = await svc.fetchChatList();
@@ -63,6 +69,9 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
       final rows = await svc.fetchChatList();
       state = AsyncValue.data(rows.map(_rowToChat).toList());
     } catch (e, st) {
+      // If we already have data, keep showing it on transient errors
+      // (e.g. offline). Only surface the error when we have nothing yet.
+      if (state.hasValue) return;
       state = AsyncValue.error(e, st);
     }
   }
