@@ -52,10 +52,16 @@ class ChatsScreen extends ConsumerWidget {
         children: [
           const OfflineBanner(),
           Expanded(
-            child: chatsAsync.when(
-              loading: () => const ChatListSkeleton(),
-              error: (e, _) => _ErrorState(detail: e.toString()),
-              data: (chats) {
+            child: Builder(
+              builder: (context) {
+                // Show last-known data even during transient errors
+                // (offline, token refresh, etc.) instead of collapsing
+                // to the skeleton.
+                final chats = chatsAsync.value;
+                if (chats == null) {
+                  if (chatsAsync.isLoading) return const ChatListSkeleton();
+                  return _ErrorState(detail: chatsAsync.error?.toString());
+                }
                 if (chats.isEmpty) return const _EmptyState();
                 return RefreshIndicator(
                   color: BlabColors.brand,

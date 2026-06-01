@@ -264,12 +264,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             ConnectionState.done) {
                           return const ChatViewSkeleton();
                         }
-                        return messagesAsync.when(
-                          loading: () => const ChatViewSkeleton(),
-                          error: (_, _) => const ChatViewSkeleton(),
-                          data: (messages) {
-                            // Merge in any optimistic pending/failed sends
-                            // and sort chronologically. Step 2.2 Task 12.
+                        // Show the skeleton only while we have NO data at
+                        // all. If the stream errored after a successful
+                        // initial yield (e.g. user toggled airplane mode),
+                        // keep showing the last-known messages rather than
+                        // collapsing to the loading shimmer.
+                        final knownMessages = messagesAsync.value;
+                        if (knownMessages == null) {
+                          return const ChatViewSkeleton();
+                        }
+                        return Builder(
+                          builder: (context) {
+                            final messages = knownMessages;
                             final pending =
                                 ref.watch(pendingSendsProvider(widget.chatId));
                             // In-place upgrade: after the server confirms
