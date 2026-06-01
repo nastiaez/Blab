@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/blab-logo.svg" alt="Blab" width="180">
+</p>
+
 # Blab
 
 A language-exchange chat app where two people swap their native languages by chatting.
