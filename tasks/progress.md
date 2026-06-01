@@ -182,15 +182,17 @@
   - Force a server 5xx → bubble shows ⚠ + retry sheet works
   - Failed messages survive app restart
 
-### Step 2.5 — Push notifications  `[ ]`
+### Step 2.5 — Push notifications  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
 - **Scope:** US-038, FR-29.
-- **Done when:**
+- **v1 substitute:** in-app foreground banner only (no FCM, no permission prompt).
+- **Done when (when un-deferred):**
   - Permission prompt fires after first chat open, not at launch
   - Real push delivered to Android via FCM when partner sends a message and app is backgrounded
   - Tapping the notification deep-links to the correct chat
   - Push payload contains no message plaintext (title/body generic or client-decrypted post-delivery)
 
-### Step 2.6 — End-to-end encryption  `[ ]`
+### Step 2.6 — End-to-end encryption  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
+- **v1 substitute:** plaintext bodies + Supabase RLS + EU region. Privacy screen text rewritten to be honest about this in Step 3.5.
 - **Scope:** PRD § Security & Encryption. Cross-cuts Steps 2.1, 2.2, 2.5.
 - **Done when:**
   - Per-device keypair generated on-device on first launch; public key uploaded to Supabase, private key in Android Keystore (iOS Keychain in Phase 3)
@@ -203,16 +205,70 @@
 
 ---
 
-## Phase 3 — iOS parity + release prep
+### Step 2.7 — Translation dictionary + tokenizer (2 pairs) `[ ]`
+- **Scope:** ship real word-popup + subtitle translation for **Tamil ↔ English** and **Ukrainian ↔ English** only. Other 9 languages stay selectable but render a "Translation coming soon" hint in chat until v1.1.
+- **Done when:**
+  - Static JSON dictionaries live under `assets/dictionaries/` for ta-en and uk-en (both directions)
+  - Tokenizer splits incoming/outgoing target-language messages into clickable spans for ta + uk
+  - Word popup pulls gloss + romanization from the bundled JSON, no network
+  - Subtitle under each bubble = sentence-level gloss (per-token concat for v1; a real sentence translator is post-launch)
+  - Other 9 languages: bubbles render plain, no tappable words, subtitle says "Translation for [lang] coming soon"
 
-### Step 3.1 — iOS build  `[ ]`
+---
+
+## Phase 2.5 — Portfolio polish (Track A — do FIRST, parallel to 2.2 wrap-up)
+
+> Added 2026-06-01 via ship-fast plan. Goal: portfolio-ready screenshots before any more backend work.
+
+### Step A1 — Brand swap in-app (purple → orange) `[ ]`
+- **Scope:** apply final orange palette + type tokens across every existing screen. Replace every `BlabColors.brand` purple reference + every hard-coded purple hex. Update gradients, switches, tick marks, buttons, focus states, link colors.
+- **Done when:**
+  - Nastia has signed off on final orange palette + type tokens (logged in tech-spec Resolved Decisions)
+  - No purple visible anywhere in the app on emulator + phone
+  - All Phase 1 screens still pass their original "Done when" rubrics with the new palette
+  - Icon + app match
+
+### Step A2 — Hero demo chat polish `[ ]`
+- **Scope:** the seeded Tamil↔English chat used for screenshots. Tighten message copy, balance incoming/outgoing, pick words that demo the popup well, time-stamps believable.
+- **Done when:** Nastia approves the demo chat as portfolio-grade.
+
+### Step A3 — Screenshot pass `[ ]`
+- **Scope:** capture portfolio shots on phone (and emulator if needed): chat list, chat view, word popup, language picker, profile, invite landing, empty state, offline banner.
+- **Done when:** ≥6 portfolio-ready images exported under `docs/portfolio/`.
+
+**End of Track A: portfolio shippable. Resume Track B.**
+
+---
+
+## Phase 3 — Release prep (Android v1)
+
+> iOS deferred to post-launch. v1 = Android only.
+
+### Step 3.0 — Sentry + crash analytics `[ ]`
+- **Scope:** install `sentry_flutter`, wire DSN via `--dart-define`, capture uncaught + Flutter framework errors, redact message bodies from breadcrumbs.
+- **Done when:** a manually-thrown error appears in Sentry within 1 minute; release builds upload to Sentry; no message plaintext in any breadcrumb.
+
+### Step 3.1 — iOS build  `[ ]` — **DEFERRED to post-launch** (2026-06-01 ship-fast decision)
 - **Done when:** every Phase 1 + Phase 2 step passes its "Done when" rubric on an iOS device or simulator.
 
-### Step 3.2 — Universal Links  `[ ]`
+### Step 3.2 — Universal Links  `[ ]` — **DEFERRED to post-launch**
 - **Done when:** invite URLs route into the iOS app via Associated Domains.
 
 ### Step 3.3 — App icons, splash, store assets  `[ ]`
-- **Done when:** Play Store internal track + TestFlight internal accept the build.
+- **Done when:** Play Store internal track accepts the build. (TestFlight removed — iOS deferred.)
+
+### Step 3.5 — Play Store listing + legal `[ ]`
+- **Scope:**
+  - Feature graphic (1024×500), phone screenshots (from Track A), short description (≤80 chars), long description, app category, content rating questionnaire
+  - Data Safety form filled honestly (plaintext-at-rest disclosed, no third-party sharing)
+  - Privacy Policy + Terms hosted at a public URL (one-page static is fine for v1)
+  - Privacy screen in-app rewritten with the honest v1 posture (no E2EE in v1)
+  - Demo account credentials documented for Play reviewer
+- **Done when:** Play Console internal release accepted; reviewer flow walkthrough passes locally before submission.
+
+### Step 3.6 — Closed testing run (Play policy gate) `[ ]`
+- **Scope:** Play now requires solo dev accounts to run a closed test with **≥12 testers for ≥14 continuous days** before production. Lock down tester list early.
+- **Done when:** Play Console shows 12+ opt-ins active for 14+ days, no critical crashes, then production unlocks.
 
 ### Step 3.4 — Pre-release audit  `[ ]`
 - **Done when:**
@@ -275,4 +331,5 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-05-30 — Step 2.2 in progress: Task 9 of chat-sync plan — dev-only "pair with email" sheet landed so we can exercise the chat flow before real invites (Step 2.3) ship. New `lib/app/dev_pair_sheet.dart` exposes `showDevPairSheet(context)` — a modal bottom sheet with heading "Dev: pair with email" + muted "TEMP — real invites land in Step 2.3" caption, a `BlabTextField` for partner email (validates non-empty + contains `@` on Pair), two language rows (I learn / Partner learns, default English, tap → existing `showLanguagePickerSheet`), full-width brand "Pair" button (shows 18 px white spinner while busy, disabled background dims to 60% alpha), and an inline red error slot. On tap → `ref.read(chatServiceProvider).pairWithEmail(...)`; success pops sheet + `showAppSnack('Paired ✓')` + `chatListProvider.refresh()` so the new tile appears immediately; `PostgrestException.message` checked for `partner_not_found` → "No account with that email.", `cannot_pair_with_self` → "You can't pair with yourself.", `not_signed_in` → "Sign in first.", anything else → "Couldn't pair. Try again." (errors do NOT pop). Wired into `DevMenu` via a new entry "Dev: pair with email…" (path sentinel `__pair__`, us caption `temp — Step 2.3`) just after "Your chats"; the existing `onPressed` handler now special-cases the sentinel to call `showDevPairSheet(context)` instead of `context.push`. `flutter analyze` clean (pre-existing test warning only), `flutter test` 15/15 green, `flutter build apk --debug` succeeds.
 - 2026-05-30 — Step 2.2 in progress: Task 8 of chat-sync plan — messages now stream live from Supabase. `ChatNotifier` rebuilt as a `StreamNotifier<List<Message>>` that yields a one-shot history from `ChatService.fetchMessages` followed by realtime snapshots from `ChatService.watchMessages` (soft-deleted rows filtered client-side). `addOutgoing`, `editMessage`, `removeMessage` are now async and delegate straight to the service; outbound sends pop `chatListProvider.refresh()` so chat-list previews update without waiting on membership events. New `ChatService.restoreMessage` (`update messages set deleted_at = null`) backs a fresh `ChatNotifier.restoreMessage` that the chat screen's Undo SnackBar calls — replaces the old in-memory `insertMessage`/`removeMessage` index trick. `retryFailed` + `insertMessage` + the `simulateFailure` send branch dropped from the notifier (Task 12 reintroduces the optimistic + failure path); `simulateFailureProvider` kept for the dev-menu toggle but currently unwired. `LearningLanguageNotifier.build` now reads from `chatListProvider` (English fallback when not signed in / row missing) instead of the deleted `findChat`. Chat screen resolves the active chat via `chatListProvider` (renders `ChatViewSkeleton` while loading or unknown), wraps the messages list in `messagesAsync.when`, drops the failed-tap sheet wiring, and replaces the hardcoded `chatId == 'nastia'` empty state with a generic `_FirstMessageEmptyState` that pulls flags + names off the resolved `Chat`. Mock files deleted: `lib/shared/data/mock_chats.dart`, `lib/shared/data/mock_messages.dart`. Tests deleted (locked in mock-only behavior): `test/chat_state_test.dart`, `test/learning_language_test.dart`, `test/step_1_10_test.dart`, `test/qa_bugs_test.dart`, `test/message_actions_test.dart`. `flutter analyze` clean (pre-existing test warnings only), `flutter test` 15/15 green, `flutter build apk --debug` succeeds.
 - 2026-05-30 — Step 2.2 in progress: Task 12 of chat-sync plan — optimistic pending bubbles + restart-surviving offline send queue + reconnected failed-message sheet. New `lib/features/chat/state/pending_sends_state.dart` exposes `pendingSendsProvider` (per-chat `NotifierProvider.family<PendingSendsNotifier, List<Message>, String>`) that holds outgoing messages still in flight (`MessageStatus.pending`) or already failed (`MessageStatus.failed`). State is persisted to `shared_preferences` under `pending_sends:<chatId>` on every mutation and hydrated asynchronously on `build` (returns `const []` immediately, fills in once disk read completes); corrupt payloads are wiped and reset. Serialization keeps id, chatId, originalText, sentAt (ISO 8601), status (`.name`), and a stub of the `replyTo` (`originalText` + `isOutgoing` only — the quoted-preview bubble doesn't need a full reconstruction). `ChatNotifier.addOutgoing` now lays a synthetic `Message(id: 'local-<microSinceEpoch>', status: pending)` into the pending queue, awaits `ChatService.sendMessage`, and on success drops the pending row (realtime delivers the canonical) + refreshes `chatListProvider`; on failure flips the row's status to `failed` and keeps it in the queue. New `retryFailed(localId)` removes the failed row and re-routes through `addOutgoing(originalText, replyTo: ...)`. New `dropPending(localId)` removes a row without retrying (used by the failed sheet's Delete). `chat_screen.dart`: data branch now `ref.watch`es `pendingSendsProvider(chatId)` and merges + sorts pending into the messages list before rendering; `_MessageList` + `_MessageRow` gained `onFailedTap`; failed bubbles get an `onTap` that opens the reconnected `showFailedMessageSheet` whose Retry/Delete actions call `retryFailed` / `dropPending`. The `simulateFailureProvider` dev toggle stays unwired — real network failures drive the failed path naturally. Reconnect-on-online auto-retry deferred (manual retry only for Task 12). `flutter analyze` clean (pre-existing `unused_element_parameter` warning in `word_popup_test.dart` only), `flutter test` 17/17 green, `flutter build apk --debug` succeeds.
+- 2026-06-01 — Ship-fast plan locked. Spec at `docs/superpowers/specs/2026-06-01-ship-fast-plan-design.md`. Two tracks: **Track A** (portfolio first — A1 brand swap purple→orange, A2 hero demo chat polish, A3 screenshot pass) inserted as new Phase 2.5 to run in parallel with Step 2.2 wrap-up; **Track B** (Play Store v1) after Track A. Decisions: (a) Step 2.5 push notifications DEFERRED to v1.1 (in-app foreground banner only for v1); (b) Step 2.6 E2EE DEFERRED to v1.1 (plaintext + RLS + EU region for v1, privacy screen rewritten to be honest); (c) new Step 2.7 ships translation for Tamil↔EN + Ukrainian↔EN only, other 9 languages show "coming soon" hint; (d) iOS (Step 3.1 + 3.2) DEFERRED to post-launch — Android-only v1; (e) new Step 3.0 (Sentry wiring), Step 3.5 (Play listing + Data Safety + hosted Privacy/Terms + honest privacy copy), Step 3.6 (Play closed-testing 12+ testers × 14 days policy gate) added to Phase 3.
 - 2026-05-30 — Step 2.2 in progress: Task 10 of chat-sync plan — scroll-into-view read receipts. New `lib/features/chat/state/message_reads_state.dart` exposes (a) `messageReadsProvider` (per-chat `NotifierProvider.family<MessageReadsNotifier, Set<String>, String>`) that collects ids via `reportVisible(id)`, dedupes within the in-flight set, and flushes through a 250 ms debounce timer to `ChatService.markRead`; errors are swallowed (next visibility tick retries); (b) `markReadFnProvider` (function-pointer indirection so tests can override per-chat without touching `ChatService`); (c) `readsForChatProvider` (`StreamProvider.family<Set<String>, String>`) that maps `ChatService.watchReads` rows, filters out the current user, and returns the set of message ids the OTHER side has read. `chat_screen.dart` changes: `_MessageList` + `_MessageRow` thread `chatId`; `_MessageRow` is now a `ConsumerWidget` and wraps INCOMING bubbles only in `VisibilityDetector` (key `msg-vis-<message.id>`) — when `visibleFraction > 0.9` we call `messageReadsProvider(chatId).notifier.reportVisible(message.id)`. `_StatusIcon` is now a `ConsumerWidget` that takes `chatId` + `messageId` + `intrinsicStatus`; when intrinsic is `delivered` and `readsForChatProvider(chatId)` contains the id, it renders as `MessageStatus.read` (brand-purple double tick). `main.dart` sets `VisibilityDetectorController.instance.updateInterval = 100 ms` before `runApp` so callbacks stay responsive. `pubspec.yaml` gained `visibility_detector ^0.4.0+2`. New test `test/message_reads_test.dart` covers (i) `reportVisible` coalesces duplicates and flushes once after the debounce window, (ii) separate chats batch independently. `flutter analyze` clean (pre-existing `unused_element_parameter` warning in `word_popup_test.dart` only), `flutter test` 17/17 green, `flutter build apk --debug` succeeds.

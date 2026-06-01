@@ -46,7 +46,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       final history = await svc.fetchMessages(chatId);
       yield history;
     } catch (_) {
-      yield const <Message>[];
+      // Offline / fetch failure: don't yield anything. Riverpod keeps the
+      // previous AsyncData accessible via `.value`, so the chat screen
+      // continues to show the last-known messages instead of an empty list.
     }
     try {
       await for (final rows in svc.watchMessages(chatId)) {
