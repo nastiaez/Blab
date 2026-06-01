@@ -884,8 +884,6 @@ class _MessageRow extends ConsumerWidget {
       bubble = VisibilityDetector(
         key: Key('msg-vis-${message.id}'),
         onVisibilityChanged: (info) {
-          debugPrint(
-              '[VIS] id=${message.id.substring(0, 8)} frac=${info.visibleFraction.toStringAsFixed(2)}');
           // Threshold lowered to 0.5 so partially-visible bubbles still
           // register — bottom-of-list messages were sometimes cropped by
           // the input bar and never crossed 0.9.

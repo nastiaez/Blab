@@ -45,16 +45,28 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     ref.watch(authSessionProvider);
     final svc = ref.watch(chatServiceProvider);
     // Seed with history (already filters soft-deleted, ordered ascending).
-    final history = await svc.fetchMessages(chatId);
-    yield history;
+    // Offline (or any fetch failure): yield an empty list so the chat
+    // screen falls through to its normal data branch with the offline
+    // banner + pending sends visible, instead of stuck on the loading
+    // skeleton. True offline-history caching lives in a later step.
+    try {
+      final history = await svc.fetchMessages(chatId);
+      yield history;
+    } catch (_) {
+      yield const <Message>[];
+    }
     // Live deltas — `.stream` emits the full row set after each change.
     // We filter soft-deleted client-side and map to domain Message objects.
-    await for (final rows in svc.watchMessages(chatId)) {
-      final list = rows
-          .where((r) => r['deleted_at'] == null)
-          .map((r) => messageFromRow(r, currentUserId: _uid))
-          .toList();
-      yield list;
+    try {
+      await for (final rows in svc.watchMessages(chatId)) {
+        final list = rows
+            .where((r) => r['deleted_at'] == null)
+            .map((r) => messageFromRow(r, currentUserId: _uid))
+            .toList();
+        yield list;
+      }
+    } catch (_) {
+      // Realtime channel errored (e.g. offline). Keep last yielded state.
     }
   }
 
