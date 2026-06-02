@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:blab/shared/services/portfolio_translator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -72,5 +74,20 @@ void main() {
 
     expect(translator.translate('   '),
         throwsA(isA<PortfolioTranslationFailed>()));
+  });
+
+  test('times out when invoker never completes', () async {
+    final never = Completer<Map<String, dynamic>>();
+    final translator = PortfolioTranslator(
+      invoke: ({required String text, required String target}) => never.future,
+      timeout: const Duration(milliseconds: 10),
+    );
+
+    try {
+      await translator.translate('hi');
+      fail('expected PortfolioTranslationFailed');
+    } on PortfolioTranslationFailed catch (e) {
+      expect(e.reason, 'timeout');
+    }
   });
 }
