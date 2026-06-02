@@ -226,7 +226,7 @@
 
 > Added 2026-06-01 via ship-fast plan. Goal: portfolio-ready screenshots before any more backend work.
 
-### Step A1 — Brand swap in-app (purple → orange) `[x]`
+### Step A1 — Brand swap in-app (purple → orange) `[ ]`
 - **Scope:** apply final orange palette + type tokens across every existing screen. Replace every `BlabColors.brand` purple reference + every hard-coded purple hex. Update gradients, switches, tick marks, buttons, focus states, link colors.
 - **Done when:**
   - Nastia has signed off on final orange palette + type tokens (logged in tech-spec Resolved Decisions)
@@ -234,11 +234,11 @@
   - All Phase 1 screens still pass their original "Done when" rubrics with the new palette
   - Icon + app match
 
-### Step A2 — Hero demo chat polish `[x]`
+### Step A2 — Hero demo chat polish `[ ]`
 - **Scope:** the seeded Tamil↔English chat used for screenshots. Tighten message copy, balance incoming/outgoing, pick words that demo the popup well, time-stamps believable.
 - **Done when:** Nastia approves the demo chat as portfolio-grade.
 
-### Step A3 — Screenshot pass `[x]`
+### Step A3 — Screenshot pass `[ ]`
 - **Scope:** capture portfolio shots on phone (and emulator if needed): chat list, chat view, word popup, language picker, profile, invite landing, empty state, offline banner.
 - **Done when:** ≥6 portfolio-ready images exported under `docs/portfolio/`.
 
