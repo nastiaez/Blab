@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget _host(Widget child) =>
+  Widget host(Widget child) =>
       MaterialApp(home: Scaffold(body: Center(child: child)));
 
   testWidgets('ready state renders the translation text', (tester) async {
-    await tester.pumpWidget(_host(const TranslationSubtitle(
+    await tester.pumpWidget(host(const TranslationSubtitle(
       state: TranslationSubtitleState.ready,
       text: 'வணக்கம்!',
       isOutgoing: true,
@@ -18,7 +18,7 @@ void main() {
 
   testWidgets('pending state renders shimmer placeholder, not text',
       (tester) async {
-    await tester.pumpWidget(_host(const TranslationSubtitle(
+    await tester.pumpWidget(host(const TranslationSubtitle(
       state: TranslationSubtitleState.pending,
       text: '',
       isOutgoing: true,
@@ -28,7 +28,7 @@ void main() {
   });
 
   testWidgets('unavailable state renders the muted label', (tester) async {
-    await tester.pumpWidget(_host(const TranslationSubtitle(
+    await tester.pumpWidget(host(const TranslationSubtitle(
       state: TranslationSubtitleState.unavailable,
       text: '',
       isOutgoing: true,
