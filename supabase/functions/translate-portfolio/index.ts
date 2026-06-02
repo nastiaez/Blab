@@ -100,11 +100,18 @@ Deno.serve(async (req) => {
   if (typeof content !== "string") {
     return json({ error: "upstream_unexpected_shape" }, 502);
   }
+  // Strip markdown code fences the model may wrap output in (```json ... ```
+  // or ``` ... ```). Trim whitespace before/after.
+  const cleaned = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
   let parsed: unknown;
   try {
-    parsed = JSON.parse(content);
+    parsed = JSON.parse(cleaned);
   } catch {
-    return json({ error: "upstream_non_json" }, 502);
+    return json({ error: "upstream_non_json", raw: content.slice(0, 500) }, 502);
   }
   if (
     typeof parsed !== "object" ||
