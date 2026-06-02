@@ -9,6 +9,7 @@ import '../../shared/models/chat.dart';
 import '../../shared/models/message.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/connectivity_state.dart';
+import '../../shared/widgets/blab_switch.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
@@ -20,6 +21,7 @@ import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
+import 'widgets/translation_subtitle.dart';
 
 /// PRD US-013, US-014, US-015, US-016, US-017, US-023.
 ///
@@ -240,6 +242,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       backgroundColor: BlabColors.appBackground,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Stack(
           children: [
@@ -378,7 +381,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             if (_menuOpen)
               Positioned(
-                top: kChatHeaderHeight - 4,
+                top: MediaQuery.paddingOf(context).top + kChatHeaderHeight - 4,
                 right: 8,
                 child: _ChatMenu(
                   chatId: widget.chatId,
@@ -431,21 +434,20 @@ class _ChatHeader extends ConsumerWidget {
       data: (v) => v,
       orElse: () => true,
     );
+    final topInset = MediaQuery.paddingOf(context).top;
     return Container(
-      height: kChatHeaderHeight,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Row(
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(4, topInset, 4, 0),
+      child: SizedBox(
+        height: kChatHeaderHeight,
+        child: Row(
         children: [
           IconButton(
             tooltip: 'Back',
             icon: const Icon(
               Icons.arrow_back_ios_new,
               size: 20,
-              color: BlabColors.brand,
+              color: BlabColors.textPrimary,
             ),
             onPressed: onBack,
             splashRadius: 22,
@@ -458,7 +460,7 @@ class _ChatHeader extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                 child: Row(
                   children: [
-                    _HeaderAvatar(initial: chat.partnerInitial),
+                    _HeaderAvatar(name: chat.partnerName, initial: chat.partnerInitial),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Row(
@@ -517,13 +519,15 @@ class _ChatHeader extends ConsumerWidget {
             splashRadius: 22,
           ),
         ],
+        ),
       ),
     );
   }
 }
 
 class _HeaderAvatar extends StatelessWidget {
-  const _HeaderAvatar({required this.initial});
+  const _HeaderAvatar({required this.name, required this.initial});
+  final String name;
   final String initial;
 
   @override
@@ -531,13 +535,9 @@ class _HeaderAvatar extends StatelessWidget {
     return Container(
       width: 32,
       height: 32,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: BlabColors.avatarColorFor(name),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -600,10 +600,8 @@ class _ChatMenu extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Switch(
+                    BlabSwitch(
                       value: showTransl,
-                      activeThumbColor: Colors.white,
-                      activeTrackColor: BlabColors.brand,
                       onChanged: (_) => ref
                           .read(showTranslationsProvider(chatId).notifier)
                           .toggle(),
@@ -963,9 +961,8 @@ class _Bubble extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Container(
         decoration: BoxDecoration(
-          color: isOut ? BlabColors.brand : BlabColors.phoneSurface,
+          color: isOut ? BlabColors.brand : BlabColors.bubbleIncoming,
           borderRadius: radius,
-          border: isOut ? null : Border.all(color: Colors.grey.shade200),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
@@ -996,28 +993,25 @@ class _Bubble extends StatelessWidget {
                 color: isOut ? Colors.white : BlabColors.textPrimary,
               ),
             ),
-            if (showTranslation &&
-                message.translation.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Container(
-                  height: 1,
-                  color: isOut
-                      ? Colors.white.withValues(alpha: 0.25)
-                      : Colors.grey.shade200,
+            if (showTranslation) ...[
+              if (message.translationState == TranslationState.pending)
+                TranslationSubtitle(
+                  state: TranslationSubtitleState.pending,
+                  text: '',
+                  isOutgoing: isOut,
+                )
+              else if (message.translationState == TranslationState.unavailable)
+                TranslationSubtitle(
+                  state: TranslationSubtitleState.unavailable,
+                  text: '',
+                  isOutgoing: isOut,
+                )
+              else if (message.translation.isNotEmpty)
+                TranslationSubtitle(
+                  state: TranslationSubtitleState.ready,
+                  text: isOut ? message.originalText : message.translation,
+                  isOutgoing: isOut,
                 ),
-              ),
-              Text(
-                isOut ? message.originalText : message.translation,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isOut
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : BlabColors.textMuted,
-                  fontStyle: FontStyle.italic,
-                  height: 1.3,
-                ),
-              ),
             ],
           ],
         ),
@@ -1162,10 +1156,7 @@ class _InputBar extends StatelessWidget {
     final atLimit = textLength >= maxLength;
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
+      color: BlabColors.cream,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -1214,7 +1205,7 @@ class _InputBar extends StatelessWidget {
                             fontSize: 15,
                           ),
                           filled: true,
-                          fillColor: Colors.grey.shade100,
+                          fillColor: BlabColors.phoneSurface,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 10,
