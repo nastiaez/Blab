@@ -1,8 +1,10 @@
 import 'package:blab/shared/data/portfolio_data.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/state/portfolio_messages_state.dart';
+import 'package:blab/shared/state/portfolio_mode.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Message _msg(String id, {String original = 'hi'}) => Message(
       id: id,
@@ -15,6 +17,11 @@ Message _msg(String id, {String original = 'hi'}) => Message(
     );
 
 void main() {
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+  });
+
   test('seeds from curated portfolio messages', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -96,5 +103,39 @@ void main() {
     for (var i = 0; i < seed.length; i++) {
       expect(list[i].id, seed[i].id);
     }
+  });
+
+  test('flipping portfolio mode off→on resets the message list', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final mode = container.read(portfolioModeProvider.notifier);
+    final messages = container
+        .read(portfolioMessagesProvider(kPortfolioChatId).notifier);
+
+    // Start in off, ensure list has the seed.
+    expect(container.read(portfolioModeProvider), isFalse);
+
+    // Mutate while off (simulating leftover state from a prior session).
+    messages.append(Message(
+      id: 'leftover',
+      chatId: kPortfolioChatId,
+      isOutgoing: true,
+      originalText: 'should be wiped',
+      translation: '',
+      sentAt: DateTime(2026, 6, 2),
+      status: MessageStatus.delivered,
+    ));
+    expect(
+        container.read(portfolioMessagesProvider(kPortfolioChatId)).length,
+        8);
+
+    // Flip on.
+    await mode.toggle();
+
+    expect(container.read(portfolioModeProvider), isTrue);
+    expect(
+        container.read(portfolioMessagesProvider(kPortfolioChatId)).length,
+        7);
   });
 }
