@@ -21,7 +21,7 @@
 | Android  | 1     | API 24 (Android 7.0) | Covers ~97% of devices |
 | iOS      | 2     | iOS 14      | Matches Flutter's current minimum |
 
-Rationale: the PRD calls for an "iOS-native feel" but we ship Android first. We keep the iOS look across both platforms (purple brand, rounded corners, bottom sheets, system fonts) rather than adapting to Material on Android. This is a product choice from `prd-blab.md` § Design Principles, not a Flutter constraint.
+Rationale: the PRD calls for an "iOS-native feel" but we ship Android first. We keep the iOS look across both platforms (sunset-orange brand on cream, rounded corners, bottom sheets, system fonts) rather than adapting to Material on Android. This is a product choice from `prd-blab.md` § Design Principles, not a Flutter constraint.
 
 ---
 
@@ -189,6 +189,8 @@ Not yet set up. When added:
 13. ✅ **Invite link policy:** Valid until a single *successful* claim, within a 48h TTL. Multiple clicks before claim are allowed. Once claimed, link returns "already claimed" state (US-037). — locked 2026-05-28
 14. ✅ **Interface-language behavior:** Switch refreshes existing chat translations + word popups immediately. No app restart. Translation lookups must be re-rendered, not cached against the old interface language. — locked 2026-05-28
 15. ✅ **Log-out UX:** Confirm dialog before sign out ("Log out?" / Cancel + Log out). Signal pattern. — locked 2026-05-28
+16. ✅ **Palette + type tokens (final v1 swap):** Brand `#D4694A` (press `#BB573B`, soft `#F3DAD0`). App + chat canvas cream `#EFEBE2`. White surface for headers/sheets/incoming bubble + (per-screen) status-bar safe area. Ink `#1F3340`, stone `#9A9490`, line `#E4DCCC`. Input focus border `#E19680` (softer than brand to avoid alarm). Selected-row tint `#FAF1EC`. Outgoing bubble = solid brand, white text. Avatars = deterministic warm swatch from `[#D4694A, #5E8B8C, #C99846, #1F3340, #9A6A8C, #5F7A52]` keyed by name; no gradients. Read tick + links = brand. System fonts only (Roboto on Android, SF Pro on iOS — same as #6). Source: `claude_design/blab-theme.css` UI kit. — locked 2026-06-01
+17. ✅ **Portfolio-mode live translation backend:** Anthropic Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) via Supabase Edge Function `translate-portfolio`. Single-call returns `{translation, tokens[]}` (token = `{text, english?, roman?, isContent}`) matching the curated portfolio chat shape, so the word popup works on live-typed bubbles too. Scope is portfolio mode only — real chats are unaffected. Edge Function keeps the API key off-device; reuses the existing Supabase backend. Spec: `docs/superpowers/specs/2026-06-02-portfolio-live-translate-design.md`. — locked 2026-06-02
 
 ## Open Decisions
 
