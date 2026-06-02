@@ -1,6 +1,7 @@
 // Portfolio mode live English → Tamil translator.
 //
-// Calls Anthropic Claude Haiku 4.5 with a fixed prompt that returns
+// Calls OpenRouter (OpenAI-compatible chat completions) routed to
+// Anthropic Claude Haiku 4.5 with a fixed prompt that returns
 // `{ translation, tokens[] }` JSON matching the curated portfolio chat
 // shape. No authn — portfolio mode is a public demo. Basic guards:
 //   - POST only
@@ -9,12 +10,12 @@
 //
 // Deploy:  supabase functions deploy translate-portfolio --no-verify-jwt
 // Required env (set via `supabase secrets set`):
-//   ANTHROPIC_API_KEY
+//   OPEN_ROUTER_KEY
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
-const MODEL = "claude-haiku-4-5-20251001";
+const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY")!;
+const MODEL = "anthropic/claude-haiku-4.5";
 const MAX_CHARS = 400;
 
 function json(body: unknown, status = 200): Response {
@@ -71,18 +72,20 @@ Deno.serve(async (req) => {
 
   let llm: Response;
   try {
-    llm = await fetch("https://api.anthropic.com/v1/messages", {
+    llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
       },
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: text.trim() }],
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: text.trim() },
+        ],
       }),
     });
   } catch (e) {
@@ -93,7 +96,7 @@ Deno.serve(async (req) => {
     return json({ error: "upstream_error", status: llm.status, detail }, 502);
   }
   const payload = await llm.json();
-  const content = payload?.content?.[0]?.text;
+  const content = payload?.choices?.[0]?.message?.content;
   if (typeof content !== "string") {
     return json({ error: "upstream_unexpected_shape" }, 502);
   }
