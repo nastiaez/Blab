@@ -48,7 +48,7 @@ class TranslationSubtitle extends StatelessWidget {
           ),
         );
       case TranslationSubtitleState.pending:
-        body = _ShimmerLine(isOutgoing: isOutgoing);
+        body = ShimmerLine(isOutgoing: isOutgoing);
       case TranslationSubtitleState.unavailable:
         body = Text(
           'Translation unavailable',
@@ -71,15 +71,20 @@ class TranslationSubtitle extends StatelessWidget {
   }
 }
 
-class _ShimmerLine extends StatefulWidget {
-  const _ShimmerLine({required this.isOutgoing});
+class ShimmerLine extends StatefulWidget {
+  const ShimmerLine({
+    super.key,
+    required this.isOutgoing,
+    this.height = 14,
+  });
   final bool isOutgoing;
+  final double height;
 
   @override
-  State<_ShimmerLine> createState() => _ShimmerLineState();
+  State<ShimmerLine> createState() => _ShimmerLineState();
 }
 
-class _ShimmerLineState extends State<_ShimmerLine>
+class _ShimmerLineState extends State<ShimmerLine>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
 
@@ -112,7 +117,7 @@ class _ShimmerLineState extends State<_ShimmerLine>
       builder: (context, _) {
         final t = _ctrl.value;
         return Container(
-          height: 14,
+          height: widget.height,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             gradient: LinearGradient(

@@ -15,7 +15,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY")!;
-const MODEL = "anthropic/claude-haiku-4.5";
+const MODEL = "minimax/minimax-m3";
 const MAX_CHARS = 400;
 
 function json(body: unknown, status = 200): Response {
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1024,
+        max_tokens: 2048,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -100,18 +100,25 @@ Deno.serve(async (req) => {
   if (typeof content !== "string") {
     return json({ error: "upstream_unexpected_shape" }, 502);
   }
-  // Strip markdown code fences the model may wrap output in (```json ... ```
-  // or ``` ... ```). Trim whitespace before/after.
-  const cleaned = content
+  // Extract the JSON object from the model's reply. Strip markdown fences
+  // and any prose around the object. Some models (e.g. minimax-m3) emit
+  // a JSON object followed by trailing chatter; we slice from the first
+  // `{` to the LAST matching `}` and parse that.
+  let cleaned = content
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    return json({ error: "upstream_non_json", raw: content.slice(0, 500) }, 502);
+    return json({ error: "upstream_non_json", raw: content.slice(0, 800) }, 502);
   }
   if (
     typeof parsed !== "object" ||

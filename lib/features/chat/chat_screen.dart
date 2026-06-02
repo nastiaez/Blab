@@ -979,39 +979,62 @@ class _Bubble extends StatelessWidget {
             // of the bubble mirror the incoming layout. PRD design
             // principles: "Partner's language always shown first; English
             // always second." For live-typed sends without a translation
-            // yet, fall back to showing just the original.
-            MessageText(
-              text: isOut && message.translation.isNotEmpty
-                  ? message.translation
-                  : message.originalText,
-              tokens: message.tokens,
-              languageCode: languageCode,
-              popupTopInset: popupTopInset,
-              style: TextStyle(
-                fontSize: 16,
-                height: 1.7,
-                color: isOut ? Colors.white : BlabColors.textPrimary,
+            // yet (pending state, outgoing), the shimmer occupies the
+            // main slot so the bubble already shows the final layout —
+            // shimmer where Tamil will land, English drops to the
+            // subtitle slot below.
+            if (isOut &&
+                message.translationState == TranslationState.pending) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: ShimmerLine(isOutgoing: isOut, height: 18),
               ),
-            ),
-            if (showTranslation) ...[
-              if (message.translationState == TranslationState.pending)
-                TranslationSubtitle(
-                  state: TranslationSubtitleState.pending,
-                  text: '',
-                  isOutgoing: isOut,
-                )
-              else if (message.translationState == TranslationState.unavailable)
-                TranslationSubtitle(
-                  state: TranslationSubtitleState.unavailable,
-                  text: '',
-                  isOutgoing: isOut,
-                )
-              else if (message.translation.isNotEmpty)
-                TranslationSubtitle(
-                  state: TranslationSubtitleState.ready,
-                  text: isOut ? message.originalText : message.translation,
-                  isOutgoing: isOut,
+              if (showTranslation) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Container(
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
                 ),
+                Text(
+                  message.originalText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ] else ...[
+              MessageText(
+                text: isOut && message.translation.isNotEmpty
+                    ? message.translation
+                    : message.originalText,
+                tokens: message.tokens,
+                languageCode: languageCode,
+                popupTopInset: popupTopInset,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.7,
+                  color: isOut ? Colors.white : BlabColors.textPrimary,
+                ),
+              ),
+              if (showTranslation) ...[
+                if (message.translationState == TranslationState.unavailable)
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.unavailable,
+                    text: '',
+                    isOutgoing: isOut,
+                  )
+                else if (message.translation.isNotEmpty)
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.ready,
+                    text:
+                        isOut ? message.originalText : message.translation,
+                    isOutgoing: isOut,
+                  ),
+              ],
             ],
           ],
         ),
