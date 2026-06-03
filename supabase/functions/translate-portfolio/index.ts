@@ -15,7 +15,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY")!;
-const MODEL = "minimax/minimax-m3";
+const MODEL = "openai/gpt-4o-mini";
 const MAX_CHARS = 400;
 
 function json(body: unknown, status = 200): Response {

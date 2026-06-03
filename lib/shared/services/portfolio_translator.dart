@@ -28,7 +28,7 @@ typedef PortfolioTranslateInvoke = Future<Map<String, dynamic>> Function({
 class PortfolioTranslator {
   PortfolioTranslator({
     PortfolioTranslateInvoke? invoke,
-    Duration timeout = const Duration(seconds: 4),
+    Duration timeout = const Duration(seconds: 15),
   })  : _invoke = invoke ?? _defaultInvoke,
         _timeout = timeout;
 

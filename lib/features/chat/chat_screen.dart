@@ -1006,6 +1006,35 @@ class _Bubble extends StatelessWidget {
                   ),
                 ),
               ],
+            ] else if (isOut &&
+                message.translationState ==
+                    TranslationState.unavailable) ...[
+              Text(
+                'Translation unavailable',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  height: 1.7,
+                ),
+              ),
+              if (showTranslation) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Container(
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.25),
+                  ),
+                ),
+                Text(
+                  message.originalText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ] else ...[
               MessageText(
                 text: isOut && message.translation.isNotEmpty
@@ -1020,20 +1049,12 @@ class _Bubble extends StatelessWidget {
                   color: isOut ? Colors.white : BlabColors.textPrimary,
                 ),
               ),
-              if (showTranslation) ...[
-                if (message.translationState == TranslationState.unavailable)
-                  TranslationSubtitle(
-                    state: TranslationSubtitleState.unavailable,
-                    text: '',
-                    isOutgoing: isOut,
-                  )
-                else if (message.translation.isNotEmpty)
-                  TranslationSubtitle(
-                    state: TranslationSubtitleState.ready,
-                    text:
-                        isOut ? message.originalText : message.translation,
-                    isOutgoing: isOut,
-                  ),
+              if (showTranslation && message.translation.isNotEmpty) ...[
+                TranslationSubtitle(
+                  state: TranslationSubtitleState.ready,
+                  text: isOut ? message.originalText : message.translation,
+                  isOutgoing: isOut,
+                ),
               ],
             ],
           ],
