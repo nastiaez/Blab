@@ -242,7 +242,7 @@
 - **Scope:** capture portfolio shots on phone (and emulator if needed): chat list, chat view, word popup, language picker, profile, invite landing, empty state, offline banner.
 - **Done when:** ≥6 portfolio-ready images exported under `docs/portfolio/`.
 
-### Step A2.5 — Portfolio mode: live English → Tamil send `[ ]` ← in progress
+### Step A2.5 — Portfolio mode: live English → Tamil send `[x]`
 - **Scope:** in portfolio mode, the user types any English in the Aswin chat and sees the bubble appear immediately, then the bubble swaps to a real Tamil translation with tappable per-word tokens (English gloss + romanization). On failure the bubble stays English with a muted "Translation unavailable" subtitle.
 - **Done when:**
   1. Type English in portfolio Aswin chat → bubble appears with shimmer subtitle → bubble swaps to Tamil with tappable tokens that match the curated-chat word popup format.
