@@ -26,6 +26,11 @@ import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/translation_subtitle.dart';
 
+/// Learning-language codes the live translator covers in v1. Other
+/// languages render plain bubbles + "Translation coming soon" subtitle
+/// (subtitle copy lands in a follow-up).
+const Set<String> _kSupportedLearningLanguages = {'ta', 'uk'};
+
 /// PRD US-013, US-014, US-015, US-016, US-017, US-023.
 ///
 /// Mock-only chat surface. Header / messages list / input. Word popups,
@@ -882,7 +887,7 @@ class _MessageRow extends ConsumerWidget {
     // (incoming + outgoing) when this viewer's learning language is one
     // we translate this slice. No-op in portfolio mode (curated tokens
     // already shipped). Source is always English for v1.
-    if (languageCode == 'ta' &&
+    if (_kSupportedLearningLanguages.contains(languageCode) &&
         !ref.watch(portfolioModeProvider) &&
         message.originalText.trim().isNotEmpty) {
       Future.microtask(() {
@@ -892,7 +897,7 @@ class _MessageRow extends ConsumerWidget {
               messageId: message.id,
               text: message.originalText,
               sourceLang: 'en',
-              targetLang: 'ta',
+              targetLang: languageCode,
             );
       });
     }
@@ -969,9 +974,10 @@ class _Bubble extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
 
-    final liveTranslation = languageCode == 'ta'
-        ? ref.watch(messageTranslationsProvider(chatId))[message.id]
-        : null;
+    final liveTranslation =
+        _kSupportedLearningLanguages.contains(languageCode)
+            ? ref.watch(messageTranslationsProvider(chatId))[message.id]
+            : null;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
