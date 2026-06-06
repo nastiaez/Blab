@@ -877,12 +877,12 @@ class _MessageRow extends ConsumerWidget {
     final maxBubble = width * 0.78;
     final isFailed = message.status == MessageStatus.failed;
 
-    // Fire real-chat translation for incoming Tamil bubbles. No-op when
-    // portfolio mode is on (curated tokens already shipped), when this is
-    // an outgoing bubble, or when the chat's learning language isn't a
-    // language we translate this slice.
-    if (!isOut &&
-        languageCode == 'ta' &&
+    // Pivot-English model: both sides type English, each viewer sees a
+    // translation into their own learning language. Fire for ALL bubbles
+    // (incoming + outgoing) when this viewer's learning language is one
+    // we translate this slice. No-op in portfolio mode (curated tokens
+    // already shipped). Source is always English for v1.
+    if (languageCode == 'ta' &&
         !ref.watch(portfolioModeProvider) &&
         message.originalText.trim().isNotEmpty) {
       Future.microtask(() {
@@ -891,8 +891,8 @@ class _MessageRow extends ConsumerWidget {
             .ensure(
               messageId: message.id,
               text: message.originalText,
-              sourceLang: 'ta',
-              targetLang: 'en',
+              sourceLang: 'en',
+              targetLang: 'ta',
             );
       });
     }
@@ -969,7 +969,7 @@ class _Bubble extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
 
-    final liveTranslation = !isOut && languageCode == 'ta'
+    final liveTranslation = languageCode == 'ta'
         ? ref.watch(messageTranslationsProvider(chatId))[message.id]
         : null;
 
@@ -1003,17 +1003,74 @@ class _Bubble extends ConsumerWidget {
               _QuotedReply(replyTo: message.replyTo!, parentIsOutgoing: isOut),
               const SizedBox(height: 6),
             ],
-            // Learning language always shown as main bubble text. For
-            // outgoing messages we display the Tamil translation as main
-            // and Nastia's typed English as the subtitle, so both sides
-            // of the bubble mirror the incoming layout. PRD design
-            // principles: "Partner's language always shown first; English
-            // always second." For live-typed sends without a translation
-            // yet (pending state, outgoing), the shimmer occupies the
-            // main slot so the bubble already shows the final layout —
-            // shimmer where Tamil will land, English drops to the
-            // subtitle slot below.
-            if (isOut &&
+            // Layout: learning-language translation in main slot, English
+            // original in subtitle. PRD design principle: "Partner's
+            // language always shown first; English always second." Holds
+            // for incoming, outgoing, real chats, and portfolio mode.
+            // Live translation states (real chat) take priority over
+            // portfolio `translationState` flags so portfolio mode still
+            // works untouched while real chats fire shimmer → ready/error
+            // via the per-chat translation cache.
+            if (liveTranslation is AsyncLoading) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: ShimmerLine(isOutgoing: isOut, height: 18),
+              ),
+              if (showTranslation) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Container(
+                    height: 1,
+                    color: isOut
+                        ? Colors.white.withValues(alpha: 0.25)
+                        : Colors.grey.shade200,
+                  ),
+                ),
+                Text(
+                  message.originalText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isOut
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : BlabColors.textMuted,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ] else if (liveTranslation is AsyncError) ...[
+              Text(
+                'Translation unavailable',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                  color: isOut
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : BlabColors.textMuted,
+                  height: 1.7,
+                ),
+              ),
+              if (showTranslation) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Container(
+                    height: 1,
+                    color: isOut
+                        ? Colors.white.withValues(alpha: 0.25)
+                        : Colors.grey.shade200,
+                  ),
+                ),
+                Text(
+                  message.originalText,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isOut
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : BlabColors.textMuted,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ] else if (isOut &&
                 message.translationState == TranslationState.pending) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1067,9 +1124,11 @@ class _Bubble extends ConsumerWidget {
               ],
             ] else ...[
               MessageText(
-                text: isOut && message.translation.isNotEmpty
-                    ? message.translation
-                    : message.originalText,
+                text: liveTranslation is AsyncData<MessageTranslation>
+                    ? liveTranslation.value.translation
+                    : (isOut && message.translation.isNotEmpty
+                        ? message.translation
+                        : message.originalText),
                 tokens: liveTranslation is AsyncData<MessageTranslation>
                     ? liveTranslation.value.tokens
                     : message.tokens,
@@ -1082,22 +1141,10 @@ class _Bubble extends ConsumerWidget {
                 ),
               ),
               if (showTranslation) ...[
-                if (liveTranslation is AsyncLoading)
-                  TranslationSubtitle(
-                    state: TranslationSubtitleState.pending,
-                    text: '',
-                    isOutgoing: isOut,
-                  )
-                else if (liveTranslation is AsyncError)
-                  TranslationSubtitle(
-                    state: TranslationSubtitleState.unavailable,
-                    text: '',
-                    isOutgoing: isOut,
-                  )
-                else if (liveTranslation is AsyncData<MessageTranslation>)
+                if (liveTranslation is AsyncData<MessageTranslation>)
                   TranslationSubtitle(
                     state: TranslationSubtitleState.ready,
-                    text: liveTranslation.value.translation,
+                    text: message.originalText,
                     isOutgoing: isOut,
                   )
                 else if (message.translation.isNotEmpty)
