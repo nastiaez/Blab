@@ -1,6 +1,8 @@
-// Real-chat translator. Calls OpenRouter (OpenAI-compatible) routed to
-// Anthropic Claude Haiku 4.5 with a parametrized prompt that returns
-// { translation, tokens[] } JSON matching the curated chat shape.
+// Real-chat translator. Calls OpenRouter (OpenAI-compatible) with a
+// parametrized prompt that returns { translation, tokens[] } JSON
+// matching the curated chat shape. Model is whatever MODEL is set to
+// below (currently openai/gpt-4o-mini — Anthropic Haiku ran here
+// previously and remains a swap-in option).
 // Auth required (Supabase JWT). Basic guards:
 //   - POST only
 //   - 400-char hard cap on `text`
