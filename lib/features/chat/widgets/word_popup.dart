@@ -491,11 +491,10 @@ class _TailPainter extends CustomPainter {
       oldDelegate.pointDown != pointDown;
 }
 
-/// Speaker icon that emits two curved sound waves while [playing] is true.
-/// Stacks three SVGs (speaker body + inner wave + outer wave) and drives
-/// per-wave opacity off a single looping controller. Inner wave leads,
-/// outer follows with a phase offset so the waves read as expanding
-/// outward.
+/// Speaker icon that scale-pulses while [playing] is true to suggest the
+/// speaker is "active". Uses the original combined `sound.svg` — no
+/// per-wave SVG splitting (the inner wave path is too thin for
+/// flutter_svg to rasterize smoothly in isolation, which caused flicker).
 class _AnimatedSpeakerIcon extends StatefulWidget {
   const _AnimatedSpeakerIcon({
     required this.playing,
@@ -520,7 +519,7 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 700),
     );
     if (widget.playing) _ctrl.repeat();
   }
@@ -532,7 +531,9 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
       _ctrl.repeat();
     } else if (!widget.playing && _ctrl.isAnimating) {
       _ctrl.stop();
-      _ctrl.value = 0;
+      _ctrl.animateTo(0,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut);
     }
   }
 
@@ -542,61 +543,26 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
     super.dispose();
   }
 
-  /// Bump-shaped curve: 0 at the edges of the cycle, 1 in the middle.
-  /// [phase] in [0, 1] shifts the bump so the two waves can alternate.
-  double _bump(double t, double phase) {
-    final shifted = (t + phase) % 1.0;
-    return (1 - (2 * shifted - 1).abs()).clamp(0.0, 1.0);
-  }
-
-  /// While playing, opacity pulses 0.6 → 1.0 → 0.6. While idle, waves
-  /// stay at full opacity (so the speaker reads as a normal sound icon,
-  /// not a muted one).
-  double _pulseOpacity(double t, double phase) {
-    if (!widget.playing) return 1.0;
-    return 0.6 + 0.4 * _bump(t, phase);
-  }
-
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.size,
-      height: widget.size,
-      child: AnimatedBuilder(
-        animation: _ctrl,
-        builder: (context, _) {
-          final t = _ctrl.value;
-          // Alternating phases so the two waves ring in opposite halves
-          // of the cycle.
-          final innerOpacity = _pulseOpacity(t, 0.0);
-          final outerOpacity = _pulseOpacity(t, 0.5);
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              BlabIcon(
-                name: 'sound-base',
-                color: widget.color,
-                size: widget.size,
-              ),
-              Opacity(
-                opacity: innerOpacity,
-                child: BlabIcon(
-                  name: 'sound-wave-1',
-                  color: widget.color,
-                  size: widget.size,
-                ),
-              ),
-              Opacity(
-                opacity: outerOpacity,
-                child: BlabIcon(
-                  name: 'sound-wave-2',
-                  color: widget.color,
-                  size: widget.size,
-                ),
-              ),
-            ],
-          );
-        },
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, child) {
+        // Triangle 0 → 1 → 0 across the cycle so the icon expands then
+        // contracts smoothly each beat.
+        final t = _ctrl.value;
+        final pulse = 1 - (2 * t - 1).abs();
+        // Up to +10 % at the peak. Subtle but visible.
+        final scale = 1.0 + 0.10 * pulse;
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
+      },
+      child: BlabIcon(
+        name: 'sound',
+        color: widget.color,
+        size: widget.size,
       ),
     );
   }
