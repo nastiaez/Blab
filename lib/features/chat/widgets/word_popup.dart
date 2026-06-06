@@ -542,12 +542,19 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
     super.dispose();
   }
 
-  /// Bump-shaped opacity curve: 0 at the edges, 1 in the middle of the
-  /// loop. [phase] in [0, 1] shifts the bump along the cycle so the outer
-  /// wave can lag the inner one.
-  double _waveOpacity(double t, double phase) {
+  /// Bump-shaped curve: 0 at the edges of the cycle, 1 in the middle.
+  /// [phase] in [0, 1] shifts the bump so the two waves can alternate.
+  double _bump(double t, double phase) {
     final shifted = (t + phase) % 1.0;
     return (1 - (2 * shifted - 1).abs()).clamp(0.0, 1.0);
+  }
+
+  /// While playing, opacity pulses 0.6 → 1.0 → 0.6. While idle, waves
+  /// stay at full opacity (so the speaker reads as a normal sound icon,
+  /// not a muted one).
+  double _pulseOpacity(double t, double phase) {
+    if (!widget.playing) return 1.0;
+    return 0.6 + 0.4 * _bump(t, phase);
   }
 
   @override
@@ -559,9 +566,10 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
         animation: _ctrl,
         builder: (context, _) {
           final t = _ctrl.value;
-          // Inner wave on phase 0, outer wave lagging by ~25%.
-          final innerOpacity = widget.playing ? _waveOpacity(t, 0.0) : 0.0;
-          final outerOpacity = widget.playing ? _waveOpacity(t, 0.75) : 0.0;
+          // Alternating phases so the two waves ring in opposite halves
+          // of the cycle.
+          final innerOpacity = _pulseOpacity(t, 0.0);
+          final outerOpacity = _pulseOpacity(t, 0.5);
           return Stack(
             alignment: Alignment.center,
             children: [
