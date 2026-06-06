@@ -570,18 +570,16 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
                 color: widget.color,
                 size: widget.size,
               ),
-              AnimatedOpacity(
+              Opacity(
                 opacity: innerOpacity,
-                duration: const Duration(milliseconds: 80),
                 child: BlabIcon(
                   name: 'sound-wave-1',
                   color: widget.color,
                   size: widget.size,
                 ),
               ),
-              AnimatedOpacity(
+              Opacity(
                 opacity: outerOpacity,
-                duration: const Duration(milliseconds: 80),
                 child: BlabIcon(
                   name: 'sound-wave-2',
                   color: widget.color,
