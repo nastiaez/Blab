@@ -26,10 +26,14 @@ import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/translation_subtitle.dart';
 
-/// Learning-language codes the live translator covers in v1. Other
-/// languages render plain bubbles + "Translation coming soon" subtitle
-/// (subtitle copy lands in a follow-up).
-const Set<String> _kSupportedLearningLanguages = {'ta', 'uk'};
+/// Learning-language codes the live translator covers. Every Blab
+/// language EXCEPT English — in v1 both sides type English, so a
+/// chat whose viewer is "learning English" needs no translation.
+/// All other 10 languages route through `translate-message` via
+/// OpenRouter / gpt-4o-mini, which knows all of them.
+const Set<String> _kSupportedLearningLanguages = {
+  'nl', 'fr', 'de', 'hi', 'it', 'pt', 'es', 'ta', 'tr', 'uk',
+};
 
 /// PRD US-013, US-014, US-015, US-016, US-017, US-023.
 ///
