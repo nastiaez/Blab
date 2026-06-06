@@ -14,7 +14,6 @@ import 'package:flutter/services.dart';
 import '../../../app/theme.dart';
 import '../../../shared/models/message_token.dart';
 import '../../../shared/services/tts_service.dart';
-import '../../../shared/widgets/blab_icon.dart';
 
 /// How long the "playing" wave animation runs after a tap. Tuned to
 /// roughly match a one-word TTS utterance on a Samsung S931B; TTS
@@ -491,10 +490,18 @@ class _TailPainter extends CustomPainter {
       oldDelegate.pointDown != pointDown;
 }
 
-/// Speaker icon that scale-pulses while [playing] is true to suggest the
-/// speaker is "active". Uses the original combined `sound.svg` — no
-/// per-wave SVG splitting (the inner wave path is too thin for
-/// flutter_svg to rasterize smoothly in isolation, which caused flicker).
+/// Speaker icon with per-wave opacity animation while [playing] is true.
+///
+/// Drawn via [CustomPaint] (Skia) rather than `flutter_svg` — isolating
+/// the thin wave-1 curve as its own SVG and animating its opacity made
+/// `flutter_svg` flicker at sub-pixel widths. Painting the speaker +
+/// both waves on a single canvas with explicit per-wave opacities
+/// removes the pipeline entirely.
+///
+/// Idle: both waves at full opacity (looks like the normal sound icon).
+/// Playing: cycle on a 900 ms loop — both waves fade to 0, inner fades
+/// back in first, outer follows shortly after, both stay visible
+/// briefly, then loop restarts. No scale change.
 class _AnimatedSpeakerIcon extends StatefulWidget {
   const _AnimatedSpeakerIcon({
     required this.playing,
@@ -519,7 +526,7 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 900),
     );
     if (widget.playing) _ctrl.repeat();
   }
@@ -531,9 +538,7 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
       _ctrl.repeat();
     } else if (!widget.playing && _ctrl.isAnimating) {
       _ctrl.stop();
-      _ctrl.animateTo(0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut);
+      _ctrl.value = 0; // idle state, both waves at full alpha
     }
   }
 
@@ -543,27 +548,125 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
     super.dispose();
   }
 
+  /// Cycle 0..1. Wave 1 (inner) fades in earlier than wave 2 (outer).
+  /// Both reach full alpha by ~70 % of the cycle and fade to 0 by the
+  /// end so the next cycle starts blank.
+  double _wave1Alpha(double t) {
+    if (!widget.playing) return 1.0;
+    // Fade in: 0.0 → 0.45 (ease-out)
+    if (t < 0.45) return Curves.easeOut.transform(t / 0.45);
+    // Hold full from 0.45 → 0.85
+    if (t < 0.85) return 1.0;
+    // Fade out: 0.85 → 1.0 (ease-in)
+    return 1.0 - Curves.easeIn.transform((t - 0.85) / 0.15);
+  }
+
+  double _wave2Alpha(double t) {
+    if (!widget.playing) return 1.0;
+    // Delayed start: nothing until 0.2
+    if (t < 0.2) return 0.0;
+    // Fade in: 0.2 → 0.65 (ease-out)
+    if (t < 0.65) return Curves.easeOut.transform((t - 0.2) / 0.45);
+    // Hold full from 0.65 → 0.85
+    if (t < 0.85) return 1.0;
+    // Fade out: 0.85 → 1.0 (ease-in)
+    return 1.0 - Curves.easeIn.transform((t - 0.85) / 0.15);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, child) {
-        // Triangle 0 → 1 → 0 across the cycle so the icon expands then
-        // contracts smoothly each beat.
-        final t = _ctrl.value;
-        final pulse = 1 - (2 * t - 1).abs();
-        // Up to +10 % at the peak. Subtle but visible.
-        final scale = 1.0 + 0.10 * pulse;
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
-      },
-      child: BlabIcon(
-        name: 'sound',
-        color: widget.color,
-        size: widget.size,
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, _) {
+          final t = _ctrl.value;
+          return CustomPaint(
+            size: Size(widget.size, widget.size),
+            painter: _SpeakerPainter(
+              color: widget.color,
+              wave1Alpha: _wave1Alpha(t),
+              wave2Alpha: _wave2Alpha(t),
+            ),
+          );
+        },
       ),
     );
   }
+}
+
+/// Paints the speaker icon shape from `sound.svg` (viewBox 0..24) with
+/// independent opacities for the two waves.
+class _SpeakerPainter extends CustomPainter {
+  _SpeakerPainter({
+    required this.color,
+    required this.wave1Alpha,
+    required this.wave2Alpha,
+  });
+
+  final Color color;
+  final double wave1Alpha;
+  final double wave2Alpha;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // viewBox is 24x24. Scale every coordinate to widget size.
+    final s = size.width / 24.0;
+
+    Paint strokePaint(double alpha) => Paint()
+      ..color = color.withValues(alpha: alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0 * s
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    // Speaker body — coordinates lifted verbatim from sound.svg path.
+    final body = Path()
+      ..moveTo(2 * s, 14.959 * s)
+      ..lineTo(2 * s, 9.04 * s)
+      ..cubicTo(2 * s, 8.466 * s, 2.448 * s, 8 * s, 3 * s, 8 * s)
+      ..lineTo(6.586 * s, 8 * s)
+      ..cubicTo(
+          6.71833 * s, 7.99954 * s, 6.8492 * s, 7.97228 * s, 6.97071 * s, 7.91986 * s)
+      ..cubicTo(
+          7.09222 * s, 7.86744 * s, 7.20185 * s, 7.79095 * s, 7.293 * s, 7.69501 * s)
+      ..lineTo(10.293 * s, 4.30701 * s)
+      ..cubicTo(10.923 * s, 3.65101 * s, 12 * s, 4.11601 * s, 12 * s, 5.04301 * s)
+      ..lineTo(12 * s, 18.957 * s)
+      ..cubicTo(12 * s, 19.891 * s, 10.91 * s, 20.352 * s, 10.284 * s, 19.683 * s)
+      ..lineTo(7.294 * s, 16.314 * s)
+      ..cubicTo(
+          7.20259 * s, 16.2153 * s, 7.09185 * s, 16.1365 * s, 6.96867 * s, 16.0825 * s)
+      ..cubicTo(
+          6.84549 * s, 16.0285 * s, 6.71251 * s, 16.0004 * s, 6.578 * s, 16 * s)
+      ..lineTo(3 * s, 16 * s)
+      ..cubicTo(2.448 * s, 16 * s, 2 * s, 15.534 * s, 2 * s, 14.959 * s)
+      ..close();
+    canvas.drawPath(body, strokePaint(1.0));
+
+    // Inner wave.
+    if (wave1Alpha > 0) {
+      final wave1 = Path()
+        ..moveTo(16 * s, 8.5 * s)
+        ..cubicTo(
+            17.333 * s, 10.278 * s, 17.333 * s, 13.722 * s, 16 * s, 15.5 * s);
+      canvas.drawPath(wave1, strokePaint(wave1Alpha));
+    }
+
+    // Outer wave.
+    if (wave2Alpha > 0) {
+      final wave2 = Path()
+        ..moveTo(19 * s, 5 * s)
+        ..cubicTo(
+            22.988 * s, 8.808 * s, 23.012 * s, 15.217 * s, 19 * s, 19 * s);
+      canvas.drawPath(wave2, strokePaint(wave2Alpha));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SpeakerPainter old) =>
+      old.color != color ||
+      old.wave1Alpha != wave1Alpha ||
+      old.wave2Alpha != wave2Alpha;
 }
