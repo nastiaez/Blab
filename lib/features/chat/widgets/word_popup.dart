@@ -6,11 +6,21 @@
 /// there isn't room above.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app/theme.dart';
 import '../../../shared/models/message_token.dart';
 import '../../../shared/services/tts_service.dart';
+import '../../../shared/widgets/blab_icon.dart';
+
+/// How long the "playing" wave animation runs after a tap. Tuned to
+/// roughly match a one-word TTS utterance on a Samsung S931B; TTS
+/// engines don't expose a reliable completion callback so we keep it
+/// deterministic.
+const Duration _kPlayingDuration = Duration(milliseconds: 1600);
 
 /// Currently-visible popup entry, so we can close it before opening a new
 /// one. Mutable singleton tracked at library scope — only ever one popup at
@@ -23,7 +33,7 @@ void _dismissCurrent() {
 }
 
 /// Maximum popup card width (PRD FR-12).
-const double _kMaxPopupWidth = 260;
+const double _kMaxPopupWidth = 280;
 
 /// Minimum gap between popup edge and screen edge.
 const double _kEdgePadding = 12;
@@ -304,7 +314,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
   }
 }
 
-class _PopupCard extends StatelessWidget {
+class _PopupCard extends StatefulWidget {
   const _PopupCard({
     super.key,
     required this.token,
@@ -317,21 +327,43 @@ class _PopupCard extends StatelessWidget {
   final VoidCallback onSpeak;
 
   @override
+  State<_PopupCard> createState() => _PopupCardState();
+}
+
+class _PopupCardState extends State<_PopupCard> {
+  bool _isPlaying = false;
+  Timer? _playTimer;
+
+  @override
+  void dispose() {
+    _playTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    HapticFeedback.lightImpact();
+    setState(() => _isPlaying = true);
+    widget.onSpeak();
+    _playTimer?.cancel();
+    _playTimer = Timer(_kPlayingDuration, () {
+      if (!mounted) return;
+      setState(() => _isPlaying = false);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final token = widget.token;
     final hasRomanization =
         token.romanization != null && token.romanization!.isNotEmpty;
     final hasEnglish = token.english != null && token.english!.isNotEmpty;
-    final unknown = ttsAvailable == null;
-    final disabled = ttsAvailable == false;
+    final unknown = widget.ttsAvailable == null;
+    final disabled = widget.ttsAvailable == false;
     final inactive = unknown || disabled;
 
-    final icon = Icon(
-      Icons.volume_up_outlined,
-      size: 24,
-      color: inactive
-          ? BlabColors.textMuted.withValues(alpha: 0.4)
-          : BlabColors.brand,
-    );
+    final iconColor = inactive
+        ? BlabColors.textMuted.withValues(alpha: 0.4)
+        : BlabColors.brand;
 
     final Widget speakerButton = SizedBox(
       width: 32,
@@ -341,8 +373,14 @@ class _PopupCard extends StatelessWidget {
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: inactive ? null : onSpeak,
-          child: Center(child: icon),
+          onTap: inactive ? null : _handleTap,
+          child: Center(
+            child: _AnimatedSpeakerIcon(
+              playing: _isPlaying && !inactive,
+              color: iconColor,
+              size: 24,
+            ),
+          ),
         ),
       ),
     );
@@ -366,6 +404,7 @@ class _PopupCard extends StatelessWidget {
             token.romanization!,
             style: const TextStyle(
               fontSize: 13,
+              fontWeight: FontWeight.w400,
               color: BlabColors.textMuted,
               height: 1.2,
             ),
@@ -377,8 +416,8 @@ class _PopupCard extends StatelessWidget {
             token.english!,
             style: const TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: BlabColors.textPrimary,
+              fontWeight: FontWeight.w600,
+              color: BlabColors.brand,
               height: 1.25,
             ),
           ),
@@ -450,4 +489,109 @@ class _TailPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TailPainter oldDelegate) =>
       oldDelegate.pointDown != pointDown;
+}
+
+/// Speaker icon that emits two curved sound waves while [playing] is true.
+/// Stacks three SVGs (speaker body + inner wave + outer wave) and drives
+/// per-wave opacity off a single looping controller. Inner wave leads,
+/// outer follows with a phase offset so the waves read as expanding
+/// outward.
+class _AnimatedSpeakerIcon extends StatefulWidget {
+  const _AnimatedSpeakerIcon({
+    required this.playing,
+    required this.color,
+    required this.size,
+  });
+
+  final bool playing;
+  final Color color;
+  final double size;
+
+  @override
+  State<_AnimatedSpeakerIcon> createState() => _AnimatedSpeakerIconState();
+}
+
+class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    if (widget.playing) _ctrl.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedSpeakerIcon old) {
+    super.didUpdateWidget(old);
+    if (widget.playing && !_ctrl.isAnimating) {
+      _ctrl.repeat();
+    } else if (!widget.playing && _ctrl.isAnimating) {
+      _ctrl.stop();
+      _ctrl.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  /// Bump-shaped opacity curve: 0 at the edges, 1 in the middle of the
+  /// loop. [phase] in [0, 1] shifts the bump along the cycle so the outer
+  /// wave can lag the inner one.
+  double _waveOpacity(double t, double phase) {
+    final shifted = (t + phase) % 1.0;
+    return (1 - (2 * shifted - 1).abs()).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, _) {
+          final t = _ctrl.value;
+          // Inner wave on phase 0, outer wave lagging by ~25%.
+          final innerOpacity = widget.playing ? _waveOpacity(t, 0.0) : 0.0;
+          final outerOpacity = widget.playing ? _waveOpacity(t, 0.75) : 0.0;
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              BlabIcon(
+                name: 'sound-base',
+                color: widget.color,
+                size: widget.size,
+              ),
+              AnimatedOpacity(
+                opacity: innerOpacity,
+                duration: const Duration(milliseconds: 80),
+                child: BlabIcon(
+                  name: 'sound-wave-1',
+                  color: widget.color,
+                  size: widget.size,
+                ),
+              ),
+              AnimatedOpacity(
+                opacity: outerOpacity,
+                duration: const Duration(milliseconds: 80),
+                child: BlabIcon(
+                  name: 'sound-wave-2',
+                  color: widget.color,
+                  size: widget.size,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
