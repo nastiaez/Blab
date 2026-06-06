@@ -306,8 +306,23 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
     return english;
   }
 
-  void set(BlabLanguage lang) {
+  /// Optimistically updates local state and persists the new language to
+  /// the user's `chat_members` row. The persist call survives realtime
+  /// refreshes of `chatListProvider`. On failure the change is rolled
+  /// back to the prior language and the error rethrown so the caller can
+  /// surface it.
+  Future<void> set(BlabLanguage lang) async {
+    final previous = state;
     state = lang;
+    try {
+      await ref
+          .read(chatServiceProvider)
+          .setLearningLanguage(chatId: chatId, langCode: lang.code);
+      await ref.read(chatListProvider.notifier).refresh();
+    } catch (e) {
+      state = previous;
+      rethrow;
+    }
   }
 }
 

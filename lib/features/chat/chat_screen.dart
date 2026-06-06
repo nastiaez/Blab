@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/models/chat.dart';
 import '../../shared/models/message.dart';
@@ -406,9 +407,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       current: current,
                     );
                     if (picked != null) {
-                      ref
-                          .read(learningLanguageProvider(widget.chatId).notifier)
-                          .set(picked);
+                      try {
+                        await ref
+                            .read(learningLanguageProvider(widget.chatId)
+                                .notifier)
+                            .set(picked);
+                      } catch (_) {
+                        if (!mounted) return;
+                        showAppSnack("Couldn't save language. Try again.");
+                      }
                     }
                   },
                 ),

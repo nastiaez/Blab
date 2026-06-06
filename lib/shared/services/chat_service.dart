@@ -116,6 +116,20 @@ class ChatService {
         .eq('user_id', _uid);
   }
 
+  /// Persist a new learning language on the caller's chat_members row.
+  /// PRD US-022 — picking a language in the ⋯ menu must survive cold
+  /// start and any realtime refresh of `chat_list`.
+  Future<void> setLearningLanguage({
+    required String chatId,
+    required String langCode,
+  }) async {
+    await _client
+        .from('chat_members')
+        .update({'learning_language': langCode})
+        .eq('chat_id', chatId)
+        .eq('user_id', _uid);
+  }
+
   Future<String> pairWithEmail({
     required String partnerEmail,
     required String myLearning,
