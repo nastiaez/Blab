@@ -13,8 +13,11 @@ import '../../shared/widgets/blab_switch.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
+import '../../shared/services/message_translator.dart';
+import '../../shared/state/portfolio_mode.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
+import 'state/message_translations_state.dart';
 import 'state/pending_sends_state.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/learning_language_sheet.dart';
@@ -874,11 +877,32 @@ class _MessageRow extends ConsumerWidget {
     final maxBubble = width * 0.78;
     final isFailed = message.status == MessageStatus.failed;
 
+    // Fire real-chat translation for incoming Tamil bubbles. No-op when
+    // portfolio mode is on (curated tokens already shipped), when this is
+    // an outgoing bubble, or when the chat's learning language isn't a
+    // language we translate this slice.
+    if (!isOut &&
+        languageCode == 'ta' &&
+        !ref.watch(portfolioModeProvider) &&
+        message.originalText.trim().isNotEmpty) {
+      Future.microtask(() {
+        ref
+            .read(messageTranslationsProvider(chatId).notifier)
+            .ensure(
+              messageId: message.id,
+              text: message.originalText,
+              sourceLang: 'ta',
+              targetLang: 'en',
+            );
+      });
+    }
+
     Widget bubble = GestureDetector(
       behavior: HitTestBehavior.opaque,
       onLongPress: onLongPress,
       onTap: isFailed ? onFailedTap : null,
       child: _Bubble(
+        chatId: chatId,
         message: message,
         showTranslation: showTranslation,
         maxWidth: maxBubble,
@@ -924,8 +948,9 @@ class _MessageRow extends ConsumerWidget {
   }
 }
 
-class _Bubble extends StatelessWidget {
+class _Bubble extends ConsumerWidget {
   const _Bubble({
+    required this.chatId,
     required this.message,
     required this.showTranslation,
     required this.maxWidth,
@@ -933,6 +958,7 @@ class _Bubble extends StatelessWidget {
     required this.popupTopInset,
   });
 
+  final String chatId;
   final Message message;
   final bool showTranslation;
   final double maxWidth;
@@ -940,8 +966,12 @@ class _Bubble extends StatelessWidget {
   final double popupTopInset;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
+
+    final liveTranslation = !isOut && languageCode == 'ta'
+        ? ref.watch(messageTranslationsProvider(chatId))[message.id]
+        : null;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
@@ -1040,7 +1070,9 @@ class _Bubble extends StatelessWidget {
                 text: isOut && message.translation.isNotEmpty
                     ? message.translation
                     : message.originalText,
-                tokens: message.tokens,
+                tokens: liveTranslation is AsyncData<MessageTranslation>
+                    ? liveTranslation.value.tokens
+                    : message.tokens,
                 languageCode: languageCode,
                 popupTopInset: popupTopInset,
                 style: TextStyle(
@@ -1049,12 +1081,31 @@ class _Bubble extends StatelessWidget {
                   color: isOut ? Colors.white : BlabColors.textPrimary,
                 ),
               ),
-              if (showTranslation && message.translation.isNotEmpty) ...[
-                TranslationSubtitle(
-                  state: TranslationSubtitleState.ready,
-                  text: isOut ? message.originalText : message.translation,
-                  isOutgoing: isOut,
-                ),
+              if (showTranslation) ...[
+                if (liveTranslation is AsyncLoading)
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.pending,
+                    text: '',
+                    isOutgoing: isOut,
+                  )
+                else if (liveTranslation is AsyncError)
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.unavailable,
+                    text: '',
+                    isOutgoing: isOut,
+                  )
+                else if (liveTranslation is AsyncData<MessageTranslation>)
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.ready,
+                    text: liveTranslation.value.translation,
+                    isOutgoing: isOut,
+                  )
+                else if (message.translation.isNotEmpty)
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.ready,
+                    text: isOut ? message.originalText : message.translation,
+                    isOutgoing: isOut,
+                  ),
               ],
             ],
           ],
