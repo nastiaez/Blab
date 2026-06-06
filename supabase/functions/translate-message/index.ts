@@ -44,33 +44,58 @@ function json(body: unknown, status = 200): Response {
 function systemPrompt(sourceLang: string, targetLang: string): string {
   const sourceName = LANG_NAMES[sourceLang];
   const targetName = LANG_NAMES[targetLang];
-  const romanGuidance = NON_LATIN.has(sourceLang)
-    ? `- For each content token (a ${sourceName} word) include "roman" (Latin-script romanization, e.g. IAST for Tamil).`
-    : `- "roman" may be omitted on content tokens when the source script is already Latin.`;
+  const romanGuidance = NON_LATIN.has(targetLang)
+    ? `- For each content token (a ${targetName} word) include "roman" (Latin-script romanization, e.g. IAST for Tamil — "Vaṇakkam", "Eppadi").`
+    : `- "roman" may be omitted on content tokens when ${targetName} is already in Latin script.`;
 
   return `You translate ${sourceName} sentences into ${targetName} for a
-language-learning app. You ALWAYS reply with strict JSON in this exact
-shape and nothing else (no prose, no markdown fences):
+language-learning app.
+
+DIRECTION: source = ${sourceName}, target = ${targetName}.
+The user sends a ${sourceName} sentence. You MUST return a ${targetName}
+translation. The "translation" field must be in ${targetName}, never
+${sourceName}.
+
+You ALWAYS reply with strict JSON in this exact shape and nothing else
+(no prose, no markdown fences):
 
 {
   "translation": "<full ${targetName} translation as one string>",
   "tokens": [
-    { "text": "<segment of the ORIGINAL ${sourceName} sentence>", "english": "<1-3 word ${targetName} gloss>", "roman": "<romanization>", "isContent": true },
+    { "text": "<segment of the ${targetName} TRANSLATION>", "english": "<1-3 word ${sourceName} gloss of this ${targetName} segment>", "roman": "<Latin-script romanization of the ${targetName} segment>", "isContent": true },
     { "text": " ", "isContent": false }
   ]
 }
 
 Rules:
+- The "translation" top-level field is the full natural ${targetName}
+  sentence — colloquial, not word-for-word. Always in ${targetName}.
 - The "tokens" array's "text" fields, concatenated in order, MUST exactly
-  reproduce the ORIGINAL ${sourceName} sentence the user sent (whitespace
-  and punctuation included). NOT the translation.
-- Content tokens (${sourceName} words) have isContent=true and include
-  "english" (the ${targetName} gloss) and "roman".
+  reproduce the "translation" string (whitespace and punctuation
+  included). Tokens are segments of the ${targetName} TRANSLATION, NOT
+  of the ${sourceName} input.
+- Content tokens (${targetName} words) have isContent=true and include
+  "english" (the ${sourceName} meaning of this ${targetName} word — 1-3
+  words) and "roman".
 - Whitespace, punctuation, and emoji are separate tokens with
   isContent=false and MUST NOT include "english" or "roman".
 ${romanGuidance}
-- The "translation" field is the full natural ${targetName} sentence —
-  colloquial, not word-for-word.`;
+
+EXAMPLE — source=English, target=Tamil, input "morning! how are you?":
+{
+  "translation": "காலை வணக்கம், எப்படி இருக்கீங்க?",
+  "tokens": [
+    { "text": "காலை", "english": "morning", "roman": "kaalai", "isContent": true },
+    { "text": " ", "isContent": false },
+    { "text": "வணக்கம்", "english": "greeting", "roman": "vanakkam", "isContent": true },
+    { "text": ",", "isContent": false },
+    { "text": " ", "isContent": false },
+    { "text": "எப்படி", "english": "how", "roman": "eppadi", "isContent": true },
+    { "text": " ", "isContent": false },
+    { "text": "இருக்கீங்க", "english": "are you", "roman": "irukkeenga", "isContent": true },
+    { "text": "?", "isContent": false }
+  ]
+}`;
 }
 
 Deno.serve(async (req) => {
