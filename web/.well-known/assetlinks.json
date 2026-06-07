@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "sh.aswin.blab",
+      "sha256_cert_fingerprints": [
+        "E5:1F:2F:CA:88:A3:D6:4E:57:44:60:55:33:C4:BA:B1:90:F4:D5:1E:4F:7E:43:9E:69:B2:DB:42:64:36:71:0C"
+      ]
+    }
+  }
+]

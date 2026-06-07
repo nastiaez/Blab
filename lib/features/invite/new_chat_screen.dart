@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../shared/data/invite_host.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/chat_list_state.dart';
 import 'widgets/share_invite_sheet.dart';
@@ -305,7 +306,7 @@ class _SendBodyState extends ConsumerState<_SendBody> {
           .read(chatServiceProvider)
           .createInvite(myLearningLanguage: widget.lang.code);
       if (!mounted) return;
-      final url = 'blab://i/${result.token}';
+      final url = 'https://$kInviteHost/i/${result.token}';
       await showShareInviteSheet(context, inviteLink: url);
       if (!mounted) return;
       showAppSnack('Invite sent ✓');

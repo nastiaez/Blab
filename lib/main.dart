@@ -11,6 +11,7 @@ import 'app/app_messenger.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 import 'features/chat/state/message_translations_state.dart';
+import 'shared/data/invite_host.dart';
 import 'shared/data/supabase_config.dart';
 
 Future<void> main() async {
@@ -99,11 +100,21 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   }
 
   void _routeIncomingLink(Uri uri) {
-    if (uri.scheme != 'blab') return;
-    // blab://i/<token>
-    if (uri.host == 'i' && uri.pathSegments.isNotEmpty) {
-      final token = uri.pathSegments.first;
-      blabRouter.go('/i/$token');
+    // Verified Android App Link: https://<host>/i/<token>
+    if (uri.scheme == 'https' &&
+        uri.host == kInviteHost &&
+        uri.pathSegments.length >= 2 &&
+        uri.pathSegments.first == 'i') {
+      blabRouter.go('/i/${uri.pathSegments[1]}');
+      return;
+    }
+    // Legacy custom-scheme deep link: blab://i/<token>. Kept for
+    // backwards compatibility with any closed-test links already in
+    // flight that used the pre-HTTPS scheme.
+    if (uri.scheme == 'blab' &&
+        uri.host == 'i' &&
+        uri.pathSegments.isNotEmpty) {
+      blabRouter.go('/i/${uri.pathSegments.first}');
       return;
     }
   }

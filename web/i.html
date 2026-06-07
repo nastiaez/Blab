@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>You're invited to Blab</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #efebe2;
+        --surface: #ffffff;
+        --ink: #1f3340;
+        --brand: #d4694a;
+        --muted: #6d6961;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        min-height: 100%;
+      }
+      main {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 48px 24px;
+        text-align: center;
+      }
+      .logo {
+        font-size: 28px;
+        color: var(--brand);
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin: 0 0 32px;
+      }
+      h1 {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.3;
+        margin: 0 0 12px;
+      }
+      p {
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--muted);
+        margin: 0 0 32px;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 320px;
+        margin: 0 auto;
+      }
+      a.btn {
+        display: block;
+        padding: 14px 22px;
+        border-radius: 14px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+      }
+      a.btn.primary {
+        background: var(--brand);
+        color: white;
+      }
+      a.btn.secondary {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid #c8c2b2;
+      }
+      .small {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="logo">blab</div>
+      <h1>You’re invited to chat on Blab.</h1>
+      <p>Open the app to accept and start chatting. If you don’t have Blab yet, install it first.</p>
+      <div class="actions">
+        <a id="openApp" class="btn primary" href="#">Open in Blab</a>
+        <a id="install" class="btn secondary" href="https://play.google.com/store/apps/details?id=sh.aswin.blab">Get the app</a>
+      </div>
+      <div class="small">Invite expires 48 hours after it was created and works once.</div>
+    </main>
+    <script>
+      (function () {
+        // /i/<token> — path has exactly two non-empty segments.
+        var parts = window.location.pathname.split('/').filter(Boolean);
+        var token = parts.length >= 2 && parts[0] === 'i' ? parts[1] : '';
+        var openApp = document.getElementById('openApp');
+        if (!token) {
+          openApp.parentNode.removeChild(openApp);
+          return;
+        }
+        var deepLink = 'blab://i/' + encodeURIComponent(token);
+        openApp.setAttribute('href', deepLink);
+
+        // Try the App Link automatically when the page loads. Android with
+        // verified App Links will catch the same HTTPS URL before the
+        // fallback runs; if it doesn't, the deep-link scheme attempt below
+        // gives one more chance, then the page just sits with the buttons.
+        setTimeout(function () {
+          window.location.href = deepLink;
+        }, 250);
+      })();
+    </script>
+  </body>
+</html>
