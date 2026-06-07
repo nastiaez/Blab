@@ -221,11 +221,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (kSupportedLearningLanguages.contains(learningLang.code) &&
         _prefetchedLang != learningLang.code) {
       _prefetchedLang = learningLang.code;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        ref
-            .read(messageTranslationsProvider(widget.chatId).notifier)
-            .prefetchFromDb(learningLang.code);
+        final notifier = ref
+            .read(messageTranslationsProvider(widget.chatId).notifier);
+        await notifier.prefetchFromDb(learningLang.code);
+        if (!mounted) return;
+        // After hydrating from the DB, kick LLM translations for every
+        // message that's still uncached so the user doesn't have to
+        // scroll past each one to trigger it. ensure() is idempotent —
+        // hits + in-flight rows no-op, only true misses round-trip.
+        final messages =
+            ref.read(chatMessagesProvider(widget.chatId)).value;
+        if (messages == null) return;
+        for (final m in messages) {
+          if (m.originalText.trim().isEmpty) continue;
+          notifier.ensure(
+            messageId: m.id,
+            text: m.originalText,
+            sourceLang: 'en',
+            targetLang: learningLang.code,
+          );
+        }
       });
     }
 
