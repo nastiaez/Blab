@@ -31,18 +31,19 @@ class InviteResolverScreen extends ConsumerWidget {
           'used' => InviteStatus.used,
           _ => InviteStatus.expired,
         };
-        // Inviter opened their own link (usually by accident in their
-        // own messenger thread). Show a "this is yours" view instead
-        // of routing them into the claim flow that would just fail.
+        // Inviter opened their own link — route to the owner-facing
+        // view regardless of state (valid / claimed / expired). Each
+        // state shows a different body.
         final currentUid =
             Supabase.instance.client.auth.currentUser?.id;
-        if (status == InviteStatus.valid &&
-            currentUid != null &&
-            currentUid == meta.inviterUserId) {
+        if (currentUid != null && currentUid == meta.inviterUserId) {
           return InviteOwnerScreen(
             token: meta.token,
             inviterLearningCode: meta.inviterLearningLanguage,
             expiresAt: meta.expiresAt,
+            status: meta.status,
+            resultingChatId: meta.resultingChatId,
+            claimedByName: meta.claimedByName,
           );
         }
         return InviteLandingScreen(

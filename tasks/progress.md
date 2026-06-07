@@ -301,7 +301,9 @@
   - Crash-free sessions > 99% over 48h of internal use
   - PRD § Open Questions resolved or explicitly deferred with a written note
 
-### Step 3.7 — Web fallback domain + Android App Links  `[ ]` — **DEFERRED to v1.1 / public launch**
+### Step 3.7 — Web fallback domain + Android App Links + state-aware landing `[ ]` — **PARTIAL (v1 closed-test); rest DEFERRED to v1.1**
+- **Status:** static landing + verified Android App Link shipped 2026-06-07 on `blab-gray.vercel.app` (vercel project `getblab`, debug signing fingerprint). Remaining items below land before public launch.
+- **v1.1 scope:** smart, state-aware web landing for cases when the recipient doesn't have the app installed yet: fetch invite metadata via Supabase REST anon (or the new `get_invite` RPC) directly from the browser, then render contextual copy — e.g. "Nastia invited you to learn Italian. Get the app to accept." for valid invites, "This invite has expired. Ask Nastia for a new one." for expired, "This invite was already claimed." for used. Today's `web/i.html` is generic and shows the same "you're invited" copy for every state. Also includes: real domain (getblab.app / similar) replacing the `*.vercel.app` URL, release-keystore + Play App Signing fingerprints added to `.well-known/assetlinks.json`, monetisation / portfolio landing on the root domain.
 - **Scope:** upgrade invite URLs from the closed-test `blab://invite/<token>` deep-link scheme (Step 2.3) to verified Android App Links served from a real HTTPS domain. Required before opening the app to organic shares — `blab://` schemes are dead links on devices without the app installed, and some messaging clients strip them entirely.
 - **Done when:**
   - Domain registered (working name: `getblab.app` or similar) and DNS pointed at a free host (Cloudflare Pages / Vercel).

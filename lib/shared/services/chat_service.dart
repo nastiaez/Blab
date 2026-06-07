@@ -12,6 +12,8 @@ class InviteMetadata {
     required this.inviterLearningLanguage,
     required this.expiresAt,
     required this.status,
+    this.resultingChatId,
+    this.claimedByName,
   });
 
   final String token;
@@ -22,6 +24,14 @@ class InviteMetadata {
 
   /// One of `valid`, `expired`, `used`.
   final String status;
+
+  /// Chat created when the invite was claimed (only populated when
+  /// `status == 'used'`).
+  final String? resultingChatId;
+
+  /// Display name of the user who accepted the invite (only populated
+  /// when `status == 'used'`).
+  final String? claimedByName;
 }
 
 class ChatService {
@@ -271,6 +281,10 @@ class ChatService {
           (row['inviter_learning_language'] as String?) ?? 'en',
       expiresAt: DateTime.parse(row['expires_at'] as String).toLocal(),
       status: row['status'] as String,
+      resultingChatId: row['resulting_chat_id'] as String?,
+      claimedByName: (row['claimed_by_name'] as String?)?.trim().isEmpty == true
+          ? null
+          : (row['claimed_by_name'] as String?),
     );
   }
 

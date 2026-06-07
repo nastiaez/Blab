@@ -276,41 +276,37 @@ class _ExpiredBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          children: [
-            const SizedBox(height: 60),
-            const Icon(
-              Icons.timer_off_outlined,
-              size: 56,
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.timer_off_outlined,
+            size: 56,
+            color: BlabColors.textMuted,
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'This invite expired.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: BlabColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ask $inviterName for a fresh link.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
               color: BlabColors.textMuted,
+              height: 1.4,
             ),
-            const SizedBox(height: 18),
-            const Text(
-              'This invite has expired.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: BlabColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Ask $inviterName for a new link.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: BlabColors.textMuted,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
-        const _GetTheAppLink(),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -320,61 +316,40 @@ class _UsedBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        Column(
-          children: [
-            SizedBox(height: 60),
-            Icon(
-              Icons.link_off,
-              size: 56,
-              color: BlabColors.textMuted,
-            ),
-            SizedBox(height: 18),
-            Text(
-              'This invite has already been claimed.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: BlabColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
-        _GetTheAppLink(),
-      ],
-    );
-  }
-}
-
-class _GetTheAppLink extends StatelessWidget {
-  const _GetTheAppLink();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: TextButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('App download (placeholder)'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-        child: const Text(
-          'Get the app',
-          style: TextStyle(
-            fontSize: 14,
-            color: BlabColors.brand,
-            fontWeight: FontWeight.w600,
-            decoration: TextDecoration.underline,
-            decorationColor: BlabColors.brand,
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.link_off,
+            size: 56,
+            color: BlabColors.textMuted,
           ),
-        ),
+          SizedBox(height: 18),
+          Text(
+            'This invite was already claimed.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: BlabColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Ask for a fresh link.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: BlabColors.textMuted,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+// _GetTheAppLink dropped — recipients in-app already have Blab. Web
+// fallback (i.html) keeps the Play Store CTA for non-installed users.

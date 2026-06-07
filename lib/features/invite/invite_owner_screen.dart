@@ -4,59 +4,68 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/invite_host.dart';
 import '../../shared/data/languages.dart';
 import 'widgets/share_invite_sheet.dart';
 
-/// Rendered when the inviter (the user who created the invite) opens
-/// their own `https://blab-gray.vercel.app/i/<token>` link — usually
-/// because they accidentally tapped it in their own messenger thread.
-/// Instead of trying to claim it (which fails server-side with
-/// `invite_self_claim`), the screen frames it as "this is yours" and
-/// lets them re-share or copy the link.
-class InviteOwnerScreen extends ConsumerStatefulWidget {
+/// Shown when the **inviter** opens their own invite link (e.g. they
+/// accidentally tap it in their own messenger thread). The body
+/// depends on the invite's current state so the inviter sees something
+/// useful instead of the recipient-facing landing.
+class InviteOwnerScreen extends ConsumerWidget {
   const InviteOwnerScreen({
     super.key,
     required this.token,
     required this.inviterLearningCode,
     required this.expiresAt,
+    required this.status,
+    this.resultingChatId,
+    this.claimedByName,
   });
 
   final String token;
   final String inviterLearningCode;
   final DateTime expiresAt;
 
-  @override
-  ConsumerState<InviteOwnerScreen> createState() => _InviteOwnerScreenState();
-}
+  /// One of `valid`, `expired`, `used`.
+  final String status;
 
-class _InviteOwnerScreenState extends ConsumerState<InviteOwnerScreen> {
-  bool _copied = false;
+  /// Populated when the invite was claimed — the chat that came out
+  /// of it. Lets the claimed-self screen jump straight in.
+  final String? resultingChatId;
 
-  String get _link => 'https://$kInviteHost/i/${widget.token}';
+  /// Display name of the person who accepted. Optional.
+  final String? claimedByName;
 
   BlabLanguage? get _learning {
     for (final l in kBlabLanguages) {
-      if (l.code == widget.inviterLearningCode) return l;
+      if (l.code == inviterLearningCode) return l;
     }
     return null;
   }
 
-  Future<void> _copy() async {
-    await Clipboard.setData(ClipboardData(text: _link));
-    if (!mounted) return;
-    setState(() => _copied = true);
-  }
-
-  Future<void> _shareAgain() async {
-    await showShareInviteSheet(context, inviteLink: _link);
-  }
+  String get _link => 'https://$kInviteHost/i/$token';
 
   @override
-  Widget build(BuildContext context) {
-    final learning = _learning;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final Widget body;
+    switch (status) {
+      case 'used':
+        body = _ClaimedBody(
+          chatId: resultingChatId,
+          claimedByName: claimedByName,
+        );
+      case 'expired':
+        body = const _ExpiredBody();
+      default:
+        body = _ValidBody(
+          link: _link,
+          learning: _learning,
+          expiresAt: expiresAt,
+        );
+    }
+
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       body: SafeArea(
@@ -65,8 +74,6 @@ class _InviteOwnerScreenState extends ConsumerState<InviteOwnerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Top bar mirrors the landing screen — back arrow only,
-              // no globe (the inviter is already inside the app).
               Row(
                 children: [
                   IconButton(
@@ -85,149 +92,316 @@ class _InviteOwnerScreenState extends ConsumerState<InviteOwnerScreen> {
                   height: 24,
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 4),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+              Expanded(child: body),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────────────────── Case 1: valid self-tap ─────────────────────────
+
+class _ValidBody extends StatefulWidget {
+  const _ValidBody({
+    required this.link,
+    required this.learning,
+    required this.expiresAt,
+  });
+
+  final String link;
+  final BlabLanguage? learning;
+  final DateTime expiresAt;
+
+  @override
+  State<_ValidBody> createState() => _ValidBodyState();
+}
+
+class _ValidBodyState extends State<_ValidBody> {
+  bool _copied = false;
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.link));
+    if (!mounted) return;
+    setState(() => _copied = true);
+  }
+
+  Future<void> _share() async {
+    await showShareInviteSheet(context, inviteLink: widget.link);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final learn = widget.learning;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 24),
+              const Text(
+                'Invite a partner',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: BlabColors.textPrimary,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                learn != null
+                    ? 'Send this link to a friend. When they join, you’ll start chatting and learning ${learn.name} together.'
+                    : 'Send this link to a friend. When they join, you’ll start chatting and learning together.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: BlabColors.textMuted,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+              InkWell(
+                onTap: _copy,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: BlabColors.selectedTint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 24),
-                          const Text(
-                            'Your invite link',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              color: BlabColors.textPrimary,
-                              height: 1.25,
-                            ),
+                      Expanded(
+                        child: Text(
+                          widget.link,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: BlabColors.textPrimary,
+                            height: 1.3,
+                            fontFeatures: [
+                              FontFeature.tabularFigures(),
+                            ],
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            learning != null
-                                ? 'You set this to learn ${learning.name} with whoever joins.'
-                                : "You haven't set a learning language.",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: BlabColors.textMuted,
-                              height: 1.45,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          // Link preview pill.
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: BlabColors.selectedTint,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _link,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: BlabColors.textPrimary,
-                                      height: 1.3,
-                                      fontFeatures: [
-                                        FontFeature.tabularFigures(),
-                                      ],
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  _copied
-                                      ? Icons.check
-                                      : Icons.copy_outlined,
-                                  size: 18,
-                                  color: _copied
-                                      ? BlabColors.brand
-                                      : BlabColors.textMuted,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Valid until ${_formatExpiry(widget.expiresAt)}.',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: BlabColors.textMuted,
-                            ),
-                          ),
-                        ],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            height: 52,
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: BlabColors.brand,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(14),
-                                ),
-                              ),
-                              onPressed: _copy,
-                              icon: const Icon(Icons.copy_outlined,
-                                  size: 20, color: Colors.white),
-                              label: Text(
-                                _copied ? 'Copied' : 'Copy link',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 48,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: BlabColors.textPrimary,
-                                side: const BorderSide(
-                                  color: BlabColors.divider,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(14),
-                                ),
-                              ),
-                              onPressed: _shareAgain,
-                              icon: const Icon(Icons.share_outlined,
-                                  size: 18),
-                              label: const Text(
-                                'Share again',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      Icon(
+                        _copied ? Icons.check : Icons.copy_outlined,
+                        size: 18,
+                        color: _copied
+                            ? BlabColors.brand
+                            : BlabColors.textMuted,
                       ),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+              Text(
+                'Valid until ${_formatExpiry(widget.expiresAt)}.',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: BlabColors.textMuted,
+                ),
+              ),
             ],
           ),
-        ),
+          SizedBox(
+            height: 52,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: BlabColors.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: _share,
+              icon: const Icon(Icons.share_outlined,
+                  size: 20, color: Colors.white),
+              label: const Text(
+                'Share',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ───────────────────── Case 2: claimed self-tap ─────────────────────
+
+class _ClaimedBody extends StatelessWidget {
+  const _ClaimedBody({this.chatId, this.claimedByName});
+
+  final String? chatId;
+  final String? claimedByName;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = claimedByName?.trim() ?? '';
+    final heading = name.isEmpty
+        ? 'Someone joined.'
+        : '$name joined.';
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              const SizedBox(height: 32),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: BlabColors.brand.withValues(alpha: 0.12),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.check_circle,
+                  color: BlabColors.brand,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                heading,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: BlabColors.textPrimary,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'You’re already connected. Open the chat to start.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: BlabColors.textMuted,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 52,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: BlabColors.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () {
+                if (chatId != null) {
+                  context.go('/chat/$chatId');
+                } else {
+                  context.go('/chats');
+                }
+              },
+              child: Text(
+                chatId != null ? 'Open chat' : 'Go to chats',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ──────────────────── Case 3: expired self-tap ────────────────────
+
+class _ExpiredBody extends StatelessWidget {
+  const _ExpiredBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              const SizedBox(height: 36),
+              const Icon(
+                Icons.timer_off_outlined,
+                size: 56,
+                color: BlabColors.textMuted,
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Your invite expired.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: BlabColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Nobody joined in 48 hours. Send a fresh link to a friend.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: BlabColors.textMuted,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 52,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: BlabColors.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () => context.go('/chats/new'),
+              icon: const Icon(Icons.add,
+                  size: 20, color: Colors.white),
+              label: const Text(
+                'Send new invite',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
