@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/state/chat_list_state.dart';
 import 'invite_landing_screen.dart';
+import 'invite_owner_screen.dart';
 
 /// Entry point for incoming `blab://i/<token>` deep links. Fetches the
 /// invite metadata via the `get_invite` RPC, then renders the existing
@@ -29,6 +31,20 @@ class InviteResolverScreen extends ConsumerWidget {
           'used' => InviteStatus.used,
           _ => InviteStatus.expired,
         };
+        // Inviter opened their own link (usually by accident in their
+        // own messenger thread). Show a "this is yours" view instead
+        // of routing them into the claim flow that would just fail.
+        final currentUid =
+            Supabase.instance.client.auth.currentUser?.id;
+        if (status == InviteStatus.valid &&
+            currentUid != null &&
+            currentUid == meta.inviterUserId) {
+          return InviteOwnerScreen(
+            token: meta.token,
+            inviterLearningCode: meta.inviterLearningLanguage,
+            expiresAt: meta.expiresAt,
+          );
+        }
         return InviteLandingScreen(
           status: status,
           inviterName: meta.inviterName.isEmpty

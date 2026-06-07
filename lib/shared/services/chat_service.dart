@@ -7,14 +7,18 @@ import '../models/message.dart';
 class InviteMetadata {
   const InviteMetadata({
     required this.token,
+    required this.inviterUserId,
     required this.inviterName,
     required this.inviterLearningLanguage,
+    required this.expiresAt,
     required this.status,
   });
 
   final String token;
+  final String inviterUserId;
   final String inviterName;
   final String inviterLearningLanguage;
+  final DateTime expiresAt;
 
   /// One of `valid`, `expired`, `used`.
   final String status;
@@ -261,9 +265,11 @@ class ChatService {
     final row = rows.first as Map<String, dynamic>;
     return InviteMetadata(
       token: row['token'] as String,
+      inviterUserId: row['inviter_user_id'] as String,
       inviterName: (row['inviter_name'] as String?) ?? '',
       inviterLearningLanguage:
           (row['inviter_learning_language'] as String?) ?? 'en',
+      expiresAt: DateTime.parse(row['expires_at'] as String).toLocal(),
       status: row['status'] as String,
     );
   }
