@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -8,6 +9,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'app/app_messenger.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
+import 'features/chat/state/message_translations_state.dart';
 import 'shared/data/supabase_config.dart';
 
 Future<void> main() async {
@@ -23,14 +25,14 @@ Future<void> main() async {
   runApp(const ProviderScope(child: BlabApp()));
 }
 
-class BlabApp extends StatefulWidget {
+class BlabApp extends ConsumerStatefulWidget {
   const BlabApp({super.key});
 
   @override
-  State<BlabApp> createState() => _BlabAppState();
+  ConsumerState<BlabApp> createState() => _BlabAppState();
 }
 
-class _BlabAppState extends State<BlabApp> with WidgetsBindingObserver {
+class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSub;
   String? _knownEmail;
   String? _knownUserId;
@@ -59,6 +61,13 @@ class _BlabAppState extends State<BlabApp> with WidgetsBindingObserver {
             s.event == AuthChangeEvent.signedOut ||
             s.event == AuthChangeEvent.tokenRefreshed) {
           final u = Supabase.instance.client.auth.currentUser;
+          // Translation cache is per-process and only keyed by chatId
+          // — switching accounts in the same process would otherwise
+          // serve the previous user's translations for the same chat.
+          // Invalidate the family whenever the auth identity changes.
+          if (u?.id != _knownUserId) {
+            ref.invalidate(messageTranslationsProvider);
+          }
           _knownEmail = u?.email;
           _knownUserId = u?.id;
         }
@@ -113,11 +122,22 @@ class _BlabAppState extends State<BlabApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Blab',
-      theme: blabTheme,
-      routerConfig: blabRouter,
-      scaffoldMessengerKey: appMessengerKey,
+    // Status-bar bg transparent + dark icons everywhere.
+    // Each screen paints its own color behind the safe area, so the
+    // status bar visually matches the top container (white header
+    // on chat, cream elsewhere) — WhatsApp/Signal pattern.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: MaterialApp.router(
+        title: 'Blab',
+        theme: blabTheme,
+        routerConfig: blabRouter,
+        scaffoldMessengerKey: appMessengerKey,
+      ),
     );
   }
 }
