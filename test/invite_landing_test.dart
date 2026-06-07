@@ -38,7 +38,7 @@ void main() {
       (tester) async {
     await _bootAt(tester, '/invite?status=expired&from=Nastia');
 
-    expect(find.text('This invite has expired.'), findsOneWidget);
+    expect(find.text('This invite expired.'), findsOneWidget);
     expect(find.text('Accept & join'), findsNothing);
     expect(find.byIcon(Icons.timer_off_outlined), findsOneWidget);
   });
@@ -47,7 +47,7 @@ void main() {
       (tester) async {
     await _bootAt(tester, '/invite?status=used&from=Nastia');
 
-    expect(find.text('This invite has already been claimed.'),
+    expect(find.text('This invite was already claimed.'),
         findsOneWidget);
     expect(find.text('Accept & join'), findsNothing);
     expect(find.byIcon(Icons.link_off), findsOneWidget);
