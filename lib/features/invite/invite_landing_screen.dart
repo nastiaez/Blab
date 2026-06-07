@@ -8,7 +8,6 @@ import '../../shared/data/languages.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../auth/widgets/language_picker_sheet.dart';
-import 'widgets/invite_progress_bar.dart';
 
 enum InviteStatus { valid, expired, used }
 
@@ -61,7 +60,10 @@ class InviteLandingScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _TopBar(
+              // Top row: logo centered, interface-language picker on
+              // the right. No progress bar — the flow is short enough
+              // that it just adds chrome.
+              _TopBarWithLogo(
                 code: lang.code.toUpperCase(),
                 onTapLanguage: () async {
                   final picked = await showLanguagePickerSheet(
@@ -74,18 +76,6 @@ class InviteLandingScreen extends ConsumerWidget {
                         .set(picked);
                   }
                 },
-              ),
-              const SizedBox(height: 4),
-              if (status == InviteStatus.valid) ...[
-                const InviteProgressBar(current: 1),
-                const SizedBox(height: 12),
-              ],
-              // Tiny wordmark — chrome only, person dominates below.
-              Center(
-                child: SvgPicture.asset(
-                  'assets/blab-logo.svg',
-                  height: 24,
-                ),
               ),
               Expanded(
                 child: switch (status) {
@@ -109,43 +99,60 @@ class InviteLandingScreen extends ConsumerWidget {
 
 // ─────────────────────────── top bar ──────────────────────────────────────
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.code, required this.onTapLanguage});
+class _TopBarWithLogo extends StatelessWidget {
+  const _TopBarWithLogo({required this.code, required this.onTapLanguage});
 
   final String code;
   final VoidCallback onTapLanguage;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        InkWell(
-          onTap: onTapLanguage,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                const BlabIcon(
-                  name: 'globe',
-                  size: 18,
-                  color: BlabColors.textPrimary,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  code,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: BlabColors.textPrimary,
-                  ),
-                ),
-              ],
+    // Stack lets the logo sit in the dead-center horizontally while the
+    // language picker hugs the right edge on the same vertical line.
+    return SizedBox(
+      height: 48,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Center(
+            child: SvgPicture.asset(
+              'assets/blab-logo.svg',
+              height: 24,
             ),
           ),
-        ),
-      ],
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: InkWell(
+              onTap: onTapLanguage,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 4, vertical: 8),
+                child: Row(
+                  children: [
+                    const BlabIcon(
+                      name: 'globe',
+                      size: 18,
+                      color: BlabColors.textPrimary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      code,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: BlabColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -165,7 +172,6 @@ class _ValidBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasLanguage = inviterLearning != null;
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: Column(
@@ -208,7 +214,7 @@ class _ValidBody extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Pick a language to practice next.',
+                'Pick a language to practice.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,

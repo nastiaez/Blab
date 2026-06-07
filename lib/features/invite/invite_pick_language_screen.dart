@@ -7,7 +7,6 @@ import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/chat_list_state.dart';
-import 'widgets/invite_progress_bar.dart';
 
 /// Step 2 of the invite flow. After tapping Accept on the invite landing,
 /// the new user picks the language they want to learn in this exchange.
@@ -128,8 +127,9 @@ class _InvitePickLanguageScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const InviteProgressBar(current: 2),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    _PreviewBubble(lang: _picked),
+                    const SizedBox(height: 14),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
@@ -307,6 +307,99 @@ class _LanguageRow extends StatelessWidget {
                       color: BlabColors.brand, size: 20),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────── live language preview at top of pick screen ─────────────
+
+/// Hardcoded greeting in each supported learning language so the
+/// preview bubble can update as the user taps a row, without
+/// round-tripping the live translator. English is the typed source —
+/// when the picked language is English, no translation row renders.
+const Map<String, String> _kGreetings = {
+  'en': '',
+  'ta': 'வணக்கம், எப்படி இருக்கீங்க?',
+  'uk': 'Привіт, як справи?',
+  'es': 'Hola, ¿cómo estás?',
+  'de': 'Hallo, wie geht’s?',
+  'fr': 'Salut, ça va?',
+  'it': 'Ciao, come stai?',
+  'pt': 'Olá, como vai?',
+  'nl': 'Hallo, hoe gaat het?',
+  'tr': 'Merhaba, nasılsın?',
+  'hi': 'नमस्ते, आप कैसे हैं?',
+};
+
+const String _kSampleEnglish = 'Hello, how are you?';
+
+class _PreviewBubble extends StatelessWidget {
+  const _PreviewBubble({required this.lang});
+
+  final BlabLanguage lang;
+
+  @override
+  Widget build(BuildContext context) {
+    final translated = _kGreetings[lang.code] ?? '';
+    final showTranslation = translated.isNotEmpty;
+    return Align(
+      alignment: Alignment.centerRight,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 280),
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: const BoxDecoration(
+            color: BlabColors.brand,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(18),
+              topRight: Radius.circular(4),
+              bottomLeft: Radius.circular(18),
+              bottomRight: Radius.circular(18),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showTranslation)
+                Text(
+                  translated,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                )
+              else
+                const Text(
+                  _kSampleEnglish,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                ),
+              if (showTranslation) ...[
+                const SizedBox(height: 6),
+                Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.25),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  _kSampleEnglish,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
