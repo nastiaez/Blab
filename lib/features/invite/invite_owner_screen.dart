@@ -145,7 +145,7 @@ class _ValidBodyState extends State<_ValidBody> {
             children: [
               const SizedBox(height: 24),
               const Text(
-                'Invite a partner',
+                'Send to a friend',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 26,
@@ -157,8 +157,8 @@ class _ValidBodyState extends State<_ValidBody> {
               const SizedBox(height: 10),
               Text(
                 learn != null
-                    ? 'Send this link to a friend. When they join, you’ll start chatting and learning ${learn.name} together.'
-                    : 'Send this link to a friend. When they join, you’ll start chatting and learning together.',
+                    ? "You're practicing ${learn.flag} ${learn.name}."
+                    : "Share your invite link.",
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
