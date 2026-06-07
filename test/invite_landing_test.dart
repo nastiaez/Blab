@@ -30,7 +30,7 @@ void main() {
       (tester) async {
     await _bootAt(tester, '/invite?from=Nastia&learning=ta');
 
-    expect(find.text('Nastia is learning Tamil.'), findsOneWidget);
+    expect(find.text('Nastia invited you to chat.'), findsOneWidget);
     expect(find.text('Start chatting'), findsOneWidget);
   });
 
