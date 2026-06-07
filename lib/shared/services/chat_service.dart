@@ -3,6 +3,23 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/chat_mappers.dart';
 import '../models/message.dart';
 
+/// Public-facing invite metadata returned by [ChatService.getInvite].
+class InviteMetadata {
+  const InviteMetadata({
+    required this.token,
+    required this.inviterName,
+    required this.inviterLearningLanguage,
+    required this.status,
+  });
+
+  final String token;
+  final String inviterName;
+  final String inviterLearningLanguage;
+
+  /// One of `valid`, `expired`, `used`.
+  final String status;
+}
+
 class ChatService {
   ChatService(this._client);
   final SupabaseClient _client;
@@ -213,6 +230,60 @@ class ChatService {
       onConflict: 'message_id,target_lang',
       ignoreDuplicates: true,
     );
+  }
+
+  /// Server-side invite creation. The current user becomes the inviter
+  /// and declares the language THEY want to learn from the partner the
+  /// invite eventually claims. Returns the token + absolute expiry so
+  /// the share sheet can build the `blab://invite/<token>` URL.
+  Future<({String token, DateTime expiresAt})> createInvite({
+    required String myLearningLanguage,
+  }) async {
+    final res = await _client.rpc('create_invite', params: {
+      'my_learning_language': myLearningLanguage,
+    });
+    final row = (res as List).first as Map<String, dynamic>;
+    return (
+      token: row['token'] as String,
+      expiresAt: DateTime.parse(row['expires_at'] as String).toLocal(),
+    );
+  }
+
+  /// Look up an invite for the landing screen. Returns null when the
+  /// token isn't recognised (404). The RPC is callable by anon callers
+  /// so the landing renders even before sign-in.
+  Future<InviteMetadata?> getInvite(String token) async {
+    final res = await _client.rpc('get_invite', params: {
+      'invite_token': token,
+    });
+    final rows = res as List;
+    if (rows.isEmpty) return null;
+    final row = rows.first as Map<String, dynamic>;
+    return InviteMetadata(
+      token: row['token'] as String,
+      inviterName: (row['inviter_name'] as String?) ?? '',
+      inviterLearningLanguage:
+          (row['inviter_learning_language'] as String?) ?? 'en',
+      status: row['status'] as String,
+    );
+  }
+
+  /// "Accept & join" path. Atomically marks the invite used, creates the
+  /// chat row + both `chat_members` rows, and returns the new chat's
+  /// id. Throws a [PostgrestException] with one of the documented
+  /// `message` codes on failure: `invite_not_found`, `invite_expired`,
+  /// `invite_already_claimed`, `invite_self_claim`, `not_signed_in`,
+  /// `invalid_language`.
+  Future<String> claimInvite({
+    required String token,
+    required String myLearningLanguage,
+  }) async {
+    final res = await _client.rpc('claim_invite', params: {
+      'invite_token': token,
+      'my_learning_language': myLearningLanguage,
+    });
+    final row = (res as List).first as Map<String, dynamic>;
+    return row['chat_id'] as String;
   }
 
   Future<String> pairWithEmail({

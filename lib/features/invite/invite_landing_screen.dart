@@ -24,6 +24,7 @@ class InviteLandingScreen extends ConsumerWidget {
     required this.status,
     required this.inviterName,
     this.inviterLearningCode,
+    this.token,
   });
 
   final InviteStatus status;
@@ -33,6 +34,11 @@ class InviteLandingScreen extends ConsumerWidget {
   /// social context ("Nastia is learning Tamil."). Not a preset for the
   /// invitee — that's chosen on `/invite/pick-language`.
   final String? inviterLearningCode;
+
+  /// Real invite token. When present, the Accept button passes it
+  /// through to the pick-language screen so it can call `claim_invite`.
+  /// Null for the legacy QA route with hand-typed query params.
+  final String? token;
 
   BlabLanguage? get _inviterLearning {
     final code = inviterLearningCode;
@@ -86,6 +92,7 @@ class InviteLandingScreen extends ConsumerWidget {
                   InviteStatus.valid => _ValidBody(
                       inviterName: inviterName,
                       inviterLearning: _inviterLearning,
+                      token: token,
                     ),
                   InviteStatus.expired =>
                     _ExpiredBody(inviterName: inviterName),
@@ -149,10 +156,12 @@ class _ValidBody extends ConsumerWidget {
   const _ValidBody({
     required this.inviterName,
     required this.inviterLearning,
+    required this.token,
   });
 
   final String inviterName;
   final BlabLanguage? inviterLearning;
+  final String? token;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -233,9 +242,15 @@ class _ValidBody extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              onPressed: () => context.push(
-                '/invite/pick-language?inviter=$inviterName',
-              ),
+              onPressed: () {
+                final qp = <String, String>{'inviter': inviterName};
+                if (token != null) qp['token'] = token!;
+                final qs = qp.entries
+                    .map((e) =>
+                        '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+                    .join('&');
+                context.push('/invite/pick-language?$qs');
+              },
               child: const Text(
                 'Start chatting',
                 style: TextStyle(

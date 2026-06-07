@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
+import '../../shared/state/chat_list_state.dart';
 import 'widgets/share_invite_sheet.dart';
 
 /// PRD US-008. New-chat / invite-a-friend wizard.
@@ -278,7 +280,7 @@ class _SearchFieldState extends State<_SearchField> {
 
 // ─────────────────────────── Step 2: send invite ──────────────────────────
 
-class _SendBody extends StatelessWidget {
+class _SendBody extends ConsumerStatefulWidget {
   const _SendBody({
     super.key,
     required this.lang,
@@ -289,7 +291,36 @@ class _SendBody extends StatelessWidget {
   final VoidCallback onChange;
 
   @override
+  ConsumerState<_SendBody> createState() => _SendBodyState();
+}
+
+class _SendBodyState extends ConsumerState<_SendBody> {
+  bool _generating = false;
+
+  Future<void> _share() async {
+    if (_generating) return;
+    setState(() => _generating = true);
+    try {
+      final result = await ref
+          .read(chatServiceProvider)
+          .createInvite(myLearningLanguage: widget.lang.code);
+      if (!mounted) return;
+      final url = 'blab://i/${result.token}';
+      await showShareInviteSheet(context, inviteLink: url);
+      if (!mounted) return;
+      showAppSnack('Invite sent ✓');
+    } catch (_) {
+      if (!mounted) return;
+      showAppSnack("Couldn't create invite. Try again.");
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final lang = widget.lang;
+    final onChange = widget.onChange;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: Column(
@@ -361,15 +392,22 @@ class _SendBody extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              onPressed: () async {
-                await showShareInviteSheet(context, language: lang);
-                showAppSnack('Invite sent ✓');
-              },
-              icon: const Icon(Icons.share_outlined,
-                  size: 20, color: Colors.white),
-              label: const Text(
-                'Share invite',
-                style: TextStyle(
+              onPressed: _generating ? null : _share,
+              icon: _generating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.share_outlined,
+                      size: 20, color: Colors.white),
+              label: Text(
+                _generating ? 'Creating link…' : 'Share invite',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,

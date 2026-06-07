@@ -14,6 +14,7 @@ import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/invite/invite_landing_screen.dart';
 import '../features/invite/invite_pick_language_screen.dart';
+import '../features/invite/invite_resolver_screen.dart';
 import '../features/invite/new_chat_screen.dart';
 import '../features/profile/change_email_screen.dart';
 import '../features/profile/change_password_screen.dart';
@@ -33,6 +34,7 @@ const _publicPaths = <String>{
   '/auth/email-changed',
   '/invite',
   '/invite/pick-language',
+  '/i',
 };
 
 bool _isPublic(String location) {
@@ -196,8 +198,15 @@ final GoRouter blabRouter = GoRouter(
         final q = state.uri.queryParameters;
         return InvitePickLanguageScreen(
           inviterName: q['inviter'] ?? 'Nastia',
+          token: q['token'],
         );
       },
+    ),
+    GoRoute(
+      path: '/i/:token',
+      builder: (context, state) => InviteResolverScreen(
+        token: state.pathParameters['token'] ?? '',
+      ),
     ),
     GoRoute(
         path: '/profile', builder: (context, state) => const ProfileScreen()),

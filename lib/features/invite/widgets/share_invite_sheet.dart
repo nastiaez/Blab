@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/theme.dart';
-import '../../../shared/data/languages.dart';
 
 /// PRD US-009.
 Future<void> showShareInviteSheet(
   BuildContext context, {
-  required BlabLanguage language,
+  required String inviteLink,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -15,13 +14,13 @@ Future<void> showShareInviteSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => _ShareSheetBody(language: language),
+    builder: (ctx) => _ShareSheetBody(inviteLink: inviteLink),
   );
 }
 
 class _ShareSheetBody extends StatefulWidget {
-  const _ShareSheetBody({required this.language});
-  final BlabLanguage language;
+  const _ShareSheetBody({required this.inviteLink});
+  final String inviteLink;
 
   @override
   State<_ShareSheetBody> createState() => _ShareSheetBodyState();
@@ -38,8 +37,7 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
   ];
 
   Future<void> _copyLink() async {
-    final url = 'https://blab.app/invite/${widget.language.code}/demo123';
-    await Clipboard.setData(ClipboardData(text: url));
+    await Clipboard.setData(ClipboardData(text: widget.inviteLink));
     setState(() => _copied = true);
   }
 

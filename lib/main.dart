@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +35,7 @@ class BlabApp extends ConsumerStatefulWidget {
 
 class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSub;
+  StreamSubscription<Uri>? _linkSub;
   String? _knownEmail;
   String? _knownUserId;
 
@@ -74,6 +76,35 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       });
     } catch (_) {
       // Test environment without Supabase. Skip silently.
+    }
+    _initInviteDeepLinks();
+  }
+
+  /// Listen for incoming `blab://i/<token>` invite links. Routes the
+  /// initial cold-launch URI plus any subsequent links while the app
+  /// is running. Non-invite `blab://` URIs (e.g. Supabase auth deep
+  /// links) are ignored — supabase_flutter consumes those itself.
+  Future<void> _initInviteDeepLinks() async {
+    try {
+      final links = AppLinks();
+      final initial = await links.getInitialLink();
+      if (initial != null) _routeIncomingLink(initial);
+      _linkSub = links.uriLinkStream.listen(
+        _routeIncomingLink,
+        onError: (_) {},
+      );
+    } catch (_) {
+      // app_links unavailable (tests, headless) — ignore.
+    }
+  }
+
+  void _routeIncomingLink(Uri uri) {
+    if (uri.scheme != 'blab') return;
+    // blab://i/<token>
+    if (uri.host == 'i' && uri.pathSegments.isNotEmpty) {
+      final token = uri.pathSegments.first;
+      blabRouter.go('/i/$token');
+      return;
     }
   }
 
@@ -117,6 +148,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _authSub?.cancel();
+    _linkSub?.cancel();
     super.dispose();
   }
 

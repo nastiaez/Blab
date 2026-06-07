@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
+import '../../shared/state/chat_list_state.dart';
 import 'widgets/invite_progress_bar.dart';
 
 /// Step 2 of the invite flow. After tapping Accept on the invite landing,
@@ -15,9 +18,18 @@ import 'widgets/invite_progress_bar.dart';
 /// cream canvas, `Skip` in top-right AppBar, helper line, two grouped
 /// white cards (CURRENT / OTHER LANGUAGES), native names, no flags.
 class InvitePickLanguageScreen extends ConsumerStatefulWidget {
-  const InvitePickLanguageScreen({super.key, required this.inviterName});
+  const InvitePickLanguageScreen({
+    super.key,
+    required this.inviterName,
+    this.token,
+  });
 
   final String inviterName;
+
+  /// Real invite token when this screen sits inside the live deep-link
+  /// flow. Null for the legacy QA route that walks through unauthenticated
+  /// signup mocks.
+  final String? token;
 
   @override
   ConsumerState<InvitePickLanguageScreen> createState() =>
@@ -28,12 +40,53 @@ class _InvitePickLanguageScreenState
     extends ConsumerState<InvitePickLanguageScreen> {
   late BlabLanguage _picked =
       kBlabLanguages.firstWhere((l) => l.code == 'en');
+  bool _claiming = false;
 
-  void _continueToSignup({String? overrideCode}) {
-    final code = overrideCode ?? _picked.code;
-    context.push(
-      '/auth?inviter=${widget.inviterName}&learn=$code',
-    );
+  Future<void> _onContinue() async {
+    final token = widget.token;
+    if (token == null) {
+      // Legacy path: route to auth signup with the picked language.
+      context.push(
+        '/auth?inviter=${widget.inviterName}&learn=${_picked.code}',
+      );
+      return;
+    }
+    final signedIn =
+        Supabase.instance.client.auth.currentSession != null;
+    if (!signedIn) {
+      // Must sign up first; carry the token + language through so we
+      // can resume after auth (future enhancement). For v1 closed test
+      // we expect testers to be signed in before claiming.
+      showAppSnack('Sign in first, then tap the invite link again.');
+      context.push('/auth?mode=signup');
+      return;
+    }
+    setState(() => _claiming = true);
+    try {
+      final chatId = await ref
+          .read(chatServiceProvider)
+          .claimInvite(token: token, myLearningLanguage: _picked.code);
+      if (!mounted) return;
+      await ref.read(chatListProvider.notifier).refresh();
+      if (!mounted) return;
+      showAppSnack('You and ${widget.inviterName} are now connected.');
+      context.go('/chat/$chatId');
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+      final msg = switch (e.message) {
+        'invite_already_claimed' => 'This invite has already been used.',
+        'invite_expired' => 'This invite has expired.',
+        'invite_not_found' => "We couldn't find that invite.",
+        'invite_self_claim' => "You can't accept your own invite.",
+        _ => "Couldn't accept the invite. Try again."
+      };
+      showAppSnack(msg);
+    } catch (_) {
+      if (!mounted) return;
+      showAppSnack("Couldn't accept the invite. Try again.");
+    } finally {
+      if (mounted) setState(() => _claiming = false);
+    }
   }
 
   @override
@@ -132,15 +185,25 @@ class _InvitePickLanguageScreenState
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: _continueToSignup,
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  onPressed: _claiming ? null : _onContinue,
+                  child: _claiming
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ),
