@@ -4,20 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-bool _spanContains(InlineSpan span, String needle) {
-  final buf = StringBuffer();
-  span.visitChildren((s) {
-    if (s is TextSpan && s.text != null) buf.write(s.text);
-    return true;
-  });
-  return buf.toString().contains(needle);
-}
-
-/// Helper that boots the full router at a specific deep-link path so we can
-/// exercise the query-parameter parsing in `blabRouter`.
 Future<void> _bootAt(WidgetTester tester, String location) async {
-  // GoRouter is a singleton in the project — push the requested location into
-  // it before pumping so the initial route renders the path we want.
   blabRouter.go(location);
   await tester.pumpWidget(
     ProviderScope(
@@ -31,37 +18,27 @@ Future<void> _bootAt(WidgetTester tester, String location) async {
 }
 
 void main() {
-  testWidgets('/invite default state shows valid invite + Accept & join',
+  testWidgets('/invite default state shows valid invite + Start chatting',
       (tester) async {
-    await _bootAt(tester, '/invite?from=Nastia&learn=uk&teach=ta');
+    await _bootAt(tester, '/invite?from=Nastia');
 
-    expect(find.text('Accept & join'), findsOneWidget);
-    // Heading is a RichText — search the InlineSpan tree for "invited you to
-    // learn" (plus "Nastia" and "Ukrainian" appear there as separate spans).
-    expect(
-      find.byWidgetPredicate((w) =>
-          w is RichText && _spanContains(w.text, 'invited you to learn')),
-      findsOneWidget,
-    );
-    expect(
-      find.byWidgetPredicate(
-          (w) => w is RichText && _spanContains(w.text, 'Nastia')),
-      findsWidgets,
-    );
-    expect(
-      find.byWidgetPredicate(
-          (w) => w is RichText && _spanContains(w.text, 'Ukrainian')),
-      findsWidgets,
-    );
-    // Exchange card row label.
-    expect(find.text('She teaches you Ukrainian'), findsOneWidget);
+    expect(find.text('Start chatting'), findsOneWidget);
+    expect(find.text('Nastia invited you to chat.'), findsOneWidget);
+  });
+
+  testWidgets('/invite with learning param shows language-aware headline',
+      (tester) async {
+    await _bootAt(tester, '/invite?from=Nastia&learning=ta');
+
+    expect(find.text('Nastia is learning Tamil.'), findsOneWidget);
+    expect(find.text('Start chatting'), findsOneWidget);
   });
 
   testWidgets('/invite?status=expired shows expired heading + no form',
       (tester) async {
     await _bootAt(tester, '/invite?status=expired&from=Nastia');
 
-    expect(find.text('This invite has expired'), findsOneWidget);
+    expect(find.text('This invite has expired.'), findsOneWidget);
     expect(find.text('Accept & join'), findsNothing);
     expect(find.byIcon(Icons.timer_off_outlined), findsOneWidget);
   });
@@ -70,7 +47,8 @@ void main() {
       (tester) async {
     await _bootAt(tester, '/invite?status=used&from=Nastia');
 
-    expect(find.text('This invite has already been claimed'), findsOneWidget);
+    expect(find.text('This invite has already been claimed.'),
+        findsOneWidget);
     expect(find.text('Accept & join'), findsNothing);
     expect(find.byIcon(Icons.link_off), findsOneWidget);
   });

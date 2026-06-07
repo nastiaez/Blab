@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
 import 'widgets/share_invite_sheet.dart';
 
-/// PRD US-008.
+/// PRD US-008. New-chat / invite-a-friend wizard.
+///
+/// 2-step flow with auto-advance: tapping a language commits the pick and
+/// the screen transitions straight to step 2 (no Continue button). On
+/// step 2 the selected language sits at the top with a `Change` link; the
+/// link details ("single-use", "48 hours") render as quiet footnotes
+/// rather than competing for attention with the share CTA.
 class NewChatScreen extends StatefulWidget {
   const NewChatScreen({super.key});
 
@@ -13,78 +21,486 @@ class NewChatScreen extends StatefulWidget {
   State<NewChatScreen> createState() => _NewChatScreenState();
 }
 
-class _NewChatScreenState extends State<NewChatScreen> {
-  String _query = '';
-  BlabLanguage? _picked;
+enum _Step { pick, send }
 
-  List<BlabLanguage> get _filtered {
-    if (_query.isEmpty) return kBlabLanguages;
-    final q = _query.toLowerCase();
-    return kBlabLanguages.where((l) => l.name.toLowerCase().contains(q)).toList();
+class _NewChatScreenState extends State<NewChatScreen> {
+  _Step _step = _Step.pick;
+  String _query = '';
+  BlabLanguage? _selected;
+
+  /// Code of the row the user just tapped, used for the brief highlight
+  /// before auto-advancing to step 2. Null when nothing's pending.
+  String? _pendingCode;
+
+  void _back() {
+    switch (_step) {
+      case _Step.pick:
+        context.pop();
+      case _Step.send:
+        setState(() => _step = _Step.pick);
+    }
   }
 
-  void _select(BlabLanguage l) {
-    FocusScope.of(context).unfocus();
-    setState(() => _picked = l);
+  Future<void> _onPickLanguage(BlabLanguage lang) async {
+    if (_pendingCode != null) return; // ignore taps mid-transition
+    HapticFeedback.selectionClick();
+    setState(() => _pendingCode = lang.code);
+    await Future<void>.delayed(const Duration(milliseconds: 240));
+    if (!mounted) return;
+    setState(() {
+      _selected = lang;
+      _step = _Step.send;
+      _pendingCode = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = switch (_step) {
+      _Step.pick => 'Pick a language',
+      _Step.send => 'Send the invite',
+    };
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: BlabColors.appBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
+        centerTitle: true,
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => context.pop(),
+          color: BlabColors.textPrimary,
+          onPressed: _back,
         ),
-        title: const Text(
-          'New chat',
-          style: TextStyle(
+        title: Text(
+          title,
+          style: const TextStyle(
             fontSize: 17,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
           ),
         ),
-        centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Indicator lives outside the AnimatedSwitcher so the bar
+            // smoothly animates from 50 % → 100 % between steps instead of
+            // flashing back to 0 each time the inner content swaps.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: _StepIndicator(
+                current: _step == _Step.pick ? 1 : 2,
+                total: 2,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 320),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                child: switch (_step) {
+                  _Step.pick => _PickBody(
+                      key: const ValueKey('pick'),
+                      query: _query,
+                      pendingCode: _pendingCode,
+                      onQueryChanged: (v) => setState(() => _query = v),
+                      onSelect: _onPickLanguage,
+                    ),
+                  _Step.send => _SendBody(
+                      key: const ValueKey('send'),
+                      lang: _selected!,
+                      onChange: () =>
+                          setState(() => _step = _Step.pick),
+                    ),
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────── Step 1: pick language ────────────────────────
+
+class _PickBody extends StatelessWidget {
+  const _PickBody({
+    super.key,
+    required this.query,
+    required this.pendingCode,
+    required this.onQueryChanged,
+    required this.onSelect,
+  });
+
+  final String query;
+  final String? pendingCode;
+  final ValueChanged<String> onQueryChanged;
+  final ValueChanged<BlabLanguage> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final list = query.isEmpty
+        ? kBlabLanguages
+        : kBlabLanguages
+            .where(
+                (l) => l.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+    final sorted = [...list]..sort((a, b) => a.name.compareTo(b.name));
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SearchField(onChanged: onQueryChanged),
+          const SizedBox(height: 12),
+          Expanded(
+            child: sorted.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off,
+                            size: 36,
+                            color:
+                                BlabColors.textMuted.withValues(alpha: 0.7)),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'No matches',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: BlabColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Try a different spelling.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: BlabColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : SingleChildScrollView(
+                    child: _Card(
+                      children: [
+                        for (var i = 0; i < sorted.length; i++) ...[
+                          if (i > 0) const _RowDivider(),
+                          _LanguageRow(
+                            lang: sorted[i],
+                            isPending: sorted[i].code == pendingCode,
+                            onTap: () => onSelect(sorted[i]),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatefulWidget {
+  const _SearchField({required this.onChanged});
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<_SearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_handleChange);
+  }
+
+  void _handleChange() {
+    widget.onChanged(_controller.text);
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_handleChange);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasText = _controller.text.isNotEmpty;
+    return TextField(
+      controller: _controller,
+      decoration: InputDecoration(
+        hintText: 'Search languages',
+        prefixIcon: const Icon(Icons.search, size: 20),
+        suffixIcon: hasText
+            ? IconButton(
+                tooltip: 'Clear',
+                onPressed: () => _controller.clear(),
+                icon: const Icon(Icons.close, size: 18),
+                color: BlabColors.textMuted,
+                splashRadius: 18,
+              )
+            : null,
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        filled: true,
+        fillColor: BlabColors.phoneSurface,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+              color: BlabColors.focusBorder, width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────── Step 2: send invite ──────────────────────────
+
+class _SendBody extends StatelessWidget {
+  const _SendBody({
+    super.key,
+    required this.lang,
+    required this.onChange,
+  });
+
+  final BlabLanguage lang;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              'Send the link to start chatting.',
+              style: TextStyle(
+                fontSize: 13,
+                color: BlabColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _Card(
             children: [
-              const Text(
-                'What do you want to learn?',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Pick the language your friend will teach you.',
-                style: TextStyle(fontSize: 14, color: BlabColors.textMuted),
-              ),
-              const SizedBox(height: 20),
-              if (_picked == null) ...[
-                _SearchField(onChanged: (v) => setState(() => _query = v)),
-                const SizedBox(height: 12),
-                Expanded(child: _LangList(items: _filtered, onTap: _select)),
-              ] else ...[
-                _PickedCard(
-                  lang: _picked!,
-                  onChange: () => setState(() {
-                    _picked = null;
-                    _query = '';
-                  }),
+              _SelectedRow(lang: lang, onChange: onChange),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Info group — soft warm tint, no border, no tap effect. Reads
+          // as inert "this is how the link behaves" info.
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: BlabColors.selectedTint,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Footnote(
+                  icon: Icons.person_outline,
+                  text: 'Only one person can use this link.',
                 ),
-                const SizedBox(height: 16),
-                const _LinkInfoCard(),
-                const Spacer(),
-                _ShareButton(onPressed: () {
-                  showShareInviteSheet(context, language: _picked!);
-                }),
+                SizedBox(height: 8),
+                _Footnote(
+                  icon: Icons.schedule_outlined,
+                  text: 'Valid for 48 hours.',
+                ),
               ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          // Muted link preview so the user sees what they're about to share.
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              'blab.app/i/N3kf8x',
+              style: TextStyle(
+                fontSize: 12,
+                color: BlabColors.textMuted,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: BlabColors.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () async {
+                await showShareInviteSheet(context, language: lang);
+                showAppSnack('Invite sent ✓');
+              },
+              icon: const Icon(Icons.share_outlined,
+                  size: 20, color: Colors.white),
+              label: const Text(
+                'Share invite',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────── shared bits ──────────────────────────────────
+
+/// Thin Duolingo-style progress bar. Just the bar — the AppBar title
+/// already names the step, the fill already shows the position, so
+/// duplicating either as text would be noise.
+class _StepIndicator extends StatelessWidget {
+  const _StepIndicator({required this.current, required this.total});
+
+  final int current;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = current / total;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: progress),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+        builder: (ctx, value, _) {
+          return LinearProgressIndicator(
+            value: value,
+            minHeight: 6,
+            backgroundColor: BlabColors.divider,
+            valueColor:
+                const AlwaysStoppedAnimation<Color>(BlabColors.brand),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        // Stretch so each row fills the card width — names left-align
+        // properly and the full row is tappable (not just the text glyphs).
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Container(height: 1, color: Colors.grey.shade100),
+    );
+  }
+}
+
+/// Step 1 list row. Tappable; tapping marks the row as "pending" so a
+/// brief highlight (warm tint + brand check) confirms the selection
+/// before the screen auto-advances to step 2.
+class _LanguageRow extends StatelessWidget {
+  const _LanguageRow({
+    required this.lang,
+    required this.isPending,
+    required this.onTap,
+  });
+
+  final BlabLanguage lang;
+  final bool isPending;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          color: isPending ? BlabColors.selectedTint : Colors.transparent,
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lang.name,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: isPending
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                    color: BlabColors.textPrimary,
+                  ),
+                ),
+              ),
+              AnimatedScale(
+                scale: isPending ? 1 : 0,
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutBack,
+                child: const Icon(Icons.check,
+                    color: BlabColors.brand, size: 20),
+              ),
             ],
           ),
         ),
@@ -93,185 +509,82 @@ class _NewChatScreenState extends State<NewChatScreen> {
   }
 }
 
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.onChanged});
-  final ValueChanged<String> onChanged;
+/// Step 2 "YOU'LL LEARN" row. Tappable to go back to the picker;
+/// `Change` link on the right + chevron telegraph the affordance.
+class _SelectedRow extends StatelessWidget {
+  const _SelectedRow({required this.lang, required this.onChange});
 
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintText: 'Search languages',
-        prefixIcon: const Icon(Icons.search, size: 20),
-        isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: BlabColors.brand, width: 1.5),
-        ),
-      ),
-    );
-  }
-}
-
-class _LangList extends StatelessWidget {
-  const _LangList({required this.items, required this.onTap});
-  final List<BlabLanguage> items;
-  final ValueChanged<BlabLanguage> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return const Center(
-        child: Text('No matches', style: TextStyle(color: BlabColors.textMuted)),
-      );
-    }
-    return ListView.separated(
-      itemCount: items.length,
-      separatorBuilder: (context, i) => Divider(
-        height: 1,
-        color: Colors.grey.shade100,
-      ),
-      itemBuilder: (context, i) {
-        final l = items[i];
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-          leading: Text(l.flag, style: const TextStyle(fontSize: 24)),
-          title: Text(l.name,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-          onTap: () => onTap(l),
-        );
-      },
-    );
-  }
-}
-
-class _PickedCard extends StatelessWidget {
-  const _PickedCard({required this.lang, required this.onChange});
   final BlabLanguage lang;
   final VoidCallback onChange;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: BlabColors.brand.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: BlabColors.brand.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Text(lang.flag, style: const TextStyle(fontSize: 28)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      selected: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onChange,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
+            child: Row(
               children: [
-                const Text('Learning',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: BlabColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.6)),
-                const SizedBox(height: 2),
-                Text(lang.name,
+                Expanded(
+                  child: Text(
+                    lang.name,
                     style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: BlabColors.textPrimary)),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: BlabColors.textPrimary,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Change',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: BlabColors.brand,
+                  ),
+                ),
               ],
             ),
           ),
-          TextButton(
-            onPressed: onChange,
-            child: const Text(
-              'Change',
-              style: TextStyle(
-                color: BlabColors.brand,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _LinkInfoCard extends StatelessWidget {
-  const _LinkInfoCard();
+/// Quiet "footnote"-style info row. No card chrome — sits on the cream
+/// canvas with muted icon + text so it doesn't compete with the share CTA.
+class _Footnote extends StatelessWidget {
+  const _Footnote({required this.icon, required this.text});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InfoRow(icon: Icons.person_outline, text: 'Only one person can use this link'),
-          SizedBox(height: 10),
-          _InfoRow(icon: Icons.schedule, text: 'Valid for 48 hours'),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.text});
   final IconData icon;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: BlabColors.textMuted),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(text,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: BlabColors.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
               style: const TextStyle(
-                  fontSize: 14, color: BlabColors.textPrimary)),
-        ),
-      ],
-    );
-  }
-}
-
-class _ShareButton extends StatelessWidget {
-  const _ShareButton({required this.onPressed});
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: BlabColors.brand,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+                fontSize: 13,
+                color: BlabColors.textMuted,
+                height: 1.4,
+              ),
+            ),
           ),
-        ),
-        onPressed: onPressed,
-        icon: const Icon(Icons.ios_share, size: 20),
-        label: const Text('Share invite link',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }

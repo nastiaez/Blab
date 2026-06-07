@@ -56,7 +56,7 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
               height: 4,
               margin: const EdgeInsets.only(top: 10, bottom: 14),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: BlabColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

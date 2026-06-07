@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,10 +8,10 @@ import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../auth/widgets/blab_text_field.dart';
 
-/// PRD US-039. Lets a signed-in user change the email on their account.
-/// Supabase sends a confirmation link to the new address; the email is
-/// only switched after the user taps that link. Old email keeps working
-/// until then.
+/// PRD US-039. Change-email page. Mirrors the Edit profile chassis:
+/// cream canvas, AppBar with centered title + a `Send` action in the
+/// top-right (no big body CTA), white grouped card showing the current
+/// email, and the new-email field below.
 class ChangeEmailScreen extends ConsumerStatefulWidget {
   const ChangeEmailScreen({super.key});
 
@@ -34,6 +35,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
       RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim());
 
   Future<void> _send() async {
+    HapticFeedback.mediumImpact();
     final auth = ref.read(supabaseAuthServiceProvider);
     final current = auth.currentUser?.email?.trim().toLowerCase() ?? '';
     final next = _email.text.trim().toLowerCase();
@@ -46,7 +48,7 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
       return;
     }
     if (next == current) {
-      setState(() => _err = 'That\'s already your email');
+      setState(() => _err = "That's already your email");
       return;
     }
     setState(() {
@@ -93,21 +95,35 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
             color: BlabColors.textPrimary,
           ),
         ),
+        actions: [
+          if (!_sent)
+            TextButton(
+              onPressed: _busy ? null : _send,
+              child: Text(
+                'Send',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: _busy
+                      ? BlabColors.textMuted
+                      : BlabColors.brand,
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           child: _sent
               ? _SentBody(newEmail: _email.text.trim())
               : _FormBody(
                   currentEmail: currentEmail,
                   emailController: _email,
                   err: _err,
-                  busy: _busy,
                   onChanged: () {
                     if (_err != null) setState(() => _err = null);
                   },
-                  onSend: _send,
                 ),
         ),
       ),
@@ -120,46 +136,47 @@ class _FormBody extends StatelessWidget {
     required this.currentEmail,
     required this.emailController,
     required this.err,
-    required this.busy,
     required this.onChanged,
-    required this.onSend,
   });
 
   final String currentEmail;
   final TextEditingController emailController;
   final String? err;
-  final bool busy;
   final VoidCallback onChanged;
-  final VoidCallback onSend;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Current email',
-          style: TextStyle(
-              fontSize: 13,
-              color: BlabColors.textMuted,
-              fontWeight: FontWeight.w500),
-        ),
+        const _SectionLabel('CURRENT EMAIL'),
         const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            currentEmail,
-            style: const TextStyle(
-                fontSize: 15,
-                color: BlabColors.textPrimary,
-                fontWeight: FontWeight.w500),
-          ),
+        _Card(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const Icon(Icons.alternate_email,
+                      size: 20, color: BlabColors.textMuted),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      currentEmail,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: BlabColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
         BlabTextField(
           controller: emailController,
           label: 'New email',
@@ -171,37 +188,15 @@ class _FormBody extends StatelessWidget {
           onChanged: (_) => onChanged(),
         ),
         const SizedBox(height: 12),
-        const Text(
-          "We'll send a confirmation link to the new address. Your email only changes after you tap it. Old email keeps working until then.",
-          style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: BlabColors.brand,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            "We'll send a confirmation link to the new address. Your email only changes after you tap it. Old email keeps working until then.",
+            style: TextStyle(
+              fontSize: 13,
+              color: BlabColors.textMuted,
+              height: 1.4,
             ),
-            onPressed: busy ? null : onSend,
-            child: busy
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text(
-                    'Send confirmation',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
           ),
         ),
       ],
@@ -252,6 +247,50 @@ class _SentBody extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: BlabColors.textMuted,
+        ),
+      ),
+    );
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
       ),
     );
   }

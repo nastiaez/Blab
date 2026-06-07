@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../shared/state/privacy_settings.dart';
+import '../../shared/widgets/blab_switch.dart';
 
 /// PRD US-040 + US-041. Signal-symmetric privacy controls.
 class PrivacyScreen extends ConsumerWidget {
@@ -146,12 +147,7 @@ class _ToggleRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Colors.white,
-            activeTrackColor: BlabColors.brand,
-          ),
+          BlabSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

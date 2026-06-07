@@ -12,6 +12,7 @@ class PasswordField extends StatefulWidget {
     this.errorText,
     this.onChanged,
     this.textInputAction,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -19,6 +20,7 @@ class PasswordField extends StatefulWidget {
   final String? errorText;
   final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
+  final bool autofocus;
 
   @override
   State<PasswordField> createState() => _PasswordFieldState();
@@ -36,6 +38,7 @@ class _PasswordFieldState extends State<PasswordField> {
       errorText: widget.errorText,
       onChanged: widget.onChanged,
       textInputAction: widget.textInputAction,
+      autofocus: widget.autofocus,
       suffix: IconButton(
         icon: Icon(
           _hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,

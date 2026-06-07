@@ -14,6 +14,7 @@ import '../../shared/widgets/blab_switch.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
+import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
 import '../../shared/state/portfolio_mode.dart';
 import 'state/chat_state.dart';
@@ -27,14 +28,9 @@ import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/translation_subtitle.dart';
 
-/// Learning-language codes the live translator covers. Every Blab
-/// language EXCEPT English — in v1 both sides type English, so a
-/// chat whose viewer is "learning English" needs no translation.
-/// All other 10 languages route through `translate-message` via
-/// OpenRouter / gpt-4o-mini, which knows all of them.
-const Set<String> _kSupportedLearningLanguages = {
-  'nl', 'fr', 'de', 'hi', 'it', 'pt', 'es', 'ta', 'tr', 'uk',
-};
+// kSupportedLearningLanguages now lives in
+// lib/shared/data/translation_support.dart so the chat list tile can
+// share the same gate when rendering preview translations.
 
 /// PRD US-013, US-014, US-015, US-016, US-017, US-023.
 ///
@@ -71,6 +67,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// edit-mode being entered/exited and pre-fill / clear the text field
   /// accordingly. PRD US-019.
   String? _editingMessageId;
+
+  /// Last learning-language code we kicked a DB-cache prefetch for, so a
+  /// rebuild doesn't fire the bulk query again. Cleared by closing the
+  /// chat screen (the field is part of the State).
+  String? _prefetchedLang;
 
   @override
   void initState() {
@@ -211,6 +212,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+
+    // Bulk-prefetch the DB-cached translations for this chat in the
+    // current learning language so reopening (or switching back to a
+    // previously-used language) renders old messages instantly instead
+    // of requiring the user to scroll past every bubble to fire its
+    // lazy LLM call. Fires on first build and on every language change.
+    if (kSupportedLearningLanguages.contains(learningLang.code) &&
+        _prefetchedLang != learningLang.code) {
+      _prefetchedLang = learningLang.code;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref
+            .read(messageTranslationsProvider(widget.chatId).notifier)
+            .prefetchFromDb(learningLang.code);
+      });
+    }
 
     // Sync the text field with the editing target. Entering edit mode
     // pre-fills with the original text; exiting clears.
@@ -898,7 +915,7 @@ class _MessageRow extends ConsumerWidget {
     // (incoming + outgoing) when this viewer's learning language is one
     // we translate this slice. No-op in portfolio mode (curated tokens
     // already shipped). Source is always English for v1.
-    if (_kSupportedLearningLanguages.contains(languageCode) &&
+    if (kSupportedLearningLanguages.contains(languageCode) &&
         !ref.watch(portfolioModeProvider) &&
         message.originalText.trim().isNotEmpty) {
       Future.microtask(() {
@@ -986,7 +1003,7 @@ class _Bubble extends ConsumerWidget {
     final isOut = message.isOutgoing;
 
     final liveTranslation =
-        _kSupportedLearningLanguages.contains(languageCode)
+        kSupportedLearningLanguages.contains(languageCode)
             ? ref.watch(messageTranslationsProvider(chatId))[
                 '${message.id}|$languageCode']
             : null;

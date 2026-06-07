@@ -45,7 +45,7 @@ class _Body extends ConsumerWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 18),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: BlabColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -53,13 +53,9 @@ class _Body extends ConsumerWidget {
             Container(
               width: 96,
               height: 96,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: BlabColors.avatarColorFor(chat.partnerName),
               ),
               alignment: Alignment.center,
               child: Text(

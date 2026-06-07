@@ -1,24 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
+import '../../../features/chat/state/message_translations_state.dart';
+import '../../../shared/data/translation_support.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/util/relative_time.dart';
 
-class ChatListTile extends StatelessWidget {
+class ChatListTile extends ConsumerWidget {
   const ChatListTile({super.key, required this.chat, required this.onTap});
 
   final Chat chat;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Resolve the preview text in the viewer's learning language when
+    // we have a last message id, the learning language is one we
+    // translate, and there's a cached translation (either in memory or
+    // hydrated from the DB via the chat screen's prefetch).
+    final code = chat.learningLanguage.code;
+    final supported = kSupportedLearningLanguages.contains(code);
+    String previewText = chat.lastMessage;
+    if (supported &&
+        chat.lastMessageId != null &&
+        chat.lastMessage.isNotEmpty &&
+        !chat.isNewInvite) {
+      // Watch the translation cache so the tile rebuilds when a fetch
+      // lands. Fire ensure() so the tile can populate its own preview
+      // even when the chat screen hasn't been opened yet.
+      final key = '${chat.lastMessageId}|$code';
+      final entry = ref.watch(messageTranslationsProvider(chat.id))[key];
+      final ready = entry?.value;
+      if (ready != null) {
+        previewText = ready.translation;
+      } else {
+        Future.microtask(() {
+          ref
+              .read(messageTranslationsProvider(chat.id).notifier)
+              .ensure(
+                messageId: chat.lastMessageId!,
+                text: chat.lastMessage,
+                sourceLang: 'en',
+                targetLang: code,
+              );
+        });
+      }
+    }
+
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            _Avatar(initial: chat.partnerInitial),
+            _Avatar(name: chat.partnerName, initial: chat.partnerInitial),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -73,7 +109,7 @@ class ChatListTile extends StatelessWidget {
                         child: Text(
                           chat.isNewInvite
                               ? 'New connection · say hi'
-                              : chat.lastMessage,
+                              : previewText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -104,7 +140,8 @@ class ChatListTile extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.initial});
+  const _Avatar({required this.name, required this.initial});
+  final String name;
   final String initial;
 
   @override
@@ -112,13 +149,9 @@ class _Avatar extends StatelessWidget {
     return Container(
       width: 48,
       height: 48,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: BlabColors.avatarColorFor(name),
       ),
       alignment: Alignment.center,
       child: Text(

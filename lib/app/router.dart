@@ -13,11 +13,13 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/invite/invite_landing_screen.dart';
-import '../features/invite/invitee_signup_screen.dart';
+import '../features/invite/invite_pick_language_screen.dart';
 import '../features/invite/new_chat_screen.dart';
 import '../features/profile/change_email_screen.dart';
 import '../features/profile/change_password_screen.dart';
+import '../features/profile/delete_account_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
+import '../features/profile/interface_language_screen.dart';
 import '../features/profile/privacy_screen.dart';
 import '../features/profile/profile_screen.dart';
 import 'dev_menu.dart';
@@ -30,7 +32,7 @@ const _publicPaths = <String>{
   '/auth/reset',
   '/auth/email-changed',
   '/invite',
-  '/invite/signup',
+  '/invite/pick-language',
 };
 
 bool _isPublic(String location) {
@@ -117,10 +119,14 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/auth',
       builder: (context, state) {
-        final mode = state.uri.queryParameters['mode'] == 'login'
-            ? AuthMode.logIn
-            : AuthMode.signUp;
-        return AuthScreen(initialMode: mode);
+        final q = state.uri.queryParameters;
+        final mode =
+            q['mode'] == 'login' ? AuthMode.logIn : AuthMode.signUp;
+        return AuthScreen(
+          initialMode: mode,
+          inviterName: q['inviter'],
+          learnCode: q['learn'],
+        );
       },
     ),
     GoRoute(
@@ -180,16 +186,18 @@ final GoRouter blabRouter = GoRouter(
         return InviteLandingScreen(
           status: status,
           inviterName: q['from'] ?? 'Nastia',
-          learnCode: q['learn'] ?? 'uk',
-          teachCode: q['teach'] ?? 'ta',
+          inviterLearningCode: q['learning'],
         );
       },
     ),
     GoRoute(
-      path: '/invite/signup',
-      builder: (context, state) => InviteeSignupScreen(
-        inviterName: state.uri.queryParameters['inviter'] ?? 'Nastia',
-      ),
+      path: '/invite/pick-language',
+      builder: (context, state) {
+        final q = state.uri.queryParameters;
+        return InvitePickLanguageScreen(
+          inviterName: q['inviter'] ?? 'Nastia',
+        );
+      },
     ),
     GoRoute(
         path: '/profile', builder: (context, state) => const ProfileScreen()),
@@ -208,6 +216,14 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/profile/privacy',
       builder: (context, state) => const PrivacyScreen(),
+    ),
+    GoRoute(
+      path: '/profile/interface-language',
+      builder: (context, state) => const InterfaceLanguageScreen(),
+    ),
+    GoRoute(
+      path: '/profile/delete-account',
+      builder: (context, state) => const DeleteAccountScreen(),
     ),
   ],
 );

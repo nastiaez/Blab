@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,7 +8,12 @@ import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import 'widgets/blab_text_field.dart';
 
-/// PRD US-004.
+/// PRD US-004. Forgot-password page.
+///
+/// Same chassis as the Profile sub-pages (cream canvas, transparent AppBar
+/// with centered title + ink back arrow, single primary CTA). No "Back to
+/// log in" text button — the AppBar back already does that, and the
+/// duplicate link was adding clutter under the CTA.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key, this.prefilledEmail});
 
@@ -34,10 +40,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim());
 
   Future<void> _send() async {
+    HapticFeedback.mediumImpact();
     setState(() {
       _err = _email.text.trim().isEmpty
           ? 'Enter your email'
-          : (_isValidEmail(_email.text) ? null : 'Enter a valid email address');
+          : (_isValidEmail(_email.text)
+              ? null
+              : 'Enter a valid email address');
     });
     if (_err != null) return;
     setState(() => _busy = true);
@@ -46,7 +55,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       await auth.sendPasswordReset(_email.text);
       if (!mounted) return;
       context.go(
-          '/auth/forgot/sent?email=${Uri.encodeComponent(_email.text.trim())}');
+        '/auth/forgot/sent?email=${Uri.encodeComponent(_email.text.trim())}',
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _err = SupabaseAuthService.messageFor(e));
@@ -58,32 +68,46 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: BlabColors.appBackground,
       appBar: AppBar(
+        backgroundColor: BlabColors.appBackground,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => context.pop(),
+          color: BlabColors.textPrimary,
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go('/auth?mode=login'),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: BlabColors.textPrimary,
+        title: const Text(
+          'Forgot password?',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: BlabColors.textPrimary,
+          ),
+        ),
       ),
-      backgroundColor: BlabColors.appBackground,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Forgot your password?',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  "Enter the email you signed up with — we'll send you a reset link.",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: BlabColors.textMuted,
+                    height: 1.4,
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter the email you signed up with and we\'ll send you a reset link.',
-                style: TextStyle(fontSize: 14, color: BlabColors.textMuted),
-              ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               BlabTextField(
                 controller: _email,
                 label: 'Email',
@@ -92,9 +116,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 errorText: _err,
                 autofocus: true,
                 textInputAction: TextInputAction.send,
-                // BUG-006: clear the stale "Enter a valid email" error as
-                // soon as the user types something valid — don't make them
-                // wait until the next submit.
                 onChanged: (v) {
                   if (_err != null && _isValidEmail(v)) {
                     setState(() => _err = null);
@@ -119,28 +140,17 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white),
                           ),
                         )
                       : const Text(
-                          'Send reset link  →',
+                          'Send reset link',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Center(
-                child: TextButton(
-                  onPressed: () => context.go('/auth?mode=login'),
-                  child: const Text(
-                    'Back to log in',
-                    style: TextStyle(
-                      color: BlabColors.brand,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                 ),
               ),
             ],

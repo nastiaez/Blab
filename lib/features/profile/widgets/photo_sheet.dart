@@ -23,7 +23,7 @@ Future<void> showPhotoSheet(BuildContext context, {bool hasPhoto = false}) {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: BlabColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

@@ -1,35 +1,39 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
+import '../../../app/theme.dart';
 
 /// Apple + Google SSO buttons. PRD US-003.
 ///
-/// Both buttons are shown regardless of platform so the surface matches the
-/// PRD spec everywhere (including the invite-signup screen). Runtime auth
-/// wiring lands in Phase 2 — until then, taps are mock-handled by the caller.
+/// Apple is hidden on Android (ship-fast v1 — Apple SSO deferred to Phase 3
+/// alongside the iOS build). Both buttons use the same neutral white chip so
+/// neither one outweighs the other visually.
 class SsoButtons extends StatelessWidget {
   const SsoButtons({super.key, required this.onPressed});
 
   final ValueChanged<String> onPressed;
+
+  bool get _showApple => !kIsWeb && Platform.isIOS;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _SsoButton(
-          label: 'Continue with Apple',
-          icon: Icons.apple,
-          background: Colors.black,
-          foreground: Colors.white,
-          onPressed: () => onPressed('apple'),
-        ),
-        const SizedBox(height: 10),
-        _SsoButton(
           label: 'Continue with Google',
           iconWidget: const _GoogleGlyph(),
-          background: Colors.white,
-          foreground: Colors.black87,
-          border: Colors.grey.shade300,
           onPressed: () => onPressed('google'),
         ),
+        if (_showApple) ...[
+          const SizedBox(height: 10),
+          _SsoButton(
+            label: 'Continue with Apple',
+            icon: Icons.apple,
+            onPressed: () => onPressed('apple'),
+          ),
+        ],
       ],
     );
   }
@@ -38,50 +42,45 @@ class SsoButtons extends StatelessWidget {
 class _SsoButton extends StatelessWidget {
   const _SsoButton({
     required this.label,
-    required this.background,
-    required this.foreground,
     required this.onPressed,
     this.icon,
     this.iconWidget,
-    this.border,
   });
 
   final String label;
   final IconData? icon;
   final Widget? iconWidget;
-  final Color background;
-  final Color foreground;
-  final Color? border;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 52,
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: iconWidget ?? Icon(icon, size: 22, color: foreground),
+        icon: iconWidget ??
+            Icon(icon, size: 22, color: BlabColors.textPrimary),
         label: Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: foreground,
+            color: BlabColors.textPrimary,
           ),
         ),
         style: OutlinedButton.styleFrom(
-          backgroundColor: background,
-          side: BorderSide(color: border ?? background),
+          backgroundColor: BlabColors.phoneSurface,
+          side: const BorderSide(color: BlabColors.divider),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
     );
   }
 }
 
-/// Simple 4-color "G" mark. Standalone glyph to avoid bundling Google brand assets.
+/// Simple "G" glyph in Google's blue. Avoids bundling brand assets.
 class _GoogleGlyph extends StatelessWidget {
   const _GoogleGlyph();
 

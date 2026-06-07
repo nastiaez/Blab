@@ -49,6 +49,60 @@ class MessageTranslationsNotifier
     return state[_entryKey(messageId, targetLang)];
   }
 
+  /// Hydrate the in-memory cache with translations already persisted to
+  /// the DB. Idempotent — existing entries (loading, error, or data
+  /// from a fresher LLM call) are NOT overwritten so we never trample
+  /// in-flight requests.
+  void hydrateFromDb(
+    Map<String, MessageTranslation> byMessageId,
+    String targetLang,
+  ) {
+    if (byMessageId.isEmpty) return;
+    final updates = <String, AsyncValue<MessageTranslation>>{...state};
+    var changed = false;
+    for (final entry in byMessageId.entries) {
+      final key = _entryKey(entry.key, targetLang);
+      if (updates.containsKey(key)) continue;
+      updates[key] = AsyncData(entry.value);
+      changed = true;
+    }
+    if (changed) state = updates;
+  }
+
+  /// Fire-and-forget bulk DB prefetch: one query, populate the cache.
+  /// Safe to call repeatedly — already-hydrated keys are skipped.
+  Future<void> prefetchFromDb(String targetLang) async {
+    try {
+      final rows = await ref
+          .read(chatServiceProvider)
+          .fetchCachedTranslationsForChat(
+            chatId: chatId,
+            targetLang: targetLang,
+          );
+      final byId = <String, MessageTranslation>{};
+      for (final entry in rows.entries) {
+        final tokens = <MessageToken>[];
+        for (final t in entry.value.tokens) {
+          final tokenText = t['text'];
+          if (tokenText is! String) continue;
+          tokens.add(MessageToken(
+            text: tokenText,
+            english: t['english'] as String?,
+            romanization: t['roman'] as String?,
+            isContent: t['isContent'] as bool? ?? true,
+          ));
+        }
+        byId[entry.key] = MessageTranslation(
+          translation: entry.value.text,
+          tokens: tokens,
+        );
+      }
+      hydrateFromDb(byId, targetLang);
+    } catch (_) {
+      // Best effort. Misses fall back to lazy LLM on visibility.
+    }
+  }
+
   /// Triggers translation for [messageId] if not already started for
   /// [targetLang]. Safe to call on every rebuild — idempotent.
   Future<void> ensure({

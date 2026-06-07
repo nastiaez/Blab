@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
@@ -31,6 +32,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   void _submit() {
+    HapticFeedback.mediumImpact();
     setState(() {
       _currentErr =
           _current.text.isEmpty ? 'Enter your current password' : null;
@@ -89,6 +91,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               errorText: _currentErr,
               onChanged: (_) => setState(() {}),
               textInputAction: TextInputAction.next,
+              autofocus: true,
             ),
             const SizedBox(height: 16),
             PasswordField(

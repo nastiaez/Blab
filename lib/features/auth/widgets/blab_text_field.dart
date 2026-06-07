@@ -76,13 +76,17 @@ class BlabTextField extends StatelessWidget {
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: hasError ? Colors.red.shade400 : Colors.grey.shade300,
+                  color: hasError
+                      ? BlabColors.error
+                      : Colors.grey.shade300,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: hasError ? Colors.red.shade400 : BlabColors.brand,
+                  color: hasError
+                      ? BlabColors.error
+                      : BlabColors.focusBorder,
                   width: 1.5,
                 ),
               ),
@@ -93,7 +97,7 @@ class BlabTextField extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             errorText!,
-            style: TextStyle(fontSize: 12, color: Colors.red.shade600),
+            style: const TextStyle(fontSize: 12, color: BlabColors.error),
           ),
         ],
       ],

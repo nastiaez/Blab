@@ -27,7 +27,7 @@ class ExchangeCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: BlabColors.brand.withValues(alpha: 0.3),
+          color: BlabColors.divider,
           width: 1,
         ),
       ),

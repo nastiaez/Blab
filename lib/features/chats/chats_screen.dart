@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../shared/state/chat_list_state.dart';
+import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'widgets/chat_list_tile.dart';
@@ -207,15 +208,13 @@ class _BottomTabs extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _TabItem(
-                icon: Icons.chat_bubble_outline,
-                iconActive: Icons.chat_bubble,
+                iconName: 'chat',
                 label: 'Chats',
                 selected: active == _Tab.chats,
                 onTap: () {},
               ),
               _TabItem(
-                icon: Icons.person_outline,
-                iconActive: Icons.person,
+                iconName: 'profile',
                 label: 'Profile',
                 selected: active == _Tab.profile,
                 onTap: () => context.go('/profile'),
@@ -230,15 +229,13 @@ class _BottomTabs extends StatelessWidget {
 
 class _TabItem extends StatelessWidget {
   const _TabItem({
-    required this.icon,
-    required this.iconActive,
+    required this.iconName,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final IconData icon;
-  final IconData iconActive;
+  final String iconName;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -254,7 +251,7 @@ class _TabItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(selected ? iconActive : icon, color: color, size: 22),
+            BlabIcon(name: iconName, color: color, size: 24),
             const SizedBox(height: 2),
             Text(
               label,

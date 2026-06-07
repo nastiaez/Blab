@@ -32,7 +32,7 @@ Future<void> showFailedMessageSheet(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: BlabColors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

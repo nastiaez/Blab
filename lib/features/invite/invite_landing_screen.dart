@@ -1,84 +1,97 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
-import 'widgets/exchange_card.dart';
+import '../../shared/state/interface_language.dart';
+import '../../shared/widgets/blab_icon.dart';
+import '../auth/widgets/language_picker_sheet.dart';
+import 'widgets/invite_progress_bar.dart';
 
 enum InviteStatus { valid, expired, used }
 
-/// Web-style invite landing page. Shown when someone opens an invite link.
+/// Invite landing page. PRD US-024 (valid) + US-037 (expired / used).
 ///
-/// PRD US-024 (valid state) + US-037 (expired / used).
-class InviteLandingScreen extends StatelessWidget {
+/// Person-led hierarchy (Discord / Tandem pattern): tiny logo top, big
+/// inviter avatar, personal headline. The invitee picks their own learning
+/// language on the next step — the landing only displays the *inviter's*
+/// learning language as context, never presets the invitee's.
+class InviteLandingScreen extends ConsumerWidget {
   const InviteLandingScreen({
     super.key,
     required this.status,
     required this.inviterName,
-    required this.learnCode,
-    required this.teachCode,
+    this.inviterLearningCode,
   });
 
   final InviteStatus status;
   final String inviterName;
 
-  /// Language the invitee will learn (the inviter teaches it).
-  final String learnCode;
+  /// The language the *inviter* is learning. Shown in the headline copy as
+  /// social context ("Nastia is learning Tamil."). Not a preset for the
+  /// invitee — that's chosen on `/invite/pick-language`.
+  final String? inviterLearningCode;
 
-  /// Language the invitee will teach (the inviter learns it).
-  final String teachCode;
-
-  BlabLanguage _lang(String code) => kBlabLanguages.firstWhere(
-        (l) => l.code == code,
-        orElse: () => kBlabLanguages.firstWhere((l) => l.code == 'en'),
-      );
+  BlabLanguage? get _inviterLearning {
+    final code = inviterLearningCode;
+    if (code == null) return null;
+    for (final l in kBlabLanguages) {
+      if (l.code == code) return l;
+    }
+    return null;
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final learn = _lang(learnCode);
-    final teach = _lang(teachCode);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(interfaceLanguageProvider);
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
-              const Center(
-                child: Text(
-                  'Blab',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: BlabColors.brand,
-                  ),
+              _TopBar(
+                code: lang.code.toUpperCase(),
+                onTapLanguage: () async {
+                  final picked = await showLanguagePickerSheet(
+                    context,
+                    current: lang,
+                  );
+                  if (picked != null) {
+                    ref
+                        .read(interfaceLanguageProvider.notifier)
+                        .set(picked);
+                  }
+                },
+              ),
+              const SizedBox(height: 4),
+              if (status == InviteStatus.valid) ...[
+                const InviteProgressBar(current: 1),
+                const SizedBox(height: 12),
+              ],
+              // Tiny wordmark — chrome only, person dominates below.
+              Center(
+                child: SvgPicture.asset(
+                  'assets/blab-logo.svg',
+                  height: 24,
                 ),
               ),
-              const SizedBox(height: 6),
-              const Center(
-                child: Text(
-                  'Language exchange, real conversations',
-                  style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
-                ),
+              Expanded(
+                child: switch (status) {
+                  InviteStatus.valid => _ValidBody(
+                      inviterName: inviterName,
+                      inviterLearning: _inviterLearning,
+                    ),
+                  InviteStatus.expired =>
+                    _ExpiredBody(inviterName: inviterName),
+                  InviteStatus.used => const _UsedBody(),
+                },
               ),
-              const SizedBox(height: 40),
-              if (status == InviteStatus.valid)
-                _ValidBody(
-                  inviterName: inviterName,
-                  learn: learn,
-                  teach: teach,
-                  onAccept: () => context.push(
-                    '/invite/signup?inviter=$inviterName'
-                    '&learn=$learnCode&teach=$teachCode',
-                  ),
-                )
-              else if (status == InviteStatus.expired)
-                _ExpiredBody(inviterName: inviterName)
-              else
-                const _UsedBody(),
             ],
           ),
         ),
@@ -87,69 +100,41 @@ class InviteLandingScreen extends StatelessWidget {
   }
 }
 
-class _ValidBody extends StatelessWidget {
-  const _ValidBody({
-    required this.inviterName,
-    required this.learn,
-    required this.teach,
-    required this.onAccept,
-  });
+// ─────────────────────────── top bar ──────────────────────────────────────
 
-  final String inviterName;
-  final BlabLanguage learn;
-  final BlabLanguage teach;
-  final VoidCallback onAccept;
+class _TopBar extends StatelessWidget {
+  const _TopBar({required this.code, required this.onTapLanguage});
+
+  final String code;
+  final VoidCallback onTapLanguage;
 
   @override
   Widget build(BuildContext context) {
-    final brandBold = const TextStyle(
-      fontSize: 22,
-      fontWeight: FontWeight.w700,
-      color: BlabColors.brand,
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        RichText(
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-              color: BlabColors.textPrimary,
-              height: 1.4,
-            ),
-            children: [
-              TextSpan(text: inviterName, style: brandBold),
-              const TextSpan(text: ' invited you to learn '),
-              TextSpan(text: learn.name, style: brandBold),
-              TextSpan(text: ' together ${learn.flag}'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        ExchangeCard(
-          topFlag: learn.flag,
-          topLabel: 'She teaches you ${learn.name}',
-          bottomFlag: teach.flag,
-          bottomLabel: 'You teach her ${teach.name}',
-        ),
-        const SizedBox(height: 40),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: BlabColors.brand,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            onPressed: onAccept,
-            child: const Text(
-              'Accept & join',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        InkWell(
+          onTap: onTapLanguage,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                const BlabIcon(
+                  name: 'globe',
+                  size: 18,
+                  color: BlabColors.textPrimary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  code,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: BlabColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -157,6 +142,117 @@ class _ValidBody extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────── valid body ───────────────────────────────────
+
+class _ValidBody extends ConsumerWidget {
+  const _ValidBody({
+    required this.inviterName,
+    required this.inviterLearning,
+  });
+
+  final String inviterName;
+  final BlabLanguage? inviterLearning;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasLanguage = inviterLearning != null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              const SizedBox(height: 32),
+              // Big inviter avatar — person dominates.
+              Container(
+                width: 112,
+                height: 112,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: BlabColors.avatarColorFor(inviterName),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  inviterName.isNotEmpty
+                      ? inviterName[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 48,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 26),
+              if (hasLanguage)
+                Text(
+                  '$inviterName is learning ${inviterLearning!.name}.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: BlabColors.textPrimary,
+                    height: 1.3,
+                  ),
+                ),
+              if (!hasLanguage)
+                Text(
+                  '$inviterName invited you to chat.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: BlabColors.textPrimary,
+                    height: 1.3,
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Text(
+                hasLanguage
+                    ? "Chat with $inviterName in any language — you'll both pick up new words along the way."
+                    : "Practice a new language by chatting with $inviterName.",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: BlabColors.textMuted,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: BlabColors.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () => context.push(
+                '/invite/pick-language?inviter=$inviterName',
+              ),
+              child: const Text(
+                'Start chatting',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────── expired / used ───────────────────────────────
 
 class _ExpiredBody extends StatelessWidget {
   const _ExpiredBody({required this.inviterName});
@@ -166,33 +262,38 @@ class _ExpiredBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Icon(
-          Icons.timer_off_outlined,
-          size: 64,
-          color: BlabColors.textMuted,
+        Column(
+          children: [
+            const SizedBox(height: 60),
+            const Icon(
+              Icons.timer_off_outlined,
+              size: 56,
+              color: BlabColors.textMuted,
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'This invite has expired.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: BlabColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ask $inviterName for a new link.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: BlabColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 20),
-        const Text(
-          'This invite has expired',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'Ask $inviterName for a new link.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 15,
-            color: BlabColors.textMuted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 40),
         const _GetTheAppLink(),
       ],
     );
@@ -205,23 +306,28 @@ class _UsedBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: const [
-        Icon(
-          Icons.link_off,
-          size: 64,
-          color: BlabColors.textMuted,
+        Column(
+          children: [
+            SizedBox(height: 60),
+            Icon(
+              Icons.link_off,
+              size: 56,
+              color: BlabColors.textMuted,
+            ),
+            SizedBox(height: 18),
+            Text(
+              'This invite has already been claimed.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: BlabColors.textPrimary,
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: 20),
-        Text(
-          'This invite has already been claimed',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: 40),
         _GetTheAppLink(),
       ],
     );

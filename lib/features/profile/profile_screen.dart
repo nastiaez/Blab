@@ -4,10 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
+import '../../shared/widgets/blab_icon.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
-import '../auth/widgets/language_picker_sheet.dart';
-import 'widgets/delete_account_sheet.dart';
 import 'widgets/photo_sheet.dart';
 import 'widgets/pressable_avatar.dart';
 
@@ -55,23 +54,23 @@ class ProfileScreen extends ConsumerWidget {
                 _SettingsRow(
                   icon: Icons.language_outlined,
                   label: 'Interface language',
-                  trailing: Text(
-                    lang.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: BlabColors.brand,
-                    ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        lang.nativeName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: BlabColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right,
+                          color: BlabColors.textMuted),
+                    ],
                   ),
-                  onTap: () async {
-                    final picked = await showLanguagePickerSheet(context,
-                        current: lang);
-                    if (picked != null) {
-                      ref
-                          .read(interfaceLanguageProvider.notifier)
-                          .set(picked);
-                    }
-                  },
+                  onTap: () =>
+                      context.push('/profile/interface-language'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
@@ -130,7 +129,7 @@ class ProfileScreen extends ConsumerWidget {
                   destructive: true,
                   trailing: Icon(Icons.chevron_right,
                       color: Colors.red.shade400),
-                  onTap: () => showDeleteAccountSheet(context),
+                  onTap: () => context.push('/profile/delete-account'),
                 ),
               ],
             ),
@@ -202,13 +201,9 @@ class _ProfileHero extends StatelessWidget {
             child: Container(
               width: 96,
               height: 96,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: BlabColors.avatarColorFor(name),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -384,15 +379,13 @@ class _BottomTabs extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _TabItem(
-                icon: Icons.chat_bubble_outline,
-                iconActive: Icons.chat_bubble,
+                iconName: 'chat',
                 label: 'Chats',
                 selected: active == _Tab.chats,
                 onTap: () => context.go('/chats'),
               ),
               _TabItem(
-                icon: Icons.person_outline,
-                iconActive: Icons.person,
+                iconName: 'profile',
                 label: 'Profile',
                 selected: active == _Tab.profile,
                 onTap: () {},
@@ -407,15 +400,13 @@ class _BottomTabs extends StatelessWidget {
 
 class _TabItem extends StatelessWidget {
   const _TabItem({
-    required this.icon,
-    required this.iconActive,
+    required this.iconName,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
-  final IconData icon;
-  final IconData iconActive;
+  final String iconName;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -431,7 +422,7 @@ class _TabItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(selected ? iconActive : icon, color: color, size: 22),
+            BlabIcon(name: iconName, color: color, size: 24),
             const SizedBox(height: 2),
             Text(
               label,

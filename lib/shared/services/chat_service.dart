@@ -155,6 +155,45 @@ class ChatService {
     return (text: row['translation_text'] as String, tokens: tokens);
   }
 
+  /// Bulk-fetch every cached translation for messages belonging to
+  /// [chatId] in [targetLang]. Returned as a map keyed by message id.
+  /// Used to hydrate the in-memory translation cache on chat open and
+  /// on learning-language change so old messages don't need to be
+  /// scrolled past to translate.
+  Future<Map<String, ({String text, List<Map<String, dynamic>> tokens})>>
+      fetchCachedTranslationsForChat({
+    required String chatId,
+    required String targetLang,
+  }) async {
+    final msgRows = await _client
+        .from('messages')
+        .select('id')
+        .eq('chat_id', chatId)
+        .filter('deleted_at', 'is', null);
+    final ids = (msgRows as List).map((r) => r['id'] as String).toList();
+    if (ids.isEmpty) return {};
+    final transRows = await _client
+        .from('message_translations')
+        .select('message_id, translation_text, tokens')
+        .eq('target_lang', targetLang)
+        .inFilter('message_id', ids);
+    final result =
+        <String, ({String text, List<Map<String, dynamic>> tokens})>{};
+    for (final row in transRows as List) {
+      final id = row['message_id'] as String;
+      final text = row['translation_text'] as String;
+      final rawTokens = row['tokens'];
+      final tokens = <Map<String, dynamic>>[];
+      if (rawTokens is List) {
+        for (final t in rawTokens) {
+          if (t is Map) tokens.add(Map<String, dynamic>.from(t));
+        }
+      }
+      result[id] = (text: text, tokens: tokens);
+    }
+    return result;
+  }
+
   /// Persist a translation result so future viewers + sessions skip the
   /// LLM round-trip. Idempotent — duplicate (message_id, target_lang)
   /// keys are ignored.

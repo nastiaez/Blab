@@ -85,16 +85,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Container(
                 width: 112,
                 height: 112,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF667EEA),
-                      Color(0xFF764BA2),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: BlabColors.avatarColorFor(_name.text),
                 ),
                 alignment: Alignment.center,
                 child: Text(

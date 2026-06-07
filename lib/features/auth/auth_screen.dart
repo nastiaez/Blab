@@ -1,12 +1,15 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
+import '../../shared/widgets/blab_icon.dart';
+import '../invite/widgets/invite_progress_bar.dart';
 import 'widgets/blab_text_field.dart';
 import 'widgets/language_picker_sheet.dart';
 import 'widgets/password_field.dart';
@@ -16,13 +19,27 @@ import 'widgets/sso_buttons.dart';
 enum AuthMode { signUp, logIn }
 
 /// Sign up / Log in screen. PRD US-001…US-005.
+///
+/// Single-screen layout (Tandem/Bumble pattern): SSO buttons + email form
+/// always visible together. Mode-switch link top-right slides the Name
+/// field in/out and swaps the CTA copy.
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({super.key, this.initialMode = AuthMode.signUp});
+  const AuthScreen({
+    super.key,
+    this.initialMode = AuthMode.signUp,
+    this.inviterName,
+    this.learnCode,
+  });
 
-  /// Which tab to land on. Defaults to [AuthMode.signUp]. Set to
-  /// [AuthMode.logIn] when returning from the forgot-password flow so
-  /// "Back to log in" actually returns to the log-in tab. PRD US-004.
   final AuthMode initialMode;
+
+  /// When set, the screen is part of the invite flow. Top-left swaps the
+  /// globe for a back arrow and the subtitle personalises the copy.
+  final String? inviterName;
+
+  /// Language code the invitee picked on the previous step. Backend wiring
+  /// (Step 2.3) will use this when seeding the new chat row.
+  final String? learnCode;
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
@@ -30,6 +47,7 @@ class AuthScreen extends ConsumerStatefulWidget {
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   late AuthMode _mode = widget.initialMode;
+
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -41,17 +59,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String? _formErr;
   bool _busy = false;
 
-  final List<TapGestureRecognizer> _legalRecognizers = [];
-
   @override
   void initState() {
     super.initState();
-    // Validate email on blur (PRD US-001). Fires whenever the field loses
-    // focus, not only on Done/Enter.
     _emailFocus.addListener(() {
-      if (!_emailFocus.hasFocus) {
-        _validateEmail();
-      }
+      if (!_emailFocus.hasFocus) _validateEmail();
     });
   }
 
@@ -61,9 +73,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     _email.dispose();
     _password.dispose();
     _emailFocus.dispose();
-    for (final r in _legalRecognizers) {
-      r.dispose();
-    }
     super.dispose();
   }
 
@@ -150,6 +159,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  void _switchMode() {
+    setState(() {
+      _mode = _mode == AuthMode.signUp ? AuthMode.logIn : AuthMode.signUp;
+      _nameErr = null;
+      _emailErr = null;
+      _pwErr = null;
+      _formErr = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(interfaceLanguageProvider);
@@ -158,13 +177,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _TopBar(
-                language: lang,
+                code: lang.code.toUpperCase(),
                 onTapLanguage: () async {
                   final picked = await showLanguagePickerSheet(context,
                       current: lang);
@@ -172,142 +191,151 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ref.read(interfaceLanguageProvider.notifier).set(picked);
                   }
                 },
+                isSignUp: isSignUp,
+                onTapSwitchMode: _switchMode,
+                inviteFlow: widget.inviterName != null,
+                onBack: () =>
+                    context.canPop() ? context.pop() : context.go('/invite'),
               ),
-              const SizedBox(height: 32),
-              const Center(
+              if (widget.inviterName != null) ...[
+                const SizedBox(height: 8),
+                const InviteProgressBar(current: 3),
+              ],
+              const SizedBox(height: 18),
+              Center(
+                child: SvgPicture.asset(
+                  'assets/blab-logo.svg',
+                  height: 44,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Center(
                 child: Text(
-                  'Blab',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: BlabColors.brand,
+                  widget.inviterName != null
+                      ? 'Sign up to chat with ${widget.inviterName}.'
+                      : 'Learn a language by chatting with a friend.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: BlabColors.textMuted,
+                    height: 1.35,
                   ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              const Center(
-                child: Text(
-                  'Language exchange, real conversations',
-                  style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
-                ),
-              ),
-              const SizedBox(height: 28),
-              _ModeToggle(
-                mode: _mode,
-                onChanged: (m) => setState(() {
-                  _mode = m;
-                  _nameErr = null;
-                  _emailErr = null;
-                  _pwErr = null;
-                }),
               ),
               const SizedBox(height: 22),
-              SsoButtons(
-                onPressed: (provider) => _socialSignIn(provider),
-              ),
-              const SizedBox(height: 18),
-              const _OrDivider(),
-              const SizedBox(height: 18),
-              if (isSignUp) ...[
-                BlabTextField(
-                  controller: _name,
-                  label: 'Name',
-                  hint: 'Your first name',
-                  errorText: _nameErr,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 16),
-              ],
-              BlabTextField(
-                controller: _email,
-                focusNode: _emailFocus,
-                label: 'Email',
-                hint: 'you@example.com',
-                keyboardType: TextInputType.emailAddress,
-                errorText: _emailErr,
-                onEditingComplete: _validateEmail,
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 16),
-              PasswordField(
-                controller: _password,
-                errorText: _pwErr,
-                onChanged: (_) => setState(() {}),
-                textInputAction: TextInputAction.done,
-              ),
-              if (isSignUp) PasswordStrengthBar(password: _password.text),
-              if (_formErr != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDECEA),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFF5C2C7)),
-                  ),
-                  child: Text(
-                    _formErr!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFFB42318),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: BlabColors.brand,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: _busy ? null : _submit,
-                  child: _busy
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          isSignUp ? 'Create account  →' : 'Log in  →',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                ),
-              ),
-              if (isSignUp) ...[
-                const SizedBox(height: 14),
-                _LegalFinePrint(
-                  onTermsTap: () => _showLegalToast('Terms'),
-                  onPrivacyTap: () => _showLegalToast('Privacy Policy'),
-                  recognizerSink: _legalRecognizers,
-                ),
-              ],
-              if (!isSignUp) ...[
-                const SizedBox(height: 14),
-                Center(
-                  child: TextButton(
-                    onPressed: () => context.push('/auth/forgot'),
-                    child: const Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        color: BlabColors.brand,
-                        fontWeight: FontWeight.w600,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SsoButtons(onPressed: _socialSignIn),
+                      const SizedBox(height: 14),
+                      const _OrDivider(),
+                      const SizedBox(height: 14),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        child: isSignUp
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  BlabTextField(
+                                    controller: _name,
+                                    label: 'Name',
+                                    hint: 'Your first name',
+                                    errorText: _nameErr,
+                                    textInputAction: TextInputAction.next,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
                       ),
-                    ),
+                      BlabTextField(
+                        controller: _email,
+                        focusNode: _emailFocus,
+                        label: 'Email',
+                        hint: 'you@example.com',
+                        keyboardType: TextInputType.emailAddress,
+                        errorText: _emailErr,
+                        onEditingComplete: _validateEmail,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 12),
+                      PasswordField(
+                        controller: _password,
+                        errorText: _pwErr,
+                        onChanged: (_) => setState(() {}),
+                        textInputAction: TextInputAction.done,
+                      ),
+                      if (isSignUp)
+                        PasswordStrengthBar(password: _password.text),
+                      if (_formErr != null) ...[
+                        const SizedBox(height: 10),
+                        _InlineError(message: _formErr!),
+                      ],
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: BlabColors.brand,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: _busy ? null : _submit,
+                          child: _busy
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                )
+                              : Text(
+                                  isSignUp ? 'Create account  →' : 'Log in  →',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      if (!isSignUp)
+                        Center(
+                          child: TextButton(
+                            onPressed: () => context.push('/auth/forgot'),
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Forgot password?',
+                              style: TextStyle(
+                                color: BlabColors.brand,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (isSignUp) ...[
+                        const SizedBox(height: 8),
+                        _LegalFinePrint(
+                          onTermsTap: () => _showLegalToast('Terms'),
+                          onPrivacyTap: () =>
+                              _showLegalToast('Privacy Policy'),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -316,35 +344,82 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.language, required this.onTapLanguage});
+// ─────────────────────────── top bar ──────────────────────────────────────
 
-  final dynamic language;
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.code,
+    required this.onTapLanguage,
+    required this.isSignUp,
+    required this.onTapSwitchMode,
+    required this.inviteFlow,
+    required this.onBack,
+  });
+
+  final String code;
   final VoidCallback onTapLanguage;
+  final bool isSignUp;
+  final VoidCallback onTapSwitchMode;
+
+  /// When true, top-left swaps the globe for a back arrow (invite flow —
+  /// language switcher lives on the invite landing instead).
+  final bool inviteFlow;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        InkWell(
-          onTap: onTapLanguage,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(
-              children: [
-                const Text('🌐', style: TextStyle(fontSize: 18)),
-                const SizedBox(width: 6),
-                Text(
-                  language.code.toString().toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+    final Widget leading = inviteFlow
+        ? InkWell(
+            onTap: onBack,
+            borderRadius: BorderRadius.circular(20),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Icon(Icons.arrow_back_ios_new,
+                  size: 20, color: BlabColors.textPrimary),
+            ),
+          )
+        : InkWell(
+            onTap: onTapLanguage,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const BlabIcon(
+                    name: 'globe',
+                    size: 18,
                     color: BlabColors.textPrimary,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    code,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: BlabColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        leading,
+        InkWell(
+          onTap: onTapSwitchMode,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              isSignUp ? 'Log in' : 'Sign up',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: BlabColors.brand,
+              ),
             ),
           ),
         ),
@@ -353,82 +428,23 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _ModeToggle extends StatelessWidget {
-  const _ModeToggle({required this.mode, required this.onChanged});
-
-  final AuthMode mode;
-  final ValueChanged<AuthMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        children: [
-          _segment('Sign up', AuthMode.signUp),
-          _segment('Log in', AuthMode.logIn),
-        ],
-      ),
-    );
-  }
-
-  Widget _segment(String label, AuthMode m) {
-    final selected = mode == m;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onChanged(m),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: selected ? BlabColors.brand : BlabColors.textMuted,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+// ─────────────────────────── shared bits ──────────────────────────────────
 
 class _OrDivider extends StatelessWidget {
   const _OrDivider();
 
   @override
   Widget build(BuildContext context) {
-    final line = Expanded(child: Container(height: 1, color: Colors.grey.shade300));
+    final line = Expanded(
+        child: Container(height: 1, color: BlabColors.divider));
     return Row(
       children: [
         line,
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
           child: Text(
-            'or continue with email',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade500,
-            ),
+            'or use email',
+            style: TextStyle(fontSize: 12, color: BlabColors.textMuted),
           ),
         ),
         line,
@@ -437,32 +453,74 @@ class _OrDivider extends StatelessWidget {
   }
 }
 
-/// PRD US-034: fine print under signup CTA with Terms + Privacy links.
-class _LegalFinePrint extends StatelessWidget {
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.error_outline,
+            size: 16, color: BlabColors.error),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 13,
+              color: BlabColors.error,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegalFinePrint extends StatefulWidget {
   const _LegalFinePrint({
     required this.onTermsTap,
     required this.onPrivacyTap,
-    required this.recognizerSink,
   });
 
   final VoidCallback onTermsTap;
   final VoidCallback onPrivacyTap;
-  final List<TapGestureRecognizer> recognizerSink;
+
+  @override
+  State<_LegalFinePrint> createState() => _LegalFinePrintState();
+}
+
+class _LegalFinePrintState extends State<_LegalFinePrint> {
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()..onTap = () => widget.onTermsTap();
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => widget.onPrivacyTap();
+  }
+
+  @override
+  void dispose() {
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final termsRecognizer = TapGestureRecognizer()..onTap = onTermsTap;
-    final privacyRecognizer = TapGestureRecognizer()..onTap = onPrivacyTap;
-    recognizerSink
-      ..add(termsRecognizer)
-      ..add(privacyRecognizer);
-
     const baseStyle = TextStyle(
       fontSize: 12,
       color: BlabColors.textMuted,
       height: 1.4,
     );
-    final linkStyle = TextStyle(
+    const linkStyle = TextStyle(
       fontSize: 12,
       color: BlabColors.brand,
       fontWeight: FontWeight.w600,
@@ -482,13 +540,13 @@ class _LegalFinePrint extends StatelessWidget {
             TextSpan(
               text: 'Terms',
               style: linkStyle,
-              recognizer: termsRecognizer,
+              recognizer: _termsRecognizer,
             ),
             const TextSpan(text: ' and '),
             TextSpan(
               text: 'Privacy Policy',
               style: linkStyle,
-              recognizer: privacyRecognizer,
+              recognizer: _privacyRecognizer,
             ),
             const TextSpan(text: '.'),
           ],

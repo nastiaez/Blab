@@ -12,6 +12,7 @@ class Chat {
     required this.lastMessageTranslation,
     required this.timestamp,
     required this.unreadCount,
+    this.lastMessageId,
     this.isNewInvite = false,
     this.startedAt,
   });
@@ -31,6 +32,12 @@ class Chat {
 
   final String lastMessage;
   final String lastMessageTranslation;
+
+  /// Id of the most recent non-deleted message in the chat, or null if
+  /// the chat has no messages yet. Used by the chat list tile to render
+  /// the preview in the viewer's learning language via the live
+  /// translation cache.
+  final String? lastMessageId;
   final DateTime timestamp;
   final int unreadCount;
   final bool isNewInvite;
