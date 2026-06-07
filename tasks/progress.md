@@ -301,6 +301,16 @@
   - Crash-free sessions > 99% over 48h of internal use
   - PRD § Open Questions resolved or explicitly deferred with a written note
 
+### Step 3.7 — Web fallback domain + Android App Links  `[ ]` — **DEFERRED to v1.1 / public launch**
+- **Scope:** upgrade invite URLs from the closed-test `blab://invite/<token>` deep-link scheme (Step 2.3) to verified Android App Links served from a real HTTPS domain. Required before opening the app to organic shares — `blab://` schemes are dead links on devices without the app installed, and some messaging clients strip them entirely.
+- **Done when:**
+  - Domain registered (working name: `getblab.app` or similar) and DNS pointed at a free host (Cloudflare Pages / Vercel).
+  - `.well-known/assetlinks.json` hosted at the root, listing the Play Store package id + signing fingerprint, verified via Google's App Link verification API.
+  - One-page landing template renders `https://getblab.app/invite/<token>`: if the app is installed the intent filter opens the Blab invite landing screen directly; if not, the page shows "X invited you to learn Y" with a "Get the app" CTA pointing to the Play Store listing.
+  - Expired / claimed invites render the same web page in their existing copy states so non-installed recipients see a clear message.
+  - Old `blab://` scheme remains supported for backwards-compatibility with closed-test invite links already in flight.
+- **Out of scope (v1):** custom marketing / monetisation landing, email capture, separate domain for business vs. invite paths — those are a Phase 4 product decision.
+
 ---
 
 ## How to use this file
