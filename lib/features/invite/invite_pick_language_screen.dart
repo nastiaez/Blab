@@ -90,10 +90,9 @@ class _InvitePickLanguageScreenState
 
   @override
   Widget build(BuildContext context) {
-    final others = kBlabLanguages
-        .where((l) => l.code != _picked.code)
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    // Single stable list — `kBlabLanguages` order. Picking a row doesn't
+    // reshuffle the list; only the tick moves.
+    final all = kBlabLanguages;
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
@@ -142,29 +141,15 @@ class _InvitePickLanguageScreenState
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const _SectionLabel('CURRENT'),
-                    const SizedBox(height: 6),
                     _Card(
                       children: [
-                        _LanguageRow(
-                          lang: _picked,
-                          selected: true,
-                          onTap: () {},
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const _SectionLabel('OTHER LANGUAGES'),
-                    const SizedBox(height: 6),
-                    _Card(
-                      children: [
-                        for (var i = 0; i < others.length; i++) ...[
+                        for (var i = 0; i < all.length; i++) ...[
                           if (i > 0) const _RowDivider(),
                           _LanguageRow(
-                            lang: others[i],
-                            selected: false,
+                            lang: all[i],
+                            selected: all[i].code == _picked.code,
                             onTap: () =>
-                                setState(() => _picked = others[i]),
+                                setState(() => _picked = all[i]),
                           ),
                         ],
                       ],
@@ -214,26 +199,7 @@ class _InvitePickLanguageScreenState
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-          color: BlabColors.textMuted,
-        ),
-      ),
-    );
-  }
-}
+// _SectionLabel removed — list is no longer split into CURRENT / OTHER.
 
 class _Card extends StatelessWidget {
   const _Card({required this.children});

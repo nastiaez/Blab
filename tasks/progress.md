@@ -301,6 +301,10 @@
   - Crash-free sessions > 99% over 48h of internal use
   - PRD § Open Questions resolved or explicitly deferred with a written note
 
+### Step 2.8 — Share-sheet app intents `[ ]`
+- **Scope:** wire the WhatsApp / iMessage / Telegram / Email tiles in `showShareInviteSheet` to actually open the chosen app with the invite link pre-filled. Today the tiles just close the sheet and pretend success — no `Intent.ACTION_SEND` or `mailto:` is fired. Plus add a Copy row back into the share sheet for the case where the user can't find their intended app in the tile list. Most likely solution: `share_plus` package, which on Android opens the system share chooser; the four custom tiles can stay as quick-access shortcuts via per-app `intent:` URIs.
+- **Done when:** tapping any tile launches the app (or the system share sheet) with the link in the compose field; Copy row reappears below the apps; "Invite sent ✓" snack only fires after the share intent returns success.
+
 ### Step 3.7 — Web fallback domain + Android App Links + state-aware landing `[ ]` — **PARTIAL (v1 closed-test); rest DEFERRED to v1.1**
 - **Status:** static landing + verified Android App Link shipped 2026-06-07 on `blab-gray.vercel.app` (vercel project `getblab`, debug signing fingerprint). Remaining items below land before public launch.
 - **v1.1 scope:** smart, state-aware web landing for cases when the recipient doesn't have the app installed yet: fetch invite metadata via Supabase REST anon (or the new `get_invite` RPC) directly from the browser, then render contextual copy — e.g. "Nastia invited you to learn Italian. Get the app to accept." for valid invites, "This invite has expired. Ask Nastia for a new one." for expired, "This invite was already claimed." for used. Today's `web/i.html` is generic and shows the same "you're invited" copy for every state. Also includes: real domain (getblab.app / similar) replacing the `*.vercel.app` URL, release-keystore + Play App Signing fingerprints added to `.well-known/assetlinks.json`, monetisation / portfolio landing on the root domain.
