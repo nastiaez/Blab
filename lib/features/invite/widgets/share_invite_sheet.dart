@@ -27,19 +27,12 @@ class _ShareSheetBody extends StatefulWidget {
 }
 
 class _ShareSheetBodyState extends State<_ShareSheetBody> {
-  bool _copied = false;
-
   static const List<({String label, Color bg, IconData icon})> _apps = [
     (label: 'WhatsApp', bg: Color(0xFF25D366), icon: Icons.chat),
     (label: 'iMessage', bg: Color(0xFF34C759), icon: Icons.message),
     (label: 'Telegram', bg: Color(0xFF229ED9), icon: Icons.send),
     (label: 'Email', bg: Color(0xFFEA4335), icon: Icons.mail_outline),
   ];
-
-  Future<void> _copyLink() async {
-    await Clipboard.setData(ClipboardData(text: widget.inviteLink));
-    setState(() => _copied = true);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,58 +75,7 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
                 },
               ),
             ),
-            const Divider(height: 24),
-            InkWell(
-              onTap: _copyLink,
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text('🔗', style: TextStyle(fontSize: 18)),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _copied ? 'Link copied' : 'Copy link',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: _copied
-                                  ? BlabColors.brand
-                                  : BlabColors.textPrimary,
-                            ),
-                          ),
-                          if (_copied)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 2),
-                              child: Text(
-                                'Now paste it in a chat',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: BlabColors.textMuted,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SizedBox(
