@@ -196,35 +196,21 @@ class _ValidBody extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 26),
-              if (hasLanguage)
-                Text(
-                  '$inviterName is learning ${inviterLearning!.name}.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: BlabColors.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-              if (!hasLanguage)
-                Text(
-                  '$inviterName invited you to chat.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: BlabColors.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-              const SizedBox(height: 12),
               Text(
-                hasLanguage
-                    ? "Chat with $inviterName in any language — you'll both pick up new words along the way."
-                    : "Practice a new language by chatting with $inviterName.",
+                '$inviterName invited you to chat.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: BlabColors.textPrimary,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Pick a language to practice next.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
                   fontSize: 15,
                   color: BlabColors.textMuted,
                   height: 1.45,
