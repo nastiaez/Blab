@@ -41,28 +41,24 @@ void main() {
 
     final notifier =
         container.read(messageTranslationsProvider('chat-1').notifier);
-    notifier.ensure(
+    await notifier.ensure(
       messageId: 'm1',
       text: 'வணக்கம்',
       sourceLang: 'ta',
       targetLang: 'en',
     );
-
-    // After microtask drain the future resolves and state is AsyncData.
-    await Future<void>.delayed(Duration.zero);
 
     final state = container.read(messageTranslationsProvider('chat-1'));
-    expect(state['m1'], isA<AsyncData<MessageTranslation>>());
-    expect(state['m1']!.value!.translation, 'Hello');
+    expect(state['m1|en'], isA<AsyncData<MessageTranslation>>());
+    expect(state['m1|en']!.value!.translation, 'Hello');
 
-    // Second ensure for the same id does NOT re-fire.
-    notifier.ensure(
+    // Second ensure for the same key does NOT re-fire.
+    await notifier.ensure(
       messageId: 'm1',
       text: 'வணக்கம்',
       sourceLang: 'ta',
       targetLang: 'en',
     );
-    await Future<void>.delayed(Duration.zero);
     expect(calls, 1);
   });
 
@@ -76,16 +72,15 @@ void main() {
 
     final notifier =
         container.read(messageTranslationsProvider('chat-1').notifier);
-    notifier.ensure(
+    await notifier.ensure(
       messageId: 'm1',
       text: 'வணக்கம்',
       sourceLang: 'ta',
       targetLang: 'en',
     );
-    await Future<void>.delayed(Duration.zero);
 
     final state = container.read(messageTranslationsProvider('chat-1'));
-    expect(state['m1'], isA<AsyncError>());
+    expect(state['m1|en'], isA<AsyncError>());
   });
 
   test('different message ids cache independently', () async {
@@ -99,23 +94,22 @@ void main() {
 
     final notifier =
         container.read(messageTranslationsProvider('chat-1').notifier);
-    notifier.ensure(
+    await notifier.ensure(
       messageId: 'm1',
       text: 'a',
       sourceLang: 'ta',
       targetLang: 'en',
     );
-    notifier.ensure(
+    await notifier.ensure(
       messageId: 'm2',
       text: 'b',
       sourceLang: 'ta',
       targetLang: 'en',
     );
-    await Future<void>.delayed(Duration.zero);
 
     final state = container.read(messageTranslationsProvider('chat-1'));
-    expect(state['m1']!.value!.translation, 'T-m1');
-    expect(state['m2']!.value!.translation, 'T-m2');
+    expect(state['m1|en']!.value!.translation, 'T-m1');
+    expect(state['m2|en']!.value!.translation, 'T-m2');
   });
 
   test('different chats cache independently', () async {
@@ -127,17 +121,40 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    container.read(messageTranslationsProvider('chat-1').notifier).ensure(
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
           messageId: 'm1',
           text: 'a',
           sourceLang: 'ta',
           targetLang: 'en',
         );
-    await Future<void>.delayed(Duration.zero);
 
-    expect(container.read(messageTranslationsProvider('chat-1'))['m1'],
+    expect(container.read(messageTranslationsProvider('chat-1'))['m1|en'],
         isA<AsyncData<MessageTranslation>>());
     expect(
-        container.read(messageTranslationsProvider('chat-2'))['m1'], isNull);
+        container.read(messageTranslationsProvider('chat-2'))['m1|en'], isNull);
+  });
+
+  test('same message id with different target langs caches independently',
+      () async {
+    final container = _container(
+      translateFn: (id, text, source, target) async => MessageTranslation(
+        translation: 'translated-to-$target',
+        tokens: const [],
+      ),
+    );
+    addTearDown(container.dispose);
+
+    final notifier =
+        container.read(messageTranslationsProvider('chat-1').notifier);
+    await notifier.ensure(
+        messageId: 'm1', text: 'x', sourceLang: 'en', targetLang: 'ta');
+    await notifier.ensure(
+        messageId: 'm1', text: 'x', sourceLang: 'en', targetLang: 'de');
+
+    final state = container.read(messageTranslationsProvider('chat-1'));
+    expect(state['m1|ta']!.value!.translation, 'translated-to-ta');
+    expect(state['m1|de']!.value!.translation, 'translated-to-de');
   });
 }

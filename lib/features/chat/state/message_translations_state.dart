@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/models/message_token.dart';
 import '../../../shared/services/message_translator.dart';
+import '../../../shared/state/chat_list_state.dart';
 
 /// Function-pointer indirection. Tests override this to swap the real
 /// translator out without monkeying with [messageTranslatorProvider].
@@ -20,9 +22,17 @@ final translateMessageFnProvider = Provider<TranslateMessageFn>((ref) {
       );
 });
 
-/// Per-chat in-memory translation cache. Keyed by message id. Dies when
-/// the provider is disposed. No persistence in this slice.
-/// Step 2.2 Task 3 / PRD US-017, US-018.
+/// Composite cache key — same message viewed in two different target
+/// languages (e.g. the same chat opened by users with different
+/// `learning_language`) stays cached separately.
+String _entryKey(String messageId, String targetLang) =>
+    '$messageId|$targetLang';
+
+/// Per-chat translation cache. Keyed by `(messageId, targetLang)`.
+/// On miss, checks the Supabase `message_translations` row first
+/// (instant if any session has translated this message before), then
+/// falls back to the live translator and writes the result back so
+/// future sessions skip the LLM round-trip.
 class MessageTranslationsNotifier
     extends Notifier<Map<String, AsyncValue<MessageTranslation>>> {
   MessageTranslationsNotifier(this.chatId);
@@ -32,25 +42,98 @@ class MessageTranslationsNotifier
   @override
   Map<String, AsyncValue<MessageTranslation>> build() => const {};
 
-  /// Triggers translation for [messageId] if not already started. Safe to
-  /// call on every rebuild — idempotent.
-  void ensure({
+  /// Backwards-compatible lookup so callers can still read by message id
+  /// alone when [targetLang] isn't varying.
+  AsyncValue<MessageTranslation>? entryFor(
+      String messageId, String targetLang) {
+    return state[_entryKey(messageId, targetLang)];
+  }
+
+  /// Triggers translation for [messageId] if not already started for
+  /// [targetLang]. Safe to call on every rebuild — idempotent.
+  Future<void> ensure({
     required String messageId,
     required String text,
     required String sourceLang,
     required String targetLang,
-  }) {
-    if (state.containsKey(messageId)) return;
-    state = {...state, messageId: const AsyncLoading()};
+  }) async {
+    final key = _entryKey(messageId, targetLang);
+    if (state.containsKey(key)) return;
+    state = {...state, key: const AsyncLoading()};
+
+    // 1. DB cache. Returns instantly when another session already
+    // translated this message into this target language.
+    try {
+      final cached = await ref
+          .read(chatServiceProvider)
+          .fetchCachedTranslation(
+            messageId: messageId,
+            targetLang: targetLang,
+          );
+      if (cached != null) {
+        final tokens = <MessageToken>[];
+        for (final t in cached.tokens) {
+          final tokenText = t['text'];
+          if (tokenText is! String) continue;
+          tokens.add(MessageToken(
+            text: tokenText,
+            english: t['english'] as String?,
+            romanization: t['roman'] as String?,
+            isContent: t['isContent'] as bool? ?? true,
+          ));
+        }
+        state = {
+          ...state,
+          key: AsyncData(MessageTranslation(
+            translation: cached.text,
+            tokens: tokens,
+          )),
+        };
+        return;
+      }
+    } catch (_) {
+      // Treat any DB error as a cache miss. Tests use ProviderContainer
+      // without a real Supabase client, so this path is exercised on
+      // every unit test too.
+    }
+
+    // 2. Live translator. On success, write the result back to the DB
+    // cache (fire-and-forget) so the next viewer skips the LLM.
     final fn = ref.read(translateMessageFnProvider);
-    fn(messageId, text, sourceLang, targetLang).then((result) {
-      state = {...state, messageId: AsyncData(result)};
-    }, onError: (Object error, StackTrace stack) {
-      state = {
-        ...state,
-        messageId: AsyncError(error, stack),
-      };
-    });
+    MessageTranslation? translated;
+    try {
+      translated = await fn(messageId, text, sourceLang, targetLang);
+    } catch (error, stack) {
+      state = {...state, key: AsyncError(error, stack)};
+      return;
+    }
+    state = {...state, key: AsyncData(translated)};
+
+    // Best-effort DB writeback. Failures here must NOT roll back the
+    // successful AsyncData state, so the chat-service call lives in its
+    // own try/catch.
+    try {
+      final tokenMaps = translated.tokens
+          .map((t) => <String, dynamic>{
+                'text': t.text,
+                'english': t.english,
+                'roman': t.romanization,
+                'isContent': t.isContent,
+              })
+          .toList();
+      // ignore: unawaited_futures — best-effort cache write.
+      ref
+          .read(chatServiceProvider)
+          .saveCachedTranslation(
+            messageId: messageId,
+            targetLang: targetLang,
+            translationText: translated.translation,
+            tokens: tokenMaps,
+          )
+          .catchError((_) {});
+    } catch (_) {
+      // Swallow DB writeback errors — local AsyncData already set.
+    }
   }
 }
 

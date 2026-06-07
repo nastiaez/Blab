@@ -130,6 +130,52 @@ class ChatService {
         .eq('user_id', _uid);
   }
 
+  /// Fetch a cached translation for [messageId] into [targetLang], if
+  /// any. Returns null on cache miss (so the caller falls back to the
+  /// live translator).
+  Future<({String text, List<Map<String, dynamic>> tokens})?>
+      fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+  }) async {
+    final row = await _client
+        .from('message_translations')
+        .select('translation_text, tokens')
+        .eq('message_id', messageId)
+        .eq('target_lang', targetLang)
+        .maybeSingle();
+    if (row == null) return null;
+    final rawTokens = row['tokens'];
+    final tokens = <Map<String, dynamic>>[];
+    if (rawTokens is List) {
+      for (final t in rawTokens) {
+        if (t is Map) tokens.add(Map<String, dynamic>.from(t));
+      }
+    }
+    return (text: row['translation_text'] as String, tokens: tokens);
+  }
+
+  /// Persist a translation result so future viewers + sessions skip the
+  /// LLM round-trip. Idempotent — duplicate (message_id, target_lang)
+  /// keys are ignored.
+  Future<void> saveCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String translationText,
+    required List<Map<String, dynamic>> tokens,
+  }) async {
+    await _client.from('message_translations').upsert(
+      {
+        'message_id': messageId,
+        'target_lang': targetLang,
+        'translation_text': translationText,
+        'tokens': tokens,
+      },
+      onConflict: 'message_id,target_lang',
+      ignoreDuplicates: true,
+    );
+  }
+
   Future<String> pairWithEmail({
     required String partnerEmail,
     required String myLearning,

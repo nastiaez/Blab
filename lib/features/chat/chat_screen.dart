@@ -987,7 +987,8 @@ class _Bubble extends ConsumerWidget {
 
     final liveTranslation =
         _kSupportedLearningLanguages.contains(languageCode)
-            ? ref.watch(messageTranslationsProvider(chatId))[message.id]
+            ? ref.watch(messageTranslationsProvider(chatId))[
+                '${message.id}|$languageCode']
             : null;
 
     final BorderRadius radius = isOut
