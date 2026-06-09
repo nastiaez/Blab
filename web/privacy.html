@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blab — Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #efebe2;
+        --ink: #1f3340;
+        --brand: #d4694a;
+        --muted: #6d6961;
+        --card: #fffdf8;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        min-height: 100%;
+      }
+      main {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 56px 24px 80px;
+      }
+      h1 {
+        font-size: 34px;
+        margin: 0 0 6px;
+        color: var(--brand);
+        letter-spacing: -0.5px;
+      }
+      .updated { color: var(--muted); font-size: 14px; margin: 0 0 32px; }
+      h2 {
+        font-size: 20px;
+        margin: 34px 0 10px;
+        color: var(--ink);
+      }
+      p, li { font-size: 16px; line-height: 1.6; color: var(--ink); }
+      ul { padding-left: 22px; }
+      li { margin-bottom: 8px; }
+      a { color: var(--brand); }
+      .note {
+        background: var(--card);
+        border: 1px solid #e4ded1;
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin: 18px 0;
+      }
+      footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Blab Privacy Policy</h1>
+      <p class="updated">Last updated: 9 June 2026</p>
+
+      <p>
+        Blab is a chat app for practising languages with someone you know.
+        This policy explains, in plain language, what information the app
+        handles and who it is shared with. We keep this short on purpose.
+      </p>
+
+      <div class="note">
+        <strong>The honest version:</strong> we don't show ads, we don't
+        sell your data, and we don't track your behaviour for marketing.
+        Your messages are <strong>not end-to-end encrypted in this version</strong>
+        — that protection is planned for a future update. Today your messages
+        travel over a secure (HTTPS/TLS) connection and are stored on
+        access-controlled servers located in the European Union.
+      </div>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Account details</strong> — your email address, the display name you choose, and an optional profile photo.</li>
+        <li><strong>Messages</strong> — the chats you send and receive, so we can deliver them and show your history.</li>
+        <li><strong>Language preferences</strong> — the languages you're learning, to set up your chats and translations.</li>
+        <li><strong>Diagnostics</strong> — if the app crashes, we receive a technical error report. These reports are scrubbed so they never contain your message text.</li>
+      </ul>
+
+      <h2>How your messages are translated</h2>
+      <p>
+        To show a translation of a message, the app sends that message's
+        text to a third-party AI translation provider (OpenRouter, which
+        routes to an OpenAI model). The provider returns the translation.
+        The text is sent only to produce the translation; it is not used to
+        show you ads.
+      </p>
+
+      <h2>Who we share information with</h2>
+      <p>We use a small number of service providers to run the app:</p>
+      <ul>
+        <li><strong>Supabase</strong> — secure database and hosting for your account and messages (servers in the EU).</li>
+        <li><strong>Google</strong> — when you choose "Sign in with Google".</li>
+        <li><strong>OpenRouter / OpenAI</strong> — to translate message text, as described above.</li>
+        <li><strong>Sentry</strong> — crash and error diagnostics (no message content).</li>
+      </ul>
+      <p>We do not sell your personal data, and we do not share it for advertising.</p>
+
+      <h2>Keeping and deleting your data</h2>
+      <p>
+        We keep your account and messages for as long as your account
+        exists. You can delete your account at any time from
+        <em>Profile → Delete account</em>. Deleting your account removes your
+        profile and your messages from our database.
+      </p>
+
+      <h2>Children</h2>
+      <p>Blab is not intended for children under 13.</p>
+
+      <h2>Changes</h2>
+      <p>
+        If we change this policy we'll update the date at the top. When
+        end-to-end encryption ships, this page will be updated to reflect it.
+      </p>
+
+      <h2>Contact</h2>
+      <p>Questions? Email <a href="mailto:me@aswin.sh">me@aswin.sh</a>.</p>
+
+      <footer>© 2026 Blab</footer>
+    </main>
+  </body>
+</html>

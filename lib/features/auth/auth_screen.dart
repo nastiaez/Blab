@@ -5,9 +5,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../shared/data/legal_links.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
+import '../../shared/util/open_url.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../invite/widgets/invite_progress_bar.dart';
 import 'widgets/blab_text_field.dart';
@@ -76,14 +78,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.dispose();
   }
 
-  void _showLegalToast(String which) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$which (placeholder link)'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
 
   bool _isValidEmail(String v) {
     final re = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
@@ -327,9 +321,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       if (isSignUp) ...[
                         const SizedBox(height: 8),
                         _LegalFinePrint(
-                          onTermsTap: () => _showLegalToast('Terms'),
+                          onTermsTap: () => openExternalUrl(kTermsUrl),
                           onPrivacyTap: () =>
-                              _showLegalToast('Privacy Policy'),
+                              openExternalUrl(kPrivacyPolicyUrl),
                         ),
                       ],
                     ],

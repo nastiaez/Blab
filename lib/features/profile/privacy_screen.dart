@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../shared/data/legal_links.dart';
 import '../../shared/state/privacy_settings.dart';
+import '../../shared/util/open_url.dart';
 import '../../shared/widgets/blab_switch.dart';
 
 /// PRD US-040 + US-041. Signal-symmetric privacy controls.
@@ -67,7 +69,7 @@ class PrivacyScreen extends ConsumerWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                "We don't analyze your behavior, track you for ads, or sell your data. Messages are end-to-end encrypted — we can't read them. These two toggles control what your phone sends to our servers.",
+                "We don't analyze your behavior, track you for ads, or sell your data. Your messages travel over a secure connection and are stored on protected servers in the EU. End-to-end encryption isn't in this version yet — it's on the way. These two toggles control what your phone shares with our servers.",
                 style: TextStyle(
                   fontSize: 13,
                   color: BlabColors.textMuted,
@@ -75,6 +77,52 @@ class PrivacyScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 18),
+            _Card(
+              children: [
+                _LinkRow(
+                  label: 'Privacy Policy',
+                  onTap: () => openExternalUrl(kPrivacyPolicyUrl),
+                ),
+                const _RowDivider(),
+                _LinkRow(
+                  label: 'Terms of Use',
+                  onTap: () => openExternalUrl(kTermsUrl),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: BlabColors.textPrimary,
+                ),
+              ),
+            ),
+            const Icon(Icons.open_in_new,
+                size: 18, color: BlabColors.textMuted),
           ],
         ),
       ),

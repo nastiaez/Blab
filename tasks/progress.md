@@ -294,8 +294,9 @@
 
 ### Step 3.3 — App icons, splash, store assets  `[ ]`
 - **Done when:** Play Store internal track accepts the build. (TestFlight removed — iOS deferred.)
+- **Progress (2026-06-09):** app icon (adaptive) + splash (incl. Android 12) already generated and wired from an earlier session — verified present. Remaining: feature graphic (1024×500, design work, Nastia) + reuse Track A screenshots. Folds into the Step 3.5 listing.
 
-### Step 3.5 — Play Store listing + legal `[ ]`
+### Step 3.5 — Play Store listing + legal `[ ]` ← in progress
 - **Scope:**
   - Feature graphic (1024×500), phone screenshots (from Track A), short description (≤80 chars), long description, app category, content rating questionnaire
   - Data Safety form filled honestly (plaintext-at-rest disclosed, no third-party sharing)
@@ -303,6 +304,13 @@
   - Privacy screen in-app rewritten with the honest v1 posture (no E2EE in v1)
   - Demo account credentials documented for Play reviewer
 - **Done when:** Play Console internal release accepted; reviewer flow walkthrough passes locally before submission.
+- **Progress (2026-06-09):**
+  - [x] **Honesty fix (critical):** the in-app Privacy screen claimed *"Messages are end-to-end encrypted — we can't read them"* — false in v1. Rewritten to the honest posture (secure connection, EU servers, no E2EE yet, no ads/selling). Grep confirms no other encryption overclaim anywhere in `lib/` or `web/`.
+  - [x] Privacy Policy + Terms written as hostable pages (`web/privacy.html`, `web/terms.html`) on the existing Vercel host. Honest disclosure incl. the AI translation provider that processes message text, EU storage, Google SSO, scrubbed Sentry diagnostics, deletion path. Contact: me@aswin.sh.
+  - [x] In-app legal links wired: auth-screen Terms/Privacy links (were placeholder toasts) + new Privacy Policy / Terms rows in the Privacy screen now open the hosted pages (`url_launcher`, shared `openExternalUrl`).
+  - [x] Play listing copy + **Data Safety answers** (matched to the policy) + content-rating guidance drafted in `docs/play-listing.md`. Tester-recruitment invite + tracking in `docs/tester-invite.md`.
+  - [x] `flutter analyze` clean; `flutter test` 54/54 green.
+  - [ ] **Nastia's to-dos:** deploy the web pages (Vercel); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
 
 ### Step 3.6 — Closed testing run (Play policy gate) `[ ]`
 - **Scope:** Play now requires solo dev accounts to run a closed test with **≥12 testers for ≥14 continuous days** before production. Lock down tester list early.
