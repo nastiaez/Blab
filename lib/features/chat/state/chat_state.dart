@@ -5,10 +5,8 @@ import '../../../shared/data/chat_mappers.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/models/message.dart';
 import '../../../shared/state/auth_state.dart';
-import '../../../shared/services/portfolio_translator.dart';
 import '../../../shared/state/chat_list_state.dart';
-import '../../../shared/state/portfolio_messages_state.dart';
-import '../../../shared/state/portfolio_mode.dart';
+import '../../../shared/state/connectivity_state.dart';
 import 'pending_sends_state.dart';
 
 /// Dev/QA toggle: when `true`, every outgoing send is simulated to fail
@@ -35,6 +33,13 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   final String chatId;
 
+  /// Ids currently being sent to the server. Guards against a queued send
+  /// being fired twice when both the user action and the reconnect flush
+  /// race on the same message.
+  final Set<String> _inFlight = <String>{};
+
+  bool get _online => ref.read(isOnlineProvider);
+
   String get _uid {
     final id = Supabase.instance.client.auth.currentUser?.id;
     if (id == null) throw StateError('not_signed_in');
@@ -43,10 +48,6 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   @override
   Stream<List<Message>> build() async* {
-    if (ref.watch(portfolioModeProvider)) {
-      yield ref.watch(portfolioMessagesProvider(chatId));
-      return;
-    }
     ref.watch(authSessionProvider);
     final svc = ref.watch(chatServiceProvider);
     try {
@@ -71,16 +72,10 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   }
 
   /// Send a new outgoing message. Lays an optimistic pending bubble into
-  /// [pendingSendsProvider], then awaits the real send. On success the
-  /// pending row is dropped (the realtime stream will deliver the canonical
-  /// row); on failure the row's status flips to [MessageStatus.failed] and
-  /// stays in the queue so the user can retry from the failed-message
-  /// sheet. Step 2.2 Task 12 / PRD US-016, US-021, US-030, US-031.
+  /// [pendingSendsProvider]. When offline the bubble stays queued (clock)
+  /// and the reconnect flush sends it later; when online it's sent right
+  /// away. Step 2.2 Task 12 / PRD US-016, US-021, US-030, US-031.
   Future<void> addOutgoing(String text, {Message? replyTo}) async {
-    if (ref.read(portfolioModeProvider)) {
-      await _addOutgoingPortfolio(text, replyTo: replyTo);
-      return;
-    }
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final tempId = 'local-${DateTime.now().microsecondsSinceEpoch}';
@@ -95,28 +90,62 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       replyTo: replyTo,
     );
     ref.read(pendingSendsProvider(chatId).notifier).add(pending);
+    // Offline: leave it on the clock. [flushPending] retries on reconnect.
+    if (!_online) return;
+    await _attemptSend(tempId, trimmed);
+  }
+
+  /// Push one queued message to the server. On success the pending row is
+  /// upgraded in place (clock → tick) keeping its widget identity; the
+  /// realtime stream later dedupes it by the server id. On error, a
+  /// genuine server rejection (still online) flips the row to
+  /// [MessageStatus.failed] so the user gets the retry sheet, while a
+  /// network drop mid-send leaves it queued for the next reconnect flush.
+  Future<void> _attemptSend(String localId, String body) async {
+    if (_inFlight.contains(localId)) return;
+    _inFlight.add(localId);
     try {
+      // Dev/QA: the dev-menu "failed-send" switch forces a server-side
+      // rejection so US-030's ⚠ + retry path can be exercised on a real
+      // device without a genuine outage.
+      if (ref.read(simulateFailureProvider)) {
+        throw Exception('simulated_failure');
+      }
       final server = await ref
           .read(chatServiceProvider)
-          .sendMessage(chatId: chatId, body: trimmed);
-      // In-place upgrade: swap the temp id + sentAt for the server's values
-      // and flip status to delivered. The bubble keeps its position; only
-      // the clock icon turns into a tick. When the realtime stream emits
-      // the canonical row, the merge layer dedupes by id and the pending
-      // entry quietly drops away with no visual jump.
+          .sendMessage(chatId: chatId, body: body);
       ref.read(pendingSendsProvider(chatId).notifier).upgrade(
-            tempId: tempId,
+            tempId: localId,
             newId: server.id,
             newSentAt: server.createdAt,
           );
-      // Refresh chat list so the tile's last-message preview updates
-      // immediately.
+      // Refresh chat list so the tile's last-message preview updates.
       ref.read(chatListProvider.notifier).refresh();
     } catch (_) {
-      ref.read(pendingSendsProvider(chatId).notifier).update(
-            tempId,
-            (m) => m.copyWith(status: MessageStatus.failed),
-          );
+      if (_online) {
+        ref.read(pendingSendsProvider(chatId).notifier).update(
+              localId,
+              (m) => m.copyWith(status: MessageStatus.failed),
+            );
+      }
+      // Offline drop: keep the row pending so the reconnect flush retries.
+    } finally {
+      _inFlight.remove(localId);
+    }
+  }
+
+  /// Re-attempt every still-pending queued send for this chat. Triggered
+  /// when connectivity returns and on chat open, so sends interrupted by
+  /// going offline or by an app kill go out automatically. No-op while
+  /// offline. PRD US-030, US-031.
+  Future<void> flushPending() async {
+    if (!_online) return;
+    final queued = ref
+        .read(pendingSendsProvider(chatId))
+        .where((m) => m.status == MessageStatus.pending)
+        .toList();
+    for (final m in queued) {
+      await _attemptSend(m.id, m.originalText);
     }
   }
 
@@ -145,7 +174,6 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   /// Edit an existing outgoing message. PRD US-019.
   Future<void> editMessage(String id, String newText) async {
-    if (ref.read(portfolioModeProvider)) return;
     final trimmed = newText.trim();
     if (trimmed.isEmpty) return;
     await ref
@@ -156,58 +184,12 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   /// Soft-delete a message. Paired with [restoreMessage] for Undo. PRD
   /// US-019.
   Future<void> removeMessage(String id) async {
-    if (ref.read(portfolioModeProvider)) return;
     await ref.read(chatServiceProvider).softDelete(id);
   }
 
   /// Undo a soft-delete by nulling `deleted_at` on the row. PRD US-019.
   Future<void> restoreMessage(String id) async {
-    if (ref.read(portfolioModeProvider)) return;
     await ref.read(chatServiceProvider).restoreMessage(id);
-  }
-
-  Future<void> _addOutgoingPortfolio(String text, {Message? replyTo}) async {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
-    final id = 'portfolio-${DateTime.now().microsecondsSinceEpoch}';
-    final pending = Message(
-      id: id,
-      chatId: chatId,
-      isOutgoing: true,
-      originalText: trimmed,
-      translation: '',
-      sentAt: DateTime.now(),
-      status: MessageStatus.delivered,
-      replyTo: replyTo,
-      translationState: TranslationState.pending,
-    );
-    final messages =
-        ref.read(portfolioMessagesProvider(chatId).notifier);
-    messages.append(pending);
-
-    // Optimistic delivered → read flip, mirrors the curated outgoing
-    // bubbles in portfolio_data.dart.
-    Future<void>.delayed(const Duration(milliseconds: 1500), () {
-      messages.updateById(id, (m) => m.copyWith(status: MessageStatus.read));
-    });
-
-    try {
-      final result =
-          await ref.read(portfolioTranslatorProvider).translate(trimmed);
-      messages.updateById(
-        id,
-        (m) => m.copyWith(
-          translation: result.tamil,
-          tokens: result.tokens,
-          clearTranslationState: true,
-        ),
-      );
-    } on PortfolioTranslationFailed {
-      messages.updateById(
-        id,
-        (m) => m.copyWith(translationState: TranslationState.unavailable),
-      );
-    }
   }
 }
 

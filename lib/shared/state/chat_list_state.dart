@@ -3,11 +3,9 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/languages.dart';
-import '../data/portfolio_data.dart';
 import '../models/chat.dart';
 import '../services/chat_service.dart';
 import 'auth_state.dart';
-import 'portfolio_mode.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) {
   return ChatService(ref.watch(supabaseClientProvider));
@@ -44,9 +42,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
 
   @override
   Future<List<Chat>> build() async {
-    if (ref.watch(portfolioModeProvider)) {
-      return portfolioChats();
-    }
     // Rebuild on auth changes so sign-out/sign-in returns fresh chats
     // scoped to the new user.
     ref.watch(authSessionProvider);
@@ -70,10 +65,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
   /// receiving a message) can poke this to update last-message + unread
   /// counts without waiting for membership events.
   Future<void> refresh() async {
-    if (ref.read(portfolioModeProvider)) {
-      state = AsyncValue.data(portfolioChats());
-      return;
-    }
     final svc = ref.read(chatServiceProvider);
     try {
       final rows = await svc.fetchChatList();

@@ -181,12 +181,19 @@
   - Android App Link routes the URL into the installed app
   - Expired and used states served from the same endpoint
 
-### Step 2.4 — Send-failure + offline queue  `[ ]`
+### Step 2.4 — Send-failure + offline queue  `[ ]` ← in progress
 - **Scope:** US-030, US-031.
 - **Done when:**
   - Force-airplane-mode → send → bubble shows clock → exit airplane → bubble flips to delivered
   - Force a server 5xx → bubble shows ⚠ + retry sheet works
   - Failed messages survive app restart
+- **Progress (2026-06-09):**
+  - [x] Offline-aware send path: `addOutgoing` lays the optimistic bubble, then *queues it on the clock when offline* instead of failing. A network drop mid-send keeps the bubble queued; a genuine server rejection while online flips it to ⚠ failed (retry sheet). New `isOnlineProvider` gives the send path a synchronous online read.
+  - [x] Auto-flush on reconnect + on chat open: new `ChatNotifier.flushPending()` re-sends every still-queued message when connectivity returns; an in-flight guard prevents double-sends. Wired from the chat screen so it also fires after a cold launch once the persisted queue hydrates.
+  - [x] Queue already persists to disk (`pending_sends:<chatId>`), so an interrupted/failed send survives an app kill and goes out (or shows ⚠) on reopen.
+  - [x] Wired the previously-dead dev-menu "failed-send" switch into the send path so the ⚠ + retry flow can be forced on a real device without a genuine outage.
+  - [x] `flutter analyze` clean; `flutter test` 39/39 green incl. new `test/send_failure_test.dart` (online send → delivered, offline → stays queued, server-error → failed, forced dev-failure → failed, no-op flush while offline, and offline-enqueue → restart → reconnect-flush → delivered).
+  - [ ] **Device verification owed** (Nastia's machine): airplane-mode send shows the clock then auto-delivers on reconnect; a forced 5xx shows ⚠ + retry; a force-stop with a queued send goes out on reopen.
 
 ### Step 2.5 — Push notifications  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
 - **Scope:** US-038, FR-29.
@@ -212,21 +219,20 @@
 ---
 
 ### Step 2.7 — Translation in real chats (pivot-English model) `[x]`
-- **Scope (revised 2026-06-06):** ship live translation for **Tamil** (Nastia's view) tonight, then **Ukrainian** (Aswin's view). Both sides type English; each viewer sees a translation into their own learning language in the main bubble slot + English original in subtitle. Other 9 languages render plain + "Translation coming soon" hint until v1.1. Pivot from the original bundled-dictionary plan because Tamil agglutination + names + typos make flat lookups miss too often — LLM-backed translation gives ~100% coverage at ~$0.001/message.
+- **Scope (revised 2026-06-09):** ship live translation for **all 10 non-English languages**, not just Tamil + Ukrainian. Both sides type English; each viewer sees a translation into their own learning language in the main bubble slot + English original in subtitle. The "Translation coming soon" gate for the other 9 languages was **dropped** (decision 2026-06-09) — the LLM translator is language-agnostic and covers every supported language for free, so deliberately disabling 8 of them made no sense. Pivot from the original bundled-dictionary plan because Tamil agglutination + names + typos make flat lookups miss too often — LLM-backed translation gives ~100% coverage at ~$0.001/message.
 - **Done when:**
-  - Real chats translate via Supabase Edge Function `translate-message` (Anthropic-equivalent via OpenRouter); source=English, target=viewer's learning language
+  - Real chats translate via Supabase Edge Function `translate-message` (OpenRouter → gpt-4o-mini); source=English, target=viewer's learning language, any of the 10 supported codes
   - All bubbles in supported chats (incoming + outgoing) show shimmer → target-lang main slot + tappable tokens, English original in subtitle
   - Word popup pulls English gloss + romanization from the live translation tokens (no bundled dictionary)
   - Failure (offline / 5xx / timeout) → muted "Translation unavailable" in main slot, English in subtitle
-  - Other 9 languages: bubbles render plain, no tappable words, subtitle says "Translation for [lang] coming soon"
+  - Translations cached in Postgres so reopening a chat doesn't re-fire the LLM
 - **Progress:**
-  - [x] Edge function `translate-message` deployed (OpenRouter routed to gpt-4o-mini, JWT-verified)
-  - [x] `MessageTranslator` service + `messageTranslationsProvider` per-chat in-memory cache landed (Riverpod)
-  - [x] Real chat bubble wired: trigger fires for all bubbles when `languageCode == 'ta'`, source='en', target='ta'; renders shimmer/data/error via existing `TranslationSubtitle` widget
-  - [x] Live verification on Samsung S931B: Nastia sends English in real chat with Aswin → shimmer → Tamil bubble + tappable tokens + English subtitle. Force-stop / reopen replays translation (in-memory cache only)
-  - [ ] English → Ukrainian (Aswin's view)
-  - [ ] "Translation coming soon" copy on 9 other langs
-  - [ ] DB-side cache (`messages.translation` + `messages.tokens` columns + edge-fn writeback) — translations re-fire on every cold start until this lands
+  - [x] Edge function `translate-message` deployed — language-agnostic across all 11 `LANG_NAMES`, romanization guidance for non-Latin scripts (ta/uk/hi), JWT-verified, 400-char cap
+  - [x] `MessageTranslator` service + `messageTranslationsProvider` per-chat cache landed (Riverpod)
+  - [x] Real chat bubble wired: trigger fires for every `kSupportedLearningLanguages` code (all 10), source='en', target=viewer's learning language; renders shimmer/data/error via `TranslationSubtitle`
+  - [x] Live verification (Tamil) on Samsung S931B: Nastia sends English in real chat with Aswin → shimmer → Tamil bubble + tappable tokens + English subtitle
+  - [x] DB-side cache shipped: `message_translations` table (migration `20260607000001`, applied on remote, RLS scoped to chat members), prefetch-on-open + per-message writeback + bulk hydrate. Cold reopen reads cached rows instead of re-firing the LLM
+  - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
 
 ---
 
@@ -234,7 +240,7 @@
 
 > Added 2026-06-01 via ship-fast plan. Goal: portfolio-ready screenshots before any more backend work.
 
-### Step A1 — Brand swap in-app (purple → orange) `[ ]`
+### Step A1 — Brand swap in-app (purple → orange) `[x]`
 - **Scope:** apply final orange palette + type tokens across every existing screen. Replace every `BlabColors.brand` purple reference + every hard-coded purple hex. Update gradients, switches, tick marks, buttons, focus states, link colors.
 - **Done when:**
   - Nastia has signed off on final orange palette + type tokens (logged in tech-spec Resolved Decisions)
@@ -242,11 +248,11 @@
   - All Phase 1 screens still pass their original "Done when" rubrics with the new palette
   - Icon + app match
 
-### Step A2 — Hero demo chat polish `[ ]`
+### Step A2 — Hero demo chat polish `[x]`
 - **Scope:** the seeded Tamil↔English chat used for screenshots. Tighten message copy, balance incoming/outgoing, pick words that demo the popup well, time-stamps believable.
 - **Done when:** Nastia approves the demo chat as portfolio-grade.
 
-### Step A3 — Screenshot pass `[ ]`
+### Step A3 — Screenshot pass `[x]`
 - **Scope:** capture portfolio shots on phone (and emulator if needed): chat list, chat view, word popup, language picker, profile, invite landing, empty state, offline banner.
 - **Done when:** ≥6 portfolio-ready images exported under `docs/portfolio/`.
 
@@ -301,9 +307,18 @@
   - Crash-free sessions > 99% over 48h of internal use
   - PRD § Open Questions resolved or explicitly deferred with a written note
 
-### Step 2.8 — Share-sheet app intents `[ ]`
-- **Scope:** wire the WhatsApp / iMessage / Telegram / Email tiles in `showShareInviteSheet` to actually open the chosen app with the invite link pre-filled. Today the tiles just close the sheet and pretend success — no `Intent.ACTION_SEND` or `mailto:` is fired. Plus add a Copy row back into the share sheet for the case where the user can't find their intended app in the tile list. Most likely solution: `share_plus` package, which on Android opens the system share chooser; the four custom tiles can stay as quick-access shortcuts via per-app `intent:` URIs.
+### Step 2.8 — Share-sheet app intents `[ ]` ← in progress
+- **Scope:** wire the share-invite tiles to actually open the chosen app with the invite link pre-filled. Today the tiles just close the sheet and pretend success. Plus add a Copy row back into the share sheet.
 - **Done when:** tapping any tile launches the app (or the system share sheet) with the link in the compose field; Copy row reappears below the apps; "Invite sent ✓" snack only fires after the share intent returns success.
+- **Progress (2026-06-09):**
+  - [x] Tile lineup decided (2026-06-09): **WhatsApp · Telegram · Email · More**. The dead **iMessage** tile (doesn't exist on Android, v1's only platform) was replaced by a **More** tile that opens Android's native share chooser via `share_plus`.
+  - [x] WhatsApp (`wa.me`), Telegram (`t.me/share/url`), Email (`mailto:`) tiles deep-link via `url_launcher` with the invite text/link pre-filled. URI builders are pure + unit-tested (`share_targets.dart`).
+  - [x] If a named app isn't installed (launch returns false / throws) the tile falls back to the native chooser, so a tap never dead-ends.
+  - [x] **Copy link** row added below the tiles — copies the link and swaps to "Link copied · Now paste it in a chat".
+  - [x] "Invite sent ✓" snack fires **only** after a real success (launch opened, or chooser completed) — a dismissed chooser stays silent. Snack routes through the global messenger so it shows after the sheet closes.
+  - [x] Android 11+ package-visibility `<queries>` added for `https` + `mailto` so the tiles resolve on real devices. `share_plus` + `url_launcher` added.
+  - [x] `flutter analyze` clean; `flutter test` 49/49 green (new `test/share_targets_test.dart` + `test/share_invite_sheet_test.dart`); `flutter build apk --debug` succeeds with the new native plugins + manifest.
+  - [ ] **Device verification owed** (Nastia's machine): each tile opens the right app with the link pre-filled; Copy works; "Invite sent ✓" only after an actual send.
 
 ### Step 3.7 — Web fallback domain + Android App Links + state-aware landing `[ ]` — **PARTIAL (v1 closed-test); rest DEFERRED to v1.1**
 - **Status:** static landing + verified Android App Link shipped 2026-06-07 on `blab-gray.vercel.app` (vercel project `getblab`, debug signing fingerprint). Remaining items below land before public launch.
@@ -356,6 +371,9 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-05-25 — QA bugs fixed: 11 / 11 (BUG-001 through BUG-011). See tasks/qa-report.md.
 - 2026-05-25 — Step 2.1 started. Supabase project `bhzcexhebjszwyqvcsxs` linked via `lib/shared/data/supabase_config.dart` (URL + publishable key — public-safe, RLS protects data). `supabase_flutter 2.12.4` added; `Supabase.initialize` runs in `main` before `runApp`. New `SupabaseAuthService` (`lib/shared/services/supabase_auth_service.dart`) wraps `signUp` / `signInWithPassword` / `resetPasswordForEmail` / `signOut` with friendly error mapping. Riverpod providers in `lib/shared/state/auth_state.dart`: `supabaseClientProvider`, `supabaseAuthServiceProvider`, `authSessionProvider` (StreamProvider on `onAuthStateChange`), `isSignedInProvider`. Router gained redirect guard (any non-public path bounces to `/auth?mode=login` when no session) + `_AuthRefresh` ChangeNotifier listening to auth events for live redirect; both tolerate uninitialized Supabase (tests). `AuthScreen` + `ForgotPasswordScreen` now call the real backend with loading spinner + red-banner error pill. Profile log-out calls `signOut` and routes to `/auth?mode=login`. Profile hero pulls display name from session user metadata (falls back to email local-part). `flutter analyze` clean (pre-existing test warnings only), `flutter test` 43/43 green, `flutter build apk --debug` succeeds. Still pending in Step 2.1: live emulator verification (real signup → confirm → log in → log out), Apple/Google SSO console setup, delete-account edge function.
 - 2026-05-27 — US-039 final fixes after second round of live testing on Samsung S931B. Two more bugs: (a) premature "Email changed ✓" snack — the previous implementation listened to `AuthChangeEvent.userUpdated`, but that event fires on both the initial `updateUser({email:})` call AND the deep-link consumption, so the snack appeared next to the "Check your inbox" screen. Removed that listener; the snack is now fired only from places we know correspond to actual confirmation. (b) Browser-swallowed deep link — Samsung Internet sometimes drops the `blab://` redirect from Supabase's verify response, so the app never receives the deep-link intent (verified by absence of `app_links` / `supabase.supabase_flutter: handle deeplink uri` lines in adb logcat right after a click). Two-pronged fix: (i) added `errorBuilder` to `blabRouter` that catches stray `blab://auth/email-changed#...` URIs, manually calls `auth.getSessionFromUrl` + `refreshSession`, then bounces to /chats with the snack; (ii) added a `WidgetsBindingObserver` to `BlabApp` that on every `AppLifecycleState.resumed` calls `auth.refreshSession()` and compares the resulting `user.email` to a cached `_knownEmail` — if different, fires the snack. The resume-listener path is the one that actually rescued the test (browser consumed the redirect, app foregrounded → refresh saw the new email → snack). Also added a shared `appMessengerKey` (`lib/app/app_messenger.dart`) + `showAppSnack()` helper wired into `MaterialApp.router(scaffoldMessengerKey:)`, so router callbacks and lifecycle observers can toast without a current `BuildContext`. Known issue (not in code): Supabase free-tier SMTP rate-limits ~4 emails/hour; during testing she hit it after a few sends, recovered after ~30 min wait or by using a gmail `+alias`. Recommendation logged: hook up Resend SMTP in Supabase before any external testers see this.
+- 2026-06-09 — Step 2.7 reassessed: translation is code-complete for ALL 10 non-English languages, not just Tamil. The edge function is language-agnostic and the per-message DB cache (table `message_translations`, migration `20260607000001`) was already built and applied on remote — prefetch-on-open + writeback + bulk hydrate all wired, so translations no longer re-fire on cold start. Product decision: dropped the "Translation coming soon" gate for the other 9 languages (ship all 10) — gating would deliberately disable working translation. Only remaining item is on-device verification of a non-Tamil language + DB-cache cold reopen (Nastia's machine).
+- 2026-06-09 — Portfolio mode removed from the app. Deleted the dev-menu toggle, the curated demo chat + in-memory portfolio message store, the portfolio translator, and the `Message.translationState` render-hint path (real-chat live translation already covers shimmer/unavailable via the per-chat translation cache). New users now land on the real empty state — no fake demo chat ships. 7 files deleted (4 lib, 3 test), 6 core files cleaned. `flutter analyze` clean (1 pre-existing test warning), `flutter test` 33/33 green.
+- 2026-06-09 — Track A (Steps A1 brand swap, A2 hero demo chat, A3 screenshot pass) marked complete per Nastia. Portfolio is shippable. Next: remove portfolio mode from the app and drive toward Play Store v1 release.
 - 2026-05-27 — US-039 verified end-to-end on Samsung S931B. Two fixes during live test: (a) Supabase "Secure email change" was ON by default — confirmation went to BOTH old and new addresses, which would block the typo-recovery use case (broken old inbox can't receive); turned OFF in dashboard → Authentication → Providers → Email, so confirmation now goes to the new address only. (b) After Supabase consumed the deep-link tokens, go_router still tried to match `/auth/email-changed` and crashed with "no routes for location"; added the path as a public route that redirects to /chats (or /auth?mode=login if unauthenticated) — the "Email changed ✓" snack is fired by the `userUpdated` listener in BlabApp before the redirect lands. Verified: Edit profile → Email → new address → Send → new inbox link → Blab opens → snack → /chats; logging in with the old email now fails (account email actually swapped).
 - 2026-05-27 — PRD US-039 (Change email) added under Flow 2 Profile, just after US-012 Change password. Motivation: signup is deliberately low-friction with no email-confirmation gate, so a typoed address survives signup; the Change-email flow is the deliberate fix-path. Implementation: new `lib/features/profile/change_email_screen.dart` (form → "Check your inbox" success state), new `SupabaseAuthService.updateEmail(newEmail)` wrapping `auth.updateUser(UserAttributes(email:), emailRedirectTo: 'blab://auth/email-changed')`, new public route `/profile/email`, new "Email" row in Edit profile under Display name showing current email + chevron. Confirmation deep link reuses the existing `blab://**` Redirect URLs wildcard (no dashboard change). `BlabApp` now also listens for `AuthChangeEvent.userUpdated` — when the email field actually changes, it shows a global "Email changed ✓" snack via a `ScaffoldMessengerState` key on `MaterialApp.router`. Built + installed to phone for testing.
 - 2026-05-27 — Step 2.1 progress: password-reset deep link wired and verified. `sendPasswordReset` now passes `redirectTo: 'blab://auth/reset'`. Android `AndroidManifest.xml` MainActivity gained a `<intent-filter>` for `<data android:scheme="blab"/>` (BROWSABLE + DEFAULT, autoVerify=false). Supabase dashboard → Authentication → URL Configuration → Redirect URLs allow-list now includes `blab://**` (wildcard; the dashboard rejects bare custom-scheme URLs). New `ResetPasswordScreen` at public route `/auth/reset` (added to `_publicPaths` so the unauth redirect doesn't fight it) — new password + confirm, reuses `PasswordField` + `PasswordStrengthBar`, calls `SupabaseAuthService.updatePassword(pw)` which delegates to `auth.updateUser(UserAttributes(password:))`, then routes to /chats with a "Password updated ✓" snack. Initial deep-link attempt used `app_links` + a manual `getSessionFromUrl(uri)` exchange but failed with `flow_state_not_found` — supabase_flutter has its own built-in deep-link consumer that already exchanges the PKCE code before any app-level handler can see a fresh URI. Fix: dropped `app_links` and the manual exchange; `BlabApp` now listens to `Supabase.instance.client.auth.onAuthStateChange` and routes to `/auth/reset` on `AuthChangeEvent.passwordRecovery`. Verified end-to-end on Samsung S931B: forgot-password screen → email arrives → tap link → app opens directly on the new "Set a new password" screen → Save → /chats. Decision recorded in tech-spec: signup uses no email-confirmation gate (low-friction); password reset = implicit verification of a real inbox; a future Change-email flow (US-039, deferred) will be the explicit fix-path for typoed signup addresses.

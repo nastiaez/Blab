@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../features/chat/state/chat_state.dart';
 import '../shared/state/connectivity_state.dart';
-import '../shared/state/portfolio_mode.dart';
 import 'dev_pair_sheet.dart';
 import 'theme.dart';
 
@@ -44,7 +43,6 @@ class DevMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final forceOffline = ref.watch(forceOfflineProvider);
     final simulateFailure = ref.watch(simulateFailureProvider);
-    final portfolio = ref.watch(portfolioModeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -54,21 +52,10 @@ class DevMenu extends ConsumerWidget {
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: _entries.length + 3,
+        itemCount: _entries.length + 2,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, i) {
           if (i == _entries.length) {
-            return _DevToggleRow(
-              label: portfolio
-                  ? 'Portfolio mode (on)'
-                  : 'Portfolio mode (off)',
-              us: 'Track A screenshots',
-              value: portfolio,
-              onTap: () =>
-                  ref.read(portfolioModeProvider.notifier).toggle(),
-            );
-          }
-          if (i == _entries.length + 1) {
             return _DevToggleRow(
               label: forceOffline
                   ? 'Toggle offline (on)'
@@ -79,7 +66,7 @@ class DevMenu extends ConsumerWidget {
                   ref.read(forceOfflineProvider.notifier).toggle(),
             );
           }
-          if (i == _entries.length + 2) {
+          if (i == _entries.length + 1) {
             return _DevToggleRow(
               label: simulateFailure
                   ? 'Toggle failed-send (on)'

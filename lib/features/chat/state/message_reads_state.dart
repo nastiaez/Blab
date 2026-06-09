@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
-import '../../../shared/state/portfolio_mode.dart';
 
 typedef MarkReadFn = Future<void> Function(List<String> ids);
 
@@ -41,7 +40,6 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
     final ids = state.toList();
     if (ids.isEmpty) return;
     state = <String>{};
-    if (ref.read(portfolioModeProvider)) return;
     final fn = ref.read(markReadFnProvider(chatId));
     try {
       await fn(ids);

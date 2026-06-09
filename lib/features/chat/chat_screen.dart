@@ -16,7 +16,6 @@ import '../../shared/widgets/skeletons.dart';
 import '../invite/widgets/exchange_card.dart';
 import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
-import '../../shared/state/portfolio_mode.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
 import 'state/message_translations_state.dart';
@@ -34,8 +33,8 @@ import 'widgets/translation_subtitle.dart';
 
 /// PRD US-013, US-014, US-015, US-016, US-017, US-023.
 ///
-/// Mock-only chat surface. Header / messages list / input. Word popups,
-/// long-press actions and the change-language sheet land in Steps 1.6–1.8.
+/// Live chat surface backed by Supabase. Header / messages list / input,
+/// word popups, long-press actions, and the change-language sheet.
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.chatId});
 
@@ -344,6 +343,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             final pendingVisible = pending
                                 .where((p) => !messageIds.contains(p.id))
                                 .toList();
+                            // Auto-flush queued sends once we're back online
+                            // (covers reconnect after airplane mode and
+                            // sends interrupted by an app kill, re-hydrated
+                            // from disk on cold launch). flushPending guards
+                            // in-flight ids, so re-running it per rebuild is
+                            // safe. PRD US-030, US-031.
+                            final online = ref.watch(isOnlineProvider);
+                            if (online &&
+                                pendingVisible.any((m) =>
+                                    m.status == MessageStatus.pending)) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                ref
+                                    .read(chatMessagesProvider(widget.chatId)
+                                        .notifier)
+                                    .flushPending();
+                              });
+                            }
                             final all = [...messages, ...pendingVisible]
                               ..sort(
                                   (a, b) => a.sentAt.compareTo(b.sentAt));
@@ -930,10 +946,8 @@ class _MessageRow extends ConsumerWidget {
     // Pivot-English model: both sides type English, each viewer sees a
     // translation into their own learning language. Fire for ALL bubbles
     // (incoming + outgoing) when this viewer's learning language is one
-    // we translate this slice. No-op in portfolio mode (curated tokens
-    // already shipped). Source is always English for v1.
+    // we translate this slice. Source is always English for v1.
     if (kSupportedLearningLanguages.contains(languageCode) &&
-        !ref.watch(portfolioModeProvider) &&
         message.originalText.trim().isNotEmpty) {
       Future.microtask(() {
         ref
@@ -1058,11 +1072,8 @@ class _Bubble extends ConsumerWidget {
             // Layout: learning-language translation in main slot, English
             // original in subtitle. PRD design principle: "Partner's
             // language always shown first; English always second." Holds
-            // for incoming, outgoing, real chats, and portfolio mode.
-            // Live translation states (real chat) take priority over
-            // portfolio `translationState` flags so portfolio mode still
-            // works untouched while real chats fire shimmer → ready/error
-            // via the per-chat translation cache.
+            // for incoming and outgoing. Real chats fire shimmer →
+            // ready/error via the per-chat translation cache.
             if (liveTranslation is AsyncLoading) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1118,58 +1129,6 @@ class _Bubble extends ConsumerWidget {
                     color: isOut
                         ? Colors.white.withValues(alpha: 0.85)
                         : BlabColors.textMuted,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ] else if (isOut &&
-                message.translationState == TranslationState.pending) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: ShimmerLine(isOutgoing: isOut, height: 18),
-              ),
-              if (showTranslation) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Container(
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.25),
-                  ),
-                ),
-                Text(
-                  message.originalText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ] else if (isOut &&
-                message.translationState ==
-                    TranslationState.unavailable) ...[
-              Text(
-                'Translation unavailable',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.white.withValues(alpha: 0.7),
-                  height: 1.7,
-                ),
-              ),
-              if (showTranslation) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Container(
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.25),
-                  ),
-                ),
-                Text(
-                  message.originalText,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.85),
                     height: 1.3,
                   ),
                 ),

@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/app_messenger.dart';
 import '../../../app/theme.dart';
+import 'share_targets.dart';
 
-/// PRD US-009.
+/// Launches a deep-link / compose URI. Returns `true` if a handler app
+/// opened. Injectable so tests can drive the sheet without the platform.
+typedef LaunchUriFn = Future<bool> Function(Uri uri);
+
+/// Opens the OS share chooser with [text]. Returns `true` if the user
+/// completed a share (vs. dismissing it).
+typedef ShareTextFn = Future<bool> Function(String text);
+
+Future<bool> _defaultLaunch(Uri uri) =>
+    launchUrl(uri, mode: LaunchMode.externalApplication);
+
+Future<bool> _defaultShare(String text) async {
+  final result =
+      await SharePlus.instance.share(ShareParams(text: text));
+  return result.status == ShareResultStatus.success;
+}
+
+/// PRD US-009 / Step 2.8. Bottom sheet to share an invite link: three
+/// named app tiles (WhatsApp / Telegram / Email) that deep-link straight
+/// into the app, a "More" tile for the native chooser, and a Copy row.
 Future<void> showShareInviteSheet(
   BuildContext context, {
   required String inviteLink,
+  LaunchUriFn? launchUri,
+  ShareTextFn? shareText,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -13,25 +39,94 @@ Future<void> showShareInviteSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => _ShareSheetBody(inviteLink: inviteLink),
+    builder: (ctx) => _ShareSheetBody(
+      inviteLink: inviteLink,
+      launchUri: launchUri ?? _defaultLaunch,
+      shareText: shareText ?? _defaultShare,
+    ),
   );
 }
 
+enum _Target { whatsApp, telegram, email, more }
+
 class _ShareSheetBody extends StatefulWidget {
-  const _ShareSheetBody({required this.inviteLink});
+  const _ShareSheetBody({
+    required this.inviteLink,
+    required this.launchUri,
+    required this.shareText,
+  });
+
   final String inviteLink;
+  final LaunchUriFn launchUri;
+  final ShareTextFn shareText;
 
   @override
   State<_ShareSheetBody> createState() => _ShareSheetBodyState();
 }
 
 class _ShareSheetBodyState extends State<_ShareSheetBody> {
-  static const List<({String label, Color bg, IconData icon})> _apps = [
-    (label: 'WhatsApp', bg: Color(0xFF25D366), icon: Icons.chat),
-    (label: 'iMessage', bg: Color(0xFF34C759), icon: Icons.message),
-    (label: 'Telegram', bg: Color(0xFF229ED9), icon: Icons.send),
-    (label: 'Email', bg: Color(0xFFEA4335), icon: Icons.mail_outline),
+  bool _copied = false;
+
+  static const List<({String label, Color bg, IconData icon, _Target target})>
+      _apps = [
+    (
+      label: 'WhatsApp',
+      bg: Color(0xFF25D366),
+      icon: Icons.chat,
+      target: _Target.whatsApp,
+    ),
+    (
+      label: 'Telegram',
+      bg: Color(0xFF229ED9),
+      icon: Icons.send,
+      target: _Target.telegram,
+    ),
+    (
+      label: 'Email',
+      bg: Color(0xFFEA4335),
+      icon: Icons.mail_outline,
+      target: _Target.email,
+    ),
+    (
+      label: 'More',
+      bg: Color(0xFF8E8E93),
+      icon: Icons.more_horiz,
+      target: _Target.more,
+    ),
   ];
+
+  Future<void> _onTap(_Target target) async {
+    bool ok;
+    if (target == _Target.more) {
+      ok = await widget.shareText(inviteShareText(widget.inviteLink));
+    } else {
+      final uri = switch (target) {
+        _Target.whatsApp => whatsAppShareUri(widget.inviteLink),
+        _Target.telegram => telegramShareUri(widget.inviteLink),
+        _Target.email => emailShareUri(widget.inviteLink),
+        _Target.more => throw StateError('unreachable'),
+      };
+      try {
+        ok = await widget.launchUri(uri);
+      } catch (_) {
+        ok = false;
+      }
+      // App not installed / no handler → fall back to the native chooser
+      // so the user can still send the link somewhere.
+      if (!ok) {
+        ok = await widget.shareText(inviteShareText(widget.inviteLink));
+      }
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    // "Invite sent ✓" only after the share actually went through.
+    if (ok) showAppSnack('Invite sent ✓');
+  }
+
+  void _copy() {
+    Clipboard.setData(ClipboardData(text: widget.inviteLink));
+    setState(() => _copied = true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,11 +165,18 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
                 separatorBuilder: (context, i) => const SizedBox(width: 16),
                 itemBuilder: (context, i) {
                   final a = _apps[i];
-                  return _AppTile(label: a.label, bg: a.bg, icon: a.icon);
+                  return _AppTile(
+                    label: a.label,
+                    bg: a.bg,
+                    icon: a.icon,
+                    onTap: () => _onTap(a.target),
+                  );
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            _CopyRow(copied: _copied, onTap: _copy),
+            const SizedBox(height: 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SizedBox(
@@ -106,11 +208,71 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
   }
 }
 
+class _CopyRow extends StatelessWidget {
+  const _CopyRow({required this.copied, required this.onTap});
+  final bool copied;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Material(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                Icon(
+                  copied ? Icons.check_circle : Icons.link,
+                  size: 20,
+                  color: copied ? BlabColors.brand : BlabColors.textPrimary,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  copied ? 'Link copied' : 'Copy link',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color:
+                        copied ? BlabColors.brand : BlabColors.textPrimary,
+                  ),
+                ),
+                if (copied) ...[
+                  const Spacer(),
+                  const Text(
+                    'Now paste it in a chat',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: BlabColors.textMuted,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AppTile extends StatefulWidget {
-  const _AppTile({required this.label, required this.bg, required this.icon});
+  const _AppTile({
+    required this.label,
+    required this.bg,
+    required this.icon,
+    required this.onTap,
+  });
   final String label;
   final Color bg;
   final IconData icon;
+  final VoidCallback onTap;
 
   @override
   State<_AppTile> createState() => _AppTileState();
@@ -123,8 +285,7 @@ class _AppTileState extends State<_AppTile> {
     setState(() => _scale = 0.9);
     await Future.delayed(const Duration(milliseconds: 120));
     if (mounted) setState(() => _scale = 1.0);
-    await Future.delayed(const Duration(milliseconds: 180));
-    if (mounted) Navigator.of(context).pop();
+    widget.onTap();
   }
 
   @override

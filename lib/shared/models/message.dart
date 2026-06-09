@@ -6,18 +6,7 @@ import 'message_token.dart';
 /// PRD US-016 (read receipts) + US-031 (offline / failure).
 enum MessageStatus { pending, delivered, read, failed }
 
-/// Render hint for a live-translated outgoing message in portfolio mode.
-///
-/// `null` (the default) means "no live translation flow involved" — the
-/// existing rendering logic runs unchanged. [pending] tells the bubble to
-/// show a shimmer in the subtitle slot while the translator is in flight.
-/// [unavailable] tells it to show a muted "Translation unavailable" line.
-/// On successful translation the field is reset to `null` so the message
-/// renders like any normal outgoing bubble.
-enum TranslationState { pending, unavailable }
-
-/// A single chat message. Mock-only for Phase 1 — backend wiring lands in
-/// Step 2.2.
+/// A single chat message. Backed by the live Supabase stream (Step 2.2).
 ///
 /// PRD US-013…US-017, US-023.
 class Message {
@@ -32,7 +21,6 @@ class Message {
     this.tokens,
     this.replyTo,
     this.isEdited = false,
-    this.translationState,
   });
 
   final String id;
@@ -67,9 +55,6 @@ class Message {
   /// "· edited" tag in the meta row. PRD US-019.
   final bool isEdited;
 
-  /// Optional translation render hint. See [TranslationState].
-  final TranslationState? translationState;
-
   Message copyWith({
     MessageStatus? status,
     String? originalText,
@@ -77,8 +62,6 @@ class Message {
     List<MessageToken>? tokens,
     Message? replyTo,
     bool? isEdited,
-    TranslationState? translationState,
-    bool clearTranslationState = false,
   }) {
     return Message(
       id: id,
@@ -91,9 +74,6 @@ class Message {
       status: status ?? this.status,
       replyTo: replyTo ?? this.replyTo,
       isEdited: isEdited ?? this.isEdited,
-      translationState: clearTranslationState
-          ? null
-          : (translationState ?? this.translationState),
     );
   }
 }

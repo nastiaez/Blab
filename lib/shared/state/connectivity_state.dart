@@ -71,6 +71,14 @@ final onlineProvider = StreamProvider<bool>((ref) async* {
   );
 });
 
+/// Synchronous boolean view of [onlineProvider]. Defaults to online while
+/// connectivity is still unknown (the stream hasn't emitted yet) so a cold
+/// first send isn't wrongly queued. The send path reads this to branch
+/// without awaiting a stream. PRD US-031.
+final isOnlineProvider = Provider<bool>(
+  (ref) => ref.watch(onlineProvider).value ?? true,
+);
+
 /// Small debounce transformer used by [onlineProvider]. Emits the latest
 /// value only after [duration] of silence.
 class _DebounceTransformer<T> extends StreamTransformerBase<T, T> {
