@@ -284,7 +284,8 @@
   - [x] Message plaintext redacted: `beforeBreadcrumb` strips everything but safe metadata (method/url/status) from HTTP breadcrumbs; `beforeSend` rebuilds the request with the body replaced by `[redacted]`. `sendDefaultPii = false`, tracing off. Pure scrub helpers unit-tested (`test/sentry_scrub_test.dart`, 5 cases).
   - [x] Dev-menu "Throw test error" button (uncaught throw → framework handler → Sentry) for end-to-end verification on device.
   - [x] `flutter analyze` clean; `flutter test` 54/54 green; **release** APK builds with the DSN wired (`flutter build apk --release --dart-define=SENTRY_DSN=…`).
-  - [ ] **Account + device verification owed** (Nastia): create a Sentry project, build the release APK with the real DSN, tap "Throw test error", confirm the event lands in the Sentry dashboard within ~1 min and carries no message text.
+  - [x] Sentry project created (EU region, `de.sentry.io`); DSN stored in gitignored `env/sentry.json`; release App Bundle builds with `--dart-define-from-file=env/sentry.json`.
+  - [ ] **Live check during manual test** (Nastia): on the installed release build, dev menu → "Throw test error" → confirm the event lands in Sentry within ~1 min and carries no message text.
 
 ### Step 3.1 — iOS build  `[ ]` — **DEFERRED to post-launch** (2026-06-01 ship-fast decision)
 - **Done when:** every Phase 1 + Phase 2 step passes its "Done when" rubric on an iOS device or simulator.

@@ -154,7 +154,7 @@ Do these last, right before submitting to production:
 - [ ] Fill **Child safety standards** (Terms `#child-safety` URL + me@aswin.sh).
 - [ ] Upload the **feature graphic** (1024×500) + screenshots.
 - [ ] Add the **reviewer demo account** credentials.
-- [ ] Set the **Sentry DSN** in the release build.
+- [x] **Sentry DSN** set (in gitignored `env/sentry.json`; builds use `--dart-define-from-file=env/sentry.json`).
 - [ ] Confirm **Report + Block** is live in the build (Step 3.6a).
 - [ ] Closed test: **12+ testers, 14 continuous days** complete.
 
@@ -180,7 +180,7 @@ key (currently it falls back to the debug key). One-time setup:
    ```
 3. Build the signed bundle for upload:
    ```
-   flutter build appbundle --release --dart-define=SENTRY_DSN=<your-dsn>
+   flutter build appbundle --release --dart-define-from-file=env/sentry.json
    ```
    → upload `build/app/outputs/bundle/release/app-release.aab` to Play.
 4. Enable **Play App Signing** (Play's default). After the first upload, copy
