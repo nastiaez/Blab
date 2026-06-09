@@ -13,6 +13,7 @@ import 'app/theme.dart';
 import 'features/chat/state/message_translations_state.dart';
 import 'shared/data/invite_host.dart';
 import 'shared/data/supabase_config.dart';
+import 'shared/observability/observability.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,9 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
   );
-  runApp(const ProviderScope(child: BlabApp()));
+  // Run the app inside Sentry (no-op when no DSN is built in). Captures
+  // uncaught Dart + Flutter + native errors. Step 3.0.
+  await bootstrap(() => runApp(const ProviderScope(child: BlabApp())));
 }
 
 class BlabApp extends ConsumerStatefulWidget {

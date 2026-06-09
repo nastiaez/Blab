@@ -275,9 +275,16 @@
 
 > iOS deferred to post-launch. v1 = Android only.
 
-### Step 3.0 — Sentry + crash analytics `[ ]`
+### Step 3.0 — Sentry + crash analytics `[ ]` ← in progress
 - **Scope:** install `sentry_flutter`, wire DSN via `--dart-define`, capture uncaught + Flutter framework errors, redact message bodies from breadcrumbs.
 - **Done when:** a manually-thrown error appears in Sentry within 1 minute; release builds upload to Sentry; no message plaintext in any breadcrumb.
+- **Progress (2026-06-09):**
+  - [x] `sentry_flutter` added (9.21.0 — 8.x failed the release build by pinning Kotlin language version 1.6, which the project's modern Kotlin compiler rejects; 9.x fixes it). `runApp` runs inside `SentryFlutter.init` via `bootstrap()`, so uncaught Dart, Flutter framework, and native crashes are all captured automatically.
+  - [x] DSN supplied at build time via `--dart-define=SENTRY_DSN=…` (never in the repo). No DSN → Sentry is a clean no-op, so dev/tests/CI send nothing.
+  - [x] Message plaintext redacted: `beforeBreadcrumb` strips everything but safe metadata (method/url/status) from HTTP breadcrumbs; `beforeSend` rebuilds the request with the body replaced by `[redacted]`. `sendDefaultPii = false`, tracing off. Pure scrub helpers unit-tested (`test/sentry_scrub_test.dart`, 5 cases).
+  - [x] Dev-menu "Throw test error" button (uncaught throw → framework handler → Sentry) for end-to-end verification on device.
+  - [x] `flutter analyze` clean; `flutter test` 54/54 green; **release** APK builds with the DSN wired (`flutter build apk --release --dart-define=SENTRY_DSN=…`).
+  - [ ] **Account + device verification owed** (Nastia): create a Sentry project, build the release APK with the real DSN, tap "Throw test error", confirm the event lands in the Sentry dashboard within ~1 min and carries no message text.
 
 ### Step 3.1 — iOS build  `[ ]` — **DEFERRED to post-launch** (2026-06-01 ship-fast decision)
 - **Done when:** every Phase 1 + Phase 2 step passes its "Done when" rubric on an iOS device or simulator.

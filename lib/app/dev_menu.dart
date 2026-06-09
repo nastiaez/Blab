@@ -52,9 +52,33 @@ class DevMenu extends ConsumerWidget {
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: _entries.length + 2,
+        itemCount: _entries.length + 3,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, i) {
+          if (i == _entries.length + 2) {
+            return FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                minimumSize: const Size.fromHeight(56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              // Uncaught throw → Flutter error handler → Sentry. Verifies
+              // crash reporting end-to-end on a real device. Step 3.0.
+              onPressed: () => throw StateError('Blab dev-menu test crash'),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Throw test error',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text('Sentry · Step 3.0',
+                      style: TextStyle(fontSize: 12, color: Colors.white70)),
+                ],
+              ),
+            );
+          }
           if (i == _entries.length) {
             return _DevToggleRow(
               label: forceOffline
