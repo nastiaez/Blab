@@ -310,7 +310,8 @@
   - [x] In-app legal links wired: auth-screen Terms/Privacy links (were placeholder toasts) + new Privacy Policy / Terms rows in the Privacy screen now open the hosted pages (`url_launcher`, shared `openExternalUrl`).
   - [x] Play listing copy + **Data Safety answers** (matched to the policy) + content-rating guidance drafted in `docs/play-listing.md`. Tester-recruitment invite + tracking in `docs/tester-invite.md`.
   - [x] `flutter analyze` clean; `flutter test` 54/54 green.
-  - [ ] **Nastia's to-dos:** deploy the web pages (Vercel); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
+  - [x] Privacy + Terms **deployed to production** (2026-06-09) — live at `https://blab-gray.vercel.app/privacy.html` + `/terms.html` (200, verified).
+  - [ ] **Nastia's to-dos:** fill the operator legal name in `web/privacy.html` (then redeploy); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
 
 ### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[ ]` ← in progress
 - **Scope:** Play requires social/messaging apps to provide a way to report objectionable content and block another user. Add: report a message / report a person, and block a person so they can no longer contact you. Reports route to a store + the contact email; blocking hides the partner and prevents new messages.
