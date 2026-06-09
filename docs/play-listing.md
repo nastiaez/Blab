@@ -94,8 +94,27 @@ crash logs (sent to Sentry).
 Answer honestly — Blab has user-to-user messaging:
 - Users can interact / communicate with each other → **Yes**
 - Users can share content (messages) → **Yes**
-- No violence, no sexual content, no gambling, no controlled substances → **No** to all of those.
-- This typically yields a **Teen / PEGI 12** rating because of open user communication. That's expected and fine.
+- Users can share their location → **No**
+- No violence, no sexual content, no gambling, no controlled substances in the app's own content → **No** to all of those.
+- Note: messages are translated faithfully, so user-typed profanity may appear in translation. That's user-generated, not app content.
+- This typically yields a **Teen / PEGI 12** rating because of open user communication. Expected and fine.
+
+**Minimum age:** 13+ (stated in Terms + confirmed at signup).
+
+---
+
+## Child safety / CSAE (required for social apps)
+
+Google Play requires apps with social features to declare child-safety standards
+and a reporting path. We have:
+- A **zero-tolerance CSAE** section in the Terms (`/terms.html#child-safety`).
+- **In-app Report + Block** (Step 3.6a).
+- A **point of contact**: me@aswin.sh.
+
+In Play Console:
+- **App content → Child safety standards**: provide the Terms URL (the CSAE
+  section) as the published standards, and me@aswin.sh as the contact.
+- Affirm compliance with Google's CSAE policy when prompted.
 
 ---
 

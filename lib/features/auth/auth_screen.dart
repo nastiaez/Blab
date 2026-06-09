@@ -542,7 +542,7 @@ class _LegalFinePrintState extends State<_LegalFinePrint> {
               style: linkStyle,
               recognizer: _privacyRecognizer,
             ),
-            const TextSpan(text: '.'),
+            const TextSpan(text: ', and confirm you are at least 13.'),
           ],
         ),
       ),
