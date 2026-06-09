@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../shared/models/message.dart';
 
-/// The action picked from the long-press sheet. PRD US-019, US-020.
-enum MessageAction { reply, edit, copy, delete }
+/// The action picked from the long-press sheet. PRD US-019, US-020;
+/// `report` added for Step 3.6a.
+enum MessageAction { reply, edit, copy, delete, report }
 
 /// Show the long-press action sheet for [message]. Outgoing messages get
 /// Reply / Edit / Copy / Delete; incoming get Reply / Copy only.
@@ -62,6 +63,17 @@ Future<void> showMessageActionSheet(
             onTap: () {
               Navigator.of(sheetCtx).pop();
               onAction(MessageAction.delete);
+            },
+          ),
+        // Report only makes sense for the other person's messages.
+        if (!isOut)
+          _ActionRow(
+            icon: Icons.flag_outlined,
+            label: 'Report',
+            destructive: true,
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              onAction(MessageAction.report);
             },
           ),
       ];

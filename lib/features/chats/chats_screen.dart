@@ -15,7 +15,7 @@ class ChatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatsAsync = ref.watch(chatListProvider);
+    final chatsAsync = ref.watch(visibleChatsProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

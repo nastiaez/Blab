@@ -246,6 +246,64 @@ class ChatService {
     );
   }
 
+  // ---- Report + Block (Step 3.6a, Play UGC/CSAE policy) ----
+
+  /// File an abuse report. Any of [reportedUserId] / [chatId] / [messageId]
+  /// may be null depending on what's being reported.
+  Future<void> reportContent({
+    required String reason,
+    String? reportedUserId,
+    String? chatId,
+    String? messageId,
+    String? details,
+  }) async {
+    await _client.from('reports').insert({
+      'reporter_id': _uid,
+      'reported_user_id': reportedUserId,
+      'chat_id': chatId,
+      'message_id': messageId,
+      'reason': reason,
+      'details': details,
+    });
+  }
+
+  /// Block [userId] so they can no longer message the current user. The
+  /// messages-insert RLS enforces this server-side. Idempotent.
+  Future<void> blockUser(String userId) async {
+    await _client.from('blocks').upsert(
+      {'blocker_id': _uid, 'blocked_id': userId},
+      onConflict: 'blocker_id,blocked_id',
+      ignoreDuplicates: true,
+    );
+  }
+
+  /// Remove a block.
+  Future<void> unblockUser(String userId) async {
+    await _client
+        .from('blocks')
+        .delete()
+        .eq('blocker_id', _uid)
+        .eq('blocked_id', userId);
+  }
+
+  /// Ids the current user has blocked (one-shot).
+  Future<Set<String>> fetchBlockedIds() async {
+    final rows = await _client
+        .from('blocks')
+        .select('blocked_id')
+        .eq('blocker_id', _uid);
+    return (rows as List).map((r) => r['blocked_id'] as String).toSet();
+  }
+
+  /// Realtime stream of the current user's blocked ids.
+  Stream<Set<String>> watchBlockedIds() {
+    return _client
+        .from('blocks')
+        .stream(primaryKey: ['blocker_id', 'blocked_id'])
+        .eq('blocker_id', _uid)
+        .map((rows) => rows.map((r) => r['blocked_id'] as String).toSet());
+  }
+
   /// Server-side invite creation. The current user becomes the inviter
   /// and declares the language THEY want to learn from the partner the
   /// invite eventually claims. Returns the token + absolute expiry so

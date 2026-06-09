@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_messenger.dart';
 import '../../../app/theme.dart';
 import '../../../shared/models/chat.dart';
+import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/connectivity_state.dart';
+import 'report_sheet.dart';
+
+/// Result of the partner profile sheet. `blocked` tells the caller to leave
+/// the chat (the partner is now hidden from the chat list). Step 3.6a.
+enum PartnerProfileResult { blocked }
 
 /// Bottom sheet shown when the user taps the partner avatar / name in the
-/// chat header. Read-only: shows who the partner is, what they speak
-/// natively (= what you're learning) and what they're learning from you.
-Future<void> showPartnerProfileSheet(
+/// chat header. Shows who the partner is + Report / Block safety actions.
+Future<PartnerProfileResult?> showPartnerProfileSheet(
   BuildContext context, {
   required Chat chat,
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<PartnerProfileResult>(
     context: context,
     backgroundColor: Colors.white,
     isScrollControlled: true,
@@ -135,6 +141,10 @@ class _Body extends ConsumerWidget {
                 ),
               ],
             ),
+            if (chat.partnerId != null) ...[
+              const SizedBox(height: 22),
+              _SafetyActions(chat: chat),
+            ],
           ],
         ),
       ),
@@ -179,6 +189,113 @@ class _Section extends StatelessWidget {
               .toList()
             ..removeLast(),
         ],
+      ),
+    );
+  }
+}
+
+class _SafetyActions extends ConsumerWidget {
+  const _SafetyActions({required this.chat});
+  final Chat chat;
+
+  Future<void> _report(BuildContext context, WidgetRef ref) async {
+    final reason = await showReportReasonSheet(
+      context,
+      title: 'Report ${chat.partnerName}',
+    );
+    if (reason == null) return;
+    try {
+      await ref.read(chatServiceProvider).reportContent(
+            reason: reason.wire,
+            reportedUserId: chat.partnerId,
+            chatId: chat.id,
+          );
+      showAppSnack("Thanks — we'll review this.");
+    } catch (_) {
+      showAppSnack("Couldn't send the report. Try again.");
+    }
+  }
+
+  Future<void> _block(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(chatServiceProvider).blockUser(chat.partnerId!);
+      if (context.mounted) {
+        Navigator.of(context).pop(PartnerProfileResult.blocked);
+      }
+      showAppSnack('${chat.partnerName} blocked');
+    } catch (_) {
+      showAppSnack("Couldn't block. Try again.");
+    }
+  }
+
+  Future<void> _unblock(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(chatServiceProvider).unblockUser(chat.partnerId!);
+      showAppSnack('${chat.partnerName} unblocked');
+    } catch (_) {
+      showAppSnack("Couldn't unblock. Try again.");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final isBlocked = blocked.contains(chat.partnerId);
+    return _Section(
+      title: 'Safety',
+      children: [
+        _SafetyRow(
+          icon: Icons.flag_outlined,
+          label: 'Report ${chat.partnerName}',
+          onTap: () => _report(context, ref),
+        ),
+        _SafetyRow(
+          icon: isBlocked ? Icons.lock_open_outlined : Icons.block,
+          label: isBlocked
+              ? 'Unblock ${chat.partnerName}'
+              : 'Block ${chat.partnerName}',
+          destructive: !isBlocked,
+          onTap: () => isBlocked ? _unblock(context, ref) : _block(context, ref),
+        ),
+      ],
+    );
+  }
+}
+
+class _SafetyRow extends StatelessWidget {
+  const _SafetyRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        destructive ? const Color(0xFFEF4444) : BlabColors.textPrimary;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: color),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

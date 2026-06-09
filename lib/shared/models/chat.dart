@@ -15,9 +15,15 @@ class Chat {
     this.lastMessageId,
     this.isNewInvite = false,
     this.startedAt,
+    this.partnerId,
   });
 
   final String id;
+
+  /// The partner's user id. Needed to block / report them. Null for mock
+  /// chats that predate the chat-list view exposing it.
+  final String? partnerId;
+
   final String partnerName;
   final String partnerInitial;
 

@@ -22,6 +22,7 @@ Chat _rowToChat(Map<String, dynamic> r) {
   final name = raw.trim().isEmpty ? '?' : raw.trim();
   return Chat(
     id: r['chat_id'] as String,
+    partnerId: r['partner_id'] as String?,
     partnerName: name,
     partnerInitial: name == '?' ? '?' : name[0].toUpperCase(),
     learningLanguage: myLearn,
@@ -80,3 +81,32 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
 
 final chatListProvider =
     AsyncNotifierProvider<ChatListNotifier, List<Chat>>(ChatListNotifier.new);
+
+/// Realtime set of user ids the current user has blocked. Empty when
+/// signed-out or on error. Step 3.6a.
+final blockedUserIdsProvider = StreamProvider<Set<String>>((ref) {
+  ref.watch(authSessionProvider);
+  final svc = ref.watch(chatServiceProvider);
+  try {
+    return svc.watchBlockedIds();
+  } catch (_) {
+    return Stream.value(const <String>{});
+  }
+});
+
+/// Drop chats whose partner the user has blocked. Pure so it can be unit
+/// tested without provider/stream timing. Chats with no partner id (mocks)
+/// always pass. Step 3.6a.
+List<Chat> filterBlockedChats(List<Chat> chats, Set<String> blocked) => chats
+    .where((c) => c.partnerId == null || !blocked.contains(c.partnerId))
+    .toList();
+
+/// The chat list with blocked partners filtered out. Screens render this
+/// instead of [chatListProvider] so blocking a person removes their chat
+/// from the list immediately (and it returns on unblock). Step 3.6a.
+final visibleChatsProvider = Provider<AsyncValue<List<Chat>>>((ref) {
+  final chats = ref.watch(chatListProvider);
+  final blocked =
+      ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+  return chats.whenData((list) => filterBlockedChats(list, blocked));
+});

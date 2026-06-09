@@ -312,7 +312,7 @@
   - [x] `flutter analyze` clean; `flutter test` 54/54 green.
   - [ ] **Nastia's to-dos:** deploy the web pages (Vercel); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
 
-### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[ ]`
+### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[ ]` ← in progress
 - **Scope:** Play requires social/messaging apps to provide a way to report objectionable content and block another user. Add: report a message / report a person, and block a person so they can no longer contact you. Reports route to a store + the contact email; blocking hides the partner and prevents new messages.
 - **Why:** missing report/block is a common Play rejection for social apps; also required by the child-safety (CSAE) standards. Decision 2026-06-09: build before submission.
 - **Done when:**
@@ -320,6 +320,14 @@
   - Blocking a person stops their messages reaching you and removes them from the active chat surface; can be undone
   - Reports are recorded (server) and acknowledged in the UI
   - `flutter analyze` clean, `flutter test` green
+- **Progress (2026-06-09):**
+  - [x] Migration `20260609000001_reports_blocks.sql`: `blocks` + `reports` tables with RLS (you manage only your own); message-insert RLS now denies a blocked user from posting into a shared chat (via `SECURITY DEFINER` helper `is_blocked_in_chat`, mirroring `is_chat_member` to avoid recursion); `blocks` added to realtime.
+  - [x] `ChatService`: `reportContent`, `blockUser`/`unblockUser`, `fetchBlockedIds`, `watchBlockedIds`. `Chat` gained `partnerId` (mapped from the chat-list view).
+  - [x] State: realtime `blockedUserIdsProvider`; `visibleChatsProvider` filters blocked partners out of the chat list (pure `filterBlockedChats` helper, unit-tested); chats screen renders the filtered list.
+  - [x] UI: Report row on incoming messages (long-press) → reason sheet → recorded + "we'll review" snack; partner profile sheet gained a Safety section with Report + Block/Unblock; blocking leaves the chat (back to list), unblock restores it.
+  - [x] `flutter analyze` clean; `flutter test` 60/60 green (new `test/report_block_test.dart`); debug APK builds.
+  - [ ] **Apply migration to remote** (`supabase db push`) — not yet done; the message-insert policy change should be applied + smoke-tested together. **Owed.**
+  - [ ] **Device verification owed** (Nastia): report a message + a person; block someone and confirm their chat disappears + they can't message you; unblock and confirm it returns.
 
 ### Step 3.6 — Closed testing run (Play policy gate) `[ ]`
 - **Scope:** Play now requires solo dev accounts to run a closed test with **≥12 testers for ≥14 continuous days** before production. Lock down tester list early.

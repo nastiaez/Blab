@@ -25,6 +25,7 @@ import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
+import 'widgets/report_sheet.dart';
 import 'widgets/translation_subtitle.dart';
 
 // kSupportedLearningLanguages now lives in
@@ -131,8 +132,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
-  void _handleAction(Message message, MessageAction action) {
+  Future<void> _reportMessage(Message message, Chat chat) async {
+    final reason =
+        await showReportReasonSheet(context, title: 'Report message');
+    if (reason == null) return;
+    try {
+      await ref.read(chatServiceProvider).reportContent(
+            reason: reason.wire,
+            messageId: message.id,
+            chatId: chat.id,
+            reportedUserId: chat.partnerId,
+          );
+      showAppSnack("Thanks — we'll review this.");
+    } catch (_) {
+      showAppSnack("Couldn't send the report. Try again.");
+    }
+  }
+
+  void _handleAction(Message message, MessageAction action, Chat chat) {
     switch (action) {
+      case MessageAction.report:
+        _reportMessage(message, chat);
+        break;
       case MessageAction.reply:
         ref.read(replyingToProvider(widget.chatId).notifier).set(message);
         break;
@@ -304,8 +325,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     }
                   },
                   onMenu: _toggleMenu,
-                  onTapPartner: () =>
-                      showPartnerProfileSheet(context, chat: chat),
+                  onTapPartner: () async {
+                    final result =
+                        await showPartnerProfileSheet(context, chat: chat);
+                    // Blocking the partner hides this chat — leave the view.
+                    if (result == PartnerProfileResult.blocked &&
+                        context.mounted) {
+                      context.go('/chats');
+                    }
+                  },
                 ),
                 const OfflineBanner(),
                 Expanded(
@@ -381,7 +409,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 showMessageActionSheet(
                                   context,
                                   message: m,
-                                  onAction: (a) => _handleAction(m, a),
+                                  onAction: (a) => _handleAction(m, a, chat),
                                 );
                               },
                               onFailedTap: (m) {
