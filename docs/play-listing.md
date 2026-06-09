@@ -134,3 +134,25 @@ Play now requires **12+ testers opted in for 14 continuous days** before
 production. Line up the tester emails early — that 14-day clock is the only
 thing on this whole list you can't speed up. Invite copy is in
 `docs/tester-invite.md`.
+
+---
+
+## ✅ Final checklist before you hit "Publish" on Play
+
+Do these last, right before submitting to production:
+
+- [ ] **Fill the operator legal name** in `web/privacy.html` — replace
+      `[OPERATOR NAME]` (location is already set to Berlin, Germany). This is
+      legally required (GDPR controller identity). Re-deploy the page after.
+      *No EU representative needed — the operator is based in the EU.*
+- [ ] Deploy `web/privacy.html` + `web/terms.html` (Vercel) and confirm both
+      open in a browser.
+- [ ] Paste the Privacy Policy URL into the Play listing.
+- [ ] Fill the **Data Safety** form using the answers above.
+- [ ] Complete the **content rating** questionnaire (lands at Teen).
+- [ ] Fill **Child safety standards** (Terms `#child-safety` URL + me@aswin.sh).
+- [ ] Upload the **feature graphic** (1024×500) + screenshots.
+- [ ] Add the **reviewer demo account** credentials.
+- [ ] Set the **Sentry DSN** in the release build.
+- [ ] Confirm **Report + Block** is live in the build (Step 3.6a).
+- [ ] Closed test: **12+ testers, 14 continuous days** complete.
