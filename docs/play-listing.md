@@ -156,3 +156,33 @@ Do these last, right before submitting to production:
 - [ ] Set the **Sentry DSN** in the release build.
 - [ ] Confirm **Report + Block** is live in the build (Step 3.6a).
 - [ ] Closed test: **12+ testers, 14 continuous days** complete.
+
+---
+
+## Release signing (one-time keystore)  [YOU]
+
+The app build is Play-ready, but the release must be signed with YOUR upload
+key (currently it falls back to the debug key). One-time setup:
+
+1. Create an upload keystore (keep it safe + backed up — losing it means you
+   can't update the app):
+   ```
+   keytool -genkey -v -keystore ~/blab-upload.jks -keyalg RSA -keysize 2048 \
+     -validity 10000 -alias upload
+   ```
+2. Create `android/key.properties` (already gitignored — never commit it):
+   ```
+   storePassword=<the password you set>
+   keyPassword=<the password you set>
+   keyAlias=upload
+   storeFile=/Users/anastasiiayezhyzhanska/blab-upload.jks
+   ```
+3. Build the signed bundle for upload:
+   ```
+   flutter build appbundle --release --dart-define=SENTRY_DSN=<your-dsn>
+   ```
+   → upload `build/app/outputs/bundle/release/app-release.aab` to Play.
+4. Enable **Play App Signing** (Play's default). After the first upload, copy
+   the **app-signing SHA-256** from Play Console → and update
+   `web/.well-known/assetlinks.json` with it so invite App Links verify on
+   production builds (the file currently lists the debug fingerprint).
