@@ -141,6 +141,7 @@ thing on this whole list you can't speed up. Invite copy is in
 
 Do these last, right before submitting to production:
 
+- [ ] **Run the full manual test pass** on a real phone (`docs/manual-test-plan.md`), ideally on the signed release build. Don't submit until it passes.
 - [ ] **Fill the operator legal name** in `web/privacy.html` — replace
       `[OPERATOR NAME]` (location is already set to Berlin, Germany). This is
       legally required (GDPR controller identity). Re-deploy the page after.
