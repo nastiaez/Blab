@@ -325,8 +325,9 @@
   - [x] `ChatService`: `reportContent`, `blockUser`/`unblockUser`, `fetchBlockedIds`, `watchBlockedIds`. `Chat` gained `partnerId` (mapped from the chat-list view).
   - [x] State: realtime `blockedUserIdsProvider`; `visibleChatsProvider` filters blocked partners out of the chat list (pure `filterBlockedChats` helper, unit-tested); chats screen renders the filtered list.
   - [x] UI: Report row on incoming messages (long-press) → reason sheet → recorded + "we'll review" snack; partner profile sheet gained a Safety section with Report + Block/Unblock; blocking leaves the chat (back to list), unblock restores it.
-  - [x] `flutter analyze` clean; `flutter test` 60/60 green (new `test/report_block_test.dart`); debug APK builds.
-  - [ ] **Apply migration to remote** (`supabase db push`) — not yet done; the message-insert policy change should be applied + smoke-tested together. **Owed.**
+  - [x] Migration **applied to remote** (`supabase db push`, 2026-06-09) — `blocks` + `reports` + the updated message-insert policy are live.
+  - [x] Gesture regression locked (`test/word_gesture_test.dart`): a quick tap on a learning-language word opens the word popup (not the menu); a held press opens the action sheet (incl. Report) and not the popup. Adding Report didn't change the bubble's tap/long-press routing.
+  - [x] `flutter analyze` clean; `flutter test` 62/62 green (`test/report_block_test.dart` + `test/word_gesture_test.dart`); debug APK builds.
   - [ ] **Device verification owed** (Nastia): report a message + a person; block someone and confirm their chat disappears + they can't message you; unblock and confirm it returns.
 
 ### Step 3.6 — Closed testing run (Play policy gate) `[ ]`
