@@ -171,24 +171,30 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: BlabColors.textMuted,
+      // Full width so every section's content left-aligns consistently.
+      // Without this, a section that only holds short text (e.g. "Chat")
+      // shrink-wraps and gets centered by the sheet's centering Column.
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: BlabColors.textMuted,
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          ...children
-              .expand((c) => [c, const SizedBox(height: 8)])
-              .toList()
-            ..removeLast(),
-        ],
+            const SizedBox(height: 10),
+            ...children
+                .expand((c) => [c, const SizedBox(height: 8)])
+                .toList()
+              ..removeLast(),
+          ],
+        ),
       ),
     );
   }
