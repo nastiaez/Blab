@@ -1632,29 +1632,19 @@ class _FirstMessageEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '🎉  You’re connected with ${chat.partnerName}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: BlabColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 18),
             ExchangeCard(
               topFlag: chat.learningLanguage.flag,
               topLabel: 'You learn ${chat.learningLanguage.name}',
               bottomFlag: chat.partnerLearningLanguage.flag,
               bottomLabel:
-                  'Help ${chat.partnerName} learn ${chat.partnerLearningLanguage.name}',
+                  '${chat.partnerName} learns ${chat.partnerLearningLanguage.name}',
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             const Text(
-              'Say hi to start — just type below 👇',
+              'Send any message to start.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: BlabColors.textMuted,
               ),
             ),
