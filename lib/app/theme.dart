@@ -70,4 +70,10 @@ final ThemeData blabTheme = ThemeData(
     surface: BlabColors.phoneSurface,
   ),
   scaffoldBackgroundColor: BlabColors.appBackground,
+  // Every snackbar floats above the bottom (so it can't sit on the message
+  // input) and carries a close (×) button so users can dismiss it early.
+  snackBarTheme: const SnackBarThemeData(
+    behavior: SnackBarBehavior.floating,
+    showCloseIcon: true,
+  ),
 );

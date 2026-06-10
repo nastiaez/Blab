@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../auth/widgets/password_field.dart';
 import '../auth/widgets/password_strength.dart';
@@ -47,12 +48,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           : (_confirm.text != _next.text ? "Passwords don't match" : null);
     });
     if (_currentErr == null && _nextErr == null && _confirmErr == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password updated ✓'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showAppSnack('Password updated ✓');
       context.pop();
     }
   }
