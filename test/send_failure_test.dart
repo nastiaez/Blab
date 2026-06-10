@@ -40,6 +40,12 @@ class _FakeChatService implements ChatService {
       const Stream.empty();
 
   @override
+  Future<void> softDelete(String messageId) async {}
+
+  @override
+  Future<void> restoreMessage(String messageId) async {}
+
+  @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => const [];
 
   @override
@@ -112,6 +118,20 @@ void main() {
     final q = _queue(c, 'c1');
     expect(q.length, 1);
     expect(q.single.status, MessageStatus.failed);
+  });
+
+  test('removeMessage hides instantly; restore (undo) unhides', () async {
+    final fake = _FakeChatService();
+    final c = _container(fake, online: true);
+    addTearDown(c.dispose);
+
+    await c.read(chatMessagesProvider('c1').notifier).removeMessage('m1');
+    expect(c.read(hiddenMessagesProvider('c1')), contains('m1'),
+        reason: 'delete should hide the message without waiting for realtime');
+
+    await c.read(chatMessagesProvider('c1').notifier).restoreMessage('m1');
+    expect(c.read(hiddenMessagesProvider('c1')), isNot(contains('m1')),
+        reason: 'undo should bring it back');
   });
 
   test('dev simulate-failure toggle forces a failed bubble while online',

@@ -371,6 +371,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             final pendingVisible = pending
                                 .where((p) => !messageIds.contains(p.id))
                                 .toList();
+                            // Optimistic delete overlay: hide anything the
+                            // user just deleted, instantly, without waiting
+                            // for the realtime row update. US-019.
+                            final hidden = ref.watch(
+                                hiddenMessagesProvider(widget.chatId));
                             // Auto-flush queued sends once we're back online
                             // (covers reconnect after airplane mode and
                             // sends interrupted by an app kill, re-hydrated
@@ -389,6 +394,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               });
                             }
                             final all = [...messages, ...pendingVisible]
+                                .where((m) => !hidden.contains(m.id))
+                                .toList()
                               ..sort(
                                   (a, b) => a.sentAt.compareTo(b.sentAt));
                             return _MessageList(

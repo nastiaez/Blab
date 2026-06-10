@@ -181,17 +181,51 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         .editMessage(messageId: id, newBody: trimmed);
   }
 
-  /// Soft-delete a message. Paired with [restoreMessage] for Undo. PRD
-  /// US-019.
+  /// Soft-delete a message. Hides it locally right away (so it disappears
+  /// the instant the user taps Delete, regardless of realtime timing), then
+  /// persists the soft-delete server-side. If the server call fails, the
+  /// optimistic hide is rolled back so we never pretend a message is gone
+  /// when it isn't. Also drops it from the pending queue in case it was an
+  /// un-acknowledged send. Paired with [restoreMessage] for Undo. PRD US-019.
   Future<void> removeMessage(String id) async {
-    await ref.read(chatServiceProvider).softDelete(id);
+    ref.read(hiddenMessagesProvider(chatId).notifier).hide(id);
+    ref.read(pendingSendsProvider(chatId).notifier).remove(id);
+    try {
+      await ref.read(chatServiceProvider).softDelete(id);
+    } catch (_) {
+      ref.read(hiddenMessagesProvider(chatId).notifier).unhide(id);
+      rethrow;
+    }
   }
 
-  /// Undo a soft-delete by nulling `deleted_at` on the row. PRD US-019.
+  /// Undo a soft-delete: un-hide locally and null `deleted_at` server-side.
+  /// PRD US-019.
   Future<void> restoreMessage(String id) async {
+    ref.read(hiddenMessagesProvider(chatId).notifier).unhide(id);
     await ref.read(chatServiceProvider).restoreMessage(id);
   }
 }
+
+/// Ids optimistically hidden by a local delete, per chat. Overlaid on top
+/// of the realtime message list so a delete (and its Undo) feels instant
+/// and doesn't depend on the realtime row update arriving first. PRD
+/// US-019.
+class HiddenMessagesNotifier extends Notifier<Set<String>> {
+  HiddenMessagesNotifier(this.chatId);
+
+  final String chatId;
+
+  @override
+  Set<String> build() => <String>{};
+
+  void hide(String id) => state = {...state, id};
+  void unhide(String id) => state = {...state}..remove(id);
+}
+
+final hiddenMessagesProvider =
+    NotifierProvider.family<HiddenMessagesNotifier, Set<String>, String>(
+  HiddenMessagesNotifier.new,
+);
 
 final chatMessagesProvider =
     StreamNotifierProvider.family<ChatNotifier, List<Message>, String>(
