@@ -13,7 +13,6 @@ import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/blab_switch.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
-import '../invite/widgets/exchange_card.dart';
 import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
 import 'state/chat_state.dart';
@@ -21,6 +20,7 @@ import 'state/message_reads_state.dart';
 import 'state/message_translations_state.dart';
 import 'state/pending_sends_state.dart';
 import 'widgets/failed_message_sheet.dart';
+import 'widgets/first_message_empty_state.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_text.dart';
@@ -410,7 +410,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               popupTopInset:
                                   MediaQuery.paddingOf(context).top +
                                       kChatHeaderHeight,
-                              emptyState: _FirstMessageEmptyState(chat: chat),
+                              emptyState: FirstMessageEmptyState(chat: chat),
                               onLongPress: (m) {
                                 HapticFeedback.mediumImpact();
                                 showMessageActionSheet(
@@ -1619,42 +1619,6 @@ class _ReplyBar extends StatelessWidget {
 
 /// Centered exchange card shown in any chat with no messages yet.
 /// PRD US-027.
-class _FirstMessageEmptyState extends StatelessWidget {
-  const _FirstMessageEmptyState({required this.chat});
-
-  final Chat chat;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ExchangeCard(
-              topFlag: chat.learningLanguage.flag,
-              topLabel: 'You learn ${chat.learningLanguage.name}',
-              bottomFlag: chat.partnerLearningLanguage.flag,
-              bottomLabel:
-                  '${chat.partnerName} learns ${chat.partnerLearningLanguage.name}',
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Send any message to start.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: BlabColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _EditBar extends StatelessWidget {
   const _EditBar({required this.onClose});
 
