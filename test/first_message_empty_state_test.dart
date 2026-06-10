@@ -44,4 +44,16 @@ void main() {
     expect(find.text('🇳🇱'), findsNothing);
     expect(find.textContaining('connected'), findsNothing);
   });
+
+  testWidgets('wraps the copy in a styled (decorated) container',
+      (tester) async {
+    await pump(tester);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Container && w.decoration is BoxDecoration,
+      ),
+      findsOneWidget,
+      reason: 'the empty-state copy should sit in a card-like container',
+    );
+  });
 }

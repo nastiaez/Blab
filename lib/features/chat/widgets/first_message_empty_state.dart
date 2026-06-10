@@ -20,31 +20,39 @@ class FirstMessageEmptyState extends StatelessWidget {
     );
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'You learn ${chat.learningLanguage.name}',
-              textAlign: TextAlign.center,
-              style: lineStyle,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${chat.partnerName} learns ${chat.partnerLearningLanguage.name}',
-              textAlign: TextAlign.center,
-              style: lineStyle,
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              'Send any message to start.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: BlabColors.textMuted,
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            color: BlabColors.phoneSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: BlabColors.divider),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'You learn ${chat.learningLanguage.name}',
+                textAlign: TextAlign.center,
+                style: lineStyle,
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                '${chat.partnerName} learns ${chat.partnerLearningLanguage.name}',
+                textAlign: TextAlign.center,
+                style: lineStyle,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Send any message to start.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: BlabColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
