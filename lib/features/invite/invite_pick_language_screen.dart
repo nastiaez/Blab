@@ -68,7 +68,9 @@ class _InvitePickLanguageScreenState
       if (!mounted) return;
       await ref.read(chatListProvider.notifier).refresh();
       if (!mounted) return;
-      showAppSnack('You and ${widget.inviterName} are now connected.');
+      // No bottom snackbar here — it would cover the chat input. The chat's
+      // empty state shows "You're connected with X · say hi" instead, which
+      // is persistent and never blocks the input.
       context.go('/chat/$chatId');
     } on PostgrestException catch (e) {
       if (!mounted) return;
