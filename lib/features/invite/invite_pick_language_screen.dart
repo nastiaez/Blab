@@ -128,6 +128,7 @@ class _InvitePickLanguageScreenState
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (var i = 0; i < kBlabLanguages.length; i++) ...[
                       if (i > 0) const SizedBox(height: 8),

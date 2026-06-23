@@ -30,10 +30,6 @@ class _NewChatScreenState extends State<NewChatScreen> {
   _Step _step = _Step.pick;
   BlabLanguage? _selected;
 
-  /// Code of the row the user just tapped, used for the brief highlight
-  /// before auto-advancing to step 2. Null when nothing's pending.
-  String? _pendingCode;
-
   void _back() {
     switch (_step) {
       case _Step.pick:
@@ -43,47 +39,39 @@ class _NewChatScreenState extends State<NewChatScreen> {
     }
   }
 
-  Future<void> _onPickLanguage(BlabLanguage lang) async {
-    if (_pendingCode != null) return; // ignore taps mid-transition
+  void _onConfirmLanguage(BlabLanguage lang) {
     HapticFeedback.selectionClick();
-    setState(() => _pendingCode = lang.code);
-    await Future<void>.delayed(const Duration(milliseconds: 240));
-    if (!mounted) return;
     setState(() {
       _selected = lang;
       _step = _Step.send;
-      _pendingCode = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = switch (_step) {
-      _Step.pick => 'Pick a language',
-      _Step.send => 'Send the invite',
-    };
-
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       appBar: AppBar(
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
         leading: IconButton(
           tooltip: 'Back',
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
           onPressed: _back,
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
-          ),
-        ),
+        title: _step == _Step.send
+            ? const Text(
+                'Send the invite',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: BlabColors.textPrimary,
+                ),
+              )
+            : null,
+        centerTitle: _step == _Step.send,
       ),
       body: SafeArea(
         child: AnimatedSwitcher(
@@ -93,8 +81,7 @@ class _NewChatScreenState extends State<NewChatScreen> {
           child: switch (_step) {
             _Step.pick => _PickBody(
                 key: const ValueKey('pick'),
-                pendingCode: _pendingCode,
-                onSelect: _onPickLanguage,
+                onConfirm: _onConfirmLanguage,
               ),
             _Step.send => _SendBody(
                 key: const ValueKey('send'),
@@ -110,15 +97,16 @@ class _NewChatScreenState extends State<NewChatScreen> {
 
 // ─────────────────────────── Step 1: pick language ────────────────────────
 
-class _PickBody extends StatelessWidget {
-  const _PickBody({
-    super.key,
-    required this.pendingCode,
-    required this.onSelect,
-  });
+class _PickBody extends StatefulWidget {
+  const _PickBody({super.key, required this.onConfirm});
+  final ValueChanged<BlabLanguage> onConfirm;
 
-  final String? pendingCode;
-  final ValueChanged<BlabLanguage> onSelect;
+  @override
+  State<_PickBody> createState() => _PickBodyState();
+}
+
+class _PickBodyState extends State<_PickBody> {
+  BlabLanguage? _picked;
 
   @override
   Widget build(BuildContext context) {
@@ -126,20 +114,72 @@ class _PickBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pick a language.',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: BlabColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "We'll translate all messages into this language. Switch it whenever you like.",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: BlabColors.textMuted,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < sorted.length; i++) ...[
                   if (i > 0) const SizedBox(height: 8),
                   _LanguageCard(
                     lang: sorted[i],
-                    isPending: sorted[i].code == pendingCode,
-                    onTap: () => onSelect(sorted[i]),
+                    selected: sorted[i].code == _picked?.code,
+                    onTap: () => setState(() => _picked = sorted[i]),
                   ),
                 ],
               ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: BlabColors.brand,
+                disabledBackgroundColor: const Color(0xFFC6C6C6),
+                disabledForegroundColor: const Color(0xFF707070),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed:
+                  _picked != null ? () => widget.onConfirm(_picked!) : null,
+              child: Text(
+                _picked == null ? 'Pick a language' : 'Continue →',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
@@ -303,28 +343,28 @@ class _SendBodyState extends ConsumerState<_SendBody> {
 class _LanguageCard extends StatelessWidget {
   const _LanguageCard({
     required this.lang,
-    required this.isPending,
+    required this.selected,
     required this.onTap,
   });
 
   final BlabLanguage lang;
-  final bool isPending;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      selected: isPending,
+      selected: selected,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: isPending
+          color: selected
               ? BlabColors.brand.withValues(alpha: 0.12)
               : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isPending ? BlabColors.brand : Colors.grey.shade200,
-            width: isPending ? 2 : 1,
+            color: selected ? BlabColors.brand : Colors.grey.shade200,
+            width: selected ? 2 : 1,
           ),
         ),
         child: Material(
@@ -341,8 +381,8 @@ class _LanguageCard extends StatelessWidget {
                 lang.name,
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: isPending ? FontWeight.w700 : FontWeight.w500,
-                  color: isPending ? BlabColors.brand : BlabColors.textPrimary,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? BlabColors.brand : BlabColors.textPrimary,
                 ),
               ),
             ),
