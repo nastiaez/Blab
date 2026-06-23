@@ -203,20 +203,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   height: 44,
                 ),
               ),
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  widget.inviterName != null
-                      ? 'Sign up to chat with ${widget.inviterName}.'
-                      : 'Learn a language by chatting with a friend.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: BlabColors.textMuted,
-                    height: 1.35,
+              if (isSignUp || widget.inviterName != null) ...[
+                const SizedBox(height: 10),
+                Center(
+                  child: Text(
+                    widget.inviterName != null
+                        ? 'Sign up to chat with ${widget.inviterName}.'
+                        : 'Learn a language by chatting with a friend.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: BlabColors.textMuted,
+                      height: 1.35,
+                    ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(height: 22),
               Expanded(
                 child: SingleChildScrollView(
@@ -263,6 +265,27 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         onChanged: (_) => setState(() {}),
                         textInputAction: TextInputAction.done,
                       ),
+                      if (!isSignUp)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () => context.push('/auth/forgot'),
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(0, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 4),
+                            ),
+                            child: const Text(
+                              'Forgot password?',
+                              style: TextStyle(
+                                color: BlabColors.brand,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
                       if (isSignUp)
                         PasswordStrengthBar(password: _password.text),
                       if (_formErr != null) ...[
@@ -271,40 +294,42 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ],
                       const SizedBox(height: 16),
                       BrandButton(
-                        label: isSignUp ? 'Create account' : 'Log in',
+                        label: isSignUp ? 'Join Blab' : 'Log in',
                         onPressed: _submit,
                         loading: _busy,
                       ),
-                      if (!isSignUp)
-                        Center(
-                          child: TextButton(
-                            onPressed: () => context.push('/auth/forgot'),
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(0, 36),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                color: BlabColors.brand,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
+                      const SizedBox(height: 4),
+                      Center(
+                        child: TextButton(
+                          onPressed: _switchMode,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            isSignUp
+                                ? 'Already have an account? Log in'
+                                : 'New to Blab? Sign up',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: BlabColors.brand,
                             ),
                           ),
                         ),
-                      if (isSignUp) ...[
-                        const SizedBox(height: 8),
-                        _LegalFinePrint(
-                          onTermsTap: () => openExternalUrl(kTermsUrl),
-                          onPrivacyTap: () =>
-                              openExternalUrl(kPrivacyPolicyUrl),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
               ),
+              if (isSignUp)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _LegalFinePrint(
+                    onTermsTap: () => openExternalUrl(kTermsUrl),
+                    onPrivacyTap: () => openExternalUrl(kPrivacyPolicyUrl),
+                  ),
+                ),
             ],
           ),
         ),
@@ -373,27 +398,7 @@ class _TopBar extends StatelessWidget {
             ),
           );
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        leading,
-        InkWell(
-          onTap: onTapSwitchMode,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              isSignUp ? 'Log in' : 'Sign up',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: BlabColors.brand,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    return Row(children: [leading]);
   }
 }
 
@@ -505,7 +510,7 @@ class _LegalFinePrintState extends State<_LegalFinePrint> {
         text: TextSpan(
           style: baseStyle,
           children: [
-            const TextSpan(text: 'By creating an account you agree to our '),
+            const TextSpan(text: 'By continuing, you agree to our '),
             TextSpan(
               text: 'Terms',
               style: linkStyle,
