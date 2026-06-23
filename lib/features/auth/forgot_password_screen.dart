@@ -96,18 +96,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  "Enter the email you signed up with — we'll send you a reset link.",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: BlabColors.textMuted,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
               BlabTextField(
                 controller: _email,
                 label: 'Email',
@@ -145,7 +133,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           ),
                         )
                       : const Text(
-                          'Send reset link',
+                          'Email me a reset link →',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
