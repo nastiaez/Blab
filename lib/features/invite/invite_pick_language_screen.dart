@@ -223,32 +223,16 @@ class _LanguageRow extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      lang.name,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w500,
-                        color: selected
-                            ? BlabColors.brand
-                            : BlabColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    lang.hello,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: selected
-                          ? BlabColors.brand.withValues(alpha: 0.7)
-                          : BlabColors.textMuted,
-                    ),
-                  ),
-                ],
+              child: Text(
+                lang.name,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight:
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected
+                      ? BlabColors.brand
+                      : BlabColors.textPrimary,
+                ),
               ),
             ),
           ),

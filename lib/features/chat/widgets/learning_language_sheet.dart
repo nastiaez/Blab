@@ -126,13 +126,7 @@ class _SheetBody extends StatelessWidget {
                                   color: BlabColors.brand,
                                   size: 24,
                                 )
-                              : Text(
-                                  lang.hello,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: BlabColors.textMuted,
-                                  ),
-                                ),
+                              : null,
                           onTap: () => Navigator.of(ctx).pop(lang),
                         );
                       },
