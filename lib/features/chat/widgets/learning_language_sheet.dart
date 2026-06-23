@@ -110,10 +110,6 @@ class _SheetBody extends StatelessWidget {
                         return ListTile(
                           tileColor:
                               selected ? BlabColors.selectedTint : null,
-                          leading: Text(
-                            lang.flag,
-                            style: const TextStyle(fontSize: 24),
-                          ),
                           title: Text(
                             lang.name,
                             style: TextStyle(
@@ -130,7 +126,13 @@ class _SheetBody extends StatelessWidget {
                                   color: BlabColors.brand,
                                   size: 24,
                                 )
-                              : null,
+                              : Text(
+                                  lang.hello,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: BlabColors.textMuted,
+                                  ),
+                                ),
                           onTap: () => Navigator.of(ctx).pop(lang),
                         );
                       },

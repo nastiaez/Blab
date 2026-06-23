@@ -533,12 +533,21 @@ class _LanguageRow extends StatelessWidget {
                   ),
                 ),
               ),
-              AnimatedScale(
-                scale: isPending ? 1 : 0,
+              AnimatedSwitcher(
                 duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutBack,
-                child: const Icon(Icons.check,
-                    color: BlabColors.brand, size: 20),
+                child: isPending
+                    ? const Icon(Icons.check,
+                        key: ValueKey('check'),
+                        color: BlabColors.brand, size: 20)
+                    : Text(
+                        lang.hello,
+                        key: ValueKey(lang.code),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: BlabColors.textMuted,
+                        ),
+                      ),
               ),
             ],
           ),
