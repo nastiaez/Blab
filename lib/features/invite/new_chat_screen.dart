@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -28,7 +28,6 @@ enum _Step { pick, send }
 
 class _NewChatScreenState extends State<NewChatScreen> {
   _Step _step = _Step.pick;
-  String _query = '';
   BlabLanguage? _selected;
 
   /// Code of the row the user just tapped, used for the brief highlight
@@ -87,43 +86,22 @@ class _NewChatScreenState extends State<NewChatScreen> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Indicator lives outside the AnimatedSwitcher so the bar
-            // smoothly animates from 50 % → 100 % between steps instead of
-            // flashing back to 0 each time the inner content swaps.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-              child: _StepIndicator(
-                current: _step == _Step.pick ? 1 : 2,
-                total: 2,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 320),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: switch (_step) {
+            _Step.pick => _PickBody(
+                key: const ValueKey('pick'),
+                pendingCode: _pendingCode,
+                onSelect: _onPickLanguage,
               ),
-            ),
-            const SizedBox(height: 18),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 320),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                child: switch (_step) {
-                  _Step.pick => _PickBody(
-                      key: const ValueKey('pick'),
-                      query: _query,
-                      pendingCode: _pendingCode,
-                      onQueryChanged: (v) => setState(() => _query = v),
-                      onSelect: _onPickLanguage,
-                    ),
-                  _Step.send => _SendBody(
-                      key: const ValueKey('send'),
-                      lang: _selected!,
-                      onChange: () =>
-                          setState(() => _step = _Step.pick),
-                    ),
-                },
+            _Step.send => _SendBody(
+                key: const ValueKey('send'),
+                lang: _selected!,
+                onChange: () => setState(() => _step = _Step.pick),
               ),
-            ),
-          ],
+          },
         ),
       ),
     );
@@ -135,146 +113,37 @@ class _NewChatScreenState extends State<NewChatScreen> {
 class _PickBody extends StatelessWidget {
   const _PickBody({
     super.key,
-    required this.query,
     required this.pendingCode,
-    required this.onQueryChanged,
     required this.onSelect,
   });
 
-  final String query;
   final String? pendingCode;
-  final ValueChanged<String> onQueryChanged;
   final ValueChanged<BlabLanguage> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final list = query.isEmpty
-        ? kBlabLanguages
-        : kBlabLanguages
-            .where(
-                (l) => l.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-    final sorted = [...list]..sort((a, b) => a.name.compareTo(b.name));
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _SearchField(onChanged: onQueryChanged),
-          const SizedBox(height: 12),
-          Expanded(
-            child: sorted.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off,
-                            size: 36,
-                            color:
-                                BlabColors.textMuted.withValues(alpha: 0.7)),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'No matches',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: BlabColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Try a different spelling.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: BlabColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : SingleChildScrollView(
-                    child: _Card(
-                      children: [
-                        for (var i = 0; i < sorted.length; i++) ...[
-                          if (i > 0) const _RowDivider(),
-                          _LanguageRow(
-                            lang: sorted[i],
-                            isPending: sorted[i].code == pendingCode,
-                            onTap: () => onSelect(sorted[i]),
-                          ),
-                        ],
-                      ],
-                    ),
+    final sorted = [...kBlabLanguages]..sort((a, b) => a.name.compareTo(b.name));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Column(
+              children: [
+                for (var i = 0; i < sorted.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  _LanguageCard(
+                    lang: sorted[i],
+                    isPending: sorted[i].code == pendingCode,
+                    onTap: () => onSelect(sorted[i]),
                   ),
+                ],
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchField extends StatefulWidget {
-  const _SearchField({required this.onChanged});
-  final ValueChanged<String> onChanged;
-
-  @override
-  State<_SearchField> createState() => _SearchFieldState();
-}
-
-class _SearchFieldState extends State<_SearchField> {
-  final _controller = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.addListener(_handleChange);
-  }
-
-  void _handleChange() {
-    widget.onChanged(_controller.text);
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _controller.removeListener(_handleChange);
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasText = _controller.text.isNotEmpty;
-    return TextField(
-      controller: _controller,
-      decoration: InputDecoration(
-        hintText: 'Search languages',
-        prefixIcon: const Icon(Icons.search, size: 20),
-        suffixIcon: hasText
-            ? IconButton(
-                tooltip: 'Clear',
-                onPressed: () => _controller.clear(),
-                icon: const Icon(Icons.close, size: 18),
-                color: BlabColors.textMuted,
-                splashRadius: 18,
-              )
-            : null,
-        isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        filled: true,
-        fillColor: BlabColors.phoneSurface,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-              color: BlabColors.focusBorder, width: 1.5),
-        ),
-      ),
+      ],
     );
   }
 }
@@ -339,10 +208,16 @@ class _SendBodyState extends ConsumerState<_SendBody> {
             ),
           ),
           const SizedBox(height: 14),
-          _Card(
-            children: [
-              _SelectedRow(lang: lang, onChange: onChange),
-            ],
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: _SelectedRow(lang: lang, onChange: onChange),
+            ),
           ),
           const SizedBox(height: 16),
           // Info group — soft warm tint, no border, no tap effect. Reads
@@ -424,80 +299,9 @@ class _SendBodyState extends ConsumerState<_SendBody> {
 
 // ─────────────────────────── shared bits ──────────────────────────────────
 
-/// Thin Duolingo-style progress bar. Just the bar — the AppBar title
-/// already names the step, the fill already shows the position, so
-/// duplicating either as text would be noise.
-class _StepIndicator extends StatelessWidget {
-  const _StepIndicator({required this.current, required this.total});
-
-  final int current;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = current / total;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0, end: progress),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutCubic,
-        builder: (ctx, value, _) {
-          return LinearProgressIndicator(
-            value: value,
-            minHeight: 6,
-            backgroundColor: BlabColors.divider,
-            valueColor:
-                const AlwaysStoppedAnimation<Color>(BlabColors.brand),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _Card extends StatelessWidget {
-  const _Card({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        // Stretch so each row fills the card width — names left-align
-        // properly and the full row is tappable (not just the text glyphs).
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: children,
-        ),
-      ),
-    );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16),
-      child: Container(height: 1, color: Colors.grey.shade100),
-    );
-  }
-}
-
-/// Step 1 list row. Tappable; tapping marks the row as "pending" so a
-/// brief highlight (warm tint + brand check) confirms the selection
-/// before the screen auto-advances to step 2.
-class _LanguageRow extends StatelessWidget {
-  const _LanguageRow({
+/// Step 1 card. Matches the invite pick-language screen card style.
+class _LanguageCard extends StatelessWidget {
+  const _LanguageCard({
     required this.lang,
     required this.isPending,
     required this.onTap,
@@ -509,38 +313,39 @@ class _LanguageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          color: isPending ? BlabColors.selectedTint : Colors.transparent,
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  lang.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: isPending
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: BlabColors.textPrimary,
-                  ),
+    return Semantics(
+      selected: isPending,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        decoration: BoxDecoration(
+          color: isPending
+              ? BlabColors.brand.withValues(alpha: 0.12)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isPending ? BlabColors.brand : Colors.grey.shade200,
+            width: isPending ? 2 : 1,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            splashColor: BlabColors.brand.withValues(alpha: 0.12),
+            highlightColor: BlabColors.brand.withValues(alpha: 0.08),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Text(
+                lang.name,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isPending ? FontWeight.w700 : FontWeight.w500,
+                  color: isPending ? BlabColors.brand : BlabColors.textPrimary,
                 ),
               ),
-              AnimatedScale(
-                scale: isPending ? 1 : 0,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutBack,
-                child: const Icon(Icons.check,
-                    color: BlabColors.brand, size: 20),
-              ),
-            ],
+            ),
           ),
         ),
       ),
