@@ -141,37 +141,80 @@ class _ExpiredBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.timer_off_outlined,
-            size: 56,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Spacer(),
+        const Icon(
+          Icons.timer_off_outlined,
+          size: 56,
+          color: BlabColors.textMuted,
+        ),
+        const SizedBox(height: 18),
+        const Text(
+          'This invite expired.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: BlabColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Ask $inviterName for a fresh link.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 14,
             color: BlabColors.textMuted,
+            height: 1.4,
           ),
-          const SizedBox(height: 18),
-          const Text(
-            'This invite expired.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: BlabColors.textPrimary,
+        ),
+        const Spacer(),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: BlabColors.brand,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () => context.go('/chats'),
+            child: const Text(
+              'My chats →',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Ask $inviterName for a fresh link.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color: BlabColors.textMuted,
-              height: 1.4,
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: BlabColors.brand),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () => context.go('/chats/new'),
+            child: Text(
+              'Send $inviterName an invite →',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: BlabColors.brand,
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -183,37 +226,58 @@ class _UsedBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.link_off,
-            size: 56,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Spacer(),
+        const Icon(
+          Icons.link_off,
+          size: 56,
+          color: BlabColors.textMuted,
+        ),
+        const SizedBox(height: 18),
+        const Text(
+          'This invite was already claimed.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: BlabColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Ask $inviterName for a fresh link.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 14,
             color: BlabColors.textMuted,
+            height: 1.4,
           ),
-          const SizedBox(height: 18),
-          const Text(
-            'This invite was already claimed.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: BlabColors.textPrimary,
+        ),
+        const Spacer(),
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: BlabColors.brand,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () => context.go('/chats'),
+            child: const Text(
+              'My chats →',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Ask $inviterName for a fresh link.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              color: BlabColors.textMuted,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
