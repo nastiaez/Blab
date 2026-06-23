@@ -133,7 +133,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           ),
                         )
                       : const Text(
-                          'Email me a reset link →',
+                          'Email me a reset link',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
