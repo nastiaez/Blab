@@ -6,6 +6,7 @@ import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/interface_language.dart';
+import '../../shared/widgets/picker_card.dart';
 
 /// Full-screen interface-language picker. PRD US-005, FR-3.
 class InterfaceLanguageScreen extends ConsumerStatefulWidget {
@@ -78,8 +79,8 @@ class _InterfaceLanguageScreenState
                   children: [
                     for (var i = 0; i < sorted.length; i++) ...[
                       if (i > 0) const SizedBox(height: 8),
-                      _LanguageCard(
-                        lang: sorted[i],
+                      languageCardNative(
+                        sorted[i],
                         selected: sorted[i].code == selection.code,
                         onTap: () => setState(() => _picked = sorted[i]),
                       ),
@@ -90,27 +91,9 @@ class _InterfaceLanguageScreenState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: BlabColors.brand,
-                    disabledBackgroundColor: const Color(0xFFC6C6C6),
-                    disabledForegroundColor: const Color(0xFF707070),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: hasChange ? apply : null,
-                  child: const Text(
-                    'Apply',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              child: BrandButton(
+                label: 'Apply',
+                onPressed: hasChange ? apply : null,
               ),
             ),
           ],
@@ -120,59 +103,3 @@ class _InterfaceLanguageScreenState
   }
 }
 
-class _LanguageCard extends StatelessWidget {
-  const _LanguageCard({
-    required this.lang,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final BlabLanguage lang;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: selected,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          color: selected
-              ? BlabColors.brand.withValues(alpha: 0.12)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? BlabColors.brand : Colors.grey.shade200,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            splashColor: BlabColors.brand.withValues(alpha: 0.12),
-            highlightColor: BlabColors.brand.withValues(alpha: 0.08),
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Text(
-                lang.nativeName,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected
-                      ? BlabColors.brand
-                      : BlabColors.textPrimary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

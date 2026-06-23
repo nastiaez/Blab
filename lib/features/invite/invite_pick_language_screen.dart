@@ -7,6 +7,7 @@ import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/chat_list_state.dart';
+import '../../shared/widgets/picker_card.dart';
 
 
 class InvitePickLanguageScreen extends ConsumerStatefulWidget {
@@ -132,8 +133,8 @@ class _InvitePickLanguageScreenState
                   children: [
                     for (var i = 0; i < kBlabLanguages.length; i++) ...[
                       if (i > 0) const SizedBox(height: 8),
-                      _LanguageRow(
-                        lang: kBlabLanguages[i],
+                      languageCardEn(
+                        kBlabLanguages[i],
                         selected: kBlabLanguages[i].code == _picked?.code,
                         onTap: () =>
                             setState(() => _picked = kBlabLanguages[i]),
@@ -145,98 +146,13 @@ class _InvitePickLanguageScreenState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: BlabColors.brand,
-                    disabledBackgroundColor: const Color(0xFFC6C6C6),
-                    disabledForegroundColor: const Color(0xFF707070),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: canContinue ? _onContinue : null,
-                  child: _claiming
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.4,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          _ctaLabel,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              child: BrandButton(
+                label: _ctaLabel,
+                onPressed: canContinue ? _onContinue : null,
+                loading: _claiming,
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-
-class _LanguageRow extends StatelessWidget {
-  const _LanguageRow({
-    required this.lang,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final BlabLanguage lang;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: selected,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          color: selected
-              ? BlabColors.brand.withValues(alpha: 0.12)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? BlabColors.brand : Colors.grey.shade200,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            splashColor: BlabColors.brand.withValues(alpha: 0.12),
-            highlightColor: BlabColors.brand.withValues(alpha: 0.08),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-              child: Text(
-                lang.name,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected
-                      ? BlabColors.brand
-                      : BlabColors.textPrimary,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

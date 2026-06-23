@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../shared/data/invite_host.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/chat_list_state.dart';
+import '../../shared/widgets/picker_card.dart';
 import 'widgets/share_invite_sheet.dart';
 
 /// PRD US-008. New-chat / invite-a-friend wizard.
@@ -147,8 +148,8 @@ class _PickBodyState extends State<_PickBody> {
               children: [
                 for (var i = 0; i < sorted.length; i++) ...[
                   if (i > 0) const SizedBox(height: 8),
-                  _LanguageCard(
-                    lang: sorted[i],
+                  languageCardEn(
+                    sorted[i],
                     selected: sorted[i].code == _picked?.code,
                     onTap: () => setState(() => _picked = sorted[i]),
                   ),
@@ -159,28 +160,10 @@ class _PickBodyState extends State<_PickBody> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: BlabColors.brand,
-                disabledBackgroundColor: const Color(0xFFC6C6C6),
-                disabledForegroundColor: const Color(0xFF707070),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed:
-                  _picked != null ? () => widget.onConfirm(_picked!) : null,
-              child: Text(
-                'Continue',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          child: BrandButton(
+            label: 'Continue',
+            onPressed:
+                _picked != null ? () => widget.onConfirm(_picked!) : null,
           ),
         ),
       ],
@@ -339,59 +322,6 @@ class _SendBodyState extends ConsumerState<_SendBody> {
 
 // ─────────────────────────── shared bits ──────────────────────────────────
 
-/// Step 1 card. Matches the invite pick-language screen card style.
-class _LanguageCard extends StatelessWidget {
-  const _LanguageCard({
-    required this.lang,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final BlabLanguage lang;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      selected: selected,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          color: selected
-              ? BlabColors.brand.withValues(alpha: 0.12)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? BlabColors.brand : Colors.grey.shade200,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            splashColor: BlabColors.brand.withValues(alpha: 0.12),
-            highlightColor: BlabColors.brand.withValues(alpha: 0.08),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Text(
-                lang.name,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? BlabColors.brand : BlabColors.textPrimary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Step 2 "YOU'LL LEARN" row. Tappable to go back to the picker;
 /// `Change` link on the right + chevron telegraph the affordance.
