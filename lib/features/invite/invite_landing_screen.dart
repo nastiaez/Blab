@@ -152,7 +152,7 @@ class _ExpiredBody extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         const Text(
-          'This invite expired.',
+          'This invite expired',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
@@ -162,7 +162,7 @@ class _ExpiredBody extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Ask $inviterName for a fresh link.',
+          'Ask $inviterName for a fresh link',
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 14,
@@ -215,7 +215,7 @@ class _UsedBody extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         const Text(
-          'This invite was already claimed.',
+          'This invite was already claimed',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
@@ -225,7 +225,7 @@ class _UsedBody extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Ask $inviterName for a fresh link.',
+          'Ask $inviterName for a fresh link',
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 14,
