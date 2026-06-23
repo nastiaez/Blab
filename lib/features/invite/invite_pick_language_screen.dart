@@ -105,7 +105,7 @@ class _InvitePickLanguageScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Pick a language.',
+                    'Pick a language',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,

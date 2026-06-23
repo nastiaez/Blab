@@ -120,7 +120,7 @@ class _PickBodyState extends State<_PickBody> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Pick a language.',
+                'Pick a language',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
