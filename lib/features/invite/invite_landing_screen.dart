@@ -183,7 +183,7 @@ class _ExpiredBody extends StatelessWidget {
             ),
             onPressed: () => context.go('/chats'),
             child: const Text(
-              'My chats',
+              'Go to chats',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -246,7 +246,7 @@ class _UsedBody extends StatelessWidget {
             ),
             onPressed: () => context.go('/chats'),
             child: const Text(
-              'My chats',
+              'Go to chats',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
