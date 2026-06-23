@@ -130,6 +130,7 @@ class _BrandButtonState extends State<BrandButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _press;
   late final Animation<double> _scale;
+  bool _pressed = false;
 
   bool get _enabled => widget.onPressed != null && !widget.loading;
 
@@ -158,23 +159,48 @@ class _BrandButtonState extends State<BrandButton>
 
   @override
   Widget build(BuildContext context) {
+    // Match FilledButton's M3 disabled background so loading and
+    // disabled states look consistent across all button types.
+    final disabledColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
+
+    Color bgColor;
+    if (!_enabled) {
+      bgColor = disabledColor;
+    } else if (_pressed) {
+      bgColor = BlabColors.brandPress;
+    } else {
+      bgColor = BlabColors.brand;
+    }
+
     return GestureDetector(
-      onTapDown: _enabled ? (_) => _press.forward() : null,
+      onTapDown: _enabled
+          ? (_) {
+              setState(() => _pressed = true);
+              _press.forward();
+            }
+          : null,
       onTapUp: _enabled
           ? (_) {
+              setState(() => _pressed = false);
               _press.reverse();
               widget.onPressed!();
             }
           : null,
-      onTapCancel: _enabled ? () => _press.reverse() : null,
+      onTapCancel: _enabled
+          ? () {
+              setState(() => _pressed = false);
+              _press.reverse();
+            }
+          : null,
       child: ScaleTransition(
         scale: _scale,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: const Duration(milliseconds: 100),
           height: 52,
           width: double.infinity,
           decoration: BoxDecoration(
-            color: _enabled ? BlabColors.brand : BlabColors.disabledSurface,
+            color: bgColor,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Center(

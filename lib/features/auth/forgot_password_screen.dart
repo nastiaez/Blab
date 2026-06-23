@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
+import '../../shared/widgets/picker_card.dart';
 import 'widgets/blab_text_field.dart';
 
 /// PRD US-004. Forgot-password page.
@@ -54,7 +55,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     try {
       await auth.sendPasswordReset(_email.text);
       if (!mounted) return;
-      context.go(
+      context.push(
         '/auth/forgot/sent?email=${Uri.encodeComponent(_email.text.trim())}',
       );
     } catch (e) {
@@ -111,35 +112,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: BlabColors.brand,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: _busy ? null : _send,
-                  child: _busy
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'Email me a reset link',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              BrandButton(
+                label: 'Email me a reset link',
+                onPressed: _send,
+                loading: _busy,
               ),
             ],
           ),

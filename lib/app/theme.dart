@@ -67,6 +67,7 @@ final ThemeData blabTheme = ThemeData(
   colorScheme: ColorScheme.fromSeed(
     seedColor: BlabColors.brand,
     primary: BlabColors.brand,
+    onPrimary: Colors.white,
     surface: BlabColors.phoneSurface,
   ),
   scaffoldBackgroundColor: BlabColors.appBackground,
@@ -75,5 +76,26 @@ final ThemeData blabTheme = ThemeData(
   snackBarTheme: const SnackBarThemeData(
     behavior: SnackBarBehavior.floating,
     showCloseIcon: true,
+  ),
+  // Force white text + white-tint press overlay on ALL FilledButtons.
+  // Without this, M3 may compute onPrimary = dark (brand orange fails WCAG
+  // AA with white at 3.5:1), making button text dark and press state black.
+  filledButtonTheme: FilledButtonThemeData(
+    style: ButtonStyle(
+      foregroundColor: WidgetStateProperty.resolveWith((states) {
+        return states.contains(WidgetState.disabled)
+            ? BlabColors.disabledOnSurface
+            : Colors.white;
+      }),
+      overlayColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.pressed)) {
+          return Colors.white.withValues(alpha: 0.15);
+        }
+        if (states.contains(WidgetState.hovered)) {
+          return Colors.white.withValues(alpha: 0.08);
+        }
+        return Colors.transparent;
+      }),
+    ),
   ),
 );

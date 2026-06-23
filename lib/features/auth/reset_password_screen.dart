@@ -6,6 +6,7 @@ import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
+import '../../shared/widgets/picker_card.dart';
 import 'widgets/password_field.dart';
 import 'widgets/password_strength.dart';
 
@@ -114,33 +115,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: BlabColors.brand,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: _busy ? null : _save,
-                  child: _busy
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'Save new password',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                ),
+              BrandButton(
+                label: 'Save new password',
+                onPressed: _save,
+                loading: _busy,
               ),
             ],
           ),

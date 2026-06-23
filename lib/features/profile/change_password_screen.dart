@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../shared/widgets/picker_card.dart';
 import '../auth/widgets/password_field.dart';
 import '../auth/widgets/password_strength.dart';
 
@@ -107,25 +108,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               textInputAction: TextInputAction.done,
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: BlabColors.brand,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                onPressed: _submit,
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+            BrandButton(
+              label: 'Save',
+              onPressed: _submit,
             ),
             const SizedBox(height: 18),
             Center(
