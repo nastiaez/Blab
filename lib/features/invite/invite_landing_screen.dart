@@ -183,33 +183,11 @@ class _ExpiredBody extends StatelessWidget {
             ),
             onPressed: () => context.go('/chats'),
             child: const Text(
-              'My chats →',
+              'My chats',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: BlabColors.brand),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            onPressed: () => context.go('/chats/new'),
-            child: Text(
-              'Send $inviterName an invite →',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: BlabColors.brand,
               ),
             ),
           ),
@@ -268,7 +246,7 @@ class _UsedBody extends StatelessWidget {
             ),
             onPressed: () => context.go('/chats'),
             child: const Text(
-              'My chats →',
+              'My chats',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
