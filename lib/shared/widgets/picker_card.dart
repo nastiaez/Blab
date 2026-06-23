@@ -126,57 +126,79 @@ class BrandButton extends StatefulWidget {
   State<BrandButton> createState() => _BrandButtonState();
 }
 
-class _BrandButtonState extends State<BrandButton> {
-  bool _pressing = false;
+class _BrandButtonState extends State<BrandButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _press;
+  late final Animation<double> _scale;
 
   bool get _enabled => widget.onPressed != null && !widget.loading;
 
   @override
+  void initState() {
+    super.initState();
+    _press = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 80),
+      reverseDuration: const Duration(milliseconds: 300),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(
+        parent: _press,
+        curve: Curves.easeIn,
+        reverseCurve: _kSpring,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _press.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: _enabled ? (_) => setState(() => _pressing = true) : null,
+      onTapDown: _enabled ? (_) => _press.forward() : null,
       onTapUp: _enabled
           ? (_) {
-              setState(() => _pressing = false);
+              _press.reverse();
               widget.onPressed!();
             }
           : null,
-      onTapCancel:
-          _enabled ? () => setState(() => _pressing = false) : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        height: 52,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: !_enabled
-              ? BlabColors.disabledSurface
-              : _pressing
-                  ? BlabColors.brandPress
-                  : BlabColors.brand,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Center(
-          child: widget.loading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Colors.white),
+      onTapCancel: _enabled ? () => _press.reverse() : null,
+      child: ScaleTransition(
+        scale: _scale,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          height: 52,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: _enabled ? BlabColors.brand : BlabColors.disabledSurface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: widget.loading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _enabled
+                          ? Colors.white
+                          : BlabColors.disabledOnSurface,
+                    ),
                   ),
-                )
-              : AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 120),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: _enabled
-                        ? Colors.white
-                        : BlabColors.disabledOnSurface,
-                  ),
-                  child: Text(widget.label),
-                ),
+          ),
         ),
       ),
     );
