@@ -174,7 +174,7 @@ class _PickBodyState extends State<_PickBody> {
               onPressed:
                   _picked != null ? () => widget.onConfirm(_picked!) : null,
               child: Text(
-                _picked == null ? 'Pick a language' : 'Continue →',
+                'Continue',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
