@@ -167,6 +167,10 @@ final GoRouter blabRouter = GoRouter(
       builder: (context, state) => const NewChatScreen(),
     ),
     GoRoute(
+      path: '/chats/empty',
+      builder: (context, state) => const ChatsScreen(preview: true),
+    ),
+    GoRoute(
       path: '/chat',
       builder: (context, state) => const ChatScreen(chatId: 'aswin'),
     ),

@@ -20,7 +20,7 @@ class DevMenu extends ConsumerWidget {
       path: _pairSheetPath,
       us: 'temp — Step 2.3',
     ),
-    (label: 'Open a chat', path: '/chat', us: 'US-013…US-023'),
+    (label: 'Chat list — empty state', path: '/chats/empty', us: 'US-006'),
     (
       label: 'Invite landing — valid',
       path: '/invite?from=Nastia&learning=ta',

@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../app/theme.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/offline_banner.dart';
+import '../../shared/widgets/picker_card.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'widgets/chat_list_tile.dart';
 
 /// PRD US-006, US-007, US-026.
 class ChatsScreen extends ConsumerWidget {
-  const ChatsScreen({super.key});
+  const ChatsScreen({super.key, this.preview = false});
+
+  /// When true, always renders the empty state (used by dev preview route).
+  final bool preview;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,32 +28,8 @@ class ChatsScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
-          'Chats',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
-          ),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'New chat',
-            onPressed: () => context.push('/chats/new'),
-            icon: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: BlabColors.brand.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.add,
-                  color: BlabColors.brand, size: 20),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
+        automaticallyImplyLeading: false,
+        title: SvgPicture.asset('assets/blab-logo.svg', height: 22),
       ),
       body: Column(
         children: [
@@ -55,6 +37,7 @@ class ChatsScreen extends ConsumerWidget {
           Expanded(
             child: Builder(
               builder: (context) {
+                if (preview) return const ChatsEmptyState();
                 // Show last-known data even during transient errors
                 // (offline, token refresh, etc.) instead of collapsing
                 // to the skeleton.
@@ -63,7 +46,7 @@ class ChatsScreen extends ConsumerWidget {
                   if (chatsAsync.isLoading) return const ChatListSkeleton();
                   return _ErrorState(detail: chatsAsync.error?.toString());
                 }
-                if (chats.isEmpty) return const _EmptyState();
+                if (chats.isEmpty) return const ChatsEmptyState();
                 return RefreshIndicator(
                   color: BlabColors.brand,
                   onRefresh: () =>
@@ -90,13 +73,21 @@ class ChatsScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/chats/new'),
+        backgroundColor: BlabColors.brand,
+        foregroundColor: Colors.white,
+        elevation: 3,
+        tooltip: 'New chat',
+        child: const Icon(Icons.add, size: 26),
+      ),
       bottomNavigationBar: const _BottomTabs(active: _Tab.chats),
     );
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+class ChatsEmptyState extends StatelessWidget {
+  const ChatsEmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +97,6 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('💬', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 16),
             const Text(
               'No chats yet',
               style: TextStyle(
@@ -118,24 +107,16 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Invite someone to start swapping languages.',
+              'Invite a friend and start chatting.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: BlabColors.textMuted),
             ),
             const SizedBox(height: 24),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: BlabColors.brand,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed: () => context.push('/chats/new'),
-              child: const Text(
-                'Invite someone',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            SizedBox(
+              width: 180,
+              child: BrandButton(
+                label: 'Invite a friend',
+                onPressed: () => context.push('/chats/new'),
               ),
             ),
           ],
