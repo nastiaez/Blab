@@ -67,12 +67,13 @@ class ChatListTile extends ConsumerWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                chat.partnerName,
-                                style: TextStyle(
+                                chat.partnerName.isNotEmpty
+                                    ? chat.partnerName[0].toUpperCase() +
+                                        chat.partnerName.substring(1)
+                                    : chat.partnerName,
+                                style: const TextStyle(
                                   fontSize: 16,
-                                  fontWeight: chat.unreadCount > 0
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
+                                  fontWeight: FontWeight.w500,
                                   color: BlabColors.textPrimary,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -90,14 +91,10 @@ class ChatListTile extends ConsumerWidget {
                       else
                         Text(
                           relativeTime(chat.timestamp),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: chat.unreadCount > 0
-                                ? BlabColors.brand
-                                : BlabColors.textMuted,
-                            fontWeight: chat.unreadCount > 0
-                                ? FontWeight.w600
-                                : FontWeight.w500,
+                            color: BlabColors.textMuted,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                     ],
@@ -112,14 +109,10 @@ class ChatListTile extends ConsumerWidget {
                               : previewText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: chat.unreadCount > 0
-                                ? BlabColors.textPrimary
-                                : BlabColors.textMuted,
-                            fontWeight: chat.unreadCount > 0
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            color: BlabColors.textMuted,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),

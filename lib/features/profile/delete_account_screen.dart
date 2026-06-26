@@ -123,8 +123,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 child: Text(
                   'This is permanent. The following will be deleted:',
                   style: TextStyle(
-                    fontSize: 13,
-                    color: BlabColors.textMuted,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: BlabColors.textPrimary,
                     height: 1.4,
                   ),
                 ),
@@ -136,7 +137,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   _RowDivider(),
                   _DeleteRow(text: 'Your profile and photo'),
                   _RowDivider(),
-                  _DeleteRow(text: 'Your settings and language picks'),
+                  _DeleteRow(text: 'Your settings and preferences'),
                 ],
               ),
               const SizedBox(height: 22),
@@ -258,7 +259,7 @@ class _DeleteRow extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.warning_amber_outlined,
-              size: 20, color: Colors.orange.shade600),
+              size: 20, color: Colors.red.shade500),
           const SizedBox(width: 14),
           Expanded(
             child: Text(

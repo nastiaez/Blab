@@ -466,6 +466,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   maxLength: _maxMessageLength,
                   counterShowAt: _counterShowAt,
                   onSend: _send,
+                  autofocus: messagesAsync.value?.isEmpty == true,
                 ),
               ],
             ),
@@ -531,13 +532,6 @@ class _ChatHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // BUG-007: hide the green dot + "Online" label when the device is
-    // offline — the offline banner is the source of truth for live state.
-    final onlineAsync = ref.watch(onlineProvider);
-    final isOnline = onlineAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => true,
-    );
     final topInset = MediaQuery.paddingOf(context).top;
     return Container(
       color: Colors.white,
@@ -571,7 +565,7 @@ class _ChatHeader extends ConsumerWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              chat.partnerName,
+                              _capitaliseName(chat.partnerName),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -580,33 +574,6 @@ class _ChatHeader extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isOnline) ...[
-                            const SizedBox(width: 8),
-                            Semantics(
-                              label: 'Online',
-                              container: true,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Text(
-                                    '●',
-                                    style: TextStyle(
-                                      color: Color(0xFF34C759),
-                                      fontSize: 8,
-                                    ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Online',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: BlabColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -617,7 +584,7 @@ class _ChatHeader extends ConsumerWidget {
           ),
           IconButton(
             tooltip: 'Chat menu',
-            icon: const Icon(Icons.more_horiz, size: 22),
+            icon: const Icon(Icons.more_vert, size: 22),
             color: BlabColors.textMuted,
             onPressed: onMenu,
             splashRadius: 22,
@@ -856,6 +823,9 @@ class _MessageList extends StatelessWidget {
   }
 }
 
+String _capitaliseName(String name) =>
+    name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
+
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -975,7 +945,7 @@ class _MessageRow extends ConsumerWidget {
     final isOut = message.isOutgoing;
     final topGap = isFirstInGroup ? 10.0 : 2.0;
     final width = MediaQuery.sizeOf(context).width;
-    final maxBubble = width * 0.78;
+    final maxBubble = width * (isOut ? 0.78 : 0.72);
     final isFailed = message.status == MessageStatus.failed;
 
     // Pivot-English model: both sides type English, each viewer sees a
@@ -1005,6 +975,7 @@ class _MessageRow extends ConsumerWidget {
         message: message,
         showTranslation: showTranslation,
         maxWidth: maxBubble,
+        isLastInGroup: isLastInGroup,
         languageCode: languageCode,
         popupTopInset: popupTopInset,
       ),
@@ -1035,13 +1006,7 @@ class _MessageRow extends ConsumerWidget {
       child: Column(
         crossAxisAlignment:
             isOut ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          bubble,
-          if (isLastInGroup) ...[
-            const SizedBox(height: 4),
-            _Meta(chatId: chatId, message: message),
-          ],
-        ],
+        children: [bubble],
       ),
     );
   }
@@ -1053,6 +1018,7 @@ class _Bubble extends ConsumerWidget {
     required this.message,
     required this.showTranslation,
     required this.maxWidth,
+    required this.isLastInGroup,
     required this.languageCode,
     required this.popupTopInset,
   });
@@ -1061,6 +1027,7 @@ class _Bubble extends ConsumerWidget {
   final Message message;
   final bool showTranslation;
   final double maxWidth;
+  final bool isLastInGroup;
   final String languageCode;
   final double popupTopInset;
 
@@ -1088,7 +1055,8 @@ class _Bubble extends ConsumerWidget {
             bottomRight: Radius.circular(18),
           );
 
-    return ConstrainedBox(
+    return IntrinsicWidth(
+      child: ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Container(
         decoration: BoxDecoration(
@@ -1201,38 +1169,52 @@ class _Bubble extends ConsumerWidget {
                   ),
               ],
             ],
+            if (isLastInGroup) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _Meta(
+                  chatId: chatId,
+                  message: message,
+                  isOutgoing: isOut,
+                ),
+              ),
+            ],
           ],
         ),
+      ),
       ),
     );
   }
 }
 
 class _Meta extends StatelessWidget {
-  const _Meta({required this.chatId, required this.message});
+  const _Meta({
+    required this.chatId,
+    required this.message,
+    required this.isOutgoing,
+  });
   final String chatId;
   final Message message;
+  final bool isOutgoing;
 
   @override
   Widget build(BuildContext context) {
     final timeLabel = _formatTime(message.sentAt);
+    final textColor = isOutgoing
+        ? Colors.white.withValues(alpha: 0.7)
+        : BlabColors.textMuted;
     final children = <Widget>[
       Text(
         timeLabel,
-        style: const TextStyle(
-          fontSize: 11,
-          color: BlabColors.textMuted,
-        ),
+        style: TextStyle(fontSize: 11, color: textColor),
       ),
     ];
     if (message.isEdited) {
       children.add(const SizedBox(width: 4));
-      children.add(const Text(
+      children.add(Text(
         '· edited',
-        style: TextStyle(
-          fontSize: 10,
-          color: BlabColors.textMuted,
-        ),
+        style: TextStyle(fontSize: 10, color: textColor),
       ));
     }
     if (message.isOutgoing) {
@@ -1241,6 +1223,7 @@ class _Meta extends StatelessWidget {
         chatId: chatId,
         messageId: message.id,
         intrinsicStatus: message.status,
+        isOutgoing: isOutgoing,
       ));
     }
     return Row(
@@ -1261,11 +1244,13 @@ class _StatusIcon extends ConsumerWidget {
     required this.chatId,
     required this.messageId,
     required this.intrinsicStatus,
+    required this.isOutgoing,
   });
 
   final String chatId;
   final String messageId;
   final MessageStatus intrinsicStatus;
+  final bool isOutgoing;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1286,23 +1271,25 @@ class _StatusIcon extends ConsumerWidget {
 
     // Semantics labels paired with the icon — read receipts and online
     // indicators must not be color-only. PRD US-033.
+    final tint = Colors.white.withValues(alpha: 0.5);
     switch (status) {
       case MessageStatus.pending:
         return Semantics(
           label: 'Sending',
-          child: const Icon(Icons.access_time,
-              size: 14, color: BlabColors.textMuted),
+          child: Icon(Icons.access_time,
+              size: 14, color: isOutgoing ? tint : BlabColors.textMuted),
         );
       case MessageStatus.delivered:
         return Semantics(
           label: 'Delivered',
-          child: Icon(Icons.done_all, size: 14, color: Colors.grey.shade500),
+          child: Icon(Icons.done_all,
+              size: 14, color: isOutgoing ? tint : Colors.grey.shade500),
         );
       case MessageStatus.read:
         return Semantics(
           label: 'Read',
-          child: const Icon(Icons.done_all,
-              size: 14, color: BlabColors.brand),
+          child: Icon(Icons.done_all,
+              size: 14, color: isOutgoing ? Colors.white : BlabColors.brand),
         );
       case MessageStatus.failed:
         return Semantics(
@@ -1325,6 +1312,7 @@ class _InputBar extends StatelessWidget {
     required this.maxLength,
     required this.counterShowAt,
     required this.onSend,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -1334,6 +1322,7 @@ class _InputBar extends StatelessWidget {
   final int maxLength;
   final int counterShowAt;
   final VoidCallback onSend;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -1368,6 +1357,7 @@ class _InputBar extends StatelessWidget {
                       label: 'Message',
                       child: TextField(
                         controller: controller,
+                        autofocus: autofocus,
                         minLines: 1,
                         maxLines: 5,
                         maxLength: maxLength,

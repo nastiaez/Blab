@@ -48,8 +48,6 @@ class PrivacyScreen extends ConsumerWidget {
               children: [
                 _ToggleRow(
                   label: 'Typing indicators',
-                  caption:
-                      "If turned off, you won't see when others are typing, and they won't see when you are.",
                   value: typing,
                   onChanged: (v) =>
                       ref.read(typingIndicatorsProvider.notifier).set(v),
@@ -57,25 +55,11 @@ class PrivacyScreen extends ConsumerWidget {
                 const _RowDivider(),
                 _ToggleRow(
                   label: 'Read receipts',
-                  caption:
-                      "If turned off, you won't see read receipts from others, and they won't see yours.",
                   value: read,
                   onChanged: (v) =>
                       ref.read(readReceiptsProvider.notifier).set(v),
                 ),
               ],
-            ),
-            const SizedBox(height: 18),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                "We don't analyze your behavior, track you for ads, or sell your data. Your messages travel over a secure connection and are stored on protected servers in the EU. End-to-end encryption isn't in this version yet — it's on the way. These two toggles control what your phone shares with our servers.",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: BlabColors.textMuted,
-                  height: 1.4,
-                ),
-              ),
             ),
             const SizedBox(height: 18),
             _Card(
@@ -153,45 +137,28 @@ class _Card extends StatelessWidget {
 class _ToggleRow extends StatelessWidget {
   const _ToggleRow({
     required this.label,
-    required this.caption,
     required this.value,
     required this.onChanged,
   });
 
   final String label;
-  final String caption;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: BlabColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  caption,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: BlabColors.textMuted,
-                    height: 1.35,
-                  ),
-                ),
-              ],
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: BlabColors.textPrimary,
+              ),
             ),
           ),
           const SizedBox(width: 12),

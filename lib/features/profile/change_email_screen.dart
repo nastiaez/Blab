@@ -151,30 +151,29 @@ class _FormBody extends StatelessWidget {
       children: [
         const _SectionLabel('CURRENT EMAIL'),
         const SizedBox(height: 6),
-        _Card(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  const Icon(Icons.alternate_email,
-                      size: 20, color: BlabColors.textMuted),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      currentEmail,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: BlabColors.textPrimary,
-                      ),
-                    ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: BlabColors.cream,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.alternate_email,
+                  size: 20, color: BlabColors.textMuted),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  currentEmail,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: BlabColors.textMuted,
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 22),
         BlabTextField(
@@ -191,7 +190,7 @@ class _FormBody extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            "We'll send a confirmation link to the new address. Your email only changes after you tap it. Old email keeps working until then.",
+            "We'll send a confirmation link. Your old email stays active until you confirm.",
             style: TextStyle(
               fontSize: 13,
               color: BlabColors.textMuted,

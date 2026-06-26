@@ -90,7 +90,27 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               textInputAction: TextInputAction.next,
               autofocus: true,
             ),
-            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => context.push('/auth/forgot'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                ),
+                child: const Text(
+                  'Forgot your password?',
+                  style: TextStyle(
+                    color: BlabColors.brand,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             PasswordField(
               controller: _next,
               label: 'New password',
@@ -111,19 +131,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             BrandButton(
               label: 'Save',
               onPressed: _submit,
-            ),
-            const SizedBox(height: 18),
-            Center(
-              child: TextButton(
-                onPressed: () => context.push('/auth/forgot'),
-                child: const Text(
-                  'Forgot your password?',
-                  style: TextStyle(
-                    color: BlabColors.brand,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ),
           ],
         ),
