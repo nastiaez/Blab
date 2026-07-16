@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: `None` (`L-01` passed; `L-02` pending start)
+Active item: `None` (`L-02` passed; `L-03` pending start)
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -13,7 +13,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | ---: | --- | --- | --- | --- | --- | --- |
 | 0 | L-00 | P0-08 | Approve launch security model: E2EE, AI translation, plaintext boundaries, consent, and public claims | None | Complete | [`items/L-00.md`](./items/L-00.md) |
 | 1 | L-01 | P0-04 | Remove authenticated development pairing and verify consent-only membership creation | L-00 | Complete | [`items/L-01.md`](./items/L-01.md) |
-| 2 | L-02 | P0-01 | Remove production dev entry points and boot into the real product journey | L-01 | Not started | `items/L-02.md` |
+| 2 | L-02 | P0-01 | Remove production dev entry points and boot into the real product journey | L-01 | Complete | [`items/L-02.md`](./items/L-02.md) |
 | 3 | L-03 | P0-02 | Preserve and resume invite state through signup/sign-in | L-02 | Not started | `items/L-03.md` |
 | 4 | L-04 | P0-03 | Configure release signing and verified Android App Links | L-03 | Not started | `items/L-04.md` |
 | 5 | L-05 | P0-05 | Make password change real and provider-aware | L-02 | Not started | `items/L-05.md` |

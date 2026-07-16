@@ -38,6 +38,18 @@ If that emulator is not running, the helper starts the `Pixel_10_Pro` AVD and
 waits for Android to finish booting. Override the AVD with
 `BLAB_ANDROID_AVD=another_name` when needed.
 
+Normal helper runs use Flutter debug mode and the app's normal initial route.
+For a work item that must explicitly probe a route or release behavior, use the
+opt-in overrides, for example:
+
+```bash
+BLAB_FLUTTER_MODE=release BLAB_INITIAL_ROUTE=/dev \
+  scripts/local_test.sh android emulator-5554
+```
+
+Supported modes are `debug`, `profile`, and `release`. Do not use these overrides
+for ordinary product-journey tests.
+
 Use another terminal for Chrome when a two-user realtime test is needed:
 
 ```bash

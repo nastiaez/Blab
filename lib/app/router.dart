@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,7 +27,7 @@ import '../features/profile/profile_screen.dart';
 import 'dev_menu.dart';
 
 const _publicPaths = <String>{
-  '/dev',
+  if (kDebugMode) '/dev',
   '/auth',
   '/auth/forgot',
   '/auth/forgot/sent',
@@ -64,7 +65,7 @@ Stream<dynamic>? _authStreamOrNull() {
 }
 
 final GoRouter blabRouter = GoRouter(
-  initialLocation: '/dev',
+  initialLocation: '/chats',
   redirect: (context, state) {
     final loc = state.matchedLocation;
     // Custom-scheme deep links land here as `blab://auth/...` because
@@ -117,7 +118,8 @@ final GoRouter blabRouter = GoRouter(
   },
   refreshListenable: _AuthRefresh(_authStreamOrNull()),
   routes: <RouteBase>[
-    GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
+    if (kDebugMode)
+      GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
     GoRoute(
       path: '/auth',
       builder: (context, state) {

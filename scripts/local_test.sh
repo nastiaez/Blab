@@ -120,7 +120,28 @@ ensure_android_device() {
 run_app() {
   local device="$1"
   local invite_input="${2:-}"
+  local flutter_mode="${BLAB_FLUTTER_MODE:-debug}"
+  local initial_route="${BLAB_INITIAL_ROUTE:-}"
   local url
+
+  set -- flutter run
+
+  case "$flutter_mode" in
+    debug)
+      ;;
+    profile | release)
+      set -- "$@" "--$flutter_mode"
+      ;;
+    *)
+      printf 'Unsupported BLAB_FLUTTER_MODE: %s\n' "$flutter_mode" >&2
+      printf 'Use debug, profile, or release.\n' >&2
+      exit 2
+      ;;
+  esac
+  if [[ -n "$initial_route" ]]; then
+    set -- "$@" "--route=$initial_route"
+  fi
+
   case "$device" in
     chrome)
       url='http://127.0.0.1:54321'
@@ -140,12 +161,12 @@ run_app() {
     if [[ -n "$invite_input" ]]; then
       launch_url="http://localhost:7357/#/i/$(invite_token "$invite_input")"
     fi
-    flutter run -d chrome --web-port 7357 \
+    "$@" -d chrome --web-port 7357 \
       --web-launch-url="$launch_url" \
       --dart-define="SUPABASE_URL=$url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$(local_key)"
   else
-    flutter run -d "$device" \
+    "$@" -d "$device" \
       --dart-define="SUPABASE_URL=$url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$(local_key)"
   fi
