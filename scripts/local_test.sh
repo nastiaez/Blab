@@ -70,7 +70,7 @@ run_integration() {
   publishable_key="$(printf '%s' "$status" | jq -er '.PUBLISHABLE_KEY // .ANON_KEY')"
   service_role_key="$(printf '%s' "$status" | jq -er '.SERVICE_ROLE_KEY')"
 
-  flutter test test/integration/local_invite_flow_test.dart \
+  flutter test test/integration \
     --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
     --dart-define="SUPABASE_URL=$api_url" \
     --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \

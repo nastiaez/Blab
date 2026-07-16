@@ -56,6 +56,23 @@ class SupabaseAuthService {
     return _auth.updateUser(UserAttributes(password: newPassword));
   }
 
+  /// Reauthenticates an email/password user immediately before changing the
+  /// credential. Social-only accounts must not silently gain a password.
+  Future<UserResponse> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final email = currentUser?.email;
+    if (email == null) {
+      throw const AuthException('Not signed in');
+    }
+    if (!hasPasswordIdentity) {
+      throw const AuthException('Password sign-in is not enabled');
+    }
+    await _auth.signInWithPassword(email: email, password: currentPassword);
+    return updatePassword(newPassword);
+  }
+
   /// PRD US-039. Sends a confirmation email to the NEW address; the
   /// account email only switches after the user taps the link in that
   /// email. Old email keeps signing in until then. With "Secure email
@@ -154,5 +171,26 @@ class SupabaseAuthService {
       return error.message;
     }
     return 'Something went wrong. Try again.';
+  }
+
+  static String passwordChangeMessageFor(Object error) {
+    if (error is AuthException) {
+      final message = error.message.toLowerCase();
+      if (message.contains('invalid login') ||
+          message.contains('invalid credentials')) {
+        return 'Current password is incorrect';
+      }
+      if (message.contains('same password') ||
+          message.contains('different from the old')) {
+        return 'Choose a different password';
+      }
+      if (message.contains('reauth') || message.contains('not signed in')) {
+        return 'Please sign in again before changing your password';
+      }
+      if (message.contains('rate') || message.contains('too many')) {
+        return 'Too many attempts. Try again later.';
+      }
+    }
+    return 'Could not update your password. Try again.';
   }
 }
