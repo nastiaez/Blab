@@ -160,30 +160,30 @@ Do these last, right before submitting to production:
 
 ---
 
-## Release signing (one-time keystore)  [YOU]
+## Release signing (one-time upload key)
 
-The app build is Play-ready, but the release must be signed with YOUR upload
-key (currently it falls back to the debug key). One-time setup:
+Release builds fail when upload signing is unavailable. For a new Play app,
+create the owner-controlled upload key once:
 
-1. Create an upload keystore (keep it safe + backed up — losing it means you
-   can't update the app):
+1. Run the setup helper. It generates a strong password without printing it,
+   stores the keystore outside Git, and writes gitignored Gradle properties:
    ```
-   keytool -genkey -v -keystore ~/blab-upload.jks -keyalg RSA -keysize 2048 \
-     -validity 10000 -alias upload
+   scripts/setup_android_signing.sh
    ```
-2. Create `android/key.properties` (already gitignored — never commit it):
-   ```
-   storePassword=<the password you set>
-   keyPassword=<the password you set>
-   keyAlias=upload
-   storeFile=/Users/anastasiiayezhyzhanska/blab-upload.jks
-   ```
-3. Build the signed bundle for upload:
+2. Back up both files in the owner's 1Password vault and confirm the item has
+   synchronized to another trusted device:
+   - `~/.config/blab/signing/blab-upload.jks`
+   - `android/key.properties`
+
+   Never commit or share either private file. The properties path may need to
+   be updated when restoring on a different machine.
+3. Build the upload-signed bundle:
    ```
    flutter build appbundle --release --dart-define-from-file=env/sentry.json
    ```
    → upload `build/app/outputs/bundle/release/app-release.aab` to Play.
-4. Enable **Play App Signing** (Play's default). After the first upload, copy
-   the **app-signing SHA-256** from Play Console → and update
-   `web/.well-known/assetlinks.json` with it so invite App Links verify on
-   production builds (the file currently lists the debug fingerprint).
+4. Use Google-generated **Play App Signing** (the recommended default). After
+   the first upload, copy the **app-signing SHA-256** from Play Console's App
+   integrity page. Add it to `web/.well-known/assetlinks.json` alongside the
+   controlled upload fingerprint, deploy the web directory, and verify a build
+   installed from the Play internal track.
