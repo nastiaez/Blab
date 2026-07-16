@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: `None` (`L-05` passed; `L-04` remains externally blocked)
+Active item: `None` (`L-06` passed; `L-04` remains externally blocked)
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -17,7 +17,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 3 | L-03 | P0-02 | Preserve and resume invite state through signup/sign-in | L-02 | Complete | [`items/L-03.md`](./items/L-03.md) |
 | 4 | L-04 | P0-03 | Configure release signing and verified Android App Links | L-03 | Blocked | [`items/L-04.md`](./items/L-04.md) |
 | 5 | L-05 | P0-05 | Make password change real and provider-aware | L-02 | Complete | [`items/L-05.md`](./items/L-05.md) |
-| 6 | L-06 | P0-06 | Enforce privacy toggles at transport boundaries | L-00 | Not started | `items/L-06.md` |
+| 6 | L-06 | P0-06 | Enforce privacy toggles at transport boundaries | L-00 | Complete | [`items/L-06.md`](./items/L-06.md) |
 | 7 | L-07 | P0-07 | Complete operator policy, account deletion web path, and moderation operations | L-00 | Not started | `items/L-07.md` |
 
 ## Core MVP requirements

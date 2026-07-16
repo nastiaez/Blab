@@ -17,6 +17,17 @@ class PrivacyScreen extends ConsumerWidget {
     final typing = ref.watch(typingIndicatorsProvider);
     final read = ref.watch(readReceiptsProvider);
 
+    Future<void> saveSetting(Future<void> Function() save) async {
+      try {
+        await save();
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn't save privacy setting.")),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       appBar: AppBar(
@@ -48,16 +59,28 @@ class PrivacyScreen extends ConsumerWidget {
               children: [
                 _ToggleRow(
                   label: 'Typing indicators',
-                  value: typing,
-                  onChanged: (v) =>
-                      ref.read(typingIndicatorsProvider.notifier).set(v),
+                  caption:
+                      "If turned off, you won't see when others are typing, and they won't see when you are.",
+                  value: typing.enabled,
+                  onChanged: typing.isLoaded
+                      ? (v) => saveSetting(
+                          () => ref
+                              .read(typingIndicatorsProvider.notifier)
+                              .set(v),
+                        )
+                      : null,
                 ),
                 const _RowDivider(),
                 _ToggleRow(
                   label: 'Read receipts',
-                  value: read,
-                  onChanged: (v) =>
-                      ref.read(readReceiptsProvider.notifier).set(v),
+                  caption:
+                      "If turned off, you won't see read receipts from others, and they won't see yours.",
+                  value: read.enabled,
+                  onChanged: read.isLoaded
+                      ? (v) => saveSetting(
+                          () => ref.read(readReceiptsProvider.notifier).set(v),
+                        )
+                      : null,
                 ),
               ],
             ),
@@ -105,8 +128,11 @@ class _LinkRow extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.open_in_new,
-                size: 18, color: BlabColors.textMuted),
+            const Icon(
+              Icons.open_in_new,
+              size: 18,
+              color: BlabColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -143,7 +169,7 @@ class _ToggleRow extends StatelessWidget {
 
   final String label;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {

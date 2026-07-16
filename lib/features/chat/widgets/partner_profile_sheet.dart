@@ -5,7 +5,6 @@ import '../../../app/app_messenger.dart';
 import '../../../app/theme.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/state/chat_list_state.dart';
-import '../../../shared/state/connectivity_state.dart';
 import 'report_sheet.dart';
 
 /// Result of the partner profile sheet. `blocked` tells the caller to leave
@@ -29,15 +28,12 @@ Future<PartnerProfileResult?> showPartnerProfileSheet(
   );
 }
 
-class _Body extends ConsumerWidget {
+class _Body extends StatelessWidget {
   const _Body({required this.chat});
   final Chat chat;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncOnline = ref.watch(onlineProvider);
-    final online = asyncOnline.maybeWhen(data: (v) => v, orElse: () => true);
-
+  Widget build(BuildContext context) {
     return SafeArea(
       top: false,
       child: Padding(
@@ -83,33 +79,10 @@ class _Body extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 6),
-            if (online)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF34C759),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Online',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: BlabColors.textMuted,
-                    ),
-                  ),
-                ],
-              )
-            else
-              const Text(
-                'Offline',
-                style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
-              ),
+            Text(
+              'Learning ${chat.partnerLearningLanguage.name} ${chat.partnerLearningLanguage.flag}',
+              style: const TextStyle(fontSize: 13, color: BlabColors.textMuted),
+            ),
             const SizedBox(height: 28),
             _Section(
               title: 'Languages',
