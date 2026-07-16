@@ -11,6 +11,10 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: BlabApp()));
     await tester.pumpAndSettle();
     expect(find.text('Blab — dev menu'), findsOneWidget);
+    expect(
+      find.textContaining('pair with email', findRichText: true),
+      findsNothing,
+    );
     final BuildContext ctx = tester.element(find.byType(Scaffold).first);
     expect(Theme.of(ctx).colorScheme.primary, BlabColors.brand);
   });

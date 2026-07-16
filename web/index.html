@@ -30,7 +30,7 @@
         font-size: 40px;
         margin: 0 0 12px;
         color: var(--brand);
-        letter-spacing: -1px;
+        letter-spacing: 0;
       }
       p {
         font-size: 17px;
@@ -48,7 +48,23 @@
         font-weight: 600;
         font-size: 16px;
       }
+      html.flutter-local main {
+        display: none;
+      }
     </style>
+    <script>
+      const flutterLocalHosts = new Set(["localhost", "127.0.0.1"]);
+      if (flutterLocalHosts.has(window.location.hostname)) {
+        document.documentElement.classList.add("flutter-local");
+        window.addEventListener("DOMContentLoaded", () => {
+          document.body.replaceChildren();
+          const bootstrap = document.createElement("script");
+          bootstrap.src = "flutter_bootstrap.js";
+          bootstrap.async = true;
+          document.body.appendChild(bootstrap);
+        });
+      }
+    </script>
   </head>
   <body>
     <main>
