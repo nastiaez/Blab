@@ -92,6 +92,21 @@ Restart the app or reopen the chat after starting the function server. Translati
 errors are cached in memory for the current app process, so hot reload alone does
 not retry an entry that has already failed.
 
+## Run backend integration
+
+Run the opt-in invite/auth integration against the local Supabase stack:
+
+```bash
+scripts/local_test.sh integration
+```
+
+The test uses independent Supabase clients for Alice, Bob, Carol, and one
+disposable sign-up identity. It verifies successful signup-to-claim membership,
+a concurrent single-use claim, the losing account's exclusion, and expiry without
+membership creation. Generated invites, chats, and the disposable user are removed
+even when the test fails. The helper reads local-only keys from `supabase status`;
+no service-role key is stored in the repository.
+
 ## L-01 realtime check
 
 1. Run the Android and web commands above in separate terminals.

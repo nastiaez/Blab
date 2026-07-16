@@ -14,6 +14,7 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/invite/invite_landing_screen.dart';
+import '../features/invite/invite_continuation.dart';
 import '../features/invite/invite_pick_language_screen.dart';
 import '../features/invite/invite_resolver_screen.dart';
 import '../features/invite/new_chat_screen.dart';
@@ -112,9 +113,7 @@ final GoRouter blabRouter = GoRouter(
       final signedIn = _currentSessionOrNull() != null;
       blabRouter.go(signedIn ? '/chats' : '/auth?mode=login');
     });
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   },
   refreshListenable: _AuthRefresh(_authStreamOrNull()),
   routes: <RouteBase>[
@@ -124,12 +123,13 @@ final GoRouter blabRouter = GoRouter(
       path: '/auth',
       builder: (context, state) {
         final q = state.uri.queryParameters;
-        final mode =
-            q['mode'] == 'login' ? AuthMode.logIn : AuthMode.signUp;
+        final mode = q['mode'] == 'login' ? AuthMode.logIn : AuthMode.signUp;
+        final continuation = InviteContinuation.fromQuery(q);
         return AuthScreen(
           initialMode: mode,
-          inviterName: q['inviter'],
-          learnCode: q['learn'],
+          inviterName: continuation.inviterName,
+          learnCode: continuation.learningLanguage,
+          inviteToken: continuation.token,
         );
       },
     ),
@@ -140,7 +140,8 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/auth/forgot/sent',
       builder: (context, state) => ForgotPasswordSentScreen(
-          email: state.uri.queryParameters['email'] ?? ''),
+        email: state.uri.queryParameters['email'] ?? '',
+      ),
     ),
     GoRoute(
       path: '/auth/reset',
@@ -160,10 +161,7 @@ final GoRouter blabRouter = GoRouter(
         return signedIn ? '/chats' : '/auth?mode=login';
       },
     ),
-    GoRoute(
-      path: '/chats',
-      builder: (context, state) => const ChatsScreen(),
-    ),
+    GoRoute(path: '/chats', builder: (context, state) => const ChatsScreen()),
     GoRoute(
       path: '/chats/new',
       builder: (context, state) => const NewChatScreen(),
@@ -178,9 +176,8 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/chat/:id',
-      builder: (context, state) => ChatScreen(
-        chatId: state.pathParameters['id'] ?? 'aswin',
-      ),
+      builder: (context, state) =>
+          ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
     ),
     GoRoute(
       path: '/invite',
@@ -210,12 +207,13 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/i/:token',
-      builder: (context, state) => InviteResolverScreen(
-        token: state.pathParameters['token'] ?? '',
-      ),
+      builder: (context, state) =>
+          InviteResolverScreen(token: state.pathParameters['token'] ?? ''),
     ),
     GoRoute(
-        path: '/profile', builder: (context, state) => const ProfileScreen()),
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
     GoRoute(
       path: '/profile/edit',
       builder: (context, state) => const EditProfileScreen(),

@@ -134,3 +134,9 @@ grant select, insert on table public.message_translations to authenticated;
 grant select, insert, delete on table public.blocks to authenticated;
 grant select, insert on table public.reports to authenticated;
 grant select on table public.chat_list to authenticated;
+
+-- Local integration cleanup and expiry setup use the local service-role key.
+-- Keep these grants limited to the tables touched by that harness.
+grant select, delete on table public.chats to service_role;
+grant select on table public.chat_members to service_role;
+grant select, update, delete on table public.invites to service_role;

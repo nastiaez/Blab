@@ -59,6 +59,24 @@ local_key() {
   status_json | jq -er '.PUBLISHABLE_KEY // .ANON_KEY'
 }
 
+run_integration() {
+  local status
+  local api_url
+  local publishable_key
+  local service_role_key
+
+  status="$(status_json)"
+  api_url="$(printf '%s' "$status" | jq -er '.API_URL')"
+  publishable_key="$(printf '%s' "$status" | jq -er '.PUBLISHABLE_KEY // .ANON_KEY')"
+  service_role_key="$(printf '%s' "$status" | jq -er '.SERVICE_ROLE_KEY')"
+
+  flutter test test/integration/local_invite_flow_test.dart \
+    --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
+    --dart-define="SUPABASE_URL=$api_url" \
+    --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
+    --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
+}
+
 serve_functions() {
   if [[ ! -f "$function_env_file" ]]; then
     printf '%s\n' \
@@ -223,6 +241,9 @@ case "${1:-help}" in
   functions)
     serve_functions
     ;;
+  integration)
+    run_integration
+    ;;
   *)
     printf '%s\n' \
       'Usage:' \
@@ -231,6 +252,7 @@ case "${1:-help}" in
       '  scripts/local_test.sh android [device-id]' \
       '  scripts/local_test.sh web [copied-invite-url-or-token]' \
       '  scripts/local_test.sh invite <copied-url-or-token>' \
-      '  scripts/local_test.sh functions'
+      '  scripts/local_test.sh functions' \
+      '  scripts/local_test.sh integration'
     ;;
 esac
