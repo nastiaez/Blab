@@ -131,7 +131,10 @@ class SupabaseAuthService {
   /// the user from Supabase Auth. The server-side edge function
   /// validates the JWT, so omitting [password] (for social-login
   /// users) is still authenticated end-to-end.
-  Future<void> deleteAccount({String? password}) async {
+  Future<void> deleteAccount({
+    String? password,
+    required Future<void> Function() clearLocalData,
+  }) async {
     final email = _auth.currentUser?.email;
     if (email == null) {
       throw const AuthException('Not signed in');
@@ -146,7 +149,11 @@ class SupabaseAuthService {
       final code = body is Map ? body['error']?.toString() : null;
       throw Exception(code ?? 'delete_failed');
     }
-    await _auth.signOut();
+    try {
+      await clearLocalData();
+    } finally {
+      await _auth.signOut();
+    }
   }
 
   /// Map a Supabase AuthException to a short, user-facing message.

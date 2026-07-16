@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Request deletion of your Blab account and associated data." />
+    <title>Delete your Blab account</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #efebe2;
+        --surface: #ffffff;
+        --ink: #1f3340;
+        --brand: #d4694a;
+        --muted: #6d6961;
+        --line: #d8d1c3;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      main {
+        width: min(680px, 100%);
+        margin: 0 auto;
+        padding: 48px 24px 72px;
+      }
+      .brand {
+        margin: 0 0 36px;
+        color: var(--brand);
+        font-size: 25px;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(30px, 7vw, 42px);
+        line-height: 1.12;
+        letter-spacing: 0;
+      }
+      h2 {
+        margin: 36px 0 10px;
+        font-size: 20px;
+        letter-spacing: 0;
+      }
+      p, li {
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      .lead { color: var(--muted); font-size: 18px; }
+      ul, ol { padding-left: 22px; }
+      li { margin-bottom: 9px; }
+      .request {
+        margin: 28px 0;
+        padding: 22px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .request p { margin-top: 0; }
+      .button {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 18px;
+        border-radius: 6px;
+        background: var(--brand);
+        color: #ffffff;
+        font-size: 16px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      a { color: var(--brand); }
+      .fine { color: var(--muted); font-size: 14px; }
+      footer {
+        margin-top: 48px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">blab</div>
+      <h1>Delete your Blab account</h1>
+      <p class="lead">
+        You can permanently delete your account in the app or request deletion
+        here if you no longer have access to it.
+      </p>
+
+      <section class="request" aria-labelledby="request-title">
+        <h2 id="request-title">Request deletion without the app</h2>
+        <p>
+          Email us from the address used for your Blab account. We will verify
+          that you control the account, complete the request within seven
+          calendar days, and confirm when deletion is finished.
+        </p>
+        <a
+          class="button"
+          href="mailto:nastia.ez@gmail.com?subject=Blab%20account%20deletion%20request&amp;body=Account%20email%3A%0A%0APlease%20delete%20my%20Blab%20account%20and%20associated%20data."
+        >Request account deletion</a>
+        <p class="fine">
+          Never send us your password. If you cannot email from the account
+          address, explain that in your request so we can arrange another
+          verification step.
+        </p>
+      </section>
+
+      <h2>Delete immediately in the app</h2>
+      <ol>
+        <li>Open <strong>Profile</strong>.</li>
+        <li>Select <strong>Delete account</strong>.</li>
+        <li>Review the warning and confirm deletion.</li>
+      </ol>
+
+      <h2>What deletion removes</h2>
+      <ul>
+        <li>Your Blab authentication account and profile.</li>
+        <li>Your messages and saved translations associated with those messages.</li>
+        <li>Your chat memberships, invites, and block list.</li>
+      </ul>
+      <p>
+        Deletion is permanent. Backups and service-provider logs expire on
+        their normal cycles, typically within 30 to 90 days.
+      </p>
+
+      <h2>Limited safety retention</h2>
+      <p>
+        If information is part of an abuse or safety report, we may retain a
+        minimized evidence copy for 180 days after the report is resolved, or
+        longer when a legal hold or reporting duty requires it. Access is
+        restricted to the operator and the information is used only for safety,
+        enforcement, or legal compliance.
+      </p>
+
+      <h2>Questions</h2>
+      <p>
+        Contact <a href="mailto:nastia.ez@gmail.com">nastia.ez@gmail.com</a>. See the
+        <a href="/privacy.html">Privacy Policy</a> and
+        <a href="/terms.html">Terms of Use</a> for more information.
+      </p>
+
+      <footer>Last updated: 16 July 2026 · © 2026 Blab</footer>
+    </main>
+  </body>
+</html>

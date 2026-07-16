@@ -625,7 +625,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 5. **No behavioral analytics, no ads SDKs, no third-party trackers.** Period. Sentry crash reports only (no message bodies, no PII beyond user id).
 6. **Server region = EU (GDPR).** Locked in tech-spec Resolved Decision #9.
 7. **Key loss = data loss in V1.** No key recovery scheme yet — reinstalling wipes chat history. This is surfaced clearly in onboarding copy. V2 may add an optional passphrase-wrapped key backup. (See § Security & Encryption Caveats.)
-8. **No moderation / blocking / reporting in V1** (already a Non-Goal). Personal-safety from harassment is out of scope and must not be claimed in marketing.
+8. **Report, block, and staffed moderation are required in V1.** The invite-only design reduces exposure but does not remove the need for accessible reporting/blocking, validated report intake, timely human review, enforcement, and child-safety escalation.
 
 ### What we do not promise
 

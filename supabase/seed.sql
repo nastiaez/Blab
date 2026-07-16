@@ -132,7 +132,6 @@ grant select, insert, update, delete on table public.messages to authenticated;
 grant select, insert on table public.message_reads to authenticated;
 grant select, insert on table public.message_translations to authenticated;
 grant select, insert, delete on table public.blocks to authenticated;
-grant select, insert on table public.reports to authenticated;
 grant select on table public.chat_list to authenticated;
 
 -- Local integration cleanup and expiry setup use the local service-role key.

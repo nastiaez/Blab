@@ -5,8 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
+import '../../shared/services/local_account_data_store.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
+import '../../shared/state/interface_language.dart';
+import '../../shared/state/privacy_settings.dart';
+import '../chat/state/pending_sends_state.dart';
 import '../auth/widgets/blab_text_field.dart';
 import '../auth/widgets/password_field.dart';
 
@@ -66,7 +70,12 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     try {
       await auth.deleteAccount(
         password: usePassword ? _password.text : null,
+        clearLocalData: const LocalAccountDataStore().clear,
       );
+      ref.invalidate(typingIndicatorsProvider);
+      ref.invalidate(readReceiptsProvider);
+      ref.invalidate(interfaceLanguageProvider);
+      ref.invalidate(pendingSendsProvider);
       // signOut already fires inside deleteAccount → the router redirect
       // listens to the auth-session stream and will bounce to /auth.
       // Don't pop or go() here — racing navigations crash Navigator.

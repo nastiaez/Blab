@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/local_storage_keys.dart';
+
 /// A privacy choice is not allowed to transmit until persistence has loaded.
 /// This avoids briefly using the default-ON behavior when the saved value is
 /// OFF during a cold start.
@@ -18,9 +20,6 @@ class PrivacySettingState {
   bool get canTransmit => isLoaded && enabled;
 }
 
-const _kTypingKey = 'privacy_typing_indicators';
-const _kReadKey = 'privacy_read_receipts';
-
 class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
   @override
   PrivacySettingState build() {
@@ -31,7 +30,7 @@ class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
   Future<void> _hydrate() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getBool(_kTypingKey);
+      final stored = prefs.getBool(kPrivacyTypingIndicatorsKey);
       if (ref.mounted) {
         state = PrivacySettingState.ready(stored ?? true);
       }
@@ -46,7 +45,7 @@ class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
     if (!state.isLoaded) return;
     state = PrivacySettingState.ready(value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kTypingKey, value);
+    await prefs.setBool(kPrivacyTypingIndicatorsKey, value);
   }
 }
 
@@ -60,7 +59,7 @@ class ReadReceiptsNotifier extends Notifier<PrivacySettingState> {
   Future<void> _hydrate() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getBool(_kReadKey);
+      final stored = prefs.getBool(kPrivacyReadReceiptsKey);
       if (ref.mounted) {
         state = PrivacySettingState.ready(stored ?? true);
       }
@@ -75,7 +74,7 @@ class ReadReceiptsNotifier extends Notifier<PrivacySettingState> {
     if (!state.isLoaded) return;
     state = PrivacySettingState.ready(value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kReadKey, value);
+    await prefs.setBool(kPrivacyReadReceiptsKey, value);
   }
 }
 

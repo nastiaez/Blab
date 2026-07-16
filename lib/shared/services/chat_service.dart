@@ -257,21 +257,24 @@ class ChatService {
 
   /// File an abuse report. Any of [reportedUserId] / [chatId] / [messageId]
   /// may be null depending on what's being reported.
-  Future<void> reportContent({
+  Future<String> reportContent({
     required String reason,
     String? reportedUserId,
     String? chatId,
     String? messageId,
     String? details,
   }) async {
-    await _client.from('reports').insert({
-      'reporter_id': _uid,
-      'reported_user_id': reportedUserId,
-      'chat_id': chatId,
-      'message_id': messageId,
-      'reason': reason,
-      'details': details,
-    });
+    final reportId = await _client.rpc(
+      'submit_report',
+      params: {
+        'p_reason': reason,
+        'p_reported_user_id': reportedUserId,
+        'p_chat_id': chatId,
+        'p_message_id': messageId,
+        'p_details': details,
+      },
+    );
+    return reportId as String;
   }
 
   /// Block [userId] so they can no longer message the current user. The

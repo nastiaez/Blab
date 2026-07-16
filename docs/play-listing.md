@@ -39,10 +39,12 @@ the hosted Privacy Policy (`web/privacy.html`) exactly — keep them in sync.
 
 **Tags/keywords:** language learning, language exchange, chat, translate
 
-**Contact email:** me@aswin.sh
+**Contact email:** nastia.ez@gmail.com
 
 **Privacy Policy URL:** https://blab-gray.vercel.app/privacy.html
 *(swap to the real domain when Step 3.7 lands)*
+
+**Account deletion URL:** https://blab-gray.vercel.app/delete-account
 
 ---
 
@@ -62,7 +64,7 @@ Google asks, section by section. Answer like this:
 
 **Is all of the user data collected by your app encrypted in transit?** → **Yes**
 
-**Do you provide a way for users to request that their data is deleted?** → **Yes** (in-app: Profile → Delete account)
+**Do you provide a way for users to request that their data is deleted?** → **Yes** (in-app: Profile → Delete account; web: `/delete-account`)
 
 ### Data types — collected (none "shared" in Google's sense; providers below are processors acting on our behalf only)
 
@@ -108,12 +110,13 @@ Answer honestly — Blab has user-to-user messaging:
 Google Play requires apps with social features to declare child-safety standards
 and a reporting path. We have:
 - A **zero-tolerance CSAE** section in the Terms (`/terms.html#child-safety`).
-- **In-app Report + Block** (Step 3.6a).
-- A **point of contact**: me@aswin.sh.
+- Separate **in-app Report + Block** controls.
+- Validated report intake, a private operator queue, audited enforcement, and the staffed response process in `docs/operations/moderation-and-deletion.md`.
+- A **point of contact**: nastia.ez@gmail.com.
 
 In Play Console:
 - **App content → Child safety standards**: provide the Terms URL (the CSAE
-  section) as the published standards, and me@aswin.sh as the contact.
+  section) as the published standards, and nastia.ez@gmail.com as the contact.
 - Affirm compliance with Google's CSAE policy when prompted.
 
 ---
@@ -142,16 +145,15 @@ thing on this whole list you can't speed up. Invite copy is in
 Do these last, right before submitting to production:
 
 - [ ] **Run the full manual test pass** on a real phone (`docs/manual-test-plan.md`), ideally on the signed release build. Don't submit until it passes.
-- [ ] **Fill the operator legal name** in `web/privacy.html` — replace
-      `[OPERATOR NAME]` (location is already set to Berlin, Germany). This is
-      legally required (GDPR controller identity). Re-deploy the page after.
+- [x] **Fill the operator legal name and address** in `web/privacy.html`.
+      Re-deploy the page after any controller-detail change.
       *No EU representative needed — the operator is based in the EU.*
 - [ ] Deploy `web/privacy.html` + `web/terms.html` (Vercel) and confirm both
       open in a browser.
 - [ ] Paste the Privacy Policy URL into the Play listing.
 - [ ] Fill the **Data Safety** form using the answers above.
 - [ ] Complete the **content rating** questionnaire (lands at Teen).
-- [ ] Fill **Child safety standards** (Terms `#child-safety` URL + me@aswin.sh).
+- [ ] Fill **Child safety standards** (Terms `#child-safety` URL + nastia.ez@gmail.com).
 - [ ] Upload the **feature graphic** (1024×500) + screenshots.
 - [ ] Add the **reviewer demo account** credentials.
 - [x] **Sentry DSN** set (in gitignored `env/sentry.json`; builds use `--dart-define-from-file=env/sentry.json`).
