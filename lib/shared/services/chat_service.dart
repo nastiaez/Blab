@@ -112,10 +112,7 @@ class ChatService {
   }) async {
     await _client
         .from('messages')
-        .update({
-          'body': newBody,
-          'edited_at': DateTime.now().toUtc().toIso8601String(),
-        })
+        .update({'body': newBody})
         .eq('id', messageId);
   }
 

@@ -125,11 +125,19 @@ where id in (
 
 -- A fresh local reset revokes DML default privileges. Restore only the client
 -- operations represented by the existing RLS policies and Flutter services.
-grant select, update on table public.profiles to authenticated;
+grant select on table public.profiles to authenticated;
+revoke update on table public.profiles from authenticated;
+grant update (display_name, avatar_path, interface_language)
+  on table public.profiles to authenticated;
 grant select on table public.chats to authenticated;
 grant select, update on table public.chat_members to authenticated;
-grant select, insert, update, delete on table public.messages to authenticated;
-grant select, insert on table public.message_reads to authenticated;
+grant select, insert on table public.messages to authenticated;
+revoke update, delete on table public.messages from authenticated;
+grant update (body, deleted_at) on table public.messages to authenticated;
+grant select on table public.message_reads to authenticated;
+revoke insert on table public.message_reads from authenticated;
+grant insert (message_id, user_id, chat_id)
+  on table public.message_reads to authenticated;
 grant select, insert on table public.message_translations to authenticated;
 grant select, insert, delete on table public.blocks to authenticated;
 grant select on table public.chat_list to authenticated;
@@ -138,4 +146,6 @@ grant select on table public.chat_list to authenticated;
 -- Keep these grants limited to the tables touched by that harness.
 grant select, delete on table public.chats to service_role;
 grant select on table public.chat_members to service_role;
+grant select, update on table public.messages to service_role;
+grant select on table public.message_reads to service_role;
 grant select, update, delete on table public.invites to service_role;
