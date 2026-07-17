@@ -117,7 +117,7 @@ class ChatListTile extends ConsumerWidget {
                               : previewText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             color: partnerTyping
                                 ? BlabColors.brand
