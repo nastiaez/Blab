@@ -10,57 +10,61 @@ ProviderContainer _container({
     String text,
     String sourceLang,
     String targetLang,
-  ) translateFn,
+  )
+  translateFn,
 }) {
-  return ProviderContainer(overrides: [
-    translateMessageFnProvider.overrideWithValue(translateFn),
-  ]);
+  return ProviderContainer(
+    overrides: [translateMessageFnProvider.overrideWithValue(translateFn)],
+  );
 }
 
 void main() {
-  test('ensure fires translator once and caches AsyncData on success',
-      () async {
-    var calls = 0;
-    final container = _container(
-      translateFn: (id, text, source, target) async {
-        calls++;
-        return MessageTranslation(
-          translation: 'Hello',
-          tokens: [
-            const MessageToken(
-              text: 'வணக்கம்',
-              english: 'Hello',
-              romanization: 'Vaṇakkam',
-              isContent: true,
-            ),
-          ],
-        );
-      },
-    );
-    addTearDown(container.dispose);
+  test(
+    'ensure fires translator once and caches AsyncData on success',
+    () async {
+      var calls = 0;
+      final container = _container(
+        translateFn: (id, text, source, target) async {
+          calls++;
+          return MessageTranslation(
+            translation: 'Hello',
+            tokens: [
+              const MessageToken(
+                text: 'வணக்கம்',
+                english: 'Hello',
+                romanization: 'Vaṇakkam',
+                isContent: true,
+              ),
+            ],
+          );
+        },
+      );
+      addTearDown(container.dispose);
 
-    final notifier =
-        container.read(messageTranslationsProvider('chat-1').notifier);
-    await notifier.ensure(
-      messageId: 'm1',
-      text: 'வணக்கம்',
-      sourceLang: 'ta',
-      targetLang: 'en',
-    );
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'வணக்கம்',
+        sourceLang: 'ta',
+        targetLang: 'en',
+      );
 
-    final state = container.read(messageTranslationsProvider('chat-1'));
-    expect(state['m1|en'], isA<AsyncData<MessageTranslation>>());
-    expect(state['m1|en']!.value!.translation, 'Hello');
+      final state = container.read(messageTranslationsProvider('chat-1'));
+      expect(state['m1|en'], isA<AsyncData<MessageTranslation>>());
+      expect(state['m1|en']!.value!.translation, 'Hello');
 
-    // Second ensure for the same key does NOT re-fire.
-    await notifier.ensure(
-      messageId: 'm1',
-      text: 'வணக்கம்',
-      sourceLang: 'ta',
-      targetLang: 'en',
-    );
-    expect(calls, 1);
-  });
+      // Second ensure for the same key does NOT re-fire.
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'வணக்கம்',
+        sourceLang: 'ta',
+        targetLang: 'en',
+      );
+      expect(calls, 1);
+    },
+  );
 
   test('ensure sets AsyncError on translator failure', () async {
     final container = _container(
@@ -70,8 +74,9 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final notifier =
-        container.read(messageTranslationsProvider('chat-1').notifier);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
     await notifier.ensure(
       messageId: 'm1',
       text: 'வணக்கம்',
@@ -85,15 +90,14 @@ void main() {
 
   test('different message ids cache independently', () async {
     final container = _container(
-      translateFn: (id, text, source, target) async => MessageTranslation(
-        translation: 'T-$id',
-        tokens: const [],
-      ),
+      translateFn: (id, text, source, target) async =>
+          MessageTranslation(translation: 'T-$id', tokens: const []),
     );
     addTearDown(container.dispose);
 
-    final notifier =
-        container.read(messageTranslationsProvider('chat-1').notifier);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
     await notifier.ensure(
       messageId: 'm1',
       text: 'a',
@@ -114,47 +118,86 @@ void main() {
 
   test('different chats cache independently', () async {
     final container = _container(
-      translateFn: (id, text, source, target) async => MessageTranslation(
-        translation: 'T',
-        tokens: const [],
-      ),
+      translateFn: (id, text, source, target) async =>
+          MessageTranslation(translation: 'T', tokens: const []),
     );
     addTearDown(container.dispose);
 
     await container
         .read(messageTranslationsProvider('chat-1').notifier)
-        .ensure(
-          messageId: 'm1',
-          text: 'a',
-          sourceLang: 'ta',
-          targetLang: 'en',
-        );
+        .ensure(messageId: 'm1', text: 'a', sourceLang: 'ta', targetLang: 'en');
 
-    expect(container.read(messageTranslationsProvider('chat-1'))['m1|en'],
-        isA<AsyncData<MessageTranslation>>());
     expect(
-        container.read(messageTranslationsProvider('chat-2'))['m1|en'], isNull);
+      container.read(messageTranslationsProvider('chat-1'))['m1|en'],
+      isA<AsyncData<MessageTranslation>>(),
+    );
+    expect(
+      container.read(messageTranslationsProvider('chat-2'))['m1|en'],
+      isNull,
+    );
   });
 
-  test('same message id with different target langs caches independently',
-      () async {
+  test(
+    'same message id with different target langs caches independently',
+    () async {
+      final container = _container(
+        translateFn: (id, text, source, target) async => MessageTranslation(
+          translation: 'translated-to-$target',
+          tokens: const [],
+        ),
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'x',
+        sourceLang: 'en',
+        targetLang: 'ta',
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'x',
+        sourceLang: 'en',
+        targetLang: 'de',
+      );
+
+      final state = container.read(messageTranslationsProvider('chat-1'));
+      expect(state['m1|ta']!.value!.translation, 'translated-to-ta');
+      expect(state['m1|de']!.value!.translation, 'translated-to-de');
+    },
+  );
+
+  test('edited source text replaces the in-memory translation', () async {
+    var calls = 0;
     final container = _container(
-      translateFn: (id, text, source, target) async => MessageTranslation(
-        translation: 'translated-to-$target',
-        tokens: const [],
-      ),
+      translateFn: (id, text, source, target) async {
+        calls++;
+        return MessageTranslation(translation: 'translated:$text', tokens: []);
+      },
     );
     addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
 
-    final notifier =
-        container.read(messageTranslationsProvider('chat-1').notifier);
     await notifier.ensure(
-        messageId: 'm1', text: 'x', sourceLang: 'en', targetLang: 'ta');
+      messageId: 'm1',
+      text: 'before',
+      sourceLang: 'en',
+      targetLang: 'de',
+    );
     await notifier.ensure(
-        messageId: 'm1', text: 'x', sourceLang: 'en', targetLang: 'de');
+      messageId: 'm1',
+      text: 'after',
+      sourceLang: 'en',
+      targetLang: 'de',
+    );
 
     final state = container.read(messageTranslationsProvider('chat-1'));
-    expect(state['m1|ta']!.value!.translation, 'translated-to-ta');
-    expect(state['m1|de']!.value!.translation, 'translated-to-de');
+    expect(calls, 2);
+    expect(state['m1|de']!.value!.translation, 'translated:after');
   });
 }

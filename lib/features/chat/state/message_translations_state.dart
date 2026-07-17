@@ -6,20 +6,21 @@ import '../../../shared/state/chat_list_state.dart';
 
 /// Function-pointer indirection. Tests override this to swap the real
 /// translator out without monkeying with [messageTranslatorProvider].
-typedef TranslateMessageFn = Future<MessageTranslation> Function(
-  String messageId,
-  String text,
-  String sourceLang,
-  String targetLang,
-);
+typedef TranslateMessageFn =
+    Future<MessageTranslation> Function(
+      String messageId,
+      String text,
+      String sourceLang,
+      String targetLang,
+    );
 
 final translateMessageFnProvider = Provider<TranslateMessageFn>((ref) {
   final translator = ref.watch(messageTranslatorProvider);
   return (id, text, sourceLang, targetLang) => translator.translate(
-        text: text,
-        sourceLang: sourceLang,
-        targetLang: targetLang,
-      );
+    text: text,
+    sourceLang: sourceLang,
+    targetLang: targetLang,
+  );
 });
 
 /// Composite cache key — same message viewed in two different target
@@ -38,14 +39,20 @@ class MessageTranslationsNotifier
   MessageTranslationsNotifier(this.chatId);
 
   final String chatId;
+  final Map<String, String> _sourceTexts = <String, String>{};
 
   @override
-  Map<String, AsyncValue<MessageTranslation>> build() => const {};
+  Map<String, AsyncValue<MessageTranslation>> build() {
+    _sourceTexts.clear();
+    return const {};
+  }
 
   /// Backwards-compatible lookup so callers can still read by message id
   /// alone when [targetLang] isn't varying.
   AsyncValue<MessageTranslation>? entryFor(
-      String messageId, String targetLang) {
+    String messageId,
+    String targetLang,
+  ) {
     return state[_entryKey(messageId, targetLang)];
   }
 
@@ -85,12 +92,14 @@ class MessageTranslationsNotifier
         for (final t in entry.value.tokens) {
           final tokenText = t['text'];
           if (tokenText is! String) continue;
-          tokens.add(MessageToken(
-            text: tokenText,
-            english: t['english'] as String?,
-            romanization: t['roman'] as String?,
-            isContent: t['isContent'] as bool? ?? true,
-          ));
+          tokens.add(
+            MessageToken(
+              text: tokenText,
+              english: t['english'] as String?,
+              romanization: t['roman'] as String?,
+              isContent: t['isContent'] as bool? ?? true,
+            ),
+          );
         }
         byId[entry.key] = MessageTranslation(
           translation: entry.value.text,
@@ -112,7 +121,13 @@ class MessageTranslationsNotifier
     required String targetLang,
   }) async {
     final key = _entryKey(messageId, targetLang);
-    if (state.containsKey(key)) return;
+    final previousSource = _sourceTexts[key];
+    if (state.containsKey(key) &&
+        (previousSource == null || previousSource == text)) {
+      _sourceTexts[key] = text;
+      return;
+    }
+    _sourceTexts[key] = text;
     state = {...state, key: const AsyncLoading()};
 
     // 1. DB cache. Returns instantly when another session already
@@ -120,28 +135,27 @@ class MessageTranslationsNotifier
     try {
       final cached = await ref
           .read(chatServiceProvider)
-          .fetchCachedTranslation(
-            messageId: messageId,
-            targetLang: targetLang,
-          );
+          .fetchCachedTranslation(messageId: messageId, targetLang: targetLang);
+      if (_sourceTexts[key] != text) return;
       if (cached != null) {
         final tokens = <MessageToken>[];
         for (final t in cached.tokens) {
           final tokenText = t['text'];
           if (tokenText is! String) continue;
-          tokens.add(MessageToken(
-            text: tokenText,
-            english: t['english'] as String?,
-            romanization: t['roman'] as String?,
-            isContent: t['isContent'] as bool? ?? true,
-          ));
+          tokens.add(
+            MessageToken(
+              text: tokenText,
+              english: t['english'] as String?,
+              romanization: t['roman'] as String?,
+              isContent: t['isContent'] as bool? ?? true,
+            ),
+          );
         }
         state = {
           ...state,
-          key: AsyncData(MessageTranslation(
-            translation: cached.text,
-            tokens: tokens,
-          )),
+          key: AsyncData(
+            MessageTranslation(translation: cached.text, tokens: tokens),
+          ),
         };
         return;
       }
@@ -158,9 +172,11 @@ class MessageTranslationsNotifier
     try {
       translated = await fn(messageId, text, sourceLang, targetLang);
     } catch (error, stack) {
+      if (_sourceTexts[key] != text) return;
       state = {...state, key: AsyncError(error, stack)};
       return;
     }
+    if (_sourceTexts[key] != text) return;
     state = {...state, key: AsyncData(translated)};
 
     // Best-effort DB writeback. Failures here must NOT roll back the
@@ -168,12 +184,14 @@ class MessageTranslationsNotifier
     // own try/catch.
     try {
       final tokenMaps = translated.tokens
-          .map((t) => <String, dynamic>{
-                'text': t.text,
-                'english': t.english,
-                'roman': t.romanization,
-                'isContent': t.isContent,
-              })
+          .map(
+            (t) => <String, dynamic>{
+              'text': t.text,
+              'english': t.english,
+              'roman': t.romanization,
+              'isContent': t.isContent,
+            },
+          )
           .toList();
       // ignore: unawaited_futures — best-effort cache write.
       ref
@@ -191,7 +209,9 @@ class MessageTranslationsNotifier
   }
 }
 
-final messageTranslationsProvider = NotifierProvider.family<
-    MessageTranslationsNotifier,
-    Map<String, AsyncValue<MessageTranslation>>,
-    String>(MessageTranslationsNotifier.new);
+final messageTranslationsProvider =
+    NotifierProvider.family<
+      MessageTranslationsNotifier,
+      Map<String, AsyncValue<MessageTranslation>>,
+      String
+    >(MessageTranslationsNotifier.new);

@@ -52,14 +52,30 @@ class ChatService {
         .filter('deleted_at', 'is', null)
         .order('created_at', ascending: false)
         .limit(limit);
-    final list = (rows as List)
-        .map(
-          (r) => messageFromRow(r as Map<String, dynamic>, currentUserId: _uid),
-        )
-        .toList()
-        .reversed
+    final pageRows = (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
         .toList();
-    return list;
+    final pageIds = pageRows.map((row) => row['id'] as String).toSet();
+    final missingReplyIds = pageRows
+        .map((row) => row['reply_to'] as String?)
+        .whereType<String>()
+        .where((id) => !pageIds.contains(id))
+        .toSet();
+    var replyRows = <Map<String, dynamic>>[];
+    if (missingReplyIds.isNotEmpty) {
+      final extra = await _client
+          .from('messages')
+          .select()
+          .inFilter('id', missingReplyIds.toList());
+      replyRows = (extra as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+    }
+    return messagesFromRows(
+      pageRows.reversed,
+      currentUserId: _uid,
+      additionalReplyRows: replyRows,
+    );
   }
 
   Stream<List<Map<String, dynamic>>> watchMessages(String chatId) {
@@ -81,12 +97,14 @@ class ChatService {
     required String chatId,
     required String body,
     String? clientMessageId,
+    String? replyToId,
   }) async {
     final payload = {
       'id': ?clientMessageId,
       'chat_id': chatId,
       'sender_id': _uid,
       'body': body,
+      'reply_to': ?replyToId,
     };
     Map<String, dynamic> row;
     try {
@@ -95,13 +113,14 @@ class ChatService {
       if (clientMessageId == null || error.code != '23505') rethrow;
       final existing = await _client
           .from('messages')
-          .select('id,chat_id,sender_id,body,created_at,deleted_at')
+          .select('id,chat_id,sender_id,body,created_at,reply_to,deleted_at')
           .eq('id', clientMessageId)
           .maybeSingle();
       if (existing == null ||
           existing['chat_id'] != chatId ||
           existing['sender_id'] != _uid ||
           existing['body'] != body ||
+          existing['reply_to'] != replyToId ||
           existing['deleted_at'] != null) {
         throw StateError('idempotency_conflict');
       }

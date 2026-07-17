@@ -90,10 +90,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
     try {
       await for (final rows in svc.watchMessages(chatId)) {
-        final list = rows
-            .where((r) => r['deleted_at'] == null)
-            .map((r) => messageFromRow(r, currentUserId: _uid))
-            .toList();
+        final list = messagesFromRows(rows, currentUserId: _uid);
         ref
             .read(pendingSendsProvider(chatId).notifier)
             .reconcile(list.map((message) => message.id));
@@ -125,7 +122,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     ref.read(pendingSendsProvider(chatId).notifier).add(pending);
     // Offline: leave it on the clock. [flushPending] retries on reconnect.
     if (!_online) return;
-    await _attemptSend(tempId, trimmed);
+    await _attemptSend(tempId, trimmed, replyToId: replyTo?.id);
   }
 
   /// Push one queued message to the server. On success the pending row is
@@ -134,7 +131,11 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   /// genuine server rejection (still online) flips the row to
   /// [MessageStatus.failed] so the user gets the retry sheet, while a
   /// network drop mid-send leaves it queued for the next reconnect flush.
-  Future<void> _attemptSend(String localId, String body) async {
+  Future<void> _attemptSend(
+    String localId,
+    String body, {
+    String? replyToId,
+  }) async {
     if (_inFlight.contains(localId)) return;
     _inFlight.add(localId);
     try {
@@ -145,7 +146,12 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       }
       final server = await ref
           .read(chatServiceProvider)
-          .sendMessage(chatId: chatId, body: body, clientMessageId: localId);
+          .sendMessage(
+            chatId: chatId,
+            body: body,
+            clientMessageId: localId,
+            replyToId: replyToId,
+          );
       ref
           .read(pendingSendsProvider(chatId).notifier)
           .upgrade(
@@ -178,7 +184,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         .where((m) => m.status == MessageStatus.pending)
         .toList();
     for (final m in queued) {
-      await _attemptSend(m.id, m.originalText);
+      await _attemptSend(m.id, m.originalText, replyToId: m.replyTo?.id);
     }
   }
 
@@ -200,7 +206,11 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
           localId,
           (message) => message.copyWith(status: MessageStatus.pending),
         );
-    await _attemptSend(localId, target.originalText);
+    await _attemptSend(
+      localId,
+      target.originalText,
+      replyToId: target.replyTo?.id,
+    );
   }
 
   /// Drop a pending or failed message from the queue without retrying.

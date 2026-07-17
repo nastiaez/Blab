@@ -20,6 +20,7 @@ class _FakeChatService implements ChatService {
   bool throwOnSend = false;
   bool loseFirstResponse = false;
   final List<String> attemptedIds = <String>[];
+  final List<String?> attemptedReplyIds = <String?>[];
   final Set<String> committedIds = <String>{};
 
   @override
@@ -27,11 +28,13 @@ class _FakeChatService implements ChatService {
     required String chatId,
     required String body,
     String? clientMessageId,
+    String? replyToId,
   }) async {
     sendCalls++;
     if (throwOnSend) throw Exception('server_500');
     final id = clientMessageId ?? 'server-$sendCalls';
     attemptedIds.add(id);
+    attemptedReplyIds.add(replyToId);
     if (loseFirstResponse && committedIds.add(id)) {
       throw TimeoutException('response_lost');
     }
@@ -118,6 +121,28 @@ void main() {
     final q = _queue(c, 'c1');
     expect(q.length, 1);
     expect(q.single.status, MessageStatus.pending);
+  });
+
+  test('online reply sends its stable target id', () async {
+    final fake = _FakeChatService();
+    final c = _container(fake, online: true);
+    addTearDown(c.dispose);
+    final source = Message(
+      id: _id(99),
+      chatId: 'c1',
+      isOutgoing: false,
+      originalText: 'source',
+      translation: '',
+      sentAt: DateTime.parse('2026-06-09T00:00:00Z'),
+      status: MessageStatus.delivered,
+    );
+
+    await c
+        .read(chatMessagesProvider('c1').notifier)
+        .addOutgoing('reply', replyTo: source);
+
+    expect(fake.attemptedReplyIds, [source.id]);
+    expect(_queue(c, 'c1').single.replyTo?.id, source.id);
   });
 
   test('server error while online → bubble flips to failed', () async {
@@ -222,14 +247,53 @@ void main() {
     },
   );
 
+  test('offline reply preserves target id across restart and flush', () async {
+    final source = Message(
+      id: _id(98),
+      chatId: 'c1',
+      isOutgoing: false,
+      originalText: 'persist me',
+      translation: '',
+      sentAt: DateTime.parse('2026-06-09T00:00:00Z'),
+      status: MessageStatus.delivered,
+    );
+    final c1 = _container(_FakeChatService(), online: false);
+    await c1
+        .read(chatMessagesProvider('c1').notifier)
+        .addOutgoing('queued reply', replyTo: source);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    c1.dispose();
+
+    final fake2 = _FakeChatService();
+    final c2 = _container(fake2, online: true);
+    addTearDown(c2.dispose);
+    c2.read(pendingSendsProvider('c1'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(_queue(c2, 'c1').single.replyTo?.id, source.id);
+    await c2.read(chatMessagesProvider('c1').notifier).flushPending();
+    expect(fake2.attemptedReplyIds, [source.id]);
+  });
+
   test(
     'manual retry preserves the id after a committed response is lost',
     () async {
       final fake = _FakeChatService()..loseFirstResponse = true;
       final c = _container(fake, online: true);
       addTearDown(c.dispose);
+      final source = Message(
+        id: _id(97),
+        chatId: 'c1',
+        isOutgoing: false,
+        originalText: 'retry target',
+        translation: '',
+        sentAt: DateTime.parse('2026-06-09T00:00:00Z'),
+        status: MessageStatus.delivered,
+      );
 
-      await c.read(chatMessagesProvider('c1').notifier).addOutgoing('once');
+      await c
+          .read(chatMessagesProvider('c1').notifier)
+          .addOutgoing('once', replyTo: source);
       final failed = _queue(c, 'c1').single;
       expect(failed.status, MessageStatus.failed);
 
@@ -237,6 +301,7 @@ void main() {
 
       expect(_queue(c, 'c1').single.status, MessageStatus.delivered);
       expect(fake.attemptedIds, [failed.id, failed.id]);
+      expect(fake.attemptedReplyIds, [source.id, source.id]);
       expect(fake.committedIds, {failed.id});
     },
   );

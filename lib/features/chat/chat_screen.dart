@@ -107,7 +107,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.jumpTo(0);
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _input.text;
     if (text.trim().isEmpty) return;
     // Defensive — TextField.maxLength enforces this, but guard anyway.
@@ -116,11 +116,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final editing = ref.read(editingProvider(widget.chatId));
     if (editing != null) {
-      ref
-          .read(chatMessagesProvider(widget.chatId).notifier)
-          .editMessage(editing.id, text);
-      ref.read(editingProvider(widget.chatId).notifier).clear();
-      _input.clear();
+      try {
+        await ref
+            .read(chatMessagesProvider(widget.chatId).notifier)
+            .editMessage(editing.id, text);
+        ref.read(editingProvider(widget.chatId).notifier).clear();
+        _input.clear();
+      } catch (_) {
+        if (!mounted) return;
+        showAppSnack("Couldn't edit message. Try again.");
+      }
       return;
     }
 
@@ -1543,7 +1548,7 @@ class _QuotedReply extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.85)
         : BlabColors.textMuted;
 
-    final author = replyTo.isOutgoing ? 'You' : 'Aswin';
+    final author = replyTo.isOutgoing ? 'You' : 'Partner';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
