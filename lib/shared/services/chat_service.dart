@@ -206,14 +206,21 @@ class ChatService {
   /// Fetch a cached translation for [messageId] into [targetLang], if
   /// any. Returns null on cache miss (so the caller falls back to the
   /// live translator).
-  Future<({String text, List<Map<String, dynamic>> tokens})?>
+  Future<
+    ({
+      String text,
+      String englishText,
+      String sourceLang,
+      List<Map<String, dynamic>> tokens,
+    })?
+  >
   fetchCachedTranslation({
     required String messageId,
     required String targetLang,
   }) async {
     final row = await _client
         .from('message_translations')
-        .select('translation_text, tokens')
+        .select('translation_text, english_text, source_lang, tokens')
         .eq('message_id', messageId)
         .eq('target_lang', targetLang)
         .maybeSingle();
@@ -225,14 +232,29 @@ class ChatService {
         if (t is Map) tokens.add(Map<String, dynamic>.from(t));
       }
     }
-    return (text: row['translation_text'] as String, tokens: tokens);
+    return (
+      text: row['translation_text'] as String,
+      englishText: row['english_text'] as String,
+      sourceLang: row['source_lang'] as String,
+      tokens: tokens,
+    );
   }
 
   /// Bulk-fetch every cached translation for messages belonging to
   /// [chatId] in [targetLang]. Returned as a map keyed by message id.
   /// When [translationCutoffAt] is set, history from before the viewer's
   /// latest language change is excluded.
-  Future<Map<String, ({String text, List<Map<String, dynamic>> tokens})>>
+  Future<
+    Map<
+      String,
+      ({
+        String text,
+        String englishText,
+        String sourceLang,
+        List<Map<String, dynamic>> tokens,
+      })
+    >
+  >
   fetchCachedTranslationsForChat({
     required String chatId,
     required String targetLang,
@@ -254,11 +276,21 @@ class ChatService {
     if (ids.isEmpty) return {};
     final transRows = await _client
         .from('message_translations')
-        .select('message_id, translation_text, tokens')
+        .select(
+          'message_id, translation_text, english_text, source_lang, tokens',
+        )
         .eq('target_lang', targetLang)
         .inFilter('message_id', ids);
     final result =
-        <String, ({String text, List<Map<String, dynamic>> tokens})>{};
+        <
+          String,
+          ({
+            String text,
+            String englishText,
+            String sourceLang,
+            List<Map<String, dynamic>> tokens,
+          })
+        >{};
     for (final row in transRows as List) {
       final id = row['message_id'] as String;
       final text = row['translation_text'] as String;
@@ -269,7 +301,12 @@ class ChatService {
           if (t is Map) tokens.add(Map<String, dynamic>.from(t));
         }
       }
-      result[id] = (text: text, tokens: tokens);
+      result[id] = (
+        text: text,
+        englishText: row['english_text'] as String,
+        sourceLang: row['source_lang'] as String,
+        tokens: tokens,
+      );
     }
     return result;
   }
@@ -281,6 +318,8 @@ class ChatService {
     required String messageId,
     required String targetLang,
     required String translationText,
+    required String englishText,
+    required String sourceLang,
     required List<Map<String, dynamic>> tokens,
   }) async {
     await _client
@@ -290,6 +329,8 @@ class ChatService {
             'message_id': messageId,
             'target_lang': targetLang,
             'translation_text': translationText,
+            'english_text': englishText,
+            'source_lang': sourceLang,
             'tokens': tokens,
           },
           onConflict: 'message_id,target_lang',

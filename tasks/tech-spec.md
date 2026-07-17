@@ -99,7 +99,7 @@ Conventions:
 - Migrations live under `supabase/migrations/` (Supabase CLI). PR-reviewed; never edit prod via dashboard.
 - Generate Dart types from the Postgres schema with `supabase gen types` → checked in under `lib/shared/models/db/`.
 
-**Out of scope for backend (per PRD Non-Goals):** AI translation, language matching/discovery, payments, voice/video, group chats.
+**Out of scope for backend:** language matching/discovery, payments, voice/video, group chats, and AI-generated conversation partners. Message translation is implemented through the authenticated `translate-message` Edge Function and OpenRouter.
 
 Translation + word lookup data (tappable word popups, FR-11) is **static dictionary content**, not AI. Bundle as JSON assets per language pair under `assets/dictionaries/`. No Supabase calls in the word-lookup path. No LLM calls anywhere.
 

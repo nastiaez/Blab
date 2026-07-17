@@ -128,8 +128,17 @@ void main() {
           messageId: source.id,
           targetLang: 'de',
           translationText: 'alte Uebersetzung',
+          englishText: 'old translation',
+          sourceLang: 'en',
           tokens: const [],
         );
+        final cached = await ChatService(alice).fetchCachedTranslation(
+          messageId: source.id,
+          targetLang: 'de',
+        );
+        expect(cached?.text, 'alte Uebersetzung');
+        expect(cached?.englishText, 'old translation');
+        expect(cached?.sourceLang, 'en');
         expect(
           await alice
               .from('message_translations')

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
+import '../../../features/chat/state/chat_state.dart';
 import '../../../features/chat/state/message_translations_state.dart';
 import '../../../features/chat/state/typing_state.dart';
 import '../../../shared/data/translation_support.dart';
@@ -24,16 +25,16 @@ class ChatListTile extends ConsumerWidget {
     // translate, and there's a cached translation (either in memory or
     // hydrated from the DB via the chat screen's prefetch).
     final code = chat.learningLanguage.code;
-    final supported = kSupportedLearningLanguages.contains(code);
-    final latestMessageIsEligible = shouldTranslateMessage(
-      sentAt: chat.timestamp,
-      translationCutoffAt: chat.translationCutoffAt,
-    );
+    final showTranslations = ref.watch(showTranslationsProvider(chat.id));
     String previewText = chat.lastMessage;
-    if (supported &&
-        latestMessageIsEligible &&
+    if (shouldRequestTranslation(
+          showTranslations: showTranslations,
+          learningLanguageCode: code,
+          text: chat.lastMessage,
+          sentAt: chat.timestamp,
+          translationCutoffAt: chat.translationCutoffAt,
+        ) &&
         chat.lastMessageId != null &&
-        chat.lastMessage.isNotEmpty &&
         !chat.isNewInvite) {
       // Watch the translation cache so the tile rebuilds when a fetch
       // lands. Fire ensure() so the tile can populate its own preview
@@ -45,12 +46,13 @@ class ChatListTile extends ConsumerWidget {
         previewText = ready.translation;
       } else {
         Future.microtask(() {
+          if (!ref.read(showTranslationsProvider(chat.id))) return;
           ref
               .read(messageTranslationsProvider(chat.id).notifier)
               .ensure(
                 messageId: chat.lastMessageId!,
                 text: chat.lastMessage,
-                sourceLang: 'en',
+                sourceLang: 'auto',
                 targetLang: code,
               );
         });

@@ -107,6 +107,8 @@ class MessageTranslationsNotifier
         }
         byId[entry.key] = MessageTranslation(
           translation: entry.value.text,
+          englishText: entry.value.englishText,
+          sourceLang: entry.value.sourceLang,
           tokens: tokens,
         );
       }
@@ -158,7 +160,12 @@ class MessageTranslationsNotifier
         state = {
           ...state,
           key: AsyncData(
-            MessageTranslation(translation: cached.text, tokens: tokens),
+            MessageTranslation(
+              translation: cached.text,
+              englishText: cached.englishText,
+              sourceLang: cached.sourceLang,
+              tokens: tokens,
+            ),
           ),
         };
         return;
@@ -204,6 +211,8 @@ class MessageTranslationsNotifier
             messageId: messageId,
             targetLang: targetLang,
             translationText: translated.translation,
+            englishText: translated.englishText,
+            sourceLang: translated.sourceLang,
             tokens: tokenMaps,
           )
           .catchError((_) {});

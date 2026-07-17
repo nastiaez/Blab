@@ -6,22 +6,25 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('parses a successful response into translation + tokens', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async => {
-        'translation': 'Hello!',
-        'tokens': [
-          {
-            'text': 'வணக்கம்',
-            'english': 'Hello',
-            'roman': 'Vaṇakkam',
-            'isContent': true,
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) async => {
+            'translation': 'Hello!',
+            'english': 'Hello!',
+            'sourceLang': 'ta',
+            'tokens': [
+              {
+                'text': 'வணக்கம்',
+                'english': 'Hello',
+                'roman': 'Vaṇakkam',
+                'isContent': true,
+              },
+              {'text': '!', 'isContent': false},
+            ],
           },
-          {'text': '!', 'isContent': false},
-        ],
-      },
     );
 
     final result = await translator.translate(
@@ -30,6 +33,8 @@ void main() {
       targetLang: 'en',
     );
     expect(result.translation, 'Hello!');
+    expect(result.englishText, 'Hello!');
+    expect(result.sourceLang, 'ta');
     expect(result.tokens, hasLength(2));
     expect(result.tokens.first.text, 'வணக்கம்');
     expect(result.tokens.first.english, 'Hello');
@@ -43,15 +48,21 @@ void main() {
     String? capturedSource;
     String? capturedTarget;
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async {
-        capturedSource = sourceLang;
-        capturedTarget = targetLang;
-        return {'translation': 'x', 'tokens': <Map<String, dynamic>>[]};
-      },
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) async {
+            capturedSource = sourceLang;
+            capturedTarget = targetLang;
+            return {
+              'translation': 'x',
+              'english': 'x',
+              'sourceLang': 'en',
+              'tokens': <Map<String, dynamic>>[],
+            };
+          },
     );
 
     await translator.translate(
@@ -66,14 +77,20 @@ void main() {
   test('trims input before invoking', () async {
     String? captured;
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async {
-        captured = text;
-        return {'translation': 'x', 'tokens': <Map<String, dynamic>>[]};
-      },
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) async {
+            captured = text;
+            return {
+              'translation': 'x',
+              'english': 'x',
+              'sourceLang': 'en',
+              'tokens': <Map<String, dynamic>>[],
+            };
+          },
     );
 
     await translator.translate(
@@ -86,13 +103,14 @@ void main() {
 
   test('throws MessageTranslationFailed when invoker throws', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async {
-        throw Exception('boom');
-      },
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) async {
+            throw Exception('boom');
+          },
     );
 
     expect(
@@ -103,11 +121,12 @@ void main() {
 
   test('throws MessageTranslationFailed when response is malformed', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async => {'translation': null},
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) async => {'translation': null},
     );
 
     expect(
@@ -118,11 +137,12 @@ void main() {
 
   test('rejects empty / whitespace-only input', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async => {},
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) async => {},
     );
 
     expect(
@@ -134,11 +154,12 @@ void main() {
   test('times out when invoker never completes', () async {
     final never = Completer<Map<String, dynamic>>();
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) => never.future,
+      invoke:
+          ({
+            required String text,
+            required String sourceLang,
+            required String targetLang,
+          }) => never.future,
       timeout: const Duration(milliseconds: 10),
     );
 

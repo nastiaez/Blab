@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: `L-12` (`Not started`; finding confirmation is next; `L-04` remains externally blocked)
+Active item: `L-13` (`Not started`; finding confirmation is next; `L-04` remains externally blocked)
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -28,7 +28,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 9 | L-09 | P1-10 | Account-scope pending sends and add send idempotency | L-08 | Complete | [`items/L-09.md`](./items/L-09.md) |
 | 10 | L-10 | P1-03, P1-04 | Persist replies and enforce the approved edit contract | L-08 | Complete | [`items/L-10.md`](./items/L-10.md) |
 | 11 | L-11 | P1-05 | Prevent duplicate pair chats during invite claims | L-03, L-08 | Complete | [`items/L-11.md`](./items/L-11.md) |
-| 12 | L-12 | P1-07 | Align translation length, source-language behavior, triggering, and product claims | L-00 | Not started | `items/L-12.md` |
+| 12 | L-12 | P1-07 | Align translation length, source-language behavior, triggering, and product claims | L-00 | Complete | [`items/L-12.md`](./items/L-12.md) |
 | 13 | L-13 | P1-08, P1-09 | Secure translation authorization, quotas, cache integrity, provider routing, and retention | L-12 | Not started | `items/L-13.md` |
 | 14 | L-14 | P1-01 | Implement or remove profile and photo editing from launch scope | L-00 | Not started | `items/L-14.md` |
 | 15 | L-15 | P1-02 | Implement persisted interface localization or remove unsupported claims | L-00 | Not started | `items/L-15.md` |

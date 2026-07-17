@@ -57,7 +57,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   int _lastMessageCount = 0;
 
   /// Hard cap from PRD US-036.
-  static const int _maxMessageLength = 2000;
+  static const int _maxMessageLength = kMaxMessageCharacters;
 
   /// Show the live character counter once we cross this threshold.
   static const int _counterShowAt = 1800;
@@ -249,9 +249,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     ref.watch(typingComposerProvider(widget.chatId));
 
     // Bulk-prefetch DB-cached translations for messages in the current
-    // language era. History from before a language change stays in English
+    // language era. History from before a language change stays as authored
     // and never enters the live translation path.
-    if (kSupportedLearningLanguages.contains(learningLang.code) &&
+    if (showTransl &&
+        kSupportedLearningLanguages.contains(learningLang.code) &&
         _prefetchedLang != learningLang.code) {
       _prefetchedLang = learningLang.code;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -264,23 +265,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           translationCutoffAt: translationCutoffAt,
         );
         if (!mounted) return;
+        if (!ref.read(showTranslationsProvider(widget.chatId))) return;
         // Translate every eligible cache miss. ensure() is idempotent; old
         // history is excluded above so a language switch cannot fan out one
         // OpenRouter request per historical message.
         final messages = ref.read(chatMessagesProvider(widget.chatId)).value;
         if (messages == null) return;
         for (final m in messages) {
-          if (m.originalText.trim().isEmpty) continue;
-          if (!shouldTranslateMessage(
+          if (!shouldRequestBubbleTranslation(
+            showTranslations: true,
+            learningLanguageCode: learningLang.code,
+            text: m.originalText,
             sentAt: m.sentAt,
             translationCutoffAt: translationCutoffAt,
+            isOutgoing: m.isOutgoing,
           )) {
             continue;
           }
           notifier.ensure(
             messageId: m.id,
             text: m.originalText,
-            sourceLang: 'en',
+            sourceLang: 'auto',
             targetLang: learningLang.code,
           );
         }
@@ -493,7 +498,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 _InputBar(
                   controller: _input,
                   hasText: _hasText,
-                  hintText: 'English or ${learningLang.name}…',
+                  hintText: learningLang.code == 'en'
+                      ? 'Message in English…'
+                      : 'English or ${learningLang.name}…',
                   textLength: _textLength,
                   maxLength: _maxMessageLength,
                   counterShowAt: _counterShowAt,
@@ -1022,20 +1029,22 @@ class _MessageRow extends ConsumerWidget {
     final maxBubble = width * (isOut ? 0.78 : 0.72);
     final isFailed = message.status == MessageStatus.failed;
 
-    // Pivot-English model: both sides type English, each viewer sees a
-    // translation into their own learning language. Fire for ALL bubbles
-    // (incoming + outgoing) when this viewer's learning language is one
-    // we translate this slice. Source is always English for v1.
-    if (shouldTranslate &&
+    // Normalize authored text into this viewer's learning language plus an
+    // English subtitle. The edge function detects the actual source language.
+    // The display toggle also gates live AI requests.
+    if (showTranslation &&
+        shouldTranslate &&
         kSupportedLearningLanguages.contains(languageCode) &&
-        message.originalText.trim().isNotEmpty) {
+        message.originalText.trim().isNotEmpty &&
+        !(message.isOutgoing && languageCode == 'en')) {
       Future.microtask(() {
+        if (!ref.read(showTranslationsProvider(chatId))) return;
         ref
             .read(messageTranslationsProvider(chatId).notifier)
             .ensure(
               messageId: message.id,
               text: message.originalText,
-              sourceLang: 'en',
+              sourceLang: 'auto',
               targetLang: languageCode,
             );
       });
@@ -1115,7 +1124,9 @@ class _Bubble extends ConsumerWidget {
     final isOut = message.isOutgoing;
 
     final liveTranslation =
-        shouldTranslate && kSupportedLearningLanguages.contains(languageCode)
+        showTranslation &&
+            shouldTranslate &&
+            kSupportedLearningLanguages.contains(languageCode)
         ? ref.watch(
             messageTranslationsProvider(chatId),
           )['${message.id}|$languageCode']
@@ -1155,82 +1166,13 @@ class _Bubble extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
               ],
-              // Layout: learning-language translation in main slot, English
-              // original in subtitle. PRD design principle: "Partner's
-              // language always shown first; English always second." Holds
-              // for incoming and outgoing. Real chats fire shimmer →
-              // ready/error via the per-chat translation cache.
+              // With translations enabled, normalize to the viewer's learning
+              // language in the main slot and English below it. While loading
+              // or unavailable, keep the authored text readable.
               if (liveTranslation is AsyncLoading) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: ShimmerLine(isOutgoing: isOut, height: 18),
-                ),
-                if (showTranslation) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Container(
-                      height: 1,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.25)
-                          : Colors.grey.shade200,
-                    ),
-                  ),
-                  Text(
-                    message.originalText,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.85)
-                          : BlabColors.textMuted,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ] else if (liveTranslation is AsyncError) ...[
-                Text(
-                  'Translation unavailable',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: isOut
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : BlabColors.textMuted,
-                    height: 1.7,
-                  ),
-                ),
-                if (showTranslation) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Container(
-                      height: 1,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.25)
-                          : Colors.grey.shade200,
-                    ),
-                  ),
-                  Text(
-                    message.originalText,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.85)
-                          : BlabColors.textMuted,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ] else ...[
                 MessageText(
-                  text: liveTranslation is AsyncData<MessageTranslation>
-                      ? liveTranslation.value.translation
-                      : (shouldTranslate &&
-                                isOut &&
-                                message.translation.isNotEmpty
-                            ? message.translation
-                            : message.originalText),
-                  tokens: liveTranslation is AsyncData<MessageTranslation>
-                      ? liveTranslation.value.tokens
-                      : message.tokens,
+                  text: message.originalText,
+                  tokens: const [],
                   languageCode: languageCode,
                   popupTopInset: popupTopInset,
                   style: TextStyle(
@@ -1240,10 +1182,57 @@ class _Bubble extends ConsumerWidget {
                   ),
                 ),
                 if (showTranslation) ...[
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.pending,
+                    text: '',
+                    isOutgoing: isOut,
+                  ),
+                ],
+              ] else if (liveTranslation is AsyncError) ...[
+                MessageText(
+                  text: message.originalText,
+                  tokens: const [],
+                  languageCode: languageCode,
+                  popupTopInset: popupTopInset,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.7,
+                    color: isOut ? Colors.white : BlabColors.textPrimary,
+                  ),
+                ),
+                if (showTranslation) ...[
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.unavailable,
+                    text: '',
+                    isOutgoing: isOut,
+                  ),
+                ],
+              ] else ...[
+                MessageText(
+                  text: liveTranslation is AsyncData<MessageTranslation>
+                      ? liveTranslation.value.translation
+                      : (showTranslation &&
+                                shouldTranslate &&
+                                isOut &&
+                                message.translation.isNotEmpty
+                            ? message.translation
+                            : message.originalText),
+                  tokens: liveTranslation is AsyncData<MessageTranslation>
+                      ? liveTranslation.value.tokens
+                      : (showTranslation ? message.tokens : const []),
+                  languageCode: languageCode,
+                  popupTopInset: popupTopInset,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.7,
+                    color: isOut ? Colors.white : BlabColors.textPrimary,
+                  ),
+                ),
+                if (showTranslation && languageCode != 'en') ...[
                   if (liveTranslation is AsyncData<MessageTranslation>)
                     TranslationSubtitle(
                       state: TranslationSubtitleState.ready,
-                      text: message.originalText,
+                      text: liveTranslation.value.englishText,
                       isOutgoing: isOut,
                     )
                   else if (shouldTranslate && message.translation.isNotEmpty)

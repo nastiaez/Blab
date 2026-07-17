@@ -43,6 +43,58 @@ void main() {
     );
   });
 
+  test('translation requests require the display toggle to be enabled', () {
+    final sentAt = DateTime.utc(2026, 7, 17, 12);
+
+    expect(
+      shouldRequestTranslation(
+        showTranslations: false,
+        learningLanguageCode: 'de',
+        text: 'Hello',
+        sentAt: sentAt,
+        translationCutoffAt: null,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldRequestTranslation(
+        showTranslations: true,
+        learningLanguageCode: 'de',
+        text: 'Hello',
+        sentAt: sentAt,
+        translationCutoffAt: null,
+      ),
+      isTrue,
+    );
+  });
+
+  test('outgoing messages need no English-to-English AI request', () {
+    final sentAt = DateTime.utc(2026, 7, 17, 12);
+
+    expect(
+      shouldRequestBubbleTranslation(
+        showTranslations: true,
+        learningLanguageCode: 'en',
+        text: 'Already English',
+        sentAt: sentAt,
+        translationCutoffAt: null,
+        isOutgoing: true,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldRequestBubbleTranslation(
+        showTranslations: true,
+        learningLanguageCode: 'en',
+        text: 'Kannst du mich verstehen?',
+        sentAt: sentAt,
+        translationCutoffAt: null,
+        isOutgoing: false,
+      ),
+      isTrue,
+    );
+  });
+
   test(
     'ensure fires translator once and caches AsyncData on success',
     () async {
@@ -52,6 +104,8 @@ void main() {
           calls++;
           return MessageTranslation(
             translation: 'Hello',
+            englishText: 'Hello',
+            sourceLang: 'ta',
             tokens: [
               const MessageToken(
                 text: 'வணக்கம்',
@@ -114,8 +168,12 @@ void main() {
 
   test('different message ids cache independently', () async {
     final container = _container(
-      translateFn: (id, text, source, target) async =>
-          MessageTranslation(translation: 'T-$id', tokens: const []),
+      translateFn: (id, text, source, target) async => MessageTranslation(
+        translation: 'T-$id',
+        englishText: text,
+        sourceLang: source,
+        tokens: const [],
+      ),
     );
     addTearDown(container.dispose);
 
@@ -142,8 +200,12 @@ void main() {
 
   test('different chats cache independently', () async {
     final container = _container(
-      translateFn: (id, text, source, target) async =>
-          MessageTranslation(translation: 'T', tokens: const []),
+      translateFn: (id, text, source, target) async => MessageTranslation(
+        translation: 'T',
+        englishText: text,
+        sourceLang: source,
+        tokens: const [],
+      ),
     );
     addTearDown(container.dispose);
 
@@ -167,6 +229,8 @@ void main() {
       final container = _container(
         translateFn: (id, text, source, target) async => MessageTranslation(
           translation: 'translated-to-$target',
+          englishText: text,
+          sourceLang: source,
           tokens: const [],
         ),
       );
@@ -199,7 +263,12 @@ void main() {
     final container = _container(
       translateFn: (id, text, source, target) async {
         calls++;
-        return MessageTranslation(translation: 'translated:$text', tokens: []);
+        return MessageTranslation(
+          translation: 'translated:$text',
+          englishText: text,
+          sourceLang: source,
+          tokens: [],
+        );
       },
     );
     addTearDown(container.dispose);

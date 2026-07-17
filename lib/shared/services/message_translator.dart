@@ -6,8 +6,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/message_token.dart';
 
 class MessageTranslation {
-  const MessageTranslation({required this.translation, required this.tokens});
+  const MessageTranslation({
+    required this.translation,
+    required this.englishText,
+    required this.sourceLang,
+    required this.tokens,
+  });
   final String translation;
+  final String englishText;
+  final String sourceLang;
   final List<MessageToken> tokens;
 }
 
@@ -20,18 +27,19 @@ class MessageTranslationFailed implements Exception {
 
 /// Injectable invoker. Production wires to a real Supabase Edge Function
 /// call; tests pass a fake.
-typedef MessageTranslateInvoke = Future<Map<String, dynamic>> Function({
-  required String text,
-  required String sourceLang,
-  required String targetLang,
-});
+typedef MessageTranslateInvoke =
+    Future<Map<String, dynamic>> Function({
+      required String text,
+      required String sourceLang,
+      required String targetLang,
+    });
 
 class MessageTranslator {
   MessageTranslator({
     MessageTranslateInvoke? invoke,
-    Duration timeout = const Duration(seconds: 15),
-  })  : _invoke = invoke ?? _defaultInvoke,
-        _timeout = timeout;
+    Duration timeout = const Duration(seconds: 60),
+  }) : _invoke = invoke ?? _defaultInvoke,
+       _timeout = timeout;
 
   final MessageTranslateInvoke _invoke;
   final Duration _timeout;
@@ -58,9 +66,17 @@ class MessageTranslator {
       throw MessageTranslationFailed('invoke_failed: $e');
     }
     final translation = raw['translation'];
+    final englishText = raw['english'];
+    final detectedSourceLang = raw['sourceLang'];
     final rawTokens = raw['tokens'];
-    if (translation is! String || translation.isEmpty) {
+    if (translation is! String || translation.trim().isEmpty) {
       throw MessageTranslationFailed('missing_translation');
+    }
+    if (englishText is! String || englishText.trim().isEmpty) {
+      throw MessageTranslationFailed('missing_english');
+    }
+    if (detectedSourceLang is! String || detectedSourceLang.isEmpty) {
+      throw MessageTranslationFailed('missing_source_language');
     }
     final tokens = <MessageToken>[];
     if (rawTokens is List) {
@@ -69,15 +85,22 @@ class MessageTranslator {
         final tokenText = t['text'];
         if (tokenText is! String) continue;
         final isContent = t['isContent'] as bool? ?? true;
-        tokens.add(MessageToken(
-          text: tokenText,
-          english: t['english'] as String?,
-          romanization: t['roman'] as String?,
-          isContent: isContent,
-        ));
+        tokens.add(
+          MessageToken(
+            text: tokenText,
+            english: t['english'] as String?,
+            romanization: t['roman'] as String?,
+            isContent: isContent,
+          ),
+        );
       }
     }
-    return MessageTranslation(translation: translation, tokens: tokens);
+    return MessageTranslation(
+      translation: translation,
+      englishText: englishText,
+      sourceLang: detectedSourceLang,
+      tokens: tokens,
+    );
   }
 }
 
@@ -88,11 +111,7 @@ Future<Map<String, dynamic>> _defaultInvoke({
 }) async {
   final response = await Supabase.instance.client.functions.invoke(
     'translate-message',
-    body: {
-      'text': text,
-      'sourceLang': sourceLang,
-      'targetLang': targetLang,
-    },
+    body: {'text': text, 'sourceLang': sourceLang, 'targetLang': targetLang},
   );
   final data = response.data;
   if (data is Map<String, dynamic>) return data;
@@ -100,5 +119,6 @@ Future<Map<String, dynamic>> _defaultInvoke({
   throw StateError('unexpected_payload');
 }
 
-final messageTranslatorProvider =
-    Provider<MessageTranslator>((ref) => MessageTranslator());
+final messageTranslatorProvider = Provider<MessageTranslator>(
+  (ref) => MessageTranslator(),
+);
