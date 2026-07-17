@@ -13,9 +13,9 @@ final chatServiceProvider = Provider<ChatService>((ref) {
 
 Chat _rowToChat(Map<String, dynamic> r) {
   BlabLanguage lang(String code) => kBlabLanguages.firstWhere(
-        (l) => l.code == code,
-        orElse: () => kBlabLanguages.firstWhere((l) => l.code == 'en'),
-      );
+    (l) => l.code == code,
+    orElse: () => kBlabLanguages.firstWhere((l) => l.code == 'en'),
+  );
   final myLearn = lang((r['my_learning'] as String?) ?? 'en');
   final partnerLearn = lang((r['partner_learning'] as String?) ?? 'en');
   final raw = (r['partner_name'] as String?) ?? '';
@@ -28,6 +28,9 @@ Chat _rowToChat(Map<String, dynamic> r) {
     learningLanguage: myLearn,
     partnerNativeLanguage: myLearn,
     partnerLearningLanguage: partnerLearn,
+    translationCutoffAt: r['translation_cutoff_at'] == null
+        ? null
+        : DateTime.parse(r['translation_cutoff_at'] as String).toLocal(),
     lastMessage: (r['last_body'] as String?) ?? '',
     lastMessageTranslation: '',
     lastMessageId: r['last_message_id'] as String?,
@@ -79,8 +82,9 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
   }
 }
 
-final chatListProvider =
-    AsyncNotifierProvider<ChatListNotifier, List<Chat>>(ChatListNotifier.new);
+final chatListProvider = AsyncNotifierProvider<ChatListNotifier, List<Chat>>(
+  ChatListNotifier.new,
+);
 
 /// Realtime set of user ids the current user has blocked. Empty when
 /// signed-out or on error. Step 3.6a.
@@ -106,7 +110,6 @@ List<Chat> filterBlockedChats(List<Chat> chats, Set<String> blocked) => chats
 /// from the list immediately (and it returns on unblock). Step 3.6a.
 final visibleChatsProvider = Provider<AsyncValue<List<Chat>>>((ref) {
   final chats = ref.watch(chatListProvider);
-  final blocked =
-      ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+  final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
   return chats.whenData((list) => filterBlockedChats(list, blocked));
 });

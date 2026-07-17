@@ -1,4 +1,5 @@
 import 'package:blab/features/chat/state/message_translations_state.dart';
+import 'package:blab/shared/data/translation_support.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +20,29 @@ ProviderContainer _container({
 }
 
 void main() {
+  test('language cutoff excludes old history and includes new messages', () {
+    final cutoff = DateTime.utc(2026, 7, 17, 12);
+
+    expect(
+      shouldTranslateMessage(
+        sentAt: cutoff.subtract(const Duration(microseconds: 1)),
+        translationCutoffAt: cutoff,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldTranslateMessage(sentAt: cutoff, translationCutoffAt: cutoff),
+      isTrue,
+    );
+    expect(
+      shouldTranslateMessage(
+        sentAt: cutoff.subtract(const Duration(days: 365)),
+        translationCutoffAt: null,
+      ),
+      isTrue,
+    );
+  });
+
   test(
     'ensure fires translator once and caches AsyncData on success',
     () async {

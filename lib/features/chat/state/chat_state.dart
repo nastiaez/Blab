@@ -376,12 +376,12 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
   /// surface it.
   Future<void> set(BlabLanguage lang) async {
     final previous = state;
-    state = lang;
     try {
       await ref
           .read(chatServiceProvider)
           .setLearningLanguage(chatId: chatId, langCode: lang.code);
       await ref.read(chatListProvider.notifier).refresh();
+      state = lang;
     } catch (e) {
       state = previous;
       rethrow;

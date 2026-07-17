@@ -25,8 +25,13 @@ class ChatListTile extends ConsumerWidget {
     // hydrated from the DB via the chat screen's prefetch).
     final code = chat.learningLanguage.code;
     final supported = kSupportedLearningLanguages.contains(code);
+    final latestMessageIsEligible = shouldTranslateMessage(
+      sentAt: chat.timestamp,
+      translationCutoffAt: chat.translationCutoffAt,
+    );
     String previewText = chat.lastMessage;
     if (supported &&
+        latestMessageIsEligible &&
         chat.lastMessageId != null &&
         chat.lastMessage.isNotEmpty &&
         !chat.isNewInvite) {

@@ -209,10 +209,18 @@ reset_local() {
   # local resets without changing the repository's tracked CLI metadata.
   printf '%s' "$local_postgres_version" > "$postgres_version_file"
   if [[ "${SUPABASE_DEBUG:-0}" == '1' ]]; then
-    supabase start --debug
+    if [[ "${BLAB_IGNORE_SUPABASE_HEALTH_CHECKS:-0}" == '1' ]]; then
+      supabase start --ignore-health-check --debug
+    else
+      supabase start --debug
+    fi
     supabase db reset --debug
   else
-    supabase start
+    if [[ "${BLAB_IGNORE_SUPABASE_HEALTH_CHECKS:-0}" == '1' ]]; then
+      supabase start --ignore-health-check
+    else
+      supabase start
+    fi
     supabase db reset
   fi
 

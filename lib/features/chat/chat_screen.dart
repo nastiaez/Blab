@@ -243,15 +243,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+    final translationCutoffAt = chat.translationCutoffAt;
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
-    // Bulk-prefetch the DB-cached translations for this chat in the
-    // current learning language so reopening (or switching back to a
-    // previously-used language) renders old messages instantly instead
-    // of requiring the user to scroll past every bubble to fire its
-    // lazy LLM call. Fires on first build and on every language change.
+    // Bulk-prefetch DB-cached translations for messages in the current
+    // language era. History from before a language change stays in English
+    // and never enters the live translation path.
     if (kSupportedLearningLanguages.contains(learningLang.code) &&
         _prefetchedLang != learningLang.code) {
       _prefetchedLang = learningLang.code;
@@ -260,16 +259,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final notifier = ref.read(
           messageTranslationsProvider(widget.chatId).notifier,
         );
-        await notifier.prefetchFromDb(learningLang.code);
+        await notifier.prefetchFromDb(
+          learningLang.code,
+          translationCutoffAt: translationCutoffAt,
+        );
         if (!mounted) return;
-        // After hydrating from the DB, kick LLM translations for every
-        // message that's still uncached so the user doesn't have to
-        // scroll past each one to trigger it. ensure() is idempotent —
-        // hits + in-flight rows no-op, only true misses round-trip.
+        // Translate every eligible cache miss. ensure() is idempotent; old
+        // history is excluded above so a language switch cannot fan out one
+        // OpenRouter request per historical message.
         final messages = ref.read(chatMessagesProvider(widget.chatId)).value;
         if (messages == null) return;
         for (final m in messages) {
           if (m.originalText.trim().isEmpty) continue;
+          if (!shouldTranslateMessage(
+            sentAt: m.sentAt,
+            translationCutoffAt: translationCutoffAt,
+          )) {
+            continue;
+          }
           notifier.ensure(
             messageId: m.id,
             text: m.originalText,
@@ -428,6 +435,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               showTranslations: showTransl,
                               scrollController: _scroll,
                               languageCode: learningLang.code,
+                              translationCutoffAt: translationCutoffAt,
                               // BUG-009: keep the word popup from drawing on
                               // top of the chat header. Account for the
                               // safe-area notch as well.
@@ -790,6 +798,7 @@ class _MessageList extends StatelessWidget {
     required this.showTranslations,
     required this.scrollController,
     required this.languageCode,
+    required this.translationCutoffAt,
     required this.popupTopInset,
     required this.onLongPress,
     required this.onFailedTap,
@@ -801,6 +810,7 @@ class _MessageList extends StatelessWidget {
   final bool showTranslations;
   final ScrollController scrollController;
   final String languageCode;
+  final DateTime? translationCutoffAt;
   final double popupTopInset;
   final void Function(Message) onLongPress;
   final void Function(Message) onFailedTap;
@@ -870,6 +880,10 @@ class _MessageList extends StatelessWidget {
             isFirstInGroup: item.isFirstInGroup,
             isLastInGroup: item.isLastInGroup,
             languageCode: languageCode,
+            shouldTranslate: shouldTranslateMessage(
+              sentAt: item.message.sentAt,
+              translationCutoffAt: translationCutoffAt,
+            ),
             popupTopInset: popupTopInset,
             onLongPress: () => onLongPress(item.message),
             onFailedTap: () => onFailedTap(item.message),
@@ -983,6 +997,7 @@ class _MessageRow extends ConsumerWidget {
     required this.isFirstInGroup,
     required this.isLastInGroup,
     required this.languageCode,
+    required this.shouldTranslate,
     required this.popupTopInset,
     required this.onLongPress,
     required this.onFailedTap,
@@ -994,6 +1009,7 @@ class _MessageRow extends ConsumerWidget {
   final bool isFirstInGroup;
   final bool isLastInGroup;
   final String languageCode;
+  final bool shouldTranslate;
   final double popupTopInset;
   final VoidCallback onLongPress;
   final VoidCallback onFailedTap;
@@ -1010,7 +1026,8 @@ class _MessageRow extends ConsumerWidget {
     // translation into their own learning language. Fire for ALL bubbles
     // (incoming + outgoing) when this viewer's learning language is one
     // we translate this slice. Source is always English for v1.
-    if (kSupportedLearningLanguages.contains(languageCode) &&
+    if (shouldTranslate &&
+        kSupportedLearningLanguages.contains(languageCode) &&
         message.originalText.trim().isNotEmpty) {
       Future.microtask(() {
         ref
@@ -1035,6 +1052,7 @@ class _MessageRow extends ConsumerWidget {
         maxWidth: maxBubble,
         isLastInGroup: isLastInGroup,
         languageCode: languageCode,
+        shouldTranslate: shouldTranslate,
         popupTopInset: popupTopInset,
       ),
     );
@@ -1079,6 +1097,7 @@ class _Bubble extends ConsumerWidget {
     required this.maxWidth,
     required this.isLastInGroup,
     required this.languageCode,
+    required this.shouldTranslate,
     required this.popupTopInset,
   });
 
@@ -1088,13 +1107,15 @@ class _Bubble extends ConsumerWidget {
   final double maxWidth;
   final bool isLastInGroup;
   final String languageCode;
+  final bool shouldTranslate;
   final double popupTopInset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
 
-    final liveTranslation = kSupportedLearningLanguages.contains(languageCode)
+    final liveTranslation =
+        shouldTranslate && kSupportedLearningLanguages.contains(languageCode)
         ? ref.watch(
             messageTranslationsProvider(chatId),
           )['${message.id}|$languageCode']
@@ -1202,7 +1223,9 @@ class _Bubble extends ConsumerWidget {
                 MessageText(
                   text: liveTranslation is AsyncData<MessageTranslation>
                       ? liveTranslation.value.translation
-                      : (isOut && message.translation.isNotEmpty
+                      : (shouldTranslate &&
+                                isOut &&
+                                message.translation.isNotEmpty
                             ? message.translation
                             : message.originalText),
                   tokens: liveTranslation is AsyncData<MessageTranslation>
@@ -1223,7 +1246,7 @@ class _Bubble extends ConsumerWidget {
                       text: message.originalText,
                       isOutgoing: isOut,
                     )
-                  else if (message.translation.isNotEmpty)
+                  else if (shouldTranslate && message.translation.isNotEmpty)
                     TranslationSubtitle(
                       state: TranslationSubtitleState.ready,
                       text: isOut ? message.originalText : message.translation,

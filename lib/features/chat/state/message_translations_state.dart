@@ -78,13 +78,17 @@ class MessageTranslationsNotifier
 
   /// Fire-and-forget bulk DB prefetch: one query, populate the cache.
   /// Safe to call repeatedly — already-hydrated keys are skipped.
-  Future<void> prefetchFromDb(String targetLang) async {
+  Future<void> prefetchFromDb(
+    String targetLang, {
+    DateTime? translationCutoffAt,
+  }) async {
     try {
       final rows = await ref
           .read(chatServiceProvider)
           .fetchCachedTranslationsForChat(
             chatId: chatId,
             targetLang: targetLang,
+            translationCutoffAt: translationCutoffAt,
           );
       final byId = <String, MessageTranslation>{};
       for (final entry in rows.entries) {

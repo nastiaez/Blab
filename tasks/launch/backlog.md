@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: `None` (`L-10` passed; `L-04` remains externally blocked)
+Active item: `L-12` (`Not started`; finding confirmation is next; `L-04` remains externally blocked)
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -27,7 +27,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 8 | L-08 | P1-11 | Tighten profile, message-update, and read-receipt RLS boundaries | L-01, L-06 | Complete | [`items/L-08.md`](./items/L-08.md) |
 | 9 | L-09 | P1-10 | Account-scope pending sends and add send idempotency | L-08 | Complete | [`items/L-09.md`](./items/L-09.md) |
 | 10 | L-10 | P1-03, P1-04 | Persist replies and enforce the approved edit contract | L-08 | Complete | [`items/L-10.md`](./items/L-10.md) |
-| 11 | L-11 | P1-05 | Prevent duplicate pair chats during invite claims | L-03, L-08 | Not started | `items/L-11.md` |
+| 11 | L-11 | P1-05 | Prevent duplicate pair chats during invite claims | L-03, L-08 | Complete | [`items/L-11.md`](./items/L-11.md) |
 | 12 | L-12 | P1-07 | Align translation length, source-language behavior, triggering, and product claims | L-00 | Not started | `items/L-12.md` |
 | 13 | L-13 | P1-08, P1-09 | Secure translation authorization, quotas, cache integrity, provider routing, and retention | L-12 | Not started | `items/L-13.md` |
 | 14 | L-14 | P1-01 | Implement or remove profile and photo editing from launch scope | L-00 | Not started | `items/L-14.md` |
@@ -35,6 +35,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 16 | L-16 | P1-13 | Add message-history pagination, page-aware translation hydration, and correct reconnect/offline behavior | L-09, L-13 | Not started | `items/L-16.md` |
 | 17 | L-17 | P1-06 | Approve and implement notifications, or explicitly constrain the launch | L-00 | Not started | `items/L-17.md` |
 | 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Not started | `items/L-18.md` |
+| 24 | L-24 | Follow-up | Repair Android warm invite-link routing; received links must navigate while Blab is already open | L-03, L-04 | Not started | `items/L-24.md` |
 
 ## Release hardening
 

@@ -230,19 +230,26 @@ class ChatService {
 
   /// Bulk-fetch every cached translation for messages belonging to
   /// [chatId] in [targetLang]. Returned as a map keyed by message id.
-  /// Used to hydrate the in-memory translation cache on chat open and
-  /// on learning-language change so old messages don't need to be
-  /// scrolled past to translate.
+  /// When [translationCutoffAt] is set, history from before the viewer's
+  /// latest language change is excluded.
   Future<Map<String, ({String text, List<Map<String, dynamic>> tokens})>>
   fetchCachedTranslationsForChat({
     required String chatId,
     required String targetLang,
+    DateTime? translationCutoffAt,
   }) async {
-    final msgRows = await _client
+    var messageQuery = _client
         .from('messages')
         .select('id')
         .eq('chat_id', chatId)
         .filter('deleted_at', 'is', null);
+    if (translationCutoffAt != null) {
+      messageQuery = messageQuery.gte(
+        'created_at',
+        translationCutoffAt.toUtc().toIso8601String(),
+      );
+    }
+    final msgRows = await messageQuery;
     final ids = (msgRows as List).map((r) => r['id'] as String).toList();
     if (ids.isEmpty) return {};
     final transRows = await _client
@@ -397,9 +404,10 @@ class ChatService {
     );
   }
 
-  /// "Accept & join" path. Atomically marks the invite used, creates the
-  /// chat row + both `chat_members` rows, and returns the new chat's
-  /// id. Throws a [PostgrestException] with one of the documented
+  /// "Accept & join" path. Atomically marks the invite used, creates or
+  /// reuses the pair's canonical chat, applies both selected learning
+  /// languages, and returns that chat's id. Throws a [PostgrestException]
+  /// with one of the documented
   /// `message` codes on failure: `invite_not_found`, `invite_expired`,
   /// `invite_already_claimed`, `invite_self_claim`, `not_signed_in`,
   /// `invalid_language`.

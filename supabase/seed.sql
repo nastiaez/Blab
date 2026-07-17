@@ -130,7 +130,8 @@ revoke update on table public.profiles from authenticated;
 grant update (display_name, avatar_path, interface_language)
   on table public.profiles to authenticated;
 grant select on table public.chats to authenticated;
-grant select, update on table public.chat_members to authenticated;
+grant select on table public.chat_members to authenticated;
+grant update (learning_language) on table public.chat_members to authenticated;
 grant select, insert on table public.messages to authenticated;
 revoke update, delete on table public.messages from authenticated;
 grant update (body, deleted_at) on table public.messages to authenticated;
