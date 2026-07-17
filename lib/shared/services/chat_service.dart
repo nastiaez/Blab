@@ -80,12 +80,33 @@ class ChatService {
   Future<({String id, DateTime createdAt})> sendMessage({
     required String chatId,
     required String body,
+    String? clientMessageId,
   }) async {
-    final row = await _client
-        .from('messages')
-        .insert({'chat_id': chatId, 'sender_id': _uid, 'body': body})
-        .select()
-        .single();
+    final payload = {
+      'id': ?clientMessageId,
+      'chat_id': chatId,
+      'sender_id': _uid,
+      'body': body,
+    };
+    Map<String, dynamic> row;
+    try {
+      row = await _client.from('messages').insert(payload).select().single();
+    } on PostgrestException catch (error) {
+      if (clientMessageId == null || error.code != '23505') rethrow;
+      final existing = await _client
+          .from('messages')
+          .select('id,chat_id,sender_id,body,created_at,deleted_at')
+          .eq('id', clientMessageId)
+          .maybeSingle();
+      if (existing == null ||
+          existing['chat_id'] != chatId ||
+          existing['sender_id'] != _uid ||
+          existing['body'] != body ||
+          existing['deleted_at'] != null) {
+        throw StateError('idempotency_conflict');
+      }
+      row = existing;
+    }
     return (
       id: row['id'] as String,
       createdAt: DateTime.parse(row['created_at'] as String).toLocal(),

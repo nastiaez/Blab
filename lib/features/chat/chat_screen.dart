@@ -24,6 +24,7 @@ import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
+import 'widgets/message_interaction_target.dart';
 import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/report_sheet.dart';
@@ -1018,10 +1019,10 @@ class _MessageRow extends ConsumerWidget {
       });
     }
 
-    Widget bubble = GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    Widget bubble = MessageInteractionTarget(
+      isFailed: isFailed,
       onLongPress: onLongPress,
-      onTap: isFailed ? onFailedTap : null,
+      onFailedTap: onFailedTap,
       child: _Bubble(
         chatId: chatId,
         message: message,

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,21 +11,46 @@ import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/connectivity_state.dart';
 import 'pending_sends_state.dart';
 
-/// Dev/QA toggle: when `true`, every outgoing send is simulated to fail
-/// (PRD US-030 affordances). Currently unwired pending Task 12 (optimistic
-/// pending queue + real failure path). Kept for the dev menu switch.
+/// Dev/QA one-shot: when armed, the next outgoing send is simulated to fail
+/// so PRD US-030's retry/delete affordances can be exercised deterministically.
 class SimulateFailureNotifier extends Notifier<bool> {
   @override
   bool build() => false;
 
   void toggle() => state = !state;
   void set(bool value) => state = value;
+
+  /// Consume the debug failure once so the resulting bubble can be retried
+  /// without navigating back to the dev menu to reset the switch.
+  bool consume() {
+    if (!state) return false;
+    state = false;
+    return true;
+  }
 }
 
-final simulateFailureProvider =
-    NotifierProvider<SimulateFailureNotifier, bool>(
+final simulateFailureProvider = NotifierProvider<SimulateFailureNotifier, bool>(
   SimulateFailureNotifier.new,
 );
+
+typedef ClientMessageIdFactory = String Function();
+
+final clientMessageIdFactoryProvider = Provider<ClientMessageIdFactory>(
+  (ref) => _newClientMessageId,
+);
+
+String _newClientMessageId() {
+  final random = Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
+      '${hex.substring(20)}';
+}
 
 /// Per-chat message stream backed by Supabase. Yields a one-shot history
 /// from [ChatService.fetchMessages] followed by realtime snapshots from
@@ -52,6 +79,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     final svc = ref.watch(chatServiceProvider);
     try {
       final history = await svc.fetchMessages(chatId);
+      ref
+          .read(pendingSendsProvider(chatId).notifier)
+          .reconcile(history.map((message) => message.id));
       yield history;
     } catch (_) {
       // Offline / fetch failure: don't yield anything. Riverpod keeps the
@@ -64,6 +94,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
             .where((r) => r['deleted_at'] == null)
             .map((r) => messageFromRow(r, currentUserId: _uid))
             .toList();
+        ref
+            .read(pendingSendsProvider(chatId).notifier)
+            .reconcile(list.map((message) => message.id));
         yield list;
       }
     } catch (_) {
@@ -78,7 +111,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   Future<void> addOutgoing(String text, {Message? replyTo}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
-    final tempId = 'local-${DateTime.now().microsecondsSinceEpoch}';
+    final tempId = ref.read(clientMessageIdFactoryProvider)();
     final pending = Message(
       id: tempId,
       chatId: chatId,
@@ -105,16 +138,17 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     if (_inFlight.contains(localId)) return;
     _inFlight.add(localId);
     try {
-      // Dev/QA: the dev-menu "failed-send" switch forces a server-side
-      // rejection so US-030's ⚠ + retry path can be exercised on a real
-      // device without a genuine outage.
-      if (ref.read(simulateFailureProvider)) {
+      // Dev/QA: consume the one-shot before forcing a rejection so the
+      // resulting failed bubble can exercise the real retry path.
+      if (ref.read(simulateFailureProvider.notifier).consume()) {
         throw Exception('simulated_failure');
       }
       final server = await ref
           .read(chatServiceProvider)
-          .sendMessage(chatId: chatId, body: body);
-      ref.read(pendingSendsProvider(chatId).notifier).upgrade(
+          .sendMessage(chatId: chatId, body: body, clientMessageId: localId);
+      ref
+          .read(pendingSendsProvider(chatId).notifier)
+          .upgrade(
             tempId: localId,
             newId: server.id,
             newSentAt: server.createdAt,
@@ -123,10 +157,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       ref.read(chatListProvider.notifier).refresh();
     } catch (_) {
       if (_online) {
-        ref.read(pendingSendsProvider(chatId).notifier).update(
-              localId,
-              (m) => m.copyWith(status: MessageStatus.failed),
-            );
+        ref
+            .read(pendingSendsProvider(chatId).notifier)
+            .update(localId, (m) => m.copyWith(status: MessageStatus.failed));
       }
       // Offline drop: keep the row pending so the reconnect flush retries.
     } finally {
@@ -149,9 +182,8 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
   }
 
-  /// Re-fire a previously failed send. Drops the failed row from the
-  /// queue, then routes back through [addOutgoing] (which lays down a
-  /// fresh pending row). PRD US-030.
+  /// Re-fire a previously failed send with its original idempotency id.
+  /// PRD US-030.
   Future<void> retryFailed(String localId) async {
     final pendings = ref.read(pendingSendsProvider(chatId));
     Message? target;
@@ -162,8 +194,13 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       }
     }
     if (target == null) return;
-    ref.read(pendingSendsProvider(chatId).notifier).remove(localId);
-    await addOutgoing(target.originalText, replyTo: target.replyTo);
+    ref
+        .read(pendingSendsProvider(chatId).notifier)
+        .update(
+          localId,
+          (message) => message.copyWith(status: MessageStatus.pending),
+        );
+    await _attemptSend(localId, target.originalText);
   }
 
   /// Drop a pending or failed message from the queue without retrying.
@@ -224,13 +261,13 @@ class HiddenMessagesNotifier extends Notifier<Set<String>> {
 
 final hiddenMessagesProvider =
     NotifierProvider.family<HiddenMessagesNotifier, Set<String>, String>(
-  HiddenMessagesNotifier.new,
-);
+      HiddenMessagesNotifier.new,
+    );
 
 final chatMessagesProvider =
     StreamNotifierProvider.family<ChatNotifier, List<Message>, String>(
-  ChatNotifier.new,
-);
+      ChatNotifier.new,
+    );
 
 /// Per-chat translation visibility. Default `true`. Flipping this only
 /// affects the chat with the matching `chatId` — PRD FR-23.
@@ -247,8 +284,8 @@ class ShowTranslationsNotifier extends Notifier<bool> {
 
 final showTranslationsProvider =
     NotifierProvider.family<ShowTranslationsNotifier, bool, String>(
-  ShowTranslationsNotifier.new,
-);
+      ShowTranslationsNotifier.new,
+    );
 
 /// Per-chat "currently replying to" message. Null when not replying.
 /// Setting a reply target clears any in-flight edit (the two modes are
@@ -274,8 +311,8 @@ class ReplyingToNotifier extends Notifier<Message?> {
 
 final replyingToProvider =
     NotifierProvider.family<ReplyingToNotifier, Message?, String>(
-  ReplyingToNotifier.new,
-);
+      ReplyingToNotifier.new,
+    );
 
 /// Per-chat "currently editing" message. Null when not editing. PRD US-019.
 class EditingNotifier extends Notifier<Message?> {
@@ -299,8 +336,8 @@ class EditingNotifier extends Notifier<Message?> {
 
 final editingProvider =
     NotifierProvider.family<EditingNotifier, Message?, String>(
-  EditingNotifier.new,
-);
+      EditingNotifier.new,
+    );
 
 /// Per-chat learning language. Seeded from the live chat list — when the
 /// chat row is present we use its `learningLanguage`, otherwise we fall
@@ -344,5 +381,5 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
 
 final learningLanguageProvider =
     NotifierProvider.family<LearningLanguageNotifier, BlabLanguage, String>(
-  LearningLanguageNotifier.new,
-);
+      LearningLanguageNotifier.new,
+    );

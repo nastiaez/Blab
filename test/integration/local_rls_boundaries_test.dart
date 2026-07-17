@@ -234,11 +234,18 @@ void main() {
         );
 
         final chatList = List<Map<String, dynamic>>.from(
-          await alice.from('chat_list').select('partner_id,partner_name'),
+          await alice
+              .from('chat_list')
+              .select('viewer_id,chat_id,partner_id,partner_name'),
         );
-        expect(chatList, hasLength(1));
-        expect(chatList.single['partner_id'], bobId);
-        expect(chatList.single['partner_name'], 'Bob Local');
+        expect(chatList, isNotEmpty);
+        expect(chatList, everyElement(containsPair('viewer_id', aliceId)));
+        final testChatRows = chatList
+            .where((row) => row['chat_id'] == aliceBobChat)
+            .toList();
+        expect(testChatRows, hasLength(1));
+        expect(testChatRows.single['partner_id'], bobId);
+        expect(testChatRows.single['partner_name'], 'Bob Local');
       } finally {
         if (alice.auth.currentUser != null && originalAliceName != null) {
           await alice

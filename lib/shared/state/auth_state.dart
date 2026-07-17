@@ -45,3 +45,12 @@ final isSignedInProvider = Provider<bool>((ref) {
   final session = ref.watch(authSessionProvider).value;
   return session != null;
 });
+
+/// Stable account identity for device-local stores that must never be shared
+/// across sessions. The client fallback is available while the auth stream is
+/// still loading its initial value.
+final currentUserIdProvider = Provider<String?>((ref) {
+  final session = ref.watch(authSessionProvider).value;
+  return session?.user.id ??
+      ref.watch(supabaseClientProvider).auth.currentUser?.id;
+});

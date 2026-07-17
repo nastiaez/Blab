@@ -1,3 +1,4 @@
+import 'package:blab/features/chat/widgets/message_interaction_target.dart';
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/tts_service.dart';
@@ -25,24 +26,34 @@ class _FakeTtsService implements TtsService {
   dynamic noSuchMethod(Invocation invocation) => null;
 }
 
-Widget _harness({required VoidCallback onLongPress}) {
+Widget _harness({
+  required VoidCallback onLongPress,
+  VoidCallback? onFailedTap,
+  bool isFailed = false,
+}) {
   return ProviderScope(
     overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
     child: MaterialApp(
       home: Scaffold(
         body: Center(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
+          child: MessageInteractionTarget(
+            isFailed: isFailed,
             onLongPress: onLongPress,
-            // onTap intentionally null — matches a non-failed bubble.
+            onFailedTap: onFailedTap ?? () {},
             child: const MessageText(
               text: 'காலை எப்படி',
               tokens: [
                 MessageToken(
-                    text: 'காலை', romanization: 'kālai', english: 'morning'),
+                  text: 'காலை',
+                  romanization: 'kālai',
+                  english: 'morning',
+                ),
                 MessageToken(text: ' ', isContent: false),
                 MessageToken(
-                    text: 'எப்படி', romanization: 'eppadi', english: 'how'),
+                  text: 'எப்படி',
+                  romanization: 'eppadi',
+                  english: 'how',
+                ),
               ],
               languageCode: 'ta',
               style: TextStyle(fontSize: 16, color: Colors.black),
@@ -55,31 +66,78 @@ Widget _harness({required VoidCallback onLongPress}) {
 }
 
 void main() {
-  testWidgets('tapping a word opens the popup and does NOT long-press',
-      (tester) async {
+  testWidgets('tapping a word opens the popup and does NOT long-press', (
+    tester,
+  ) async {
     var longPressed = false;
     await tester.pumpWidget(_harness(onLongPress: () => longPressed = true));
 
-    await tester.tap(find.text('காலை'));
+    await tester.tapAt(tester.getCenter(find.text('காலை')));
     await tester.pumpAndSettle();
 
-    expect(find.text('morning'), findsOneWidget,
-        reason: 'word popup should open on tap');
-    expect(longPressed, isFalse,
-        reason: 'a quick tap must not trigger the action sheet');
+    expect(
+      find.text('morning'),
+      findsOneWidget,
+      reason: 'word popup should open on tap',
+    );
+    expect(
+      longPressed,
+      isFalse,
+      reason: 'a quick tap must not trigger the action sheet',
+    );
   });
 
-  testWidgets('long-pressing a word opens the action sheet, NOT the popup',
-      (tester) async {
+  testWidgets('long-pressing a word opens the action sheet, NOT the popup', (
+    tester,
+  ) async {
     var longPressed = false;
     await tester.pumpWidget(_harness(onLongPress: () => longPressed = true));
 
     await tester.longPress(find.text('காலை'));
     await tester.pumpAndSettle();
 
-    expect(longPressed, isTrue,
-        reason: 'holding the word must trigger the action sheet');
-    expect(find.text('morning'), findsNothing,
-        reason: 'long-press must not also open the word popup');
+    expect(
+      longPressed,
+      isTrue,
+      reason: 'holding the word must trigger the action sheet',
+    );
+    expect(
+      find.text('morning'),
+      findsNothing,
+      reason: 'long-press must not also open the word popup',
+    );
   });
+
+  testWidgets(
+    'clicking failed message text opens send options, not word popup',
+    (tester) async {
+      var failedTapped = false;
+      await tester.pumpWidget(
+        _harness(
+          isFailed: true,
+          onLongPress: () {},
+          onFailedTap: () => failedTapped = true,
+        ),
+      );
+
+      await tester.tapAt(tester.getCenter(find.text('காலை')));
+      await tester.pumpAndSettle();
+
+      expect(failedTapped, isTrue);
+      expect(find.text('morning'), findsNothing);
+      expect(
+        tester
+            .widget<MouseRegion>(
+              find
+                  .ancestor(
+                    of: find.text('காலை'),
+                    matching: find.byType(MouseRegion),
+                  )
+                  .first,
+            )
+            .cursor,
+        SystemMouseCursors.click,
+      );
+    },
+  );
 }

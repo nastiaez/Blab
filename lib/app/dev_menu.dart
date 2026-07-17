@@ -87,8 +87,8 @@ class DevMenu extends ConsumerWidget {
           if (i == _entries.length + 1) {
             return _DevToggleRow(
               label: simulateFailure
-                  ? 'Toggle failed-send (on)'
-                  : 'Toggle failed-send (off)',
+                  ? 'Fail next send (armed)'
+                  : 'Fail next send (off)',
               us: 'US-030',
               value: simulateFailure,
               onTap: () => ref.read(simulateFailureProvider.notifier).toggle(),

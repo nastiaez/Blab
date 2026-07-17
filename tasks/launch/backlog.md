@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: `None` (`L-08` passed; `L-04` remains externally blocked)
+Active item: `None` (`L-09` passed; `L-04` remains externally blocked)
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -25,7 +25,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | Order | Work ID | Audit ID | Scope | Depends on | Status | Work record |
 | ---: | --- | --- | --- | --- | --- | --- |
 | 8 | L-08 | P1-11 | Tighten profile, message-update, and read-receipt RLS boundaries | L-01, L-06 | Complete | [`items/L-08.md`](./items/L-08.md) |
-| 9 | L-09 | P1-10 | Account-scope pending sends and add send idempotency | L-08 | Not started | `items/L-09.md` |
+| 9 | L-09 | P1-10 | Account-scope pending sends and add send idempotency | L-08 | Complete | [`items/L-09.md`](./items/L-09.md) |
 | 10 | L-10 | P1-03, P1-04 | Persist replies and enforce the approved edit contract | L-08 | Not started | `items/L-10.md` |
 | 11 | L-11 | P1-05 | Prevent duplicate pair chats during invite claims | L-03, L-08 | Not started | `items/L-11.md` |
 | 12 | L-12 | P1-07 | Align translation length, source-language behavior, triggering, and product claims | L-00 | Not started | `items/L-12.md` |

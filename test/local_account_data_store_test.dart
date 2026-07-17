@@ -10,8 +10,10 @@ void main() {
     SharedPreferences.setMockInitialValues({
       kPrivacyTypingIndicatorsKey: false,
       kPrivacyReadReceiptsKey: false,
-      '${kPendingSendsKeyPrefix}chat-a': '[{"body":"one"}]',
-      '${kPendingSendsKeyPrefix}chat-b': '[{"body":"two"}]',
+      pendingSendsStorageKey(userId: 'user-a', chatId: 'chat-a'):
+          '[{"body":"one"}]',
+      pendingSendsStorageKey(userId: 'user-b', chatId: 'chat-b'):
+          '[{"body":"two"}]',
       'unrelated_device_preference': 'keep',
     });
 
