@@ -47,7 +47,7 @@ something's off, note it and tell Claude — don't submit until these pass.
 - [ ] Offline banner appears/disappears within ~3s
 
 ## Profile & account
-- [ ] Edit profile (name + photo)
+- [ ] Edit profile (persisted display name; static initial avatar)
 - [ ] Change password
 - [ ] Change interface language
 - [ ] Delete account → bounced to login; can't log back in

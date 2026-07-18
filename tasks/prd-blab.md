@@ -147,25 +147,23 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to view and manage my profile.
 
 **Acceptance Criteria:**
-- [ ] Profile tab shows hero section: avatar initial, name, "Learning" chips (language + flag)
+- [ ] Profile tab shows hero section: static avatar initial and persisted display name
 - [ ] Settings card (one container, dividers): Interface language | Edit profile | Change email | Change password | Log out
 - [ ] "Interface language" row shows current language name in purple, tapping opens language sheet
 - [ ] "Edit profile" navigates to Edit Profile screen
 - [ ] "Change email" navigates to Change Email screen (US-039)
 - [ ] "Change password" navigates to Change Password screen
 - [ ] Tapping "Log out" first opens a confirm dialog (title: "Log out?", buttons: Cancel + Log out); only on confirm does it sign out and return to auth screen with all fields reset
-- [ ] Avatar in the hero is tappable — opens the same photo action sheet as Edit profile (quick path)
+- [ ] Learning language is shown only within its chat because it is a per-chat setting
 
 ---
 
 ### US-011: Edit profile
-**Description:** As a user, I want to update my display name and photo.
+**Description:** As a user, I want to update my display name.
 
 **Acceptance Criteria:**
 - [ ] Nav: back (‹) | "Edit profile" title | "Save" (top right)
-- [ ] Avatar shown clean (no camera badge, no overlay icon). Press state = scale 0.96 + opacity 0.85 for tappable affordance
-- [ ] Inline "PROFILE PHOTO" settings-card directly below the avatar with rows: Take photo / Choose from library / Remove photo (red). "Remove photo" only renders when a photo actually exists
-- [ ] No bottom sheet on this screen — actions live inline
+- [ ] Static initial avatar is shown without photo actions or upload affordances
 - [ ] "DISPLAY NAME" label above bordered text input pre-filled with current name
 - [ ] Tapping "Save" in nav returns to profile + shows a "Profile updated ✓" toast (matches the toast pattern from Change password)
 
@@ -544,7 +542,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge
 - FR-7: Empty state shown when no chats exist
 - FR-8: Profile settings in a single card: Interface language | Edit profile | Change email | Change password | Log out. Log out triggers a confirm dialog before signing out
-- FR-9: Edit profile shows an inline "PROFILE PHOTO" card under the avatar with 3 actions (Take / Choose / Remove — Remove hidden until a photo exists). Save (in nav) returns to profile + shows "Profile updated ✓" toast
+- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to profile + shows "Profile updated ✓" only after the server succeeds
 - FR-10: Change password has current/new/confirm fields with strength bar; success shows toast
 - FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
@@ -643,7 +641,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 - No real backend, database, or user accounts
 - No actual push notifications (simulated in prototype)
 - No real audio playback (simulated play interaction)
-- No real file/photo upload (photo action sheet is UI-only)
+- Profile photos and file uploads are out of scope; launch profiles use initial avatars only
 - No real invite link generation or validation
 - No group chats
 - No voice or video messages

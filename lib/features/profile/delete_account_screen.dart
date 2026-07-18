@@ -144,7 +144,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 children: const [
                   _DeleteRow(text: 'All chats and messages'),
                   _RowDivider(),
-                  _DeleteRow(text: 'Your profile and photo'),
+                  _DeleteRow(text: 'Your profile'),
                   _RowDivider(),
                   _DeleteRow(text: 'Your settings and preferences'),
                 ],

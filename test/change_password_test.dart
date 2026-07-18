@@ -5,6 +5,8 @@ import 'package:blab/app/theme.dart';
 import 'package:blab/features/profile/change_password_screen.dart';
 import 'package:blab/features/profile/profile_screen.dart';
 import 'package:blab/shared/state/auth_state.dart';
+import 'package:blab/shared/services/profile_service.dart';
+import 'package:blab/shared/state/profile_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,15 +18,15 @@ GoRouter _router() => GoRouter(
   routes: [
     GoRoute(
       path: '/profile/password',
-          builder: (_, _) => const ChangePasswordScreen(),
+      builder: (_, _) => const ChangePasswordScreen(),
     ),
     GoRoute(
       path: '/profile',
-          builder: (_, _) => const Scaffold(body: Text('profile destination')),
+      builder: (_, _) => const Scaffold(body: Text('profile destination')),
     ),
     GoRoute(
       path: '/auth/forgot',
-          builder: (_, _) => const Scaffold(body: Text('forgot destination')),
+      builder: (_, _) => const Scaffold(body: Text('forgot destination')),
     ),
   ],
 );
@@ -182,6 +184,9 @@ void main() {
         overrides: [
           hasPasswordIdentityProvider.overrideWithValue(false),
           authSessionProvider.overrideWith((_) => Stream.value(null)),
+          currentProfileProvider.overrideWith(
+            (_) async => const UserProfile(displayName: 'Alice Local'),
+          ),
         ],
         child: MaterialApp(theme: blabTheme, home: const ProfileScreen()),
       ),
@@ -191,5 +196,9 @@ void main() {
     expect(find.text('Change password'), findsNothing);
     expect(find.text('Change email'), findsOneWidget);
     expect(find.text('Privacy'), findsOneWidget);
+    expect(find.text('Alice Local'), findsOneWidget);
+    expect(find.textContaining('Learning'), findsNothing);
+    expect(find.textContaining('Tamil'), findsNothing);
+    expect(find.textContaining('photo', findRichText: true), findsNothing);
   });
 }

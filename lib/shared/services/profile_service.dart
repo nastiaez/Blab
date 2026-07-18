@@ -1,0 +1,39 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class UserProfile {
+  const UserProfile({required this.displayName});
+
+  final String displayName;
+}
+
+class ProfileService {
+  ProfileService(this._client);
+
+  final SupabaseClient _client;
+
+  String get _uid {
+    final id = _client.auth.currentUser?.id;
+    if (id == null) throw StateError('not_signed_in');
+    return id;
+  }
+
+  Future<UserProfile> fetchCurrentProfile() async {
+    final row = await _client
+        .from('profiles')
+        .select('display_name')
+        .eq('id', _uid)
+        .single();
+    return UserProfile(displayName: row['display_name'] as String);
+  }
+
+  Future<String> updateDisplayName(String displayName) async {
+    final value = await _client.rpc(
+      'update_my_display_name',
+      params: {'p_display_name': displayName},
+    );
+    if (value is! String || value.isEmpty) {
+      throw StateError('invalid_profile_response');
+    }
+    return value;
+  }
+}
