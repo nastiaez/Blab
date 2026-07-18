@@ -311,33 +311,6 @@ class ChatService {
     return result;
   }
 
-  /// Persist a translation result so future viewers + sessions skip the
-  /// LLM round-trip. Idempotent — duplicate (message_id, target_lang)
-  /// keys are ignored.
-  Future<void> saveCachedTranslation({
-    required String messageId,
-    required String targetLang,
-    required String translationText,
-    required String englishText,
-    required String sourceLang,
-    required List<Map<String, dynamic>> tokens,
-  }) async {
-    await _client
-        .from('message_translations')
-        .upsert(
-          {
-            'message_id': messageId,
-            'target_lang': targetLang,
-            'translation_text': translationText,
-            'english_text': englishText,
-            'source_lang': sourceLang,
-            'tokens': tokens,
-          },
-          onConflict: 'message_id,target_lang',
-          ignoreDuplicates: true,
-        );
-  }
-
   // ---- Report + Block (Step 3.6a, Play UGC/CSAE policy) ----
 
   /// File an abuse report. Any of [reportedUserId] / [chatId] / [messageId]

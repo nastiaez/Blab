@@ -285,7 +285,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           notifier.ensure(
             messageId: m.id,
             text: m.originalText,
-            sourceLang: 'auto',
             targetLang: learningLang.code,
           );
         }
@@ -1044,7 +1043,6 @@ class _MessageRow extends ConsumerWidget {
             .ensure(
               messageId: message.id,
               text: message.originalText,
-              sourceLang: 'auto',
               targetLang: languageCode,
             );
       });
@@ -1131,6 +1129,10 @@ class _Bubble extends ConsumerWidget {
             messageTranslationsProvider(chatId),
           )['${message.id}|$languageCode']
         : null;
+    final liveTranslationError =
+        liveTranslation is AsyncError<MessageTranslation>
+        ? liveTranslation.error
+        : null;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
@@ -1205,6 +1207,12 @@ class _Bubble extends ConsumerWidget {
                     state: TranslationSubtitleState.unavailable,
                     text: '',
                     isOutgoing: isOut,
+                    unavailableText:
+                        liveTranslationError is MessageTranslationFailed &&
+                            liveTranslationError.reason ==
+                                'translation_limit_reached'
+                        ? 'Translation limit reached'
+                        : 'Translation unavailable',
                   ),
                 ],
               ] else ...[

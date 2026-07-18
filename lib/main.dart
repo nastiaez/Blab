@@ -14,13 +14,15 @@ import 'features/chat/state/message_translations_state.dart';
 import 'shared/data/invite_host.dart';
 import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
+import 'shared/services/supabase_auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Tighten the VisibilityDetector callback cadence so scroll-into-view
   // read receipts (Step 2.2 Task 10) feel responsive.
-  VisibilityDetectorController.instance.updateInterval =
-      const Duration(milliseconds: 100);
+  VisibilityDetectorController.instance.updateInterval = const Duration(
+    milliseconds: 100,
+  );
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
@@ -77,11 +79,38 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
           _knownEmail = u?.email;
           _knownUserId = u?.id;
         }
-      });
+      }, onError: _handleAuthStreamError);
     } catch (_) {
       // Test environment without Supabase. Skip silently.
     }
     _initInviteDeepLinks();
+  }
+
+  void _handleAuthStreamError(Object error, StackTrace stackTrace) {
+    if (SupabaseAuthService.isRevokedSessionError(error)) {
+      unawaited(_clearRevokedSession());
+      return;
+    }
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'supabase auth',
+      ),
+    );
+  }
+
+  Future<void> _clearRevokedSession() async {
+    try {
+      await Supabase.instance.client.auth.signOut(scope: SignOutScope.local);
+    } catch (_) {
+      // The remote session is already invalid; local recovery must continue.
+    }
+    if (!mounted) return;
+    _knownEmail = null;
+    _knownUserId = null;
+    ref.invalidate(messageTranslationsProvider);
+    blabRouter.go('/auth?mode=login');
   }
 
   /// Listen for incoming `blab://i/<token>` invite links. Routes the

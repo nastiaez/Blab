@@ -28,10 +28,19 @@ values (
 );
 
 insert into public.message_translations (
-  message_id, target_lang, translation_text, english_text, source_lang
+  message_id,
+  target_lang,
+  translation_text,
+  english_text,
+  source_lang,
+  source_hash
 ) values (
   '42000000-0000-4000-8000-000000000002', 'de', 'Duplikatverlauf',
-  'duplicate history', 'en'
+  'duplicate history', 'en',
+  encode(
+    extensions.digest(convert_to('duplicate history', 'UTF8'), 'sha256'),
+    'hex'
+  )
 );
 
 insert into public.invites (

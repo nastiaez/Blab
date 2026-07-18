@@ -139,7 +139,9 @@ grant select on table public.message_reads to authenticated;
 revoke insert on table public.message_reads from authenticated;
 grant insert (message_id, user_id, chat_id)
   on table public.message_reads to authenticated;
-grant select, insert on table public.message_translations to authenticated;
+revoke insert, update, delete on table public.message_translations
+  from authenticated;
+grant select on table public.message_translations to authenticated;
 grant select, insert, delete on table public.blocks to authenticated;
 grant select on table public.chat_list to authenticated;
 
@@ -149,4 +151,8 @@ grant select, delete on table public.chats to service_role;
 grant select on table public.chat_members to service_role;
 grant select, update on table public.messages to service_role;
 grant select on table public.message_reads to service_role;
+grant select, insert, update, delete on table public.message_translations
+  to service_role;
+grant select, insert, update, delete on table public.translation_usage
+  to service_role;
 grant select, update, delete on table public.invites to service_role;

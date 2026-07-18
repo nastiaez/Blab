@@ -98,11 +98,13 @@
 
       <h2>How your messages are translated</h2>
       <p>
-        To show a translation of a message, the app sends that message's
-        text to a third-party AI translation provider (OpenRouter, which
-        routes to an OpenAI model). The provider returns the translation.
-        The text is sent only to produce the translation; it is not used to
-        show you ads.
+        When you enable translations, Blab sends the text of an eligible
+        message through OpenRouter to a Microsoft Azure endpoint hosting an
+        OpenAI translation model. Requests are restricted to endpoints that
+        OpenRouter classifies as Zero Data Retention and as not collecting
+        prompt data. The text is sent only to produce the translation; it is
+        not used to show you ads. Blab stores the resulting translation so it
+        can be shown again without sending the message for translation again.
       </p>
 
       <h2>Who we share information with</h2>
@@ -110,7 +112,7 @@
       <ul>
         <li><strong>Supabase</strong> — secure database and hosting for your account and messages (servers in the EU).</li>
         <li><strong>Google</strong> — when you choose "Sign in with Google".</li>
-        <li><strong>OpenRouter / OpenAI</strong> — to translate message text, as described above.</li>
+        <li><strong>OpenRouter / Microsoft Azure</strong> — to run an OpenAI translation model under the controls described above.</li>
         <li><strong>Sentry</strong> — crash and error diagnostics (no message content).</li>
       </ul>
       <p>We do not sell your personal data, and we do not share it for advertising. (Under laws like California's CCPA/CPRA, we do not "sell" or "share" your personal information.)</p>
@@ -129,7 +131,7 @@
         Your account and messages are stored on servers in the
         <strong>European Union</strong>. Some of our service providers operate
         outside the EU/your country — for example the translation provider
-        (OpenRouter / OpenAI), Google sign-in, and our crash-diagnostics
+        (OpenRouter / Microsoft Azure), Google sign-in, and our crash-diagnostics
         provider (Sentry) may process data in the United States. Where data
         leaves your region it is protected by appropriate safeguards such as
         the European Commission's Standard Contractual Clauses.

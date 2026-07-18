@@ -52,7 +52,6 @@ class ChatListTile extends ConsumerWidget {
               .ensure(
                 messageId: chat.lastMessageId!,
                 text: chat.lastMessage,
-                sourceLang: 'auto',
                 targetLang: code,
               );
         });

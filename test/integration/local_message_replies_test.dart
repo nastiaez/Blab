@@ -124,18 +124,31 @@ void main() {
           throwsA(isA<PostgrestException>()),
         );
 
-        await ChatService(alice).saveCachedTranslation(
-          messageId: source.id,
-          targetLang: 'de',
-          translationText: 'alte Uebersetzung',
-          englishText: 'old translation',
-          sourceLang: 'en',
-          tokens: const [],
+        final prepared = Map<String, dynamic>.from(
+          await alice.rpc(
+                'request_message_translation',
+                params: {'p_message_id': source.id},
+              )
+              as Map,
         );
-        final cached = await ChatService(alice).fetchCachedTranslation(
-          messageId: source.id,
-          targetLang: 'de',
+        expect(prepared['status'], 'ready');
+        final completed = await admin.rpc(
+          'complete_message_translation',
+          params: {
+            'p_message_id': source.id,
+            'p_requester_id': alice.auth.currentUser!.id,
+            'p_target_lang': prepared['targetLang'],
+            'p_source_hash': prepared['sourceHash'],
+            'p_translation_text': 'alte Uebersetzung',
+            'p_english_text': 'old translation',
+            'p_source_lang': 'en',
+            'p_tokens': <Map<String, dynamic>>[],
+          },
         );
+        expect(completed, isTrue);
+        final cached = await ChatService(
+          alice,
+        ).fetchCachedTranslation(messageId: source.id, targetLang: 'de');
         expect(cached?.text, 'alte Uebersetzung');
         expect(cached?.englishText, 'old translation');
         expect(cached?.sourceLang, 'en');

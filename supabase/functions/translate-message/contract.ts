@@ -1,5 +1,13 @@
 export const MAX_CHARS = 2000;
 
+export const OPENROUTER_PROVIDER = {
+  only: ["azure"],
+  allow_fallbacks: true,
+  require_parameters: true,
+  data_collection: "deny",
+  zdr: true,
+} as const;
+
 export const LANG_NAMES: Record<string, string> = {
   en: "English",
   ta: "Tamil",
@@ -17,9 +25,7 @@ export const LANG_NAMES: Record<string, string> = {
 const NON_LATIN = new Set(["ta", "uk", "hi"]);
 
 export type TranslationRequest = {
-  text: string;
-  sourceLang: string;
-  targetLang: string;
+  messageId: string;
 };
 
 export type TranslationRequestValidation =
@@ -31,35 +37,80 @@ export function characterCount(text: string): number {
   return Array.from(segmenter.segment(text)).length;
 }
 
-export function validateRequest(body: {
-  text?: unknown;
-  sourceLang?: unknown;
-  targetLang?: unknown;
-}): TranslationRequestValidation {
-  const text = body.text;
-  const sourceLang = body.sourceLang;
-  const targetLang = body.targetLang;
-  if (typeof text !== "string" || text.trim().length === 0) {
-    return { error: "missing_text" };
+export function validateRequest(body: { messageId?: unknown }): TranslationRequestValidation {
+  const messageId = body.messageId;
+  if (
+    typeof messageId !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      .test(messageId)
+  ) {
+    return { error: "invalid_message_id" };
   }
-  if (characterCount(text.trim()) > MAX_CHARS) {
-    return { error: "text_too_long" };
+  return { request: { messageId } };
+}
+
+export type TranslationResult = {
+  sourceLang: string;
+  translation: string;
+  english: string;
+  tokens: unknown[];
+};
+
+export function parseProviderResult(
+  content: string,
+  text: string,
+  targetLang: string,
+): TranslationResult | null {
+  let cleaned = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    return null;
   }
   if (
-    typeof sourceLang !== "string" ||
-    (sourceLang !== "auto" && !(sourceLang in LANG_NAMES))
+    typeof parsed !== "object" ||
+    parsed === null ||
+    typeof (parsed as { translation?: unknown }).translation !== "string" ||
+    typeof (parsed as { english?: unknown }).english !== "string" ||
+    typeof (parsed as { sourceLang?: unknown }).sourceLang !== "string" ||
+    !((parsed as { sourceLang: string }).sourceLang in LANG_NAMES) ||
+    !Array.isArray((parsed as { tokens?: unknown }).tokens)
   ) {
-    return { error: "unsupported_source" };
+    return null;
   }
-  if (typeof targetLang !== "string" || !(targetLang in LANG_NAMES)) {
-    return { error: "unsupported_target" };
+
+  const result = parsed as TranslationResult;
+  if (result.sourceLang === "en") result.english = text;
+  if (result.sourceLang === targetLang) result.translation = text;
+  if (targetLang === "en") result.english = result.translation;
+  if (result.translation.trim().length === 0 || result.english.trim().length === 0) {
+    return null;
   }
-  if (sourceLang === targetLang) {
-    return { error: "same_language" };
+
+  let reproduced = "";
+  for (const token of result.tokens) {
+    if (
+      typeof token !== "object" ||
+      token === null ||
+      typeof (token as { text?: unknown }).text !== "string" ||
+      typeof (token as { isContent?: unknown }).isContent !== "boolean"
+    ) {
+      return null;
+    }
+    reproduced += (token as { text: string }).text;
   }
-  return {
-    request: { text: text.trim(), sourceLang, targetLang },
-  };
+  return reproduced === result.translation ? result : null;
 }
 
 export function systemPrompt(sourceLang: string, targetLang: string): string {

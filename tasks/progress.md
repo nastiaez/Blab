@@ -221,11 +221,11 @@
 ### Step 2.7 — Translation in real chats (bilingual-authoring model) `[x]`
 - **Scope (revised 2026-07-17 by L-12):** users may write in English or their selected learning language. The edge function detects the actual authored language and normalizes each result into the viewer's learning language for the main bubble plus English beneath it. English is also a valid learning-language target. Turning translations off shows authored text and prevents new OpenRouter calls. All 11 supported target languages remain available.
 - **Done when:**
-  - Real chats translate via Supabase Edge Function `translate-message` (OpenRouter → gpt-4o-mini); source is detected, target is the viewer's learning language, and normalized English is returned separately
+  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → Azure-hosted gpt-4o-mini); the client supplies only a message ID, the server derives source + target, and normalized English is returned separately
   - All bubbles in supported chats (incoming + outgoing) show shimmer → target-lang main slot + tappable tokens, English original in subtitle
   - Word popup pulls English gloss + romanization from the live translation tokens (no bundled dictionary)
   - Failure (offline / 5xx / timeout) → muted "Translation unavailable" in main slot, English in subtitle
-  - Translations cached in Postgres so reopening a chat doesn't re-fire the LLM
+  - Server-verified translations are cached in Postgres so reopening a chat doesn't re-fire the LLM; clients cannot write shared cache rows
 - **Progress:**
   - [x] Edge function `translate-message` implemented across all 11 `LANG_NAMES`, romanization guidance for non-Latin scripts (ta/uk/hi), JWT-verified, 2,000-character cap
   - [x] `MessageTranslator` service + `messageTranslationsProvider` per-chat cache landed (Riverpod)
@@ -233,6 +233,7 @@
   - [x] Live verification (Tamil) on Samsung S931B: Nastia sends English in real chat with Aswin → shimmer → Tamil bubble + tappable tokens + English subtitle
   - [x] DB-side cache shipped: `message_translations` table (migration `20260607000001`, applied on remote, RLS scoped to chat members), prefetch-on-open + per-message writeback + bulk hydrate. Cold reopen reads cached rows instead of re-firing the LLM
   - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
+  - [x] L-13 security controls (2026-07-17): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, Azure ZDR/data-collection-denied routing, and retirement of the unused public portfolio translator.
 
 ---
 
