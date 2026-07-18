@@ -57,7 +57,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   int _lastMessageCount = 0;
 
   /// Hard cap from PRD US-036.
-  static const int _maxMessageLength = 2000;
+  static const int _maxMessageLength = kMaxMessageCharacters;
 
   /// Show the live character counter once we cross this threshold.
   static const int _counterShowAt = 1800;
@@ -107,7 +107,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.jumpTo(0);
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _input.text;
     if (text.trim().isEmpty) return;
     // Defensive — TextField.maxLength enforces this, but guard anyway.
@@ -116,11 +116,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final editing = ref.read(editingProvider(widget.chatId));
     if (editing != null) {
-      ref
-          .read(chatMessagesProvider(widget.chatId).notifier)
-          .editMessage(editing.id, text);
-      ref.read(editingProvider(widget.chatId).notifier).clear();
-      _input.clear();
+      try {
+        await ref
+            .read(chatMessagesProvider(widget.chatId).notifier)
+            .editMessage(editing.id, text);
+        ref.read(editingProvider(widget.chatId).notifier).clear();
+        _input.clear();
+      } catch (_) {
+        if (!mounted) return;
+        showAppSnack("Couldn't edit message. Try again.");
+      }
       return;
     }
 
@@ -238,16 +243,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+    final translationCutoffAt = chat.translationCutoffAt;
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
-    // Bulk-prefetch the DB-cached translations for this chat in the
-    // current learning language so reopening (or switching back to a
-    // previously-used language) renders old messages instantly instead
-    // of requiring the user to scroll past every bubble to fire its
-    // lazy LLM call. Fires on first build and on every language change.
-    if (kSupportedLearningLanguages.contains(learningLang.code) &&
+    // Bulk-prefetch DB-cached translations for messages in the current
+    // language era. History from before a language change stays as authored
+    // and never enters the live translation path.
+    if (showTransl &&
+        kSupportedLearningLanguages.contains(learningLang.code) &&
         _prefetchedLang != learningLang.code) {
       _prefetchedLang = learningLang.code;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -255,20 +260,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final notifier = ref.read(
           messageTranslationsProvider(widget.chatId).notifier,
         );
-        await notifier.prefetchFromDb(learningLang.code);
+        await notifier.prefetchFromDb(
+          learningLang.code,
+          translationCutoffAt: translationCutoffAt,
+        );
         if (!mounted) return;
-        // After hydrating from the DB, kick LLM translations for every
-        // message that's still uncached so the user doesn't have to
-        // scroll past each one to trigger it. ensure() is idempotent —
-        // hits + in-flight rows no-op, only true misses round-trip.
+        if (!ref.read(showTranslationsProvider(widget.chatId))) return;
+        // Translate every eligible cache miss. ensure() is idempotent; old
+        // history is excluded above so a language switch cannot fan out one
+        // OpenRouter request per historical message.
         final messages = ref.read(chatMessagesProvider(widget.chatId)).value;
         if (messages == null) return;
         for (final m in messages) {
-          if (m.originalText.trim().isEmpty) continue;
+          if (!shouldRequestBubbleTranslation(
+            showTranslations: true,
+            learningLanguageCode: learningLang.code,
+            text: m.originalText,
+            sentAt: m.sentAt,
+            translationCutoffAt: translationCutoffAt,
+            isOutgoing: m.isOutgoing,
+          )) {
+            continue;
+          }
           notifier.ensure(
             messageId: m.id,
             text: m.originalText,
-            sourceLang: 'en',
             targetLang: learningLang.code,
           );
         }
@@ -423,6 +439,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               showTranslations: showTransl,
                               scrollController: _scroll,
                               languageCode: learningLang.code,
+                              translationCutoffAt: translationCutoffAt,
                               // BUG-009: keep the word popup from drawing on
                               // top of the chat header. Account for the
                               // safe-area notch as well.
@@ -480,7 +497,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 _InputBar(
                   controller: _input,
                   hasText: _hasText,
-                  hintText: 'English or ${learningLang.name}…',
+                  hintText: learningLang.code == 'en'
+                      ? 'Message in English…'
+                      : 'English or ${learningLang.name}…',
                   textLength: _textLength,
                   maxLength: _maxMessageLength,
                   counterShowAt: _counterShowAt,
@@ -785,6 +804,7 @@ class _MessageList extends StatelessWidget {
     required this.showTranslations,
     required this.scrollController,
     required this.languageCode,
+    required this.translationCutoffAt,
     required this.popupTopInset,
     required this.onLongPress,
     required this.onFailedTap,
@@ -796,6 +816,7 @@ class _MessageList extends StatelessWidget {
   final bool showTranslations;
   final ScrollController scrollController;
   final String languageCode;
+  final DateTime? translationCutoffAt;
   final double popupTopInset;
   final void Function(Message) onLongPress;
   final void Function(Message) onFailedTap;
@@ -865,6 +886,10 @@ class _MessageList extends StatelessWidget {
             isFirstInGroup: item.isFirstInGroup,
             isLastInGroup: item.isLastInGroup,
             languageCode: languageCode,
+            shouldTranslate: shouldTranslateMessage(
+              sentAt: item.message.sentAt,
+              translationCutoffAt: translationCutoffAt,
+            ),
             popupTopInset: popupTopInset,
             onLongPress: () => onLongPress(item.message),
             onFailedTap: () => onFailedTap(item.message),
@@ -978,6 +1003,7 @@ class _MessageRow extends ConsumerWidget {
     required this.isFirstInGroup,
     required this.isLastInGroup,
     required this.languageCode,
+    required this.shouldTranslate,
     required this.popupTopInset,
     required this.onLongPress,
     required this.onFailedTap,
@@ -989,6 +1015,7 @@ class _MessageRow extends ConsumerWidget {
   final bool isFirstInGroup;
   final bool isLastInGroup;
   final String languageCode;
+  final bool shouldTranslate;
   final double popupTopInset;
   final VoidCallback onLongPress;
   final VoidCallback onFailedTap;
@@ -1001,19 +1028,21 @@ class _MessageRow extends ConsumerWidget {
     final maxBubble = width * (isOut ? 0.78 : 0.72);
     final isFailed = message.status == MessageStatus.failed;
 
-    // Pivot-English model: both sides type English, each viewer sees a
-    // translation into their own learning language. Fire for ALL bubbles
-    // (incoming + outgoing) when this viewer's learning language is one
-    // we translate this slice. Source is always English for v1.
-    if (kSupportedLearningLanguages.contains(languageCode) &&
-        message.originalText.trim().isNotEmpty) {
+    // Normalize authored text into this viewer's learning language plus an
+    // English subtitle. The edge function detects the actual source language.
+    // The display toggle also gates live AI requests.
+    if (showTranslation &&
+        shouldTranslate &&
+        kSupportedLearningLanguages.contains(languageCode) &&
+        message.originalText.trim().isNotEmpty &&
+        !(message.isOutgoing && languageCode == 'en')) {
       Future.microtask(() {
+        if (!ref.read(showTranslationsProvider(chatId))) return;
         ref
             .read(messageTranslationsProvider(chatId).notifier)
             .ensure(
               messageId: message.id,
               text: message.originalText,
-              sourceLang: 'en',
               targetLang: languageCode,
             );
       });
@@ -1030,6 +1059,7 @@ class _MessageRow extends ConsumerWidget {
         maxWidth: maxBubble,
         isLastInGroup: isLastInGroup,
         languageCode: languageCode,
+        shouldTranslate: shouldTranslate,
         popupTopInset: popupTopInset,
       ),
     );
@@ -1074,6 +1104,7 @@ class _Bubble extends ConsumerWidget {
     required this.maxWidth,
     required this.isLastInGroup,
     required this.languageCode,
+    required this.shouldTranslate,
     required this.popupTopInset,
   });
 
@@ -1083,16 +1114,24 @@ class _Bubble extends ConsumerWidget {
   final double maxWidth;
   final bool isLastInGroup;
   final String languageCode;
+  final bool shouldTranslate;
   final double popupTopInset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
 
-    final liveTranslation = kSupportedLearningLanguages.contains(languageCode)
+    final liveTranslation =
+        showTranslation &&
+            shouldTranslate &&
+            kSupportedLearningLanguages.contains(languageCode)
         ? ref.watch(
             messageTranslationsProvider(chatId),
           )['${message.id}|$languageCode']
+        : null;
+    final liveTranslationError =
+        liveTranslation is AsyncError<MessageTranslation>
+        ? liveTranslation.error
         : null;
 
     final BorderRadius radius = isOut
@@ -1129,80 +1168,13 @@ class _Bubble extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
               ],
-              // Layout: learning-language translation in main slot, English
-              // original in subtitle. PRD design principle: "Partner's
-              // language always shown first; English always second." Holds
-              // for incoming and outgoing. Real chats fire shimmer →
-              // ready/error via the per-chat translation cache.
+              // With translations enabled, normalize to the viewer's learning
+              // language in the main slot and English below it. While loading
+              // or unavailable, keep the authored text readable.
               if (liveTranslation is AsyncLoading) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: ShimmerLine(isOutgoing: isOut, height: 18),
-                ),
-                if (showTranslation) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Container(
-                      height: 1,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.25)
-                          : Colors.grey.shade200,
-                    ),
-                  ),
-                  Text(
-                    message.originalText,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.85)
-                          : BlabColors.textMuted,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ] else if (liveTranslation is AsyncError) ...[
-                Text(
-                  'Translation unavailable',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: isOut
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : BlabColors.textMuted,
-                    height: 1.7,
-                  ),
-                ),
-                if (showTranslation) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Container(
-                      height: 1,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.25)
-                          : Colors.grey.shade200,
-                    ),
-                  ),
-                  Text(
-                    message.originalText,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isOut
-                          ? Colors.white.withValues(alpha: 0.85)
-                          : BlabColors.textMuted,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ] else ...[
                 MessageText(
-                  text: liveTranslation is AsyncData<MessageTranslation>
-                      ? liveTranslation.value.translation
-                      : (isOut && message.translation.isNotEmpty
-                            ? message.translation
-                            : message.originalText),
-                  tokens: liveTranslation is AsyncData<MessageTranslation>
-                      ? liveTranslation.value.tokens
-                      : message.tokens,
+                  text: message.originalText,
+                  tokens: const [],
                   languageCode: languageCode,
                   popupTopInset: popupTopInset,
                   style: TextStyle(
@@ -1212,13 +1184,66 @@ class _Bubble extends ConsumerWidget {
                   ),
                 ),
                 if (showTranslation) ...[
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.pending,
+                    text: '',
+                    isOutgoing: isOut,
+                  ),
+                ],
+              ] else if (liveTranslation is AsyncError) ...[
+                MessageText(
+                  text: message.originalText,
+                  tokens: const [],
+                  languageCode: languageCode,
+                  popupTopInset: popupTopInset,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.7,
+                    color: isOut ? Colors.white : BlabColors.textPrimary,
+                  ),
+                ),
+                if (showTranslation) ...[
+                  TranslationSubtitle(
+                    state: TranslationSubtitleState.unavailable,
+                    text: '',
+                    isOutgoing: isOut,
+                    unavailableText:
+                        liveTranslationError is MessageTranslationFailed &&
+                            liveTranslationError.reason ==
+                                'translation_limit_reached'
+                        ? 'Translation limit reached'
+                        : 'Translation unavailable',
+                  ),
+                ],
+              ] else ...[
+                MessageText(
+                  text: liveTranslation is AsyncData<MessageTranslation>
+                      ? liveTranslation.value.translation
+                      : (showTranslation &&
+                                shouldTranslate &&
+                                isOut &&
+                                message.translation.isNotEmpty
+                            ? message.translation
+                            : message.originalText),
+                  tokens: liveTranslation is AsyncData<MessageTranslation>
+                      ? liveTranslation.value.tokens
+                      : (showTranslation ? message.tokens : const []),
+                  languageCode: languageCode,
+                  popupTopInset: popupTopInset,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.7,
+                    color: isOut ? Colors.white : BlabColors.textPrimary,
+                  ),
+                ),
+                if (showTranslation && languageCode != 'en') ...[
                   if (liveTranslation is AsyncData<MessageTranslation>)
                     TranslationSubtitle(
                       state: TranslationSubtitleState.ready,
-                      text: message.originalText,
+                      text: liveTranslation.value.englishText,
                       isOutgoing: isOut,
                     )
-                  else if (message.translation.isNotEmpty)
+                  else if (shouldTranslate && message.translation.isNotEmpty)
                     TranslationSubtitle(
                       state: TranslationSubtitleState.ready,
                       text: isOut ? message.originalText : message.translation,
@@ -1543,7 +1568,7 @@ class _QuotedReply extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.85)
         : BlabColors.textMuted;
 
-    final author = replyTo.isOutgoing ? 'You' : 'Aswin';
+    final author = replyTo.isOutgoing ? 'You' : 'Partner';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),

@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "sh.aswin.blab",
+      "package_name": "blab.nastia.ez",
       "sha256_cert_fingerprints": [
         "1A:18:CC:D5:03:84:7E:B3:ED:A9:F4:23:40:5E:F4:67:40:42:4B:C3:2B:B8:50:F1:79:5A:99:22:B2:7C:0F:FB"
       ]

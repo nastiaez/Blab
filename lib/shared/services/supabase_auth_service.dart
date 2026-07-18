@@ -37,10 +37,7 @@ class SupabaseAuthService {
     required String email,
     required String password,
   }) {
-    return _auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
+    return _auth.signInWithPassword(email: email.trim(), password: password);
   }
 
   Future<void> sendPasswordReset(String email) {
@@ -88,7 +85,9 @@ class SupabaseAuthService {
   Future<void> signOut() async {
     await _auth.signOut();
     try {
-      final google = GoogleSignIn(serverClientId: SupabaseConfig.googleWebClientId);
+      final google = GoogleSignIn(
+        serverClientId: SupabaseConfig.googleWebClientId,
+      );
       if (await google.isSignedIn()) {
         await google.signOut();
       }
@@ -97,11 +96,20 @@ class SupabaseAuthService {
     }
   }
 
+  static bool isRevokedSessionError(Object error) {
+    if (error is! AuthException) return false;
+    final message = error.message.toLowerCase();
+    return message.contains('refresh token') &&
+        (message.contains('not found') || message.contains('invalid'));
+  }
+
   /// Native Google Sign-In → returns idToken → exchanges with Supabase
   /// via `signInWithIdToken`. Throws [SocialSignInCancelled] if the user
   /// dismisses the picker.
   Future<AuthResponse> signInWithGoogle() async {
-    final google = GoogleSignIn(serverClientId: SupabaseConfig.googleWebClientId);
+    final google = GoogleSignIn(
+      serverClientId: SupabaseConfig.googleWebClientId,
+    );
     final account = await google.signIn();
     if (account == null) {
       throw const SocialSignInCancelled();

@@ -1,4 +1,4 @@
-package sh.aswin.blab
+package blab.nastia.ez
 
 import io.flutter.embedding.android.FlutterActivity
 

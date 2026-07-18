@@ -7,6 +7,20 @@ import '../../../shared/models/message.dart';
 /// `report` added for Step 3.6a.
 enum MessageAction { reply, edit, copy, delete, report }
 
+const Duration messageEditWindow = Duration(hours: 24);
+
+bool canReplyToMessage(Message message) =>
+    message.status == MessageStatus.delivered ||
+    message.status == MessageStatus.read;
+
+bool canEditMessage(Message message, {DateTime? now}) {
+  if (!message.isOutgoing || !canReplyToMessage(message)) return false;
+  final age = (now ?? DateTime.now()).toUtc().difference(
+    message.sentAt.toUtc(),
+  );
+  return age <= messageEditWindow;
+}
+
 /// Show the long-press action sheet for [message]. Outgoing messages get
 /// Reply / Edit / Copy / Delete; incoming get Reply / Copy only.
 ///
@@ -17,8 +31,11 @@ Future<void> showMessageActionSheet(
   BuildContext context, {
   required Message message,
   required void Function(MessageAction) onAction,
+  DateTime? now,
 }) {
   final isOut = message.isOutgoing;
+  final canReply = canReplyToMessage(message);
+  final canEdit = canEditMessage(message, now: now);
 
   return showModalBottomSheet<void>(
     context: context,
@@ -30,15 +47,16 @@ Future<void> showMessageActionSheet(
     ),
     builder: (sheetCtx) {
       final rows = <Widget>[
-        _ActionRow(
-          icon: Icons.reply,
-          label: 'Reply',
-          onTap: () {
-            Navigator.of(sheetCtx).pop();
-            onAction(MessageAction.reply);
-          },
-        ),
-        if (isOut)
+        if (canReply)
+          _ActionRow(
+            icon: Icons.reply,
+            label: 'Reply',
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              onAction(MessageAction.reply);
+            },
+          ),
+        if (canEdit)
           _ActionRow(
             icon: Icons.edit_outlined,
             label: 'Edit',

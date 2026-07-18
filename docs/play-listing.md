@@ -72,7 +72,6 @@ Google asks, section by section. Answer like this:
 |---|---|---|---|
 | Email address | Yes | Account management, app functionality | Not shared |
 | Name | Yes | App functionality (display name) | Not shared |
-| Photos (optional) | Yes | App functionality (profile picture) | Only if the user sets one |
 | Messages (in-app) | Yes | App functionality | Stored to deliver chats; text sent to a translation provider to produce translations |
 | Crash logs | Yes | Diagnostics / app stability | Scrubbed — no message content |
 | App interactions | Yes | App functionality | Read/typing state per the privacy toggles |

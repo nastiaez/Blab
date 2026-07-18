@@ -60,7 +60,7 @@ void main() {
       contains('delegate_permission/common.handle_all_urls'),
     );
     expect(target['namespace'], 'android_app');
-    expect(target['package_name'], 'sh.aswin.blab');
+    expect(target['package_name'], 'blab.nastia.ez');
     expect(fingerprints, contains(uploadFingerprint));
     expect(
       fingerprints.toSet().intersection(obsoleteDebugFingerprints),

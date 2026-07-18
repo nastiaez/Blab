@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Blab is a peer-to-peer language exchange app. Two people teach each other their native languages through real conversations. Every message is shown in the learning language with an English translation beneath it. Words are tappable for instant lookup. The app is built around mutual exchange — not courses, not AI, not tutors. Real people, real chat.
+Blab is a peer-to-peer language exchange app. Two people teach each other their native languages through real conversations. People can write in English or the language they are learning. With translations enabled, every message is normalized into the viewer's learning language with English beneath it. Words are tappable for instant lookup. The app is built around mutual exchange — not courses, not AI conversation partners, not tutors. Real people, real chat.
 
 This document captures the full scope as prototyped across 4 phone flows.
 
@@ -147,25 +147,23 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to view and manage my profile.
 
 **Acceptance Criteria:**
-- [ ] Profile tab shows hero section: avatar initial, name, "Learning" chips (language + flag)
+- [ ] Profile tab shows hero section: static avatar initial and persisted display name
 - [ ] Settings card (one container, dividers): Interface language | Edit profile | Change email | Change password | Log out
 - [ ] "Interface language" row shows current language name in purple, tapping opens language sheet
 - [ ] "Edit profile" navigates to Edit Profile screen
 - [ ] "Change email" navigates to Change Email screen (US-039)
 - [ ] "Change password" navigates to Change Password screen
 - [ ] Tapping "Log out" first opens a confirm dialog (title: "Log out?", buttons: Cancel + Log out); only on confirm does it sign out and return to auth screen with all fields reset
-- [ ] Avatar in the hero is tappable — opens the same photo action sheet as Edit profile (quick path)
+- [ ] Learning language is shown only within its chat because it is a per-chat setting
 
 ---
 
 ### US-011: Edit profile
-**Description:** As a user, I want to update my display name and photo.
+**Description:** As a user, I want to update my display name.
 
 **Acceptance Criteria:**
 - [ ] Nav: back (‹) | "Edit profile" title | "Save" (top right)
-- [ ] Avatar shown clean (no camera badge, no overlay icon). Press state = scale 0.96 + opacity 0.85 for tappable affordance
-- [ ] Inline "PROFILE PHOTO" settings-card directly below the avatar with rows: Take photo / Choose from library / Remove photo (red). "Remove photo" only renders when a photo actually exists
-- [ ] No bottom sheet on this screen — actions live inline
+- [ ] Static initial avatar is shown without photo actions or upload affordances
 - [ ] "DISPLAY NAME" label above bordered text input pre-filled with current name
 - [ ] Tapping "Save" in nav returns to profile + shows a "Profile updated ✓" toast (matches the toast pattern from Change password)
 
@@ -230,12 +228,13 @@ This document captures the full scope as prototyped across 4 phone flows.
 ---
 
 ### US-015: Messages — incoming with translation
-**Description:** As a learner, I want to see my partner's messages in their language with an English translation below.
+**Description:** As a learner, I want messages normalized into my learning language with English below.
 
 **Acceptance Criteria:**
 - [ ] Incoming bubbles: white, left-aligned
-- [ ] Main text = partner's language (Tamil for Nastia)
-- [ ] Subtitle = English translation in gray
+- [ ] With translations enabled, main text = viewer's selected learning language
+- [ ] Subtitle = normalized English text in gray (hidden when the learning language is English)
+- [ ] With translations disabled, authored text is shown and no new AI translation request is made
 - [ ] Timestamp shown below bubble (no read ticks on incoming)
 - [ ] Date divider "Today" shown above first messages of the day
 
@@ -329,6 +328,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Auto-growing textarea (starts at 1 row)
+- [ ] Placeholder communicates that the user may write in English or their selected learning language
+- [ ] Messages are capped at 2,000 user-perceived characters end to end, including translation
 - [ ] Send button dims (opacity 0.4) when input is empty; brightens when text entered
 - [ ] Tapping send appends message and clears input
 
@@ -541,11 +542,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge
 - FR-7: Empty state shown when no chats exist
 - FR-8: Profile settings in a single card: Interface language | Edit profile | Change email | Change password | Log out. Log out triggers a confirm dialog before signing out
-- FR-9: Edit profile shows an inline "PROFILE PHOTO" card under the avatar with 3 actions (Take / Choose / Remove — Remove hidden until a photo exists). Save (in nav) returns to profile + shows "Profile updated ✓" toast
+- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to profile + shows "Profile updated ✓" only after the server succeeds
 - FR-10: Change password has current/new/confirm fields with strength bar; success shows toast
-- FR-11: Every word in partner's language is tappable → popup (word + romanization + translation + audio)
+- FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
-- FR-13: Incoming messages show partner language + English translation subtitle
+- FR-13: With translations enabled, messages show the viewer's learning language + English subtitle; disabling translations shows authored text and prevents new AI requests
 - FR-14: Outgoing messages show delivery (gray) always; read state (purple) only when both sides have Read receipts ON (Signal-symmetric, US-041). Default ON
 - FR-15: Long-press on outgoing: Reply, Edit (24h window), Copy (translation), Delete (forever) + undo
 - FR-16: Long-press on incoming: Reply, Copy (original text) only
@@ -640,11 +641,11 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 - No real backend, database, or user accounts
 - No actual push notifications (simulated in prototype)
 - No real audio playback (simulated play interaction)
-- No real file/photo upload (photo action sheet is UI-only)
+- Profile photos and file uploads are out of scope; launch profiles use initial avatars only
 - No real invite link generation or validation
 - No group chats
 - No voice or video messages
-- No AI translation or auto-translate
+- No AI conversation partners, generated replies, or tutoring; AI is limited to user-controlled message translation
 - No language matching algorithm / discovery feed
 - No in-app payments or subscription
 - No notifications settings screen

@@ -50,7 +50,7 @@ if (hasReleaseKeystore) {
 }
 
 android {
-    namespace = "sh.aswin.blab"
+    namespace = "blab.nastia.ez"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -64,8 +64,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "sh.aswin.blab"
+        applicationId = "blab.nastia.ez"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24  // tech-spec.md § Platform Targets

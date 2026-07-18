@@ -70,12 +70,67 @@ run_integration() {
   publishable_key="$(printf '%s' "$status" | jq -er '.PUBLISHABLE_KEY // .ANON_KEY')"
   service_role_key="$(printf '%s' "$status" | jq -er '.SERVICE_ROLE_KEY')"
 
-  flutter test test/integration \
-    --concurrency=1 \
-    --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
-    --dart-define="SUPABASE_URL=$api_url" \
-    --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
-    --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
+  if [[ "${BLAB_RUN_OPENROUTER_INTEGRATION:-0}" == '1' ]]; then
+    flutter test test/integration/local_translation_security_test.dart \
+      --concurrency=1 \
+      --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
+      --dart-define=RUN_LOCAL_OPENROUTER_INTEGRATION=true \
+      --dart-define="SUPABASE_URL=$api_url" \
+      --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
+      --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
+  else
+    flutter test test/integration \
+      --concurrency=1 \
+      --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
+      --dart-define="SUPABASE_URL=$api_url" \
+      --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
+      --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
+  fi
+}
+
+set_translation_limit() {
+  local action="${1:-set}"
+  local account="${2:-alice}"
+  local user_id
+  local status
+  local rest_url
+  local service_role_key
+
+  case "$account" in
+    alice) user_id='00000000-0000-4000-8000-00000000000a' ;;
+    bob) user_id='00000000-0000-4000-8000-00000000000b' ;;
+    carol) user_id='00000000-0000-4000-8000-00000000000c' ;;
+    *)
+      printf 'Use alice, bob, or carol.\n' >&2
+      exit 2
+      ;;
+  esac
+
+  status="$(status_json)"
+  rest_url="$(printf '%s' "$status" | jq -er '.REST_URL')"
+  service_role_key="$(printf '%s' "$status" | jq -er '.SERVICE_ROLE_KEY')"
+
+  if [[ "$action" == 'clear' ]]; then
+    curl -fsS -X DELETE \
+      "$rest_url/translation_usage?user_id=eq.$user_id" \
+      -H "apikey: $service_role_key" \
+      -H "Authorization: Bearer $service_role_key"
+    printf 'Cleared the local translation quota fixture for %s.\n' "$account"
+    return
+  fi
+  if [[ "$action" != 'set' ]]; then
+    printf 'Use set or clear.\n' >&2
+    exit 2
+  fi
+
+  curl -fsS -X POST \
+    "$rest_url/translation_usage?on_conflict=user_id" \
+    -H "apikey: $service_role_key" \
+    -H "Authorization: Bearer $service_role_key" \
+    -H 'Content-Type: application/json' \
+    -H 'Prefer: resolution=merge-duplicates,return=minimal' \
+    --data "{\"user_id\":\"$user_id\",\"minute_started_at\":\"$(date -u '+%Y-%m-%dT%H:%M:00Z')\",\"minute_requests\":0,\"day_started_at\":\"$(date -u '+%Y-%m-%d')\",\"day_requests\":200,\"day_characters\":1000}"
+  printf 'Set %s at the local daily translation limit.\n' "$account"
 }
 
 serve_functions() {
@@ -209,10 +264,18 @@ reset_local() {
   # local resets without changing the repository's tracked CLI metadata.
   printf '%s' "$local_postgres_version" > "$postgres_version_file"
   if [[ "${SUPABASE_DEBUG:-0}" == '1' ]]; then
-    supabase start --debug
+    if [[ "${BLAB_IGNORE_SUPABASE_HEALTH_CHECKS:-0}" == '1' ]]; then
+      supabase start --ignore-health-check --debug
+    else
+      supabase start --debug
+    fi
     supabase db reset --debug
   else
-    supabase start
+    if [[ "${BLAB_IGNORE_SUPABASE_HEALTH_CHECKS:-0}" == '1' ]]; then
+      supabase start --ignore-health-check
+    else
+      supabase start
+    fi
     supabase db reset
   fi
 
@@ -245,6 +308,9 @@ case "${1:-help}" in
   integration)
     run_integration
     ;;
+  translation-limit)
+    set_translation_limit "${2:-set}" "${3:-alice}"
+    ;;
   *)
     printf '%s\n' \
       'Usage:' \
@@ -254,6 +320,7 @@ case "${1:-help}" in
       '  scripts/local_test.sh web [copied-invite-url-or-token]' \
       '  scripts/local_test.sh invite <copied-url-or-token>' \
       '  scripts/local_test.sh functions' \
-      '  scripts/local_test.sh integration'
+      '  scripts/local_test.sh integration' \
+      '  scripts/local_test.sh translation-limit [set|clear] [alice|bob|carol]'
     ;;
 esac

@@ -1,12 +1,15 @@
+import 'package:blab/features/chat/state/chat_state.dart';
+import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
 import 'package:blab/features/chats/widgets/chat_list_tile.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/chat.dart';
+import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Chat _chat() {
+Chat _chat({bool withLastMessageId = false}) {
   final german = kBlabLanguages.firstWhere((language) => language.code == 'de');
   final english = kBlabLanguages.firstWhere(
     (language) => language.code == 'en',
@@ -20,6 +23,7 @@ Chat _chat() {
     partnerLearningLanguage: english,
     lastMessage: 'Last message',
     lastMessageTranslation: '',
+    lastMessageId: withLastMessageId ? 'message-1' : null,
     timestamp: DateTime(2026, 7, 16),
     unreadCount: 0,
   );
@@ -61,5 +65,45 @@ void main() {
 
     expect(find.text('typing...'), findsNothing);
     expect(find.text('Last message'), findsOneWidget);
+  });
+
+  testWidgets('translation toggle gates preview AI requests', (tester) async {
+    var calls = 0;
+    final chat = _chat(withLastMessageId: true);
+    final container = ProviderContainer(
+      overrides: [
+        translateMessageFnProvider.overrideWithValue((id) async {
+          calls++;
+          return MessageTranslation(
+            translation: 'Letzte Nachricht',
+            englishText: 'Last message',
+            sourceLang: 'en',
+            tokens: const [],
+          );
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.read(showTranslationsProvider(chat.id).notifier).toggle();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: ChatListTile(chat: chat, onTap: () {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(calls, 0);
+    expect(find.text('Last message'), findsOneWidget);
+
+    container.read(showTranslationsProvider(chat.id).notifier).toggle();
+    await tester.pump();
+    await tester.pump();
+    expect(calls, 1);
+    expect(find.text('Letzte Nachricht'), findsOneWidget);
   });
 }

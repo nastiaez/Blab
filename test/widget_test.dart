@@ -6,6 +6,8 @@ import 'package:blab/app/router.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/auth/widgets/password_strength.dart';
 import 'package:blab/main.dart';
+import 'package:blab/shared/services/supabase_auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   testWidgets('Signed-out app boots into login, not the dev menu', (
@@ -40,5 +42,20 @@ void main() {
     expect(estimatePasswordStrength('Abcdefgh'), PasswordStrength.fair);
     expect(estimatePasswordStrength('Abcdefg1'), PasswordStrength.fair);
     expect(estimatePasswordStrength('Abcdef1!23'), PasswordStrength.strong);
+  });
+
+  test('revoked refresh-token failures are recognized for local recovery', () {
+    expect(
+      SupabaseAuthService.isRevokedSessionError(
+        const AuthException('Invalid Refresh Token: Refresh Token Not Found'),
+      ),
+      isTrue,
+    );
+    expect(
+      SupabaseAuthService.isRevokedSessionError(
+        const AuthException('Invalid login credentials'),
+      ),
+      isFalse,
+    );
   });
 }

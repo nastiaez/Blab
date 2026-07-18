@@ -173,22 +173,28 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
     'originalText': m.originalText,
     'sentAt': m.sentAt.toIso8601String(),
     'status': m.status.name,
+    'replyToId': m.replyTo?.id,
     'replyToText': m.replyTo?.originalText,
     'replyToWasOutgoing': m.replyTo?.isOutgoing,
+    'replyToSentAt': m.replyTo?.sentAt.toIso8601String(),
   };
 
   static Message _deserialize(Map<String, dynamic> j) {
+    final replyId = j['replyToId'] as String?;
     final replyText = j['replyToText'] as String?;
     final replyOut = j['replyToWasOutgoing'] as bool?;
     Message? replyTo;
     if (replyText != null) {
+      if (replyId == null) throw const FormatException('missing_reply_id');
       replyTo = Message(
-        id: 'reply-stub',
+        id: replyId,
         chatId: j['chatId'] as String,
         isOutgoing: replyOut ?? false,
         originalText: replyText,
         translation: '',
-        sentAt: DateTime.now(),
+        sentAt:
+            DateTime.tryParse(j['replyToSentAt'] as String? ?? '') ??
+            DateTime.parse(j['sentAt'] as String),
         status: MessageStatus.delivered,
       );
     }

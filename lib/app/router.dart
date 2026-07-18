@@ -243,7 +243,10 @@ final GoRouter blabRouter = GoRouter(
 
 class _AuthRefresh extends ChangeNotifier {
   _AuthRefresh(Stream<dynamic>? stream) {
-    _sub = stream?.listen((_) => notifyListeners());
+    _sub = stream?.listen(
+      (_) => notifyListeners(),
+      onError: (_, _) => notifyListeners(),
+    );
   }
   StreamSubscription<dynamic>? _sub;
 

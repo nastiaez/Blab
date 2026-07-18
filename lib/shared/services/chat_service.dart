@@ -52,14 +52,30 @@ class ChatService {
         .filter('deleted_at', 'is', null)
         .order('created_at', ascending: false)
         .limit(limit);
-    final list = (rows as List)
-        .map(
-          (r) => messageFromRow(r as Map<String, dynamic>, currentUserId: _uid),
-        )
-        .toList()
-        .reversed
+    final pageRows = (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
         .toList();
-    return list;
+    final pageIds = pageRows.map((row) => row['id'] as String).toSet();
+    final missingReplyIds = pageRows
+        .map((row) => row['reply_to'] as String?)
+        .whereType<String>()
+        .where((id) => !pageIds.contains(id))
+        .toSet();
+    var replyRows = <Map<String, dynamic>>[];
+    if (missingReplyIds.isNotEmpty) {
+      final extra = await _client
+          .from('messages')
+          .select()
+          .inFilter('id', missingReplyIds.toList());
+      replyRows = (extra as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+    }
+    return messagesFromRows(
+      pageRows.reversed,
+      currentUserId: _uid,
+      additionalReplyRows: replyRows,
+    );
   }
 
   Stream<List<Map<String, dynamic>>> watchMessages(String chatId) {
@@ -81,12 +97,14 @@ class ChatService {
     required String chatId,
     required String body,
     String? clientMessageId,
+    String? replyToId,
   }) async {
     final payload = {
       'id': ?clientMessageId,
       'chat_id': chatId,
       'sender_id': _uid,
       'body': body,
+      'reply_to': ?replyToId,
     };
     Map<String, dynamic> row;
     try {
@@ -95,13 +113,14 @@ class ChatService {
       if (clientMessageId == null || error.code != '23505') rethrow;
       final existing = await _client
           .from('messages')
-          .select('id,chat_id,sender_id,body,created_at,deleted_at')
+          .select('id,chat_id,sender_id,body,created_at,reply_to,deleted_at')
           .eq('id', clientMessageId)
           .maybeSingle();
       if (existing == null ||
           existing['chat_id'] != chatId ||
           existing['sender_id'] != _uid ||
           existing['body'] != body ||
+          existing['reply_to'] != replyToId ||
           existing['deleted_at'] != null) {
         throw StateError('idempotency_conflict');
       }
@@ -187,14 +206,21 @@ class ChatService {
   /// Fetch a cached translation for [messageId] into [targetLang], if
   /// any. Returns null on cache miss (so the caller falls back to the
   /// live translator).
-  Future<({String text, List<Map<String, dynamic>> tokens})?>
+  Future<
+    ({
+      String text,
+      String englishText,
+      String sourceLang,
+      List<Map<String, dynamic>> tokens,
+    })?
+  >
   fetchCachedTranslation({
     required String messageId,
     required String targetLang,
   }) async {
     final row = await _client
         .from('message_translations')
-        .select('translation_text, tokens')
+        .select('translation_text, english_text, source_lang, tokens')
         .eq('message_id', messageId)
         .eq('target_lang', targetLang)
         .maybeSingle();
@@ -206,33 +232,65 @@ class ChatService {
         if (t is Map) tokens.add(Map<String, dynamic>.from(t));
       }
     }
-    return (text: row['translation_text'] as String, tokens: tokens);
+    return (
+      text: row['translation_text'] as String,
+      englishText: row['english_text'] as String,
+      sourceLang: row['source_lang'] as String,
+      tokens: tokens,
+    );
   }
 
   /// Bulk-fetch every cached translation for messages belonging to
   /// [chatId] in [targetLang]. Returned as a map keyed by message id.
-  /// Used to hydrate the in-memory translation cache on chat open and
-  /// on learning-language change so old messages don't need to be
-  /// scrolled past to translate.
-  Future<Map<String, ({String text, List<Map<String, dynamic>> tokens})>>
+  /// When [translationCutoffAt] is set, history from before the viewer's
+  /// latest language change is excluded.
+  Future<
+    Map<
+      String,
+      ({
+        String text,
+        String englishText,
+        String sourceLang,
+        List<Map<String, dynamic>> tokens,
+      })
+    >
+  >
   fetchCachedTranslationsForChat({
     required String chatId,
     required String targetLang,
+    DateTime? translationCutoffAt,
   }) async {
-    final msgRows = await _client
+    var messageQuery = _client
         .from('messages')
         .select('id')
         .eq('chat_id', chatId)
         .filter('deleted_at', 'is', null);
+    if (translationCutoffAt != null) {
+      messageQuery = messageQuery.gte(
+        'created_at',
+        translationCutoffAt.toUtc().toIso8601String(),
+      );
+    }
+    final msgRows = await messageQuery;
     final ids = (msgRows as List).map((r) => r['id'] as String).toList();
     if (ids.isEmpty) return {};
     final transRows = await _client
         .from('message_translations')
-        .select('message_id, translation_text, tokens')
+        .select(
+          'message_id, translation_text, english_text, source_lang, tokens',
+        )
         .eq('target_lang', targetLang)
         .inFilter('message_id', ids);
     final result =
-        <String, ({String text, List<Map<String, dynamic>> tokens})>{};
+        <
+          String,
+          ({
+            String text,
+            String englishText,
+            String sourceLang,
+            List<Map<String, dynamic>> tokens,
+          })
+        >{};
     for (final row in transRows as List) {
       final id = row['message_id'] as String;
       final text = row['translation_text'] as String;
@@ -243,32 +301,14 @@ class ChatService {
           if (t is Map) tokens.add(Map<String, dynamic>.from(t));
         }
       }
-      result[id] = (text: text, tokens: tokens);
+      result[id] = (
+        text: text,
+        englishText: row['english_text'] as String,
+        sourceLang: row['source_lang'] as String,
+        tokens: tokens,
+      );
     }
     return result;
-  }
-
-  /// Persist a translation result so future viewers + sessions skip the
-  /// LLM round-trip. Idempotent — duplicate (message_id, target_lang)
-  /// keys are ignored.
-  Future<void> saveCachedTranslation({
-    required String messageId,
-    required String targetLang,
-    required String translationText,
-    required List<Map<String, dynamic>> tokens,
-  }) async {
-    await _client
-        .from('message_translations')
-        .upsert(
-          {
-            'message_id': messageId,
-            'target_lang': targetLang,
-            'translation_text': translationText,
-            'tokens': tokens,
-          },
-          onConflict: 'message_id,target_lang',
-          ignoreDuplicates: true,
-        );
   }
 
   // ---- Report + Block (Step 3.6a, Play UGC/CSAE policy) ----
@@ -378,9 +418,10 @@ class ChatService {
     );
   }
 
-  /// "Accept & join" path. Atomically marks the invite used, creates the
-  /// chat row + both `chat_members` rows, and returns the new chat's
-  /// id. Throws a [PostgrestException] with one of the documented
+  /// "Accept & join" path. Atomically marks the invite used, creates or
+  /// reuses the pair's canonical chat, applies both selected learning
+  /// languages, and returns that chat's id. Throws a [PostgrestException]
+  /// with one of the documented
   /// `message` codes on failure: `invite_not_found`, `invite_expired`,
   /// `invite_already_claimed`, `invite_self_claim`, `not_signed_in`,
   /// `invalid_language`.

@@ -16,6 +16,7 @@ class Chat {
     this.isNewInvite = false,
     this.startedAt,
     this.partnerId,
+    this.translationCutoffAt,
   });
 
   final String id;
@@ -35,6 +36,11 @@ class Chat {
 
   /// What the partner is currently learning from the local user.
   final BlabLanguage partnerLearningLanguage;
+
+  /// Messages before this viewer-specific cutoff stay in their English
+  /// original after a learning-language change. Null means the chat has not
+  /// changed language and its full history remains eligible for translation.
+  final DateTime? translationCutoffAt;
 
   final String lastMessage;
   final String lastMessageTranslation;

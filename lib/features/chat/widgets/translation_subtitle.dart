@@ -16,11 +16,13 @@ class TranslationSubtitle extends StatelessWidget {
     required this.state,
     required this.text,
     required this.isOutgoing,
+    this.unavailableText = 'Translation unavailable',
   });
 
   final TranslationSubtitleState state;
   final String text;
   final bool isOutgoing;
+  final String unavailableText;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +53,7 @@ class TranslationSubtitle extends StatelessWidget {
         body = ShimmerLine(isOutgoing: isOutgoing);
       case TranslationSubtitleState.unavailable:
         body = Text(
-          'Translation unavailable',
+          unavailableText,
           style: TextStyle(
             fontSize: 14,
             fontStyle: FontStyle.italic,
@@ -72,11 +74,7 @@ class TranslationSubtitle extends StatelessWidget {
 }
 
 class ShimmerLine extends StatefulWidget {
-  const ShimmerLine({
-    super.key,
-    required this.isOutgoing,
-    this.height = 14,
-  });
+  const ShimmerLine({super.key, required this.isOutgoing, this.height = 14});
   final bool isOutgoing;
   final double height;
 

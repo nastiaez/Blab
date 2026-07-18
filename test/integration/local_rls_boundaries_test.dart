@@ -1,4 +1,5 @@
 import 'package:blab/shared/services/chat_service.dart';
+import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -82,17 +83,40 @@ void main() {
         );
         expect(unrelatedProfiles, isEmpty);
 
-        await alice
-            .from('profiles')
-            .update({'display_name': 'Alice L08'})
-            .eq('id', aliceId);
+        expect(
+          await ProfileService(alice).updateDisplayName('  Alice L14  '),
+          'Alice L14',
+        );
         expect(
           (await bob
               .from('profiles')
               .select('display_name')
               .eq('id', aliceId)
               .single())['display_name'],
-          'Alice L08',
+          'Alice L14',
+        );
+        final bobChatList = List<Map<String, dynamic>>.from(
+          await bob
+              .from('chat_list')
+              .select('chat_id,partner_id,partner_name')
+              .eq('chat_id', aliceBobChat),
+        );
+        expect(bobChatList, hasLength(1));
+        expect(bobChatList.single['partner_id'], aliceId);
+        expect(bobChatList.single['partner_name'], 'Alice L14');
+        await expectLater(
+          alice
+              .from('profiles')
+              .update({'display_name': 'Bypassed'})
+              .eq('id', aliceId),
+          throwsA(isA<PostgrestException>()),
+        );
+        await expectLater(
+          alice
+              .from('profiles')
+              .update({'display_name': 'Forged Bob'})
+              .eq('id', bobId),
+          throwsA(isA<PostgrestException>()),
         );
         await expectLater(
           alice
@@ -248,10 +272,7 @@ void main() {
         expect(testChatRows.single['partner_name'], 'Bob Local');
       } finally {
         if (alice.auth.currentUser != null && originalAliceName != null) {
-          await alice
-              .from('profiles')
-              .update({'display_name': originalAliceName})
-              .eq('id', alice.auth.currentUser!.id);
+          await ProfileService(alice).updateDisplayName(originalAliceName);
         }
         if (inviteTokens.isNotEmpty) {
           await admin.from('invites').delete().inFilter('token', inviteTokens);
