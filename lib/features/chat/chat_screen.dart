@@ -19,10 +19,12 @@ import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
 import 'state/message_translations_state.dart';
 import 'state/pending_sends_state.dart';
+import 'state/typing_state.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_sheet.dart';
+import 'widgets/message_interaction_target.dart';
 import 'widgets/message_text.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/report_sheet.dart';
@@ -80,6 +82,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final text = _input.text;
       final has = text.trim().isNotEmpty;
       final len = text.characters.length;
+      ref.read(typingComposerProvider(widget.chatId)).textChanged(has);
       if (has != _hasText || len != _textLength) {
         setState(() {
           _hasText = has;
@@ -133,11 +136,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _reportMessage(Message message, Chat chat) async {
-    final reason =
-        await showReportReasonSheet(context, title: 'Report message');
+    final reason = await showReportReasonSheet(
+      context,
+      title: 'Report message',
+    );
     if (reason == null) return;
     try {
-      await ref.read(chatServiceProvider).reportContent(
+      await ref
+          .read(chatServiceProvider)
+          .reportContent(
             reason: reason.wire,
             messageId: message.id,
             chatId: chat.id,
@@ -172,8 +179,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
         break;
       case MessageAction.delete:
-        final notifier =
-            ref.read(chatMessagesProvider(widget.chatId).notifier);
+        final notifier = ref.read(chatMessagesProvider(widget.chatId).notifier);
         final removedId = message.id;
         notifier.removeMessage(removedId);
         final messenger = ScaffoldMessenger.of(context);
@@ -232,6 +238,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+    // Keep the auto-disposed composer alive for this chat while its input is
+    // mounted. The controller listener reads the same instance on each edit.
+    ref.watch(typingComposerProvider(widget.chatId));
 
     // Bulk-prefetch the DB-cached translations for this chat in the
     // current learning language so reopening (or switching back to a
@@ -243,16 +252,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _prefetchedLang = learningLang.code;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        final notifier = ref
-            .read(messageTranslationsProvider(widget.chatId).notifier);
+        final notifier = ref.read(
+          messageTranslationsProvider(widget.chatId).notifier,
+        );
         await notifier.prefetchFromDb(learningLang.code);
         if (!mounted) return;
         // After hydrating from the DB, kick LLM translations for every
         // message that's still uncached so the user doesn't have to
         // scroll past each one to trigger it. ensure() is idempotent —
         // hits + in-flight rows no-op, only true misses round-trip.
-        final messages =
-            ref.read(chatMessagesProvider(widget.chatId)).value;
+        final messages = ref.read(chatMessagesProvider(widget.chatId)).value;
         if (messages == null) return;
         for (final m in messages) {
           if (m.originalText.trim().isEmpty) continue;
@@ -326,8 +335,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   },
                   onMenu: _toggleMenu,
                   onTapPartner: () async {
-                    final result =
-                        await showPartnerProfileSheet(context, chat: chat);
+                    final result = await showPartnerProfileSheet(
+                      context,
+                      chat: chat,
+                    );
                     // Blocking the partner hides this chat — leave the view.
                     if (result == PartnerProfileResult.blocked &&
                         context.mounted) {
@@ -343,8 +354,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     child: FutureBuilder<void>(
                       future: _ready,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState !=
-                            ConnectionState.done) {
+                        if (snapshot.connectionState != ConnectionState.done) {
                           return const ChatViewSkeleton();
                         }
                         // Show the skeleton only while we have NO data at
@@ -359,15 +369,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         return Builder(
                           builder: (context) {
                             final messages = knownMessages;
-                            final pending =
-                                ref.watch(pendingSendsProvider(widget.chatId));
+                            final pending = ref.watch(
+                              pendingSendsProvider(widget.chatId),
+                            );
                             // In-place upgrade: after the server confirms
                             // a send, the pending bubble carries the server's
                             // id + timestamp. As soon as the realtime stream
                             // emits the canonical row the merge layer dedupes
                             // by id, dropping the pending without a flicker.
-                            final messageIds =
-                                messages.map((m) => m.id).toSet();
+                            final messageIds = messages
+                                .map((m) => m.id)
+                                .toSet();
                             final pendingVisible = pending
                                 .where((p) => !messageIds.contains(p.id))
                                 .toList();
@@ -375,7 +387,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // user just deleted, instantly, without waiting
                             // for the realtime row update. US-019.
                             final hidden = ref.watch(
-                                hiddenMessagesProvider(widget.chatId));
+                              hiddenMessagesProvider(widget.chatId),
+                            );
                             // Auto-flush queued sends once we're back online
                             // (covers reconnect after airplane mode and
                             // sends interrupted by an app kill, re-hydrated
@@ -384,20 +397,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // safe. PRD US-030, US-031.
                             final online = ref.watch(isOnlineProvider);
                             if (online &&
-                                pendingVisible.any((m) =>
-                                    m.status == MessageStatus.pending)) {
+                                pendingVisible.any(
+                                  (m) => m.status == MessageStatus.pending,
+                                )) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 ref
-                                    .read(chatMessagesProvider(widget.chatId)
-                                        .notifier)
+                                    .read(
+                                      chatMessagesProvider(
+                                        widget.chatId,
+                                      ).notifier,
+                                    )
                                     .flushPending();
                               });
                             }
-                            final all = [...messages, ...pendingVisible]
-                                .where((m) => !hidden.contains(m.id))
-                                .toList()
-                              ..sort(
-                                  (a, b) => a.sentAt.compareTo(b.sentAt));
+                            final all =
+                                [...messages, ...pendingVisible]
+                                    .where((m) => !hidden.contains(m.id))
+                                    .toList()
+                                  ..sort(
+                                    (a, b) => a.sentAt.compareTo(b.sentAt),
+                                  );
                             return _MessageList(
                               chatId: widget.chatId,
                               messages: all,
@@ -409,7 +428,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               // safe-area notch as well.
                               popupTopInset:
                                   MediaQuery.paddingOf(context).top +
-                                      kChatHeaderHeight,
+                                  kChatHeaderHeight,
                               emptyState: FirstMessageEmptyState(chat: chat),
                               onLongPress: (m) {
                                 HapticFeedback.mediumImpact();
@@ -486,8 +505,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   chatId: widget.chatId,
                   onLearningLanguageTap: () async {
                     _closeMenu();
-                    final current =
-                        ref.read(learningLanguageProvider(widget.chatId));
+                    final current = ref.read(
+                      learningLanguageProvider(widget.chatId),
+                    );
                     final picked = await showLearningLanguageSheet(
                       context,
                       current: current,
@@ -495,8 +515,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     if (picked != null) {
                       try {
                         await ref
-                            .read(learningLanguageProvider(widget.chatId)
-                                .notifier)
+                            .read(
+                              learningLanguageProvider(widget.chatId).notifier,
+                            )
                             .set(picked);
                       } catch (_) {
                         if (!mounted) return;
@@ -532,6 +553,8 @@ class _ChatHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final partnerTyping =
+        ref.watch(partnerTypingProvider(chat.id)).value ?? false;
     final topInset = MediaQuery.paddingOf(context).top;
     return Container(
       color: Colors.white,
@@ -539,32 +562,39 @@ class _ChatHeader extends ConsumerWidget {
       child: SizedBox(
         height: kChatHeaderHeight,
         child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Back',
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 20,
-              color: BlabColors.textPrimary,
+          children: [
+            IconButton(
+              tooltip: 'Back',
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                size: 20,
+                color: BlabColors.textPrimary,
+              ),
+              onPressed: onBack,
+              splashRadius: 22,
             ),
-            onPressed: onBack,
-            splashRadius: 22,
-          ),
-          Expanded(
-            child: InkWell(
-              onTap: onTapPartner,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                child: Row(
-                  children: [
-                    _HeaderAvatar(name: chat.partnerName, initial: chat.partnerInitial),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
+            Expanded(
+              child: InkWell(
+                onTap: onTapPartner,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      _HeaderAvatar(
+                        name: chat.partnerName,
+                        initial: chat.partnerInitial,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
                               _capitaliseName(chat.partnerName),
                               style: const TextStyle(
                                 fontSize: 16,
@@ -573,23 +603,43 @@ class _ChatHeader extends ConsumerWidget {
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 1),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 150),
+                              child: Text(
+                                partnerTyping
+                                    ? 'typing...'
+                                    : 'Learning ${chat.learningLanguage.name} ${chat.learningLanguage.flag}',
+                                key: ValueKey(partnerTyping),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: partnerTyping
+                                      ? BlabColors.brand
+                                      : BlabColors.textMuted,
+                                  fontWeight: partnerTyping
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Chat menu',
-            icon: const Icon(Icons.more_vert, size: 22),
-            color: BlabColors.textMuted,
-            onPressed: onMenu,
-            splashRadius: 22,
-          ),
-        ],
+            IconButton(
+              tooltip: 'Chat menu',
+              icon: const Icon(Icons.more_vert, size: 22),
+              color: BlabColors.textMuted,
+              onPressed: onMenu,
+              splashRadius: 22,
+            ),
+          ],
         ),
       ),
     );
@@ -626,10 +676,7 @@ class _HeaderAvatar extends StatelessWidget {
 // ─────────────────────────── menu ────────────────────────────────────────────
 
 class _ChatMenu extends ConsumerWidget {
-  const _ChatMenu({
-    required this.chatId,
-    required this.onLearningLanguageTap,
-  });
+  const _ChatMenu({required this.chatId, required this.onLearningLanguageTap});
 
   final String chatId;
   final VoidCallback onLearningLanguageTap;
@@ -684,8 +731,10 @@ class _ChatMenu extends ConsumerWidget {
               InkWell(
                 onTap: onLearningLanguageTap,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -770,20 +819,24 @@ class _MessageList extends StatelessWidget {
         items.add(_DateDividerItem(m.sentAt));
       }
 
-      final isFirstInGroup = prev == null ||
+      final isFirstInGroup =
+          prev == null ||
           prev.isOutgoing != m.isOutgoing ||
           !_isSameDay(prev.sentAt, m.sentAt) ||
           m.sentAt.difference(prev.sentAt).inMinutes.abs() > 2;
-      final isLastInGroup = next == null ||
+      final isLastInGroup =
+          next == null ||
           next.isOutgoing != m.isOutgoing ||
           !_isSameDay(next.sentAt, m.sentAt) ||
           next.sentAt.difference(m.sentAt).inMinutes.abs() > 2;
 
-      items.add(_MessageItem(
-        message: m,
-        isFirstInGroup: isFirstInGroup,
-        isLastInGroup: isLastInGroup,
-      ));
+      items.add(
+        _MessageItem(
+          message: m,
+          isFirstInGroup: isFirstInGroup,
+          isLastInGroup: isLastInGroup,
+        ),
+      );
     }
 
     // Reverse the items so the list can use `reverse: true` — the standard
@@ -909,7 +962,7 @@ class _DateDivider extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     return '${months[when.month - 1]} ${when.day}';
   }
@@ -966,10 +1019,10 @@ class _MessageRow extends ConsumerWidget {
       });
     }
 
-    Widget bubble = GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    Widget bubble = MessageInteractionTarget(
+      isFailed: isFailed,
       onLongPress: onLongPress,
-      onTap: isFailed ? onFailedTap : null,
+      onFailedTap: onFailedTap,
       child: _Bubble(
         chatId: chatId,
         message: message,
@@ -1004,8 +1057,9 @@ class _MessageRow extends ConsumerWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(12, topGap, 12, 0),
       child: Column(
-        crossAxisAlignment:
-            isOut ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isOut
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [bubble],
       ),
     );
@@ -1035,11 +1089,11 @@ class _Bubble extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
 
-    final liveTranslation =
-        kSupportedLearningLanguages.contains(languageCode)
-            ? ref.watch(messageTranslationsProvider(chatId))[
-                '${message.id}|$languageCode']
-            : null;
+    final liveTranslation = kSupportedLearningLanguages.contains(languageCode)
+        ? ref.watch(
+            messageTranslationsProvider(chatId),
+          )['${message.id}|$languageCode']
+        : null;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
@@ -1057,132 +1111,135 @@ class _Bubble extends ConsumerWidget {
 
     return IntrinsicWidth(
       child: ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isOut ? BlabColors.brand : BlabColors.bubbleIncoming,
-          borderRadius: radius,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (message.replyTo != null) ...[
-              _QuotedReply(replyTo: message.replyTo!, parentIsOutgoing: isOut),
-              const SizedBox(height: 6),
-            ],
-            // Layout: learning-language translation in main slot, English
-            // original in subtitle. PRD design principle: "Partner's
-            // language always shown first; English always second." Holds
-            // for incoming and outgoing. Real chats fire shimmer →
-            // ready/error via the per-chat translation cache.
-            if (liveTranslation is AsyncLoading) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: ShimmerLine(isOutgoing: isOut, height: 18),
-              ),
-              if (showTranslation) ...[
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isOut ? BlabColors.brand : BlabColors.bubbleIncoming,
+            borderRadius: radius,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (message.replyTo != null) ...[
+                _QuotedReply(
+                  replyTo: message.replyTo!,
+                  parentIsOutgoing: isOut,
+                ),
+                const SizedBox(height: 6),
+              ],
+              // Layout: learning-language translation in main slot, English
+              // original in subtitle. PRD design principle: "Partner's
+              // language always shown first; English always second." Holds
+              // for incoming and outgoing. Real chats fire shimmer →
+              // ready/error via the per-chat translation cache.
+              if (liveTranslation is AsyncLoading) ...[
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Container(
-                    height: 1,
-                    color: isOut
-                        ? Colors.white.withValues(alpha: 0.25)
-                        : Colors.grey.shade200,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: ShimmerLine(isOutgoing: isOut, height: 18),
                 ),
+                if (showTranslation) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Container(
+                      height: 1,
+                      color: isOut
+                          ? Colors.white.withValues(alpha: 0.25)
+                          : Colors.grey.shade200,
+                    ),
+                  ),
+                  Text(
+                    message.originalText,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isOut
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : BlabColors.textMuted,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ] else if (liveTranslation is AsyncError) ...[
                 Text(
-                  message.originalText,
+                  'Translation unavailable',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
                     color: isOut
-                        ? Colors.white.withValues(alpha: 0.85)
+                        ? Colors.white.withValues(alpha: 0.7)
                         : BlabColors.textMuted,
-                    height: 1.3,
+                    height: 1.7,
                   ),
                 ),
-              ],
-            ] else if (liveTranslation is AsyncError) ...[
-              Text(
-                'Translation unavailable',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
-                  color: isOut
-                      ? Colors.white.withValues(alpha: 0.7)
-                      : BlabColors.textMuted,
-                  height: 1.7,
-                ),
-              ),
-              if (showTranslation) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Container(
-                    height: 1,
-                    color: isOut
-                        ? Colors.white.withValues(alpha: 0.25)
-                        : Colors.grey.shade200,
+                if (showTranslation) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Container(
+                      height: 1,
+                      color: isOut
+                          ? Colors.white.withValues(alpha: 0.25)
+                          : Colors.grey.shade200,
+                    ),
                   ),
-                ),
-                Text(
-                  message.originalText,
+                  Text(
+                    message.originalText,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isOut
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : BlabColors.textMuted,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ] else ...[
+                MessageText(
+                  text: liveTranslation is AsyncData<MessageTranslation>
+                      ? liveTranslation.value.translation
+                      : (isOut && message.translation.isNotEmpty
+                            ? message.translation
+                            : message.originalText),
+                  tokens: liveTranslation is AsyncData<MessageTranslation>
+                      ? liveTranslation.value.tokens
+                      : message.tokens,
+                  languageCode: languageCode,
+                  popupTopInset: popupTopInset,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: isOut
-                        ? Colors.white.withValues(alpha: 0.85)
-                        : BlabColors.textMuted,
-                    height: 1.3,
+                    fontSize: 16,
+                    height: 1.7,
+                    color: isOut ? Colors.white : BlabColors.textPrimary,
                   ),
                 ),
+                if (showTranslation) ...[
+                  if (liveTranslation is AsyncData<MessageTranslation>)
+                    TranslationSubtitle(
+                      state: TranslationSubtitleState.ready,
+                      text: message.originalText,
+                      isOutgoing: isOut,
+                    )
+                  else if (message.translation.isNotEmpty)
+                    TranslationSubtitle(
+                      state: TranslationSubtitleState.ready,
+                      text: isOut ? message.originalText : message.translation,
+                      isOutgoing: isOut,
+                    ),
+                ],
               ],
-            ] else ...[
-              MessageText(
-                text: liveTranslation is AsyncData<MessageTranslation>
-                    ? liveTranslation.value.translation
-                    : (isOut && message.translation.isNotEmpty
-                        ? message.translation
-                        : message.originalText),
-                tokens: liveTranslation is AsyncData<MessageTranslation>
-                    ? liveTranslation.value.tokens
-                    : message.tokens,
-                languageCode: languageCode,
-                popupTopInset: popupTopInset,
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.7,
-                  color: isOut ? Colors.white : BlabColors.textPrimary,
-                ),
-              ),
-              if (showTranslation) ...[
-                if (liveTranslation is AsyncData<MessageTranslation>)
-                  TranslationSubtitle(
-                    state: TranslationSubtitleState.ready,
-                    text: message.originalText,
-                    isOutgoing: isOut,
-                  )
-                else if (message.translation.isNotEmpty)
-                  TranslationSubtitle(
-                    state: TranslationSubtitleState.ready,
-                    text: isOut ? message.originalText : message.translation,
+              if (isLastInGroup) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _Meta(
+                    chatId: chatId,
+                    message: message,
                     isOutgoing: isOut,
                   ),
+                ),
               ],
             ],
-            if (isLastInGroup) ...[
-              const SizedBox(height: 4),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _Meta(
-                  chatId: chatId,
-                  message: message,
-                  isOutgoing: isOut,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -1205,31 +1262,26 @@ class _Meta extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.7)
         : BlabColors.textMuted;
     final children = <Widget>[
-      Text(
-        timeLabel,
-        style: TextStyle(fontSize: 11, color: textColor),
-      ),
+      Text(timeLabel, style: TextStyle(fontSize: 11, color: textColor)),
     ];
     if (message.isEdited) {
       children.add(const SizedBox(width: 4));
-      children.add(Text(
-        '· edited',
-        style: TextStyle(fontSize: 10, color: textColor),
-      ));
+      children.add(
+        Text('· edited', style: TextStyle(fontSize: 10, color: textColor)),
+      );
     }
     if (message.isOutgoing) {
       children.add(const SizedBox(width: 4));
-      children.add(_StatusIcon(
-        chatId: chatId,
-        messageId: message.id,
-        intrinsicStatus: message.status,
-        isOutgoing: isOutgoing,
-      ));
+      children.add(
+        _StatusIcon(
+          chatId: chatId,
+          messageId: message.id,
+          intrinsicStatus: message.status,
+          isOutgoing: isOutgoing,
+        ),
+      );
     }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: children,
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: children);
   }
 
   static String _formatTime(DateTime t) {
@@ -1276,26 +1328,38 @@ class _StatusIcon extends ConsumerWidget {
       case MessageStatus.pending:
         return Semantics(
           label: 'Sending',
-          child: Icon(Icons.access_time,
-              size: 14, color: isOutgoing ? tint : BlabColors.textMuted),
+          child: Icon(
+            Icons.access_time,
+            size: 14,
+            color: isOutgoing ? tint : BlabColors.textMuted,
+          ),
         );
       case MessageStatus.delivered:
         return Semantics(
           label: 'Delivered',
-          child: Icon(Icons.done_all,
-              size: 14, color: isOutgoing ? tint : Colors.grey.shade500),
+          child: Icon(
+            Icons.done_all,
+            size: 14,
+            color: isOutgoing ? tint : Colors.grey.shade500,
+          ),
         );
       case MessageStatus.read:
         return Semantics(
           label: 'Read',
-          child: Icon(Icons.done_all,
-              size: 14, color: isOutgoing ? Colors.white : BlabColors.brand),
+          child: Icon(
+            Icons.done_all,
+            size: 14,
+            color: isOutgoing ? Colors.white : BlabColors.brand,
+          ),
         );
       case MessageStatus.failed:
         return Semantics(
           label: 'Failed to send. Tap to retry.',
-          child: const Icon(Icons.error_outline,
-              size: 14, color: Color(0xFFEF4444)),
+          child: const Icon(
+            Icons.error_outline,
+            size: 14,
+            color: Color(0xFFEF4444),
+          ),
         );
     }
   }
@@ -1346,8 +1410,11 @@ class _InputBar extends StatelessWidget {
                 children: [
                   IconButton(
                     tooltip: 'Attach',
-                    icon:
-                        Icon(Icons.add, color: Colors.grey.shade500, size: 26),
+                    icon: Icon(
+                      Icons.add,
+                      color: Colors.grey.shade500,
+                      size: 26,
+                    ),
                     onPressed: null,
                     splashRadius: 22,
                   ),
@@ -1363,13 +1430,13 @@ class _InputBar extends StatelessWidget {
                         maxLength: maxLength,
                         // Hide the default counter — we render our own
                         // (right-aligned, only at threshold). PRD US-036.
-                        buildCounter: (
-                          context, {
-                          required currentLength,
-                          required isFocused,
-                          maxLength,
-                        }) =>
-                            null,
+                        buildCounter:
+                            (
+                              context, {
+                              required currentLength,
+                              required isFocused,
+                              maxLength,
+                            }) => null,
                         textCapitalization: TextCapitalization.sentences,
                         style: const TextStyle(
                           fontSize: 15,
@@ -1460,10 +1527,7 @@ class _InputBar extends StatelessWidget {
 // ─────────────────────────── reply preview inside bubble ────────────────────
 
 class _QuotedReply extends StatelessWidget {
-  const _QuotedReply({
-    required this.replyTo,
-    required this.parentIsOutgoing,
-  });
+  const _QuotedReply({required this.replyTo, required this.parentIsOutgoing});
 
   final Message replyTo;
   final bool parentIsOutgoing;
@@ -1494,8 +1558,10 @@ class _QuotedReply extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 6,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1513,10 +1579,7 @@ class _QuotedReply extends StatelessWidget {
                         replyTo.originalText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: previewColor,
-                        ),
+                        style: TextStyle(fontSize: 11, color: previewColor),
                       ),
                     ],
                   ),
@@ -1591,11 +1654,7 @@ class _ReplyBar extends StatelessWidget {
               customBorder: const CircleBorder(),
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: BlabColors.textMuted,
-                ),
+                child: Icon(Icons.close, size: 20, color: BlabColors.textMuted),
               ),
             ),
           ],
@@ -1651,11 +1710,7 @@ class _EditBar extends StatelessWidget {
               customBorder: const CircleBorder(),
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: BlabColors.textMuted,
-                ),
+                child: Icon(Icons.close, size: 20, color: BlabColors.textMuted),
               ),
             ),
           ],
@@ -1664,4 +1719,3 @@ class _EditBar extends StatelessWidget {
     );
   }
 }
-

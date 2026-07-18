@@ -18,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(interfaceLanguageProvider);
     final session = ref.watch(authSessionProvider).value;
+    final hasPasswordIdentity = ref.watch(hasPasswordIdentityProvider);
     final metaName = session?.user.userMetadata?['name'] as String?;
     final emailLocal = session?.user.email?.split('@').first;
     final displayName = (metaName?.trim().isNotEmpty ?? false)
@@ -88,14 +89,16 @@ class ProfileScreen extends ConsumerWidget {
                       color: BlabColors.textMuted),
                   onTap: () => context.push('/profile/email'),
                 ),
-                const _RowDivider(),
-                _SettingsRow(
-                  icon: Icons.lock_outline,
-                  label: 'Change password',
-                  trailing: const Icon(Icons.chevron_right,
-                      color: BlabColors.textMuted),
-                  onTap: () => context.push('/profile/password'),
-                ),
+                if (hasPasswordIdentity) ...[
+                  const _RowDivider(),
+                  _SettingsRow(
+                    icon: Icons.lock_outline,
+                    label: 'Change password',
+                    trailing: const Icon(Icons.chevron_right,
+                        color: BlabColors.textMuted),
+                    onTap: () => context.push('/profile/password'),
+                  ),
+                ],
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.shield_outlined,

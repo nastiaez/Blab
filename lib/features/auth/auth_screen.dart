@@ -12,6 +12,7 @@ import '../../shared/state/interface_language.dart';
 import '../../shared/util/open_url.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/picker_card.dart';
+import '../invite/invite_continuation.dart';
 import '../invite/widgets/invite_progress_bar.dart';
 import 'widgets/blab_text_field.dart';
 import 'widgets/language_picker_sheet.dart';
@@ -20,6 +21,47 @@ import 'widgets/password_strength.dart';
 import 'widgets/sso_buttons.dart';
 
 enum AuthMode { signUp, logIn }
+
+class EmailAuthRequest {
+  const EmailAuthRequest({
+    required this.mode,
+    required this.name,
+    required this.email,
+    required this.password,
+  });
+
+  final AuthMode mode;
+  final String name;
+  final String email;
+  final String password;
+}
+
+typedef EmailAuthAction = Future<void> Function(EmailAuthRequest request);
+
+final emailAuthActionProvider = Provider<EmailAuthAction>((ref) {
+  final auth = ref.watch(supabaseAuthServiceProvider);
+  return (request) async {
+    if (request.mode == AuthMode.signUp) {
+      await auth.signUp(
+        name: request.name,
+        email: request.email,
+        password: request.password,
+      );
+    } else {
+      await auth.signIn(email: request.email, password: request.password);
+    }
+  };
+});
+
+typedef SocialAuthAction = Future<void> Function(String provider);
+
+final socialAuthActionProvider = Provider<SocialAuthAction>((ref) {
+  final auth = ref.watch(supabaseAuthServiceProvider);
+  return (provider) async {
+    if (provider != 'google') throw UnsupportedError(provider);
+    await auth.signInWithGoogle();
+  };
+});
 
 /// Sign up / Log in screen. PRD US-001…US-005.
 ///
@@ -32,6 +74,7 @@ class AuthScreen extends ConsumerStatefulWidget {
     this.initialMode = AuthMode.signUp,
     this.inviterName,
     this.learnCode,
+    this.inviteToken,
   });
 
   final AuthMode initialMode;
@@ -43,6 +86,9 @@ class AuthScreen extends ConsumerStatefulWidget {
   /// Language code the invitee picked on the previous step. Backend wiring
   /// (Step 2.3) will use this when seeding the new chat row.
   final String? learnCode;
+
+  /// Opaque server invite token to claim after authentication succeeds.
+  final String? inviteToken;
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
@@ -61,6 +107,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String? _pwErr;
   String? _formErr;
   bool _busy = false;
+  bool _authenticationCompleted = false;
 
   @override
   void initState() {
@@ -78,7 +125,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     _emailFocus.dispose();
     super.dispose();
   }
-
 
   bool _isValidEmail(String v) {
     final re = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
@@ -99,16 +145,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _busy = true;
       _formErr = null;
     });
-    final auth = ref.read(supabaseAuthServiceProvider);
     try {
-      if (provider == 'google') {
-        await auth.signInWithGoogle();
+      if (_authenticationCompleted) {
+        await _completeAuthentication();
+      } else if (provider == 'google') {
+        await ref.read(socialAuthActionProvider)(provider);
+        _authenticationCompleted = true;
+        if (!mounted) return;
+        await _completeAuthentication();
       } else {
         setState(() => _formErr = 'Apple sign-in coming soon');
         return;
       }
-      if (!mounted) return;
-      context.go('/chats');
     } on SocialSignInCancelled {
       // Silent — user dismissed picker.
     } catch (e) {
@@ -120,6 +168,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _submit() async {
+    if (_busy) return;
     setState(() {
       _nameErr = (_mode == AuthMode.signUp && _name.text.trim().isEmpty)
           ? 'Enter your name'
@@ -133,19 +182,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (_nameErr != null || _emailErr != null || _pwErr != null) return;
 
     setState(() => _busy = true);
-    final auth = ref.read(supabaseAuthServiceProvider);
     try {
-      if (_mode == AuthMode.signUp) {
-        await auth.signUp(
-          name: _name.text,
-          email: _email.text,
-          password: _password.text,
+      if (!_authenticationCompleted) {
+        await ref.read(emailAuthActionProvider)(
+          EmailAuthRequest(
+            mode: _mode,
+            name: _name.text,
+            email: _email.text,
+            password: _password.text,
+          ),
         );
-      } else {
-        await auth.signIn(email: _email.text, password: _password.text);
+        _authenticationCompleted = true;
       }
       if (!mounted) return;
-      context.go('/chats');
+      await _completeAuthentication();
     } catch (e) {
       if (!mounted) return;
       setState(() => _formErr = SupabaseAuthService.messageFor(e));
@@ -154,7 +204,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  Future<void> _completeAuthentication() async {
+    final continuation = InviteContinuation(
+      token: widget.inviteToken,
+      inviterName: widget.inviterName,
+      learningLanguage: widget.learnCode,
+    );
+    if (!continuation.canResume) {
+      context.go('/chats');
+      return;
+    }
+
+    try {
+      final chatId = await ref.read(inviteClaimActionProvider)(continuation);
+      if (!mounted) return;
+      context.go('/chat/$chatId');
+    } catch (e) {
+      if (!mounted) return;
+      final failure = inviteClaimFailureFor(e);
+      if (isTerminalInviteClaimFailure(failure)) {
+        context.go(continuation.resolverLocation);
+      } else {
+        setState(() => _formErr = inviteClaimMessage(failure));
+      }
+    }
+  }
+
   void _switchMode() {
+    if (_busy) return;
     setState(() {
       _mode = _mode == AuthMode.signUp ? AuthMode.logIn : AuthMode.signUp;
       _nameErr = null;
@@ -180,8 +257,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               _TopBar(
                 code: lang.code.toUpperCase(),
                 onTapLanguage: () async {
-                  final picked = await showLanguagePickerSheet(context,
-                      current: lang);
+                  final picked = await showLanguagePickerSheet(
+                    context,
+                    current: lang,
+                  );
                   if (picked != null) {
                     ref.read(interfaceLanguageProvider.notifier).set(picked);
                   }
@@ -198,17 +277,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               ],
               const SizedBox(height: 18),
               Center(
-                child: SvgPicture.asset(
-                  'assets/blab-logo.svg',
-                  height: 44,
-                ),
+                child: SvgPicture.asset('assets/blab-logo.svg', height: 44),
               ),
               if (isSignUp || widget.inviterName != null) ...[
                 const SizedBox(height: 10),
                 Center(
                   child: Text(
                     widget.inviterName != null
-                        ? 'Sign up to chat with ${widget.inviterName}.'
+                        ? '${isSignUp ? 'Sign up' : 'Log in'} to chat with ${widget.inviterName}.'
                         : 'Learn a language by chatting with a friend.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -274,7 +350,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               minimumSize: const Size(0, 32),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 4),
+                                horizontal: 4,
+                                vertical: 4,
+                              ),
                             ),
                             child: const Text(
                               'Forgot password?',
@@ -368,8 +446,11 @@ class _TopBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             child: const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Icon(Icons.arrow_back_ios_new,
-                  size: 20, color: BlabColors.textPrimary),
+              child: Icon(
+                Icons.arrow_back_ios_new,
+                size: 20,
+                color: BlabColors.textPrimary,
+              ),
             ),
           )
         : InkWell(
@@ -410,7 +491,8 @@ class _OrDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final line = Expanded(
-        child: Container(height: 1, color: BlabColors.divider));
+      child: Container(height: 1, color: BlabColors.divider),
+    );
     return Row(
       children: [
         line,
@@ -436,8 +518,7 @@ class _InlineError extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.error_outline,
-            size: 16, color: BlabColors.error),
+        const Icon(Icons.error_outline, size: 16, color: BlabColors.error),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -456,10 +537,7 @@ class _InlineError extends StatelessWidget {
 }
 
 class _LegalFinePrint extends StatefulWidget {
-  const _LegalFinePrint({
-    required this.onTermsTap,
-    required this.onPrivacyTap,
-  });
+  const _LegalFinePrint({required this.onTermsTap, required this.onPrivacyTap});
 
   final VoidCallback onTermsTap;
   final VoidCallback onPrivacyTap;
@@ -475,7 +553,8 @@ class _LegalFinePrintState extends State<_LegalFinePrint> {
   @override
   void initState() {
     super.initState();
-    _termsRecognizer = TapGestureRecognizer()..onTap = () => widget.onTermsTap();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => widget.onTermsTap();
     _privacyRecognizer = TapGestureRecognizer()
       ..onTap = () => widget.onPrivacyTap();
   }

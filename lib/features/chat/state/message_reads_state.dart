@@ -5,13 +5,33 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
+import '../../../shared/state/privacy_settings.dart';
 
 typedef MarkReadFn = Future<void> Function(List<String> ids);
+typedef WatchReadsFn = Stream<List<Map<String, dynamic>>> Function();
 
 /// Per-chat function pointer for marking ids read. Overridable in tests.
 final markReadFnProvider = Provider.family<MarkReadFn, String>((ref, chatId) {
   final svc = ref.watch(chatServiceProvider);
   return (ids) => svc.markRead(chatId: chatId, messageIds: ids);
+});
+
+/// Per-chat read stream pointer for transport-boundary tests.
+final watchReadsFnProvider = Provider.family<WatchReadsFn, String>((
+  ref,
+  chatId,
+) {
+  final svc = ref.watch(chatServiceProvider);
+  return () => svc.watchReads(chatId);
+});
+
+final readReceiptUserIdProvider = Provider<String?>((ref) {
+  ref.watch(authSessionProvider);
+  try {
+    return Supabase.instance.client.auth.currentUser?.id;
+  } catch (_) {
+    return null;
+  }
 });
 
 /// Collects ids of incoming messages that have just scrolled into view and
@@ -25,11 +45,17 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
 
   @override
   Set<String> build() {
+    final enabled = ref.watch(readReceiptsEnabledProvider);
+    if (!enabled) {
+      _flush?.cancel();
+      _flush = null;
+    }
     ref.onDispose(() => _flush?.cancel());
     return <String>{};
   }
 
   void reportVisible(String id) {
+    if (!ref.read(readReceiptsEnabledProvider)) return;
     if (state.contains(id)) return;
     state = {...state, id};
     _flush?.cancel();
@@ -37,6 +63,10 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   }
 
   Future<void> _flushNow() async {
+    if (!ref.read(readReceiptsEnabledProvider)) {
+      state = <String>{};
+      return;
+    }
     final ids = state.toList();
     if (ids.isEmpty) return;
     state = <String>{};
@@ -58,20 +88,25 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
 
 final messageReadsProvider =
     NotifierProvider.family<MessageReadsNotifier, Set<String>, String>(
-  MessageReadsNotifier.new,
-);
+      MessageReadsNotifier.new,
+    );
 
 /// Set of message ids in this chat that the OTHER user has read. Outgoing
 /// bubbles render as `read` when their id is in this set.
-final readsForChatProvider =
-    StreamProvider.family<Set<String>, String>((ref, chatId) {
+final readsForChatProvider = StreamProvider.family<Set<String>, String>((
+  ref,
+  chatId,
+) {
+  if (!ref.watch(readReceiptsEnabledProvider)) {
+    return Stream.value(const <String>{});
+  }
   // Re-open the realtime subscription when the signed-in user changes,
   // otherwise the channel keeps using the previous account's auth context
   // and outgoing bubbles stay stuck on the gray double-tick.
   ref.watch(authSessionProvider);
-  final svc = ref.watch(chatServiceProvider);
-  return svc.watchReads(chatId).map((rows) {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+  final watchReads = ref.watch(watchReadsFnProvider(chatId));
+  final uid = ref.watch(readReceiptUserIdProvider);
+  return watchReads().map((rows) {
     return rows
         .where((r) => r['user_id'] != uid)
         .map((r) => r['message_id'] as String)

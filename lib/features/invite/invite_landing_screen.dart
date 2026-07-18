@@ -29,9 +29,9 @@ class InviteLandingScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
           child: switch (status) {
             InviteStatus.valid => _ValidBody(
-                inviterName: inviterName,
-                token: token,
-              ),
+              inviterName: inviterName,
+              token: token,
+            ),
             InviteStatus.expired => _ExpiredBody(inviterName: inviterName),
             InviteStatus.used => _UsedBody(inviterName: inviterName),
           },
@@ -44,18 +44,20 @@ class InviteLandingScreen extends ConsumerWidget {
 // ─────────────────────────── valid body ───────────────────────────────────
 
 class _ValidBody extends StatelessWidget {
-  const _ValidBody({
-    required this.inviterName,
-    required this.token,
-  });
+  const _ValidBody({required this.inviterName, required this.token});
 
   final String inviterName;
   final String? token;
 
   void _onJoin(BuildContext context) {
-    final params = StringBuffer('/invite/pick-language?inviter=$inviterName');
-    if (token != null) params.write('&token=$token');
-    context.push(params.toString());
+    final location = Uri(
+      path: '/invite/pick-language',
+      queryParameters: {
+        'inviter': inviterName,
+        if (token != null) 'token': token,
+      },
+    ).toString();
+    context.push(location);
   }
 
   @override
@@ -74,9 +76,7 @@ class _ValidBody extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              inviterName.isNotEmpty
-                  ? inviterName[0].toUpperCase()
-                  : '?',
+              inviterName.isNotEmpty ? inviterName[0].toUpperCase() : '?',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -208,11 +208,7 @@ class _UsedBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Spacer(),
-        const Icon(
-          Icons.link_off,
-          size: 56,
-          color: BlabColors.textMuted,
-        ),
+        const Icon(Icons.link_off, size: 56, color: BlabColors.textMuted),
         const SizedBox(height: 18),
         const Text(
           'This invite was already claimed',

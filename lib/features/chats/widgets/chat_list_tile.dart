@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../../features/chat/state/message_translations_state.dart';
+import '../../../features/chat/state/typing_state.dart';
 import '../../../shared/data/translation_support.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/util/relative_time.dart';
@@ -15,6 +16,9 @@ class ChatListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final partnerTyping =
+        !chat.isNewInvite &&
+        (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
     // Resolve the preview text in the viewer's learning language when
     // we have a last message id, the learning language is one we
     // translate, and there's a cached translation (either in memory or
@@ -69,7 +73,7 @@ class ChatListTile extends ConsumerWidget {
                               child: Text(
                                 chat.partnerName.isNotEmpty
                                     ? chat.partnerName[0].toUpperCase() +
-                                        chat.partnerName.substring(1)
+                                          chat.partnerName.substring(1)
                                     : chat.partnerName,
                                 style: const TextStyle(
                                   fontSize: 16,
@@ -80,8 +84,10 @@ class ChatListTile extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text(chat.learningLanguage.flag,
-                                style: const TextStyle(fontSize: 14)),
+                            Text(
+                              chat.learningLanguage.flag,
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ],
                         ),
                       ),
@@ -106,13 +112,21 @@ class ChatListTile extends ConsumerWidget {
                         child: Text(
                           chat.isNewInvite
                               ? 'New connection · say hi'
+                              : partnerTyping
+                              ? 'typing...'
                               : previewText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: BlabColors.textMuted,
-                            fontWeight: FontWeight.w400,
+                            color: partnerTyping
+                                ? BlabColors.brand
+                                : chat.unreadCount > 0
+                                ? BlabColors.textPrimary
+                                : BlabColors.textMuted,
+                            fontWeight: partnerTyping || chat.unreadCount > 0
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ),

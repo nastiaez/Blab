@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../shared/data/languages.dart';
-import '../../shared/state/chat_list_state.dart';
+import '../../shared/state/auth_state.dart';
 import '../../shared/widgets/picker_card.dart';
-
+import 'invite_continuation.dart';
 
 class InvitePickLanguageScreen extends ConsumerStatefulWidget {
   const InvitePickLanguageScreen({
@@ -30,50 +29,41 @@ class _InvitePickLanguageScreenState
   BlabLanguage? _picked;
   bool _claiming = false;
 
-  String get _ctaLabel => _picked == null
-      ? 'Say hello'
-      : 'Say ${_picked!.hello}';
+  String get _ctaLabel =>
+      _picked == null ? 'Say hello' : 'Say ${_picked!.hello}';
 
   Future<void> _onContinue() async {
     final picked = _picked;
     if (picked == null) return;
 
-    final token = widget.token;
+    final continuation = InviteContinuation(
+      token: widget.token,
+      inviterName: widget.inviterName,
+      learningLanguage: picked.code,
+    );
+    final token = continuation.token;
     if (token == null) {
-      context.push(
-        '/auth?inviter=${widget.inviterName}&learn=${picked.code}',
-      );
+      context.push(continuation.authLocation());
       return;
     }
-    final signedIn =
-        Supabase.instance.client.auth.currentSession != null;
+    final signedIn = ref.read(isSignedInProvider);
     if (!signedIn) {
-      showAppSnack('Sign in first, then tap the invite link again.');
-      context.push('/auth?mode=signup');
+      context.push(continuation.authLocation());
       return;
     }
     setState(() => _claiming = true);
     try {
-      final chatId = await ref
-          .read(chatServiceProvider)
-          .claimInvite(token: token, myLearningLanguage: picked.code);
-      if (!mounted) return;
-      await ref.read(chatListProvider.notifier).refresh();
+      final chatId = await ref.read(inviteClaimActionProvider)(continuation);
       if (!mounted) return;
       context.go('/chat/$chatId');
-    } on PostgrestException catch (e) {
+    } catch (e) {
       if (!mounted) return;
-      final msg = switch (e.message) {
-        'invite_already_claimed' => 'This invite has already been used.',
-        'invite_expired' => 'This invite has expired.',
-        'invite_not_found' => "We couldn't find that invite.",
-        'invite_self_claim' => "You can't accept your own invite.",
-        _ => "Couldn't accept the invite. Try again."
-      };
-      showAppSnack(msg);
-    } catch (_) {
-      if (!mounted) return;
-      showAppSnack("Couldn't accept the invite. Try again.");
+      final failure = inviteClaimFailureFor(e);
+      if (isTerminalInviteClaimFailure(failure)) {
+        context.go(continuation.resolverLocation);
+      } else {
+        showAppSnack(inviteClaimMessage(failure));
+      }
     } finally {
       if (mounted) setState(() => _claiming = false);
     }

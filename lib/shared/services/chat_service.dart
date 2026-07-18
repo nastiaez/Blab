@@ -53,7 +53,9 @@ class ChatService {
         .order('created_at', ascending: false)
         .limit(limit);
     final list = (rows as List)
-        .map((r) => messageFromRow(r as Map<String, dynamic>, currentUserId: _uid))
+        .map(
+          (r) => messageFromRow(r as Map<String, dynamic>, currentUserId: _uid),
+        )
         .toList()
         .reversed
         .toList();
@@ -78,20 +80,43 @@ class ChatService {
   Future<({String id, DateTime createdAt})> sendMessage({
     required String chatId,
     required String body,
+    String? clientMessageId,
   }) async {
-    final row = await _client
-        .from('messages')
-        .insert({'chat_id': chatId, 'sender_id': _uid, 'body': body})
-        .select()
-        .single();
+    final payload = {
+      'id': ?clientMessageId,
+      'chat_id': chatId,
+      'sender_id': _uid,
+      'body': body,
+    };
+    Map<String, dynamic> row;
+    try {
+      row = await _client.from('messages').insert(payload).select().single();
+    } on PostgrestException catch (error) {
+      if (clientMessageId == null || error.code != '23505') rethrow;
+      final existing = await _client
+          .from('messages')
+          .select('id,chat_id,sender_id,body,created_at,deleted_at')
+          .eq('id', clientMessageId)
+          .maybeSingle();
+      if (existing == null ||
+          existing['chat_id'] != chatId ||
+          existing['sender_id'] != _uid ||
+          existing['body'] != body ||
+          existing['deleted_at'] != null) {
+        throw StateError('idempotency_conflict');
+      }
+      row = existing;
+    }
     return (
       id: row['id'] as String,
-      createdAt:
-          DateTime.parse(row['created_at'] as String).toLocal(),
+      createdAt: DateTime.parse(row['created_at'] as String).toLocal(),
     );
   }
 
-  Future<void> markRead({required String chatId, required List<String> messageIds}) async {
+  Future<void> markRead({
+    required String chatId,
+    required List<String> messageIds,
+  }) async {
     if (messageIds.isEmpty) return;
     final rows = messageIds
         .map((id) => {'message_id': id, 'user_id': _uid, 'chat_id': chatId})
@@ -99,15 +124,16 @@ class ChatService {
     // ON CONFLICT DO NOTHING — read receipts are insert-once. Using the
     // default upsert (DO UPDATE) hit the missing UPDATE policy on
     // message_reads and got rejected by RLS.
-    await _client
-        .from('message_reads')
-        .upsert(rows, ignoreDuplicates: true);
+    await _client.from('message_reads').upsert(rows, ignoreDuplicates: true);
   }
 
-  Future<void> editMessage({required String messageId, required String newBody}) async {
+  Future<void> editMessage({
+    required String messageId,
+    required String newBody,
+  }) async {
     await _client
         .from('messages')
-        .update({'body': newBody, 'edited_at': DateTime.now().toUtc().toIso8601String()})
+        .update({'body': newBody})
         .eq('id', messageId);
   }
 
@@ -132,10 +158,7 @@ class ChatService {
   /// Use the one-shot fetcher [fetchChatList] in a polling loop tied to the
   /// source tables. Later tasks wire that up via Riverpod.
   Future<List<Map<String, dynamic>>> fetchChatList() async {
-    final rows = await _client
-        .from('chat_list')
-        .select()
-        .eq('viewer_id', _uid);
+    final rows = await _client.from('chat_list').select().eq('viewer_id', _uid);
     return (rows as List).cast<Map<String, dynamic>>();
   }
 
@@ -165,7 +188,7 @@ class ChatService {
   /// any. Returns null on cache miss (so the caller falls back to the
   /// live translator).
   Future<({String text, List<Map<String, dynamic>> tokens})?>
-      fetchCachedTranslation({
+  fetchCachedTranslation({
     required String messageId,
     required String targetLang,
   }) async {
@@ -192,7 +215,7 @@ class ChatService {
   /// on learning-language change so old messages don't need to be
   /// scrolled past to translate.
   Future<Map<String, ({String text, List<Map<String, dynamic>> tokens})>>
-      fetchCachedTranslationsForChat({
+  fetchCachedTranslationsForChat({
     required String chatId,
     required String targetLang,
   }) async {
@@ -234,47 +257,54 @@ class ChatService {
     required String translationText,
     required List<Map<String, dynamic>> tokens,
   }) async {
-    await _client.from('message_translations').upsert(
-      {
-        'message_id': messageId,
-        'target_lang': targetLang,
-        'translation_text': translationText,
-        'tokens': tokens,
-      },
-      onConflict: 'message_id,target_lang',
-      ignoreDuplicates: true,
-    );
+    await _client
+        .from('message_translations')
+        .upsert(
+          {
+            'message_id': messageId,
+            'target_lang': targetLang,
+            'translation_text': translationText,
+            'tokens': tokens,
+          },
+          onConflict: 'message_id,target_lang',
+          ignoreDuplicates: true,
+        );
   }
 
   // ---- Report + Block (Step 3.6a, Play UGC/CSAE policy) ----
 
   /// File an abuse report. Any of [reportedUserId] / [chatId] / [messageId]
   /// may be null depending on what's being reported.
-  Future<void> reportContent({
+  Future<String> reportContent({
     required String reason,
     String? reportedUserId,
     String? chatId,
     String? messageId,
     String? details,
   }) async {
-    await _client.from('reports').insert({
-      'reporter_id': _uid,
-      'reported_user_id': reportedUserId,
-      'chat_id': chatId,
-      'message_id': messageId,
-      'reason': reason,
-      'details': details,
-    });
+    final reportId = await _client.rpc(
+      'submit_report',
+      params: {
+        'p_reason': reason,
+        'p_reported_user_id': reportedUserId,
+        'p_chat_id': chatId,
+        'p_message_id': messageId,
+        'p_details': details,
+      },
+    );
+    return reportId as String;
   }
 
   /// Block [userId] so they can no longer message the current user. The
   /// messages-insert RLS enforces this server-side. Idempotent.
   Future<void> blockUser(String userId) async {
-    await _client.from('blocks').upsert(
-      {'blocker_id': _uid, 'blocked_id': userId},
-      onConflict: 'blocker_id,blocked_id',
-      ignoreDuplicates: true,
-    );
+    await _client
+        .from('blocks')
+        .upsert(
+          {'blocker_id': _uid, 'blocked_id': userId},
+          onConflict: 'blocker_id,blocked_id',
+          ignoreDuplicates: true,
+        );
   }
 
   /// Remove a block.
@@ -311,9 +341,10 @@ class ChatService {
   Future<({String token, DateTime expiresAt})> createInvite({
     required String myLearningLanguage,
   }) async {
-    final res = await _client.rpc('create_invite', params: {
-      'my_learning_language': myLearningLanguage,
-    });
+    final res = await _client.rpc(
+      'create_invite',
+      params: {'my_learning_language': myLearningLanguage},
+    );
     final row = (res as List).first as Map<String, dynamic>;
     return (
       token: row['token'] as String,
@@ -325,9 +356,10 @@ class ChatService {
   /// token isn't recognised (404). The RPC is callable by anon callers
   /// so the landing renders even before sign-in.
   Future<InviteMetadata?> getInvite(String token) async {
-    final res = await _client.rpc('get_invite', params: {
-      'invite_token': token,
-    });
+    final res = await _client.rpc(
+      'get_invite',
+      params: {'invite_token': token},
+    );
     final rows = res as List;
     if (rows.isEmpty) return null;
     final row = rows.first as Map<String, dynamic>;
@@ -356,24 +388,14 @@ class ChatService {
     required String token,
     required String myLearningLanguage,
   }) async {
-    final res = await _client.rpc('claim_invite', params: {
-      'invite_token': token,
-      'my_learning_language': myLearningLanguage,
-    });
+    final res = await _client.rpc(
+      'claim_invite',
+      params: {
+        'invite_token': token,
+        'my_learning_language': myLearningLanguage,
+      },
+    );
     final row = (res as List).first as Map<String, dynamic>;
     return row['chat_id'] as String;
-  }
-
-  Future<String> pairWithEmail({
-    required String partnerEmail,
-    required String myLearning,
-    required String partnerLearning,
-  }) async {
-    final res = await _client.rpc('pair_with_email', params: {
-      'partner_email': partnerEmail,
-      'my_learning': myLearning,
-      'partner_learning': partnerLearning,
-    });
-    return res as String;
   }
 }

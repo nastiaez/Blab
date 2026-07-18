@@ -19,8 +19,38 @@ final authSessionProvider = StreamProvider<Session?>((ref) {
       .distinct((a, b) => a?.accessToken == b?.accessToken);
 });
 
+typedef ChangePasswordAction =
+    Future<void> Function({
+      required String currentPassword,
+      required String newPassword,
+    });
+
+final hasPasswordIdentityProvider = Provider<bool>((ref) {
+  ref.watch(authSessionProvider);
+  return ref.watch(supabaseAuthServiceProvider).hasPasswordIdentity;
+});
+
+final changePasswordActionProvider = Provider<ChangePasswordAction>((ref) {
+  final auth = ref.watch(supabaseAuthServiceProvider);
+  return ({required currentPassword, required newPassword}) async {
+    await auth.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  };
+});
+
 /// Convenience boolean — true once a session exists.
 final isSignedInProvider = Provider<bool>((ref) {
   final session = ref.watch(authSessionProvider).value;
   return session != null;
+});
+
+/// Stable account identity for device-local stores that must never be shared
+/// across sessions. The client fallback is available while the auth stream is
+/// still loading its initial value.
+final currentUserIdProvider = Provider<String?>((ref) {
+  final session = ref.watch(authSessionProvider).value;
+  return session?.user.id ??
+      ref.watch(supabaseClientProvider).auth.currentUser?.id;
 });

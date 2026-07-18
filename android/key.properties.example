@@ -1,0 +1,6 @@
+# Copy to android/key.properties only when managing signing manually.
+# Prefer running scripts/setup_android_signing.sh from the repository root.
+storeFile=/absolute/path/to/blab-upload.jks
+storePassword=<owner-controlled-password>
+keyAlias=upload
+keyPassword=<owner-controlled-password>
