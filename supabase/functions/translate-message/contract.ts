@@ -135,15 +135,14 @@ export function parseProviderResult(
     return null;
   }
   if (result.interfaceText.trim().length === 0) return null;
-  if (
-    interfaceLang === targetLang &&
-    result.interfaceText !== result.translation
-  ) return null;
-  if (
-    result.sourceLang === interfaceLang &&
-    result.sourceLang !== targetLang &&
-    result.interfaceText !== text
-  ) return null;
+  // These display lines are fully determined by trusted inputs. Normalize
+  // them instead of rejecting an otherwise valid provider translation when
+  // the model rewrites a typo or returns two slightly different copies.
+  if (interfaceLang === targetLang) {
+    result.interfaceText = result.translation;
+  } else if (result.sourceLang === interfaceLang) {
+    result.interfaceText = text;
+  }
   if (result.mode === "none") {
     if (
       result.translation !== text ||
@@ -207,7 +206,7 @@ export function systemPrompt(
       Object.entries(LANG_NAMES).map(([code, name]) => `${code}=${name}`).join(
         ", ",
       )
-    }. For every other input language use sourceLang=${OTHER_SOURCE_LANG}.`
+    }. Infer the intended supported language when short text contains spelling or keyboard-adjacent typos. For ambiguous malformed text, use the viewer's ${interfaceName} (${interfaceLang}) interface language as a weak hint when its script and recognizable fragments fit; never override a clearly recognizable different language. Only use sourceLang=${OTHER_SOURCE_LANG} when no supported intended language can be inferred.`
     : `The input language is ${LANG_NAMES[sourceLang]} (${sourceLang}).`;
   const romanGuidance = NON_LATIN.has(targetLang)
     ? `For each content token include "roman", a Latin-script romanization.`
@@ -236,8 +235,8 @@ Return strict JSON only:
 Rules:
 - Preserve meaning, tone, names, URLs, emoji, and punctuation.
 - First detect sourceLang, then choose exactly one mode.
-- If sourceLang differs from ${targetLang}, use mode=translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
-- If sourceLang is ${targetLang}, use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
+- If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
+- mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
 - Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
 - mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
 - For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.

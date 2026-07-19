@@ -47,7 +47,14 @@ class _FakeChatService implements ChatService {
       const [];
 
   @override
-  Stream<List<Map<String, dynamic>>> watchMessages(String chatId) =>
+  Future<MessagePage> fetchMessagePage(
+    String chatId, {
+    int limit = 50,
+    MessageCursor? before,
+  }) async => const MessagePage(messages: [], hasMore: false);
+
+  @override
+  Stream<MessageChange> watchMessageChanges(String chatId) =>
       const Stream.empty();
 
   @override
@@ -73,6 +80,7 @@ String _id(int value) =>
 ProviderContainer _container(
   _FakeChatService fake, {
   required bool online,
+  bool? backendReachable,
   String userId = 'user-a',
 }) {
   var nextId = 0;
@@ -82,6 +90,9 @@ ProviderContainer _container(
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue(userId),
       isOnlineProvider.overrideWithValue(online),
+      backendReachabilityCheckProvider.overrideWithValue(
+        () async => backendReachable ?? online,
+      ),
       clientMessageIdFactoryProvider.overrideWithValue(() => _id(++nextId)),
     ],
   );
@@ -156,6 +167,17 @@ void main() {
     final q = _queue(c, 'c1');
     expect(q.length, 1);
     expect(q.single.status, MessageStatus.failed);
+  });
+
+  test('unreachable backend leaves an online-interface send pending', () async {
+    final fake = _FakeChatService()..throwOnSend = true;
+    final c = _container(fake, online: true, backendReachable: false);
+    addTearDown(c.dispose);
+
+    await c.read(chatMessagesProvider('c1').notifier).addOutgoing('hi');
+
+    expect(fake.sendCalls, 1);
+    expect(_queue(c, 'c1').single.status, MessageStatus.pending);
   });
 
   test('removeMessage hides instantly; restore (undo) unhides', () async {

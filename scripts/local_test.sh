@@ -133,6 +133,127 @@ set_translation_limit() {
   printf 'Set %s at the local daily translation limit.\n' "$account"
 }
 
+seed_history() {
+  local count="${1:-120}"
+  local alice_id='00000000-0000-4000-8000-00000000000a'
+  local bob_id='00000000-0000-4000-8000-00000000000b'
+  local status
+  local api_url
+  local rest_url
+  local publishable_key
+  local service_role_key
+  local alice_token
+  local bob_token
+  local alice_language
+  local bob_language
+  local alice_temporary_language
+  local bob_temporary_language
+  local members
+  local chat_id
+  local payload
+
+  if [[ ! "$count" =~ ^[0-9]+$ ]] || (( count < 1 || count > 500 )); then
+    printf 'History count must be an integer from 1 to 500.\n' >&2
+    exit 2
+  fi
+
+  status="$(status_json)"
+  api_url="$(printf '%s' "$status" | jq -er '.API_URL')"
+  rest_url="$(printf '%s' "$status" | jq -er '.REST_URL')"
+  publishable_key="$(printf '%s' "$status" | jq -er '.PUBLISHABLE_KEY // .ANON_KEY')"
+  service_role_key="$(printf '%s' "$status" | jq -er '.SERVICE_ROLE_KEY')"
+  members="$(curl -fsS \
+    "$rest_url/chat_members?select=chat_id,user_id,learning_language&user_id=in.($alice_id,$bob_id)" \
+    -H "apikey: $service_role_key" \
+    -H "Authorization: Bearer $service_role_key")"
+  chat_id="$(printf '%s' "$members" | jq -r \
+    --arg alice "$alice_id" \
+    --arg bob "$bob_id" \
+    'group_by(.chat_id) | map(select((map(.user_id) | index($alice)) and (map(.user_id) | index($bob)))) | first[0].chat_id // empty')"
+
+  if [[ -z "$chat_id" ]]; then
+    printf '%s\n' \
+      'No local Alice/Bob chat exists.' \
+      'Create one through an invite, then rerun this command.' >&2
+    exit 1
+  fi
+
+  alice_language="$(printf '%s' "$members" | jq -er \
+    --arg chat_id "$chat_id" --arg user_id "$alice_id" \
+    '.[] | select(.chat_id == $chat_id and .user_id == $user_id) | .learning_language')"
+  bob_language="$(printf '%s' "$members" | jq -er \
+    --arg chat_id "$chat_id" --arg user_id "$bob_id" \
+    '.[] | select(.chat_id == $chat_id and .user_id == $user_id) | .learning_language')"
+  alice_temporary_language="$([[ "$alice_language" == 'es' ]] && printf 'de' || printf 'es')"
+  bob_temporary_language="$([[ "$bob_language" == 'es' ]] && printf 'de' || printf 'es')"
+
+  alice_token="$(curl -fsS -X POST \
+    "$api_url/auth/v1/token?grant_type=password" \
+    -H "apikey: $publishable_key" \
+    -H 'Content-Type: application/json' \
+    --data "{\"email\":\"alice@blab.test\",\"password\":\"$password\"}" \
+    | jq -er '.access_token')"
+  bob_token="$(curl -fsS -X POST \
+    "$api_url/auth/v1/token?grant_type=password" \
+    -H "apikey: $publishable_key" \
+    -H 'Content-Type: application/json' \
+    --data "{\"email\":\"bob@blab.test\",\"password\":\"$password\"}" \
+    | jq -er '.access_token')"
+
+  payload="$(jq -cn \
+    --arg chat_id "$chat_id" \
+    --arg alice "$alice_id" \
+    --argjson count "$count" \
+    '[range(1; $count + 1) | {
+      chat_id: $chat_id,
+      sender_id: $alice,
+      body: ("L-16 history message " + (.|tostring)),
+      created_at: ((1577836800 + .) | strftime("%Y-%m-%dT%H:%M:%SZ"))
+    }]')"
+
+  curl -fsS -X POST \
+    "$rest_url/messages" \
+    -H "apikey: $publishable_key" \
+    -H "Authorization: Bearer $alice_token" \
+    -H 'Content-Type: application/json' \
+    -H 'Prefer: return=minimal' \
+    --data "$payload"
+
+  # Advance each member's translation era after inserting the old fixture.
+  # The schema intentionally owns cutoff writes through language changes.
+  curl -fsS -X PATCH \
+    "$rest_url/chat_members?chat_id=eq.$chat_id&user_id=eq.$alice_id" \
+    -H "apikey: $publishable_key" \
+    -H "Authorization: Bearer $alice_token" \
+    -H 'Content-Type: application/json' \
+    -H 'Prefer: return=minimal' \
+    --data "{\"learning_language\":\"$alice_temporary_language\"}"
+  curl -fsS -X PATCH \
+    "$rest_url/chat_members?chat_id=eq.$chat_id&user_id=eq.$alice_id" \
+    -H "apikey: $publishable_key" \
+    -H "Authorization: Bearer $alice_token" \
+    -H 'Content-Type: application/json' \
+    -H 'Prefer: return=minimal' \
+    --data "{\"learning_language\":\"$alice_language\"}"
+  curl -fsS -X PATCH \
+    "$rest_url/chat_members?chat_id=eq.$chat_id&user_id=eq.$bob_id" \
+    -H "apikey: $publishable_key" \
+    -H "Authorization: Bearer $bob_token" \
+    -H 'Content-Type: application/json' \
+    -H 'Prefer: return=minimal' \
+    --data "{\"learning_language\":\"$bob_temporary_language\"}"
+  curl -fsS -X PATCH \
+    "$rest_url/chat_members?chat_id=eq.$chat_id&user_id=eq.$bob_id" \
+    -H "apikey: $publishable_key" \
+    -H "Authorization: Bearer $bob_token" \
+    -H 'Content-Type: application/json' \
+    -H 'Prefer: return=minimal' \
+    --data "{\"learning_language\":\"$bob_language\"}"
+
+  printf 'Added %s pre-cutoff local history messages to Alice/Bob chat %s.\n' \
+    "$count" "$chat_id"
+}
+
 serve_functions() {
   if [[ ! -f "$function_env_file" ]]; then
     printf '%s\n' \
@@ -319,6 +440,9 @@ case "${1:-help}" in
   translation-limit)
     set_translation_limit "${2:-set}" "${3:-alice}"
     ;;
+  history)
+    seed_history "${2:-120}"
+    ;;
   *)
     printf '%s\n' \
       'Usage:' \
@@ -329,6 +453,7 @@ case "${1:-help}" in
       '  scripts/local_test.sh invite <copied-url-or-token>' \
       '  scripts/local_test.sh functions' \
       '  scripts/local_test.sh integration' \
-      '  scripts/local_test.sh translation-limit [set|clear] [alice|bob|carol]'
+      '  scripts/local_test.sh translation-limit [set|clear] [alice|bob|carol]' \
+      '  scripts/local_test.sh history [message-count]'
     ;;
 esac

@@ -73,9 +73,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _editingMessageId;
 
   /// Last learning-language code we kicked a DB-cache prefetch for, so a
-  /// rebuild doesn't fire the bulk query again. Cleared by closing the
-  /// chat screen (the field is part of the State).
+  /// rebuild doesn't fire the page query again. Cleared by closing the chat
+  /// screen (the field is part of the State).
   String? _prefetchedLocaleKey;
+  final Set<String> _prefetchedMessageIds = <String>{};
 
   @override
   void initState() {
@@ -92,12 +93,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         });
       }
     });
+    _scroll.addListener(_loadOlderNearTop);
     _ready = Future<void>.delayed(const Duration(milliseconds: 400));
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
   @override
   void dispose() {
+    _scroll.removeListener(_loadOlderNearTop);
     _input.dispose();
     _scroll.dispose();
     super.dispose();
@@ -107,6 +110,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (!_scroll.hasClients) return;
     // Reverse: true list — position 0 is the visual bottom.
     _scroll.jumpTo(0);
+  }
+
+  void _loadOlderNearTop() {
+    if (!_scroll.hasClients) return;
+    if (_scroll.position.maxScrollExtent - _scroll.position.pixels > 240) {
+      return;
+    }
+    ref.read(chatMessagesProvider(widget.chatId).notifier).loadOlder();
   }
 
   Future<void> _send() async {
@@ -243,6 +254,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final chat = resolved;
 
     final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
+    final pagination = ref.watch(chatPaginationProvider(widget.chatId));
     // Keep the read batcher reactive while this screen is open. Its privacy
     // gate starts fail-closed; watching it here lets queued visibility events
     // resume as soon as the saved read-receipt preference finishes loading.
@@ -257,47 +269,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
-    // Bulk-prefetch DB-cached translations for messages in the current
-    // language era. History from before a language change stays as authored
-    // and never enters the live translation path.
+    // Hydrate translations one loaded page at a time. History before a
+    // language change stays as authored and never enters the AI path.
+    final localeKey = '${learningLang.code}|${interfaceLang.code}';
+    if (_prefetchedLocaleKey != localeKey) {
+      _prefetchedLocaleKey = localeKey;
+      _prefetchedMessageIds.clear();
+    }
+    final eligibleMessages = (messagesAsync.value ?? const <Message>[])
+        .where(
+          (message) => shouldRequestBubbleTranslation(
+            showTranslations: showTransl,
+            learningLanguageCode: learningLang.code,
+            text: message.originalText,
+            sentAt: message.sentAt,
+            translationCutoffAt: translationCutoffAt,
+          ),
+        )
+        .where((message) => !_prefetchedMessageIds.contains(message.id))
+        .toList();
     if (showTransl &&
         kSupportedLearningLanguages.contains(learningLang.code) &&
-        _prefetchedLocaleKey != '${learningLang.code}|${interfaceLang.code}') {
-      _prefetchedLocaleKey = '${learningLang.code}|${interfaceLang.code}';
+        eligibleMessages.isNotEmpty) {
+      _prefetchedMessageIds.addAll(eligibleMessages.map((m) => m.id));
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final notifier = ref.read(
           messageTranslationsProvider(widget.chatId).notifier,
         );
         await notifier.prefetchFromDb(
+          eligibleMessages.map((m) => m.id).toList(),
           learningLang.code,
           interfaceLang.code,
-          translationCutoffAt: translationCutoffAt,
         );
-        if (!mounted) return;
-        if (!ref.read(showTranslationsProvider(widget.chatId))) return;
-        // Translate every eligible cache miss. ensure() is idempotent; old
-        // history is excluded above so a language switch cannot fan out one
-        // OpenRouter request per historical message.
-        final messages = ref.read(chatMessagesProvider(widget.chatId)).value;
-        if (messages == null) return;
-        for (final m in messages) {
-          if (!shouldRequestBubbleTranslation(
-            showTranslations: true,
-            learningLanguageCode: learningLang.code,
-            text: m.originalText,
-            sentAt: m.sentAt,
-            translationCutoffAt: translationCutoffAt,
-          )) {
-            continue;
-          }
-          notifier.ensure(
-            messageId: m.id,
-            text: m.originalText,
-            targetLang: learningLang.code,
-            interfaceLang: interfaceLang.code,
-          );
-        }
       });
     }
 
@@ -451,6 +455,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               languageCode: learningLang.code,
                               interfaceLanguageCode: interfaceLang.code,
                               translationCutoffAt: translationCutoffAt,
+                              hasOlderMessages: pagination.hasMore,
+                              isLoadingOlder: pagination.isLoading,
                               // BUG-009: keep the word popup from drawing on
                               // top of the chat header. Account for the
                               // safe-area notch as well.
@@ -823,6 +829,8 @@ class _MessageList extends StatelessWidget {
     required this.languageCode,
     required this.interfaceLanguageCode,
     required this.translationCutoffAt,
+    required this.hasOlderMessages,
+    required this.isLoadingOlder,
     required this.popupTopInset,
     required this.onLongPress,
     required this.onTap,
@@ -837,6 +845,8 @@ class _MessageList extends StatelessWidget {
   final String languageCode;
   final String interfaceLanguageCode;
   final DateTime? translationCutoffAt;
+  final bool hasOlderMessages;
+  final bool isLoadingOlder;
   final double popupTopInset;
   final void Function(Message) onLongPress;
   final void Function(Message) onTap;
@@ -893,8 +903,21 @@ class _MessageList extends StatelessWidget {
       controller: scrollController,
       reverse: true,
       padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: reversed.length,
+      itemCount: reversed.length + (hasOlderMessages ? 1 : 0),
       itemBuilder: (context, i) {
+        if (i == reversed.length) {
+          return SizedBox(
+            height: 48,
+            child: isLoadingOlder
+                ? const Center(
+                    child: SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          );
+        }
         final item = reversed[i];
         if (item is _DateDividerItem) {
           return _DateDivider(when: item.when);
@@ -1035,25 +1058,11 @@ class _MessageRow extends ConsumerWidget {
     final maxBubble = width * (isOut ? 0.78 : 0.72);
     final isFailed = message.status == MessageStatus.failed;
 
-    // Preserve authored text and generate a separate learning-language aid.
-    // The edge function detects source independently of the interface locale.
-    // The display toggle also gates live AI requests.
-    if (showTranslation &&
+    final canRequestTranslation =
+        showTranslation &&
         shouldTranslate &&
         kSupportedLearningLanguages.contains(languageCode) &&
-        message.originalText.trim().isNotEmpty) {
-      Future.microtask(() {
-        if (!ref.read(showTranslationsProvider(chatId))) return;
-        ref
-            .read(messageTranslationsProvider(chatId).notifier)
-            .ensure(
-              messageId: message.id,
-              text: message.originalText,
-              targetLang: languageCode,
-              interfaceLang: interfaceLanguageCode,
-            );
-      });
-    }
+        message.originalText.trim().isNotEmpty;
 
     Widget bubble = MessageInteractionTarget(
       isFailed: isFailed,
@@ -1073,17 +1082,30 @@ class _MessageRow extends ConsumerWidget {
       ),
     );
 
-    // Incoming bubbles report themselves as seen once they cross the 90 %
-    // visibility threshold; the batcher coalesces ids and flushes to the
-    // server. Step 2.2 Task 10 / PRD US-016.
-    if (!isOut) {
+    // Cache hydration happens by loaded page, but a live LLM request starts
+    // only when the bubble actually enters the viewport. The same visibility
+    // callback retains incoming read-receipt behavior.
+    if (canRequestTranslation || !isOut) {
       bubble = VisibilityDetector(
         key: Key('msg-vis-${message.id}'),
         onVisibilityChanged: (info) {
+          if (canRequestTranslation && info.visibleFraction > 0) {
+            if (ref.read(showTranslationsProvider(chatId))) {
+              ref
+                  .read(messageTranslationsProvider(chatId).notifier)
+                  .ensureVisible(
+                    visibleFraction: info.visibleFraction,
+                    messageId: message.id,
+                    text: message.originalText,
+                    targetLang: languageCode,
+                    interfaceLang: interfaceLanguageCode,
+                  );
+            }
+          }
           // Threshold lowered to 0.5 so partially-visible bubbles still
           // register — bottom-of-list messages were sometimes cropped by
           // the input bar and never crossed 0.9.
-          if (info.visibleFraction > 0.5) {
+          if (!isOut && info.visibleFraction > 0.5) {
             ref
                 .read(messageReadsProvider(chatId).notifier)
                 .reportVisible(message.id);

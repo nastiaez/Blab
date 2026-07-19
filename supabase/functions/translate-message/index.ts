@@ -39,6 +39,7 @@ async function repairInterfaceText(
       },
       body: JSON.stringify({
         model: MODEL,
+        temperature: 0,
         max_completion_tokens: 4000,
         response_format: { type: "json_object" },
         provider: OPENROUTER_PROVIDER,
@@ -184,7 +185,7 @@ Deno.serve(async (req) => {
     const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
     const retryGuidance = attempt === 0
       ? ""
-      : `\n\nThe previous response was unusable. Re-check every contract rule. In particular, interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
+      : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
     let llm: Response;
     try {
       llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -195,6 +196,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           model: MODEL,
+          temperature: 0,
           max_completion_tokens: 12000,
           response_format: { type: "json_object" },
           provider: OPENROUTER_PROVIDER,

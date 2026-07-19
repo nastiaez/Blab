@@ -161,11 +161,23 @@ Deno.test("provider accepts a source outside the learning-language list", () => 
 Deno.test("auto-source prompt requests learning output with localized glosses", () => {
   const prompt = systemPrompt("auto", "uk", "es");
   assert(prompt.includes("Detect the input language"), "source detection");
+  assert(
+    prompt.includes("keyboard-adjacent typos"),
+    "source detection handles misspelled short text",
+  );
+  assert(
+    prompt.includes("interface language as a weak hint"),
+    "ambiguous malformed text gets a bounded locale hint",
+  );
   assert(prompt.includes('"translation"'), "target-language output");
   assert(prompt.includes("Spanish"), "selected interface language");
   assert(prompt.includes('"sourceLang"'), "detected source output");
   assert(prompt.includes("sourceLang=other"), "arbitrary source fallback");
   assert(prompt.includes("mode=correction"), "same-language correction mode");
+  assert(
+    prompt.includes("mode MUST be translation"),
+    "non-target sources require translation mode",
+  );
   assert(
     prompt.includes("mode=none applies only to correction"),
     "none still requires interface translation",
@@ -269,7 +281,7 @@ Deno.test("same-language correction is available to any eligible viewer", () => 
   assert(correction?.mode === "correction", "recipient correction should pass");
 });
 
-Deno.test("interface output preserves authored interface-language text", () => {
+Deno.test("server preserves authored interface-language text", () => {
   const valid = parseProviderResult(
     JSON.stringify({
       mode: "translation",
@@ -312,7 +324,39 @@ Deno.test("interface output preserves authored interface-language text", () => {
     "de",
     "en",
   );
-  assert(rewritten === null, "interface-source mistakes must stay exact");
+  assert(rewritten !== null, "valid translation should not be discarded");
+  assert(
+    rewritten?.interfaceText === "What is you doing?",
+    "server must restore the exact authored interface text",
+  );
+});
+
+Deno.test("server keeps duplicate target and interface lanes identical", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Was meinst du?",
+      interfaceText: "Was sprechen Sie?",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "Was meinst du?",
+          gloss: "what do you mean",
+          isContent: true,
+        },
+      ],
+    }),
+    "What do you mean?",
+    "de",
+    "de",
+  );
+  assert(result !== null, "valid translation should not be discarded");
+  assert(
+    result?.interfaceText === "Was meinst du?",
+    "server must copy the trusted learning line into the interface lane",
+  );
 });
 
 Deno.test("maximum character contract remains 2000", () => {

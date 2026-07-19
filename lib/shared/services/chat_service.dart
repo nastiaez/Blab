@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/chat_mappers.dart';
@@ -34,6 +36,42 @@ class InviteMetadata {
   final String? claimedByName;
 }
 
+class MessageCursor {
+  const MessageCursor({required this.createdAt, required this.id});
+
+  final DateTime createdAt;
+  final String id;
+}
+
+class MessagePage {
+  const MessagePage({
+    required this.messages,
+    required this.hasMore,
+    this.nextCursor,
+  });
+
+  final List<Message> messages;
+  final bool hasMore;
+  final MessageCursor? nextCursor;
+}
+
+enum MessageChangeType { upsert, remove, resync }
+
+class MessageChange {
+  const MessageChange._(this.type, this.row);
+
+  const MessageChange.upsert(Map<String, dynamic> row)
+    : this._(MessageChangeType.upsert, row);
+
+  const MessageChange.remove(Map<String, dynamic> row)
+    : this._(MessageChangeType.remove, row);
+
+  const MessageChange.resync() : this._(MessageChangeType.resync, null);
+
+  final MessageChangeType type;
+  final Map<String, dynamic>? row;
+}
+
 class ChatService {
   ChatService(this._client);
   final SupabaseClient _client;
@@ -45,16 +83,52 @@ class ChatService {
   }
 
   Future<List<Message>> fetchMessages(String chatId, {int limit = 50}) async {
-    final rows = await _client
+    return (await fetchMessagePage(chatId, limit: limit)).messages;
+  }
+
+  Future<MessagePage> fetchMessagePage(
+    String chatId, {
+    int limit = 50,
+    MessageCursor? before,
+  }) async {
+    assert(limit > 0);
+    var query = _client
         .from('messages')
         .select()
         .eq('chat_id', chatId)
-        .filter('deleted_at', 'is', null)
+        .filter('deleted_at', 'is', null);
+    if (before != null) {
+      final timestamp = before.createdAt.toUtc().toIso8601String();
+      query = query.or(
+        'created_at.lt.$timestamp,and(created_at.eq.$timestamp,id.lt.${before.id})',
+      );
+    }
+    final rows = await query
         .order('created_at', ascending: false)
-        .limit(limit);
+        .order('id', ascending: false)
+        .limit(limit + 1);
     final pageRows = (rows as List)
         .map((row) => Map<String, dynamic>.from(row as Map))
         .toList();
+    final hasMore = pageRows.length > limit;
+    if (hasMore) pageRows.removeLast();
+    final messages = await _mapMessageRows(pageRows);
+    final oldest = pageRows.lastOrNull;
+    return MessagePage(
+      messages: messages,
+      hasMore: hasMore,
+      nextCursor: oldest == null
+          ? null
+          : MessageCursor(
+              createdAt: DateTime.parse(oldest['created_at'] as String),
+              id: oldest['id'] as String,
+            ),
+    );
+  }
+
+  Future<List<Message>> _mapMessageRows(
+    List<Map<String, dynamic>> pageRows,
+  ) async {
     final pageIds = pageRows.map((row) => row['id'] as String).toSet();
     final missingReplyIds = pageRows
         .map((row) => row['reply_to'] as String?)
@@ -78,12 +152,63 @@ class ChatService {
     );
   }
 
-  Stream<List<Map<String, dynamic>>> watchMessages(String chatId) {
-    return _client
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('chat_id', chatId)
-        .order('created_at');
+  /// Emits individual message changes rather than an ever-growing table
+  /// snapshot. A resync marker is emitted after a channel reconnect so the
+  /// caller can refresh only its bounded, currently loaded window.
+  Stream<MessageChange> watchMessageChanges(String chatId) {
+    late final RealtimeChannel channel;
+    late final StreamController<MessageChange> controller;
+    controller = StreamController<MessageChange>(
+      onListen: () {
+        channel = _client.channel(
+          'messages:$chatId:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'messages',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'chat_id',
+                value: chatId,
+              ),
+              callback: (payload) {
+                if (controller.isClosed) return;
+                if (payload.eventType == PostgresChangeEvent.delete) {
+                  controller.add(MessageChange.remove(payload.oldRecord));
+                  return;
+                }
+                final row = payload.newRecord;
+                if (row['deleted_at'] != null) {
+                  controller.add(MessageChange.remove(row));
+                } else {
+                  controller.add(MessageChange.upsert(row));
+                }
+              },
+            )
+            .subscribe((status, [error]) {
+              if (status != RealtimeSubscribeStatus.subscribed ||
+                  controller.isClosed) {
+                return;
+              }
+              // Also resync on the first subscription. This closes the small
+              // gap between the initial page query and channel readiness;
+              // later subscriptions use the same marker after reconnect.
+              controller.add(const MessageChange.resync());
+            });
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
+  }
+
+  Future<Message?> messageFromRealtimeRow(Map<String, dynamic> row) async {
+    if (row['deleted_at'] != null) return null;
+    final messages = await _mapMessageRows([row]);
+    return messages.firstOrNull;
   }
 
   Stream<List<Map<String, dynamic>>> watchReads(String chatId) {
@@ -253,10 +378,8 @@ class ChatService {
     );
   }
 
-  /// Bulk-fetch every cached translation for messages belonging to
-  /// [chatId] in [targetLang]. Returned as a map keyed by message id.
-  /// When [translationCutoffAt] is set, history from before the viewer's
-  /// latest language change is excluded.
+  /// Bulk-fetch cached translations only for the currently loaded message
+  /// ids. Returned as a map keyed by message id.
   Future<
     Map<
       String,
@@ -272,26 +395,12 @@ class ChatService {
       })
     >
   >
-  fetchCachedTranslationsForChat({
-    required String chatId,
+  fetchCachedTranslationsForMessages({
+    required List<String> messageIds,
     required String targetLang,
     required String interfaceLang,
-    DateTime? translationCutoffAt,
   }) async {
-    var messageQuery = _client
-        .from('messages')
-        .select('id')
-        .eq('chat_id', chatId)
-        .filter('deleted_at', 'is', null);
-    if (translationCutoffAt != null) {
-      messageQuery = messageQuery.gte(
-        'created_at',
-        translationCutoffAt.toUtc().toIso8601String(),
-      );
-    }
-    final msgRows = await messageQuery;
-    final ids = (msgRows as List).map((r) => r['id'] as String).toList();
-    if (ids.isEmpty) return {};
+    if (messageIds.isEmpty) return {};
     final transRows = await _client
         .from('message_translations')
         .select(
@@ -300,7 +409,7 @@ class ChatService {
         )
         .eq('target_lang', targetLang)
         .eq('interface_lang', interfaceLang)
-        .inFilter('message_id', ids);
+        .inFilter('message_id', messageIds);
     final result =
         <
           String,

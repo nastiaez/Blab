@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/shared/data/translation_support.dart';
 import 'package:blab/shared/models/message_token.dart';
@@ -59,6 +61,79 @@ class _CommittedTranslationChatService implements ChatService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _PageTranslationChatService implements ChatService {
+  List<String>? requestedIds;
+
+  @override
+  Future<
+    Map<
+      String,
+      ({
+        String text,
+        String interfaceText,
+        String interfaceLang,
+        String sourceLang,
+        String mode,
+        String? explanation,
+        String? confidence,
+        List<Map<String, dynamic>> tokens,
+      })
+    >
+  >
+  fetchCachedTranslationsForMessages({
+    required List<String> messageIds,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    requestedIds = [...messageIds];
+    return {};
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ControlledCacheChatService implements ChatService {
+  _ControlledCacheChatService({this.cachedByMessageId = const {}});
+
+  final Map<String, MessageTranslation> cachedByMessageId;
+
+  @override
+  Future<
+    ({
+      String text,
+      String interfaceText,
+      String interfaceLang,
+      String sourceLang,
+      String mode,
+      String? explanation,
+      String? confidence,
+      List<Map<String, dynamic>> tokens,
+    })?
+  >
+  fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    final cached = cachedByMessageId[messageId];
+    if (cached == null) return null;
+    return (
+      text: cached.translation,
+      interfaceText: cached.interfaceText,
+      interfaceLang: cached.interfaceLang,
+      sourceLang: cached.sourceLang,
+      mode: cached.mode.name,
+      explanation: cached.explanation,
+      confidence: cached.confidence?.name,
+      tokens: <Map<String, dynamic>>[],
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 MessageTranslation _translation(String text) => MessageTranslation(
   translation: text,
   interfaceText: text,
@@ -68,6 +143,152 @@ MessageTranslation _translation(String text) => MessageTranslation(
 );
 
 void main() {
+  test('off-screen messages never start a live translation request', () async {
+    var calls = 0;
+    final container = _container(
+      translateFn: (id) async {
+        calls++;
+        return _translation('Hallo');
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    await notifier.ensureVisible(
+      visibleFraction: 0,
+      messageId: 'off-screen',
+      text: 'hello',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    expect(calls, 0);
+    expect(container.read(messageTranslationsProvider('chat-1')), isEmpty);
+
+    await notifier.ensureVisible(
+      visibleFraction: 0.25,
+      messageId: 'visible',
+      text: 'hello',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    expect(calls, 1);
+  });
+
+  test('database prefetch is restricted to the loaded message ids', () async {
+    final chatService = _PageTranslationChatService();
+    var liveCalls = 0;
+    final container = _container(
+      chatService: chatService,
+      translateFn: (id) async {
+        liveCalls++;
+        return _translation(id);
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .prefetchFromDb(['m51', 'm52'], 'de', 'en');
+
+    expect(chatService.requestedIds, ['m51', 'm52']);
+    expect(liveCalls, 0);
+  });
+
+  test('visible cache misses serialize live translation calls', () async {
+    final pending = <String, Completer<MessageTranslation>>{};
+    final callOrder = <String>[];
+    var inFlight = 0;
+    var maxInFlight = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      translateFn: (id) {
+        callOrder.add(id);
+        inFlight++;
+        maxInFlight = inFlight > maxInFlight ? inFlight : maxInFlight;
+        final completer = Completer<MessageTranslation>();
+        pending[id] = completer;
+        return completer.future.whenComplete(() => inFlight--);
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    final first = notifier.ensureVisible(
+      visibleFraction: 1,
+      messageId: 'm1',
+      text: 'one',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    final second = notifier.ensureVisible(
+      visibleFraction: 1,
+      messageId: 'm2',
+      text: 'two',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(callOrder, ['m1']);
+    expect(maxInFlight, 1);
+    pending['m1']!.complete(_translation('Eins'));
+    await Future<void>.delayed(Duration.zero);
+    expect(callOrder, ['m1', 'm2']);
+    expect(maxInFlight, 1);
+
+    pending['m2']!.complete(_translation('Zwei'));
+    await Future.wait([first, second]);
+    expect(maxInFlight, 1);
+  });
+
+  test('cached visible result bypasses an active live queue', () async {
+    final live = Completer<MessageTranslation>();
+    var liveCalls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(
+        cachedByMessageId: {'cached': _translation('Aus Cache')},
+      ),
+      translateFn: (id) {
+        liveCalls++;
+        return live.future;
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    final uncached = notifier.ensureVisible(
+      visibleFraction: 1,
+      messageId: 'live',
+      text: 'live source',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    await Future<void>.delayed(Duration.zero);
+    await notifier.ensureVisible(
+      visibleFraction: 1,
+      messageId: 'cached',
+      text: 'cached source',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+
+    final cached = container.read(
+      messageTranslationsProvider('chat-1'),
+    )['cached|de|en'];
+    expect(cached, isA<AsyncData<MessageTranslation>>());
+    expect(cached!.value!.translation, 'Aus Cache');
+    expect(liveCalls, 1);
+
+    live.complete(_translation('Live'));
+    await uncached;
+  });
+
   test('language cutoff excludes old history and includes new messages', () {
     final cutoff = DateTime.utc(2026, 7, 17, 12);
 
