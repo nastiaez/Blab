@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: none (`L-14` complete; next dependency-ready item is `L-15`; `L-04` remains externally blocked)
+Active item: `L-16` (`Not started`; ready for scope review; `L-04` remains externally blocked)
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -31,7 +31,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 12 | L-12 | P1-07 | Align translation length, source-language behavior, triggering, and product claims | L-00 | Complete | [`items/L-12.md`](./items/L-12.md) |
 | 13 | L-13 | P1-08, P1-09 | Secure translation authorization, quotas, cache integrity, provider routing, and retention | L-12 | Complete | [`items/L-13.md`](./items/L-13.md) |
 | 14 | L-14 | P1-01 | Implement or remove profile and photo editing from launch scope | L-00 | Complete | [`items/L-14.md`](./items/L-14.md) |
-| 15 | L-15 | P1-02 | Implement persisted interface localization or remove unsupported claims | L-00 | Not started | `items/L-15.md` |
+| 15 | L-15 | P1-02 | Implement persisted interface localization or remove unsupported claims | L-00 | Complete | [`items/L-15.md`](./items/L-15.md) |
 | 16 | L-16 | P1-13 | Add message-history pagination, page-aware translation hydration, and correct reconnect/offline behavior | L-09, L-13 | Not started | `items/L-16.md` |
 | 17 | L-17 | P1-06 | Approve and implement notifications, or explicitly constrain the launch | L-00 | Not started | `items/L-17.md` |
 | 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Not started | `items/L-18.md` |

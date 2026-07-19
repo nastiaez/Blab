@@ -19,10 +19,60 @@ final translateMessageFnProvider = Provider<TranslateMessageFn>((ref) {
 /// Composite cache key — same message viewed in two different target
 /// languages (e.g. the same chat opened by users with different
 /// `learning_language`) stays cached separately.
-String _entryKey(String messageId, String targetLang) =>
-    '$messageId|$targetLang';
+String translationEntryKey(
+  String messageId,
+  String targetLang,
+  String interfaceLang,
+) => '$messageId|$targetLang|$interfaceLang';
 
-/// Per-chat translation cache. Keyed by `(messageId, targetLang)`.
+typedef _CachedTranslation = ({
+  String text,
+  String interfaceText,
+  String interfaceLang,
+  String sourceLang,
+  String mode,
+  String? explanation,
+  String? confidence,
+  List<Map<String, dynamic>> tokens,
+});
+
+MessageTranslation _translationFromCache(_CachedTranslation cached) {
+  final tokens = <MessageToken>[];
+  for (final token in cached.tokens) {
+    final tokenText = token['text'];
+    if (tokenText is! String) continue;
+    tokens.add(
+      MessageToken(
+        text: tokenText,
+        gloss: token['gloss'] as String?,
+        romanization: token['roman'] as String?,
+        isContent: token['isContent'] as bool? ?? true,
+      ),
+    );
+  }
+  return MessageTranslation(
+    translation: cached.text,
+    interfaceText: cached.interfaceText,
+    interfaceLang: cached.interfaceLang,
+    sourceLang: cached.sourceLang,
+    tokens: tokens,
+    mode: switch (cached.mode) {
+      'correction' => LearningAidMode.correction,
+      'none' => LearningAidMode.none,
+      _ => LearningAidMode.translation,
+    },
+    explanation: cached.explanation,
+    confidence: switch (cached.confidence) {
+      'low' => CorrectionConfidence.low,
+      'medium' => CorrectionConfidence.medium,
+      'high' => CorrectionConfidence.high,
+      _ => null,
+    },
+  );
+}
+
+/// Per-chat translation cache. Keyed by
+/// `(messageId, targetLang, interfaceLang)`.
 /// On miss, checks the Supabase `message_translations` row first
 /// (instant if any session has translated this message before), then
 /// falls back to the server-authoritative translator. The server owns cache
@@ -56,24 +106,28 @@ class MessageTranslationsNotifier
   AsyncValue<MessageTranslation>? entryFor(
     String messageId,
     String targetLang,
+    String interfaceLang,
   ) {
-    return state[_entryKey(messageId, targetLang)];
+    return state[translationEntryKey(messageId, targetLang, interfaceLang)];
   }
 
   /// Hydrate the in-memory cache with translations already persisted to
-  /// the DB. Idempotent — existing entries (loading, error, or data
-  /// from a fresher LLM call) are NOT overwritten so we never trample
-  /// in-flight requests.
+  /// the DB. Successful and in-flight entries win, while a server-backed
+  /// cache row may repair a prior transient client error.
   void hydrateFromDb(
     Map<String, MessageTranslation> byMessageId,
     String targetLang,
+    String interfaceLang,
   ) {
     if (byMessageId.isEmpty) return;
     final updates = <String, AsyncValue<MessageTranslation>>{...state};
     var changed = false;
     for (final entry in byMessageId.entries) {
-      final key = _entryKey(entry.key, targetLang);
-      if (updates.containsKey(key)) continue;
+      final key = translationEntryKey(entry.key, targetLang, interfaceLang);
+      final existing = updates[key];
+      if (existing != null && existing is! AsyncError<MessageTranslation>) {
+        continue;
+      }
       updates[key] = AsyncData(entry.value);
       changed = true;
     }
@@ -83,7 +137,8 @@ class MessageTranslationsNotifier
   /// Fire-and-forget bulk DB prefetch: one query, populate the cache.
   /// Safe to call repeatedly — already-hydrated keys are skipped.
   Future<void> prefetchFromDb(
-    String targetLang, {
+    String targetLang,
+    String interfaceLang, {
     DateTime? translationCutoffAt,
   }) async {
     try {
@@ -92,31 +147,14 @@ class MessageTranslationsNotifier
           .fetchCachedTranslationsForChat(
             chatId: chatId,
             targetLang: targetLang,
+            interfaceLang: interfaceLang,
             translationCutoffAt: translationCutoffAt,
           );
       final byId = <String, MessageTranslation>{};
       for (final entry in rows.entries) {
-        final tokens = <MessageToken>[];
-        for (final t in entry.value.tokens) {
-          final tokenText = t['text'];
-          if (tokenText is! String) continue;
-          tokens.add(
-            MessageToken(
-              text: tokenText,
-              english: t['english'] as String?,
-              romanization: t['roman'] as String?,
-              isContent: t['isContent'] as bool? ?? true,
-            ),
-          );
-        }
-        byId[entry.key] = MessageTranslation(
-          translation: entry.value.text,
-          englishText: entry.value.englishText,
-          sourceLang: entry.value.sourceLang,
-          tokens: tokens,
-        );
+        byId[entry.key] = _translationFromCache(entry.value);
       }
-      hydrateFromDb(byId, targetLang);
+      hydrateFromDb(byId, targetLang, interfaceLang);
     } catch (_) {
       // Best effort. Misses fall back to lazy LLM on visibility.
     }
@@ -128,8 +166,9 @@ class MessageTranslationsNotifier
     required String messageId,
     required String text,
     required String targetLang,
+    required String interfaceLang,
   }) async {
-    final key = _entryKey(messageId, targetLang);
+    final key = translationEntryKey(messageId, targetLang, interfaceLang);
     final previousSource = _sourceTexts[key];
     if (state.containsKey(key) &&
         (previousSource == null || previousSource == text)) {
@@ -145,33 +184,14 @@ class MessageTranslationsNotifier
     try {
       final cached = await ref
           .read(chatServiceProvider)
-          .fetchCachedTranslation(messageId: messageId, targetLang: targetLang);
+          .fetchCachedTranslation(
+            messageId: messageId,
+            targetLang: targetLang,
+            interfaceLang: interfaceLang,
+          );
       if (_sourceTexts[key] != text) return;
       if (cached != null) {
-        final tokens = <MessageToken>[];
-        for (final t in cached.tokens) {
-          final tokenText = t['text'];
-          if (tokenText is! String) continue;
-          tokens.add(
-            MessageToken(
-              text: tokenText,
-              english: t['english'] as String?,
-              romanization: t['roman'] as String?,
-              isContent: t['isContent'] as bool? ?? true,
-            ),
-          );
-        }
-        state = {
-          ...state,
-          key: AsyncData(
-            MessageTranslation(
-              translation: cached.text,
-              englishText: cached.englishText,
-              sourceLang: cached.sourceLang,
-              tokens: tokens,
-            ),
-          ),
-        };
+        state = {...state, key: AsyncData(_translationFromCache(cached))};
         return;
       }
     } catch (_) {
@@ -186,8 +206,32 @@ class MessageTranslationsNotifier
     MessageTranslation? translated;
     try {
       translated = await fn(messageId);
+      if (translated.interfaceLang != interfaceLang) {
+        throw MessageTranslationFailed('interface_language_changed');
+      }
     } catch (error, stack) {
       if (_sourceTexts[key] != text) return;
+
+      // The function commits the cache row before sending its response. If
+      // that response is lost, prefer the committed server result over a
+      // permanent client-side "unavailable" state.
+      try {
+        final cached = await ref
+            .read(chatServiceProvider)
+            .fetchCachedTranslation(
+              messageId: messageId,
+              targetLang: targetLang,
+              interfaceLang: interfaceLang,
+            );
+        if (_sourceTexts[key] != text) return;
+        if (cached != null) {
+          state = {...state, key: AsyncData(_translationFromCache(cached))};
+          return;
+        }
+      } catch (_) {
+        // Preserve the original invocation error when cache recovery fails.
+      }
+
       state = {...state, key: AsyncError(error, stack)};
       if (error is MessageTranslationFailed &&
           error.reason == 'translation_limit_reached' &&
@@ -206,7 +250,12 @@ class MessageTranslationsNotifier
             ..remove(key);
           state = next;
           unawaited(
-            ensure(messageId: messageId, text: text, targetLang: targetLang),
+            ensure(
+              messageId: messageId,
+              text: text,
+              targetLang: targetLang,
+              interfaceLang: interfaceLang,
+            ),
           );
         });
       }
@@ -215,6 +264,29 @@ class MessageTranslationsNotifier
     if (_sourceTexts[key] != text) return;
     _retryTimers.remove(key)?.cancel();
     state = {...state, key: AsyncData(translated)};
+  }
+
+  /// Clears a failed entry and immediately retries only this message and
+  /// locale combination. Successful cache entries for other messages and
+  /// languages remain untouched.
+  Future<void> retry({
+    required String messageId,
+    required String text,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    final key = translationEntryKey(messageId, targetLang, interfaceLang);
+    _retryTimers.remove(key)?.cancel();
+    _sourceTexts.remove(key);
+    final next = <String, AsyncValue<MessageTranslation>>{...state}
+      ..remove(key);
+    state = next;
+    await ensure(
+      messageId: messageId,
+      text: text,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+    );
   }
 }
 

@@ -209,20 +209,29 @@ class ChatService {
   Future<
     ({
       String text,
-      String englishText,
+      String interfaceText,
+      String interfaceLang,
       String sourceLang,
+      String mode,
+      String? explanation,
+      String? confidence,
       List<Map<String, dynamic>> tokens,
     })?
   >
   fetchCachedTranslation({
     required String messageId,
     required String targetLang,
+    required String interfaceLang,
   }) async {
     final row = await _client
         .from('message_translations')
-        .select('translation_text, english_text, source_lang, tokens')
+        .select(
+          'translation_text, interface_text, interface_lang, source_lang, aid_mode, '
+          'explanation, confidence, tokens',
+        )
         .eq('message_id', messageId)
         .eq('target_lang', targetLang)
+        .eq('interface_lang', interfaceLang)
         .maybeSingle();
     if (row == null) return null;
     final rawTokens = row['tokens'];
@@ -234,8 +243,12 @@ class ChatService {
     }
     return (
       text: row['translation_text'] as String,
-      englishText: row['english_text'] as String,
+      interfaceText: row['interface_text'] as String,
+      interfaceLang: row['interface_lang'] as String,
       sourceLang: row['source_lang'] as String,
+      mode: row['aid_mode'] as String,
+      explanation: row['explanation'] as String?,
+      confidence: row['confidence'] as String?,
       tokens: tokens,
     );
   }
@@ -249,8 +262,12 @@ class ChatService {
       String,
       ({
         String text,
-        String englishText,
+        String interfaceText,
+        String interfaceLang,
         String sourceLang,
+        String mode,
+        String? explanation,
+        String? confidence,
         List<Map<String, dynamic>> tokens,
       })
     >
@@ -258,6 +275,7 @@ class ChatService {
   fetchCachedTranslationsForChat({
     required String chatId,
     required String targetLang,
+    required String interfaceLang,
     DateTime? translationCutoffAt,
   }) async {
     var messageQuery = _client
@@ -277,17 +295,23 @@ class ChatService {
     final transRows = await _client
         .from('message_translations')
         .select(
-          'message_id, translation_text, english_text, source_lang, tokens',
+          'message_id, translation_text, interface_text, interface_lang, source_lang, '
+          'aid_mode, explanation, confidence, tokens',
         )
         .eq('target_lang', targetLang)
+        .eq('interface_lang', interfaceLang)
         .inFilter('message_id', ids);
     final result =
         <
           String,
           ({
             String text,
-            String englishText,
+            String interfaceText,
+            String interfaceLang,
             String sourceLang,
+            String mode,
+            String? explanation,
+            String? confidence,
             List<Map<String, dynamic>> tokens,
           })
         >{};
@@ -303,8 +327,12 @@ class ChatService {
       }
       result[id] = (
         text: text,
-        englishText: row['english_text'] as String,
+        interfaceText: row['interface_text'] as String,
+        interfaceLang: row['interface_lang'] as String,
         sourceLang: row['source_lang'] as String,
+        mode: row['aid_mode'] as String,
+        explanation: row['explanation'] as String?,
+        confidence: row['confidence'] as String?,
         tokens: tokens,
       );
     }

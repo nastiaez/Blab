@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/invite_host.dart';
 import '../../shared/data/languages.dart';
 import 'widgets/share_invite_sheet.dart';
@@ -77,9 +79,8 @@ class InviteOwnerScreen extends ConsumerWidget {
               Row(
                 children: [
                   IconButton(
-                    tooltip: 'Back',
-                    icon:
-                        const Icon(Icons.arrow_back_ios_new, size: 20),
+                    tooltip: context.l10n.back,
+                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                     color: BlabColors.textPrimary,
                     onPressed: () => context.go('/chats'),
                   ),
@@ -87,10 +88,7 @@ class InviteOwnerScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               Center(
-                child: SvgPicture.asset(
-                  'assets/blab-logo.svg',
-                  height: 24,
-                ),
+                child: SvgPicture.asset('assets/blab-logo.svg', height: 24),
               ),
               Expanded(child: body),
             ],
@@ -144,8 +142,8 @@ class _ValidBodyState extends State<_ValidBody> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 24),
-              const Text(
-                'Invite a friend',
+              Text(
+                context.l10n.inviteFriend,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 26,
@@ -157,8 +155,8 @@ class _ValidBodyState extends State<_ValidBody> {
               const SizedBox(height: 10),
               Text(
                 learn != null
-                    ? "You're practicing ${learn.name}."
-                    : "Share your invite link.",
+                    ? context.l10n.practicingLanguage(learn.name)
+                    : context.l10n.shareYourInvite,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
@@ -172,7 +170,9 @@ class _ValidBodyState extends State<_ValidBody> {
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 12),
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: BlabColors.selectedTint,
                     borderRadius: BorderRadius.circular(12),
@@ -186,9 +186,7 @@ class _ValidBodyState extends State<_ValidBody> {
                             fontSize: 13,
                             color: BlabColors.textPrimary,
                             height: 1.3,
-                            fontFeatures: [
-                              FontFeature.tabularFigures(),
-                            ],
+                            fontFeatures: [FontFeature.tabularFigures()],
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -208,7 +206,11 @@ class _ValidBodyState extends State<_ValidBody> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Valid until ${_formatExpiry(widget.expiresAt)}.',
+                context.l10n.validUntil(
+                  DateFormat.MMMEd(
+                    Localizations.localeOf(context).toLanguageTag(),
+                  ).add_Hm().format(widget.expiresAt),
+                ),
                 style: const TextStyle(
                   fontSize: 13,
                   color: BlabColors.textMuted,
@@ -226,11 +228,14 @@ class _ValidBodyState extends State<_ValidBody> {
                 ),
               ),
               onPressed: _share,
-              icon: const Icon(Icons.share_outlined,
-                  size: 20, color: Colors.white),
-              label: const Text(
-                'Share',
-                style: TextStyle(
+              icon: const Icon(
+                Icons.share_outlined,
+                size: 20,
+                color: Colors.white,
+              ),
+              label: Text(
+                context.l10n.shareInvite,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -256,8 +261,8 @@ class _ClaimedBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = claimedByName?.trim() ?? '';
     final heading = name.isEmpty
-        ? 'Someone joined.'
-        : '$name joined.';
+        ? context.l10n.someoneJoined
+        : context.l10n.personJoined(name);
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 4),
       child: Column(
@@ -293,8 +298,8 @@ class _ClaimedBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'You’re already connected. Open the chat to start.',
+              Text(
+                context.l10n.alreadyConnected,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -321,7 +326,7 @@ class _ClaimedBody extends StatelessWidget {
                 }
               },
               child: Text(
-                chatId != null ? 'Open chat' : 'Go to chats',
+                chatId != null ? context.l10n.openChat : context.l10n.goToChats,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -358,8 +363,8 @@ class _ExpiredBody extends StatelessWidget {
                 color: BlabColors.textMuted,
               ),
               const SizedBox(height: 18),
-              const Text(
-                'Your invite expired.',
+              Text(
+                context.l10n.yourInviteExpired,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 22,
@@ -368,8 +373,8 @@ class _ExpiredBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Nobody joined in 48 hours. Send a fresh link to a friend.',
+              Text(
+                context.l10n.inviteExpiredHelp,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -389,11 +394,10 @@ class _ExpiredBody extends StatelessWidget {
                 ),
               ),
               onPressed: () => context.go('/chats/new'),
-              icon: const Icon(Icons.add,
-                  size: 20, color: Colors.white),
-              label: const Text(
-                'Send new invite',
-                style: TextStyle(
+              icon: const Icon(Icons.add, size: 20, color: Colors.white),
+              label: Text(
+                context.l10n.sendNewInvite,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -405,18 +409,4 @@ class _ExpiredBody extends StatelessWidget {
       ),
     );
   }
-}
-
-const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const _months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
-String _formatExpiry(DateTime d) {
-  final w = _weekdays[(d.weekday - 1) % 7];
-  final m = _months[d.month - 1];
-  final hh = d.hour.toString().padLeft(2, '0');
-  final mm = d.minute.toString().padLeft(2, '0');
-  return '$w, $m ${d.day} at $hh:$mm';
 }

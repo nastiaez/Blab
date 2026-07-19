@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
 
 /// Interface-language bottom sheet. PRD US-005, FR-3.
@@ -14,7 +15,7 @@ Future<BlabLanguage?> showLanguagePickerSheet(
 }) {
   final ordered = <BlabLanguage>[
     current,
-    ...kBlabLanguages.where((l) => l.code != current.code),
+    ...kInterfaceLanguages.where((l) => l.code != current.code),
   ];
 
   return showModalBottomSheet<BlabLanguage>(
@@ -45,6 +46,7 @@ class _SheetBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = context.l10n;
     // Approx height of the pinned header (drag handle + title + helper).
     const headerHeight = 120.0;
 
@@ -65,14 +67,13 @@ class _SheetBody extends StatelessWidget {
                   final lang = ordered[i];
                   final selected = lang.code == current.code;
                   return ListTile(
-                    tileColor:
-                        selected ? BlabColors.selectedTint : null,
+                    tileColor: selected ? BlabColors.selectedTint : null,
                     leading: Text(
                       lang.flag,
                       style: const TextStyle(fontSize: 24),
                     ),
                     title: Text(
-                      lang.name,
+                      localizedInterfaceLanguageName(localizations, lang.code),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: selected
@@ -82,8 +83,7 @@ class _SheetBody extends StatelessWidget {
                       ),
                     ),
                     trailing: selected
-                        ? const Icon(Icons.check,
-                            color: BlabColors.brand)
+                        ? const Icon(Icons.check, color: BlabColors.brand)
                         : null,
                     onTap: () => Navigator.of(ctx).pop(lang),
                   );
@@ -99,8 +99,7 @@ class _SheetBody extends StatelessWidget {
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
               child: Column(
@@ -118,18 +117,18 @@ class _SheetBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Interface language',
-                    style: TextStyle(
+                  Text(
+                    localizations.interfaceLanguage,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: BlabColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    "Pick the language for menus, buttons, and translations across the app.",
-                    style: TextStyle(
+                  Text(
+                    localizations.interfaceLanguageHelp,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: BlabColors.textMuted,
                       height: 1.35,
@@ -151,10 +150,7 @@ class _SheetBody extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: 0),
-                      Colors.white,
-                    ],
+                    colors: [Colors.white.withValues(alpha: 0), Colors.white],
                   ),
                 ),
               ),

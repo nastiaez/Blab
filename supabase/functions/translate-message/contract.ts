@@ -23,6 +23,17 @@ export const LANG_NAMES: Record<string, string> = {
 };
 
 const NON_LATIN = new Set(["ta", "uk", "hi"]);
+export const INTERFACE_LANGS = new Set(["en", "uk", "de", "es"]);
+export const OTHER_SOURCE_LANG = "other";
+export const LEARNING_AID_MODES = new Set([
+  "translation",
+  "correction",
+  "none",
+]);
+export const CORRECTION_CONFIDENCE = new Set(["low", "medium", "high"]);
+
+export type LearningAidMode = "translation" | "correction" | "none";
+export type CorrectionConfidence = "low" | "medium" | "high";
 
 export type TranslationRequest = {
   messageId: string;
@@ -37,7 +48,9 @@ export function characterCount(text: string): number {
   return Array.from(segmenter.segment(text)).length;
 }
 
-export function validateRequest(body: { messageId?: unknown }): TranslationRequestValidation {
+export function validateRequest(
+  body: { messageId?: unknown },
+): TranslationRequestValidation {
   const messageId = body.messageId;
   if (
     typeof messageId !== "string" ||
@@ -50,16 +63,35 @@ export function validateRequest(body: { messageId?: unknown }): TranslationReque
 }
 
 export type TranslationResult = {
+  mode: LearningAidMode;
   sourceLang: string;
   translation: string;
-  english: string;
+  interfaceText: string;
+  explanation: string | null;
+  confidence: CorrectionConfidence | null;
   tokens: unknown[];
 };
+
+/// A copied learning line is usually a provider mistake when the viewer's
+/// interface uses another language. It is only a retry signal, not a hard
+/// validation failure, because names and language-neutral text can legitimately
+/// be identical in both languages.
+export function interfaceOutputNeedsRetry(
+  result: TranslationResult,
+  targetLang: string,
+  interfaceLang: string,
+): boolean {
+  return targetLang !== interfaceLang &&
+    result.interfaceText.trim().toLocaleLowerCase() ===
+      result.translation.trim().toLocaleLowerCase() &&
+    /\p{L}/u.test(result.translation);
+}
 
 export function parseProviderResult(
   content: string,
   text: string,
   targetLang: string,
+  interfaceLang: string,
 ): TranslationResult | null {
   let cleaned = content
     .trim()
@@ -81,24 +113,58 @@ export function parseProviderResult(
   if (
     typeof parsed !== "object" ||
     parsed === null ||
+    typeof (parsed as { mode?: unknown }).mode !== "string" ||
+    !LEARNING_AID_MODES.has((parsed as { mode: string }).mode) ||
     typeof (parsed as { translation?: unknown }).translation !== "string" ||
-    typeof (parsed as { english?: unknown }).english !== "string" ||
+    typeof (parsed as { interfaceText?: unknown }).interfaceText !== "string" ||
     typeof (parsed as { sourceLang?: unknown }).sourceLang !== "string" ||
-    !((parsed as { sourceLang: string }).sourceLang in LANG_NAMES) ||
+    !(
+      (parsed as { sourceLang: string }).sourceLang in LANG_NAMES ||
+      (parsed as { sourceLang: string }).sourceLang === OTHER_SOURCE_LANG
+    ) ||
     !Array.isArray((parsed as { tokens?: unknown }).tokens)
   ) {
     return null;
   }
 
   const result = parsed as TranslationResult;
-  if (result.sourceLang === "en") result.english = text;
-  if (result.sourceLang === targetLang) result.translation = text;
-  if (targetLang === "en") result.english = result.translation;
-  if (result.translation.trim().length === 0 || result.english.trim().length === 0) {
+  const sourceMatchesTarget = result.sourceLang === targetLang;
+  if (!sourceMatchesTarget && result.mode !== "translation") return null;
+  if (sourceMatchesTarget && result.mode === "translation") return null;
+  if (result.translation.trim().length === 0) {
     return null;
+  }
+  if (result.interfaceText.trim().length === 0) return null;
+  if (
+    interfaceLang === targetLang &&
+    result.interfaceText !== result.translation
+  ) return null;
+  if (
+    result.sourceLang === interfaceLang &&
+    result.sourceLang !== targetLang &&
+    result.interfaceText !== text
+  ) return null;
+  if (result.mode === "none") {
+    if (
+      result.translation !== text ||
+      result.explanation !== null ||
+      result.confidence !== null
+    ) return null;
+  } else if (result.mode === "correction") {
+    if (
+      result.translation === text ||
+      typeof result.explanation !== "string" ||
+      result.explanation.trim().length === 0 ||
+      typeof result.confidence !== "string" ||
+      !CORRECTION_CONFIDENCE.has(result.confidence)
+    ) return null;
+  } else {
+    result.explanation = null;
+    result.confidence = null;
   }
 
   let reproduced = "";
+  let validTokens = true;
   for (const token of result.tokens) {
     if (
       typeof token !== "object" ||
@@ -106,19 +172,42 @@ export function parseProviderResult(
       typeof (token as { text?: unknown }).text !== "string" ||
       typeof (token as { isContent?: unknown }).isContent !== "boolean"
     ) {
-      return null;
+      validTokens = false;
+      break;
+    }
+    if (
+      (token as { isContent: boolean }).isContent &&
+      (
+        typeof (token as { gloss?: unknown }).gloss !== "string" ||
+        (token as { gloss: string }).gloss.trim().length === 0
+      )
+    ) {
+      validTokens = false;
+      break;
     }
     reproduced += (token as { text: string }).text;
   }
-  return reproduced === result.translation ? result : null;
+  if (!validTokens || reproduced !== result.translation) {
+    // Token metadata powers optional word lookup. A malformed token list must
+    // not hide an otherwise valid full-message translation.
+    result.tokens = [];
+  }
+  return result;
 }
 
-export function systemPrompt(sourceLang: string, targetLang: string): string {
+export function systemPrompt(
+  sourceLang: string,
+  targetLang: string,
+  interfaceLang: string,
+): string {
   const targetName = LANG_NAMES[targetLang];
+  const interfaceName = LANG_NAMES[interfaceLang];
   const sourceInstruction = sourceLang === "auto"
-    ? `Detect the input language. It should be one of: ${
-      Object.entries(LANG_NAMES).map(([code, name]) => `${code}=${name}`).join(", ")
-    }.`
+    ? `Detect the input language. Use its code when it is one of: ${
+      Object.entries(LANG_NAMES).map(([code, name]) => `${code}=${name}`).join(
+        ", ",
+      )
+    }. For every other input language use sourceLang=${OTHER_SOURCE_LANG}.`
     : `The input language is ${LANG_NAMES[sourceLang]} (${sourceLang}).`;
   const romanGuidance = NON_LATIN.has(targetLang)
     ? `For each content token include "roman", a Latin-script romanization.`
@@ -128,27 +217,39 @@ export function systemPrompt(sourceLang: string, targetLang: string): string {
 
 ${sourceInstruction}
 The viewer's learning language is ${targetName} (${targetLang}).
+The viewer's interface language is ${interfaceName} (${interfaceLang}).
 
 Return strict JSON only:
 {
-  "sourceLang": "<detected supported language code>",
-  "translation": "<full message in ${targetName}>",
-  "english": "<full message in English>",
+  "mode": "<translation, correction, or none>",
+  "sourceLang": "<detected supported code, or ${OTHER_SOURCE_LANG}>",
+  "translation": "<the complete ${targetName} learning-language line>",
+  "interfaceText": "<the complete ${interfaceName} interface-language line>",
+  "explanation": "<short ${interfaceName} correction explanation, or null>",
+  "confidence": "<low, medium, high, or null>",
   "tokens": [
-    { "text": "<segment of translation>", "english": "<1-3 word English gloss>", "roman": "<romanization>", "isContent": true },
+    { "text": "<segment of translation>", "gloss": "<1-3 word ${interfaceName} gloss>", "roman": "<romanization>", "isContent": true },
     { "text": " ", "isContent": false }
   ]
 }
 
 Rules:
 - Preserve meaning, tone, names, URLs, emoji, and punctuation.
-- Translate the entire input. Never summarize, omit, deduplicate, or combine repeated content.
-- "translation" is always in ${targetName}. If the input is already ${targetName}, preserve the trimmed input exactly.
-- "english" is always in English. If the input is already English, preserve the trimmed input exactly.
-- When targetLang is en, "translation" and "english" must be identical.
-- sourceLang must be one of the supported codes listed above.
-- Concatenating every tokens[].text must exactly reproduce "translation".
-- Content tokens are segments of "translation" and include a short English gloss.
+- First detect sourceLang, then choose exactly one mode.
+- If sourceLang differs from ${targetLang}, use mode=translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
+- If sourceLang is ${targetLang}, use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
+- Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
+- mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
+- For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.
+- For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
+- For mode=translation, explanation/confidence are null.
+- "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction.
+- mode=none applies only to correction of the ${targetName} learning line. When ${interfaceName} is a different language, interfaceText must still translate the complete message into ${interfaceName}; do not copy the ${targetName} text into interfaceText.
+- If sourceLang is ${interfaceLang} and differs from ${targetLang}, "interfaceText" must exactly equal the trimmed input, including any mistakes.
+- If ${interfaceLang} and ${targetName} are the same language, "interfaceText" must exactly equal "translation".
+- sourceLang must be one of the listed codes, or ${OTHER_SOURCE_LANG} for any other input language.
+- For every mode, concatenating every tokens[].text must exactly reproduce "translation".
+- Content tokens are segments of the translated/corrected text and include a short ${interfaceName} gloss.
 - Whitespace, punctuation, and emoji use isContent=false and omit glosses.
 - ${romanGuidance}`;
 }

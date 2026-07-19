@@ -51,13 +51,13 @@ select ok(
 );
 
 select ok(
-  has_column_privilege(
+  not has_column_privilege(
     'authenticated',
     'public.profiles',
     'interface_language',
     'update'
   ),
-  'the existing interface-language path keeps its narrow grant'
+  'clients cannot directly update interface language'
 );
 
 select set_config(
@@ -110,9 +110,10 @@ select throws_ok(
   'control characters are rejected'
 );
 
-select lives_ok(
-  $$update public.profiles set interface_language = 'de' where id = auth.uid()$$,
-  'the unrelated allowed preference remains writable'
+select is(
+  public.update_my_interface_language('de'),
+  'de',
+  'the self-only interface-language operation persists a launch locale'
 );
 
 reset role;

@@ -85,14 +85,14 @@ class _LanguageCardState extends State<LanguageCard>
               ),
             ),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
               child: Text(
                 widget.label,
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight:
-                      widget.selected ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: widget.selected
+                      ? FontWeight.w700
+                      : FontWeight.w500,
                   color: widget.selected
                       ? BlabColors.brand
                       : BlabColors.textPrimary,
@@ -161,8 +161,9 @@ class _BrandButtonState extends State<BrandButton>
   Widget build(BuildContext context) {
     // Match FilledButton's M3 disabled background so loading and
     // disabled states look consistent across all button types.
-    final disabledColor =
-        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
+    final disabledColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.12);
 
     Color bgColor;
     if (!_enabled) {
@@ -210,8 +211,7 @@ class _BrandButtonState extends State<BrandButton>
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                 : Text(
@@ -233,20 +233,16 @@ class _BrandButtonState extends State<BrandButton>
 
 /// Convenience: build a [LanguageCard] from a [BlabLanguage], using the
 /// English name (for learning pickers).
-LanguageCard languageCardEn(BlabLanguage lang,
-        {required bool selected, required VoidCallback onTap}) =>
-    LanguageCard(
-      label: lang.name,
-      selected: selected,
-      onTap: onTap,
-    );
+LanguageCard languageCardEn(
+  BlabLanguage lang, {
+  required bool selected,
+  required VoidCallback onTap,
+}) => LanguageCard(label: lang.name, selected: selected, onTap: onTap);
 
 /// Convenience: build a [LanguageCard] from a [BlabLanguage], using the
 /// native name (for interface-language picker).
-LanguageCard languageCardNative(BlabLanguage lang,
-        {required bool selected, required VoidCallback onTap}) =>
-    LanguageCard(
-      label: lang.nativeName,
-      selected: selected,
-      onTap: onTap,
-    );
+LanguageCard languageCardNative(
+  BlabLanguage lang, {
+  required bool selected,
+  required VoidCallback onTap,
+}) => LanguageCard(label: lang.nativeName, selected: selected, onTap: onTap);

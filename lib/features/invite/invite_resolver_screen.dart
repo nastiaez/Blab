@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/state/chat_list_state.dart';
 import 'invite_landing_screen.dart';
@@ -34,8 +35,7 @@ class InviteResolverScreen extends ConsumerWidget {
         // Inviter opened their own link — route to the owner-facing
         // view regardless of state (valid / claimed / expired). Each
         // state shows a different body.
-        final currentUid =
-            Supabase.instance.client.auth.currentUser?.id;
+        final currentUid = Supabase.instance.client.auth.currentUser?.id;
         if (currentUid != null && currentUid == meta.inviterUserId) {
           return InviteOwnerScreen(
             token: meta.token,
@@ -49,7 +49,7 @@ class InviteResolverScreen extends ConsumerWidget {
         return InviteLandingScreen(
           status: status,
           inviterName: meta.inviterName.isEmpty
-              ? 'A friend'
+              ? context.l10n.aFriend
               : meta.inviterName,
           inviterLearningCode: meta.inviterLearningLanguage,
           token: status == InviteStatus.valid ? token : null,
@@ -64,8 +64,10 @@ class InviteResolverScreen extends ConsumerWidget {
   }
 }
 
-final _inviteMetadataProvider =
-    FutureProvider.family<InviteMetadata?, String>((ref, token) {
+final _inviteMetadataProvider = FutureProvider.family<InviteMetadata?, String>((
+  ref,
+  token,
+) {
   return ref.watch(chatServiceProvider).getInvite(token);
 });
 
@@ -81,12 +83,11 @@ class _InviteNotFoundScreen extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.link_off,
-                  size: 56, color: BlabColors.textMuted),
-              SizedBox(height: 18),
+            children: [
+              const Icon(Icons.link_off, size: 56, color: BlabColors.textMuted),
+              const SizedBox(height: 18),
               Text(
-                "We couldn't find that invite.",
+                context.l10n.inviteNotFound,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
@@ -94,9 +95,9 @@ class _InviteNotFoundScreen extends StatelessWidget {
                   color: BlabColors.textPrimary,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
-                'Check the link is correct, or ask for a new one.',
+                context.l10n.checkInviteLink,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,

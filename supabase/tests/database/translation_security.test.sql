@@ -56,7 +56,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.complete_message_translation(uuid,uuid,text,text,text,text,text,jsonb)',
+    'public.complete_message_translation(uuid,uuid,text,text,text,text,text,text,text,text,text,jsonb)',
     'execute'
   ),
   'authenticated users cannot complete cache writes'
@@ -173,11 +173,15 @@ select ok(
     '52000000-0000-4000-8000-000000000001',
     '00000000-0000-4000-8000-00000000000a',
     'de',
+    (select value ->> 'interfaceLang' from l13_prepared where label = 'current'),
     (select value ->> 'sourceHash' from l13_prepared where label = 'current'),
     'Hallo aktuell',
     'Hello current',
     'en',
-    '[{"text":"Hallo aktuell","english":"Hello current","isContent":true}]'::jsonb
+    'translation',
+    null,
+    null,
+    '[{"text":"Hallo aktuell","gloss":"Hello current","isContent":true}]'::jsonb
   ),
   'service role can complete an unchanged authorized translation'
 );
@@ -282,10 +286,14 @@ select is(
     '52000000-0000-4000-8000-000000000002',
     '00000000-0000-4000-8000-00000000000a',
     'de',
+    (select value ->> 'interfaceLang' from l13_prepared where label = 'stale'),
     (select value ->> 'sourceHash' from l13_prepared where label = 'stale'),
     'Veraltete Uebersetzung',
     'Edit race source',
     'en',
+    'translation',
+    null,
+    null,
     '[]'::jsonb
   ),
   false,

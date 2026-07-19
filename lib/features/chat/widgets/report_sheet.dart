@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 
 /// Reasons a user can pick when reporting a message or a person. The
 /// `wire` value is what's stored in the `reports.reason` column. Step 3.6a.
@@ -15,6 +16,17 @@ enum ReportReason {
   const ReportReason(this.wire, this.label);
   final String wire;
   final String label;
+}
+
+String localizedReportReason(BuildContext context, ReportReason reason) {
+  return switch (reason) {
+    ReportReason.spam => context.l10n.reportSpam,
+    ReportReason.harassment => context.l10n.reportHarassment,
+    ReportReason.hate => context.l10n.reportHate,
+    ReportReason.sexual => context.l10n.reportSexual,
+    ReportReason.childSafety => context.l10n.reportChildSafety,
+    ReportReason.other => context.l10n.reportOther,
+  };
 }
 
 /// Show the report-reason picker. Resolves to the chosen [ReportReason], or
@@ -65,20 +77,25 @@ Future<ReportReason?> showReportReasonSheet(
                 onTap: () => Navigator.of(sheetCtx).pop(reason),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
-                          reason.label,
+                          localizedReportReason(context, reason),
                           style: const TextStyle(
                             fontSize: 16,
                             color: BlabColors.textPrimary,
                           ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right,
-                          color: BlabColors.textMuted, size: 20),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: BlabColors.textMuted,
+                        size: 20,
+                      ),
                     ],
                   ),
                 ),

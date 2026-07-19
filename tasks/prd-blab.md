@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Blab is a peer-to-peer language exchange app. Two people teach each other their native languages through real conversations. People can write in English or the language they are learning. With translations enabled, every message is normalized into the viewer's learning language with English beneath it. Words are tappable for instant lookup. The app is built around mutual exchange — not courses, not AI conversation partners, not tutors. Real people, real chat.
+Blab is a peer-to-peer language exchange app. Two people teach each other their native languages through real conversations. People can write in any language. With learning aids enabled, every successful bubble puts the viewer's learning language on top and normally puts their interface language below; authors keep an unexpected third-language original in the bottom lane. The exact authored text is always available from the message action sheet. The app is built around mutual exchange — not courses, not AI conversation partners, not tutors. Real people, real chat.
 
 This document captures the full scope as prototyped across 4 phone flows.
 
@@ -87,10 +87,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Globe icon 🌐 with language code (e.g. "EN") in top-right of auth screen
-- [ ] Tapping opens bottom sheet with language list (checkmark style)
-- [ ] Selecting language closes sheet and updates label
+- [ ] Tapping opens a bottom sheet containing English, Ukrainian, German, and Spanish
+- [ ] English is the first-launch default and fallback; selecting another language updates all localized app chrome
 - [ ] Same sheet accessible from Profile → Interface language
-- [ ] Switching the interface language immediately re-renders translation subtitles + word-popup translations on existing chats (no app restart, no cache stale)
+- [ ] The pre-auth choice persists locally; a signed-in choice persists to that account without leaking across logout/account switches
+- [ ] Switching the interface language immediately re-renders localized word-popup definitions from a cache keyed by both learning and interface language (no app restart, no stale locale)
 
 ---
 
@@ -215,26 +216,34 @@ This document captures the full scope as prototyped across 4 phone flows.
 ---
 
 ### US-014: ··· chat menu
-**Description:** As a user, I want quick access to translation settings from within the chat.
+**Description:** As a user, I want quick access to translation and correction settings from within the chat.
 
 **Acceptance Criteria:**
 - [ ] Tapping ··· opens dropdown menu below nav
-- [ ] Menu: "Show translations" toggle (green = on) + "Learning language [name] ›"
+- [ ] Menu: "Show translations and corrections" toggle (green = on) + "Learning language [name] ›"
 - [ ] Menu auto-width (no wrapping on long language names)
 - [ ] Tapping outside closes menu
-- [ ] "Show translations" toggle hides/shows all `.transl-line` rows in message area only
+- [ ] The toggle hides/shows learning-aid rows in the message area only
 - [ ] "Learning language ›" opens change-language bottom sheet
 
 ---
 
-### US-015: Messages — incoming with translation
-**Description:** As a learner, I want messages normalized into my learning language with English below.
+### US-015: Messages — translations and corrections
+**Description:** As a learner, I want messages presented in my learning and interface languages without losing access to what was authored.
 
 **Acceptance Criteria:**
 - [ ] Incoming bubbles: white, left-aligned
-- [ ] With translations enabled, main text = viewer's selected learning language
-- [ ] Subtitle = normalized English text in gray (hidden when the learning language is English)
-- [ ] With translations disabled, authored text is shown and no new AI translation request is made
+- [ ] On success, the top lane is the viewer's learning language and the bottom lane is normally the viewer's interface language
+- [ ] If the author writes in neither their learning nor interface language, that author sees the exact original in the bottom lane instead of an interface translation
+- [ ] If an author makes a clear mistake in their learning language, that author sees the minimal correction inline with replaced text struck through plus a short interface-language explanation
+- [ ] Recipients never see the author's correction marks or coaching explanation; they see a clean corrected learning-language line and their interface-language meaning
+- [ ] Correct target-language writing remains clean in the top lane and receives the interface-language meaning below; uncertain author corrections are labeled "Possible correction" and do not invent missing meaning
+- [ ] When learning and interface outputs are identical, render one line rather than duplicate text
+- [ ] Sender and receiver reuse the same correction cache variant when their learning and interface languages match
+- [ ] Translation words are tappable and definitions use the selected interface language
+- [ ] Tapping message padding opens the action sheet with a visibility icon and exact original text
+- [ ] With learning aids disabled, authored text is shown and no new AI request is made
+- [ ] A failed learning aid shows an error icon, keeps the authored text usable, and offers Retry for retryable failures
 - [ ] Timestamp shown below bubble (no read ticks on incoming)
 - [ ] Date divider "Today" shown above first messages of the day
 
@@ -276,11 +285,12 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
-### US-019: Long-press on outgoing message
+### US-019: Message actions on outgoing messages
 **Description:** As a user, I want to edit, copy, reply to, or delete my own messages.
 
 **Acceptance Criteria:**
-- [ ] Long-press (500ms) on outgoing bubble opens action sheet
+- [ ] Tap on bubble padding or long-press (500ms) opens the action sheet; tapping a learning word still opens its definition
+- [ ] The sheet starts with a visibility icon and the exact original message text
 - [ ] Action sheet: Reply | Edit (only while editable) | Copy | Delete
 - [ ] Tapping outside sheet closes it
 - [ ] Reply: shows reply bar above input with quoted message preview; send threads reply
@@ -291,11 +301,12 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
-### US-020: Long-press on incoming message
+### US-020: Message actions on incoming messages
 **Description:** As a user, I want to reply to or copy messages from my chat partner.
 
 **Acceptance Criteria:**
-- [ ] Long-press on incoming bubble opens action sheet
+- [ ] Tap on bubble padding or long-press opens the action sheet; tapping a learning word still opens its definition
+- [ ] The sheet starts with a visibility icon and the exact original message text
 - [ ] Action sheet shows: Reply | Copy only (no Edit, no Delete)
 - [ ] Copy: copies original language text (not translation)
 - [ ] Reply: same reply bar behavior as outgoing
@@ -328,7 +339,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Auto-growing textarea (starts at 1 row)
-- [ ] Placeholder communicates that the user may write in English or their selected learning language
+- [ ] Placeholder is the localized equivalent of "Message" and does not imply a source-language restriction
+- [ ] Messages may be authored in any language; the interface language is never used as a translation target
 - [ ] Messages are capped at 2,000 user-perceived characters end to end, including translation
 - [ ] Send button dims (opacity 0.4) when input is empty; brightens when text entered
 - [ ] Tapping send appends message and clears input
@@ -386,10 +398,10 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Ukrainian words tappable → popup with word, romanization, English meaning, audio
-- [ ] ··· menu: Show translations toggle + Learning language (Ukrainian) ›
+- [ ] ··· menu: Show translations and corrections toggle + Learning language (Ukrainian) ›
 - [ ] Change learning language sheet (11 languages)
 - [ ] Reply bar + incoming long-press (Reply + Copy)
-- [ ] Input placeholder: "English or Ukrainian…"
+- [ ] Input placeholder: localized "Message"
 - [ ] Send button dims when empty
 
 ---
@@ -536,7 +548,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 - FR-1: Auth supports sign up, login, SSO (Apple/Google), forgot password — all as tab-toggle on one screen
 - FR-2: Password field has show/hide toggle, strength meter visible during sign up only
-- FR-3: Language picker available from auth screen and from profile settings; auto-saves on selection
+- FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth
 - FR-4: New chat requires language selection before enabling share; invite link is valid until a single successful claim, within a 48h TTL
 - FR-5: Share sheet surfaces WhatsApp, iMessage, Telegram, Email; copy-link action with confirmation hint
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge
@@ -546,13 +558,13 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-10: Change password has current/new/confirm fields with strength bar; success shows toast
 - FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
-- FR-13: With translations enabled, messages show the viewer's learning language + English subtitle; disabling translations shows authored text and prevents new AI requests
+- FR-13: On successful learning-aid resolution, the top lane is the viewer's learning language and the bottom lane is their interface language, except that an author writing in neither selected language keeps the exact original in the bottom lane. Author mistakes in their learning language render as minimal inline strike-through corrections; recipients receive clean corrected output without coaching marks. Identical lanes are deduplicated. Exact original text remains available from the icon-labeled message sheet. Word definitions and author correction explanations use the selected interface language. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline error and per-message Retry action
 - FR-14: Outgoing messages show delivery (gray) always; read state (purple) only when both sides have Read receipts ON (Signal-symmetric, US-041). Default ON
-- FR-15: Long-press on outgoing: Reply, Edit (24h window), Copy (translation), Delete (forever) + undo
-- FR-16: Long-press on incoming: Reply, Copy (original text) only
+- FR-15: Tap padding or long-press outgoing: show original with visibility icon, Reply, Edit (24h window), Copy (translation), Delete (forever) + undo
+- FR-16: Tap padding or long-press incoming: show original with visibility icon, Reply, Copy (original text) only
 - FR-17: Reply bar shows quoted message preview, threads into bubble on send
 - FR-18: Consecutive outgoing messages group (reduced gap, no repeated timestamp)
-- FR-19: ··· menu: show/hide translations toggle + change learning language, auto-width
+- FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
 - FR-20: Change learning language sheet: 11 languages, checkmark on current, updates header label
 - FR-21: Send button disabled-state (dim) when input empty; input is auto-growing textarea
 - FR-22: Exchange card shown centered on empty chat; fades out (200 ms opacity) on first message
@@ -566,7 +578,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-30: No online / "last seen" feature exists. Chat header shows learning-language subtitle, replaced by "typing…" only when both sides have Typing-indicator toggle ON (US-040)
 - FR-31: Typing indicators + Read receipts are Signal-symmetric toggles in Privacy settings; default ON; OFF path = client never broadcasts the event (server has no record) AND user does not see partner's signal either
 - FR-32: Edit window 24h; delete forever; both apply to outgoing messages only
-- FR-33: Interface-language switch immediately re-renders existing translation subtitles and word popups on all loaded chats — no restart, no stale cache
+- FR-33: Interface-language switch immediately re-renders word definitions on loaded chats from locale-specific cache entries — no restart and no gloss from another interface locale
 
 ---
 
@@ -645,7 +657,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 - No real invite link generation or validation
 - No group chats
 - No voice or video messages
-- No AI conversation partners, generated replies, or tutoring; AI is limited to user-controlled message translation
+- No AI conversation partners or generated replies; AI is limited to user-controlled message translation and writing correction
 - No language matching algorithm / discovery feed
 - No in-app payments or subscription
 - No notifications settings screen
@@ -655,7 +667,8 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 
 ## Languages Supported (Prototype)
 
-Dutch, English, French, German, Hindi, Italian, Portuguese, Spanish, Tamil, Turkish, Ukrainian
+- **Interface:** English (default/fallback), Ukrainian, German, Spanish
+- **Chat learning:** Dutch, English, French, German, Hindi, Italian, Portuguese, Spanish, Tamil, Turkish, Ukrainian
 
 ---
 
@@ -684,7 +697,7 @@ Dutch, English, French, German, Hindi, Italian, Portuguese, Spanish, Tamil, Turk
 Originally tracked as "Open Questions"; resolved 2026-05-28 in one batch.
 
 - **Multiple simultaneous language exchanges per user?** → **Yes**, per-chat. Each chat owns its `learning_language_code` + `teaching_language_code`; languages can repeat across chats or differ. Profile shows the primary (most active) as a hint. (Affects US-022, chat schema in Phase 2.2.)
-- **Interface-language switch refreshing existing translations?** → **Yes**, immediately. Translation subtitles + word popups re-render on switch, no app restart. (Updated US-005.)
+- **Interface-language switch refreshing existing translations?** → **Yes**, immediately for the bottom interface-language lane, word definitions, and correction explanations. The learning-language line stays unchanged; an author's third-language-original exception continues to show the original. The four launch interface locales use separate cache variants. (Updated US-005 by L-15.)
 - **Invite link single-use or reusable until claimed?** → **Reusable until claimed** (single *successful* claim), within the 48h TTL. (Updated US-024, FR-4.)
 - **Exchange card disappearance on first message?** → **200 ms opacity fade-out**, no slide/scale. (Updated US-027.)
 - **Edit-profile Save success toast?** → **Yes**, "Profile updated ✓" toast on return to profile. (Updated US-011.)

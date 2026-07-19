@@ -31,6 +31,46 @@ Future<void> _signIn(SupabaseClient client, String email) async {
 Map<String, dynamic> _map(dynamic value) =>
     Map<String, dynamic>.from(value as Map);
 
+Future<List<({SupabaseClient client, String language})>> _setInterfaceLanguage(
+  Iterable<SupabaseClient> clients,
+  String language,
+) async {
+  final previous = <({SupabaseClient client, String language})>[];
+  for (final client in clients) {
+    final user = client.auth.currentUser;
+    if (user == null) continue;
+    final row = await client
+        .from('profiles')
+        .select('interface_language')
+        .eq('id', user.id)
+        .single();
+    previous.add((
+      client: client,
+      language: row['interface_language'] as String,
+    ));
+    await client.rpc(
+      'update_my_interface_language',
+      params: {'p_interface_language': language},
+    );
+  }
+  return previous;
+}
+
+Future<void> _restoreInterfaceLanguages(
+  List<({SupabaseClient client, String language})> previous,
+) async {
+  for (final entry in previous) {
+    try {
+      await entry.client.rpc(
+        'update_my_interface_language',
+        params: {'p_interface_language': entry.language},
+      );
+    } catch (_) {
+      // Cleanup must continue even if an account was suspended by this test.
+    }
+  }
+}
+
 void main() {
   test(
     'translation API enforces auth, membership, quota, and cache ownership',
@@ -48,6 +88,7 @@ void main() {
       String? chatId;
       String? inviteToken;
       String? reportId;
+      var previousLocales = <({SupabaseClient client, String language})>[];
 
       try {
         await Future.wait([
@@ -55,6 +96,7 @@ void main() {
           _signIn(bob, 'bob@blab.test'),
           _signIn(carol, 'carol@blab.test'),
         ]);
+        previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
 
         final invite = await ChatService(
           alice,
@@ -102,8 +144,9 @@ void main() {
           alice.from('message_translations').insert({
             'message_id': message.id,
             'target_lang': 'de',
+            'interface_lang': 'en',
             'translation_text': 'forged',
-            'english_text': 'forged',
+            'interface_text': 'forged',
             'source_lang': 'en',
             'tokens': <Map<String, dynamic>>[],
             'source_hash': List.filled(64, '0').join(),
@@ -118,14 +161,18 @@ void main() {
               'p_message_id': message.id,
               'p_requester_id': alice.auth.currentUser!.id,
               'p_target_lang': prepared['targetLang'],
+              'p_interface_lang': prepared['interfaceLang'],
               'p_source_hash': prepared['sourceHash'],
               'p_translation_text': 'Hallo sichere Uebersetzung',
-              'p_english_text': 'Hello secure translation',
+              'p_interface_text': 'Hello secure translation',
               'p_source_lang': 'en',
+              'p_aid_mode': 'translation',
+              'p_explanation': null,
+              'p_confidence': null,
               'p_tokens': [
                 {
                   'text': 'Hallo sichere Uebersetzung',
-                  'english': 'Hello secure translation',
+                  'gloss': 'Hello secure translation',
                   'isContent': true,
                 },
               ],
@@ -141,7 +188,8 @@ void main() {
         final translated = _map(response.data);
         expect(response.status, 200);
         expect(translated['translation'], 'Hallo sichere Uebersetzung');
-        expect(translated['english'], 'Hello secure translation');
+        expect(translated['interfaceText'], 'Hello secure translation');
+        expect(translated['interfaceLang'], 'en');
         expect(
           (await admin
               .from('translation_usage')
@@ -170,10 +218,14 @@ void main() {
               'p_message_id': raceMessage.id,
               'p_requester_id': alice.auth.currentUser!.id,
               'p_target_lang': racePrepared['targetLang'],
+              'p_interface_lang': racePrepared['interfaceLang'],
               'p_source_hash': racePrepared['sourceHash'],
               'p_translation_text': 'Vor Bearbeitung',
-              'p_english_text': 'Before edit',
+              'p_interface_text': 'Before edit',
               'p_source_lang': 'en',
+              'p_aid_mode': 'translation',
+              'p_explanation': null,
+              'p_confidence': null,
               'p_tokens': <Map<String, dynamic>>[],
             },
           ),
@@ -226,6 +278,7 @@ void main() {
         if (chatId != null) {
           await admin.from('chats').delete().eq('id', chatId);
         }
+        await _restoreInterfaceLanguages(previousLocales);
         await Future.wait(clients.map((client) => client.dispose()));
       }
     },
@@ -244,12 +297,14 @@ void main() {
       final clients = [admin, alice, bob];
       String? chatId;
       String? inviteToken;
+      var previousLocales = <({SupabaseClient client, String language})>[];
 
       try {
         await Future.wait([
           _signIn(alice, 'alice@blab.test'),
           _signIn(bob, 'bob@blab.test'),
         ]);
+        previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
         final invite = await ChatService(
           alice,
         ).createInvite(myLearningLanguage: 'de');
@@ -269,8 +324,9 @@ void main() {
         );
         expect(first['translation'], isA<String>());
         expect((first['translation'] as String).trim(), isNotEmpty);
-        expect(first['english'], 'Hello from the secure route');
+        expect(first['interfaceLang'], 'en');
         expect(first['sourceLang'], 'en');
+        expect(first['interfaceText'], 'Hello from the secure route');
 
         final second = _map(
           (await alice.functions.invoke(
@@ -300,6 +356,143 @@ void main() {
         if (chatId != null) {
           await admin.from('chats').delete().eq('id', chatId);
         }
+        await _restoreInterfaceLanguages(previousLocales);
+        await Future.wait(clients.map((client) => client.dispose()));
+      }
+    },
+    skip: _enabled && _providerEnabled
+        ? false
+        : 'Requires local functions plus a development OpenRouter key.',
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
+  test(
+    'same-language writing correction applies to author and recipient',
+    () async {
+      final admin = _client(_serviceRoleKey);
+      final alice = _client(_publicKey);
+      final carol = _client(_publicKey);
+      final clients = [admin, alice, carol];
+      String? chatId;
+      String? inviteToken;
+      var previousLocales = <({SupabaseClient client, String language})>[];
+
+      try {
+        await Future.wait([
+          _signIn(alice, 'alice@blab.test'),
+          _signIn(carol, 'carol@blab.test'),
+        ]);
+        previousLocales = await _setInterfaceLanguage([alice, carol], 'en');
+        final invite = await ChatService(
+          alice,
+        ).createInvite(myLearningLanguage: 'de');
+        inviteToken = invite.token;
+        chatId = await ChatService(
+          carol,
+        ).claimInvite(token: invite.token, myLearningLanguage: 'de');
+        final message = await ChatService(
+          alice,
+        ).sendMessage(chatId: chatId, body: 'Machen du');
+
+        final authorResult = _map(
+          (await alice.functions.invoke(
+            'translate-message',
+            body: {'messageId': message.id},
+          )).data,
+        );
+        expect(authorResult['mode'], 'correction');
+        expect(authorResult['sourceLang'], 'de');
+        expect(authorResult['translation'], isNot('Machen du'));
+        expect((authorResult['interfaceText'] as String).trim(), isNotEmpty);
+        expect((authorResult['explanation'] as String).trim(), isNotEmpty);
+        expect(authorResult['confidence'], anyOf('low', 'medium', 'high'));
+
+        final recipientResult = _map(
+          (await carol.functions.invoke(
+            'translate-message',
+            body: {'messageId': message.id},
+          )).data,
+        );
+        expect(recipientResult['mode'], 'correction');
+        expect(recipientResult['translation'], isNot('Machen du'));
+        expect(recipientResult['interfaceText'], authorResult['interfaceText']);
+        expect((recipientResult['explanation'] as String).trim(), isNotEmpty);
+
+        final greeting = await ChatService(
+          alice,
+        ).sendMessage(chatId: chatId, body: 'Hallo!!');
+        final greetingResult = _map(
+          (await alice.functions.invoke(
+            'translate-message',
+            body: {'messageId': greeting.id},
+          )).data,
+        );
+        expect(greetingResult['mode'], 'none');
+        expect(greetingResult['sourceLang'], 'de');
+        expect(greetingResult['translation'], 'Hallo!!');
+        expect(greetingResult['interfaceText'], 'Hello!!');
+
+        for (final locale in const {
+          'uk': 'привіт',
+          'de': 'hallo',
+          'es': 'hola',
+        }.entries) {
+          await alice.rpc(
+            'update_my_interface_language',
+            params: {'p_interface_language': locale.key},
+          );
+          final localizedGreeting = _map(
+            (await alice.functions.invoke(
+              'translate-message',
+              body: {'messageId': greeting.id},
+            )).data,
+          );
+          expect(localizedGreeting['mode'], 'none');
+          expect(localizedGreeting['sourceLang'], 'de');
+          expect(localizedGreeting['translation'], 'Hallo!!');
+          expect(localizedGreeting['interfaceLang'], locale.key);
+          expect(
+            (localizedGreeting['interfaceText'] as String).toLowerCase(),
+            contains(locale.value),
+          );
+        }
+        await alice.rpc(
+          'update_my_interface_language',
+          params: {'p_interface_language': 'en'},
+        );
+
+        expect(
+          await alice
+              .from('message_translations')
+              .count(CountOption.exact)
+              .eq('message_id', message.id)
+              .eq('aid_mode', 'correction'),
+          1,
+        );
+        expect(
+          await carol
+              .from('message_translations')
+              .count(CountOption.exact)
+              .eq('message_id', message.id)
+              .eq('aid_mode', 'correction'),
+          1,
+        );
+      } finally {
+        for (final user in [alice.auth.currentUser, carol.auth.currentUser]) {
+          if (user != null) {
+            await admin
+                .from('translation_usage')
+                .delete()
+                .eq('user_id', user.id);
+          }
+        }
+        if (inviteToken != null) {
+          await admin.from('invites').delete().eq('token', inviteToken);
+        }
+        if (chatId != null) {
+          await admin.from('chats').delete().eq('id', chatId);
+        }
+        await _restoreInterfaceLanguages(previousLocales);
         await Future.wait(clients.map((client) => client.dispose()));
       }
     },

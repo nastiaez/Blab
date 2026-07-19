@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/widgets/picker_card.dart';
@@ -26,8 +27,9 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  late final TextEditingController _email =
-      TextEditingController(text: widget.prefilledEmail ?? '');
+  late final TextEditingController _email = TextEditingController(
+    text: widget.prefilledEmail ?? '',
+  );
   String? _err;
   bool _busy = false;
 
@@ -44,10 +46,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     HapticFeedback.mediumImpact();
     setState(() {
       _err = _email.text.trim().isEmpty
-          ? 'Enter your email'
-          : (_isValidEmail(_email.text)
-              ? null
-              : 'Enter a valid email address');
+          ? context.l10n.enterEmail
+          : (_isValidEmail(_email.text) ? null : context.l10n.enterValidEmail);
     });
     if (_err != null) return;
     setState(() => _busy = true);
@@ -60,7 +60,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _err = SupabaseAuthService.messageFor(e));
+      setState(
+        () => _err = localizedAuthMessage(
+          context.l10n,
+          SupabaseAuthService.messageFor(e),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -78,13 +83,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
-          onPressed: () => context.canPop()
-              ? context.pop()
-              : context.go('/auth?mode=login'),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/auth?mode=login'),
         ),
-        title: const Text(
-          'Forgot password?',
-          style: TextStyle(
+        title: Text(
+          context.l10n.forgotPassword,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -99,8 +103,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             children: [
               BlabTextField(
                 controller: _email,
-                label: 'Email',
-                hint: 'you@example.com',
+                label: context.l10n.email,
+                hint: context.l10n.emailHint,
                 keyboardType: TextInputType.emailAddress,
                 errorText: _err,
                 autofocus: true,
@@ -113,7 +117,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 24),
               BrandButton(
-                label: 'Email me a reset link',
+                label: context.l10n.emailResetLink,
                 onPressed: _send,
                 loading: _busy,
               ),

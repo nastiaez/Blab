@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/invite_host.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/chat_list_state.dart';
@@ -57,15 +58,15 @@ class _NewChatScreenState extends State<NewChatScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: context.l10n.back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
           onPressed: _back,
         ),
         title: _step == _Step.send
-            ? const Text(
-                'Send the invite',
-                style: TextStyle(
+            ? Text(
+                context.l10n.sendInvite,
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: BlabColors.textPrimary,
@@ -81,14 +82,14 @@ class _NewChatScreenState extends State<NewChatScreen> {
           switchOutCurve: Curves.easeIn,
           child: switch (_step) {
             _Step.pick => _PickBody(
-                key: const ValueKey('pick'),
-                onConfirm: _onConfirmLanguage,
-              ),
+              key: const ValueKey('pick'),
+              onConfirm: _onConfirmLanguage,
+            ),
             _Step.send => _SendBody(
-                key: const ValueKey('send'),
-                lang: _selected!,
-                onChange: () => setState(() => _step = _Step.pick),
-              ),
+              key: const ValueKey('send'),
+              lang: _selected!,
+              onChange: () => setState(() => _step = _Step.pick),
+            ),
           },
         ),
       ),
@@ -111,7 +112,8 @@ class _PickBodyState extends State<_PickBody> {
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [...kBlabLanguages]..sort((a, b) => a.name.compareTo(b.name));
+    final sorted = [...kBlabLanguages]
+      ..sort((a, b) => a.name.compareTo(b.name));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -120,18 +122,18 @@ class _PickBodyState extends State<_PickBody> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Pick a language',
-                style: TextStyle(
+              Text(
+                context.l10n.pickLanguage,
+                style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
                   color: BlabColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                "We'll translate all messages into this language. Switch it whenever you like.",
-                style: TextStyle(
+              Text(
+                context.l10n.pickLanguageHelp,
+                style: const TextStyle(
                   fontSize: 14,
                   color: BlabColors.textMuted,
                   height: 1.5,
@@ -161,9 +163,10 @@ class _PickBodyState extends State<_PickBody> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
           child: BrandButton(
-            label: 'Continue',
-            onPressed:
-                _picked != null ? () => widget.onConfirm(_picked!) : null,
+            label: context.l10n.continueAction,
+            onPressed: _picked != null
+                ? () => widget.onConfirm(_picked!)
+                : null,
           ),
         ),
       ],
@@ -174,11 +177,7 @@ class _PickBodyState extends State<_PickBody> {
 // ─────────────────────────── Step 2: send invite ──────────────────────────
 
 class _SendBody extends ConsumerStatefulWidget {
-  const _SendBody({
-    super.key,
-    required this.lang,
-    required this.onChange,
-  });
+  const _SendBody({super.key, required this.lang, required this.onChange});
 
   final BlabLanguage lang;
   final VoidCallback onChange;
@@ -201,10 +200,10 @@ class _SendBodyState extends ConsumerState<_SendBody> {
       final url = 'https://$kInviteHost/i/${result.token}';
       await showShareInviteSheet(context, inviteLink: url);
       if (!mounted) return;
-      showAppSnack('Invite sent ✓');
+      showAppSnack(context.l10n.inviteSent);
     } catch (_) {
       if (!mounted) return;
-      showAppSnack("Couldn't create invite. Try again.");
+      showAppSnack(context.l10n.couldNotCreateInvite);
     } finally {
       if (mounted) setState(() => _generating = false);
     }
@@ -219,11 +218,11 @@ class _SendBodyState extends ConsumerState<_SendBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              'Send the link to start chatting.',
-              style: TextStyle(
+              context.l10n.sendLinkHelp,
+              style: const TextStyle(
                 fontSize: 13,
                 color: BlabColors.textMuted,
                 height: 1.4,
@@ -246,23 +245,22 @@ class _SendBodyState extends ConsumerState<_SendBody> {
           // Info group — soft warm tint, no border, no tap effect. Reads
           // as inert "this is how the link behaves" info.
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: BlabColors.selectedTint,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Footnote(
                   icon: Icons.person_outline,
-                  text: 'Only one person can use this link.',
+                  text: context.l10n.onePersonInvite,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 _Footnote(
                   icon: Icons.schedule_outlined,
-                  text: 'Valid for 48 hours.',
+                  text: context.l10n.validFor48Hours,
                 ),
               ],
             ),
@@ -298,14 +296,18 @@ class _SendBodyState extends ConsumerState<_SendBody> {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Icon(Icons.share_outlined,
-                      size: 20, color: Colors.white),
+                  : const Icon(
+                      Icons.share_outlined,
+                      size: 20,
+                      color: Colors.white,
+                    ),
               label: Text(
-                _generating ? 'Creating link…' : 'Share invite',
+                _generating
+                    ? context.l10n.creatingLink
+                    : context.l10n.shareInvite,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -321,7 +323,6 @@ class _SendBodyState extends ConsumerState<_SendBody> {
 }
 
 // ─────────────────────────── shared bits ──────────────────────────────────
-
 
 /// Step 2 "YOU'LL LEARN" row. Tappable to go back to the picker;
 /// `Change` link on the right + chevron telegraph the affordance.
@@ -340,8 +341,7 @@ class _SelectedRow extends StatelessWidget {
         child: InkWell(
           onTap: onChange,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Expanded(
@@ -354,9 +354,9 @@ class _SelectedRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Text(
-                  'Change',
-                  style: TextStyle(
+                Text(
+                  context.l10n.change,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: BlabColors.brand,

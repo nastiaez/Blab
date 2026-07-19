@@ -46,13 +46,10 @@ bool shouldRequestBubbleTranslation({
   required String text,
   required DateTime sentAt,
   required DateTime? translationCutoffAt,
-  required bool isOutgoing,
-}) =>
-    !(isOutgoing && learningLanguageCode == 'en') &&
-    shouldRequestTranslation(
-      showTranslations: showTranslations,
-      learningLanguageCode: learningLanguageCode,
-      text: text,
-      sentAt: sentAt,
-      translationCutoffAt: translationCutoffAt,
-    );
+}) => shouldRequestTranslation(
+  showTranslations: showTranslations,
+  learningLanguageCode: learningLanguageCode,
+  text: text,
+  sentAt: sentAt,
+  translationCutoffAt: translationCutoffAt,
+);

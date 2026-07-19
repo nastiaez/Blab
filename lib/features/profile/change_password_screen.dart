@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/widgets/picker_card.dart';
@@ -47,11 +48,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     final confirm = _confirm.text;
     setState(() {
       _formErr = null;
-      _currentErr = current.isEmpty ? 'Enter your current password' : null;
+      _currentErr = current.isEmpty ? context.l10n.enterCurrentPassword : null;
       _nextErr = _validateNewPassword(current: current, next: next);
       _confirmErr = confirm.isEmpty
-          ? 'Confirm your new password'
-          : (confirm != next ? "Passwords don't match" : null);
+          ? context.l10n.confirmPassword
+          : (confirm != next ? context.l10n.passwordsDoNotMatch : null);
     });
     if (_currentErr != null || _nextErr != null || _confirmErr != null) return;
 
@@ -62,14 +63,17 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         newPassword: next,
       );
       if (!mounted) return;
-      showAppSnack('Password updated ✓');
+      showAppSnack(context.l10n.passwordUpdated);
       context.go('/profile');
     } catch (error) {
       if (!mounted) return;
-      final message = SupabaseAuthService.passwordChangeMessageFor(error);
+      final message = localizedAuthMessage(
+        context.l10n,
+        SupabaseAuthService.passwordChangeMessageFor(error),
+      );
       setState(() {
         _busy = false;
-        if (message == 'Current password is incorrect') {
+        if (message == context.l10n.currentPasswordIncorrect) {
           _currentErr = message;
         } else {
           _formErr = message;
@@ -82,11 +86,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     required String current,
     required String next,
   }) {
-    if (next.isEmpty) return 'Enter a new password';
-    if (next.length < 6) return 'Password must be at least 6 characters';
-    if (next == current) return 'Choose a different password';
+    if (next.isEmpty) return context.l10n.enterNewPassword;
+    if (next.length < 6) return context.l10n.passwordMinLength;
+    if (next == current) return context.l10n.chooseDifferentPassword;
     if (estimatePasswordStrength(next).index < PasswordStrength.fair.index) {
-      return 'Choose a stronger password';
+      return context.l10n.chooseStrongerPassword;
     }
     return null;
   }
@@ -119,11 +123,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             onPressed: () => context.go('/profile'),
           ),
         ),
-        body: const Center(
+        body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
-              'Password sign-in is not enabled for this account.',
+              context.l10n.passwordSignInUnavailable,
               textAlign: TextAlign.center,
               style: TextStyle(color: BlabColors.textMuted),
             ),
@@ -146,9 +150,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             color: BlabColors.textPrimary,
             onPressed: _busy ? null : () => context.pop(),
           ),
-          title: const Text(
-            'Change password',
-            style: TextStyle(
+          title: Text(
+            context.l10n.changePassword,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: BlabColors.textPrimary,
@@ -162,7 +166,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             children: [
               PasswordField(
                 controller: _current,
-                label: 'Current password',
+                label: context.l10n.currentPassword,
                 errorText: _currentErr,
                 onChanged: (_) => _clearErrors(),
                 textInputAction: TextInputAction.next,
@@ -180,9 +184,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                       vertical: 4,
                     ),
                   ),
-                  child: const Text(
-                    'Forgot your password?',
-                    style: TextStyle(
+                  child: Text(
+                    context.l10n.forgotYourPassword,
+                    style: const TextStyle(
                       color: BlabColors.brand,
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
@@ -193,7 +197,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               const SizedBox(height: 8),
               PasswordField(
                 controller: _next,
-                label: 'New password',
+                label: context.l10n.newPassword,
                 errorText: _nextErr,
                 onChanged: (_) {
                   _clearErrors();
@@ -205,7 +209,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               const SizedBox(height: 16),
               PasswordField(
                 controller: _confirm,
-                label: 'Confirm new password',
+                label: context.l10n.confirmNewPassword,
                 errorText: _confirmErr,
                 onChanged: (_) => _clearErrors(),
                 textInputAction: TextInputAction.done,
@@ -219,7 +223,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ],
               const SizedBox(height: 24),
               BrandButton(
-                label: 'Save',
+                label: context.l10n.save,
                 onPressed: _busy ? null : _submit,
                 loading: _busy,
               ),

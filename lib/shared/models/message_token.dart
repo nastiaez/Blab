@@ -2,14 +2,14 @@
 /// target language.
 ///
 /// PRD US-018 / FR-12 — when [isContent] is true the segment is tappable and
-/// will surface a word-popup with [romanization] + [english] in Step 1.6.
+/// will surface a word-popup with [romanization] + [gloss] in Step 1.6.
 /// Non-content tokens (whitespace, punctuation, emoji) are rendered inline but
 /// not tappable.
 class MessageToken {
   const MessageToken({
     required this.text,
     this.romanization,
-    this.english,
+    this.gloss,
     this.isContent = true,
   });
 
@@ -20,8 +20,8 @@ class MessageToken {
   /// scripts the user is unlikely to read (Tamil, Hindi, etc.).
   final String? romanization;
 
-  /// English gloss for the word — shown in the word popup. Optional.
-  final String? english;
+  /// Short definition in the viewer's interface language. Optional.
+  final String? gloss;
 
   /// Whether this token is a "content" word the user can tap. Punctuation,
   /// whitespace and emoji should set this to `false`.

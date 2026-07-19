@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import 'blab_text_field.dart';
 
 /// Password field with show/hide eye toggle. PRD US-001, FR-2.
@@ -8,7 +9,7 @@ class PasswordField extends StatefulWidget {
   const PasswordField({
     super.key,
     required this.controller,
-    this.label = 'Password',
+    this.label,
     this.errorText,
     this.onChanged,
     this.textInputAction,
@@ -16,7 +17,7 @@ class PasswordField extends StatefulWidget {
   });
 
   final TextEditingController controller;
-  final String label;
+  final String? label;
   final String? errorText;
   final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
@@ -33,7 +34,7 @@ class _PasswordFieldState extends State<PasswordField> {
   Widget build(BuildContext context) {
     return BlabTextField(
       controller: widget.controller,
-      label: widget.label,
+      label: widget.label ?? context.l10n.password,
       obscureText: _hidden,
       errorText: widget.errorText,
       onChanged: widget.onChanged,
@@ -46,7 +47,9 @@ class _PasswordFieldState extends State<PasswordField> {
           size: 20,
         ),
         onPressed: () => setState(() => _hidden = !_hidden),
-        tooltip: _hidden ? 'Show password' : 'Hide password',
+        tooltip: _hidden
+            ? context.l10n.showPassword
+            : context.l10n.hidePassword,
       ),
     );
   }

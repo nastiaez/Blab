@@ -41,34 +41,48 @@ final readReceiptUserIdProvider = Provider<String?>((ref) {
 class MessageReadsNotifier extends Notifier<Set<String>> {
   MessageReadsNotifier(this.chatId);
   final String chatId;
+  final Set<String> _pending = <String>{};
   Timer? _flush;
 
   @override
   Set<String> build() {
-    final enabled = ref.watch(readReceiptsEnabledProvider);
-    if (!enabled) {
+    final privacy = ref.watch(readReceiptsTransportStateProvider);
+    if (privacy.isLoaded && !privacy.enabled) {
       _flush?.cancel();
       _flush = null;
+      _pending.clear();
+    } else if (privacy.canTransmit && _pending.isNotEmpty) {
+      _scheduleFlush();
     }
     ref.onDispose(() => _flush?.cancel());
-    return <String>{};
+    return Set<String>.unmodifiable(_pending);
   }
 
   void reportVisible(String id) {
-    if (!ref.read(readReceiptsEnabledProvider)) return;
-    if (state.contains(id)) return;
-    state = {...state, id};
+    final privacy = ref.read(readReceiptsTransportStateProvider);
+    if (privacy.isLoaded && !privacy.enabled) return;
+    if (!_pending.add(id)) return;
+    state = Set<String>.unmodifiable(_pending);
+    if (!privacy.canTransmit) return;
+    _scheduleFlush();
+  }
+
+  void _scheduleFlush() {
     _flush?.cancel();
     _flush = Timer(const Duration(milliseconds: 250), _flushNow);
   }
 
   Future<void> _flushNow() async {
-    if (!ref.read(readReceiptsEnabledProvider)) {
+    final privacy = ref.read(readReceiptsTransportStateProvider);
+    if (!privacy.isLoaded) return;
+    if (!privacy.enabled) {
+      _pending.clear();
       state = <String>{};
       return;
     }
-    final ids = state.toList();
+    final ids = _pending.toList();
     if (ids.isEmpty) return;
+    _pending.clear();
     state = <String>{};
     final fn = ref.read(markReadFnProvider(chatId));
     try {

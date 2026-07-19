@@ -1,5 +1,6 @@
 import {
   characterCount,
+  interfaceOutputNeedsRetry,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseProviderResult,
@@ -38,41 +39,280 @@ Deno.test("provider route is pinned to Azure ZDR endpoints", () => {
   assert(OPENROUTER_PROVIDER.require_parameters, "parameters required");
 });
 
-Deno.test("provider result must reproduce the translated text", () => {
+Deno.test("provider keeps full text when optional token metadata is invalid", () => {
   const valid = parseProviderResult(
     JSON.stringify({
+      mode: "translation",
       sourceLang: "en",
       translation: "Hallo!",
-      english: "ignored",
+      interfaceText: "Привіт!",
+      explanation: null,
+      confidence: null,
       tokens: [
-        { text: "Hallo", english: "Hello", isContent: true },
+        { text: "Hallo", gloss: "Привіт", isContent: true },
         { text: "!", isContent: false },
       ],
     }),
     "Hello!",
     "de",
+    "uk",
   );
-  assert(valid?.english === "Hello!", "English source is authoritative");
+  assert(valid?.translation === "Hallo!", "learning output is retained");
 
-  const invalid = parseProviderResult(
+  const degraded = parseProviderResult(
     JSON.stringify({
+      mode: "translation",
       sourceLang: "en",
       translation: "Hallo!",
-      english: "Hello!",
+      interfaceText: "Hello!",
+      explanation: null,
+      confidence: null,
       tokens: [{ text: "Falsch", isContent: true }],
     }),
     "Hello!",
     "de",
+    "en",
   );
-  assert(invalid === null, "token mismatch should fail");
+  assert(degraded?.translation === "Hallo!", "full translation should pass");
+  assert(degraded?.tokens.length === 0, "invalid tokens should be discarded");
 });
 
-Deno.test("auto-source prompt requests normalized bilingual output", () => {
-  const prompt = systemPrompt("auto", "uk");
+Deno.test("copied learning text requests an interface retry for every source", () => {
+  for (
+    const candidate of [
+      {
+        mode: "none",
+        sourceLang: "de",
+        translation: "Hallo!!",
+        interfaceText: "Hallo!!",
+        explanation: null,
+        confidence: null,
+        tokens: [{ text: "Hallo!!", gloss: "Hello", isContent: true }],
+        input: "Hallo!!",
+      },
+      {
+        mode: "translation",
+        sourceLang: "es",
+        translation: "Was machst du?",
+        interfaceText: "Was machst du?",
+        explanation: null,
+        confidence: null,
+        tokens: [
+          {
+            text: "Was machst du?",
+            gloss: "What are you doing?",
+            isContent: true,
+          },
+        ],
+        input: "¿Qué estás haciendo?",
+      },
+    ]
+  ) {
+    const { input, ...providerOutput } = candidate;
+    const copied = parseProviderResult(
+      JSON.stringify(providerOutput),
+      input,
+      "de",
+      "en",
+    );
+    assert(copied !== null, "copied output remains structurally valid");
+    assert(
+      interfaceOutputNeedsRetry(copied!, "de", "en"),
+      `copied ${candidate.sourceLang} output should trigger a retry`,
+    );
+  }
+
+  const translated = {
+    mode: "none" as const,
+    sourceLang: "de",
+    translation: "Hallo!!",
+    interfaceText: "Hello!!",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+  };
+  assert(
+    !interfaceOutputNeedsRetry(translated, "de", "en"),
+    "translated interface text should not retry",
+  );
+});
+
+Deno.test("provider accepts a source outside the learning-language list", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "other",
+      translation: "Hallo!",
+      interfaceText: "Hello!",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        { text: "Hallo", gloss: "Hello", isContent: true },
+        { text: "!", isContent: false },
+      ],
+    }),
+    "こんにちは！",
+    "de",
+    "en",
+  );
+  assert(result?.sourceLang === "other", "arbitrary source should pass");
+});
+
+Deno.test("auto-source prompt requests learning output with localized glosses", () => {
+  const prompt = systemPrompt("auto", "uk", "es");
   assert(prompt.includes("Detect the input language"), "source detection");
   assert(prompt.includes('"translation"'), "target-language output");
-  assert(prompt.includes('"english"'), "English output");
+  assert(prompt.includes("Spanish"), "selected interface language");
   assert(prompt.includes('"sourceLang"'), "detected source output");
+  assert(prompt.includes("sourceLang=other"), "arbitrary source fallback");
+  assert(prompt.includes("mode=correction"), "same-language correction mode");
+  assert(
+    prompt.includes("mode=none applies only to correction"),
+    "none still requires interface translation",
+  );
+  assert(
+    prompt.includes("clear, objective grammar"),
+    "corrections require an objective error",
+  );
+  assert(
+    prompt.includes("Do not correct capitalization, punctuation"),
+    "chat style is not over-corrected",
+  );
+  assert(
+    prompt.includes("never depends on whether the viewer authored"),
+    "provider output stays neutral between author and recipient",
+  );
+});
+
+Deno.test("prompt names every supported interface language correctly", () => {
+  for (
+    const [code, name] of [
+      ["en", "English"],
+      ["uk", "Ukrainian"],
+      ["de", "German"],
+      ["es", "Spanish"],
+    ]
+  ) {
+    const prompt = systemPrompt("auto", "de", code);
+    assert(
+      prompt.includes(`interface language is ${name} (${code})`),
+      `${code} interface locale should be named explicitly`,
+    );
+    assert(
+      prompt.includes(`complete ${name} interface-language line`),
+      `${code} interface output should be requested explicitly`,
+    );
+  }
+});
+
+Deno.test("author can receive a bounded same-language correction", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "correction",
+      sourceLang: "de",
+      translation: "Machst du ...?",
+      interfaceText: "Machst du ...?",
+      explanation: "Das Verb muss zu du passen.",
+      confidence: "medium",
+      tokens: [
+        {
+          text: "Machst du",
+          gloss: "do you",
+          isContent: true,
+        },
+        { text: " ...?", isContent: false },
+      ],
+    }),
+    "Machen du",
+    "de",
+    "de",
+  );
+  assert(result?.mode === "correction", "correction should pass");
+  assert(result?.confidence === "medium", "confidence should pass");
+});
+
+Deno.test("same-language correction is available to any eligible viewer", () => {
+  const none = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "de",
+      translation: "Machen du",
+      interfaceText: "What are you doing?",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        { text: "Machen du", gloss: "do you", isContent: true },
+      ],
+    }),
+    "Machen du",
+    "de",
+    "en",
+  );
+  assert(none?.mode === "none", "recipient none should pass");
+
+  const correction = parseProviderResult(
+    JSON.stringify({
+      mode: "correction",
+      sourceLang: "de",
+      translation: "Machst du ...?",
+      interfaceText: "What are you doing?",
+      explanation: "Verb agreement.",
+      confidence: "medium",
+      tokens: [
+        { text: "Machst du ...?", gloss: "do you", isContent: true },
+      ],
+    }),
+    "Machen du",
+    "de",
+    "en",
+  );
+  assert(correction?.mode === "correction", "recipient correction should pass");
+});
+
+Deno.test("interface output preserves authored interface-language text", () => {
+  const valid = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Was machst du?",
+      interfaceText: "What is you doing?",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "Was machst du?",
+          gloss: "what are you doing",
+          isContent: true,
+        },
+      ],
+    }),
+    "What is you doing?",
+    "de",
+    "en",
+  );
+  assert(valid !== null, "exact authored interface text should pass");
+
+  const rewritten = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Was machst du?",
+      interfaceText: "What are you doing?",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "Was machst du?",
+          gloss: "what are you doing",
+          isContent: true,
+        },
+      ],
+    }),
+    "What is you doing?",
+    "de",
+    "en",
+  );
+  assert(rewritten === null, "interface-source mistakes must stay exact");
 });
 
 Deno.test("maximum character contract remains 2000", () => {

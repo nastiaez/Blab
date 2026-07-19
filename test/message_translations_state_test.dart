@@ -1,19 +1,68 @@
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/shared/data/translation_support.dart';
 import 'package:blab/shared/models/message_token.dart';
+import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
+import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-ProviderContainer _container({required TranslateMessageFn translateFn}) {
+ProviderContainer _container({
+  required TranslateMessageFn translateFn,
+  ChatService? chatService,
+}) {
   return ProviderContainer(
-    overrides: [translateMessageFnProvider.overrideWithValue(translateFn)],
+    overrides: [
+      translateMessageFnProvider.overrideWithValue(translateFn),
+      if (chatService != null)
+        chatServiceProvider.overrideWithValue(chatService),
+    ],
   );
+}
+
+class _CommittedTranslationChatService implements ChatService {
+  var fetchCalls = 0;
+
+  @override
+  Future<
+    ({
+      String text,
+      String interfaceText,
+      String interfaceLang,
+      String sourceLang,
+      String mode,
+      String? explanation,
+      String? confidence,
+      List<Map<String, dynamic>> tokens,
+    })?
+  >
+  fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    fetchCalls++;
+    if (fetchCalls == 1) return null;
+    return (
+      text: 'Hallo',
+      interfaceText: 'Hello',
+      interfaceLang: interfaceLang,
+      sourceLang: 'en',
+      mode: 'translation',
+      explanation: null,
+      confidence: null,
+      tokens: <Map<String, dynamic>>[],
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 MessageTranslation _translation(String text) => MessageTranslation(
   translation: text,
-  englishText: text,
+  interfaceText: text,
+  interfaceLang: 'en',
   sourceLang: 'en',
   tokens: const [],
 );
@@ -67,7 +116,7 @@ void main() {
     );
   });
 
-  test('outgoing messages need no English-to-English AI request', () {
+  test('source detection applies to incoming and outgoing messages', () {
     final sentAt = DateTime.utc(2026, 7, 17, 12);
 
     expect(
@@ -77,9 +126,8 @@ void main() {
         text: 'Already English',
         sentAt: sentAt,
         translationCutoffAt: null,
-        isOutgoing: true,
       ),
-      isFalse,
+      isTrue,
     );
     expect(
       shouldRequestBubbleTranslation(
@@ -88,7 +136,6 @@ void main() {
         text: 'Kannst du mich verstehen?',
         sentAt: sentAt,
         translationCutoffAt: null,
-        isOutgoing: false,
       ),
       isTrue,
     );
@@ -103,12 +150,13 @@ void main() {
           calls++;
           return MessageTranslation(
             translation: 'Hello',
-            englishText: 'Hello',
+            interfaceText: 'Hello',
+            interfaceLang: 'en',
             sourceLang: 'ta',
             tokens: const [
               MessageToken(
                 text: 'வணக்கம்',
-                english: 'Hello',
+                gloss: 'Hello',
                 romanization: 'Vaṇakkam',
                 isContent: true,
               ),
@@ -121,13 +169,23 @@ void main() {
       final notifier = container.read(
         messageTranslationsProvider('chat-1').notifier,
       );
-      await notifier.ensure(messageId: 'm1', text: 'வணக்கம்', targetLang: 'en');
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'வணக்கம்',
+        targetLang: 'en',
+        interfaceLang: 'en',
+      );
 
       final state = container.read(messageTranslationsProvider('chat-1'));
-      expect(state['m1|en'], isA<AsyncData<MessageTranslation>>());
-      expect(state['m1|en']!.value!.translation, 'Hello');
+      expect(state['m1|en|en'], isA<AsyncData<MessageTranslation>>());
+      expect(state['m1|en|en']!.value!.translation, 'Hello');
 
-      await notifier.ensure(messageId: 'm1', text: 'வணக்கம்', targetLang: 'en');
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'வணக்கம்',
+        targetLang: 'en',
+        interfaceLang: 'en',
+      );
       expect(calls, 1);
     },
   );
@@ -142,16 +200,118 @@ void main() {
 
     await container
         .read(messageTranslationsProvider('chat-1').notifier)
-        .ensure(messageId: 'm1', text: 'hello', targetLang: 'de');
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
 
     final entry = container.read(
       messageTranslationsProvider('chat-1'),
-    )['m1|de'];
+    )['m1|de|en'];
     expect(entry, isA<AsyncError<MessageTranslation>>());
     expect(
       (entry!.error as MessageTranslationFailed).reason,
       'translation_limit_reached',
     );
+  });
+
+  test('lost function response recovers its committed cache row', () async {
+    final chatService = _CommittedTranslationChatService();
+    final container = _container(
+      chatService: chatService,
+      translateFn: (id) async {
+        throw MessageTranslationFailed('invoke_failed');
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+
+    final entry = container.read(
+      messageTranslationsProvider('chat-1'),
+    )['m1|de|en'];
+    expect(chatService.fetchCalls, 2);
+    expect(entry, isA<AsyncData<MessageTranslation>>());
+    expect(entry!.value!.translation, 'Hallo');
+  });
+
+  test('database hydration replaces a stale translation error', () async {
+    final container = _container(
+      translateFn: (id) async {
+        throw MessageTranslationFailed('invoke_failed');
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    await notifier.ensure(
+      messageId: 'm1',
+      text: 'hello',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    notifier.hydrateFromDb({'m1': _translation('Hallo')}, 'de', 'en');
+
+    final entry = container.read(
+      messageTranslationsProvider('chat-1'),
+    )['m1|de|en'];
+    expect(entry, isA<AsyncData<MessageTranslation>>());
+    expect(entry!.value!.translation, 'Hallo');
+  });
+
+  test('manual retry replaces only the failed translation entry', () async {
+    var failedMessageCalls = 0;
+    final container = _container(
+      translateFn: (id) async {
+        if (id == 'm1' && failedMessageCalls++ == 0) {
+          throw MessageTranslationFailed('invoke_failed');
+        }
+        return _translation(id == 'm1' ? 'Hallo' : 'Unchanged');
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    await notifier.ensure(
+      messageId: 'm2',
+      text: 'keep me',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    await notifier.ensure(
+      messageId: 'm1',
+      text: 'hello',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncError<MessageTranslation>>(),
+    );
+
+    await notifier.retry(
+      messageId: 'm1',
+      text: 'hello',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+
+    final state = container.read(messageTranslationsProvider('chat-1'));
+    expect(state['m1|de|en']!.value!.translation, 'Hallo');
+    expect(state['m2|de|en']!.value!.translation, 'Unchanged');
   });
 
   test('quota failure retries after the server retry window', () async {
@@ -172,12 +332,17 @@ void main() {
 
     await container
         .read(messageTranslationsProvider('chat-1').notifier)
-        .ensure(messageId: 'm1', text: 'hello', targetLang: 'de');
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
     final entry = container.read(
       messageTranslationsProvider('chat-1'),
-    )['m1|de'];
+    )['m1|de|en'];
     expect(calls, 2);
     expect(entry, isA<AsyncData<MessageTranslation>>());
     expect(entry!.value!.translation, 'Hallo');
@@ -192,12 +357,22 @@ void main() {
       messageTranslationsProvider('chat-1').notifier,
     );
 
-    await notifier.ensure(messageId: 'm1', text: 'a', targetLang: 'en');
-    await notifier.ensure(messageId: 'm2', text: 'b', targetLang: 'en');
+    await notifier.ensure(
+      messageId: 'm1',
+      text: 'a',
+      targetLang: 'en',
+      interfaceLang: 'en',
+    );
+    await notifier.ensure(
+      messageId: 'm2',
+      text: 'b',
+      targetLang: 'en',
+      interfaceLang: 'en',
+    );
 
     final state = container.read(messageTranslationsProvider('chat-1'));
-    expect(state['m1|en']!.value!.translation, 'T-m1');
-    expect(state['m2|en']!.value!.translation, 'T-m2');
+    expect(state['m1|en|en']!.value!.translation, 'T-m1');
+    expect(state['m2|en|en']!.value!.translation, 'T-m2');
   });
 
   test('different chats cache independently', () async {
@@ -206,14 +381,19 @@ void main() {
 
     await container
         .read(messageTranslationsProvider('chat-1').notifier)
-        .ensure(messageId: 'm1', text: 'a', targetLang: 'en');
+        .ensure(
+          messageId: 'm1',
+          text: 'a',
+          targetLang: 'en',
+          interfaceLang: 'en',
+        );
 
     expect(
-      container.read(messageTranslationsProvider('chat-1'))['m1|en'],
+      container.read(messageTranslationsProvider('chat-1'))['m1|en|en'],
       isA<AsyncData<MessageTranslation>>(),
     );
     expect(
-      container.read(messageTranslationsProvider('chat-2'))['m1|en'],
+      container.read(messageTranslationsProvider('chat-2'))['m1|en|en'],
       isNull,
     );
   });
@@ -230,12 +410,22 @@ void main() {
         messageTranslationsProvider('chat-1').notifier,
       );
 
-      await notifier.ensure(messageId: 'm1', text: 'x', targetLang: 'ta');
-      await notifier.ensure(messageId: 'm1', text: 'x', targetLang: 'de');
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'x',
+        targetLang: 'ta',
+        interfaceLang: 'en',
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'x',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
 
       final state = container.read(messageTranslationsProvider('chat-1'));
-      expect(state['m1|ta']!.value!.translation, 'translation-1');
-      expect(state['m1|de']!.value!.translation, 'translation-2');
+      expect(state['m1|ta|en']!.value!.translation, 'translation-1');
+      expect(state['m1|de|en']!.value!.translation, 'translation-2');
     },
   );
 
@@ -249,11 +439,68 @@ void main() {
       messageTranslationsProvider('chat-1').notifier,
     );
 
-    await notifier.ensure(messageId: 'm1', text: 'before', targetLang: 'de');
-    await notifier.ensure(messageId: 'm1', text: 'after', targetLang: 'de');
+    await notifier.ensure(
+      messageId: 'm1',
+      text: 'before',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    await notifier.ensure(
+      messageId: 'm1',
+      text: 'after',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
 
     final state = container.read(messageTranslationsProvider('chat-1'));
     expect(calls, 2);
-    expect(state['m1|de']!.value!.translation, 'translation-2');
+    expect(state['m1|de|en']!.value!.translation, 'translation-2');
   });
+
+  test(
+    'same target language caches each interface locale separately',
+    () async {
+      var calls = 0;
+      final container = _container(
+        translateFn: (id) async {
+          calls++;
+          return MessageTranslation(
+            translation: 'Hallo',
+            interfaceText: 'Hello',
+            interfaceLang: calls == 1 ? 'en' : 'uk',
+            sourceLang: 'de',
+            tokens: [
+              MessageToken(
+                text: 'Hallo',
+                gloss: calls == 1 ? 'Hello' : 'Привіт',
+                isContent: true,
+              ),
+            ],
+          );
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'Hallo',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'Hallo',
+        targetLang: 'de',
+        interfaceLang: 'uk',
+      );
+
+      final state = container.read(messageTranslationsProvider('chat-1'));
+      expect(state['m1|de|en']!.value!.tokens.first.gloss, 'Hello');
+      expect(state['m1|de|uk']!.value!.tokens.first.gloss, 'Привіт');
+      expect(calls, 2);
+    },
+  );
 }

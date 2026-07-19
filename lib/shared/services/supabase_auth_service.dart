@@ -25,11 +25,12 @@ class SupabaseAuthService {
     required String name,
     required String email,
     required String password,
+    String interfaceLanguage = 'en',
   }) {
     return _auth.signUp(
       email: email.trim(),
       password: password,
-      data: {'name': name.trim()},
+      data: {'name': name.trim(), 'interface_language': interfaceLanguage},
     );
   }
 

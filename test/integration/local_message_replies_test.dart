@@ -138,20 +138,28 @@ void main() {
             'p_message_id': source.id,
             'p_requester_id': alice.auth.currentUser!.id,
             'p_target_lang': prepared['targetLang'],
+            'p_interface_lang': prepared['interfaceLang'],
             'p_source_hash': prepared['sourceHash'],
             'p_translation_text': 'alte Uebersetzung',
-            'p_english_text': 'old translation',
+            'p_interface_text': 'reply source',
             'p_source_lang': 'en',
+            'p_aid_mode': 'translation',
+            'p_explanation': null,
+            'p_confidence': null,
             'p_tokens': <Map<String, dynamic>>[],
           },
         );
         expect(completed, isTrue);
-        final cached = await ChatService(
-          alice,
-        ).fetchCachedTranslation(messageId: source.id, targetLang: 'de');
+        final cached = await ChatService(alice).fetchCachedTranslation(
+          messageId: source.id,
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
         expect(cached?.text, 'alte Uebersetzung');
-        expect(cached?.englishText, 'old translation');
+        expect(cached?.interfaceText, 'reply source');
+        expect(cached?.interfaceLang, 'en');
         expect(cached?.sourceLang, 'en');
+        expect(cached?.mode, 'translation');
         expect(
           await alice
               .from('message_translations')

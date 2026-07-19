@@ -196,7 +196,15 @@ run_app() {
   local invite_input="${2:-}"
   local flutter_mode="${BLAB_FLUTTER_MODE:-debug}"
   local initial_route="${BLAB_INITIAL_ROUTE:-}"
+  local publishable_key
   local url
+
+  if ! publishable_key="$(local_key)"; then
+    printf '%s\n' \
+      'Local Supabase is not ready, so the app was not launched.' \
+      'Run scripts/local_test.sh reset, then retry this command.' >&2
+    return 1
+  fi
 
   set -- flutter run
 
@@ -238,11 +246,11 @@ run_app() {
     "$@" -d chrome --web-port 7357 \
       --web-launch-url="$launch_url" \
       --dart-define="SUPABASE_URL=$url" \
-      --dart-define="SUPABASE_PUBLISHABLE_KEY=$(local_key)"
+      --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key"
   else
     "$@" -d "$device" \
       --dart-define="SUPABASE_URL=$url" \
-      --dart-define="SUPABASE_PUBLISHABLE_KEY=$(local_key)"
+      --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key"
   fi
 }
 

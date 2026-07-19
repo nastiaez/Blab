@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/message.dart';
 
 /// The action picked from the long-press sheet. PRD US-019, US-020;
@@ -41,7 +42,7 @@ Future<void> showMessageActionSheet(
     context: context,
     backgroundColor: Colors.white,
     barrierColor: Colors.black.withValues(alpha: 0.32),
-    isScrollControlled: false,
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -50,7 +51,7 @@ Future<void> showMessageActionSheet(
         if (canReply)
           _ActionRow(
             icon: Icons.reply,
-            label: 'Reply',
+            label: context.l10n.reply,
             onTap: () {
               Navigator.of(sheetCtx).pop();
               onAction(MessageAction.reply);
@@ -59,7 +60,7 @@ Future<void> showMessageActionSheet(
         if (canEdit)
           _ActionRow(
             icon: Icons.edit_outlined,
-            label: 'Edit',
+            label: context.l10n.edit,
             onTap: () {
               Navigator.of(sheetCtx).pop();
               onAction(MessageAction.edit);
@@ -67,7 +68,7 @@ Future<void> showMessageActionSheet(
           ),
         _ActionRow(
           icon: Icons.copy_outlined,
-          label: 'Copy',
+          label: context.l10n.copy,
           onTap: () {
             Navigator.of(sheetCtx).pop();
             onAction(MessageAction.copy);
@@ -76,7 +77,7 @@ Future<void> showMessageActionSheet(
         if (isOut)
           _ActionRow(
             icon: Icons.delete_outline,
-            label: 'Delete',
+            label: context.l10n.delete,
             destructive: true,
             onTap: () {
               Navigator.of(sheetCtx).pop();
@@ -87,7 +88,7 @@ Future<void> showMessageActionSheet(
         if (!isOut)
           _ActionRow(
             icon: Icons.flag_outlined,
-            label: 'Report',
+            label: context.l10n.report,
             destructive: true,
             onTap: () {
               Navigator.of(sheetCtx).pop();
@@ -98,29 +99,89 @@ Future<void> showMessageActionSheet(
 
       return SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              // Drag handle pill.
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: BlabColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetCtx).height * 0.75,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: BlabColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _OriginalMessage(originalText: message.originalText),
+                  const Divider(height: 1),
+                  ...rows,
+                ],
               ),
-              const SizedBox(height: 8),
-              ...rows,
-            ],
+            ),
           ),
         ),
       );
     },
   );
+}
+
+class _OriginalMessage extends StatelessWidget {
+  const _OriginalMessage({required this.originalText});
+
+  final String originalText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      key: const ValueKey('original-message'),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(
+              Icons.visibility_outlined,
+              size: 24,
+              color: BlabColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.viewOriginal,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: BlabColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SelectableText(
+                  originalText,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                    color: BlabColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ActionRow extends StatelessWidget {

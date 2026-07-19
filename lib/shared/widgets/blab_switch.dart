@@ -7,11 +7,7 @@ import '../../app/theme.dart';
 /// states (Material 3's thumb shrinks when off, which we don't want) and
 /// has no outline. Scaled 88 % to sit comfortably in row layouts.
 class BlabSwitch extends StatelessWidget {
-  const BlabSwitch({
-    super.key,
-    required this.value,
-    required this.onChanged,
-  });
+  const BlabSwitch({super.key, required this.value, required this.onChanged});
 
   final bool value;
   final ValueChanged<bool>? onChanged;

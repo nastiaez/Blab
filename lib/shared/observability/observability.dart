@@ -15,8 +15,10 @@ import 'sentry_scrub.dart';
 //     --dart-define=SENTRY_ENV=production
 
 const String _dsn = String.fromEnvironment('SENTRY_DSN');
-const String _environment =
-    String.fromEnvironment('SENTRY_ENV', defaultValue: 'production');
+const String _environment = String.fromEnvironment(
+  'SENTRY_ENV',
+  defaultValue: 'production',
+);
 
 /// True when a DSN was provided at build time.
 bool get sentryEnabled => _dsn.isNotEmpty;
@@ -29,17 +31,14 @@ Future<void> bootstrap(FutureOr<void> Function() appRunner) async {
     await appRunner();
     return;
   }
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = _dsn;
-      options.environment = _environment;
-      // Never attach device PII; we redact bodies ourselves below.
-      options.sendDefaultPii = false;
-      // Crash reporting only — no performance tracing in v1.
-      options.tracesSampleRate = 0.0;
-      options.beforeBreadcrumb = (crumb, hint) => scrubBreadcrumb(crumb);
-      options.beforeSend = (event, hint) => scrubEvent(event);
-    },
-    appRunner: appRunner,
-  );
+  await SentryFlutter.init((options) {
+    options.dsn = _dsn;
+    options.environment = _environment;
+    // Never attach device PII; we redact bodies ourselves below.
+    options.sendDefaultPii = false;
+    // Crash reporting only — no performance tracing in v1.
+    options.tracesSampleRate = 0.0;
+    options.beforeBreadcrumb = (crumb, hint) => scrubBreadcrumb(crumb);
+    options.beforeSend = (event, hint) => scrubEvent(event);
+  }, appRunner: appRunner);
 }
