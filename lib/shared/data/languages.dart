@@ -102,3 +102,19 @@ const List<BlabLanguage> kBlabLanguages = [
     hello: 'привіт',
   ),
 ];
+
+const Set<String> kSupportedInterfaceLanguageCodes = {'en', 'uk', 'de', 'es'};
+
+final List<BlabLanguage> kInterfaceLanguages = List.unmodifiable(
+  kBlabLanguages.where(
+    (language) => kSupportedInterfaceLanguageCodes.contains(language.code),
+  ),
+);
+
+BlabLanguage interfaceLanguageForCode(String? code) {
+  return kInterfaceLanguages.firstWhere(
+    (language) => language.code == code,
+    orElse: () =>
+        kInterfaceLanguages.firstWhere((language) => language.code == 'en'),
+  );
+}

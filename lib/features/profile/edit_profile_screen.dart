@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/profile_service.dart';
 import '../../shared/state/profile_state.dart';
 import '../auth/widgets/blab_text_field.dart';
@@ -46,7 +47,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _save() async {
     if (_busy) return;
     HapticFeedback.mediumImpact();
-    final error = validateDisplayName(_name.text);
+    final value = _name.text.trim();
+    final error = value.isEmpty
+        ? context.l10n.enterDisplayName
+        : value.runes.length > 50
+        ? context.l10n.displayNameTooLong
+        : RegExp(r'[\x00-\x1F\x7F]').hasMatch(value)
+        ? context.l10n.displayNameUnsupported
+        : null;
     if (error != null) {
       setState(() => _error = error);
       return;
@@ -62,13 +70,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final saved = await ref.read(updateDisplayNameActionProvider)(next);
       if (!mounted) return;
       _initialName = saved;
-      showAppSnack('Profile updated ✓');
+      showAppSnack(context.l10n.profileUpdated);
       context.go('/profile');
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Could not update your profile. Try again.';
+        _error = context.l10n.couldNotUpdateProfile;
       });
     }
   }
@@ -97,9 +105,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             color: BlabColors.textPrimary,
             onPressed: _busy ? null : () => context.pop(),
           ),
-          title: const Text(
-            'Edit profile',
-            style: TextStyle(
+          title: Text(
+            context.l10n.editProfile,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: BlabColors.textPrimary,
@@ -114,7 +122,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Text(
-                      'Save',
+                      context.l10n.save,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -164,8 +172,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const SizedBox(height: 24),
                   BlabTextField(
                     controller: _name,
-                    label: 'Display name',
-                    hint: 'Your name',
+                    label: context.l10n.displayName,
+                    hint: context.l10n.yourName,
                     errorText: _error,
                     autofocus: true,
                     textInputAction: TextInputAction.done,
@@ -197,12 +205,12 @@ class _ProfileLoadError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Couldn't load your profile.",
-              style: TextStyle(color: BlabColors.textPrimary),
+            Text(
+              context.l10n.couldNotLoadProfile,
+              style: const TextStyle(color: BlabColors.textPrimary),
             ),
             const SizedBox(height: 12),
-            TextButton(onPressed: onRetry, child: const Text('Retry')),
+            TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
           ],
         ),
       ),

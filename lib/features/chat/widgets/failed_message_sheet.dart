@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 
 /// What the user picked from the failed-message sheet. PRD US-030.
 enum FailedMessageAction { retry, delete }
@@ -37,13 +38,13 @@ Future<void> showFailedMessageSheet(
                 ),
               ),
               const SizedBox(height: 8),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 6, 20, 6),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Message failed to send',
-                    style: TextStyle(
+                    context.l10n.messageFailed,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: BlabColors.textMuted,
                     ),
@@ -52,7 +53,7 @@ Future<void> showFailedMessageSheet(
               ),
               _ActionRow(
                 icon: Icons.refresh,
-                label: 'Retry',
+                label: context.l10n.retry,
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
                   onAction(FailedMessageAction.retry);
@@ -60,7 +61,7 @@ Future<void> showFailedMessageSheet(
               ),
               _ActionRow(
                 icon: Icons.delete_outline,
-                label: 'Delete',
+                label: context.l10n.delete,
                 destructive: true,
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
@@ -90,8 +91,9 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        destructive ? const Color(0xFFEF4444) : BlabColors.textPrimary;
+    final color = destructive
+        ? const Color(0xFFEF4444)
+        : BlabColors.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(

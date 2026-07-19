@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/profile_state.dart';
@@ -19,7 +20,8 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(currentProfileProvider);
     final hasPasswordIdentity = ref.watch(hasPasswordIdentityProvider);
     final emailLocal = session?.user.email?.split('@').first;
-    final displayName = profile.value?.displayName ?? emailLocal ?? 'You';
+    final displayName =
+        profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
@@ -27,9 +29,9 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
-          'Profile',
-          style: TextStyle(
+        title: Text(
+          context.l10n.profile,
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -47,7 +49,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _SettingsRow(
                   icon: Icons.language_outlined,
-                  label: 'Interface language',
+                  label: context.l10n.interfaceLanguage,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -70,7 +72,7 @@ class ProfileScreen extends ConsumerWidget {
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.edit_outlined,
-                  label: 'Edit profile',
+                  label: context.l10n.editProfile,
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: BlabColors.textMuted,
@@ -80,7 +82,7 @@ class ProfileScreen extends ConsumerWidget {
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.alternate_email,
-                  label: 'Change email',
+                  label: context.l10n.changeEmail,
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: BlabColors.textMuted,
@@ -91,7 +93,7 @@ class ProfileScreen extends ConsumerWidget {
                   const _RowDivider(),
                   _SettingsRow(
                     icon: Icons.lock_outline,
-                    label: 'Change password',
+                    label: context.l10n.changePassword,
                     trailing: const Icon(
                       Icons.chevron_right,
                       color: BlabColors.textMuted,
@@ -102,7 +104,7 @@ class ProfileScreen extends ConsumerWidget {
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.shield_outlined,
-                  label: 'Privacy',
+                  label: context.l10n.privacy,
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: BlabColors.textMuted,
@@ -112,7 +114,7 @@ class ProfileScreen extends ConsumerWidget {
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.logout_outlined,
-                  label: 'Log out',
+                  label: context.l10n.logOut,
                   trailing: const Icon(
                     Icons.chevron_right,
                     color: BlabColors.textMuted,
@@ -132,7 +134,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _SettingsRow(
                   icon: Icons.delete_outline,
-                  label: 'Delete account',
+                  label: context.l10n.deleteAccount,
                   destructive: true,
                   trailing: Icon(
                     Icons.chevron_right,
@@ -156,13 +158,13 @@ Future<bool?> _confirmLogout(BuildContext context) {
     builder: (ctx) => AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        'Log out?',
-        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+      title: Text(
+        context.l10n.logOutQuestion,
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
       ),
-      content: const Text(
-        "You'll need your email and password (or Google) to sign back in.",
-        style: TextStyle(
+      content: Text(
+        context.l10n.logOutHelp,
+        style: const TextStyle(
           fontSize: 14,
           color: BlabColors.textMuted,
           height: 1.4,
@@ -172,9 +174,9 @@ Future<bool?> _confirmLogout(BuildContext context) {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(
+          child: Text(
+            context.l10n.cancel,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
               color: BlabColors.textPrimary,
@@ -183,9 +185,9 @@ Future<bool?> _confirmLogout(BuildContext context) {
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text(
-            'Log out',
-            style: TextStyle(
+          child: Text(
+            context.l10n.logOut,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: BlabColors.brand,
@@ -342,13 +344,13 @@ class _BottomTabs extends StatelessWidget {
             children: [
               _TabItem(
                 iconName: 'chat',
-                label: 'Chats',
+                label: context.l10n.chats,
                 selected: active == _Tab.chats,
                 onTap: () => context.go('/chats'),
               ),
               _TabItem(
                 iconName: 'profile',
-                label: 'Profile',
+                label: context.l10n.profile,
                 selected: active == _Tab.profile,
                 onTap: () {},
               ),

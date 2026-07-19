@@ -38,17 +38,23 @@ void main() {
   });
 
   testWidgets('unavailable state renders the muted label', (tester) async {
+    var retried = false;
     await tester.pumpWidget(
       host(
-        const TranslationSubtitle(
+        TranslationSubtitle(
           state: TranslationSubtitleState.unavailable,
           text: '',
           isOutgoing: true,
+          onRetry: () => retried = true,
         ),
       ),
     );
     expect(find.text('Translation unavailable'), findsOneWidget);
+    expect(find.byKey(const ValueKey('translation-error')), findsOneWidget);
+    expect(find.byIcon(Icons.refresh), findsOneWidget);
     expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('translation-retry')));
+    expect(retried, isTrue);
   });
 
   testWidgets('quota state renders its specific label', (tester) async {

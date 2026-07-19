@@ -149,8 +149,12 @@ The prototype's `id`/class names are not API — don't carry them into Dart.
 ## Internationalization
 
 - `flutter_localizations` + ARB files under `lib/l10n/`
-- Interface language list = the 11 languages in `prd-blab.md` § Languages Supported
+- Launch interface locales = English (`en`), Ukrainian (`uk`), German (`de`), and Spanish (`es`); English is the synchronous default and invalid/missing-value fallback
+- The guest preference is device-local; signed-in preferences are cached under an account-scoped key and persisted through a self-only profile RPC
 - **Interface language** (chrome strings) is distinct from **learning language** (chat content). Don't conflate them.
+- Learning-aid cache identity is `(message_id, target_lang, interface_lang)`: authored text remains authoritative in `messages.body`; each row stores the learning-language output, interface-language output, detected source, tokens, and correction analysis. Matching authorized viewers share the row, while the client applies author/recipient presentation rules. Token glosses and author correction explanations follow the interface locale
+- Retryable learning-aid failures remain client-local `AsyncError` entries. Manual Retry clears only the failed `(message_id, target_lang, interface_lang)` entry before re-running the server-authoritative cache/function flow
+- Tapping message padding or long-pressing opens the action sheet, whose visibility-icon section reads the exact authorized `messages.body`; tappable learning words retain their definition gesture
 
 ---
 
@@ -187,11 +191,12 @@ Not yet set up. When added:
 11. ✅ **TTS source:** V1 on-device only (Flutter TTS via OS engines). Disabled state = icon dim 40%, no tap, no tooltip, no text. V2 evaluate cloud TTS / recorded human audio for languages where on-device quality is weak (Tamil, Ukrainian, Hindi). — locked 2026-05-28
 12. ✅ **Multiple language exchanges per user:** Yes, per-chat. Each chat row owns its `learning_language_code` + `teaching_language_code`. Profile hero shows the "primary" (most-active) as a hint. — locked 2026-05-28
 13. ✅ **Invite link policy:** Valid until a single *successful* claim, within a 48h TTL. Multiple clicks before claim are allowed. Once claimed, link returns "already claimed" state (US-037). — locked 2026-05-28
-14. ✅ **Interface-language behavior:** Switch refreshes existing chat translations + word popups immediately. No app restart. Translation lookups must be re-rendered, not cached against the old interface language. — locked 2026-05-28
+14. ✅ **Interface-language behavior:** English, Ukrainian, German, and Spanish are the launch interface locales, with English default/fallback and account-scoped persistence. Interface language controls chrome, the bottom message lane, word definitions, and correction explanations. Translation rows are cached separately by learning and interface language. Authored text remains authoritative and available through View original; authors writing in a third language keep that original in their bottom lane. — revised 2026-07-18 by L-15
 15. ✅ **Log-out UX:** Confirm dialog before sign out ("Log out?" / Cancel + Log out). Signal pattern. — locked 2026-05-28
 16. ✅ **Palette + type tokens (final v1 swap):** Brand `#D4694A` (press `#BB573B`, soft `#F3DAD0`). App + chat canvas cream `#EFEBE2`. White surface for headers/sheets/incoming bubble + (per-screen) status-bar safe area. Ink `#1F3340`, stone `#9A9490`, line `#E4DCCC`. Input focus border `#E19680` (softer than brand to avoid alarm). Selected-row tint `#FAF1EC`. Outgoing bubble = solid brand, white text. Avatars = deterministic warm swatch from `[#D4694A, #5E8B8C, #C99846, #1F3340, #9A6A8C, #5F7A52]` keyed by name; no gradients. Read tick + links = brand. System fonts only (Roboto on Android, SF Pro on iOS — same as #6). Source: `claude_design/blab-theme.css` UI kit. — locked 2026-06-01
 17. ⛔ **Portfolio-mode live translation backend (retired):** The historical public `translate-portfolio` demo endpoint was removed with L-13 after portfolio mode left the app. It must not be deployed for launch. Historical design remains in `docs/superpowers/specs/2026-06-02-portfolio-live-translate-design.md`. — retired 2026-07-17
 18. ✅ **Launch translation security:** The Flutter client submits only a message ID to the JWT-verified `translate-message` Edge Function. Postgres derives the authorized source body and caller's learning language, enforces active membership plus the translation cutoff, and atomically reserves the approved per-account quota only on a cache miss. Only the server can write `message_translations`, and writes compare a SHA-256 source hash to reject edit races. OpenRouter requests use `openai/gpt-4o-mini` only through eligible Azure endpoints with `zdr=true`, `data_collection=deny`, and required parameter support. — locked 2026-07-17 by L-13
+19. ✅ **Same-language writing correction:** The learning-aid contract returns exactly one mode: `translation` when source differs from the learning target, `correction` for a clear mistake in that target, or `none` for correct writing. Matching learning/interface locales reuse one cache row. The author alone sees correction marks and a localized explanation; recipients see the clean corrected result. Ambiguous author corrections are labeled as possible and the provider must make the smallest defensible change without inventing missing meaning. — revised 2026-07-18 by owner approval during L-15
 
 ## Open Decisions
 

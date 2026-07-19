@@ -11,10 +11,12 @@ import 'app/app_messenger.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 import 'features/chat/state/message_translations_state.dart';
+import 'l10n/l10n.dart';
 import 'shared/data/invite_host.dart';
 import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
 import 'shared/services/supabase_auth_service.dart';
+import 'shared/state/interface_language.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -197,6 +199,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final interfaceLanguage = ref.watch(interfaceLanguageProvider);
     // Status-bar bg transparent + dark icons everywhere.
     // Each screen paints its own color behind the safe area, so the
     // status bar visually matches the top container (white header
@@ -210,6 +213,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       child: MaterialApp.router(
         title: 'Blab',
         theme: blabTheme,
+        locale: Locale(interfaceLanguage.code),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         routerConfig: blabRouter,
         scaffoldMessengerKey: appMessengerKey,
       ),

@@ -8,6 +8,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  interfaceOutputNeedsRetry,
+  LANG_NAMES,
   OPENROUTER_PROVIDER,
   parseProviderResult,
   systemPrompt,
@@ -19,6 +21,65 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
 const MODEL = "openai/gpt-4o-mini";
+
+async function repairInterfaceText(
+  learningText: string,
+  targetLang: string,
+  interfaceLang: string,
+): Promise<string | null> {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  let response: Response;
+  try {
+    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_completion_tokens: 4000,
+        response_format: { type: "json_object" },
+        provider: OPENROUTER_PROVIDER,
+        messages: [
+          {
+            role: "system",
+            content:
+              `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation. Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`,
+          },
+          { role: "user", content: learningText },
+        ],
+      }),
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") return null;
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  try {
+    const parsed = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+    const interfaceText = parsed?.interfaceText;
+    return typeof interfaceText === "string" && interfaceText.trim().length > 0
+      ? interfaceText
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function json(
   body: unknown,
@@ -64,7 +125,9 @@ Deno.serve(async (req) => {
     "request_message_translation",
     { p_message_id: messageId },
   );
-  if (preparedError || typeof preparedData !== "object" || preparedData === null) {
+  if (
+    preparedError || typeof preparedData !== "object" || preparedData === null
+  ) {
     console.error("translation prepare failed");
     return json({ error: "translation_unavailable" }, 500);
   }
@@ -72,8 +135,12 @@ Deno.serve(async (req) => {
   if (prepared.status === "cached") {
     return json({
       translation: prepared.translation,
-      english: prepared.english,
+      interfaceText: prepared.interfaceText,
+      mode: prepared.mode,
       sourceLang: prepared.sourceLang,
+      interfaceLang: prepared.interfaceLang,
+      explanation: prepared.explanation,
+      confidence: prepared.confidence,
       tokens: prepared.tokens,
     });
   }
@@ -94,12 +161,14 @@ Deno.serve(async (req) => {
   const text = prepared.text;
   const sourceLang = prepared.sourceLang;
   const targetLang = prepared.targetLang;
+  const interfaceLang = prepared.interfaceLang;
   const sourceHash = prepared.sourceHash;
   if (
     prepared.status !== "ready" ||
     typeof text !== "string" ||
     typeof sourceLang !== "string" ||
     typeof targetLang !== "string" ||
+    typeof interfaceLang !== "string" ||
     typeof sourceHash !== "string"
   ) {
     return json({ error: "translation_unavailable" }, 500);
@@ -109,48 +178,90 @@ Deno.serve(async (req) => {
     return json({ error: "translation_unavailable" }, 500);
   }
 
-  let llm: Response;
-  try {
-    llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_completion_tokens: 12000,
-        response_format: { type: "json_object" },
-        provider: OPENROUTER_PROVIDER,
-        messages: [
-          { role: "system", content: systemPrompt(sourceLang, targetLang) },
-          { role: "user", content: text },
-        ],
-      }),
-    });
-  } catch {
-    console.error("translation provider unreachable");
-    return json({ error: "translation_unavailable" }, 502);
-  }
-  if (!llm.ok) {
-    console.error("translation provider rejected request", { status: llm.status });
-    return json({ error: "translation_unavailable" }, 502);
-  }
+  let result: ReturnType<typeof parseProviderResult> = null;
+  let providerFailure = "unknown";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+    const retryGuidance = attempt === 0
+      ? ""
+      : `\n\nThe previous response was unusable. Re-check every contract rule. In particular, interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
+    let llm: Response;
+    try {
+      llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_completion_tokens: 12000,
+          response_format: { type: "json_object" },
+          provider: OPENROUTER_PROVIDER,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt(sourceLang, targetLang, interfaceLang) +
+                retryGuidance,
+            },
+            { role: "user", content: text },
+          ],
+        }),
+      });
+    } catch {
+      providerFailure = "unreachable";
+      continue;
+    }
+    if (!llm.ok) {
+      providerFailure = `http_${llm.status}`;
+      continue;
+    }
 
-  let payload: unknown;
-  try {
-    payload = await llm.json();
-  } catch {
-    return json({ error: "translation_unavailable" }, 502);
+    let payload: unknown;
+    try {
+      payload = await llm.json();
+    } catch {
+      providerFailure = "invalid_json";
+      continue;
+    }
+    const content = (payload as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    })?.choices?.[0]?.message?.content;
+    if (typeof content !== "string") {
+      providerFailure = "missing_content";
+      continue;
+    }
+    const candidate = parseProviderResult(
+      content,
+      text,
+      targetLang,
+      interfaceLang,
+    );
+    if (candidate === null) {
+      providerFailure = "contract_validation";
+      continue;
+    }
+    if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
+      const repaired = await repairInterfaceText(
+        candidate.translation,
+        targetLang,
+        interfaceLang,
+      );
+      if (repaired !== null) {
+        candidate.interfaceText = repaired;
+        result = candidate;
+        break;
+      }
+      providerFailure = "interface_repair";
+      continue;
+    }
+    result = candidate;
+    break;
   }
-  const content = (payload as {
-    choices?: Array<{ message?: { content?: unknown } }>;
-  })?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") {
-    return json({ error: "translation_unavailable" }, 502);
-  }
-  const result = parseProviderResult(content, text, targetLang);
   if (result === null) {
+    console.error("translation provider failed after retry", {
+      reason: providerFailure,
+    });
     return json({ error: "translation_unavailable" }, 502);
   }
 
@@ -163,10 +274,14 @@ Deno.serve(async (req) => {
       p_message_id: messageId,
       p_requester_id: userData.user.id,
       p_target_lang: targetLang,
+      p_interface_lang: interfaceLang,
       p_source_hash: sourceHash,
       p_translation_text: result.translation,
-      p_english_text: result.english,
+      p_interface_text: result.interfaceText,
       p_source_lang: result.sourceLang,
+      p_aid_mode: result.mode,
+      p_explanation: result.explanation,
+      p_confidence: result.confidence,
       p_tokens: result.tokens,
     },
   );
@@ -177,5 +292,5 @@ Deno.serve(async (req) => {
   if (completed !== true) {
     return json({ error: "translation_stale" }, 409);
   }
-  return json(result);
+  return json({ ...result, interfaceLang });
 });

@@ -127,8 +127,6 @@ where id in (
 -- operations represented by the existing RLS policies and Flutter services.
 grant select on table public.profiles to authenticated;
 revoke update on table public.profiles from authenticated;
-grant update (interface_language)
-  on table public.profiles to authenticated;
 grant select on table public.chats to authenticated;
 grant select on table public.chat_members to authenticated;
 grant update (learning_language) on table public.chat_members to authenticated;

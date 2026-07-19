@@ -13,8 +13,9 @@ class ForceOfflineNotifier extends Notifier<bool> {
   void set(bool value) => state = value;
 }
 
-final forceOfflineProvider =
-    NotifierProvider<ForceOfflineNotifier, bool>(ForceOfflineNotifier.new);
+final forceOfflineProvider = NotifierProvider<ForceOfflineNotifier, bool>(
+  ForceOfflineNotifier.new,
+);
 
 /// Emits `true` when the device is online, `false` when offline.
 ///
@@ -57,8 +58,9 @@ final onlineProvider = StreamProvider<bool>((ref) async* {
   // transient drops without flickering the banner.
   Stream<bool> debounced(Stream<bool> source) async* {
     bool? last;
-    await for (final value in source.transform(_DebounceTransformer<bool>(
-        const Duration(milliseconds: 200)))) {
+    await for (final value in source.transform(
+      _DebounceTransformer<bool>(const Duration(milliseconds: 200)),
+    )) {
       if (value != last) {
         last = value;
         yield value;
@@ -66,9 +68,7 @@ final onlineProvider = StreamProvider<bool>((ref) async* {
     }
   }
 
-  yield* debounced(
-    connectivity.onConnectivityChanged.map(resultsAreOnline),
-  );
+  yield* debounced(connectivity.onConnectivityChanged.map(resultsAreOnline));
 });
 
 /// Synchronous boolean view of [onlineProvider]. Defaults to online while

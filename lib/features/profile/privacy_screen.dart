@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/legal_links.dart';
 import '../../shared/state/privacy_settings.dart';
 import '../../shared/util/open_url.dart';
@@ -23,7 +24,7 @@ class PrivacyScreen extends ConsumerWidget {
       } catch (_) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't save privacy setting.")),
+          SnackBar(content: Text(context.l10n.couldNotSavePrivacy)),
         );
       }
     }
@@ -40,9 +41,9 @@ class PrivacyScreen extends ConsumerWidget {
           color: BlabColors.textPrimary,
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Privacy',
-          style: TextStyle(
+        title: Text(
+          context.l10n.privacy,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -58,9 +59,8 @@ class PrivacyScreen extends ConsumerWidget {
             _Card(
               children: [
                 _ToggleRow(
-                  label: 'Typing indicators',
-                  caption:
-                      "If turned off, you won't see when others are typing, and they won't see when you are.",
+                  label: context.l10n.typingIndicators,
+                  caption: context.l10n.typingIndicatorsHelp,
                   value: typing.enabled,
                   onChanged: typing.isLoaded
                       ? (v) => saveSetting(
@@ -72,9 +72,8 @@ class PrivacyScreen extends ConsumerWidget {
                 ),
                 const _RowDivider(),
                 _ToggleRow(
-                  label: 'Read receipts',
-                  caption:
-                      "If turned off, you won't see read receipts from others, and they won't see yours.",
+                  label: context.l10n.readReceipts,
+                  caption: context.l10n.readReceiptsHelp,
                   value: read.enabled,
                   onChanged: read.isLoaded
                       ? (v) => saveSetting(
@@ -88,12 +87,12 @@ class PrivacyScreen extends ConsumerWidget {
             _Card(
               children: [
                 _LinkRow(
-                  label: 'Privacy Policy',
+                  label: context.l10n.privacyPolicy,
                   onTap: () => openExternalUrl(kPrivacyPolicyUrl),
                 ),
                 const _RowDivider(),
                 _LinkRow(
-                  label: 'Terms of Use',
+                  label: context.l10n.termsOfUse,
                   onTap: () => openExternalUrl(kTermsUrl),
                 ),
               ],

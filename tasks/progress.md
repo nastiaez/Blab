@@ -81,7 +81,7 @@
 - **Scope:** US-013, US-014, US-015, US-016, US-017, US-023.
 - **Done when:**
   - Chat header: back, avatar, name, "● Online" indicator, ··· menu
-  - ··· menu: Show translations toggle + Learning language ›
+  - ··· menu: Show translations and corrections toggle + Learning language ›
   - Translations toggle hides/shows all `transl-line` rows in messages only
   - Incoming bubbles (white, left) with translation subtitle render
   - Outgoing bubbles (purple, right) with SVG double-tick (gray → purple after 1500ms)
@@ -219,13 +219,14 @@
 ---
 
 ### Step 2.7 — Translation in real chats (bilingual-authoring model) `[x]`
-- **Scope (revised 2026-07-17 by L-12):** users may write in English or their selected learning language. The edge function detects the actual authored language and normalizes each result into the viewer's learning language for the main bubble plus English beneath it. English is also a valid learning-language target. Turning translations off shows authored text and prevents new OpenRouter calls. All 11 supported target languages remain available.
+- **Scope (revised 2026-07-18 by L-15):** users may write in any language. On success, each viewer gets a learning-language top lane and interface-language bottom lane; an author who writes in neither selected language keeps the original in the bottom lane. Author mistakes in their learning language use inline correction marks, while recipients see only clean corrected output. Exact source remains authoritative and available in the View original sheet. Turning learning aids off prevents new OpenRouter calls and shows only the original. All 11 learning targets remain available; interface localization is limited to English, Ukrainian, German, and Spanish.
 - **Done when:**
-  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → Azure-hosted gpt-4o-mini); the client supplies only a message ID, the server derives source + target, and normalized English is returned separately
-  - All bubbles in supported chats (incoming + outgoing) show shimmer → target-lang main slot + tappable tokens, English original in subtitle
-  - Word popup pulls English gloss + romanization from the live translation tokens (no bundled dictionary)
-  - Failure (offline / 5xx / timeout) → muted "Translation unavailable" in main slot, English in subtitle
-  - Server-verified translations are cached in Postgres so reopening a chat doesn't re-fire the LLM; clients cannot write shared cache rows
+  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → Azure-hosted gpt-4o-mini); the client supplies only a message ID, and the server derives source, learning target, and interface locale
+  - Successful bubbles show learning output on top and interface output below, deduplicate matching lanes, and preserve an unexpected third-language original for its author
+  - Word popup pulls an interface-language gloss + romanization from the live translation tokens (no bundled dictionary)
+  - Failure (offline / 5xx / timeout) → authored text remains usable with muted "Translation unavailable" above it
+  - Retryable learning-aid failures show an error icon and isolated Retry action; tapping message padding opens an action sheet that displays the exact original beside a visibility icon without intercepting word-definition taps
+  - Server-verified learning and interface outputs are cached in Postgres by message, learning language, and interface language. Matching senders/receivers reuse translations, corrections, and `none` results; clients cannot write cache rows
 - **Progress:**
   - [x] Edge function `translate-message` implemented across all 11 `LANG_NAMES`, romanization guidance for non-Latin scripts (ta/uk/hi), JWT-verified, 2,000-character cap
   - [x] `MessageTranslator` service + `messageTranslationsProvider` per-chat cache landed (Riverpod)
@@ -234,6 +235,7 @@
   - [x] DB-side cache shipped: `message_translations` table (migration `20260607000001`, applied on remote, RLS scoped to chat members), prefetch-on-open + per-message writeback + bulk hydrate. Cold reopen reads cached rows instead of re-firing the LLM
   - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
   - [x] L-13 security controls (2026-07-17): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, Azure ZDR/data-collection-denied routing, and retirement of the unused public portfolio translator.
+  - [x] L-15 writing correction extension (2026-07-18): provider modes `translation|correction|none`, author-only inline correction marks, recipient-clean corrected output, localized author explanations, shared authorized cache/RLS, and dual learning/interface output lanes.
 
 ---
 
@@ -396,6 +398,8 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 Append one line per non-trivial edit to this file (step added, scope changed, blocker logged, step split). Format: `YYYY-MM-DD — what changed and why`.
 
+- 2026-07-18 — Removed animation between the Chats and Profile bottom tabs so switching is instantaneous like YouTube; deeper push navigation keeps its existing transitions.
+- 2026-07-18 — Fixed the first-open unread-badge race introduced by fail-closed privacy hydration: incoming messages that become visible while the saved Read receipts preference is loading now stay queued, flush together when it resolves ON, and are discarded without transport when it resolves OFF. Added ON/OFF regression coverage; focused chat/privacy/list tests pass, and the full suite reaches 137 tests with only the pre-existing invite-picker copy assertion failing.
 - 2026-05-25 — initial plan created from PRD + tech-spec.
 - 2026-05-25 — tech-spec decisions locked: Riverpod, Supabase, Sentry. Backend-dependent steps in Phase 2 now have a concrete target (Supabase Auth, Postgres, Realtime, Storage; FCM via edge function).
 - 2026-05-25 — Step 0.1 complete. Flutter 3.41.9 project scaffolded (org `sh.aswin`, name `blab`, Android-only platforms). `minSdk` set to 24 per tech-spec § Platform Targets. AVD `blab_pixel` (Pixel 7, API 34, arm64-v8a) created. `flutter analyze` clean. Debug APK installed + launched on emulator-5554; counter app rendered (screenshot `/tmp/blab-step-0.1.png`). `.gitignore` covers build/, .dart_tool/, *.iml, .idea/; `android/.gitignore` covers local.properties.

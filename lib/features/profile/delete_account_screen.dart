@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/local_account_data_store.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
@@ -50,14 +51,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
     if (usePassword) {
       if (_password.text.isEmpty) {
-        setState(() => _err = 'Enter your password to confirm');
+        setState(() => _err = context.l10n.enterPasswordToConfirm);
         return;
       }
     } else {
-      final currentEmail =
-          auth.currentUser?.email?.trim().toLowerCase() ?? '';
+      final currentEmail = auth.currentUser?.email?.trim().toLowerCase() ?? '';
       if (_emailConfirm.text.trim().toLowerCase() != currentEmail) {
-        setState(() => _err = "That doesn't match your email");
+        setState(() => _err = context.l10n.emailDoesNotMatch);
         return;
       }
     }
@@ -83,13 +83,16 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _err = SupabaseAuthService.messageFor(e);
+        _err = localizedAuthMessage(
+          context.l10n,
+          SupabaseAuthService.messageFor(e),
+        );
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _err = "Couldn't delete your account. Try again.";
+        _err = context.l10n.couldNotDeleteAccount;
       });
     }
   }
@@ -112,9 +115,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
           color: BlabColors.textPrimary,
           onPressed: _busy ? null : () => context.pop(),
         ),
-        title: const Text(
-          'Delete account',
-          style: TextStyle(
+        title: Text(
+          context.l10n.deleteAccount,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -127,11 +130,11 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
-                  'This is permanent. The following will be deleted:',
-                  style: TextStyle(
+                  context.l10n.deleteAccountPermanent,
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: BlabColors.textPrimary,
@@ -141,19 +144,19 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               ),
               const SizedBox(height: 16),
               _Card(
-                children: const [
-                  _DeleteRow(text: 'All chats and messages'),
-                  _RowDivider(),
-                  _DeleteRow(text: 'Your profile'),
-                  _RowDivider(),
-                  _DeleteRow(text: 'Your settings and preferences'),
+                children: [
+                  _DeleteRow(text: context.l10n.allChatsMessages),
+                  const _RowDivider(),
+                  _DeleteRow(text: context.l10n.yourProfile),
+                  const _RowDivider(),
+                  _DeleteRow(text: context.l10n.yourSettings),
                 ],
               ),
               const SizedBox(height: 22),
               if (usePassword)
                 PasswordField(
                   controller: _password,
-                  label: 'Confirm with password',
+                  label: context.l10n.confirmWithPassword,
                   errorText: _err,
                   autofocus: true,
                   onChanged: (_) {
@@ -163,7 +166,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               else
                 BlabTextField(
                   controller: _emailConfirm,
-                  label: 'Type $email to confirm',
+                  label: context.l10n.typeEmailToConfirm(email),
                   keyboardType: TextInputType.emailAddress,
                   errorText: _err,
                   autofocus: true,
@@ -190,12 +193,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2.4,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white),
+                              Colors.white,
+                            ),
                           ),
                         )
-                      : const Text(
-                          'Delete forever',
-                          style: TextStyle(
+                      : Text(
+                          context.l10n.deleteForever,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -207,9 +211,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               Center(
                 child: TextButton(
                   onPressed: _busy ? null : () => context.pop(),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
+                  child: Text(
+                    context.l10n.cancel,
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: BlabColors.textMuted,
@@ -267,8 +271,11 @@ class _DeleteRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_outlined,
-              size: 20, color: Colors.red.shade500),
+          Icon(
+            Icons.warning_amber_outlined,
+            size: 20,
+            color: Colors.red.shade500,
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(

@@ -94,6 +94,10 @@ final typingIndicatorsEnabledProvider = Provider<bool>(
   (ref) => ref.watch(typingIndicatorsProvider).canTransmit,
 );
 
+final readReceiptsTransportStateProvider = Provider<PrivacySettingState>(
+  (ref) => ref.watch(readReceiptsProvider),
+);
+
 final readReceiptsEnabledProvider = Provider<bool>(
-  (ref) => ref.watch(readReceiptsProvider).canTransmit,
+  (ref) => ref.watch(readReceiptsTransportStateProvider).canTransmit,
 );

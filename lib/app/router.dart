@@ -25,6 +25,7 @@ import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/interface_language_screen.dart';
 import '../features/profile/privacy_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../l10n/l10n.dart';
 import 'dev_menu.dart';
 
 const _publicPaths = <String>{
@@ -107,7 +108,8 @@ final GoRouter blabRouter = GoRouter(
           try {
             await Supabase.instance.client.auth.refreshSession();
           } catch (_) {}
-          showAppSnack('Email changed ✓');
+          final context = appMessengerKey.currentContext;
+          showAppSnack(context?.l10n.emailChanged ?? 'Email changed');
         }
       }
       final signedIn = _currentSessionOrNull() != null;
@@ -155,13 +157,20 @@ final GoRouter blabRouter = GoRouter(
       path: '/auth/email-changed',
       redirect: (context, state) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          showAppSnack('Email changed ✓');
+          final context = appMessengerKey.currentContext;
+          showAppSnack(context?.l10n.emailChanged ?? 'Email changed');
         });
         final signedIn = _currentSessionOrNull() != null;
         return signedIn ? '/chats' : '/auth?mode=login';
       },
     ),
-    GoRoute(path: '/chats', builder: (context, state) => const ChatsScreen()),
+    GoRoute(
+      path: '/chats',
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        child: const ChatsScreen(),
+      ),
+    ),
     GoRoute(
       path: '/chats/new',
       builder: (context, state) => const NewChatScreen(),
@@ -212,7 +221,10 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/profile',
-      builder: (context, state) => const ProfileScreen(),
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        child: const ProfileScreen(),
+      ),
     ),
     GoRoute(
       path: '/profile/edit',

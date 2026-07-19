@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 
 /// PRD US-004 — confirmation screen.
 class ForgotPasswordSentScreen extends StatelessWidget {
@@ -29,26 +30,36 @@ class ForgotPasswordSentScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('📬', style: TextStyle(fontSize: 56), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
               const Text(
-                'Check your email',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                '📬',
+                style: TextStyle(fontSize: 56),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.l10n.checkYourEmail,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
               Text(
-                'We sent a reset link to\n$email',
-                style: const TextStyle(fontSize: 14, color: BlabColors.textMuted),
+                context.l10n.resetLinkSent(email),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: BlabColors.textMuted,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               Center(
                 child: TextButton(
                   onPressed: () => context.go('/auth?mode=login'),
-                  child: const Text(
-                    'Back to log in',
-                    style: TextStyle(
+                  child: Text(
+                    context.l10n.backToLogin,
+                    style: const TextStyle(
                       color: BlabColors.brand,
                       fontWeight: FontWeight.w600,
                     ),

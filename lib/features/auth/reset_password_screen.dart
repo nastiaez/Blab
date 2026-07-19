@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/widgets/picker_card.dart';
@@ -40,15 +41,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final cf = _confirm.text;
     final strength = estimatePasswordStrength(pw);
     if (pw.length < 6) {
-      setState(() => _err = 'Password must be at least 6 characters');
+      setState(() => _err = context.l10n.passwordMinLength);
       return;
     }
     if (strength == PasswordStrength.weak) {
-      setState(() => _err = 'Choose a stronger password');
+      setState(() => _err = context.l10n.chooseStrongerPassword);
       return;
     }
     if (pw != cf) {
-      setState(() => _err = 'Passwords don\'t match');
+      setState(() => _err = context.l10n.passwordsDoNotMatch);
       return;
     }
     setState(() {
@@ -59,13 +60,16 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     try {
       await auth.updatePassword(pw);
       if (!mounted) return;
-      showAppSnack('Password updated ✓');
+      showAppSnack(context.l10n.passwordUpdated);
       context.go('/chats');
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _err = SupabaseAuthService.messageFor(e);
+        _err = localizedAuthMessage(
+          context.l10n,
+          SupabaseAuthService.messageFor(e),
+        );
       });
     }
   }
@@ -85,19 +89,25 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Set a new password',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+              Text(
+                context.l10n.setNewPassword,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Pick something you\'ll remember. Use at least 6 characters.',
-                style: TextStyle(fontSize: 14, color: BlabColors.textMuted),
+              Text(
+                context.l10n.newPasswordHelp,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: BlabColors.textMuted,
+                ),
               ),
               const SizedBox(height: 28),
               PasswordField(
                 controller: _password,
-                label: 'New password',
+                label: context.l10n.newPassword,
                 errorText: _err,
                 onChanged: (_) {
                   if (_err != null) setState(() => _err = null);
@@ -109,14 +119,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               const SizedBox(height: 16),
               PasswordField(
                 controller: _confirm,
-                label: 'Confirm new password',
+                label: context.l10n.confirmNewPassword,
                 onChanged: (_) {
                   if (_err != null) setState(() => _err = null);
                 },
               ),
               const SizedBox(height: 24),
               BrandButton(
-                label: 'Save new password',
+                label: context.l10n.saveNewPassword,
                 onPressed: _save,
                 loading: _busy,
               ),

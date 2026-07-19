@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
-import '../../../features/chat/state/chat_state.dart';
-import '../../../features/chat/state/message_translations_state.dart';
+import '../../../l10n/l10n.dart';
 import '../../../features/chat/state/typing_state.dart';
-import '../../../shared/data/translation_support.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/util/relative_time.dart';
 
@@ -20,44 +18,6 @@ class ChatListTile extends ConsumerWidget {
     final partnerTyping =
         !chat.isNewInvite &&
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
-    // Resolve the preview text in the viewer's learning language when
-    // we have a last message id, the learning language is one we
-    // translate, and there's a cached translation (either in memory or
-    // hydrated from the DB via the chat screen's prefetch).
-    final code = chat.learningLanguage.code;
-    final showTranslations = ref.watch(showTranslationsProvider(chat.id));
-    String previewText = chat.lastMessage;
-    if (shouldRequestTranslation(
-          showTranslations: showTranslations,
-          learningLanguageCode: code,
-          text: chat.lastMessage,
-          sentAt: chat.timestamp,
-          translationCutoffAt: chat.translationCutoffAt,
-        ) &&
-        chat.lastMessageId != null &&
-        !chat.isNewInvite) {
-      // Watch the translation cache so the tile rebuilds when a fetch
-      // lands. Fire ensure() so the tile can populate its own preview
-      // even when the chat screen hasn't been opened yet.
-      final key = '${chat.lastMessageId}|$code';
-      final entry = ref.watch(messageTranslationsProvider(chat.id))[key];
-      final ready = entry?.value;
-      if (ready != null) {
-        previewText = ready.translation;
-      } else {
-        Future.microtask(() {
-          if (!ref.read(showTranslationsProvider(chat.id))) return;
-          ref
-              .read(messageTranslationsProvider(chat.id).notifier)
-              .ensure(
-                messageId: chat.lastMessageId!,
-                text: chat.lastMessage,
-                targetLang: code,
-              );
-        });
-      }
-    }
-
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -102,7 +62,9 @@ class ChatListTile extends ConsumerWidget {
                         const _NewPill()
                       else
                         Text(
-                          relativeTime(chat.timestamp),
+                          relativeTime(chat.timestamp) == 'Now'
+                              ? context.l10n.now
+                              : relativeTime(chat.timestamp),
                           style: const TextStyle(
                             fontSize: 12,
                             color: BlabColors.textMuted,
@@ -117,10 +79,10 @@ class ChatListTile extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           chat.isNewInvite
-                              ? 'New connection · say hi'
+                              ? context.l10n.newConnectionSayHi
                               : partnerTyping
-                              ? 'typing...'
-                              : previewText,
+                              ? context.l10n.typing
+                              : chat.lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -190,9 +152,9 @@ class _NewPill extends StatelessWidget {
         color: BlabColors.brand,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Text(
-        'New',
-        style: TextStyle(
+      child: Text(
+        context.l10n.newLabel,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.w700,

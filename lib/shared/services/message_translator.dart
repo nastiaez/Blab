@@ -5,17 +5,29 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/message_token.dart';
 
+enum LearningAidMode { translation, correction, none }
+
+enum CorrectionConfidence { low, medium, high }
+
 class MessageTranslation {
   const MessageTranslation({
     required this.translation,
-    required this.englishText,
+    required this.interfaceText,
+    required this.interfaceLang,
     required this.sourceLang,
     required this.tokens,
+    this.mode = LearningAidMode.translation,
+    this.explanation,
+    this.confidence,
   });
   final String translation;
-  final String englishText;
+  final String interfaceText;
+  final String interfaceLang;
   final String sourceLang;
   final List<MessageToken> tokens;
+  final LearningAidMode mode;
+  final String? explanation;
+  final CorrectionConfidence? confidence;
 }
 
 class MessageTranslationFailed implements Exception {
@@ -56,17 +68,44 @@ class MessageTranslator {
       throw MessageTranslationFailed('invoke_failed');
     }
     final translation = raw['translation'];
-    final englishText = raw['english'];
+    final interfaceText = raw['interfaceText'];
+    final rawMode = raw['mode'];
+    final interfaceLang = raw['interfaceLang'];
     final detectedSourceLang = raw['sourceLang'];
+    final rawExplanation = raw['explanation'];
+    final rawConfidence = raw['confidence'];
     final rawTokens = raw['tokens'];
     if (translation is! String || translation.trim().isEmpty) {
       throw MessageTranslationFailed('missing_translation');
     }
-    if (englishText is! String || englishText.trim().isEmpty) {
-      throw MessageTranslationFailed('missing_english');
+    if (interfaceText is! String || interfaceText.trim().isEmpty) {
+      throw MessageTranslationFailed('missing_interface_text');
+    }
+    if (interfaceLang is! String ||
+        !const {'en', 'uk', 'de', 'es'}.contains(interfaceLang)) {
+      throw MessageTranslationFailed('missing_interface_language');
     }
     if (detectedSourceLang is! String || detectedSourceLang.isEmpty) {
       throw MessageTranslationFailed('missing_source_language');
+    }
+    final mode = switch (rawMode) {
+      'translation' => LearningAidMode.translation,
+      'correction' => LearningAidMode.correction,
+      'none' => LearningAidMode.none,
+      _ => throw MessageTranslationFailed('missing_learning_aid_mode'),
+    };
+    final confidence = switch (rawConfidence) {
+      'low' => CorrectionConfidence.low,
+      'medium' => CorrectionConfidence.medium,
+      'high' => CorrectionConfidence.high,
+      null => null,
+      _ => throw MessageTranslationFailed('invalid_correction_confidence'),
+    };
+    if (mode == LearningAidMode.correction &&
+        (rawExplanation is! String ||
+            rawExplanation.trim().isEmpty ||
+            confidence == null)) {
+      throw MessageTranslationFailed('missing_correction_details');
     }
     final tokens = <MessageToken>[];
     if (rawTokens is List) {
@@ -78,7 +117,7 @@ class MessageTranslator {
         tokens.add(
           MessageToken(
             text: tokenText,
-            english: t['english'] as String?,
+            gloss: t['gloss'] as String?,
             romanization: t['roman'] as String?,
             isContent: isContent,
           ),
@@ -87,9 +126,15 @@ class MessageTranslator {
     }
     return MessageTranslation(
       translation: translation,
-      englishText: englishText,
+      interfaceText: interfaceText,
+      interfaceLang: interfaceLang,
       sourceLang: detectedSourceLang,
       tokens: tokens,
+      mode: mode,
+      explanation: mode == LearningAidMode.correction
+          ? (rawExplanation as String).trim()
+          : null,
+      confidence: mode == LearningAidMode.correction ? confidence : null,
     );
   }
 }

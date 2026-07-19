@@ -51,6 +51,10 @@ final isSignedInProvider = Provider<bool>((ref) {
 /// still loading its initial value.
 final currentUserIdProvider = Provider<String?>((ref) {
   final session = ref.watch(authSessionProvider).value;
-  return session?.user.id ??
-      ref.watch(supabaseClientProvider).auth.currentUser?.id;
+  if (session?.user.id case final id?) return id;
+  try {
+    return ref.watch(supabaseClientProvider).auth.currentUser?.id;
+  } catch (_) {
+    return null;
+  }
 });

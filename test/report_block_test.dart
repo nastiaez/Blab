@@ -97,6 +97,9 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.text('Report'), findsOneWidget);
+    expect(find.text('View original'), findsOneWidget);
+    expect(find.text('hello'), findsOneWidget);
+    expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     expect(find.text('Edit'), findsNothing); // incoming: no edit
   });
 

@@ -6,13 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 const _messageId = '10000000-0000-4000-8000-000000000001';
 
 Map<String, dynamic> _success() => {
+  'mode': 'translation',
   'translation': 'Hello!',
-  'english': 'Hello!',
+  'interfaceText': 'Привіт!',
+  'interfaceLang': 'uk',
   'sourceLang': 'ta',
+  'explanation': null,
+  'confidence': null,
   'tokens': [
     {
       'text': 'வணக்கம்',
-      'english': 'Hello',
+      'gloss': 'Привіт',
       'roman': 'Vaṇakkam',
       'isContent': true,
     },
@@ -28,15 +32,39 @@ void main() {
 
     final result = await translator.translate(messageId: _messageId);
     expect(result.translation, 'Hello!');
-    expect(result.englishText, 'Hello!');
+    expect(result.interfaceText, 'Привіт!');
+    expect(result.interfaceLang, 'uk');
     expect(result.sourceLang, 'ta');
+    expect(result.mode, LearningAidMode.translation);
     expect(result.tokens, hasLength(2));
     expect(result.tokens.first.text, 'வணக்கம்');
-    expect(result.tokens.first.english, 'Hello');
+    expect(result.tokens.first.gloss, 'Привіт');
     expect(result.tokens.first.romanization, 'Vaṇakkam');
     expect(result.tokens.first.isContent, isTrue);
     expect(result.tokens.last.text, '!');
     expect(result.tokens.last.isContent, isFalse);
+  });
+
+  test('parses a correction with explanation and confidence', () async {
+    final translator = MessageTranslator(
+      invoke: ({required String messageId}) async => {
+        'mode': 'correction',
+        'translation': 'Machst du ...?',
+        'interfaceText': 'What are you doing?',
+        'interfaceLang': 'en',
+        'sourceLang': 'de',
+        'explanation': 'The verb must agree with "du".',
+        'confidence': 'medium',
+        'tokens': const [],
+      },
+    );
+
+    final result = await translator.translate(messageId: _messageId);
+    expect(result.mode, LearningAidMode.correction);
+    expect(result.translation, 'Machst du ...?');
+    expect(result.interfaceText, 'What are you doing?');
+    expect(result.explanation, 'The verb must agree with "du".');
+    expect(result.confidence, CorrectionConfidence.medium);
   });
 
   test('sends only the trimmed message ID to the invoker', () async {

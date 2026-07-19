@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
 
 /// Shown in a chat that has no messages yet: who learns what, plus a nudge
@@ -32,24 +33,24 @@ class FirstMessageEmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'You learn ${chat.learningLanguage.name}',
+                context.l10n.youLearnLanguage(chat.learningLanguage.name),
                 textAlign: TextAlign.center,
                 style: lineStyle,
               ),
               const SizedBox(height: 6),
               Text(
-                '${chat.partnerName} learns ${chat.partnerLearningLanguage.name}',
+                context.l10n.personLearnsLanguage(
+                  chat.partnerLearningLanguage.name,
+                  chat.partnerName,
+                ),
                 textAlign: TextAlign.center,
                 style: lineStyle,
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Send any message to start.',
+              Text(
+                context.l10n.sendAnyMessage,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: BlabColors.textMuted,
-                ),
+                style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
               ),
             ],
           ),

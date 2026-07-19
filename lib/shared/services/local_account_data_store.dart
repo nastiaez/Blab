@@ -12,6 +12,7 @@ class LocalAccountDataStore {
       (key) =>
           key == kPrivacyTypingIndicatorsKey ||
           key == kPrivacyReadReceiptsKey ||
+          key.startsWith(kAccountInterfaceLanguageKeyPrefix) ||
           key.startsWith(kPendingSendsKeyPrefix),
     );
     await Future.wait(keys.map(preferences.remove));

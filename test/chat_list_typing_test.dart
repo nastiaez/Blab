@@ -1,4 +1,3 @@
-import 'package:blab/features/chat/state/chat_state.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
 import 'package:blab/features/chats/widgets/chat_list_tile.dart';
@@ -67,7 +66,9 @@ void main() {
     expect(find.text('Last message'), findsOneWidget);
   });
 
-  testWidgets('translation toggle gates preview AI requests', (tester) async {
+  testWidgets('chat preview preserves authored text without AI requests', (
+    tester,
+  ) async {
     var calls = 0;
     final chat = _chat(withLastMessageId: true);
     final container = ProviderContainer(
@@ -76,7 +77,8 @@ void main() {
           calls++;
           return MessageTranslation(
             translation: 'Letzte Nachricht',
-            englishText: 'Last message',
+            interfaceText: 'Last message',
+            interfaceLang: 'en',
             sourceLang: 'en',
             tokens: const [],
           );
@@ -84,8 +86,6 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    container.read(showTranslationsProvider(chat.id).notifier).toggle();
-
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -97,13 +97,8 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(calls, 0);
     expect(find.text('Last message'), findsOneWidget);
-
-    container.read(showTranslationsProvider(chat.id).notifier).toggle();
-    await tester.pump();
-    await tester.pump();
-    expect(calls, 1);
-    expect(find.text('Letzte Nachricht'), findsOneWidget);
+    expect(calls, 0);
+    expect(find.text('Letzte Nachricht'), findsNothing);
   });
 }

@@ -30,14 +30,12 @@ class Message {
   /// partner sent it.
   final bool isOutgoing;
 
-  /// The text in the language it was typed in. For incoming messages this is
-  /// usually the target language; for outgoing it's whichever language the
-  /// user typed.
+  /// Exact authored text. This is always the primary bubble content and is
+  /// never replaced by either interface- or learning-language output.
   final String originalText;
 
-  /// The interface-language gloss shown below incoming bubbles. For outgoing
-  /// messages this is generally an empty string (we don't translate the user
-  /// to themselves in v1).
+  /// Legacy hydrated translation data. Live translations use the secure,
+  /// locale-scoped message translation cache instead.
   final String translation;
 
   /// Optional per-word breakdown. Present on incoming target-language

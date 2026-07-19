@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/widgets/picker_card.dart';
@@ -29,8 +30,9 @@ class _InvitePickLanguageScreenState
   BlabLanguage? _picked;
   bool _claiming = false;
 
-  String get _ctaLabel =>
-      _picked == null ? 'Say hello' : 'Say ${_picked!.hello}';
+  String _ctaLabel(BuildContext context) => _picked == null
+      ? context.l10n.sayHello
+      : context.l10n.sayWord(_picked!.hello);
 
   Future<void> _onContinue() async {
     final picked = _picked;
@@ -62,7 +64,7 @@ class _InvitePickLanguageScreenState
       if (isTerminalInviteClaimFailure(failure)) {
         context.go(continuation.resolverLocation);
       } else {
-        showAppSnack(inviteClaimMessage(failure));
+        showAppSnack(localizedInviteClaimMessage(context.l10n, failure));
       }
     } finally {
       if (mounted) setState(() => _claiming = false);
@@ -80,7 +82,7 @@ class _InvitePickLanguageScreenState
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: context.l10n.back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
           onPressed: () => context.pop(),
@@ -95,18 +97,18 @@ class _InvitePickLanguageScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Pick a language',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.pickLanguage,
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: BlabColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'We\'ll translate all messages into this language. Switch it whenever you like.',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.pickLanguageHelp,
+                    style: const TextStyle(
                       fontSize: 14,
                       color: BlabColors.textMuted,
                       height: 1.5,
@@ -137,7 +139,7 @@ class _InvitePickLanguageScreenState
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
               child: BrandButton(
-                label: _ctaLabel,
+                label: _ctaLabel(context),
                 onPressed: canContinue ? _onContinue : null,
                 loading: _claiming,
               ),

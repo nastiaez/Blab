@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../../shared/state/chat_list_state.dart';
 
 class InviteContinuation {
@@ -83,6 +84,20 @@ String inviteClaimMessage(InviteClaimFailure failure) {
     InviteClaimFailure.invalidLanguage =>
       'Choose a supported language and try again.',
     InviteClaimFailure.unknown => "Couldn't accept the invite. Try again.",
+  };
+}
+
+String localizedInviteClaimMessage(
+  AppLocalizations localizations,
+  InviteClaimFailure failure,
+) {
+  return switch (failure) {
+    InviteClaimFailure.expired => localizations.inviteClaimExpired,
+    InviteClaimFailure.alreadyClaimed => localizations.inviteClaimUsed,
+    InviteClaimFailure.notFound => localizations.inviteNotFound,
+    InviteClaimFailure.selfClaim ||
+    InviteClaimFailure.invalidLanguage => localizations.inviteClaimInvalid,
+    InviteClaimFailure.unknown => localizations.inviteClaimFailed,
   };
 }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
+
 enum PasswordStrength { empty, weak, fair, strong }
 
 PasswordStrength estimatePasswordStrength(String pw) {
@@ -42,9 +44,9 @@ class PasswordStrengthBar extends StatelessWidget {
       _ => Colors.grey.shade300,
     };
     final String label = switch (s) {
-      PasswordStrength.weak => 'Weak',
-      PasswordStrength.fair => 'Fair',
-      PasswordStrength.strong => 'Strong',
+      PasswordStrength.weak => context.l10n.passwordWeak,
+      PasswordStrength.fair => context.l10n.passwordFair,
+      PasswordStrength.strong => context.l10n.passwordStrong,
       _ => '',
     };
 
@@ -65,12 +67,14 @@ class PasswordStrengthBar extends StatelessWidget {
             if (i < 2) const SizedBox(width: 6),
           ],
           const SizedBox(width: 10),
-          Text(label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-              )),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
         ],
       ),
     );

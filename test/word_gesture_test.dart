@@ -28,6 +28,7 @@ class _FakeTtsService implements TtsService {
 
 Widget _harness({
   required VoidCallback onLongPress,
+  VoidCallback? onTap,
   VoidCallback? onFailedTap,
   bool isFailed = false,
 }) {
@@ -39,24 +40,29 @@ Widget _harness({
           child: MessageInteractionTarget(
             isFailed: isFailed,
             onLongPress: onLongPress,
+            onTap: onTap ?? () {},
             onFailedTap: onFailedTap ?? () {},
-            child: const MessageText(
-              text: 'காலை எப்படி',
-              tokens: [
-                MessageToken(
-                  text: 'காலை',
-                  romanization: 'kālai',
-                  english: 'morning',
-                ),
-                MessageToken(text: ' ', isContent: false),
-                MessageToken(
-                  text: 'எப்படி',
-                  romanization: 'eppadi',
-                  english: 'how',
-                ),
-              ],
-              languageCode: 'ta',
-              style: TextStyle(fontSize: 16, color: Colors.black),
+            child: const Padding(
+              key: ValueKey('message-padding'),
+              padding: EdgeInsets.all(20),
+              child: MessageText(
+                text: 'காலை எப்படி',
+                tokens: [
+                  MessageToken(
+                    text: 'காலை',
+                    romanization: 'kālai',
+                    gloss: 'morning',
+                  ),
+                  MessageToken(text: ' ', isContent: false),
+                  MessageToken(
+                    text: 'எப்படி',
+                    romanization: 'eppadi',
+                    gloss: 'how',
+                  ),
+                ],
+                languageCode: 'ta',
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
             ),
           ),
         ),
@@ -106,6 +112,23 @@ void main() {
       findsNothing,
       reason: 'long-press must not also open the word popup',
     );
+  });
+
+  testWidgets('tapping non-word message space opens the action sheet', (
+    tester,
+  ) async {
+    var tapped = false;
+    await tester.pumpWidget(
+      _harness(onLongPress: () {}, onTap: () => tapped = true),
+    );
+
+    await tester.tapAt(
+      tester.getTopLeft(find.byKey(const ValueKey('message-padding'))) +
+          const Offset(4, 4),
+    );
+    await tester.pump();
+
+    expect(tapped, isTrue);
   });
 
   testWidgets(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
 
 /// Bottom sheet for changing the *learning* language of a chat. PRD US-022.
@@ -44,11 +45,7 @@ Future<BlabLanguage?> showLearningLanguageSheet(
 /// can hold the ordered list + current selection without prop-drilling.
 extension _SheetInherit on Widget {
   Widget inheritOrdered(List<BlabLanguage> ordered, BlabLanguage current) {
-    return _OrderedLanguages(
-      ordered: ordered,
-      current: current,
-      child: this,
-    );
+    return _OrderedLanguages(ordered: ordered, current: current, child: this);
   }
 }
 
@@ -108,8 +105,7 @@ class _SheetBody extends StatelessWidget {
                         final lang = ordered[i];
                         final selected = lang.code == current.code;
                         return ListTile(
-                          tileColor:
-                              selected ? BlabColors.selectedTint : null,
+                          tileColor: selected ? BlabColors.selectedTint : null,
                           title: Text(
                             lang.name,
                             style: TextStyle(
@@ -147,8 +143,7 @@ class _SheetBody extends StatelessWidget {
                         top: Radius.circular(20),
                       ),
                     ),
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 10, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -164,18 +159,18 @@ class _SheetBody extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        const Text(
-                          'Learning language',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.learningLanguage,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: BlabColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          "Pick the language you want to learn in this chat. You can change it anytime.",
-                          style: TextStyle(
+                        Text(
+                          context.l10n.learningLanguageHelp,
+                          style: const TextStyle(
                             fontSize: 13,
                             color: BlabColors.textMuted,
                             height: 1.35,
@@ -222,9 +217,9 @@ class _SheetBody extends StatelessWidget {
                   ),
                 ),
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
+                child: Text(
+                  context.l10n.done,
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,

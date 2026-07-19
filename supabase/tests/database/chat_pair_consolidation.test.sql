@@ -30,13 +30,13 @@ values (
 insert into public.message_translations (
   message_id,
   target_lang,
+  interface_lang,
   translation_text,
-  english_text,
   source_lang,
   source_hash
 ) values (
-  '42000000-0000-4000-8000-000000000002', 'de', 'Duplikatverlauf',
-  'duplicate history', 'en',
+  '42000000-0000-4000-8000-000000000002', 'de', 'en', 'Duplikatverlauf',
+  'en',
   encode(
     extensions.digest(convert_to('duplicate history', 'UTF8'), 'sha256'),
     'hex'

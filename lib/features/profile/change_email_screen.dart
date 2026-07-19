@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
 import '../auth/widgets/blab_text_field.dart';
@@ -40,15 +41,15 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
     final current = auth.currentUser?.email?.trim().toLowerCase() ?? '';
     final next = _email.text.trim().toLowerCase();
     if (next.isEmpty) {
-      setState(() => _err = 'Enter your new email');
+      setState(() => _err = context.l10n.enterNewEmail);
       return;
     }
     if (!_isValidEmail(next)) {
-      setState(() => _err = 'Enter a valid email address');
+      setState(() => _err = context.l10n.enterValidEmail);
       return;
     }
     if (next == current) {
-      setState(() => _err = "That's already your email");
+      setState(() => _err = context.l10n.emailAlreadyUsed);
       return;
     }
     setState(() {
@@ -66,7 +67,10 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _err = SupabaseAuthService.messageFor(e);
+        _err = localizedAuthMessage(
+          context.l10n,
+          SupabaseAuthService.messageFor(e),
+        );
       });
     }
   }
@@ -87,9 +91,9 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
           color: BlabColors.textPrimary,
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Change email',
-          style: TextStyle(
+        title: Text(
+          context.l10n.changeEmail,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -100,13 +104,11 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
             TextButton(
               onPressed: _busy ? null : _send,
               child: Text(
-                'Send',
+                context.l10n.send,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: _busy
-                      ? BlabColors.textMuted
-                      : BlabColors.brand,
+                  color: _busy ? BlabColors.textMuted : BlabColors.brand,
                 ),
               ),
             ),
@@ -149,7 +151,7 @@ class _FormBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _SectionLabel('CURRENT EMAIL'),
+        _SectionLabel(context.l10n.currentEmail),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -159,8 +161,11 @@ class _FormBody extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.alternate_email,
-                  size: 20, color: BlabColors.textMuted),
+              const Icon(
+                Icons.alternate_email,
+                size: 20,
+                color: BlabColors.textMuted,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -178,8 +183,8 @@ class _FormBody extends StatelessWidget {
         const SizedBox(height: 22),
         BlabTextField(
           controller: emailController,
-          label: 'New email',
-          hint: 'you@example.com',
+          label: context.l10n.newEmail,
+          hint: context.l10n.emailHint,
           keyboardType: TextInputType.emailAddress,
           errorText: err,
           autofocus: true,
@@ -187,11 +192,11 @@ class _FormBody extends StatelessWidget {
           onChanged: (_) => onChanged(),
         ),
         const SizedBox(height: 12),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            "We'll send a confirmation link. Your old email stays active until you confirm.",
-            style: TextStyle(
+            context.l10n.emailChangeHelp,
+            style: const TextStyle(
               fontSize: 13,
               color: BlabColors.textMuted,
               height: 1.4,
@@ -216,16 +221,19 @@ class _SentBody extends StatelessWidget {
         children: [
           const Text('📬', style: TextStyle(fontSize: 56)),
           const SizedBox(height: 20),
-          const Text(
-            'Check your inbox',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          Text(
+            context.l10n.checkYourInbox,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Text(
-            'We sent a confirmation link to\n$newEmail. Tap it to finish the change.',
+            context.l10n.emailConfirmationSent(newEmail),
             textAlign: TextAlign.center,
             style: const TextStyle(
-                fontSize: 14, color: BlabColors.textMuted, height: 1.4),
+              fontSize: 14,
+              color: BlabColors.textMuted,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 28),
           SizedBox(
@@ -239,9 +247,12 @@ class _SentBody extends StatelessWidget {
                 ),
               ),
               onPressed: () => context.pop(),
-              child: const Text(
-                'Done',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              child: Text(
+                context.l10n.done,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
