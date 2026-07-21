@@ -3,9 +3,9 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Next item: `L-18`. `L-17` is implementation-complete with final physical
-Android verification deferred to the end-of-launch device pass; `L-04` remains
-externally blocked.
+Active item: none. Next item: `L-19` (`Not started`). `L-17` is `Awaiting
+manual`, with final physical Android verification deferred to the end-of-launch
+device pass; `L-04` remains externally blocked.
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
@@ -17,7 +17,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 1 | L-01 | P0-04 | Remove authenticated development pairing and verify consent-only membership creation | L-00 | Complete | [`items/L-01.md`](./items/L-01.md) |
 | 2 | L-02 | P0-01 | Remove production dev entry points and boot into the real product journey | L-01 | Complete | [`items/L-02.md`](./items/L-02.md) |
 | 3 | L-03 | P0-02 | Preserve and resume invite state through signup/sign-in | L-02 | Complete | [`items/L-03.md`](./items/L-03.md) |
-| 4 | L-04 | P0-03 | Configure release signing and verified Android App Links | L-03 | Blocked | [`items/L-04.md`](./items/L-04.md) |
+| 4 | L-04 | P0-03 | Configure release signing and verified Android App Links; register the Play app-signing certificate with production Google OAuth | L-03 | Blocked | [`items/L-04.md`](./items/L-04.md) |
 | 5 | L-05 | P0-05 | Make password change real and provider-aware | L-02 | Complete | [`items/L-05.md`](./items/L-05.md) |
 | 6 | L-06 | P0-06 | Enforce privacy toggles at transport boundaries | L-00 | Complete | [`items/L-06.md`](./items/L-06.md) |
 | 7 | L-07 | P0-07 | Complete operator policy, account deletion web path, and moderation operations | L-00 | Complete | [`items/L-07.md`](./items/L-07.md) |
@@ -35,19 +35,19 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 14 | L-14 | P1-01 | Implement or remove profile and photo editing from launch scope | L-00 | Complete | [`items/L-14.md`](./items/L-14.md) |
 | 15 | L-15 | P1-02 | Implement persisted interface localization or remove unsupported claims | L-00 | Complete | [`items/L-15.md`](./items/L-15.md) |
 | 16 | L-16 | P1-13 | Add message-history pagination, page-aware translation hydration, and correct reconnect/offline behavior | L-09, L-13 | Complete | [`items/L-16.md`](./items/L-16.md) |
-| 17 | L-17 | P1-06 | Approve and implement notifications, or explicitly constrain the launch | L-00 | Awaiting final physical test | [`items/L-17.md`](./items/L-17.md) |
-| 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Not started | `items/L-18.md` |
+| 17 | L-17 | P1-06 | Approve and implement notifications, or explicitly constrain the launch | L-00 | Awaiting manual | [`items/L-17.md`](./items/L-17.md) |
+| 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Complete | [`items/L-18.md`](./items/L-18.md) |
 | 24 | L-24 | Follow-up | Repair Android warm invite-link routing; received links must navigate while Blab is already open | L-03, L-04 | Not started | `items/L-24.md` |
 
 ## Release hardening
 
 | Order | Work ID | Audit ID | Scope | Depends on | Status | Work record |
 | ---: | --- | --- | --- | --- | --- | --- |
-| 19 | L-19 | P2 | Remove raw errors, decide Android backup policy, reconcile release metadata, update deprecated Supabase local config, and make client grants reproducible from migrations | L-00 | Not started | `items/L-19.md` |
+| 19 | L-19 | P2 | Remove raw errors, decide Android backup policy, reconcile release metadata, update deprecated Supabase local config, stabilize local service versions/cold starts, and make client grants reproducible from migrations | L-00 | Not started | `items/L-19.md` |
 | 20 | L-20 | P2 | Add CI and critical integration/release test coverage | L-03, L-08, L-13 | Not started | `items/L-20.md` |
 | 21 | L-21 | P2 | Reconcile PRD, tech spec, progress, privacy, Data Safety, and store listing | L-04, L-07, L-12, L-14, L-15, L-17 | Not started | `items/L-21.md` |
 | 22 | L-22 | P2 | Produce final store assets, reviewer access, and submission package | L-21 | Not started | `items/L-22.md` |
-| 23 | L-23 | All | Repeat full audit against the Play-signed build and deployed production services | L-01 through L-22 | Not started | `items/L-23.md` |
+| 23 | L-23 | All | Repeat full audit against the Play-signed build and deployed production services, including physical startup/ANR and OAuth checks | L-01 through L-22 | Not started | `items/L-23.md` |
 
 ## Backlog rules
 

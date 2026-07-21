@@ -6,24 +6,24 @@ No Firebase or service-account secrets belong in Git.
 
 ## 1. Create the Firebase Android app
 
-1. In Firebase Console, create or select the production project.
+1. In Firebase Console, create or select the matching staging or production
+   project.
 2. Add an Android app with package name `blab.nastia.ez`.
 3. Download `google-services.json` and place it at
-   `android/app/google-services.json`. This environment-specific file is
-   gitignored and must be present for Android builds.
+   `env/firebase/<environment>/google-services.json`. The guarded environment
+   helper validates and copies it into the gitignored Android build location.
 
-Local Android runs automatically load that file through Firebase's Google
-Services Gradle plugin:
+Local Android runs disable Firebase and do not register a production token:
 
 ```bash
 scripts/local_test.sh android emulator-5554
 ```
 
-Release builds must include it explicitly alongside Sentry configuration:
+Run staging or build production with its matching configuration:
 
 ```bash
-flutter build appbundle --release \
-  --dart-define-from-file=env/sentry.json
+scripts/blab_environment.sh run staging emulator-5554
+scripts/blab_environment.sh build production
 ```
 
 ## 2. Configure server credentials
@@ -32,7 +32,8 @@ flutter build appbundle --release \
    service-account key. Store the downloaded JSON in 1Password and do not put
    it in this repository.
 2. Generate a random webhook secret with at least 32 characters.
-3. Create the gitignored `supabase/.env.push` file:
+3. Create an environment-specific, gitignored Edge Function env file such as
+   `supabase/.env.push.staging` or `supabase/.env.push.production`:
 
 ```dotenv
 FIREBASE_PROJECT_ID=<project_id>
@@ -41,11 +42,11 @@ FIREBASE_PRIVATE_KEY="<private_key_from_service_account_json>"
 PUSH_WEBHOOK_SECRET=<random_secret>
 ```
 
-4. Link the Supabase CLI to the production project, then install the secrets
-   and deploy:
+4. Link the Supabase CLI to the matching project, then install the secrets and
+   deploy. Confirm the project ref before running these commands:
 
 ```bash
-supabase secrets set --env-file supabase/.env.push
+supabase secrets set --env-file supabase/.env.push.<environment>
 supabase db push
 supabase functions deploy send-push --no-verify-jwt
 ```

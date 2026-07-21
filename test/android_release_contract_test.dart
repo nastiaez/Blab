@@ -107,6 +107,7 @@ void main() {
       );
       expect(androidGitignore, contains('/app/google-services.json'));
       expect(firebaseConfig, contains('await Firebase.initializeApp()'));
+      expect(firebaseConfig, contains('if (!enabled ||'));
       expect(firebaseConfig, isNot(contains('FIREBASE_PRIVATE_KEY')));
     },
   );
@@ -138,5 +139,40 @@ void main() {
     expect(worker, contains('completeClaimedEvent(supabase, eventId'));
     expect(worker, contains('console.error("firebase_auth_failed",'));
     expect(worker, isNot(contains('console.error(error)')));
+  });
+
+  test('hosted environments fail closed and production runs are guarded', () {
+    final config = File(
+      'lib/shared/data/supabase_config.dart',
+    ).readAsStringSync();
+    final helper = File('scripts/blab_environment.sh').readAsStringSync();
+    final mainSource = File('lib/main.dart').readAsStringSync();
+    final rootGitignore = File('.gitignore').readAsStringSync();
+
+    expect(config, isNot(contains('productionPublishableKey')));
+    expect(config, isNot(contains('https://bhzcexhebjszwyqvcsxs')));
+    expect(
+      config,
+      contains('Staging builds cannot use the production project'),
+    );
+    expect(config, contains('SENTRY_DSN is required for production builds'));
+    expect(helper, contains('BLAB_CONFIRM_PRODUCTION'));
+    expect(helper, contains(r'--dart-define-from-file="$config_file"'));
+    expect(helper, contains(r'"$action" == '));
+    expect(helper, contains("'validate'"));
+    expect(
+      mainSource,
+      contains('enabled: SupabaseConfig.environment != BlabEnvironment.local'),
+    );
+    final sentryBootstrap = mainSource.indexOf(
+      'await bootstrap(_initializeAndRunApp);',
+    );
+    final flutterBinding = mainSource.indexOf(
+      'WidgetsFlutterBinding.ensureInitialized();',
+    );
+    expect(sentryBootstrap, greaterThanOrEqualTo(0));
+    expect(flutterBinding, greaterThan(sentryBootstrap));
+    expect(rootGitignore, contains('/env/'));
+    expect(rootGitignore, contains('/supabase/.temp/'));
   });
 }

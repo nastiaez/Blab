@@ -1,0 +1,17 @@
+{
+  "environment": "staging",
+  "project_ref": "tpfksdljkfnenjfdbane",
+  "region": "eu-west-1",
+  "functions": {
+    "delete-account": true,
+    "translate-message": true,
+    "send-push": false
+  },
+  "required_secrets": [
+    "OPEN_ROUTER_KEY",
+    "PUSH_WEBHOOK_SECRET",
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_CLIENT_EMAIL",
+    "FIREBASE_PRIVATE_KEY"
+  ]
+}

@@ -62,18 +62,25 @@ prototype.html          static interaction prototype (open in any browser)
 
 ```bash
 flutter pub get
-flutter run -d <android-device-id>
+scripts/local_test.sh reset
+scripts/local_test.sh android emulator-5554
 ```
 
-Requires a Supabase project for backend features. The URL + publishable (anon) key live in `lib/shared/data/supabase_config.dart` — they are safe to ship to the client; RLS protects the actual data.
+This starts the app against disposable local Supabase data and prints the seeded
+Alice, Bob, and Carol test accounts. Use `scripts/local_test.sh web` in another
+terminal for a second client. Plain `flutter run` intentionally fails without
+an explicit environment, so it cannot silently connect to production.
+
+Hosted staging and production use ignored build configuration files and guarded
+commands. See [`docs/environments.md`](./docs/environments.md).
 
 Android push notifications additionally require the owner-controlled Firebase
 and Supabase setup in [`docs/push-notifications.md`](./docs/push-notifications.md).
 
-To apply schema changes:
+To reset and apply schema changes locally:
 
 ```bash
-supabase db push
+scripts/local_test.sh reset
 ```
 
 ## Status

@@ -22,27 +22,31 @@ import 'shared/state/interface_language.dart';
 import 'shared/state/push_notifications_state.dart';
 
 Future<void> main() async {
+  SupabaseConfig.ensureValid();
+  // Sentry uses a guarded zone on web. Flutter bindings and every async
+  // startup dependency must be initialized inside that same zone.
+  await bootstrap(_initializeAndRunApp);
+}
+
+Future<void> _initializeAndRunApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Tighten the VisibilityDetector callback cadence so scroll-into-view
   // read receipts (Step 2.2 Task 10) feel responsive.
   VisibilityDetectorController.instance.updateInterval = const Duration(
     milliseconds: 100,
   );
-  await initializeFirebaseForPush();
-  if (kDebugMode && SupabaseConfig.rejectedPublishableKeyOverride) {
-    debugPrint(
-      'Ignoring an incomplete SUPABASE_PUBLISHABLE_KEY override and using '
-      'the production publishable key.',
-    );
-  }
+  await initializeFirebaseForPush(
+    enabled: SupabaseConfig.environment != BlabEnvironment.local,
+    expectedProjectId: SupabaseConfig.firebaseProjectId,
+    requiredForHostedAndroid:
+        SupabaseConfig.environment != BlabEnvironment.local,
+  );
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
   );
   await _stabilizeInitialSession(Supabase.instance.client);
-  // Run the app inside Sentry (no-op when no DSN is built in). Captures
-  // uncaught Dart + Flutter + native errors. Step 3.0.
-  await bootstrap(() => runApp(const ProviderScope(child: BlabApp())));
+  runApp(const ProviderScope(child: BlabApp()));
 }
 
 Future<void> _stabilizeInitialSession(SupabaseClient client) async {

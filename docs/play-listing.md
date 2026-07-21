@@ -156,7 +156,8 @@ Do these last, right before submitting to production:
 - [ ] Fill **Child safety standards** (Terms `#child-safety` URL + nastia.ez@gmail.com).
 - [ ] Upload the **feature graphic** (1024×500) + screenshots.
 - [ ] Add the **reviewer demo account** credentials.
-- [ ] **Sentry DSN** set (the expected gitignored `env/sentry.json` is currently missing; builds use `--dart-define-from-file=env/sentry.json`).
+- [ ] **Production environment config** validates, including the Sentry DSN
+      and matching Firebase file (`scripts/blab_environment.sh validate production`).
 - [ ] Confirm **Report + Block** is live in the build (Step 3.6a).
 - [ ] Closed test: **12+ testers, 14 continuous days** complete.
 
@@ -181,7 +182,7 @@ create the owner-controlled upload key once:
    be updated when restoring on a different machine.
 3. Build the upload-signed bundle:
    ```
-   flutter build appbundle --release --dart-define-from-file=env/sentry.json
+   scripts/blab_environment.sh build production
    ```
    → upload `build/app/outputs/bundle/release/app-release.aab` to Play.
 4. Use Google-generated **Play App Signing** (the recommended default). After

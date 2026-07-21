@@ -71,6 +71,17 @@ Future<void> _restoreInterfaceLanguages(
   }
 }
 
+Future<void> _clearTranslationUsage(
+  SupabaseClient admin,
+  Iterable<SupabaseClient> clients,
+) async {
+  for (final client in clients) {
+    final user = client.auth.currentUser;
+    if (user == null) continue;
+    await admin.from('translation_usage').delete().eq('user_id', user.id);
+  }
+}
+
 void main() {
   test(
     'translation API enforces auth, membership, quota, and cache ownership',
@@ -96,6 +107,7 @@ void main() {
           _signIn(bob, 'bob@blab.test'),
           _signIn(carol, 'carol@blab.test'),
         ]);
+        await _clearTranslationUsage(admin, [alice, bob]);
         previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
 
         final invite = await ChatService(
@@ -264,14 +276,7 @@ void main() {
               .eq('report_id', reportId);
           await admin.from('reports').delete().eq('id', reportId);
         }
-        for (final user in [alice.auth.currentUser, bob.auth.currentUser]) {
-          if (user != null) {
-            await admin
-                .from('translation_usage')
-                .delete()
-                .eq('user_id', user.id);
-          }
-        }
+        await _clearTranslationUsage(admin, [alice, bob]);
         if (inviteToken != null) {
           await admin.from('invites').delete().eq('token', inviteToken);
         }

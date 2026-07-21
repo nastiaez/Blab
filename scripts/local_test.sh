@@ -75,6 +75,9 @@ run_integration() {
       --concurrency=1 \
       --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
       --dart-define=RUN_LOCAL_OPENROUTER_INTEGRATION=true \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$api_url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
       --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
@@ -82,6 +85,9 @@ run_integration() {
     flutter test test/integration \
       --concurrency=1 \
       --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$api_url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
       --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
@@ -366,10 +372,16 @@ run_app() {
     fi
     "$@" -d chrome --web-port 7357 \
       --web-launch-url="$launch_url" \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key"
   else
     "$@" -d "$device" \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key"
   fi
