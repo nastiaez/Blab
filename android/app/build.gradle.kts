@@ -4,6 +4,7 @@ import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -19,6 +20,13 @@ if (hasReleaseKeystore) {
 }
 val releaseBuildRequested = gradle.startParameter.taskNames.any {
     it.contains("release", ignoreCase = true)
+}
+val googleServicesFile = file("google-services.json")
+if (releaseBuildRequested && !googleServicesFile.isFile) {
+    throw GradleException(
+        "Firebase Android configuration is required for release builds. " +
+            "Place google-services.json in android/app/.",
+    )
 }
 val requiredSigningProperties = listOf(
     "storeFile",

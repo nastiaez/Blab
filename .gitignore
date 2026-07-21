@@ -49,5 +49,6 @@ app.*.map.json
 
 # Local Supabase Edge Function secrets
 /supabase/.env.local
+/supabase/.env.push
 /supabase/.branches/
 /supabase/.temp/linked-project.json

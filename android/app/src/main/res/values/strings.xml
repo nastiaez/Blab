@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="messages_notification_channel_name">Messages</string>
+    <string name="messages_notification_channel_description">New messages and chat updates</string>
+</resources>

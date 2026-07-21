@@ -7,6 +7,7 @@ import '../../l10n/l10n.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/profile_state.dart';
+import '../../shared/state/push_notifications_state.dart';
 import '../../shared/widgets/blab_icon.dart';
 
 /// PRD US-010, US-035.
@@ -19,6 +20,7 @@ class ProfileScreen extends ConsumerWidget {
     final session = ref.watch(authSessionProvider).value;
     final profile = ref.watch(currentProfileProvider);
     final hasPasswordIdentity = ref.watch(hasPasswordIdentityProvider);
+    final pushNotifications = ref.watch(pushNotificationsProvider);
     final emailLocal = session?.user.email?.split('@').first;
     final displayName =
         profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
@@ -111,6 +113,18 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   onTap: () => context.push('/profile/privacy'),
                 ),
+                if (pushNotifications.isSupported) ...[
+                  const _RowDivider(),
+                  _SettingsRow(
+                    icon: Icons.notifications_outlined,
+                    label: context.l10n.notifications,
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: BlabColors.textMuted,
+                    ),
+                    onTap: () => context.push('/profile/notifications'),
+                  ),
+                ],
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.logout_outlined,
@@ -122,6 +136,9 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () async {
                     final confirmed = await _confirmLogout(context);
                     if (confirmed != true) return;
+                    await ref
+                        .read(pushNotificationsProvider.notifier)
+                        .prepareForSignOut();
                     await ref.read(supabaseAuthServiceProvider).signOut();
                     if (!context.mounted) return;
                     context.go('/auth?mode=login');

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,7 @@ import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
 import '../../shared/state/interface_language.dart';
+import '../../shared/state/push_notifications_state.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
 import 'state/message_translations_state.dart';
@@ -77,6 +80,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// screen (the field is part of the State).
   String? _prefetchedLocaleKey;
   final Set<String> _prefetchedMessageIds = <String>{};
+  bool _notificationPermissionTriggered = false;
 
   @override
   void initState() {
@@ -95,7 +99,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
     _scroll.addListener(_loadOlderNearTop);
     _ready = Future<void>.delayed(const Duration(milliseconds: 400));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
   }
 
   @override
@@ -252,6 +258,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     }
     final chat = resolved;
+    if (!_notificationPermissionTriggered) {
+      _notificationPermissionTriggered = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          ref.read(pushNotificationsProvider.notifier).onFirstChatOpened(),
+        );
+      });
+    }
 
     final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
     final pagination = ref.watch(chatPaginationProvider(widget.chatId));
@@ -264,6 +279,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
     final interfaceLang = ref.watch(interfaceLanguageProvider);
+    final pushNotifications = ref.watch(pushNotificationsProvider);
     final translationCutoffAt = chat.translationCutoffAt;
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
@@ -376,6 +392,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     }
                   },
                 ),
+                if (pushNotifications.reminderVisible)
+                  _NotificationReminder(
+                    onDismiss: () => ref
+                        .read(pushNotificationsProvider.notifier)
+                        .dismissReminder(),
+                  ),
                 const OfflineBanner(),
                 Expanded(
                   child: GestureDetector(
@@ -579,6 +601,51 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 // ─────────────────────────── header ──────────────────────────────────────────
 
 const double kChatHeaderHeight = 60;
+
+class _NotificationReminder extends StatelessWidget {
+  const _NotificationReminder({required this.onDismiss});
+
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: BlabColors.selectedTint,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.notifications_off_outlined,
+                size: 19,
+                color: BlabColors.textPrimary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  context.l10n.enableNotificationsReminder,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: BlabColors.textPrimary,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: context.l10n.dismiss,
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, size: 19),
+                color: BlabColors.textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _ChatHeader extends ConsumerWidget {
   const _ChatHeader({
@@ -1063,6 +1130,12 @@ class _MessageRow extends ConsumerWidget {
         shouldTranslate &&
         kSupportedLearningLanguages.contains(languageCode) &&
         message.originalText.trim().isNotEmpty;
+    final translationNotifier = canRequestTranslation
+        ? ref.read(messageTranslationsProvider(chatId).notifier)
+        : null;
+    final readsNotifier = !isOut
+        ? ref.read(messageReadsProvider(chatId).notifier)
+        : null;
 
     Widget bubble = MessageInteractionTarget(
       isFailed: isFailed,
@@ -1090,25 +1163,19 @@ class _MessageRow extends ConsumerWidget {
         key: Key('msg-vis-${message.id}'),
         onVisibilityChanged: (info) {
           if (canRequestTranslation && info.visibleFraction > 0) {
-            if (ref.read(showTranslationsProvider(chatId))) {
-              ref
-                  .read(messageTranslationsProvider(chatId).notifier)
-                  .ensureVisible(
-                    visibleFraction: info.visibleFraction,
-                    messageId: message.id,
-                    text: message.originalText,
-                    targetLang: languageCode,
-                    interfaceLang: interfaceLanguageCode,
-                  );
-            }
+            translationNotifier!.ensureVisible(
+              visibleFraction: info.visibleFraction,
+              messageId: message.id,
+              text: message.originalText,
+              targetLang: languageCode,
+              interfaceLang: interfaceLanguageCode,
+            );
           }
           // Threshold lowered to 0.5 so partially-visible bubbles still
           // register — bottom-of-list messages were sometimes cropped by
           // the input bar and never crossed 0.9.
           if (!isOut && info.visibleFraction > 0.5) {
-            ref
-                .read(messageReadsProvider(chatId).notifier)
-                .reportVisible(message.id);
+            readsNotifier!.reportVisible(message.id);
           }
         },
         child: bubble,

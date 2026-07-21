@@ -67,6 +67,9 @@ flutter run -d <android-device-id>
 
 Requires a Supabase project for backend features. The URL + publishable (anon) key live in `lib/shared/data/supabase_config.dart` — they are safe to ship to the client; RLS protects the actual data.
 
+Android push notifications additionally require the owner-controlled Firebase
+and Supabase setup in [`docs/push-notifications.md`](./docs/push-notifications.md).
+
 To apply schema changes:
 
 ```bash
@@ -83,7 +86,7 @@ supabase db push
 | Phase 2.2 | Chat persistence + real-time sync + read receipts | done |
 | Phase 2.3 | Real invite links (single-use, 48h TTL) | next |
 | Phase 2.4 | Send-failure + offline queue | partial (UI wired, edge cases pending) |
-| Phase 2.5 | Push notifications (FCM) | not started |
+| Phase 2.5 | Push notifications (FCM) | production deployed; physical-device verification pending |
 | Phase 2.6 | End-to-end encryption (hard gate before external testers) | not started |
 | Phase 3 | iOS parity + release prep | not started |
 

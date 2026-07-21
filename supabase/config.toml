@@ -398,3 +398,8 @@ entrypoint = "./functions/delete-account/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/translate-message/index.ts"
+
+[functions.send-push]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/send-push/index.ts"

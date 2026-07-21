@@ -289,7 +289,7 @@ void main() {
   );
 
   test(
-    'Azure ZDR route translates once and serves the next request from cache',
+    'ZDR route translates once and serves the next request from cache',
     () async {
       final admin = _client(_serviceRoleKey);
       final alice = _client(_publicKey);

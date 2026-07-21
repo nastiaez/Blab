@@ -784,4 +784,43 @@ class AppLocalizationsEs extends AppLocalizations {
   String personJoined(Object name) {
     return '$name se unió.';
   }
+
+  @override
+  String get notifications => 'Notificaciones';
+
+  @override
+  String get showMessagePreviews => 'Mostrar vista previa';
+
+  @override
+  String get showMessagePreviewsHelp =>
+      'Muestra el remitente y el mensaje original en las notificaciones.';
+
+  @override
+  String get androidNotificationSettings =>
+      'Ajustes de notificaciones de Android';
+
+  @override
+  String get notificationsEnabled => 'Las notificaciones están activadas';
+
+  @override
+  String get notificationsDisabled => 'Las notificaciones están desactivadas';
+
+  @override
+  String get notificationsNotRequested =>
+      'Abre un chat para activar las notificaciones';
+
+  @override
+  String get notificationsUnavailable =>
+      'Las notificaciones no están disponibles en esta versión';
+
+  @override
+  String get couldNotSaveNotifications =>
+      'No se pudo guardar el ajuste de notificaciones.';
+
+  @override
+  String get enableNotificationsReminder =>
+      'Activa las notificaciones para recibir mensajes de tu compañero';
+
+  @override
+  String get dismiss => 'Cerrar';
 }

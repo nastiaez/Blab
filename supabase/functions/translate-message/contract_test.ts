@@ -1,10 +1,13 @@
 import {
   characterCount,
+  INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  providerResultFailureReason,
   systemPrompt,
+  TRANSLATION_RESPONSE_FORMAT,
   validateRequest,
 } from "./contract.ts";
 
@@ -32,11 +35,54 @@ Deno.test("accepts only a message UUID", () => {
   );
 });
 
-Deno.test("provider route is pinned to Azure ZDR endpoints", () => {
-  assert(OPENROUTER_PROVIDER.only.join(",") === "azure", "Azure only");
+Deno.test("provider route permits every eligible ZDR endpoint", () => {
+  assert(!("only" in OPENROUTER_PROVIDER), "provider is not pinned");
+  assert(OPENROUTER_PROVIDER.allow_fallbacks, "fallbacks allowed");
   assert(OPENROUTER_PROVIDER.zdr, "ZDR required");
   assert(OPENROUTER_PROVIDER.data_collection === "deny", "collection denied");
   assert(OPENROUTER_PROVIDER.require_parameters, "parameters required");
+});
+
+Deno.test("provider responses use strict schemas", () => {
+  assert(
+    TRANSLATION_RESPONSE_FORMAT.type === "json_schema",
+    "translation schema enabled",
+  );
+  assert(
+    TRANSLATION_RESPONSE_FORMAT.json_schema.strict,
+    "translation schema is strict",
+  );
+  assert(
+    TRANSLATION_RESPONSE_FORMAT.json_schema.schema.required.includes(
+      "translation",
+    ),
+    "translation field is required",
+  );
+  assert(
+    INTERFACE_RESPONSE_FORMAT.json_schema.strict,
+    "interface repair schema is strict",
+  );
+});
+
+Deno.test("provider validation failures expose bounded structural reasons", () => {
+  assert(
+    providerResultFailureReason("not json") === "invalid_response_json",
+    "invalid JSON reason",
+  );
+  assert(
+    providerResultFailureReason("[]") === "invalid_response_shape",
+    "invalid shape reason",
+  );
+  assert(
+    providerResultFailureReason('{"mode":"none"}') ===
+      "missing_translation",
+    "missing translation reason",
+  );
+  assert(
+    providerResultFailureReason('{"translation":"Hallo"}') ===
+      "contract_semantics",
+    "remaining semantic reason",
+  );
 });
 
 Deno.test("provider keeps full text when optional token metadata is invalid", () => {
@@ -75,6 +121,44 @@ Deno.test("provider keeps full text when optional token metadata is invalid", ()
   );
   assert(degraded?.translation === "Hallo!", "full translation should pass");
   assert(degraded?.tokens.length === 0, "invalid tokens should be discarded");
+});
+
+Deno.test("provider mode drift is normalized instead of hiding translation", () => {
+  const translated = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "English",
+      translation: "Hallo!",
+      interfaceText: "Hello!",
+      explanation: "unexpected model metadata",
+      confidence: "high",
+    }),
+    "Hello!",
+    "de",
+    "en",
+  );
+  assert(translated?.mode === "translation", "non-target source mode");
+  assert(translated?.sourceLang === "en", "language name normalization");
+  assert(translated?.explanation === null, "translation explanation removed");
+  assert(translated?.tokens.length === 0, "missing optional tokens degrade");
+
+  const conservative = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "de",
+      translation: "Hallo!",
+    }),
+    "Hallo",
+    "de",
+    "en",
+  );
+  assert(conservative?.mode === "none", "unsafe rewrite is discarded");
+  assert(conservative?.translation === "Hallo", "authored text is retained");
+  assert(
+    conservative !== null &&
+      interfaceOutputNeedsRetry(conservative, "de", "en"),
+    "missing interface rendering requests repair",
+  );
 });
 
 Deno.test("copied learning text requests an interface retry for every source", () => {

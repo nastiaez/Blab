@@ -221,7 +221,7 @@
 ### Step 2.7 — Translation in real chats (bilingual-authoring model) `[x]`
 - **Scope (revised 2026-07-18 by L-15):** users may write in any language. On success, each viewer gets a learning-language top lane and interface-language bottom lane; an author who writes in neither selected language keeps the original in the bottom lane. Author mistakes in their learning language use inline correction marks, while recipients see only clean corrected output. Exact source remains authoritative and available in the View original sheet. Turning learning aids off prevents new OpenRouter calls and shows only the original. All 11 learning targets remain available; interface localization is limited to English, Ukrainian, German, and Spanish.
 - **Done when:**
-  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → Azure-hosted gpt-4o-mini); the client supplies only a message ID, and the server derives source, learning target, and interface locale
+  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → an eligible ZDR endpoint for `openai/gpt-4o-mini`); the client supplies only a message ID, and the server derives source, learning target, and interface locale
   - Successful bubbles show learning output on top and interface output below, deduplicate matching lanes, and preserve an unexpected third-language original for its author
   - Word popup pulls an interface-language gloss + romanization from the live translation tokens (no bundled dictionary)
   - Failure (offline / 5xx / timeout) → authored text remains usable with muted "Translation unavailable" above it
@@ -234,7 +234,7 @@
   - [x] Live verification (Tamil) on Samsung S931B: Nastia sends English in real chat with Aswin → shimmer → Tamil bubble + tappable tokens + English subtitle
   - [x] DB-side cache shipped: `message_translations` table (migration `20260607000001`, applied on remote, RLS scoped to chat members), prefetch-on-open + per-message writeback + bulk hydrate. Cold reopen reads cached rows instead of re-firing the LLM
   - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
-  - [x] L-13 security controls (2026-07-17): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, Azure ZDR/data-collection-denied routing, and retirement of the unused public portfolio translator.
+  - [x] L-13 security controls (2026-07-17, provider policy revised 2026-07-21): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, ZDR/data-collection-denied routing across eligible endpoints, and retirement of the unused public portfolio translator.
   - [x] L-15 writing correction extension (2026-07-18): provider modes `translation|correction|none`, author-only inline correction marks, recipient-clean corrected output, localized author explanations, shared authorized cache/RLS, and dual learning/interface output lanes.
 
 ---

@@ -319,6 +319,7 @@ run_app() {
   local initial_route="${BLAB_INITIAL_ROUTE:-}"
   local publishable_key
   local url
+  local launch_url=''
 
   if ! publishable_key="$(local_key)"; then
     printf '%s\n' \
@@ -344,7 +345,6 @@ run_app() {
   if [[ -n "$initial_route" ]]; then
     set -- "$@" "--route=$initial_route"
   fi
-
   case "$device" in
     chrome)
       url='http://127.0.0.1:54321'
@@ -360,7 +360,7 @@ run_app() {
   esac
 
   if [[ "$device" == 'chrome' ]]; then
-    local launch_url='http://localhost:7357/'
+    launch_url='http://localhost:7357/'
     if [[ -n "$invite_input" ]]; then
       launch_url="http://localhost:7357/#/i/$(invite_token "$invite_input")"
     fi

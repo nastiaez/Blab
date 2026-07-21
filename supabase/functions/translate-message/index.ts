@@ -8,11 +8,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   LANG_NAMES,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  providerResultFailureReason,
   systemPrompt,
+  TRANSLATION_RESPONSE_FORMAT,
   validateRequest,
 } from "./contract.ts";
 
@@ -21,6 +24,13 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
 const MODEL = "openai/gpt-4o-mini";
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
 
 async function repairInterfaceText(
   learningText: string,
@@ -41,7 +51,7 @@ async function repairInterfaceText(
         model: MODEL,
         temperature: 0,
         max_completion_tokens: 4000,
-        response_format: { type: "json_object" },
+        response_format: INTERFACE_RESPONSE_FORMAT,
         provider: OPENROUTER_PROVIDER,
         messages: [
           {
@@ -89,11 +99,18 @@ function json(
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "application/json",
+      ...headers,
+    },
   });
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
   if (req.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
   }
@@ -198,7 +215,7 @@ Deno.serve(async (req) => {
           model: MODEL,
           temperature: 0,
           max_completion_tokens: 12000,
-          response_format: { type: "json_object" },
+          response_format: TRANSLATION_RESPONSE_FORMAT,
           provider: OPENROUTER_PROVIDER,
           messages: [
             {
@@ -240,7 +257,7 @@ Deno.serve(async (req) => {
       interfaceLang,
     );
     if (candidate === null) {
-      providerFailure = "contract_validation";
+      providerFailure = providerResultFailureReason(content);
       continue;
     }
     if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
@@ -264,7 +281,10 @@ Deno.serve(async (req) => {
     console.error("translation provider failed after retry", {
       reason: providerFailure,
     });
-    return json({ error: "translation_unavailable" }, 502);
+    return json({
+      error: "translation_unavailable",
+      reason: providerFailure,
+    }, 502);
   }
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

@@ -8,14 +8,23 @@ import '../data/supabase_config.dart';
 
 typedef BackendReachabilityCheck = Future<bool> Function();
 
+Map<String, String> backendHealthHeaders() => {
+  'apikey': SupabaseConfig.publishableKey,
+};
+
+bool isHealthyBackendStatus(int statusCode) =>
+    statusCode >= 200 && statusCode < 300;
+
 /// The app needs Supabase, not merely an attached network interface. The
 /// health endpoint is public and contains no account data or secret headers.
 final backendReachabilityCheckProvider = Provider<BackendReachabilityCheck>(
   (ref) => () async {
     try {
       final uri = Uri.parse('${SupabaseConfig.url}/auth/v1/health');
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
-      return response.statusCode >= 200 && response.statusCode < 500;
+      final response = await http
+          .get(uri, headers: backendHealthHeaders())
+          .timeout(const Duration(seconds: 4));
+      return isHealthyBackendStatus(response.statusCode);
     } catch (_) {
       return false;
     }
