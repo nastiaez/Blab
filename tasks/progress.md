@@ -314,6 +314,12 @@
   - [x] Privacy + Terms **deployed to production** (2026-06-09) — live at `https://blab-gray.vercel.app/privacy.html` + `/terms.html` (200, verified).
   - [ ] **Nastia's to-dos:** fill the operator legal name in `web/privacy.html` (then redeploy); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
 
+### Step 3.5b — Marketing landing page (loveblab.com) `[ ]` ← in progress
+- **Scope:** pre-launch waitlist page at loveblab.com, replacing the placeholder `web/index.html` stub. Reuses the 5 Play Store graphics as a scroll story, email capture into a new `waitlist_signups` Supabase table, CTA built to swap to a "Download" button once the app ships.
+- **Done when:** `loveblab.com` resolves to the live page; a test email submitted on the page appears accepted (201) and a duplicate is rejected (409); all 5 story sections + footer legal links render correctly.
+- Spec: `docs/superpowers/specs/2026-07-21-landing-page-design.md`.
+- Plan: `docs/superpowers/plans/2026-07-21-landing-page.md`.
+
 ### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[ ]` ← in progress
 - **Scope:** Play requires social/messaging apps to provide a way to report objectionable content and block another user. Add: report a message / report a person, and block a person so they can no longer contact you. Reports route to a store + the contact email; blocking hides the partner and prevents new messages.
 - **Why:** missing report/block is a common Play rejection for social apps; also required by the child-safety (CSAE) standards. Decision 2026-06-09: build before submission.
