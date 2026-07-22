@@ -3,7 +3,7 @@
 Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-07-15.md)
 
 Workflow: [`README.md`](./README.md)
-Active item: `L-20` (`In progress`). `L-17` is `Awaiting manual`, with final
+Active item: `L-20` (`Awaiting manual`). `L-17` is `Awaiting manual`, with final
 physical Android verification deferred to the end-of-launch device pass;
 `L-04` remains externally blocked.
 
@@ -44,7 +44,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | Order | Work ID | Audit ID | Scope | Depends on | Status | Work record |
 | ---: | --- | --- | --- | --- | --- | --- |
 | 19 | L-19 | P2 | Remove raw errors, decide Android backup policy, reconcile release metadata, update deprecated Supabase local config, stabilize local service versions/cold starts, and make client grants reproducible from migrations | L-00 | Complete | [`items/L-19.md`](./items/L-19.md) |
-| 20 | L-20 | P2 | Add CI and critical integration/release test coverage | L-03, L-08, L-13 | In progress | [`items/L-20.md`](./items/L-20.md) |
+| 20 | L-20 | P2 | Add CI and critical integration/release test coverage | L-03, L-08, L-13 | Awaiting manual | [`items/L-20.md`](./items/L-20.md) |
 | 21 | L-21 | P2 | Reconcile PRD, tech spec, progress, privacy, Data Safety, and store listing | L-04, L-07, L-12, L-14, L-15, L-17 | Not started | `items/L-21.md` |
 | 22 | L-22 | P2 | Produce final store assets, reviewer access, and submission package | L-21 | Not started | `items/L-22.md` |
 | 23 | L-23 | All | Repeat full audit against the Play-signed build and deployed production services, including physical startup/ANR and OAuth checks | L-01 through L-22 | Not started | `items/L-23.md` |
