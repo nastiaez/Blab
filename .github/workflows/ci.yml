@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.44.4
+  SUPABASE_CLI_VERSION: 2.109.1
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Verify Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Verify shell syntax
+        run: bash -n scripts/*.sh
+      - name: Analyze
+        run: flutter analyze
+      - name: Test with coverage
+        run: flutter test --coverage
+      - name: Verify whitespace
+        run: git diff --check
+      - name: Retain coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 7
+
+  backend-integration:
+    name: Local Supabase integration
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: true
+      - uses: supabase/setup-cli@v2
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Reset disposable backend
+        run: scripts/local_test.sh reset
+      - name: Run backend integration suite
+        run: scripts/local_test.sh integration
+      - name: Stop disposable backend
+        if: always()
+        run: supabase stop --no-backup
+
+  android-release:
+    name: Android release compile
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: true
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Compile non-distributable release bundle
+        run: CI=true scripts/ci_android_release.sh
+      - name: Verify release bundle exists
+        run: test -s build/app/outputs/bundle/release/app-release.aab
+      - name: Verify tracked files are unchanged
+        run: git diff --exit-code

@@ -9,11 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// Stand-in [TtsService] that never hits platform channels — keeps the
 /// widget test free of `MissingPluginException`s.
 class _FakeTtsService implements TtsService {
-  bool available;
-  _FakeTtsService({this.available = false});
-
   @override
-  Future<bool> isLanguageAvailable(String languageCode) async => available;
+  Future<bool> isLanguageAvailable(String languageCode) async => false;
 
   @override
   Future<void> speak(String text, String languageCode) async {}
