@@ -170,16 +170,34 @@ class SupabaseAuthService {
   static String messageFor(Object error) {
     if (error is AuthException) {
       final msg = error.message.toLowerCase();
-      if (msg.contains('invalid login')) {
+      final code = error.code?.toLowerCase();
+      if (code == 'invalid_credentials' ||
+          msg.contains('invalid login') ||
+          msg.contains('invalid credentials')) {
         return 'Email or password is incorrect';
       }
-      if (msg.contains('already registered') ||
+      if (code == 'email_exists' ||
+          code == 'user_already_exists' ||
+          msg.contains('already registered') ||
           msg.contains('user already') ||
           msg.contains('already exists')) {
         return 'An account with this email already exists';
       }
-      if (msg.contains('password') && msg.contains('6')) {
+      if (code == 'weak_password' ||
+          (msg.contains('password') && msg.contains('6'))) {
         return 'Password must be at least 6 characters';
+      }
+      if (code == 'email_address_invalid' ||
+          msg.contains('email address is invalid') ||
+          msg.contains('invalid email')) {
+        return 'Enter a valid email address';
+      }
+      if (code == 'over_email_send_rate_limit' ||
+          code == 'over_request_rate_limit' ||
+          code == 'too_many_enrolled_mfa_factors' ||
+          msg.contains('rate limit') ||
+          msg.contains('too many requests')) {
+        return 'Too many attempts. Try again later.';
       }
       if (msg.contains('email') && msg.contains('confirm')) {
         return 'Check your inbox to confirm your email';

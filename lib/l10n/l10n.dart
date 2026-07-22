@@ -31,6 +31,7 @@ String localizedAuthMessage(
     'An account with this email already exists' =>
       localizations.accountAlreadyExists,
     'Password must be at least 6 characters' => localizations.passwordMinLength,
+    'Enter a valid email address' => localizations.enterValidEmail,
     'Check your inbox to confirm your email' => localizations.confirmEmailInbox,
     'Current password is incorrect' => localizations.currentPasswordIncorrect,
     'Choose a different password' => localizations.chooseDifferentPassword,

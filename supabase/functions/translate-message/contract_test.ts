@@ -1,10 +1,13 @@
 import {
   characterCount,
+  INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  providerResultFailureReason,
   systemPrompt,
+  TRANSLATION_RESPONSE_FORMAT,
   validateRequest,
 } from "./contract.ts";
 
@@ -32,11 +35,54 @@ Deno.test("accepts only a message UUID", () => {
   );
 });
 
-Deno.test("provider route is pinned to Azure ZDR endpoints", () => {
-  assert(OPENROUTER_PROVIDER.only.join(",") === "azure", "Azure only");
+Deno.test("provider route permits every eligible ZDR endpoint", () => {
+  assert(!("only" in OPENROUTER_PROVIDER), "provider is not pinned");
+  assert(OPENROUTER_PROVIDER.allow_fallbacks, "fallbacks allowed");
   assert(OPENROUTER_PROVIDER.zdr, "ZDR required");
   assert(OPENROUTER_PROVIDER.data_collection === "deny", "collection denied");
   assert(OPENROUTER_PROVIDER.require_parameters, "parameters required");
+});
+
+Deno.test("provider responses use strict schemas", () => {
+  assert(
+    TRANSLATION_RESPONSE_FORMAT.type === "json_schema",
+    "translation schema enabled",
+  );
+  assert(
+    TRANSLATION_RESPONSE_FORMAT.json_schema.strict,
+    "translation schema is strict",
+  );
+  assert(
+    TRANSLATION_RESPONSE_FORMAT.json_schema.schema.required.includes(
+      "translation",
+    ),
+    "translation field is required",
+  );
+  assert(
+    INTERFACE_RESPONSE_FORMAT.json_schema.strict,
+    "interface repair schema is strict",
+  );
+});
+
+Deno.test("provider validation failures expose bounded structural reasons", () => {
+  assert(
+    providerResultFailureReason("not json") === "invalid_response_json",
+    "invalid JSON reason",
+  );
+  assert(
+    providerResultFailureReason("[]") === "invalid_response_shape",
+    "invalid shape reason",
+  );
+  assert(
+    providerResultFailureReason('{"mode":"none"}') ===
+      "missing_translation",
+    "missing translation reason",
+  );
+  assert(
+    providerResultFailureReason('{"translation":"Hallo"}') ===
+      "contract_semantics",
+    "remaining semantic reason",
+  );
 });
 
 Deno.test("provider keeps full text when optional token metadata is invalid", () => {
@@ -75,6 +121,44 @@ Deno.test("provider keeps full text when optional token metadata is invalid", ()
   );
   assert(degraded?.translation === "Hallo!", "full translation should pass");
   assert(degraded?.tokens.length === 0, "invalid tokens should be discarded");
+});
+
+Deno.test("provider mode drift is normalized instead of hiding translation", () => {
+  const translated = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "English",
+      translation: "Hallo!",
+      interfaceText: "Hello!",
+      explanation: "unexpected model metadata",
+      confidence: "high",
+    }),
+    "Hello!",
+    "de",
+    "en",
+  );
+  assert(translated?.mode === "translation", "non-target source mode");
+  assert(translated?.sourceLang === "en", "language name normalization");
+  assert(translated?.explanation === null, "translation explanation removed");
+  assert(translated?.tokens.length === 0, "missing optional tokens degrade");
+
+  const conservative = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "de",
+      translation: "Hallo!",
+    }),
+    "Hallo",
+    "de",
+    "en",
+  );
+  assert(conservative?.mode === "none", "unsafe rewrite is discarded");
+  assert(conservative?.translation === "Hallo", "authored text is retained");
+  assert(
+    conservative !== null &&
+      interfaceOutputNeedsRetry(conservative, "de", "en"),
+    "missing interface rendering requests repair",
+  );
 });
 
 Deno.test("copied learning text requests an interface retry for every source", () => {
@@ -161,11 +245,23 @@ Deno.test("provider accepts a source outside the learning-language list", () => 
 Deno.test("auto-source prompt requests learning output with localized glosses", () => {
   const prompt = systemPrompt("auto", "uk", "es");
   assert(prompt.includes("Detect the input language"), "source detection");
+  assert(
+    prompt.includes("keyboard-adjacent typos"),
+    "source detection handles misspelled short text",
+  );
+  assert(
+    prompt.includes("interface language as a weak hint"),
+    "ambiguous malformed text gets a bounded locale hint",
+  );
   assert(prompt.includes('"translation"'), "target-language output");
   assert(prompt.includes("Spanish"), "selected interface language");
   assert(prompt.includes('"sourceLang"'), "detected source output");
   assert(prompt.includes("sourceLang=other"), "arbitrary source fallback");
   assert(prompt.includes("mode=correction"), "same-language correction mode");
+  assert(
+    prompt.includes("mode MUST be translation"),
+    "non-target sources require translation mode",
+  );
   assert(
     prompt.includes("mode=none applies only to correction"),
     "none still requires interface translation",
@@ -269,7 +365,7 @@ Deno.test("same-language correction is available to any eligible viewer", () => 
   assert(correction?.mode === "correction", "recipient correction should pass");
 });
 
-Deno.test("interface output preserves authored interface-language text", () => {
+Deno.test("server preserves authored interface-language text", () => {
   const valid = parseProviderResult(
     JSON.stringify({
       mode: "translation",
@@ -312,7 +408,39 @@ Deno.test("interface output preserves authored interface-language text", () => {
     "de",
     "en",
   );
-  assert(rewritten === null, "interface-source mistakes must stay exact");
+  assert(rewritten !== null, "valid translation should not be discarded");
+  assert(
+    rewritten?.interfaceText === "What is you doing?",
+    "server must restore the exact authored interface text",
+  );
+});
+
+Deno.test("server keeps duplicate target and interface lanes identical", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Was meinst du?",
+      interfaceText: "Was sprechen Sie?",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "Was meinst du?",
+          gloss: "what do you mean",
+          isContent: true,
+        },
+      ],
+    }),
+    "What do you mean?",
+    "de",
+    "de",
+  );
+  assert(result !== null, "valid translation should not be discarded");
+  assert(
+    result?.interfaceText === "Was meinst du?",
+    "server must copy the trusted learning line into the interface lane",
+  );
 });
 
 Deno.test("maximum character contract remains 2000", () => {

@@ -55,7 +55,7 @@
   <body>
     <main>
       <h1>Blab Privacy Policy</h1>
-      <p class="updated">Last updated: 16 July 2026</p>
+      <p class="updated">Last updated: 21 July 2026</p>
 
       <p>
         Blab is a chat app for practising languages with someone you know.
@@ -93,26 +93,40 @@
         <li><strong>Account details</strong> — your email address and the display name you choose.</li>
         <li><strong>Messages</strong> — the chats you send and receive, so we can deliver them and show your history.</li>
         <li><strong>Language preferences</strong> — the languages you're learning, to set up your chats and translations.</li>
+        <li><strong>Notification details</strong> — a device notification token and your message-preview preference, so we can notify you about new chats.</li>
         <li><strong>Diagnostics</strong> — if the app crashes, we receive a technical error report. These reports are scrubbed so they never contain your message text.</li>
       </ul>
+
+      <h2>Message notifications</h2>
+      <p>
+        On Android, Blab uses Google Firebase Cloud Messaging to deliver
+        notifications. Message previews are on by default and can be disabled
+        in <em>Profile → Notifications</em>. When previews are on, the sender's
+        display name and original message text are sent through Google for
+        notification delivery. When previews are off, Google receives only
+        generic notification text and the identifier needed to open the chat.
+        Translations are never included in notifications.
+      </p>
 
       <h2>How your messages are translated</h2>
       <p>
         When you enable translations, Blab sends the text of an eligible
-        message through OpenRouter to a Microsoft Azure endpoint hosting an
-        OpenAI translation model. Requests are restricted to endpoints that
-        OpenRouter classifies as Zero Data Retention and as not collecting
-        prompt data. The text is sent only to produce the translation; it is
-        not used to show you ads. Blab stores the resulting translation so it
-        can be shown again without sending the message for translation again.
+        message through OpenRouter to an eligible model-infrastructure
+        provider. Requests are restricted to endpoints that OpenRouter
+        classifies as Zero Data Retention, as not collecting prompt data, and
+        as supporting all required response parameters. The current OpenAI
+        model is served through Microsoft Azure under these controls. The text
+        is sent only to produce the translation; it is not used to show you
+        ads. Blab stores the resulting translation so it can be shown again
+        without sending the message for translation again.
       </p>
 
       <h2>Who we share information with</h2>
       <p>We use a small number of service providers to run the app:</p>
       <ul>
         <li><strong>Supabase</strong> — secure database and hosting for your account and messages (servers in the EU).</li>
-        <li><strong>Google</strong> — when you choose "Sign in with Google".</li>
-        <li><strong>OpenRouter / Microsoft Azure</strong> — to run an OpenAI translation model under the controls described above.</li>
+        <li><strong>Google</strong> — when you choose "Sign in with Google", and through Firebase Cloud Messaging for Android notifications as described above.</li>
+        <li><strong>OpenRouter and eligible model-infrastructure providers</strong> — currently Microsoft Azure for the selected OpenAI translation model, under the controls described above.</li>
         <li><strong>Sentry</strong> — crash and error diagnostics (no message content).</li>
       </ul>
       <p>We do not sell your personal data, and we do not share it for advertising. (Under laws like California's CCPA/CPRA, we do not "sell" or "share" your personal information.)</p>
@@ -130,7 +144,8 @@
         Your account and messages are stored on servers in the
         <strong>European Union</strong>. Some of our service providers operate
         outside the EU/your country — for example the translation provider
-        (OpenRouter / Microsoft Azure), Google sign-in, and our crash-diagnostics
+        (OpenRouter and its eligible model-infrastructure providers, currently
+        Microsoft Azure), Google sign-in and Firebase messaging, and our crash-diagnostics
         provider (Sentry) may process data in the United States. Where data
         leaves your region it is protected by appropriate safeguards such as
         the European Commission's Standard Contractual Clauses.

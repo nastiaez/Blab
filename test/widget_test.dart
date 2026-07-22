@@ -58,4 +58,37 @@ void main() {
       isFalse,
     );
   });
+
+  test('Supabase auth errors map stable codes to actionable messages', () {
+    expect(
+      SupabaseAuthService.messageFor(
+        AuthApiException(
+          'Invalid login credentials',
+          statusCode: '400',
+          code: 'invalid_credentials',
+        ),
+      ),
+      'Email or password is incorrect',
+    );
+    expect(
+      SupabaseAuthService.messageFor(
+        AuthApiException(
+          'Email address is invalid',
+          statusCode: '400',
+          code: 'email_address_invalid',
+        ),
+      ),
+      'Enter a valid email address',
+    );
+    expect(
+      SupabaseAuthService.messageFor(
+        AuthApiException(
+          'For security purposes, you can only request this after 60 seconds.',
+          statusCode: '429',
+          code: 'over_email_send_rate_limit',
+        ),
+      ),
+      'Too many attempts. Try again later.',
+    );
+  });
 }

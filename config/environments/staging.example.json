@@ -1,0 +1,10 @@
+{
+  "BLAB_ENV": "staging",
+  "SUPABASE_PROJECT_REF": "replace_with_staging_project_ref",
+  "SUPABASE_URL": "https://replace_with_staging_project_ref.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "replace_with_staging_publishable_key",
+  "GOOGLE_WEB_CLIENT_ID": "replace_with_google_web_client_id.apps.googleusercontent.com",
+  "FIREBASE_PROJECT_ID": "replace_with_staging_firebase_project_id",
+  "SENTRY_DSN": "",
+  "SENTRY_ENV": "staging"
+}

@@ -1,11 +1,88 @@
 export const MAX_CHARS = 2000;
 
 export const OPENROUTER_PROVIDER = {
-  only: ["azure"],
   allow_fallbacks: true,
   require_parameters: true,
   data_collection: "deny",
   zdr: true,
+} as const;
+
+export const TRANSLATION_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_translation",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        mode: { type: "string", enum: ["translation", "correction", "none"] },
+        sourceLang: {
+          type: "string",
+          enum: [
+            "en",
+            "ta",
+            "uk",
+            "es",
+            "de",
+            "fr",
+            "it",
+            "pt",
+            "nl",
+            "tr",
+            "hi",
+            "other",
+          ],
+        },
+        translation: { type: "string", minLength: 1 },
+        interfaceText: { type: "string", minLength: 1 },
+        explanation: { type: ["string", "null"] },
+        confidence: {
+          type: ["string", "null"],
+          enum: ["low", "medium", "high", null],
+        },
+        tokens: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              text: { type: "string" },
+              gloss: { type: ["string", "null"] },
+              roman: { type: ["string", "null"] },
+              isContent: { type: "boolean" },
+            },
+            required: ["text", "gloss", "roman", "isContent"],
+          },
+        },
+      },
+      required: [
+        "mode",
+        "sourceLang",
+        "translation",
+        "interfaceText",
+        "explanation",
+        "confidence",
+        "tokens",
+      ],
+    },
+  },
+} as const;
+
+export const INTERFACE_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_interface_translation",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        interfaceText: { type: "string", minLength: 1 },
+      },
+      required: ["interfaceText"],
+    },
+  },
 } as const;
 
 export const LANG_NAMES: Record<string, string> = {
@@ -81,6 +158,7 @@ export function interfaceOutputNeedsRetry(
   targetLang: string,
   interfaceLang: string,
 ): boolean {
+  if (result.interfaceText.trim().length === 0) return true;
   return targetLang !== interfaceLang &&
     result.interfaceText.trim().toLocaleLowerCase() ===
       result.translation.trim().toLocaleLowerCase() &&
@@ -110,46 +188,71 @@ export function parseProviderResult(
   } catch {
     return null;
   }
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    typeof (parsed as { mode?: unknown }).mode !== "string" ||
-    !LEARNING_AID_MODES.has((parsed as { mode: string }).mode) ||
-    typeof (parsed as { translation?: unknown }).translation !== "string" ||
-    typeof (parsed as { interfaceText?: unknown }).interfaceText !== "string" ||
-    typeof (parsed as { sourceLang?: unknown }).sourceLang !== "string" ||
-    !(
-      (parsed as { sourceLang: string }).sourceLang in LANG_NAMES ||
-      (parsed as { sourceLang: string }).sourceLang === OTHER_SOURCE_LANG
-    ) ||
-    !Array.isArray((parsed as { tokens?: unknown }).tokens)
-  ) {
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     return null;
   }
+  const raw = parsed as Record<string, unknown>;
+  if (
+    typeof raw.translation !== "string" ||
+    raw.translation.trim().length === 0
+  ) return null;
 
-  const result = parsed as TranslationResult;
+  const sourceLang = normalizeSourceLang(raw.sourceLang);
+  const explanation = typeof raw.explanation === "string" &&
+      raw.explanation.trim().length > 0
+    ? raw.explanation
+    : null;
+  const confidence = typeof raw.confidence === "string" &&
+      CORRECTION_CONFIDENCE.has(raw.confidence)
+    ? raw.confidence as CorrectionConfidence
+    : null;
+  const result: TranslationResult = {
+    mode: typeof raw.mode === "string" && LEARNING_AID_MODES.has(raw.mode)
+      ? raw.mode as LearningAidMode
+      : "translation",
+    sourceLang,
+    translation: raw.translation,
+    interfaceText: typeof raw.interfaceText === "string"
+      ? raw.interfaceText
+      : "",
+    explanation,
+    confidence,
+    tokens: Array.isArray(raw.tokens) ? raw.tokens : [],
+  };
   const sourceMatchesTarget = result.sourceLang === targetLang;
-  if (!sourceMatchesTarget && result.mode !== "translation") return null;
-  if (sourceMatchesTarget && result.mode === "translation") return null;
-  if (result.translation.trim().length === 0) {
-    return null;
+  if (!sourceMatchesTarget) {
+    result.mode = "translation";
+    result.explanation = null;
+    result.confidence = null;
+  } else if (result.translation === text) {
+    result.mode = "none";
+    result.explanation = null;
+    result.confidence = null;
+  } else if (result.explanation !== null && result.confidence !== null) {
+    result.mode = "correction";
+  } else {
+    // A same-language rewrite without correction metadata is not safe to
+    // present as a correction. Preserve the authored line and repair only
+    // the interface-language rendering below.
+    result.mode = "none";
+    result.translation = text;
+    result.interfaceText = interfaceLang === targetLang ? text : "";
+    result.explanation = null;
+    result.confidence = null;
+    result.tokens = [];
   }
-  if (result.interfaceText.trim().length === 0) return null;
-  if (
-    interfaceLang === targetLang &&
-    result.interfaceText !== result.translation
-  ) return null;
-  if (
-    result.sourceLang === interfaceLang &&
-    result.sourceLang !== targetLang &&
-    result.interfaceText !== text
-  ) return null;
+  // These display lines are fully determined by trusted inputs. Normalize
+  // them instead of rejecting an otherwise valid provider translation when
+  // the model rewrites a typo or returns two slightly different copies.
+  if (interfaceLang === targetLang) {
+    result.interfaceText = result.translation;
+  } else if (result.sourceLang === interfaceLang) {
+    result.interfaceText = text;
+  }
   if (result.mode === "none") {
-    if (
-      result.translation !== text ||
-      result.explanation !== null ||
-      result.confidence !== null
-    ) return null;
+    result.translation = text;
+    result.explanation = null;
+    result.confidence = null;
   } else if (result.mode === "correction") {
     if (
       result.translation === text ||
@@ -195,6 +298,45 @@ export function parseProviderResult(
   return result;
 }
 
+export function providerResultFailureReason(content: string): string {
+  let cleaned = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    return "invalid_response_json";
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return "invalid_response_shape";
+  }
+  const translation = (parsed as Record<string, unknown>).translation;
+  if (typeof translation !== "string" || translation.trim().length === 0) {
+    return "missing_translation";
+  }
+  return "contract_semantics";
+}
+
+function normalizeSourceLang(value: unknown): string {
+  if (typeof value !== "string") return OTHER_SOURCE_LANG;
+  const normalized = value.trim().toLocaleLowerCase();
+  if (normalized in LANG_NAMES) return normalized;
+  if (normalized === OTHER_SOURCE_LANG) return OTHER_SOURCE_LANG;
+  for (const [code, name] of Object.entries(LANG_NAMES)) {
+    if (name.toLocaleLowerCase() === normalized) return code;
+  }
+  return OTHER_SOURCE_LANG;
+}
+
 export function systemPrompt(
   sourceLang: string,
   targetLang: string,
@@ -207,7 +349,7 @@ export function systemPrompt(
       Object.entries(LANG_NAMES).map(([code, name]) => `${code}=${name}`).join(
         ", ",
       )
-    }. For every other input language use sourceLang=${OTHER_SOURCE_LANG}.`
+    }. Infer the intended supported language when short text contains spelling or keyboard-adjacent typos. For ambiguous malformed text, use the viewer's ${interfaceName} (${interfaceLang}) interface language as a weak hint when its script and recognizable fragments fit; never override a clearly recognizable different language. Only use sourceLang=${OTHER_SOURCE_LANG} when no supported intended language can be inferred.`
     : `The input language is ${LANG_NAMES[sourceLang]} (${sourceLang}).`;
   const romanGuidance = NON_LATIN.has(targetLang)
     ? `For each content token include "roman", a Latin-script romanization.`
@@ -236,8 +378,8 @@ Return strict JSON only:
 Rules:
 - Preserve meaning, tone, names, URLs, emoji, and punctuation.
 - First detect sourceLang, then choose exactly one mode.
-- If sourceLang differs from ${targetLang}, use mode=translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
-- If sourceLang is ${targetLang}, use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
+- If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
+- mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
 - Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
 - mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
 - For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.

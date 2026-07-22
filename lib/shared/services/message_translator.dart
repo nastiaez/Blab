@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -148,7 +149,16 @@ Future<Map<String, dynamic>> _defaultInvoke({required String messageId}) async {
     );
   } on FunctionException catch (error) {
     final details = error.details;
-    if (details is Map && details['error'] == 'translation_limit_reached') {
+    final reason = details is Map ? details['error']?.toString() : null;
+    final diagnostic = details is Map ? details['reason']?.toString() : null;
+    if (kDebugMode) {
+      debugPrint(
+        'Translation function failed: status=${error.status}, '
+        'reason=${reason ?? 'unknown'}, '
+        'diagnostic=${diagnostic ?? 'none'}',
+      );
+    }
+    if (reason == 'translation_limit_reached') {
       final rawRetryAfter = details['retryAfterSeconds'];
       final retryAfterSeconds = switch (rawRetryAfter) {
         num value => value.ceil(),
@@ -162,7 +172,7 @@ Future<Map<String, dynamic>> _defaultInvoke({required String messageId}) async {
             : Duration(seconds: retryAfterSeconds.clamp(1, 86400)),
       );
     }
-    throw MessageTranslationFailed('invoke_failed');
+    throw MessageTranslationFailed(reason ?? 'invoke_failed');
   }
   final data = response.data;
   if (data is Map<String, dynamic>) return data;

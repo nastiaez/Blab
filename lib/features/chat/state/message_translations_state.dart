@@ -84,6 +84,7 @@ class MessageTranslationsNotifier
   final String chatId;
   final Map<String, String> _sourceTexts = <String, String>{};
   final Map<String, Timer> _retryTimers = <String, Timer>{};
+  Future<void> _liveTranslationTail = Future<void>.value();
 
   @override
   Map<String, AsyncValue<MessageTranslation>> build() {
@@ -92,6 +93,7 @@ class MessageTranslationsNotifier
       timer.cancel();
     }
     _retryTimers.clear();
+    _liveTranslationTail = Future<void>.value();
     ref.onDispose(() {
       for (final timer in _retryTimers.values) {
         timer.cancel();
@@ -99,6 +101,30 @@ class MessageTranslationsNotifier
       _retryTimers.clear();
     });
     return const {};
+  }
+
+  /// Serializes provider calls for this chat. Cache lookups happen before
+  /// entering this queue, so persisted translations are never held behind an
+  /// unrelated live request.
+  Future<MessageTranslation?> _enqueueLiveTranslation({
+    required String key,
+    required String text,
+    required String messageId,
+    required TranslateMessageFn translate,
+  }) {
+    final result = Completer<MessageTranslation?>();
+    _liveTranslationTail = _liveTranslationTail.then((_) async {
+      if (_sourceTexts[key] != text) {
+        result.complete(null);
+        return;
+      }
+      try {
+        result.complete(await translate(messageId));
+      } catch (error, stack) {
+        result.completeError(error, stack);
+      }
+    });
+    return result.future;
   }
 
   /// Backwards-compatible lookup so callers can still read by message id
@@ -134,21 +160,21 @@ class MessageTranslationsNotifier
     if (changed) state = updates;
   }
 
-  /// Fire-and-forget bulk DB prefetch: one query, populate the cache.
-  /// Safe to call repeatedly — already-hydrated keys are skipped.
+  /// Fire-and-forget DB prefetch for one loaded message page. Safe to call
+  /// repeatedly — already-hydrated keys are skipped.
   Future<void> prefetchFromDb(
+    List<String> messageIds,
     String targetLang,
-    String interfaceLang, {
-    DateTime? translationCutoffAt,
-  }) async {
+    String interfaceLang,
+  ) async {
+    if (messageIds.isEmpty) return;
     try {
       final rows = await ref
           .read(chatServiceProvider)
-          .fetchCachedTranslationsForChat(
-            chatId: chatId,
+          .fetchCachedTranslationsForMessages(
+            messageIds: messageIds,
             targetLang: targetLang,
             interfaceLang: interfaceLang,
-            translationCutoffAt: translationCutoffAt,
           );
       final byId = <String, MessageTranslation>{};
       for (final entry in rows.entries) {
@@ -158,6 +184,24 @@ class MessageTranslationsNotifier
     } catch (_) {
       // Best effort. Misses fall back to lazy LLM on visibility.
     }
+  }
+
+  /// Starts live translation only for a bubble with actual viewport pixels.
+  /// Cached page hydration is independent and may happen while off-screen.
+  Future<void> ensureVisible({
+    required double visibleFraction,
+    required String messageId,
+    required String text,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    if (visibleFraction <= 0) return;
+    await ensure(
+      messageId: messageId,
+      text: text,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+    );
   }
 
   /// Triggers translation for [messageId] if not already started for
@@ -200,12 +244,20 @@ class MessageTranslationsNotifier
       // every unit test too.
     }
 
-    // 2. Live translator. The function performs its own cache check and
-    // persists a verified result before returning success.
+    // 2. Live translator. Cache misses are serialized per chat so a viewport
+    // full of uncached bubbles cannot fan out into concurrent provider calls.
+    // The function performs its own cache check and persists a verified result
+    // before returning success.
     final fn = ref.read(translateMessageFnProvider);
     MessageTranslation? translated;
     try {
-      translated = await fn(messageId);
+      translated = await _enqueueLiveTranslation(
+        key: key,
+        text: text,
+        messageId: messageId,
+        translate: fn,
+      );
+      if (translated == null) return;
       if (translated.interfaceLang != interfaceLang) {
         throw MessageTranslationFailed('interface_language_changed');
       }

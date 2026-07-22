@@ -45,7 +45,10 @@ class ChatsScreen extends ConsumerWidget {
                 final chats = chatsAsync.value;
                 if (chats == null) {
                   if (chatsAsync.isLoading) return const ChatListSkeleton();
-                  return _ErrorState(detail: chatsAsync.error?.toString());
+                  return ChatsErrorState(
+                    onRetry: () =>
+                        ref.read(chatListProvider.notifier).refresh(),
+                  );
                 }
                 if (chats.isEmpty) return const ChatsEmptyState();
                 return RefreshIndicator(
@@ -88,7 +91,7 @@ class ChatsScreen extends ConsumerWidget {
 }
 
 class ChatsEmptyState extends StatelessWidget {
-  const ChatsEmptyState();
+  const ChatsEmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -127,9 +130,10 @@ class ChatsEmptyState extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({this.detail});
-  final String? detail;
+class ChatsErrorState extends StatelessWidget {
+  const ChatsErrorState({super.key, required this.onRetry});
+
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -144,24 +148,13 @@ class _ErrorState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 15, color: BlabColors.textMuted),
             ),
-            if (detail != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  detail!,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    color: Color(0xFF991B1B),
-                  ),
-                ),
-              ),
-            ],
+            const SizedBox(height: 16),
+            TextButton.icon(
+              key: const ValueKey('chat-list-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.retry),
+            ),
           ],
         ),
       ),

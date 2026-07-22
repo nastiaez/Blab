@@ -1,11 +1,11 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../shared/data/chat_mappers.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/models/message.dart';
+import '../../../shared/services/chat_service.dart';
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/connectivity_state.dart';
@@ -52,13 +52,47 @@ String _newClientMessageId() {
       '${hex.substring(20)}';
 }
 
-/// Per-chat message stream backed by Supabase. Yields a one-shot history
-/// from [ChatService.fetchMessages] followed by realtime snapshots from
-/// [ChatService.watchMessages]. PRD US-013…US-017, US-023.
+class ChatPaginationState {
+  const ChatPaginationState({required this.hasMore, required this.isLoading});
+
+  const ChatPaginationState.initial() : hasMore = false, isLoading = false;
+
+  final bool hasMore;
+  final bool isLoading;
+}
+
+class ChatPaginationNotifier extends Notifier<ChatPaginationState> {
+  ChatPaginationNotifier(this.chatId);
+
+  final String chatId;
+
+  @override
+  ChatPaginationState build() => const ChatPaginationState.initial();
+
+  void update({required bool hasMore, required bool isLoading}) {
+    state = ChatPaginationState(hasMore: hasMore, isLoading: isLoading);
+  }
+}
+
+final chatPaginationProvider =
+    NotifierProvider.family<
+      ChatPaginationNotifier,
+      ChatPaginationState,
+      String
+    >(ChatPaginationNotifier.new);
+
+/// Per-chat message stream backed by a cursor-bounded history fetch and
+/// individual Supabase realtime changes. PRD US-013…US-017, US-023.
 class ChatNotifier extends StreamNotifier<List<Message>> {
   ChatNotifier(this.chatId);
 
+  static const int pageSize = 50;
+
   final String chatId;
+  final Map<String, Message> _messagesById = <String, Message>{};
+  MessageCursor? _oldestCursor;
+  bool _hasMore = false;
+  bool _loadingOlder = false;
 
   /// Ids currently being sent to the server. Guards against a queued send
   /// being fired twice when both the user action and the reconnect flush
@@ -67,37 +101,132 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   bool get _online => ref.read(isOnlineProvider);
 
-  String get _uid {
-    final id = Supabase.instance.client.auth.currentUser?.id;
-    if (id == null) throw StateError('not_signed_in');
-    return id;
+  List<Message> _snapshot() {
+    final result = _messagesById.values.toList()
+      ..sort((a, b) {
+        final byTime = a.sentAt.compareTo(b.sentAt);
+        return byTime != 0 ? byTime : a.id.compareTo(b.id);
+      });
+    return result;
+  }
+
+  void _setPagination({bool? loading}) {
+    _loadingOlder = loading ?? _loadingOlder;
+    final nextHasMore = _hasMore;
+    final nextIsLoading = _loadingOlder;
+    // Riverpod forbids mutating a sibling provider synchronously while this
+    // StreamNotifier is building. Publish metadata on the next microtask.
+    Future<void>.microtask(() {
+      try {
+        ref
+            .read(chatPaginationProvider(chatId).notifier)
+            .update(hasMore: nextHasMore, isLoading: nextIsLoading);
+      } catch (_) {
+        // The chat may have been disposed before the microtask runs.
+      }
+    });
+  }
+
+  void _reconcilePending(List<Message> messages) {
+    final ids = messages.map((message) => message.id).toList();
+    Future<void>.microtask(() {
+      try {
+        ref.read(pendingSendsProvider(chatId).notifier).reconcile(ids);
+      } catch (_) {
+        // The chat may have been disposed before the microtask runs.
+      }
+    });
   }
 
   @override
   Stream<List<Message>> build() async* {
-    ref.watch(authSessionProvider);
+    ref.watch(currentUserIdProvider);
     final svc = ref.watch(chatServiceProvider);
+    _messagesById.clear();
+    _oldestCursor = null;
+    _hasMore = false;
+    _setPagination(loading: false);
+
     try {
-      final history = await svc.fetchMessages(chatId);
-      ref
-          .read(pendingSendsProvider(chatId).notifier)
-          .reconcile(history.map((message) => message.id));
-      yield history;
+      final page = await svc.fetchMessagePage(chatId, limit: pageSize);
+      for (final message in page.messages) {
+        _messagesById[message.id] = message;
+      }
+      _oldestCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      _setPagination();
+      final snapshot = _snapshot();
+      _reconcilePending(snapshot);
+      yield snapshot;
     } catch (_) {
       // Offline / fetch failure: don't yield anything. Riverpod keeps the
       // previous AsyncData accessible via `.value`, so the chat screen
       // continues to show the last-known messages instead of an empty list.
     }
     try {
-      await for (final rows in svc.watchMessages(chatId)) {
-        final list = messagesFromRows(rows, currentUserId: _uid);
-        ref
-            .read(pendingSendsProvider(chatId).notifier)
-            .reconcile(list.map((message) => message.id));
-        yield list;
+      await for (final change in svc.watchMessageChanges(chatId)) {
+        try {
+          switch (change.type) {
+            case MessageChangeType.upsert:
+              final message = await svc.messageFromRealtimeRow(change.row!);
+              if (message != null) _messagesById[message.id] = message;
+              break;
+            case MessageChangeType.remove:
+              final id = change.row?['id'];
+              if (id is String) _messagesById.remove(id);
+              break;
+            case MessageChangeType.resync:
+              final loadedCount = _messagesById.length < pageSize
+                  ? pageSize
+                  : _messagesById.length;
+              final page = await svc.fetchMessagePage(
+                chatId,
+                limit: loadedCount,
+              );
+              _messagesById
+                ..clear()
+                ..addEntries(page.messages.map((m) => MapEntry(m.id, m)));
+              _oldestCursor = page.nextCursor;
+              _hasMore = page.hasMore;
+              _setPagination();
+              break;
+          }
+        } catch (_) {
+          // Keep the channel alive. A later event or reconnect resync can
+          // repair a transient PostgREST failure for this one change.
+          continue;
+        }
+        final snapshot = _snapshot();
+        _reconcilePending(snapshot);
+        yield snapshot;
       }
     } catch (_) {
       // Realtime errored (e.g. offline). Keep last yielded state.
+    }
+  }
+
+  /// Loads the next older page once. Concurrent edge notifications collapse
+  /// into the same request and cursor ordering prevents insert races from
+  /// skipping or duplicating history.
+  Future<void> loadOlder() async {
+    if (_loadingOlder || !_hasMore || _oldestCursor == null) return;
+    _setPagination(loading: true);
+    try {
+      final page = await ref
+          .read(chatServiceProvider)
+          .fetchMessagePage(chatId, limit: pageSize, before: _oldestCursor);
+      for (final message in page.messages) {
+        _messagesById[message.id] = message;
+      }
+      _oldestCursor = page.nextCursor ?? _oldestCursor;
+      _hasMore = page.hasMore;
+      final snapshot = _snapshot();
+      _reconcilePending(snapshot);
+      state = AsyncData(snapshot);
+    } catch (_) {
+      // Keep the current page and allow another edge hit to retry.
+    } finally {
+      _setPagination(loading: false);
     }
   }
 
@@ -137,11 +266,14 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     String? replyToId,
   }) async {
     if (_inFlight.contains(localId)) return;
+    if (!_online) return;
     _inFlight.add(localId);
+    var simulatedFailure = false;
     try {
       // Dev/QA: consume the one-shot before forcing a rejection so the
       // resulting failed bubble can exercise the real retry path.
       if (ref.read(simulateFailureProvider.notifier).consume()) {
+        simulatedFailure = true;
         throw Exception('simulated_failure');
       }
       final server = await ref
@@ -161,11 +293,24 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
           );
       // Refresh chat list so the tile's last-message preview updates.
       ref.read(chatListProvider.notifier).refresh();
-    } catch (_) {
-      if (_online) {
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Message send failed: type=${error.runtimeType}, error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      final backendReachable =
+          simulatedFailure ||
+          await ref.read(backendReachabilityCheckProvider)();
+      if (backendReachable) {
         ref
             .read(pendingSendsProvider(chatId).notifier)
             .update(localId, (m) => m.copyWith(status: MessageStatus.failed));
+      } else {
+        // Re-run the online stream now instead of waiting for its periodic
+        // probe; this also updates the banner for offline Wi-Fi immediately.
+        ref.invalidate(onlineProvider);
       }
       // Offline drop: keep the row pending so the reconnect flush retries.
     } finally {

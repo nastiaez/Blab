@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +24,21 @@ SupabaseClient _client(String key) {
 
 Future<void> _signIn(SupabaseClient client, String email) async {
   await SupabaseAuthService(client).signIn(email: email, password: _password);
+}
+
+Future<MessageChange> _nextChange(
+  StreamIterator<MessageChange> changes,
+  bool Function(MessageChange) matches,
+  String stage,
+) async {
+  try {
+    while (await changes.moveNext().timeout(const Duration(seconds: 10))) {
+      if (matches(changes.current)) return changes.current;
+    }
+  } on TimeoutException {
+    throw TimeoutException('Timed out waiting for $stage');
+  }
+  throw StateError('message_change_stream_closed');
 }
 
 void main() {
@@ -65,6 +82,57 @@ void main() {
         ).claimInvite(token: carolInvite.token, myLearningLanguage: 'es');
         chatIds.add(aliceCarolChat);
 
+        final realtimeService = ChatService(alice);
+        final changes = StreamIterator(
+          realtimeService.watchMessageChanges(aliceBobChat),
+        );
+        try {
+          final subscribed = await _nextChange(
+            changes,
+            (change) => change.type == MessageChangeType.resync,
+            'initial realtime subscription',
+          );
+          expect(subscribed.type, MessageChangeType.resync);
+
+          final realtimeMessage = await ChatService(
+            bob,
+          ).sendMessage(chatId: aliceBobChat, body: 'realtime insert');
+          final inserted = await _nextChange(
+            changes,
+            (change) =>
+                change.type == MessageChangeType.upsert &&
+                change.row?['id'] == realtimeMessage.id,
+            'realtime insert',
+          );
+          expect(inserted.row?['body'], 'realtime insert');
+
+          await ChatService(bob).editMessage(
+            messageId: realtimeMessage.id,
+            newBody: 'realtime edit',
+          );
+          final edited = await _nextChange(
+            changes,
+            (change) =>
+                change.type == MessageChangeType.upsert &&
+                change.row?['id'] == realtimeMessage.id &&
+                change.row?['body'] == 'realtime edit',
+            'realtime edit',
+          );
+          expect(edited.row?['body'], 'realtime edit');
+
+          await ChatService(bob).softDelete(realtimeMessage.id);
+          final removed = await _nextChange(
+            changes,
+            (change) =>
+                change.type == MessageChangeType.remove &&
+                change.row?['id'] == realtimeMessage.id,
+            'realtime soft-delete',
+          );
+          expect(removed.type, MessageChangeType.remove);
+        } finally {
+          await changes.cancel();
+        }
+
         final source = await ChatService(
           alice,
         ).sendMessage(chatId: aliceBobChat, body: 'reply source');
@@ -85,6 +153,19 @@ void main() {
         ).fetchMessages(aliceBobChat, limit: 1);
         expect(oneMessagePage.single.id, replyId);
         expect(oneMessagePage.single.replyTo?.id, source.id);
+        final newestPage = await ChatService(
+          alice,
+        ).fetchMessagePage(aliceBobChat, limit: 1);
+        expect(newestPage.messages.single.id, replyId);
+        expect(newestPage.hasMore, isTrue);
+        expect(newestPage.nextCursor, isNotNull);
+        final olderPage = await ChatService(alice).fetchMessagePage(
+          aliceBobChat,
+          limit: 1,
+          before: newestPage.nextCursor,
+        );
+        expect(olderPage.messages.single.id, source.id);
+        expect(olderPage.hasMore, isFalse);
 
         await ChatService(bob).sendMessage(
           chatId: aliceBobChat,
