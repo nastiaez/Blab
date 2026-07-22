@@ -58,30 +58,174 @@ prototype.html          static interaction prototype (open in any browser)
 
 `tasks/prd-blab.md`, `tasks/tech-spec.md`, and `tasks/progress.md` are the source of truth. PRD wins on product behavior; tech-spec wins on engineering choices; progress wins on order of work.
 
-## Run it locally
+## Local development
+
+### Prerequisites
+
+- Flutter `3.44.4` and a working `flutter doctor` installation.
+- Supabase CLI `2.109.1`, Docker Desktop, and `jq`.
+- Chrome for web development.
+- Android Studio, an Android SDK, and an Android emulator for Android work.
+
+From the repository root, resolve dependencies:
 
 ```bash
+cd /path/to/Blab
 flutter pub get
+```
+
+For local AI translation, create the ignored function environment file if it
+does not already exist, then add a development-only OpenRouter key:
+
+```bash
+test -f supabase/.env.local || cp supabase/.env.example supabase/.env.local
+```
+
+```dotenv
+OPEN_ROUTER_KEY=<development-key>
+```
+
+Never commit `supabase/.env.local` or put production provider credentials in it.
+
+### Start the local backend
+
+Run this once before launching clients, and again whenever migrations or seed
+data need to be reapplied:
+
+```bash
 scripts/local_test.sh reset
+```
+
+This is destructive to local Blab data. It rebuilds the local Supabase database,
+applies every migration, seeds connected Alice/Bob test data, and prints the
+available accounts. It never touches staging or production.
+
+### Run the clients
+
+Keep each command running in its own terminal window.
+
+Terminal 1, local Edge Functions for translation:
+
+```bash
+cd /path/to/Blab
+scripts/local_test.sh functions
+```
+
+Terminal 2, Flutter web:
+
+```bash
+cd /path/to/Blab
+scripts/local_test.sh web
+```
+
+Chrome opens at `http://localhost:7357/`.
+
+Terminal 3, Android emulator:
+
+```bash
+cd /path/to/Blab
 scripts/local_test.sh android emulator-5554
 ```
 
-This starts the app against disposable local Supabase data and prints the seeded
-Alice, Bob, and Carol test accounts. Use `scripts/local_test.sh web` in another
-terminal for a second client. Plain `flutter run` intentionally fails without
-an explicit environment, so it cannot silently connect to production.
+Start the emulator from Android Studio's Device Manager first. If its ID is not
+`emulator-5554`, find the correct ID and substitute it in the command:
 
-Hosted staging and production use ignored build configuration files and guarded
-commands. See [`docs/environments.md`](./docs/environments.md).
+```bash
+flutter devices
+```
 
-Android push notifications additionally require the owner-controlled Firebase
-and Supabase setup in [`docs/push-notifications.md`](./docs/push-notifications.md).
+Use `r` for hot reload, `R` for hot restart, and `q` to stop a Flutter process.
+Plain `flutter run` intentionally fails without explicit environment values, so
+it cannot silently connect to production.
 
-To reset and apply schema changes locally:
+### Local test accounts
+
+All seeded accounts use the same password: `Blab-local-123!`.
+
+| Account | Email | Suggested client |
+| --- | --- | --- |
+| Alice | `alice@blab.test` | Web |
+| Bob | `bob@blab.test` | Android |
+| Carol | `carol@blab.test` | Authorization/edge-case tests |
+
+Print the account list at any time:
+
+```bash
+scripts/local_test.sh accounts
+```
+
+### Invite testing
+
+Launch a fresh web session directly into an invite by passing either the copied
+URL or its token:
+
+```bash
+scripts/local_test.sh web 'https://blab-gray.vercel.app/i/<invite-token>'
+```
+
+To print the equivalent local URL without launching another client:
+
+```bash
+scripts/local_test.sh invite 'https://blab-gray.vercel.app/i/<invite-token>'
+```
+
+### Test fixtures
+
+Seed up to 500 older messages into an existing Alice/Bob chat:
+
+```bash
+scripts/local_test.sh history 120
+```
+
+Force or clear the local translation quota state for an account:
+
+```bash
+scripts/local_test.sh translation-limit set alice
+scripts/local_test.sh translation-limit clear alice
+```
+
+### Automated verification
+
+Run the ordinary source and Flutter gates:
+
+```bash
+dart format --output=none --set-exit-if-changed lib test
+bash -n scripts/*.sh
+flutter analyze
+flutter test
+git diff --check
+```
+
+Generate the same coverage report retained by CI:
+
+```bash
+flutter test --coverage
+```
+
+Rebuild the disposable backend and run Realtime plus database authorization,
+invite, messaging, moderation, push-outbox, and translation-security tests:
 
 ```bash
 scripts/local_test.sh reset
+scripts/local_test.sh integration
 ```
+
+The provider-backed translation cases are skipped unless explicitly enabled
+with a development OpenRouter key; all secretless database contracts still run.
+
+GitHub Actions runs these gates on every pull request and also compiles a
+non-distributable Android release AAB with temporary CI-only signing and Firebase
+configuration. See [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+
+### Staging and production
+
+Hosted staging and production use ignored build configuration files and guarded
+commands. Do not substitute hosted URLs or keys into the local commands above.
+See [`docs/environments.md`](./docs/environments.md) for validation, hosted app
+runs, backend drift checks, and release builds.
+
+Android push notifications additionally require the owner-controlled Firebase
+and Supabase setup in [`docs/push-notifications.md`](./docs/push-notifications.md).
 
 ## Status
 
