@@ -9,13 +9,20 @@ import 'package:blab/shared/state/chat_list_state.dart';
 class _FakeChatService implements ChatService {
   _FakeChatService(this.rows);
   final List<Map<String, dynamic>> rows;
-  final _ctrl = StreamController<List<Map<String, dynamic>>>.broadcast();
+  final _memberships = StreamController<List<Map<String, dynamic>>>.broadcast();
+  final _messages = StreamController<void>.broadcast();
 
   @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => rows;
 
   @override
-  Stream<List<Map<String, dynamic>>> watchMyMemberships() => _ctrl.stream;
+  Stream<List<Map<String, dynamic>>> watchMyMemberships() =>
+      _memberships.stream;
+
+  @override
+  Stream<void> watchChatListMessageChanges() => _messages.stream;
+
+  void emitMessageChange() => _messages.add(null);
 
   // Unused in this test:
   @override
@@ -38,9 +45,9 @@ void main() {
         'unread_count': 2,
       },
     ]);
-    final container = ProviderContainer(overrides: [
-      chatServiceProvider.overrideWithValue(fake),
-    ]);
+    final container = ProviderContainer(
+      overrides: [chatServiceProvider.overrideWithValue(fake)],
+    );
     addTearDown(container.dispose);
 
     final chats = await container.read(chatListProvider.future);
@@ -55,11 +62,46 @@ void main() {
 
   test('empty rows → empty list', () async {
     final fake = _FakeChatService([]);
-    final container = ProviderContainer(overrides: [
-      chatServiceProvider.overrideWithValue(fake),
-    ]);
+    final container = ProviderContainer(
+      overrides: [chatServiceProvider.overrideWithValue(fake)],
+    );
     addTearDown(container.dispose);
     final chats = await container.read(chatListProvider.future);
     expect(chats, isEmpty);
+  });
+
+  test('incoming message changes refresh the chat-list preview', () async {
+    final fake = _FakeChatService([
+      {
+        'viewer_id': 'me',
+        'chat_id': 'c1',
+        'partner_id': 'u2',
+        'partner_name': 'Bob',
+        'my_learning': 'de',
+        'partner_learning': 'en',
+        'last_body': 'before',
+        'last_at': '2026-07-21T10:00:00Z',
+        'unread_count': 0,
+      },
+    ]);
+    final container = ProviderContainer(
+      overrides: [chatServiceProvider.overrideWithValue(fake)],
+    );
+    addTearDown(container.dispose);
+    await container.read(chatListProvider.future);
+
+    fake.rows.single['last_body'] = 'after';
+    fake.rows.single['unread_count'] = 1;
+    fake.emitMessageChange();
+
+    final deadline = DateTime.now().add(const Duration(seconds: 1));
+    while (container.read(chatListProvider).value?.single.lastMessage !=
+            'after' &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    final chat = container.read(chatListProvider).value!.single;
+    expect(chat.lastMessage, 'after');
+    expect(chat.unreadCount, 1);
   });
 }

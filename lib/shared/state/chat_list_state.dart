@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/languages.dart';
@@ -43,6 +44,9 @@ Chat _rowToChat(Map<String, dynamic> r) {
 
 class ChatListNotifier extends AsyncNotifier<List<Chat>> {
   StreamSubscription<dynamic>? _membershipsSub;
+  StreamSubscription<void>? _messagesSub;
+  Timer? _refreshDebounce;
+  Future<void>? _refreshInFlight;
 
   @override
   Future<List<Chat>> build() async {
@@ -52,28 +56,65 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     final svc = ref.watch(chatServiceProvider);
 
     _membershipsSub?.cancel();
+    _messagesSub?.cancel();
+    _refreshDebounce?.cancel();
     // Subscribe to my chat_members changes so the list refreshes when a new
     // chat is created or a member leaves. Errors (e.g. transient network
     // drops) are swallowed — the next successful emission catches up.
     _membershipsSub = svc.watchMyMemberships().listen(
-      (_) => refresh(),
+      (_) => _scheduleRefresh(),
       onError: (Object _) {},
     );
-    ref.onDispose(() => _membershipsSub?.cancel());
+    _messagesSub = svc.watchChatListMessageChanges().listen(
+      (_) => _scheduleRefresh(),
+      onError: (Object _) {},
+    );
+    ref.onDispose(() {
+      _refreshDebounce?.cancel();
+      _membershipsSub?.cancel();
+      _messagesSub?.cancel();
+    });
 
-    final rows = await svc.fetchChatList();
-    return rows.map(_rowToChat).toList();
+    try {
+      final rows = await svc.fetchChatList();
+      return rows.map(_rowToChat).toList();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Chat list fetch failed: type=${error.runtimeType}, error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      rethrow;
+    }
   }
 
   /// Force a refetch. Callers (e.g., the chat screen, after sending or
   /// receiving a message) can poke this to update last-message + unread
   /// counts without waiting for membership events.
-  Future<void> refresh() async {
+  Future<void> refresh() {
+    final active = _refreshInFlight;
+    if (active != null) return active;
+    final pending = _refresh();
+    _refreshInFlight = pending.whenComplete(() => _refreshInFlight = null);
+    return _refreshInFlight!;
+  }
+
+  void _scheduleRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 75), refresh);
+  }
+
+  Future<void> _refresh() async {
     final svc = ref.read(chatServiceProvider);
     try {
       final rows = await svc.fetchChatList();
       state = AsyncValue.data(rows.map(_rowToChat).toList());
     } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Chat list refresh failed: type=${e.runtimeType}, error=$e');
+        debugPrintStack(stackTrace: st);
+      }
       // If we already have data, keep showing it on transient errors
       // (e.g. offline). Only surface the error when we have nothing yet.
       if (state.hasValue) return;

@@ -1,8 +1,10 @@
 import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
@@ -164,7 +166,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } on SocialSignInCancelled {
       // Silent — user dismissed picker.
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logAuthFailure('social sign-in', e, stackTrace);
       if (!mounted) return;
       setState(
         () => _formErr = localizedAuthMessage(
@@ -209,7 +212,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
       if (!mounted) return;
       await _completeAuthentication();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logAuthFailure('email authentication', e, stackTrace);
       if (!mounted) return;
       setState(
         () => _formErr = localizedAuthMessage(
@@ -220,6 +224,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _logAuthFailure(String operation, Object error, StackTrace stackTrace) {
+    if (!kDebugMode) return;
+    if (error is AuthException) {
+      debugPrint(
+        'Auth failure ($operation): type=${error.runtimeType}, '
+        'status=${error.statusCode}, code=${error.code}, '
+        'message=${error.message}',
+      );
+      return;
+    }
+    debugPrint('Auth failure ($operation): type=${error.runtimeType}, $error');
+    debugPrintStack(stackTrace: stackTrace);
   }
 
   Future<void> _completeAuthentication() async {

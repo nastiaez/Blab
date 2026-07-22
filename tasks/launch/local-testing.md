@@ -66,8 +66,9 @@ scripts/local_test.sh web '<copied-invite-url-or-token>'
 ```
 
 The helper reads the local public API key from `supabase status` and supplies the
-correct host URL for each platform. Normal builds still use the deployed Supabase
-project unless these build-time overrides are provided.
+correct host URL for each platform. It also labels the build `local` and disables
+Firebase initialization. Plain `flutter run` has no backend fallback and exits
+before making a request; hosted runs require the guarded environment helper.
 
 ## Enable local translation
 

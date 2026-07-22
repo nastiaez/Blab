@@ -71,4 +71,108 @@ void main() {
       everyElement(matches(RegExp(r'^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$'))),
     );
   });
+
+  test(
+    'Android push permission, channel, and settings bridge stay configured',
+    () {
+      final manifest = File(
+        'android/app/src/main/AndroidManifest.xml',
+      ).readAsStringSync();
+      final activity = File(
+        'android/app/src/main/kotlin/blab/nastia/ez/MainActivity.kt',
+      ).readAsStringSync();
+      final settings = File('android/settings.gradle.kts').readAsStringSync();
+      final appGradle = File('android/app/build.gradle.kts').readAsStringSync();
+      final androidGitignore = File('android/.gitignore').readAsStringSync();
+      final firebaseConfig = File(
+        'lib/shared/data/firebase_config.dart',
+      ).readAsStringSync();
+
+      expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+      expect(
+        manifest,
+        contains('firebase.messaging.default_notification_channel_id'),
+      );
+      expect(manifest, contains('android:value="messages"'));
+      expect(activity, contains('NotificationManager.IMPORTANCE_HIGH'));
+      expect(activity, contains('Settings.ACTION_APP_NOTIFICATION_SETTINGS'));
+      expect(activity, contains('blab/notifications'));
+      expect(settings, contains('id("com.google.gms.google-services")'));
+      expect(appGradle, contains('id("com.google.gms.google-services")'));
+      expect(
+        appGradle,
+        contains(
+          'Firebase Android configuration is required for release builds.',
+        ),
+      );
+      expect(androidGitignore, contains('/app/google-services.json'));
+      expect(firebaseConfig, contains('await Firebase.initializeApp()'));
+      expect(firebaseConfig, contains('if (!enabled ||'));
+      expect(firebaseConfig, isNot(contains('FIREBASE_PRIVATE_KEY')));
+    },
+  );
+
+  test('push webhook stays asynchronous, private, and fail-open', () {
+    final migration = File(
+      'supabase/migrations/20260720000002_push_notification_webhook.sql',
+    ).readAsStringSync();
+
+    expect(migration, contains('create extension if not exists pg_net'));
+    expect(migration, contains('from vault.decrypted_secrets'));
+    expect(migration, contains("name = 'blab_push_webhook_secret'"));
+    expect(migration, contains("name = 'blab_push_webhook_url'"));
+    expect(migration, contains('perform net.http_post('));
+    expect(migration, contains('when others then'));
+    expect(migration, contains('return new;'));
+    expect(migration, isNot(contains('PUSH_WEBHOOK_SECRET=')));
+    expect(migration, isNot(contains('bhzcexhebjszwyqvcsxs')));
+  });
+
+  test('push worker records post-claim Firebase authentication failures', () {
+    final worker = File(
+      'supabase/functions/send-push/index.ts',
+    ).readAsStringSync();
+
+    expect(worker, contains('recordAuthenticationFailure('));
+    expect(worker, contains('p_status: "failed"'));
+    expect(worker, contains('p_provider_code: failureCode'));
+    expect(worker, contains('completeClaimedEvent(supabase, eventId'));
+    expect(worker, contains('console.error("firebase_auth_failed",'));
+    expect(worker, isNot(contains('console.error(error)')));
+  });
+
+  test('hosted environments fail closed and production runs are guarded', () {
+    final config = File(
+      'lib/shared/data/supabase_config.dart',
+    ).readAsStringSync();
+    final helper = File('scripts/blab_environment.sh').readAsStringSync();
+    final mainSource = File('lib/main.dart').readAsStringSync();
+    final rootGitignore = File('.gitignore').readAsStringSync();
+
+    expect(config, isNot(contains('productionPublishableKey')));
+    expect(config, isNot(contains('https://bhzcexhebjszwyqvcsxs')));
+    expect(
+      config,
+      contains('Staging builds cannot use the production project'),
+    );
+    expect(config, contains('SENTRY_DSN is required for production builds'));
+    expect(helper, contains('BLAB_CONFIRM_PRODUCTION'));
+    expect(helper, contains(r'--dart-define-from-file="$config_file"'));
+    expect(helper, contains(r'"$action" == '));
+    expect(helper, contains("'validate'"));
+    expect(
+      mainSource,
+      contains('enabled: SupabaseConfig.environment != BlabEnvironment.local'),
+    );
+    final sentryBootstrap = mainSource.indexOf(
+      'await bootstrap(_initializeAndRunApp);',
+    );
+    final flutterBinding = mainSource.indexOf(
+      'WidgetsFlutterBinding.ensureInitialized();',
+    );
+    expect(sentryBootstrap, greaterThanOrEqualTo(0));
+    expect(flutterBinding, greaterThan(sentryBootstrap));
+    expect(rootGitignore, contains('/env/'));
+    expect(rootGitignore, contains('/supabase/.temp/'));
+  });
 }

@@ -7,7 +7,22 @@ cd "$repo_root"
 password='Blab-local-123!'
 postgres_version_file='supabase/.temp/postgres-version'
 local_postgres_version="${BLAB_LOCAL_POSTGRES_VERSION:-17.6.1.084}"
+supported_supabase_cli_version="${BLAB_SUPABASE_CLI_VERSION:-2.109.1}"
 function_env_file="${BLAB_FUNCTION_ENV_FILE:-supabase/.env.local}"
+
+require_supported_supabase_cli() {
+  local actual
+  actual="$(supabase --version)"
+  if [[ "$actual" == "$supported_supabase_cli_version" ]]; then
+    return
+  fi
+
+  printf '%s\n' \
+    "Unsupported Supabase CLI: $actual." \
+    "Blab local tests currently require $supported_supabase_cli_version." \
+    'Use BLAB_SUPABASE_CLI_VERSION only after verifying reset and integration.' >&2
+  exit 1
+}
 
 print_accounts() {
   printf '%s\n' \
@@ -64,7 +79,9 @@ run_integration() {
   local api_url
   local publishable_key
   local service_role_key
+  local integration_target="${BLAB_INTEGRATION_TARGET:-test/integration}"
 
+  require_supported_supabase_cli
   status="$(status_json)"
   api_url="$(printf '%s' "$status" | jq -er '.API_URL')"
   publishable_key="$(printf '%s' "$status" | jq -er '.PUBLISHABLE_KEY // .ANON_KEY')"
@@ -75,13 +92,28 @@ run_integration() {
       --concurrency=1 \
       --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
       --dart-define=RUN_LOCAL_OPENROUTER_INTEGRATION=true \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$api_url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
       --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
   else
-    flutter test test/integration \
+    flutter test test/local_readiness/realtime_ready_test.dart \
       --concurrency=1 \
       --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
+      --dart-define="SUPABASE_URL=$api_url" \
+      --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
+      --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
+    flutter test "$integration_target" \
+      --concurrency=1 \
+      --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$api_url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key" \
       --dart-define="SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
@@ -319,6 +351,7 @@ run_app() {
   local initial_route="${BLAB_INITIAL_ROUTE:-}"
   local publishable_key
   local url
+  local launch_url=''
 
   if ! publishable_key="$(local_key)"; then
     printf '%s\n' \
@@ -344,7 +377,6 @@ run_app() {
   if [[ -n "$initial_route" ]]; then
     set -- "$@" "--route=$initial_route"
   fi
-
   case "$device" in
     chrome)
       url='http://127.0.0.1:54321'
@@ -360,27 +392,43 @@ run_app() {
   esac
 
   if [[ "$device" == 'chrome' ]]; then
-    local launch_url='http://localhost:7357/'
+    launch_url='http://localhost:7357/'
     if [[ -n "$invite_input" ]]; then
       launch_url="http://localhost:7357/#/i/$(invite_token "$invite_input")"
     fi
     "$@" -d chrome --web-port 7357 \
       --web-launch-url="$launch_url" \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key"
   else
     "$@" -d "$device" \
+      --dart-define=BLAB_ENV=local \
+      --dart-define=SUPABASE_PROJECT_REF=local \
+      --dart-define=SENTRY_ENV=local \
       --dart-define="SUPABASE_URL=$url" \
       --dart-define="SUPABASE_PUBLISHABLE_KEY=$publishable_key"
   fi
 }
 
 reset_local() {
-  local original_postgres_version
-  original_postgres_version="$(cat "$postgres_version_file")"
+  local original_postgres_version=''
+  local had_original_postgres_version='false'
+
+  require_supported_supabase_cli
+  if [[ -f "$postgres_version_file" ]]; then
+    original_postgres_version="$(cat "$postgres_version_file")"
+    had_original_postgres_version='true'
+  fi
 
   restore_postgres_version() {
-    printf '%s' "$original_postgres_version" > "$postgres_version_file"
+    if [[ "$had_original_postgres_version" == 'true' ]]; then
+      printf '%s' "$original_postgres_version" > "$postgres_version_file"
+    else
+      rm -f "$postgres_version_file"
+    fi
   }
   trap restore_postgres_version EXIT
 
@@ -391,6 +439,7 @@ reset_local() {
   # The currently CLI-pinned 17.6.1.127 image has a zero-byte entrypoint on
   # this development machine. Use the verified compatible PG 17.6 image for
   # local resets without changing the repository's tracked CLI metadata.
+  mkdir -p "$(dirname "$postgres_version_file")"
   printf '%s' "$local_postgres_version" > "$postgres_version_file"
   if [[ "${SUPABASE_DEBUG:-0}" == '1' ]]; then
     if [[ "${BLAB_IGNORE_SUPABASE_HEALTH_CHECKS:-0}" == '1' ]]; then

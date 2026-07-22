@@ -7,10 +7,7 @@ import 'package:blab/features/invite/widgets/share_targets.dart';
 
 const _link = 'https://blab-gray.vercel.app/i/abc123';
 
-Widget _host({
-  required LaunchUriFn launchUri,
-  required ShareTextFn shareText,
-}) {
+Widget _host({required LaunchUriFn launchUri, required ShareTextFn shareText}) {
   return MaterialApp(
     scaffoldMessengerKey: appMessengerKey,
     home: Scaffold(
@@ -32,12 +29,12 @@ Widget _host({
 }
 
 void main() {
-  testWidgets('renders WhatsApp / Telegram / Email / More + Copy row',
-      (tester) async {
-    await tester.pumpWidget(_host(
-      launchUri: (_) async => true,
-      shareText: (_) async => true,
-    ));
+  testWidgets('renders WhatsApp / Telegram / Email / More + Copy row', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(launchUri: (_) async => true, shareText: (_) async => true),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -48,16 +45,19 @@ void main() {
     expect(find.text('Copy link'), findsOneWidget);
   });
 
-  testWidgets('tapping WhatsApp launches wa.me and fires "Invite sent ✓"',
-      (tester) async {
+  testWidgets('tapping WhatsApp launches wa.me and fires "Invite sent ✓"', (
+    tester,
+  ) async {
     Uri? launched;
-    await tester.pumpWidget(_host(
-      launchUri: (uri) async {
-        launched = uri;
-        return true;
-      },
-      shareText: (_) async => true,
-    ));
+    await tester.pumpWidget(
+      _host(
+        launchUri: (uri) async {
+          launched = uri;
+          return true;
+        },
+        shareText: (_) async => true,
+      ),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -71,13 +71,15 @@ void main() {
 
   testWidgets('"More" tile opens the native chooser', (tester) async {
     String? shared;
-    await tester.pumpWidget(_host(
-      launchUri: (_) async => true,
-      shareText: (text) async {
-        shared = text;
-        return true;
-      },
-    ));
+    await tester.pumpWidget(
+      _host(
+        launchUri: (_) async => true,
+        shareText: (text) async {
+          shared = text;
+          return true;
+        },
+      ),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -88,16 +90,17 @@ void main() {
     expect(find.text('Invite sent ✓'), findsOneWidget);
   });
 
-  testWidgets('failed launch falls back to the native chooser',
-      (tester) async {
+  testWidgets('failed launch falls back to the native chooser', (tester) async {
     var shareCalled = false;
-    await tester.pumpWidget(_host(
-      launchUri: (_) async => false, // app not installed
-      shareText: (_) async {
-        shareCalled = true;
-        return true;
-      },
-    ));
+    await tester.pumpWidget(
+      _host(
+        launchUri: (_) async => false, // app not installed
+        shareText: (_) async {
+          shareCalled = true;
+          return true;
+        },
+      ),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -108,10 +111,12 @@ void main() {
   });
 
   testWidgets('dismissed share does NOT fire the sent snack', (tester) async {
-    await tester.pumpWidget(_host(
-      launchUri: (_) async => true,
-      shareText: (_) async => false, // user dismissed the chooser
-    ));
+    await tester.pumpWidget(
+      _host(
+        launchUri: (_) async => true,
+        shareText: (_) async => false, // user dismissed the chooser
+      ),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
@@ -122,10 +127,9 @@ void main() {
   });
 
   testWidgets('Copy row swaps to "Link copied"', (tester) async {
-    await tester.pumpWidget(_host(
-      launchUri: (_) async => true,
-      shareText: (_) async => true,
-    ));
+    await tester.pumpWidget(
+      _host(launchUri: (_) async => true, shareText: (_) async => true),
+    );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 

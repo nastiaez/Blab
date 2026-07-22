@@ -1493,6 +1493,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} joined.'**
   String personJoined(Object name);
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @showMessagePreviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Show message previews'**
+  String get showMessagePreviews;
+
+  /// No description provided for @showMessagePreviewsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the sender and original message in notifications.'**
+  String get showMessagePreviewsHelp;
+
+  /// No description provided for @androidNotificationSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Android notification settings'**
+  String get androidNotificationSettings;
+
+  /// No description provided for @notificationsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are enabled'**
+  String get notificationsEnabled;
+
+  /// No description provided for @notificationsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off'**
+  String get notificationsDisabled;
+
+  /// No description provided for @notificationsNotRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a chat to enable notifications'**
+  String get notificationsNotRequested;
+
+  /// No description provided for @notificationsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications aren\'t available in this build'**
+  String get notificationsUnavailable;
+
+  /// No description provided for @couldNotSaveNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save notification setting.'**
+  String get couldNotSaveNotifications;
+
+  /// No description provided for @enableNotificationsReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications to hear from your partner'**
+  String get enableNotificationsReminder;
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
 }
 
 class _AppLocalizationsDelegate

@@ -72,13 +72,14 @@ Google asks, section by section. Answer like this:
 |---|---|---|---|
 | Email address | Yes | Account management, app functionality | Not shared |
 | Name | Yes | App functionality (display name) | Not shared |
-| Messages (in-app) | Yes | App functionality | Stored to deliver chats; text sent to a translation provider to produce translations |
+| Messages (in-app) | Yes | App functionality | Stored to deliver chats; text sent to a translation provider; original text also goes through Firebase when notification previews are enabled |
+| Device or other IDs | Yes | App functionality | Firebase notification token used only to route Android notifications |
 | Crash logs | Yes | Diagnostics / app stability | Scrubbed — no message content |
 | App interactions | Yes | App functionality | Read/typing state per the privacy toggles |
 
 For each row, when asked "Is this data shared with third parties?" → **No**
-(service providers that only process on our behalf — Supabase, the translation
-provider, Sentry — are not "sharing" under Google's definition).
+(service providers that only process on our behalf — Supabase, Google Firebase,
+the translation provider, Sentry — are not "sharing" under Google's definition).
 
 When asked "Is this data processed ephemerally?" → No for messages (stored),
 crash logs (sent to Sentry).
@@ -155,7 +156,8 @@ Do these last, right before submitting to production:
 - [ ] Fill **Child safety standards** (Terms `#child-safety` URL + nastia.ez@gmail.com).
 - [ ] Upload the **feature graphic** (1024×500) + screenshots.
 - [ ] Add the **reviewer demo account** credentials.
-- [x] **Sentry DSN** set (in gitignored `env/sentry.json`; builds use `--dart-define-from-file=env/sentry.json`).
+- [ ] **Production environment config** validates, including the Sentry DSN
+      and matching Firebase file (`scripts/blab_environment.sh validate production`).
 - [ ] Confirm **Report + Block** is live in the build (Step 3.6a).
 - [ ] Closed test: **12+ testers, 14 continuous days** complete.
 
@@ -180,7 +182,7 @@ create the owner-controlled upload key once:
    be updated when restoring on a different machine.
 3. Build the upload-signed bundle:
    ```
-   flutter build appbundle --release --dart-define-from-file=env/sentry.json
+   scripts/blab_environment.sh build production
    ```
    → upload `build/app/outputs/bundle/release/app-release.aab` to Play.
 4. Use Google-generated **Play App Signing** (the recommended default). After

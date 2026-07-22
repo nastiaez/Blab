@@ -780,4 +780,41 @@ class AppLocalizationsUk extends AppLocalizations {
   String personJoined(Object name) {
     return '$name приєднався(-лася).';
   }
+
+  @override
+  String get notifications => 'Сповіщення';
+
+  @override
+  String get showMessagePreviews => 'Показувати текст повідомлень';
+
+  @override
+  String get showMessagePreviewsHelp =>
+      'Показувати відправника й оригінал повідомлення у сповіщеннях.';
+
+  @override
+  String get androidNotificationSettings => 'Налаштування сповіщень Android';
+
+  @override
+  String get notificationsEnabled => 'Сповіщення ввімкнено';
+
+  @override
+  String get notificationsDisabled => 'Сповіщення вимкнено';
+
+  @override
+  String get notificationsNotRequested =>
+      'Відкрийте чат, щоб увімкнути сповіщення';
+
+  @override
+  String get notificationsUnavailable => 'Сповіщення недоступні в цій збірці';
+
+  @override
+  String get couldNotSaveNotifications =>
+      'Не вдалося зберегти налаштування сповіщень.';
+
+  @override
+  String get enableNotificationsReminder =>
+      'Увімкніть сповіщення, щоб не пропускати повідомлення партнера';
+
+  @override
+  String get dismiss => 'Закрити';
 }

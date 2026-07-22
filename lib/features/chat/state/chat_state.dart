@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/data/languages.dart';
@@ -292,7 +293,13 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
           );
       // Refresh chat list so the tile's last-message preview updates.
       ref.read(chatListProvider.notifier).refresh();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Message send failed: type=${error.runtimeType}, error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
       final backendReachable =
           simulatedFailure ||
           await ref.read(backendReachabilityCheckProvider)();

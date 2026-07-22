@@ -314,6 +314,35 @@ class ChatService {
         .eq('user_id', _uid);
   }
 
+  /// Emits when an authorized message insert, edit, or removal can change a
+  /// chat-list preview. Postgres Changes applies message RLS before invoking
+  /// the callback and does not send an initial message-history snapshot.
+  Stream<void> watchChatListMessageChanges() {
+    late final RealtimeChannel channel;
+    late final StreamController<void> controller;
+    controller = StreamController<void>(
+      onListen: () {
+        channel = _client.channel(
+          'chat-list-messages:$_uid:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'messages',
+              callback: (_) {
+                if (!controller.isClosed) controller.add(null);
+              },
+            )
+            .subscribe();
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
+  }
+
   /// Persist a new learning language on the caller's chat_members row.
   /// PRD US-022 — picking a language in the ⋯ menu must survive cold
   /// start and any realtime refresh of `chat_list`.

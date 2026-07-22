@@ -1,0 +1,10 @@
+{
+  "BLAB_ENV": "production",
+  "SUPABASE_PROJECT_REF": "bhzcexhebjszwyqvcsxs",
+  "SUPABASE_URL": "https://bhzcexhebjszwyqvcsxs.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "replace_with_production_publishable_key",
+  "GOOGLE_WEB_CLIENT_ID": "replace_with_google_web_client_id.apps.googleusercontent.com",
+  "FIREBASE_PROJECT_ID": "replace_with_production_firebase_project_id",
+  "SENTRY_DSN": "https://replace_with_production_sentry_dsn",
+  "SENTRY_ENV": "production"
+}

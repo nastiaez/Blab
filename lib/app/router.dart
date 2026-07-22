@@ -24,6 +24,7 @@ import '../features/profile/delete_account_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/interface_language_screen.dart';
 import '../features/profile/privacy_screen.dart';
+import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../l10n/l10n.dart';
 import 'dev_menu.dart';
@@ -241,6 +242,10 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/profile/privacy',
       builder: (context, state) => const PrivacyScreen(),
+    ),
+    GoRoute(
+      path: '/profile/notifications',
+      builder: (context, state) => const NotificationSettingsScreen(),
     ),
     GoRoute(
       path: '/profile/interface-language',

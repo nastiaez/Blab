@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import '../data/supabase_config.dart';
 import 'sentry_scrub.dart';
 
 // Crash + error reporting. Step 3.0.
@@ -14,14 +15,8 @@ import 'sentry_scrub.dart';
 //     --dart-define=SENTRY_DSN=https://xxx@yyy.ingest.sentry.io/zzz \
 //     --dart-define=SENTRY_ENV=production
 
-const String _dsn = String.fromEnvironment('SENTRY_DSN');
-const String _environment = String.fromEnvironment(
-  'SENTRY_ENV',
-  defaultValue: 'production',
-);
-
 /// True when a DSN was provided at build time.
-bool get sentryEnabled => _dsn.isNotEmpty;
+bool get sentryEnabled => SupabaseConfig.sentryDsn.isNotEmpty;
 
 /// Initialize Sentry (when a DSN is set) and run the app inside it so
 /// uncaught Dart errors, Flutter framework errors, and native crashes are
@@ -32,8 +27,8 @@ Future<void> bootstrap(FutureOr<void> Function() appRunner) async {
     return;
   }
   await SentryFlutter.init((options) {
-    options.dsn = _dsn;
-    options.environment = _environment;
+    options.dsn = SupabaseConfig.sentryDsn;
+    options.environment = SupabaseConfig.sentryEnvironment;
     // Never attach device PII; we redact bodies ourselves below.
     options.sendDefaultPii = false;
     // Crash reporting only — no performance tracing in v1.
