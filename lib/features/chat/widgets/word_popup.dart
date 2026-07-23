@@ -118,8 +118,7 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
   }
 
   Future<void> _checkTts() async {
-    final available =
-        await widget.tts.isLanguageAvailable(widget.languageCode);
+    final available = await widget.tts.isLanguageAvailable(widget.languageCode);
     if (!mounted) return;
     setState(() => _ttsAvailable = available);
   }
@@ -285,18 +284,8 @@ class _PositionedPopupState extends State<_PositionedPopup> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            if (!flipBelow)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: card,
-              ),
-            if (flipBelow)
-              Positioned(
-                left: 0,
-                top: _kTailHeight,
-                child: card,
-              ),
+            if (!flipBelow) Positioned(left: 0, top: 0, child: card),
+            if (flipBelow) Positioned(left: 0, top: _kTailHeight, child: card),
             // Tail.
             Positioned(
               left: tailCenterInCard - _kTailWidth / 2,
@@ -355,7 +344,7 @@ class _PopupCardState extends State<_PopupCard> {
     final token = widget.token;
     final hasRomanization =
         token.romanization != null && token.romanization!.isNotEmpty;
-    final hasEnglish = token.english != null && token.english!.isNotEmpty;
+    final hasGloss = token.gloss != null && token.gloss!.isNotEmpty;
     final unknown = widget.ttsAvailable == null;
     final disabled = widget.ttsAvailable == false;
     final inactive = unknown || disabled;
@@ -409,10 +398,10 @@ class _PopupCardState extends State<_PopupCard> {
             ),
           ),
         ],
-        if (hasEnglish) ...[
+        if (hasGloss) ...[
           const SizedBox(height: 6),
           Text(
-            token.english!,
+            token.gloss!,
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -628,18 +617,56 @@ class _SpeakerPainter extends CustomPainter {
       ..cubicTo(2 * s, 8.466 * s, 2.448 * s, 8 * s, 3 * s, 8 * s)
       ..lineTo(6.586 * s, 8 * s)
       ..cubicTo(
-          6.71833 * s, 7.99954 * s, 6.8492 * s, 7.97228 * s, 6.97071 * s, 7.91986 * s)
+        6.71833 * s,
+        7.99954 * s,
+        6.8492 * s,
+        7.97228 * s,
+        6.97071 * s,
+        7.91986 * s,
+      )
       ..cubicTo(
-          7.09222 * s, 7.86744 * s, 7.20185 * s, 7.79095 * s, 7.293 * s, 7.69501 * s)
+        7.09222 * s,
+        7.86744 * s,
+        7.20185 * s,
+        7.79095 * s,
+        7.293 * s,
+        7.69501 * s,
+      )
       ..lineTo(10.293 * s, 4.30701 * s)
-      ..cubicTo(10.923 * s, 3.65101 * s, 12 * s, 4.11601 * s, 12 * s, 5.04301 * s)
+      ..cubicTo(
+        10.923 * s,
+        3.65101 * s,
+        12 * s,
+        4.11601 * s,
+        12 * s,
+        5.04301 * s,
+      )
       ..lineTo(12 * s, 18.957 * s)
-      ..cubicTo(12 * s, 19.891 * s, 10.91 * s, 20.352 * s, 10.284 * s, 19.683 * s)
+      ..cubicTo(
+        12 * s,
+        19.891 * s,
+        10.91 * s,
+        20.352 * s,
+        10.284 * s,
+        19.683 * s,
+      )
       ..lineTo(7.294 * s, 16.314 * s)
       ..cubicTo(
-          7.20259 * s, 16.2153 * s, 7.09185 * s, 16.1365 * s, 6.96867 * s, 16.0825 * s)
+        7.20259 * s,
+        16.2153 * s,
+        7.09185 * s,
+        16.1365 * s,
+        6.96867 * s,
+        16.0825 * s,
+      )
       ..cubicTo(
-          6.84549 * s, 16.0285 * s, 6.71251 * s, 16.0004 * s, 6.578 * s, 16 * s)
+        6.84549 * s,
+        16.0285 * s,
+        6.71251 * s,
+        16.0004 * s,
+        6.578 * s,
+        16 * s,
+      )
       ..lineTo(3 * s, 16 * s)
       ..cubicTo(2.448 * s, 16 * s, 2 * s, 15.534 * s, 2 * s, 14.959 * s)
       ..close();
@@ -650,7 +677,13 @@ class _SpeakerPainter extends CustomPainter {
       final wave1 = Path()
         ..moveTo(16 * s, 8.5 * s)
         ..cubicTo(
-            17.333 * s, 10.278 * s, 17.333 * s, 13.722 * s, 16 * s, 15.5 * s);
+          17.333 * s,
+          10.278 * s,
+          17.333 * s,
+          13.722 * s,
+          16 * s,
+          15.5 * s,
+        );
       canvas.drawPath(wave1, strokePaint(wave1Alpha));
     }
 
@@ -659,7 +692,13 @@ class _SpeakerPainter extends CustomPainter {
       final wave2 = Path()
         ..moveTo(19 * s, 5 * s)
         ..cubicTo(
-            22.988 * s, 8.808 * s, 23.012 * s, 15.217 * s, 19 * s, 19 * s);
+          22.988 * s,
+          8.808 * s,
+          23.012 * s,
+          15.217 * s,
+          19 * s,
+          19 * s,
+        );
       canvas.drawPath(wave2, strokePaint(wave2Alpha));
     }
   }

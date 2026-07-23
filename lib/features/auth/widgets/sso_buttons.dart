@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 
 /// Apple + Google SSO buttons. PRD US-003.
 ///
@@ -22,14 +23,14 @@ class SsoButtons extends StatelessWidget {
     return Column(
       children: [
         _SsoButton(
-          label: 'Continue with Google',
+          label: context.l10n.continueWithGoogle,
           iconWidget: const _GoogleGlyph(),
           onPressed: () => onPressed('google'),
         ),
         if (_showApple) ...[
           const SizedBox(height: 10),
           _SsoButton(
-            label: 'Continue with Apple',
+            label: context.l10n.continueWithApple,
             icon: Icons.apple,
             onPressed: () => onPressed('apple'),
           ),
@@ -59,8 +60,7 @@ class _SsoButton extends StatelessWidget {
       height: 52,
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: iconWidget ??
-            Icon(icon, size: 22, color: BlabColors.textPrimary),
+        icon: iconWidget ?? Icon(icon, size: 22, color: BlabColors.textPrimary),
         label: Text(
           label,
           style: const TextStyle(
@@ -72,8 +72,9 @@ class _SsoButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: BlabColors.phoneSurface,
           side: const BorderSide(color: BlabColors.divider),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );

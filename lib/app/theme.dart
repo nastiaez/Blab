@@ -13,12 +13,16 @@ class BlabColors {
   // Surfaces
   static const Color cream = Color(0xFFEFEBE2); // app bg + chat canvas
   static const Color appBackground = cream;
-  static const Color phoneSurface = Color(0xFFFFFFFF); // headers, sheets, incoming bubble
+  static const Color phoneSurface = Color(
+    0xFFFFFFFF,
+  ); // headers, sheets, incoming bubble
   static const Color fieldBackground = Color(0xFFFFFFFF);
 
   // Ink
   static const Color textPrimary = Color(0xFF1F3340); // ink
-  static const Color textMuted = Color(0xFF5F6770); // stone — darkened for WCAG AA (4.5:1 on cream + bubble blue-gray)
+  static const Color textMuted = Color(
+    0xFF5F6770,
+  ); // stone — darkened for WCAG AA (4.5:1 on cream + bubble blue-gray)
 
   // Incoming bubble (soft blue-gray from kit secondary token).
   static const Color bubbleIncoming = Color(0xFFD6E2E7);

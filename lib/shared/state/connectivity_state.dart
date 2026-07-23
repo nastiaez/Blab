@@ -2,6 +2,34 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+
+import '../data/supabase_config.dart';
+
+typedef BackendReachabilityCheck = Future<bool> Function();
+
+Map<String, String> backendHealthHeaders() => {
+  'apikey': SupabaseConfig.publishableKey,
+};
+
+bool isHealthyBackendStatus(int statusCode) =>
+    statusCode >= 200 && statusCode < 300;
+
+/// The app needs Supabase, not merely an attached network interface. The
+/// health endpoint is public and contains no account data or secret headers.
+final backendReachabilityCheckProvider = Provider<BackendReachabilityCheck>(
+  (ref) => () async {
+    try {
+      final uri = Uri.parse('${SupabaseConfig.url}/auth/v1/health');
+      final response = await http
+          .get(uri, headers: backendHealthHeaders())
+          .timeout(const Duration(seconds: 4));
+      return isHealthyBackendStatus(response.statusCode);
+    } catch (_) {
+      return false;
+    }
+  },
+);
 
 /// Dev/QA toggle: when `true`, the [onlineProvider] reports offline regardless
 /// of real connectivity. Lets us demo PRD US-031 without airplane mode.
@@ -13,14 +41,16 @@ class ForceOfflineNotifier extends Notifier<bool> {
   void set(bool value) => state = value;
 }
 
-final forceOfflineProvider =
-    NotifierProvider<ForceOfflineNotifier, bool>(ForceOfflineNotifier.new);
+final forceOfflineProvider = NotifierProvider<ForceOfflineNotifier, bool>(
+  ForceOfflineNotifier.new,
+);
 
 /// Emits `true` when the device is online, `false` when offline.
 ///
-/// PRD US-031. We use [Connectivity.onConnectivityChanged] from
-/// `connectivity_plus`. A 200 ms debounce keeps the banner from flickering
-/// during transient drops.
+/// PRD US-031. `connectivity_plus` tells us when an interface changes; a
+/// bounded Supabase health probe verifies that the app's backend is actually
+/// reachable. A periodic probe catches captive/offline Wi-Fi where the
+/// interface itself never changes.
 ///
 /// The [forceOfflineProvider] short-circuits the real state for demos —
 /// when on, we emit `false` immediately and don't bother listening to the
@@ -34,6 +64,7 @@ final onlineProvider = StreamProvider<bool>((ref) async* {
   }
 
   final connectivity = Connectivity();
+  final checkBackend = ref.watch(backendReachabilityCheckProvider);
 
   bool resultsAreOnline(List<ConnectivityResult> results) {
     if (results.isEmpty) return false;
@@ -41,42 +72,64 @@ final onlineProvider = StreamProvider<bool>((ref) async* {
     return results.any((r) => r != ConnectivityResult.none);
   }
 
-  // Seed with the current state. If the platform call fails (e.g. in unit
-  // tests where the plugin isn't wired up), default to online so we don't
-  // surface a false offline banner.
-  bool initial = true;
-  try {
-    final results = await connectivity.checkConnectivity();
-    initial = resultsAreOnline(results);
-  } catch (_) {
-    initial = true;
+  Future<bool> evaluate(List<ConnectivityResult> results) async {
+    if (!resultsAreOnline(results)) return false;
+    return checkBackend();
   }
+
+  // Seed with the current interface state, then verify Supabase before ever
+  // reporting online. If the plugin is unavailable, the backend probe remains
+  // authoritative.
+  var currentResults = const <ConnectivityResult>[ConnectivityResult.other];
+  try {
+    currentResults = await connectivity.checkConnectivity();
+  } catch (_) {
+    // Keep the unknown-interface sentinel and rely on the backend probe.
+  }
+  final initial = await evaluate(currentResults);
   yield initial;
 
-  // Yield subsequent connectivity changes, debounced by 200 ms to ride out
-  // transient drops without flickering the banner.
-  Stream<bool> debounced(Stream<bool> source) async* {
-    bool? last;
-    await for (final value in source.transform(_DebounceTransformer<bool>(
-        const Duration(milliseconds: 200)))) {
-      if (value != last) {
-        last = value;
-        yield value;
+  final triggers = StreamController<List<ConnectivityResult>>();
+  final subscription = connectivity.onConnectivityChanged.listen(
+    (results) {
+      currentResults = results;
+      if (!triggers.isClosed) triggers.add(results);
+    },
+    onError: (_) {
+      currentResults = const <ConnectivityResult>[];
+      if (!triggers.isClosed) triggers.add(currentResults);
+    },
+  );
+  var last = initial;
+  // Recheck while offline so pending sends recover without an interface
+  // change. Healthy clients do not poll the backend continuously.
+  final timer = Timer.periodic(const Duration(seconds: 10), (_) {
+    if (!last && !triggers.isClosed) triggers.add(currentResults);
+  });
+  try {
+    await for (final results in triggers.stream.transform(
+      _DebounceTransformer<List<ConnectivityResult>>(
+        const Duration(milliseconds: 200),
+      ),
+    )) {
+      final next = await evaluate(results);
+      if (next != last) {
+        last = next;
+        yield next;
       }
     }
+  } finally {
+    timer.cancel();
+    await subscription.cancel();
+    await triggers.close();
   }
-
-  yield* debounced(
-    connectivity.onConnectivityChanged.map(resultsAreOnline),
-  );
 });
 
-/// Synchronous boolean view of [onlineProvider]. Defaults to online while
-/// connectivity is still unknown (the stream hasn't emitted yet) so a cold
-/// first send isn't wrongly queued. The send path reads this to branch
-/// without awaiting a stream. PRD US-031.
+/// Synchronous boolean view of [onlineProvider]. Unknown is fail-closed: a
+/// cold first send remains queued for the reconnect flush until Supabase has
+/// been reached.
 final isOnlineProvider = Provider<bool>(
-  (ref) => ref.watch(onlineProvider).value ?? true,
+  (ref) => ref.watch(onlineProvider).value ?? false,
 );
 
 /// Small debounce transformer used by [onlineProvider]. Emits the latest

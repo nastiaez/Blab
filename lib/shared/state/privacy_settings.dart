@@ -1,64 +1,103 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Signal-symmetric privacy toggles (PRD US-040 typing, US-041 read receipts).
-///
-/// Both default to **true** (Signal default). The OFF path is the one that
-/// matters: when a user flips a toggle to false, the corresponding event is
-/// never broadcast by their client (no "hidden on receive" — the event
-/// simply isn't generated). Same applies symmetrically to what they see
-/// from the partner.
-///
-/// Persistence: `shared_preferences`. Privacy state must survive app
-/// restart, otherwise a user "turns it off, comes back tomorrow, it's
-/// silently on again" — that's a privacy break, not just bad UX.
+import '../data/local_storage_keys.dart';
 
-const _kTypingKey = 'privacy_typing_indicators';
-const _kReadKey = 'privacy_read_receipts';
+/// A privacy choice is not allowed to transmit until persistence has loaded.
+/// This avoids briefly using the default-ON behavior when the saved value is
+/// OFF during a cold start.
+class PrivacySettingState {
+  const PrivacySettingState._({required this.enabled, required this.isLoaded});
 
-class TypingIndicatorsNotifier extends Notifier<bool> {
+  const PrivacySettingState.loading() : this._(enabled: false, isLoaded: false);
+
+  const PrivacySettingState.ready(bool enabled)
+    : this._(enabled: enabled, isLoaded: true);
+
+  final bool enabled;
+  final bool isLoaded;
+
+  bool get canTransmit => isLoaded && enabled;
+}
+
+class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
   @override
-  bool build() {
+  PrivacySettingState build() {
     _hydrate();
-    return true; // Signal default. Hydration may flip to false post-load.
+    return const PrivacySettingState.loading();
   }
 
   Future<void> _hydrate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getBool(_kTypingKey);
-    if (stored != null && stored != state) state = stored;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getBool(kPrivacyTypingIndicatorsKey);
+      if (ref.mounted) {
+        state = PrivacySettingState.ready(stored ?? true);
+      }
+    } catch (_) {
+      if (ref.mounted) {
+        state = const PrivacySettingState.ready(false);
+      }
+    }
   }
 
   Future<void> set(bool value) async {
-    state = value;
+    if (!state.isLoaded) return;
+    state = PrivacySettingState.ready(value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kTypingKey, value);
+    await prefs.setBool(kPrivacyTypingIndicatorsKey, value);
   }
 }
 
-class ReadReceiptsNotifier extends Notifier<bool> {
+class ReadReceiptsNotifier extends Notifier<PrivacySettingState> {
   @override
-  bool build() {
+  PrivacySettingState build() {
     _hydrate();
-    return true;
+    return const PrivacySettingState.loading();
   }
 
   Future<void> _hydrate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getBool(_kReadKey);
-    if (stored != null && stored != state) state = stored;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getBool(kPrivacyReadReceiptsKey);
+      if (ref.mounted) {
+        state = PrivacySettingState.ready(stored ?? true);
+      }
+    } catch (_) {
+      if (ref.mounted) {
+        state = const PrivacySettingState.ready(false);
+      }
+    }
   }
 
   Future<void> set(bool value) async {
-    state = value;
+    if (!state.isLoaded) return;
+    state = PrivacySettingState.ready(value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kReadKey, value);
+    await prefs.setBool(kPrivacyReadReceiptsKey, value);
   }
 }
 
 final typingIndicatorsProvider =
-    NotifierProvider<TypingIndicatorsNotifier, bool>(
-        TypingIndicatorsNotifier.new);
+    NotifierProvider<TypingIndicatorsNotifier, PrivacySettingState>(
+      TypingIndicatorsNotifier.new,
+    );
 
 final readReceiptsProvider =
-    NotifierProvider<ReadReceiptsNotifier, bool>(ReadReceiptsNotifier.new);
+    NotifierProvider<ReadReceiptsNotifier, PrivacySettingState>(
+      ReadReceiptsNotifier.new,
+    );
+
+/// Transport-facing views. Tests override these directly to prove that OFF
+/// blocks calls at the final boundary, independent of the settings UI.
+final typingIndicatorsEnabledProvider = Provider<bool>(
+  (ref) => ref.watch(typingIndicatorsProvider).canTransmit,
+);
+
+final readReceiptsTransportStateProvider = Provider<PrivacySettingState>(
+  (ref) => ref.watch(readReceiptsProvider),
+);
+
+final readReceiptsEnabledProvider = Provider<bool>(
+  (ref) => ref.watch(readReceiptsTransportStateProvider).canTransmit,
+);

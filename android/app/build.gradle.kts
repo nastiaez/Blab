@@ -1,26 +1,64 @@
 import java.io.FileInputStream
 import java.util.Properties
+import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing. Drop an `android/key.properties` file (gitignored) with
-// storeFile / storePassword / keyAlias / keyPassword to sign release builds
-// with your upload key for the Play Store. Without it, builds fall back to
-// the debug key so `flutter run --release` and CI keep working. Step 3.5.
+// Release signing uses an owner-controlled upload key outside Git. Release
+// tasks fail closed when the local properties or keystore are unavailable.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseKeystore = keystorePropertiesFile.exists()
 if (hasReleaseKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val googleServicesFile = file("google-services.json")
+if (releaseBuildRequested && !googleServicesFile.isFile) {
+    throw GradleException(
+        "Firebase Android configuration is required for release builds. " +
+            "Place google-services.json in android/app/.",
+    )
+}
+val requiredSigningProperties = listOf(
+    "storeFile",
+    "storePassword",
+    "keyAlias",
+    "keyPassword",
+)
+if (releaseBuildRequested && !hasReleaseKeystore) {
+    throw GradleException(
+        "Release signing is required. Run scripts/setup_android_signing.sh " +
+            "from the repository root or create android/key.properties.",
+    )
+}
+if (hasReleaseKeystore) {
+    val missingProperties = requiredSigningProperties.filter {
+        keystoreProperties.getProperty(it).isNullOrBlank()
+    }
+    if (missingProperties.isNotEmpty()) {
+        throw GradleException(
+            "android/key.properties is missing: ${missingProperties.joinToString()}",
+        )
+    }
+    val configuredStoreFile = file(keystoreProperties.getProperty("storeFile"))
+    if (!configuredStoreFile.isFile) {
+        throw GradleException(
+            "Release keystore does not exist: ${configuredStoreFile.absolutePath}",
+        )
+    }
+}
 
 android {
-    namespace = "sh.aswin.blab"
+    namespace = "blab.nastia.ez"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -34,8 +72,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "sh.aswin.blab"
+        applicationId = "blab.nastia.ez"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24  // tech-spec.md § Platform Targets
@@ -47,23 +84,17 @@ android {
     signingConfigs {
         if (hasReleaseKeystore) {
             create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
             }
         }
     }
 
     buildTypes {
         release {
-            // Use the release upload key when key.properties is present,
-            // otherwise fall back to debug signing for local/CI builds.
-            signingConfig = if (hasReleaseKeystore) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 
 enum InviteStatus { valid, expired, used }
 
@@ -29,9 +30,9 @@ class InviteLandingScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
           child: switch (status) {
             InviteStatus.valid => _ValidBody(
-                inviterName: inviterName,
-                token: token,
-              ),
+              inviterName: inviterName,
+              token: token,
+            ),
             InviteStatus.expired => _ExpiredBody(inviterName: inviterName),
             InviteStatus.used => _UsedBody(inviterName: inviterName),
           },
@@ -44,18 +45,20 @@ class InviteLandingScreen extends ConsumerWidget {
 // ─────────────────────────── valid body ───────────────────────────────────
 
 class _ValidBody extends StatelessWidget {
-  const _ValidBody({
-    required this.inviterName,
-    required this.token,
-  });
+  const _ValidBody({required this.inviterName, required this.token});
 
   final String inviterName;
   final String? token;
 
   void _onJoin(BuildContext context) {
-    final params = StringBuffer('/invite/pick-language?inviter=$inviterName');
-    if (token != null) params.write('&token=$token');
-    context.push(params.toString());
+    final location = Uri(
+      path: '/invite/pick-language',
+      queryParameters: {
+        'inviter': inviterName,
+        if (token != null) 'token': token,
+      },
+    ).toString();
+    context.push(location);
   }
 
   @override
@@ -74,9 +77,7 @@ class _ValidBody extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              inviterName.isNotEmpty
-                  ? inviterName[0].toUpperCase()
-                  : '?',
+              inviterName.isNotEmpty ? inviterName[0].toUpperCase() : '?',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -96,8 +97,8 @@ class _ValidBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        const Text(
-          'invited you to chat',
+        Text(
+          context.l10n.invitedYouToChat,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 16,
@@ -118,7 +119,7 @@ class _ValidBody extends StatelessWidget {
             ),
             onPressed: () => _onJoin(context),
             child: Text(
-              'Join $inviterName',
+              context.l10n.joinPerson(inviterName),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -151,8 +152,8 @@ class _ExpiredBody extends StatelessWidget {
           color: BlabColors.textMuted,
         ),
         const SizedBox(height: 18),
-        const Text(
-          'This invite expired',
+        Text(
+          context.l10n.inviteExpired,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
@@ -162,7 +163,7 @@ class _ExpiredBody extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Ask $inviterName for a fresh link',
+          context.l10n.askForFreshLink(inviterName),
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 14,
@@ -182,8 +183,8 @@ class _ExpiredBody extends StatelessWidget {
               ),
             ),
             onPressed: () => context.go('/chats'),
-            child: const Text(
-              'Go to chats',
+            child: Text(
+              context.l10n.goToChats,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -208,14 +209,10 @@ class _UsedBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Spacer(),
-        const Icon(
-          Icons.link_off,
-          size: 56,
-          color: BlabColors.textMuted,
-        ),
+        const Icon(Icons.link_off, size: 56, color: BlabColors.textMuted),
         const SizedBox(height: 18),
-        const Text(
-          'This invite was already claimed',
+        Text(
+          context.l10n.inviteAlreadyClaimed,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
@@ -225,7 +222,7 @@ class _UsedBody extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Ask $inviterName for a fresh link',
+          context.l10n.askForFreshLink(inviterName),
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 14,
@@ -245,8 +242,8 @@ class _UsedBody extends StatelessWidget {
               ),
             ),
             onPressed: () => context.go('/chats'),
-            child: const Text(
-              'Go to chats',
+            child: Text(
+              context.l10n.goToChats,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

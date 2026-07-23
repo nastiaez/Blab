@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/offline_banner.dart';
@@ -44,7 +45,10 @@ class ChatsScreen extends ConsumerWidget {
                 final chats = chatsAsync.value;
                 if (chats == null) {
                   if (chatsAsync.isLoading) return const ChatListSkeleton();
-                  return _ErrorState(detail: chatsAsync.error?.toString());
+                  return ChatsErrorState(
+                    onRetry: () =>
+                        ref.read(chatListProvider.notifier).refresh(),
+                  );
                 }
                 if (chats.isEmpty) return const ChatsEmptyState();
                 return RefreshIndicator(
@@ -78,7 +82,7 @@ class ChatsScreen extends ConsumerWidget {
         backgroundColor: BlabColors.brand,
         foregroundColor: Colors.white,
         elevation: 3,
-        tooltip: 'New chat',
+        tooltip: context.l10n.newChat,
         child: const Icon(Icons.add, size: 26),
       ),
       bottomNavigationBar: const _BottomTabs(active: _Tab.chats),
@@ -87,7 +91,7 @@ class ChatsScreen extends ConsumerWidget {
 }
 
 class ChatsEmptyState extends StatelessWidget {
-  const ChatsEmptyState();
+  const ChatsEmptyState({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -97,25 +101,25 @@ class ChatsEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'No chats yet',
-              style: TextStyle(
+            Text(
+              context.l10n.noChatsYet,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: BlabColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Invite a friend and start chatting.',
+            Text(
+              context.l10n.inviteFriendStart,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: BlabColors.textMuted),
+              style: const TextStyle(fontSize: 14, color: BlabColors.textMuted),
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: 180,
               child: BrandButton(
-                label: 'Invite a friend',
+                label: context.l10n.inviteFriend,
                 onPressed: () => context.push('/chats/new'),
               ),
             ),
@@ -126,9 +130,10 @@ class ChatsEmptyState extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({this.detail});
-  final String? detail;
+class ChatsErrorState extends StatelessWidget {
+  const ChatsErrorState({super.key, required this.onRetry});
+
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -138,29 +143,18 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Couldn't load chats",
+            Text(
+              context.l10n.couldNotLoadChats,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 15, color: BlabColors.textMuted),
+              style: const TextStyle(fontSize: 15, color: BlabColors.textMuted),
             ),
-            if (detail != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  detail!,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontFamily: 'monospace',
-                    color: Color(0xFF991B1B),
-                  ),
-                ),
-              ),
-            ],
+            const SizedBox(height: 16),
+            TextButton.icon(
+              key: const ValueKey('chat-list-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.retry),
+            ),
           ],
         ),
       ),
@@ -190,13 +184,13 @@ class _BottomTabs extends StatelessWidget {
             children: [
               _TabItem(
                 iconName: 'chat',
-                label: 'Chats',
+                label: context.l10n.chats,
                 selected: active == _Tab.chats,
                 onTap: () {},
               ),
               _TabItem(
                 iconName: 'profile',
-                label: 'Profile',
+                label: context.l10n.profile,
                 selected: active == _Tab.profile,
                 onTap: () => context.go('/profile'),
               ),

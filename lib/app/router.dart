@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,7 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/chats/chats_screen.dart';
 import '../features/invite/invite_landing_screen.dart';
+import '../features/invite/invite_continuation.dart';
 import '../features/invite/invite_pick_language_screen.dart';
 import '../features/invite/invite_resolver_screen.dart';
 import '../features/invite/new_chat_screen.dart';
@@ -22,11 +24,13 @@ import '../features/profile/delete_account_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/interface_language_screen.dart';
 import '../features/profile/privacy_screen.dart';
+import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../l10n/l10n.dart';
 import 'dev_menu.dart';
 
 const _publicPaths = <String>{
-  '/dev',
+  if (kDebugMode) '/dev',
   '/auth',
   '/auth/forgot',
   '/auth/forgot/sent',
@@ -64,7 +68,7 @@ Stream<dynamic>? _authStreamOrNull() {
 }
 
 final GoRouter blabRouter = GoRouter(
-  initialLocation: '/dev',
+  initialLocation: '/chats',
   redirect: (context, state) {
     final loc = state.matchedLocation;
     // Custom-scheme deep links land here as `blab://auth/...` because
@@ -105,29 +109,30 @@ final GoRouter blabRouter = GoRouter(
           try {
             await Supabase.instance.client.auth.refreshSession();
           } catch (_) {}
-          showAppSnack('Email changed ✓');
+          final context = appMessengerKey.currentContext;
+          showAppSnack(context?.l10n.emailChanged ?? 'Email changed');
         }
       }
       final signedIn = _currentSessionOrNull() != null;
       blabRouter.go(signedIn ? '/chats' : '/auth?mode=login');
     });
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   },
   refreshListenable: _AuthRefresh(_authStreamOrNull()),
   routes: <RouteBase>[
-    GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
+    if (kDebugMode)
+      GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
     GoRoute(
       path: '/auth',
       builder: (context, state) {
         final q = state.uri.queryParameters;
-        final mode =
-            q['mode'] == 'login' ? AuthMode.logIn : AuthMode.signUp;
+        final mode = q['mode'] == 'login' ? AuthMode.logIn : AuthMode.signUp;
+        final continuation = InviteContinuation.fromQuery(q);
         return AuthScreen(
           initialMode: mode,
-          inviterName: q['inviter'],
-          learnCode: q['learn'],
+          inviterName: continuation.inviterName,
+          learnCode: continuation.learningLanguage,
+          inviteToken: continuation.token,
         );
       },
     ),
@@ -138,7 +143,8 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/auth/forgot/sent',
       builder: (context, state) => ForgotPasswordSentScreen(
-          email: state.uri.queryParameters['email'] ?? ''),
+        email: state.uri.queryParameters['email'] ?? '',
+      ),
     ),
     GoRoute(
       path: '/auth/reset',
@@ -152,7 +158,8 @@ final GoRouter blabRouter = GoRouter(
       path: '/auth/email-changed',
       redirect: (context, state) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          showAppSnack('Email changed ✓');
+          final context = appMessengerKey.currentContext;
+          showAppSnack(context?.l10n.emailChanged ?? 'Email changed');
         });
         final signedIn = _currentSessionOrNull() != null;
         return signedIn ? '/chats' : '/auth?mode=login';
@@ -160,7 +167,10 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/chats',
-      builder: (context, state) => const ChatsScreen(),
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        child: const ChatsScreen(),
+      ),
     ),
     GoRoute(
       path: '/chats/new',
@@ -176,9 +186,8 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/chat/:id',
-      builder: (context, state) => ChatScreen(
-        chatId: state.pathParameters['id'] ?? 'aswin',
-      ),
+      builder: (context, state) =>
+          ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
     ),
     GoRoute(
       path: '/invite',
@@ -208,12 +217,16 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/i/:token',
-      builder: (context, state) => InviteResolverScreen(
-        token: state.pathParameters['token'] ?? '',
-      ),
+      builder: (context, state) =>
+          InviteResolverScreen(token: state.pathParameters['token'] ?? ''),
     ),
     GoRoute(
-        path: '/profile', builder: (context, state) => const ProfileScreen()),
+      path: '/profile',
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        child: const ProfileScreen(),
+      ),
+    ),
     GoRoute(
       path: '/profile/edit',
       builder: (context, state) => const EditProfileScreen(),
@@ -231,6 +244,10 @@ final GoRouter blabRouter = GoRouter(
       builder: (context, state) => const PrivacyScreen(),
     ),
     GoRoute(
+      path: '/profile/notifications',
+      builder: (context, state) => const NotificationSettingsScreen(),
+    ),
+    GoRoute(
       path: '/profile/interface-language',
       builder: (context, state) => const InterfaceLanguageScreen(),
     ),
@@ -243,7 +260,10 @@ final GoRouter blabRouter = GoRouter(
 
 class _AuthRefresh extends ChangeNotifier {
   _AuthRefresh(Stream<dynamic>? stream) {
-    _sub = stream?.listen((_) => notifyListeners());
+    _sub = stream?.listen(
+      (_) => notifyListeners(),
+      onError: (_, _) => notifyListeners(),
+    );
   }
   StreamSubscription<dynamic>? _sub;
 

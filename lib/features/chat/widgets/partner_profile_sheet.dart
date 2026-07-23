@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_messenger.dart';
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/state/chat_list_state.dart';
-import '../../../shared/state/connectivity_state.dart';
 import 'report_sheet.dart';
 
 /// Result of the partner profile sheet. `blocked` tells the caller to leave
@@ -29,15 +29,12 @@ Future<PartnerProfileResult?> showPartnerProfileSheet(
   );
 }
 
-class _Body extends ConsumerWidget {
+class _Body extends StatelessWidget {
   const _Body({required this.chat});
   final Chat chat;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncOnline = ref.watch(onlineProvider);
-    final online = asyncOnline.maybeWhen(data: (v) => v, orElse: () => true);
-
+  Widget build(BuildContext context) {
     return SafeArea(
       top: false,
       child: Padding(
@@ -83,57 +80,38 @@ class _Body extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 6),
-            if (online)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF34C759),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Online',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: BlabColors.textMuted,
-                    ),
-                  ),
-                ],
-              )
-            else
-              const Text(
-                'Offline',
-                style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
-              ),
+            Text(
+              '${context.l10n.learningLanguage}: ${chat.partnerLearningLanguage.name} ${chat.partnerLearningLanguage.flag}',
+              style: const TextStyle(fontSize: 13, color: BlabColors.textMuted),
+            ),
             const SizedBox(height: 28),
             _Section(
-              title: 'Languages',
+              title: context.l10n.languages,
               children: [
                 _LangRow(
                   flag: chat.partnerNativeLanguage.flag,
-                  text: 'Speaks ',
-                  emphasis: chat.partnerNativeLanguage.name,
-                  trailing: ' natively',
+                  text: context.l10n.speaksNatively(
+                    chat.partnerNativeLanguage.name,
+                  ),
+                  emphasis: '',
+                  trailing: '',
                 ),
                 _LangRow(
                   flag: chat.partnerLearningLanguage.flag,
-                  text: 'Learning ',
-                  emphasis: chat.partnerLearningLanguage.name,
-                  trailing: ' with you',
+                  text: context.l10n.learningWithYou(
+                    chat.partnerLearningLanguage.name,
+                  ),
+                  emphasis: '',
+                  trailing: '',
                 ),
               ],
             ),
             const SizedBox(height: 22),
             _Section(
-              title: 'Chat',
+              title: context.l10n.chat,
               children: [
                 Text(
-                  _startedAgo(chat.startedAt ?? chat.timestamp),
+                  _startedAgo(context, chat.startedAt ?? chat.timestamp),
                   style: const TextStyle(
                     fontSize: 14,
                     color: BlabColors.textPrimary,
@@ -151,14 +129,16 @@ class _Body extends ConsumerWidget {
     );
   }
 
-  String _startedAgo(DateTime when) {
+  String _startedAgo(BuildContext context, DateTime when) {
     final diff = DateTime.now().difference(when);
-    if (diff.inMinutes < 1) return 'Started chatting just now';
-    if (diff.inHours < 1) return 'Started chatting ${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return 'Started chatting ${diff.inHours}h ago';
-    if (diff.inDays < 30) return 'Started chatting ${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return context.l10n.startedJustNow;
+    if (diff.inHours < 1) {
+      return context.l10n.startedMinutesAgo(diff.inMinutes);
+    }
+    if (diff.inDays < 1) return context.l10n.startedHoursAgo(diff.inHours);
+    if (diff.inDays < 30) return context.l10n.startedDaysAgo(diff.inDays);
     final months = (diff.inDays / 30).floor();
-    return 'Started chatting ${months}mo ago';
+    return context.l10n.startedMonthsAgo(months);
   }
 }
 
@@ -189,9 +169,7 @@ class _Section extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            ...children
-                .expand((c) => [c, const SizedBox(height: 8)])
-                .toList()
+            ...children.expand((c) => [c, const SizedBox(height: 8)]).toList()
               ..removeLast(),
           ],
         ),
@@ -205,41 +183,49 @@ class _SafetyActions extends ConsumerWidget {
   final Chat chat;
 
   Future<void> _report(BuildContext context, WidgetRef ref) async {
+    final success = context.l10n.thanksReport;
+    final failure = context.l10n.couldNotReport;
     final reason = await showReportReasonSheet(
       context,
-      title: 'Report ${chat.partnerName}',
+      title: context.l10n.reportPerson(chat.partnerName),
     );
     if (reason == null) return;
     try {
-      await ref.read(chatServiceProvider).reportContent(
+      await ref
+          .read(chatServiceProvider)
+          .reportContent(
             reason: reason.wire,
             reportedUserId: chat.partnerId,
             chatId: chat.id,
           );
-      showAppSnack("Thanks — we'll review this.");
+      showAppSnack(success);
     } catch (_) {
-      showAppSnack("Couldn't send the report. Try again.");
+      showAppSnack(failure);
     }
   }
 
   Future<void> _block(BuildContext context, WidgetRef ref) async {
+    final success = context.l10n.personBlocked(chat.partnerName);
+    final failure = context.l10n.couldNotBlock;
     try {
       await ref.read(chatServiceProvider).blockUser(chat.partnerId!);
       if (context.mounted) {
         Navigator.of(context).pop(PartnerProfileResult.blocked);
       }
-      showAppSnack('${chat.partnerName} blocked');
+      showAppSnack(success);
     } catch (_) {
-      showAppSnack("Couldn't block. Try again.");
+      showAppSnack(failure);
     }
   }
 
   Future<void> _unblock(BuildContext context, WidgetRef ref) async {
+    final success = context.l10n.personUnblocked(chat.partnerName);
+    final failure = context.l10n.couldNotUnblock;
     try {
       await ref.read(chatServiceProvider).unblockUser(chat.partnerId!);
-      showAppSnack('${chat.partnerName} unblocked');
+      showAppSnack(success);
     } catch (_) {
-      showAppSnack("Couldn't unblock. Try again.");
+      showAppSnack(failure);
     }
   }
 
@@ -248,20 +234,21 @@ class _SafetyActions extends ConsumerWidget {
     final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
     final isBlocked = blocked.contains(chat.partnerId);
     return _Section(
-      title: 'Safety',
+      title: context.l10n.safety,
       children: [
         _SafetyRow(
           icon: Icons.flag_outlined,
-          label: 'Report ${chat.partnerName}',
+          label: context.l10n.reportPerson(chat.partnerName),
           onTap: () => _report(context, ref),
         ),
         _SafetyRow(
           icon: isBlocked ? Icons.lock_open_outlined : Icons.block,
           label: isBlocked
-              ? 'Unblock ${chat.partnerName}'
-              : 'Block ${chat.partnerName}',
+              ? context.l10n.unblockPerson(chat.partnerName)
+              : context.l10n.blockPerson(chat.partnerName),
           destructive: !isBlocked,
-          onTap: () => isBlocked ? _unblock(context, ref) : _block(context, ref),
+          onTap: () =>
+              isBlocked ? _unblock(context, ref) : _block(context, ref),
         ),
       ],
     );
@@ -282,8 +269,9 @@ class _SafetyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        destructive ? const Color(0xFFEF4444) : BlabColors.textPrimary;
+    final color = destructive
+        ? const Color(0xFFEF4444)
+        : BlabColors.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(

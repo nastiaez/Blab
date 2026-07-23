@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,23 +12,60 @@ import 'app/app_messenger.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 import 'features/chat/state/message_translations_state.dart';
+import 'l10n/l10n.dart';
 import 'shared/data/invite_host.dart';
+import 'shared/data/firebase_config.dart';
 import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
+import 'shared/services/supabase_auth_service.dart';
+import 'shared/state/interface_language.dart';
+import 'shared/state/push_notifications_state.dart';
 
 Future<void> main() async {
+  SupabaseConfig.ensureValid();
+  // Sentry uses a guarded zone on web. Flutter bindings and every async
+  // startup dependency must be initialized inside that same zone.
+  await bootstrap(_initializeAndRunApp);
+}
+
+Future<void> _initializeAndRunApp() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Tighten the VisibilityDetector callback cadence so scroll-into-view
   // read receipts (Step 2.2 Task 10) feel responsive.
-  VisibilityDetectorController.instance.updateInterval =
-      const Duration(milliseconds: 100);
+  VisibilityDetectorController.instance.updateInterval = const Duration(
+    milliseconds: 100,
+  );
+  await initializeFirebaseForPush(
+    enabled: SupabaseConfig.environment != BlabEnvironment.local,
+    expectedProjectId: SupabaseConfig.firebaseProjectId,
+    requiredForHostedAndroid:
+        SupabaseConfig.environment != BlabEnvironment.local,
+  );
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
   );
-  // Run the app inside Sentry (no-op when no DSN is built in). Captures
-  // uncaught Dart + Flutter + native errors. Step 3.0.
-  await bootstrap(() => runApp(const ProviderScope(child: BlabApp())));
+  await _stabilizeInitialSession(Supabase.instance.client);
+  runApp(const ProviderScope(child: BlabApp()));
+}
+
+Future<void> _stabilizeInitialSession(SupabaseClient client) async {
+  final session = client.auth.currentSession;
+  if (session == null || !session.isExpired) return;
+  try {
+    await client.auth.refreshSession().timeout(const Duration(seconds: 8));
+  } catch (error) {
+    if (SupabaseAuthService.isRevokedSessionError(error)) {
+      await client.auth.signOut(scope: SignOutScope.local);
+      return;
+    }
+    if (kDebugMode) {
+      debugPrint(
+        'Initial session refresh deferred: type=${error.runtimeType}, '
+        'error=$error',
+      );
+    }
+  }
 }
 
 class BlabApp extends ConsumerStatefulWidget {
@@ -42,6 +80,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   StreamSubscription<Uri>? _linkSub;
   String? _knownEmail;
   String? _knownUserId;
+  bool _checkingUserOnResume = false;
 
   @override
   void initState() {
@@ -73,15 +112,44 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
           // Invalidate the family whenever the auth identity changes.
           if (u?.id != _knownUserId) {
             ref.invalidate(messageTranslationsProvider);
+            if (mounted) setState(() {});
           }
           _knownEmail = u?.email;
           _knownUserId = u?.id;
         }
-      });
+      }, onError: _handleAuthStreamError);
     } catch (_) {
       // Test environment without Supabase. Skip silently.
     }
     _initInviteDeepLinks();
+  }
+
+  void _handleAuthStreamError(Object error, StackTrace stackTrace) {
+    if (SupabaseAuthService.isRevokedSessionError(error)) {
+      unawaited(_clearRevokedSession());
+      return;
+    }
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'supabase auth',
+      ),
+    );
+  }
+
+  Future<void> _clearRevokedSession() async {
+    await ref.read(pushNotificationsProvider.notifier).prepareForSignOut();
+    try {
+      await Supabase.instance.client.auth.signOut(scope: SignOutScope.local);
+    } catch (_) {
+      // The remote session is already invalid; local recovery must continue.
+    }
+    if (!mounted) return;
+    _knownEmail = null;
+    _knownUserId = null;
+    ref.invalidate(messageTranslationsProvider);
+    blabRouter.go('/auth?mode=login');
   }
 
   /// Listen for incoming `blab://i/<token>` invite links. Routes the
@@ -126,6 +194,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshAndDetectEmailChange();
+      unawaited(
+        ref.read(pushNotificationsProvider.notifier).refreshPermission(),
+      );
     }
   }
 
@@ -135,14 +206,18 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   /// the foreground (typical after clicking the link in a browser
   /// tab) we refresh the session and toast if the email changed.
   Future<void> _refreshAndDetectEmailChange() async {
+    if (_checkingUserOnResume) return;
     final client = Supabase.instance.client;
     if (client.auth.currentSession == null) return;
+    _checkingUserOnResume = true;
+    User? user;
     try {
-      await client.auth.refreshSession();
+      user = (await client.auth.getUser()).user;
     } catch (_) {
       return;
+    } finally {
+      _checkingUserOnResume = false;
     }
-    final user = client.auth.currentUser;
     final now = user?.email;
     final id = user?.id;
     // Only fire the snack when the SAME user's email actually changed
@@ -168,6 +243,18 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final interfaceLanguage = ref.watch(interfaceLanguageProvider);
+    final push = ref.watch(pushNotificationsProvider);
+    final pendingChatId = push.pendingChatId;
+    if (_knownUserId != null && pendingChatId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final current = ref.read(pushNotificationsProvider).pendingChatId;
+        if (current != pendingChatId) return;
+        ref.read(pushNotificationsProvider.notifier).consumePendingChat();
+        blabRouter.go('/chat/$pendingChatId');
+      });
+    }
     // Status-bar bg transparent + dark icons everywhere.
     // Each screen paints its own color behind the safe area, so the
     // status bar visually matches the top container (white header
@@ -181,6 +268,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       child: MaterialApp.router(
         title: 'Blab',
         theme: blabTheme,
+        locale: Locale(interfaceLanguage.code),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         routerConfig: blabRouter,
         scaffoldMessengerKey: appMessengerKey,
       ),

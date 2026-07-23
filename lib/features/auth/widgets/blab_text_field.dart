@@ -68,25 +68,23 @@ class BlabTextField extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
               filled: true,
               fillColor: Colors.white,
               suffixIcon: suffix,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: hasError
-                      ? BlabColors.error
-                      : Colors.grey.shade300,
+                  color: hasError ? BlabColors.error : Colors.grey.shade300,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: hasError
-                      ? BlabColors.error
-                      : BlabColors.focusBorder,
+                  color: hasError ? BlabColors.error : BlabColors.focusBorder,
                   width: 1.5,
                 ),
               ),

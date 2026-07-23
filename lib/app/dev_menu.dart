@@ -4,22 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../features/chat/state/chat_state.dart';
 import '../shared/state/connectivity_state.dart';
-import 'dev_pair_sheet.dart';
 import 'theme.dart';
 
 class DevMenu extends ConsumerWidget {
   const DevMenu({super.key});
 
-  static const String _pairSheetPath = '__pair__';
-
   static const List<({String label, String path, String us})> _entries = [
     (label: 'Sign up / Log in', path: '/auth', us: 'US-001…US-005'),
     (label: 'Your chats', path: '/chats', us: 'US-006…US-012'),
-    (
-      label: 'Dev: pair with email…',
-      path: _pairSheetPath,
-      us: 'temp — Step 2.3',
-    ),
     (label: 'Chat list — empty state', path: '/chats/empty', us: 'US-006'),
     (
       label: 'Invite landing — valid',
@@ -70,11 +62,14 @@ class DevMenu extends ConsumerWidget {
               child: const Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Throw test error',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w600)),
-                  Text('Sentry · Step 3.0',
-                      style: TextStyle(fontSize: 12, color: Colors.white70)),
+                  Text(
+                    'Throw test error',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'Sentry · Step 3.0',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
                 ],
               ),
             );
@@ -86,19 +81,17 @@ class DevMenu extends ConsumerWidget {
                   : 'Toggle offline (off)',
               us: 'US-031',
               value: forceOffline,
-              onTap: () =>
-                  ref.read(forceOfflineProvider.notifier).toggle(),
+              onTap: () => ref.read(forceOfflineProvider.notifier).toggle(),
             );
           }
           if (i == _entries.length + 1) {
             return _DevToggleRow(
               label: simulateFailure
-                  ? 'Toggle failed-send (on)'
-                  : 'Toggle failed-send (off)',
+                  ? 'Fail next send (armed)'
+                  : 'Fail next send (off)',
               us: 'US-030',
               value: simulateFailure,
-              onTap: () =>
-                  ref.read(simulateFailureProvider.notifier).toggle(),
+              onTap: () => ref.read(simulateFailureProvider.notifier).toggle(),
             );
           }
           final e = _entries[i];
@@ -110,21 +103,21 @@ class DevMenu extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            onPressed: () {
-              if (e.path == _pairSheetPath) {
-                showDevPairSheet(context);
-              } else {
-                context.push(e.path);
-              }
-            },
+            onPressed: () => context.push(e.path),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(e.label,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600)),
-                Text(e.us,
-                    style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                Text(
+                  e.label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  e.us,
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                ),
               ],
             ),
           );

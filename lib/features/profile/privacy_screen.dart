@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/legal_links.dart';
 import '../../shared/state/privacy_settings.dart';
 import '../../shared/util/open_url.dart';
@@ -17,6 +18,17 @@ class PrivacyScreen extends ConsumerWidget {
     final typing = ref.watch(typingIndicatorsProvider);
     final read = ref.watch(readReceiptsProvider);
 
+    Future<void> saveSetting(Future<void> Function() save) async {
+      try {
+        await save();
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.couldNotSavePrivacy)),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       appBar: AppBar(
@@ -29,9 +41,9 @@ class PrivacyScreen extends ConsumerWidget {
           color: BlabColors.textPrimary,
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Privacy',
-          style: TextStyle(
+        title: Text(
+          context.l10n.privacy,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -47,17 +59,27 @@ class PrivacyScreen extends ConsumerWidget {
             _Card(
               children: [
                 _ToggleRow(
-                  label: 'Typing indicators',
-                  value: typing,
-                  onChanged: (v) =>
-                      ref.read(typingIndicatorsProvider.notifier).set(v),
+                  label: context.l10n.typingIndicators,
+                  caption: context.l10n.typingIndicatorsHelp,
+                  value: typing.enabled,
+                  onChanged: typing.isLoaded
+                      ? (v) => saveSetting(
+                          () => ref
+                              .read(typingIndicatorsProvider.notifier)
+                              .set(v),
+                        )
+                      : null,
                 ),
                 const _RowDivider(),
                 _ToggleRow(
-                  label: 'Read receipts',
-                  value: read,
-                  onChanged: (v) =>
-                      ref.read(readReceiptsProvider.notifier).set(v),
+                  label: context.l10n.readReceipts,
+                  caption: context.l10n.readReceiptsHelp,
+                  value: read.enabled,
+                  onChanged: read.isLoaded
+                      ? (v) => saveSetting(
+                          () => ref.read(readReceiptsProvider.notifier).set(v),
+                        )
+                      : null,
                 ),
               ],
             ),
@@ -65,12 +87,12 @@ class PrivacyScreen extends ConsumerWidget {
             _Card(
               children: [
                 _LinkRow(
-                  label: 'Privacy Policy',
+                  label: context.l10n.privacyPolicy,
                   onTap: () => openExternalUrl(kPrivacyPolicyUrl),
                 ),
                 const _RowDivider(),
                 _LinkRow(
-                  label: 'Terms of Use',
+                  label: context.l10n.termsOfUse,
                   onTap: () => openExternalUrl(kTermsUrl),
                 ),
               ],
@@ -105,8 +127,11 @@ class _LinkRow extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.open_in_new,
-                size: 18, color: BlabColors.textMuted),
+            const Icon(
+              Icons.open_in_new,
+              size: 18,
+              color: BlabColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -137,28 +162,45 @@ class _Card extends StatelessWidget {
 class _ToggleRow extends StatelessWidget {
   const _ToggleRow({
     required this.label,
+    required this.caption,
     required this.value,
     required this.onChanged,
   });
 
   final String label;
+  final String caption;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: BlabColors.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: BlabColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  caption,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: BlabColors.textMuted,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),

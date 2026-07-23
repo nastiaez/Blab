@@ -1,37 +1,98 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:math';
 
-import '../../../shared/data/chat_mappers.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../shared/data/languages.dart';
 import '../../../shared/models/message.dart';
+import '../../../shared/services/chat_service.dart';
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/connectivity_state.dart';
 import 'pending_sends_state.dart';
 
-/// Dev/QA toggle: when `true`, every outgoing send is simulated to fail
-/// (PRD US-030 affordances). Currently unwired pending Task 12 (optimistic
-/// pending queue + real failure path). Kept for the dev menu switch.
+/// Dev/QA one-shot: when armed, the next outgoing send is simulated to fail
+/// so PRD US-030's retry/delete affordances can be exercised deterministically.
 class SimulateFailureNotifier extends Notifier<bool> {
   @override
   bool build() => false;
 
   void toggle() => state = !state;
   void set(bool value) => state = value;
+
+  /// Consume the debug failure once so the resulting bubble can be retried
+  /// without navigating back to the dev menu to reset the switch.
+  bool consume() {
+    if (!state) return false;
+    state = false;
+    return true;
+  }
 }
 
-final simulateFailureProvider =
-    NotifierProvider<SimulateFailureNotifier, bool>(
+final simulateFailureProvider = NotifierProvider<SimulateFailureNotifier, bool>(
   SimulateFailureNotifier.new,
 );
 
-/// Per-chat message stream backed by Supabase. Yields a one-shot history
-/// from [ChatService.fetchMessages] followed by realtime snapshots from
-/// [ChatService.watchMessages]. PRD US-013…US-017, US-023.
+typedef ClientMessageIdFactory = String Function();
+
+final clientMessageIdFactoryProvider = Provider<ClientMessageIdFactory>(
+  (ref) => _newClientMessageId,
+);
+
+String _newClientMessageId() {
+  final random = Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
+      '${hex.substring(20)}';
+}
+
+class ChatPaginationState {
+  const ChatPaginationState({required this.hasMore, required this.isLoading});
+
+  const ChatPaginationState.initial() : hasMore = false, isLoading = false;
+
+  final bool hasMore;
+  final bool isLoading;
+}
+
+class ChatPaginationNotifier extends Notifier<ChatPaginationState> {
+  ChatPaginationNotifier(this.chatId);
+
+  final String chatId;
+
+  @override
+  ChatPaginationState build() => const ChatPaginationState.initial();
+
+  void update({required bool hasMore, required bool isLoading}) {
+    state = ChatPaginationState(hasMore: hasMore, isLoading: isLoading);
+  }
+}
+
+final chatPaginationProvider =
+    NotifierProvider.family<
+      ChatPaginationNotifier,
+      ChatPaginationState,
+      String
+    >(ChatPaginationNotifier.new);
+
+/// Per-chat message stream backed by a cursor-bounded history fetch and
+/// individual Supabase realtime changes. PRD US-013…US-017, US-023.
 class ChatNotifier extends StreamNotifier<List<Message>> {
   ChatNotifier(this.chatId);
 
+  static const int pageSize = 50;
+
   final String chatId;
+  final Map<String, Message> _messagesById = <String, Message>{};
+  MessageCursor? _oldestCursor;
+  bool _hasMore = false;
+  bool _loadingOlder = false;
 
   /// Ids currently being sent to the server. Guards against a queued send
   /// being fired twice when both the user action and the reconnect flush
@@ -40,34 +101,132 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   bool get _online => ref.read(isOnlineProvider);
 
-  String get _uid {
-    final id = Supabase.instance.client.auth.currentUser?.id;
-    if (id == null) throw StateError('not_signed_in');
-    return id;
+  List<Message> _snapshot() {
+    final result = _messagesById.values.toList()
+      ..sort((a, b) {
+        final byTime = a.sentAt.compareTo(b.sentAt);
+        return byTime != 0 ? byTime : a.id.compareTo(b.id);
+      });
+    return result;
+  }
+
+  void _setPagination({bool? loading}) {
+    _loadingOlder = loading ?? _loadingOlder;
+    final nextHasMore = _hasMore;
+    final nextIsLoading = _loadingOlder;
+    // Riverpod forbids mutating a sibling provider synchronously while this
+    // StreamNotifier is building. Publish metadata on the next microtask.
+    Future<void>.microtask(() {
+      try {
+        ref
+            .read(chatPaginationProvider(chatId).notifier)
+            .update(hasMore: nextHasMore, isLoading: nextIsLoading);
+      } catch (_) {
+        // The chat may have been disposed before the microtask runs.
+      }
+    });
+  }
+
+  void _reconcilePending(List<Message> messages) {
+    final ids = messages.map((message) => message.id).toList();
+    Future<void>.microtask(() {
+      try {
+        ref.read(pendingSendsProvider(chatId).notifier).reconcile(ids);
+      } catch (_) {
+        // The chat may have been disposed before the microtask runs.
+      }
+    });
   }
 
   @override
   Stream<List<Message>> build() async* {
-    ref.watch(authSessionProvider);
+    ref.watch(currentUserIdProvider);
     final svc = ref.watch(chatServiceProvider);
+    _messagesById.clear();
+    _oldestCursor = null;
+    _hasMore = false;
+    _setPagination(loading: false);
+
     try {
-      final history = await svc.fetchMessages(chatId);
-      yield history;
+      final page = await svc.fetchMessagePage(chatId, limit: pageSize);
+      for (final message in page.messages) {
+        _messagesById[message.id] = message;
+      }
+      _oldestCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      _setPagination();
+      final snapshot = _snapshot();
+      _reconcilePending(snapshot);
+      yield snapshot;
     } catch (_) {
       // Offline / fetch failure: don't yield anything. Riverpod keeps the
       // previous AsyncData accessible via `.value`, so the chat screen
       // continues to show the last-known messages instead of an empty list.
     }
     try {
-      await for (final rows in svc.watchMessages(chatId)) {
-        final list = rows
-            .where((r) => r['deleted_at'] == null)
-            .map((r) => messageFromRow(r, currentUserId: _uid))
-            .toList();
-        yield list;
+      await for (final change in svc.watchMessageChanges(chatId)) {
+        try {
+          switch (change.type) {
+            case MessageChangeType.upsert:
+              final message = await svc.messageFromRealtimeRow(change.row!);
+              if (message != null) _messagesById[message.id] = message;
+              break;
+            case MessageChangeType.remove:
+              final id = change.row?['id'];
+              if (id is String) _messagesById.remove(id);
+              break;
+            case MessageChangeType.resync:
+              final loadedCount = _messagesById.length < pageSize
+                  ? pageSize
+                  : _messagesById.length;
+              final page = await svc.fetchMessagePage(
+                chatId,
+                limit: loadedCount,
+              );
+              _messagesById
+                ..clear()
+                ..addEntries(page.messages.map((m) => MapEntry(m.id, m)));
+              _oldestCursor = page.nextCursor;
+              _hasMore = page.hasMore;
+              _setPagination();
+              break;
+          }
+        } catch (_) {
+          // Keep the channel alive. A later event or reconnect resync can
+          // repair a transient PostgREST failure for this one change.
+          continue;
+        }
+        final snapshot = _snapshot();
+        _reconcilePending(snapshot);
+        yield snapshot;
       }
     } catch (_) {
       // Realtime errored (e.g. offline). Keep last yielded state.
+    }
+  }
+
+  /// Loads the next older page once. Concurrent edge notifications collapse
+  /// into the same request and cursor ordering prevents insert races from
+  /// skipping or duplicating history.
+  Future<void> loadOlder() async {
+    if (_loadingOlder || !_hasMore || _oldestCursor == null) return;
+    _setPagination(loading: true);
+    try {
+      final page = await ref
+          .read(chatServiceProvider)
+          .fetchMessagePage(chatId, limit: pageSize, before: _oldestCursor);
+      for (final message in page.messages) {
+        _messagesById[message.id] = message;
+      }
+      _oldestCursor = page.nextCursor ?? _oldestCursor;
+      _hasMore = page.hasMore;
+      final snapshot = _snapshot();
+      _reconcilePending(snapshot);
+      state = AsyncData(snapshot);
+    } catch (_) {
+      // Keep the current page and allow another edge hit to retry.
+    } finally {
+      _setPagination(loading: false);
     }
   }
 
@@ -78,7 +237,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   Future<void> addOutgoing(String text, {Message? replyTo}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
-    final tempId = 'local-${DateTime.now().microsecondsSinceEpoch}';
+    final tempId = ref.read(clientMessageIdFactoryProvider)();
     final pending = Message(
       id: tempId,
       chatId: chatId,
@@ -92,7 +251,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     ref.read(pendingSendsProvider(chatId).notifier).add(pending);
     // Offline: leave it on the clock. [flushPending] retries on reconnect.
     if (!_online) return;
-    await _attemptSend(tempId, trimmed);
+    await _attemptSend(tempId, trimmed, replyToId: replyTo?.id);
   }
 
   /// Push one queued message to the server. On success the pending row is
@@ -101,32 +260,57 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   /// genuine server rejection (still online) flips the row to
   /// [MessageStatus.failed] so the user gets the retry sheet, while a
   /// network drop mid-send leaves it queued for the next reconnect flush.
-  Future<void> _attemptSend(String localId, String body) async {
+  Future<void> _attemptSend(
+    String localId,
+    String body, {
+    String? replyToId,
+  }) async {
     if (_inFlight.contains(localId)) return;
+    if (!_online) return;
     _inFlight.add(localId);
+    var simulatedFailure = false;
     try {
-      // Dev/QA: the dev-menu "failed-send" switch forces a server-side
-      // rejection so US-030's ⚠ + retry path can be exercised on a real
-      // device without a genuine outage.
-      if (ref.read(simulateFailureProvider)) {
+      // Dev/QA: consume the one-shot before forcing a rejection so the
+      // resulting failed bubble can exercise the real retry path.
+      if (ref.read(simulateFailureProvider.notifier).consume()) {
+        simulatedFailure = true;
         throw Exception('simulated_failure');
       }
       final server = await ref
           .read(chatServiceProvider)
-          .sendMessage(chatId: chatId, body: body);
-      ref.read(pendingSendsProvider(chatId).notifier).upgrade(
+          .sendMessage(
+            chatId: chatId,
+            body: body,
+            clientMessageId: localId,
+            replyToId: replyToId,
+          );
+      ref
+          .read(pendingSendsProvider(chatId).notifier)
+          .upgrade(
             tempId: localId,
             newId: server.id,
             newSentAt: server.createdAt,
           );
       // Refresh chat list so the tile's last-message preview updates.
       ref.read(chatListProvider.notifier).refresh();
-    } catch (_) {
-      if (_online) {
-        ref.read(pendingSendsProvider(chatId).notifier).update(
-              localId,
-              (m) => m.copyWith(status: MessageStatus.failed),
-            );
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Message send failed: type=${error.runtimeType}, error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      final backendReachable =
+          simulatedFailure ||
+          await ref.read(backendReachabilityCheckProvider)();
+      if (backendReachable) {
+        ref
+            .read(pendingSendsProvider(chatId).notifier)
+            .update(localId, (m) => m.copyWith(status: MessageStatus.failed));
+      } else {
+        // Re-run the online stream now instead of waiting for its periodic
+        // probe; this also updates the banner for offline Wi-Fi immediately.
+        ref.invalidate(onlineProvider);
       }
       // Offline drop: keep the row pending so the reconnect flush retries.
     } finally {
@@ -145,13 +329,12 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         .where((m) => m.status == MessageStatus.pending)
         .toList();
     for (final m in queued) {
-      await _attemptSend(m.id, m.originalText);
+      await _attemptSend(m.id, m.originalText, replyToId: m.replyTo?.id);
     }
   }
 
-  /// Re-fire a previously failed send. Drops the failed row from the
-  /// queue, then routes back through [addOutgoing] (which lays down a
-  /// fresh pending row). PRD US-030.
+  /// Re-fire a previously failed send with its original idempotency id.
+  /// PRD US-030.
   Future<void> retryFailed(String localId) async {
     final pendings = ref.read(pendingSendsProvider(chatId));
     Message? target;
@@ -162,8 +345,17 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       }
     }
     if (target == null) return;
-    ref.read(pendingSendsProvider(chatId).notifier).remove(localId);
-    await addOutgoing(target.originalText, replyTo: target.replyTo);
+    ref
+        .read(pendingSendsProvider(chatId).notifier)
+        .update(
+          localId,
+          (message) => message.copyWith(status: MessageStatus.pending),
+        );
+    await _attemptSend(
+      localId,
+      target.originalText,
+      replyToId: target.replyTo?.id,
+    );
   }
 
   /// Drop a pending or failed message from the queue without retrying.
@@ -224,13 +416,13 @@ class HiddenMessagesNotifier extends Notifier<Set<String>> {
 
 final hiddenMessagesProvider =
     NotifierProvider.family<HiddenMessagesNotifier, Set<String>, String>(
-  HiddenMessagesNotifier.new,
-);
+      HiddenMessagesNotifier.new,
+    );
 
 final chatMessagesProvider =
     StreamNotifierProvider.family<ChatNotifier, List<Message>, String>(
-  ChatNotifier.new,
-);
+      ChatNotifier.new,
+    );
 
 /// Per-chat translation visibility. Default `true`. Flipping this only
 /// affects the chat with the matching `chatId` — PRD FR-23.
@@ -247,8 +439,8 @@ class ShowTranslationsNotifier extends Notifier<bool> {
 
 final showTranslationsProvider =
     NotifierProvider.family<ShowTranslationsNotifier, bool, String>(
-  ShowTranslationsNotifier.new,
-);
+      ShowTranslationsNotifier.new,
+    );
 
 /// Per-chat "currently replying to" message. Null when not replying.
 /// Setting a reply target clears any in-flight edit (the two modes are
@@ -274,8 +466,8 @@ class ReplyingToNotifier extends Notifier<Message?> {
 
 final replyingToProvider =
     NotifierProvider.family<ReplyingToNotifier, Message?, String>(
-  ReplyingToNotifier.new,
-);
+      ReplyingToNotifier.new,
+    );
 
 /// Per-chat "currently editing" message. Null when not editing. PRD US-019.
 class EditingNotifier extends Notifier<Message?> {
@@ -299,8 +491,8 @@ class EditingNotifier extends Notifier<Message?> {
 
 final editingProvider =
     NotifierProvider.family<EditingNotifier, Message?, String>(
-  EditingNotifier.new,
-);
+      EditingNotifier.new,
+    );
 
 /// Per-chat learning language. Seeded from the live chat list — when the
 /// chat row is present we use its `learningLanguage`, otherwise we fall
@@ -329,12 +521,12 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
   /// surface it.
   Future<void> set(BlabLanguage lang) async {
     final previous = state;
-    state = lang;
     try {
       await ref
           .read(chatServiceProvider)
           .setLearningLanguage(chatId: chatId, langCode: lang.code);
       await ref.read(chatListProvider.notifier).refresh();
+      state = lang;
     } catch (e) {
       state = previous;
       rethrow;
@@ -344,5 +536,5 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
 
 final learningLanguageProvider =
     NotifierProvider.family<LearningLanguageNotifier, BlabLanguage, String>(
-  LearningLanguageNotifier.new,
-);
+      LearningLanguageNotifier.new,
+    );

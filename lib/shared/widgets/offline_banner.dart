@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../state/connectivity_state.dart';
 
 /// Slim system banner shown across post-login surfaces when the device loses
@@ -31,7 +32,9 @@ class OfflineBanner extends ConsumerWidget {
         duration: const Duration(milliseconds: 200),
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
-        child: isOffline ? const _Bar() : const SizedBox(width: double.infinity),
+        child: isOffline
+            ? const _Bar()
+            : const SizedBox(width: double.infinity),
       ),
     );
   }
@@ -44,15 +47,15 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       liveRegion: true,
-      label: "No internet connection. Messages will send when you're back online.",
+      label: context.l10n.noConnection,
       child: Container(
         width: double.infinity,
         height: OfflineBanner.bannerHeight,
         color: const Color(0xFF333333),
         alignment: Alignment.center,
-        child: const Text(
-          "No connection — messages will send when you're back online",
-          style: TextStyle(
+        child: Text(
+          context.l10n.noConnection,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.w500,

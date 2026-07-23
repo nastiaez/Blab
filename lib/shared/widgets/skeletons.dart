@@ -20,11 +20,8 @@ class ChatListSkeleton extends StatelessWidget {
       child: ListView.separated(
         physics: const NeverScrollableScrollPhysics(),
         itemCount: rows,
-        separatorBuilder: (context, i) => const Divider(
-          height: 1,
-          indent: 76,
-          color: Color(0xFFF5F5F5),
-        ),
+        separatorBuilder: (context, i) =>
+            const Divider(height: 1, indent: 76, color: Color(0xFFF5F5F5)),
         itemBuilder: (context, i) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -42,11 +39,7 @@ class ChatListSkeleton extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _SkeletonBlock(
-                        width: 120,
-                        height: 14,
-                        radius: 4,
-                      ),
+                      _SkeletonBlock(width: 120, height: 14, radius: 4),
                       const SizedBox(height: 8),
                       _SkeletonBlock(
                         // Vary the second row width for visual interest.
@@ -73,12 +66,12 @@ class ChatViewSkeleton extends StatelessWidget {
 
   static const List<({bool isOutgoing, double width, double height})> _bubbles =
       [
-    (isOutgoing: false, width: 220, height: 42),
-    (isOutgoing: true, width: 160, height: 36),
-    (isOutgoing: false, width: 260, height: 56),
-    (isOutgoing: false, width: 180, height: 36),
-    (isOutgoing: true, width: 200, height: 42),
-  ];
+        (isOutgoing: false, width: 220, height: 42),
+        (isOutgoing: true, width: 160, height: 36),
+        (isOutgoing: false, width: 260, height: 56),
+        (isOutgoing: false, width: 180, height: 36),
+        (isOutgoing: true, width: 200, height: 42),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -94,8 +87,9 @@ class ChatViewSkeleton extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Align(
-              alignment:
-                  b.isOutgoing ? Alignment.centerRight : Alignment.centerLeft,
+              alignment: b.isOutgoing
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
               child: _SkeletonBlock(
                 width: b.width,
                 height: b.height,
@@ -130,8 +124,9 @@ class _SkeletonBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: _skeletonBase,
         shape: shape,
-        borderRadius:
-            shape == BoxShape.circle ? null : BorderRadius.circular(radius),
+        borderRadius: shape == BoxShape.circle
+            ? null
+            : BorderRadius.circular(radius),
       ),
     );
   }

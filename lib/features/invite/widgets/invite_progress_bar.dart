@@ -10,11 +10,7 @@ import '../../../app/theme.dart';
 /// three screens are separate routes (no shared element animation), the
 /// transition between them still feels like motion.
 class InviteProgressBar extends StatelessWidget {
-  const InviteProgressBar({
-    super.key,
-    required this.current,
-    this.total = 3,
-  });
+  const InviteProgressBar({super.key, required this.current, this.total = 3});
 
   final int current;
   final int total;
@@ -33,8 +29,7 @@ class InviteProgressBar extends StatelessWidget {
             value: value,
             minHeight: 6,
             backgroundColor: BlabColors.divider,
-            valueColor:
-                const AlwaysStoppedAnimation<Color>(BlabColors.brand),
+            valueColor: const AlwaysStoppedAnimation<Color>(BlabColors.brand),
           );
         },
       ),

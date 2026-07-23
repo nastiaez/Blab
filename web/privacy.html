@@ -55,7 +55,7 @@
   <body>
     <main>
       <h1>Blab Privacy Policy</h1>
-      <p class="updated">Last updated: 9 June 2026</p>
+      <p class="updated">Last updated: 21 July 2026</p>
 
       <p>
         Blab is a chat app for practising languages with someone you know.
@@ -72,37 +72,61 @@
         access-controlled servers located in the European Union.
       </div>
 
+      <div class="note">
+        <strong>Delete your account:</strong> use
+        <em>Profile → Delete account</em> in the app, or
+        <a href="/delete-account">request deletion on the web</a> if you no
+        longer have access to the app.
+      </div>
+
       <h2>Who is responsible for your data</h2>
       <p>
-        Blab is operated by <strong>[OPERATOR NAME], Berlin, Germany</strong>
-        ("we", "us"), who is the data controller for the information described
-        here. You can reach us about privacy at
-        <a href="mailto:me@aswin.sh">me@aswin.sh</a>.
+        Blab is operated by <strong>Anastasiia Yezhyzhanska</strong>,
+        Furkastraße 81, 12107 Berlin, Germany ("we", "us"), who is the data
+        controller for the information described here. You can reach us about
+        privacy at
+        <a href="mailto:nastia.ez@gmail.com">nastia.ez@gmail.com</a>.
       </p>
 
       <h2>What we collect</h2>
       <ul>
-        <li><strong>Account details</strong> — your email address, the display name you choose, and an optional profile photo.</li>
+        <li><strong>Account details</strong> — your email address and the display name you choose.</li>
         <li><strong>Messages</strong> — the chats you send and receive, so we can deliver them and show your history.</li>
         <li><strong>Language preferences</strong> — the languages you're learning, to set up your chats and translations.</li>
+        <li><strong>Notification details</strong> — a device notification token and your message-preview preference, so we can notify you about new chats.</li>
         <li><strong>Diagnostics</strong> — if the app crashes, we receive a technical error report. These reports are scrubbed so they never contain your message text.</li>
       </ul>
 
+      <h2>Message notifications</h2>
+      <p>
+        On Android, Blab uses Google Firebase Cloud Messaging to deliver
+        notifications. Message previews are on by default and can be disabled
+        in <em>Profile → Notifications</em>. When previews are on, the sender's
+        display name and original message text are sent through Google for
+        notification delivery. When previews are off, Google receives only
+        generic notification text and the identifier needed to open the chat.
+        Translations are never included in notifications.
+      </p>
+
       <h2>How your messages are translated</h2>
       <p>
-        To show a translation of a message, the app sends that message's
-        text to a third-party AI translation provider (OpenRouter, which
-        routes to an OpenAI model). The provider returns the translation.
-        The text is sent only to produce the translation; it is not used to
-        show you ads.
+        When you enable translations, Blab sends the text of an eligible
+        message through OpenRouter to an eligible model-infrastructure
+        provider. Requests are restricted to endpoints that OpenRouter
+        classifies as Zero Data Retention, as not collecting prompt data, and
+        as supporting all required response parameters. The current OpenAI
+        model is served through Microsoft Azure under these controls. The text
+        is sent only to produce the translation; it is not used to show you
+        ads. Blab stores the resulting translation so it can be shown again
+        without sending the message for translation again.
       </p>
 
       <h2>Who we share information with</h2>
       <p>We use a small number of service providers to run the app:</p>
       <ul>
         <li><strong>Supabase</strong> — secure database and hosting for your account and messages (servers in the EU).</li>
-        <li><strong>Google</strong> — when you choose "Sign in with Google".</li>
-        <li><strong>OpenRouter / OpenAI</strong> — to translate message text, as described above.</li>
+        <li><strong>Google</strong> — when you choose "Sign in with Google", and through Firebase Cloud Messaging for Android notifications as described above.</li>
+        <li><strong>OpenRouter and eligible model-infrastructure providers</strong> — currently Microsoft Azure for the selected OpenAI translation model, under the controls described above.</li>
         <li><strong>Sentry</strong> — crash and error diagnostics (no message content).</li>
       </ul>
       <p>We do not sell your personal data, and we do not share it for advertising. (Under laws like California's CCPA/CPRA, we do not "sell" or "share" your personal information.)</p>
@@ -111,9 +135,8 @@
       <p>
         Where laws such as the EU/UK GDPR apply, we process your data to
         <strong>provide the service you asked for</strong> (delivering and
-        translating your messages, running your account) and, where relevant,
-        based on <strong>your consent</strong> (for example an optional profile
-        photo). You can withdraw consent or close your account at any time.
+        translating your messages and running your account). You can close your
+        account at any time.
       </p>
 
       <h2>Where your data is processed (international transfers)</h2>
@@ -121,7 +144,8 @@
         Your account and messages are stored on servers in the
         <strong>European Union</strong>. Some of our service providers operate
         outside the EU/your country — for example the translation provider
-        (OpenRouter / OpenAI), Google sign-in, and our crash-diagnostics
+        (OpenRouter and its eligible model-infrastructure providers, currently
+        Microsoft Azure), Google sign-in and Firebase messaging, and our crash-diagnostics
         provider (Sentry) may process data in the United States. Where data
         leaves your region it is protected by appropriate safeguards such as
         the European Commission's Standard Contractual Clauses.
@@ -135,22 +159,23 @@
       <ul>
         <li>access the personal data we hold about you;</li>
         <li>correct it if it's wrong;</li>
-        <li>delete it (you can delete your account in-app at any time);</li>
+        <li>delete it in the app or through our <a href="/delete-account">public deletion request page</a>;</li>
         <li>get a copy of it to take elsewhere;</li>
         <li>object to or restrict certain processing, and withdraw consent;</li>
         <li>complain to your local data-protection regulator.</li>
       </ul>
-      <p>To exercise any of these, email <a href="mailto:me@aswin.sh">me@aswin.sh</a>. We don't charge for this and we won't treat you differently for asking.</p>
+      <p>To exercise any of these, email <a href="mailto:nastia.ez@gmail.com">nastia.ez@gmail.com</a>. We don't charge for this and we won't treat you differently for asking.</p>
 
       <h2>Keeping and deleting your data</h2>
       <p>
-        We keep your account and messages for as long as your account
-        exists. You can delete your account at any time from
-        <em>Profile → Delete account</em>. Deleting your account removes your
-        profile and your messages from our database. Backups and provider logs
-        are cleared on their normal cycle (typically within 30–90 days)
-        afterwards. We may keep limited records for longer where the law
-        requires it (for example to handle a safety report or legal claim).
+        We keep your account and messages for as long as your account exists.
+        You can delete your account from <em>Profile → Delete account</em>, or
+        use our <a href="/delete-account">public deletion request page</a>.
+        Deleting your account removes your profile and messages from our live
+        database. Backups and provider logs are cleared on their normal cycle
+        (typically within 30–90 days). Minimized evidence that forms part of an
+        abuse or safety report may be kept for 180 days after the report is
+        resolved, or longer when a legal hold or reporting duty requires it.
       </p>
 
       <h2>How we protect your data</h2>
@@ -188,8 +213,8 @@
       <h2>Information we handle (categories)</h2>
       <p>
         For laws that ask us to list categories (such as California's CCPA/CPRA),
-        we handle: identifiers (email, account ID), your name and optional
-        photo, your user content (messages and language settings), and technical
+        we handle: identifiers (email, account ID), your name, your user content
+        (messages and language settings), and technical
         diagnostics. We disclose these only to the service providers listed
         above to run the app, and we do not sell or share them for advertising.
       </p>
@@ -209,7 +234,7 @@
       </p>
 
       <h2>Contact</h2>
-      <p>Questions? Email <a href="mailto:me@aswin.sh">me@aswin.sh</a>.</p>
+      <p>Questions? Email <a href="mailto:nastia.ez@gmail.com">nastia.ez@gmail.com</a>.</p>
 
       <footer>© 2026 Blab</footer>
     </main>

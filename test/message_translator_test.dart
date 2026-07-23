@@ -3,130 +3,139 @@ import 'dart:async';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+const _messageId = '10000000-0000-4000-8000-000000000001';
+
+Map<String, dynamic> _success() => {
+  'mode': 'translation',
+  'translation': 'Hello!',
+  'interfaceText': 'Привіт!',
+  'interfaceLang': 'uk',
+  'sourceLang': 'ta',
+  'explanation': null,
+  'confidence': null,
+  'tokens': [
+    {
+      'text': 'வணக்கம்',
+      'gloss': 'Привіт',
+      'roman': 'Vaṇakkam',
+      'isContent': true,
+    },
+    {'text': '!', 'isContent': false},
+  ],
+};
+
 void main() {
   test('parses a successful response into translation + tokens', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async => {
-        'translation': 'Hello!',
-        'tokens': [
-          {
-            'text': 'வணக்கம்',
-            'english': 'Hello',
-            'roman': 'Vaṇakkam',
-            'isContent': true,
-          },
-          {'text': '!', 'isContent': false},
-        ],
-      },
+      invoke: ({required String messageId}) async => _success(),
     );
 
-    final result = await translator.translate(
-      text: 'வணக்கம்!',
-      sourceLang: 'ta',
-      targetLang: 'en',
-    );
+    final result = await translator.translate(messageId: _messageId);
     expect(result.translation, 'Hello!');
+    expect(result.interfaceText, 'Привіт!');
+    expect(result.interfaceLang, 'uk');
+    expect(result.sourceLang, 'ta');
+    expect(result.mode, LearningAidMode.translation);
     expect(result.tokens, hasLength(2));
     expect(result.tokens.first.text, 'வணக்கம்');
-    expect(result.tokens.first.english, 'Hello');
+    expect(result.tokens.first.gloss, 'Привіт');
     expect(result.tokens.first.romanization, 'Vaṇakkam');
     expect(result.tokens.first.isContent, isTrue);
     expect(result.tokens.last.text, '!');
     expect(result.tokens.last.isContent, isFalse);
   });
 
-  test('passes source + target lang through to the invoker', () async {
-    String? capturedSource;
-    String? capturedTarget;
+  test('parses a correction with explanation and confidence', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async {
-        capturedSource = sourceLang;
-        capturedTarget = targetLang;
-        return {'translation': 'x', 'tokens': <Map<String, dynamic>>[]};
+      invoke: ({required String messageId}) async => {
+        'mode': 'correction',
+        'translation': 'Machst du ...?',
+        'interfaceText': 'What are you doing?',
+        'interfaceLang': 'en',
+        'sourceLang': 'de',
+        'explanation': 'The verb must agree with "du".',
+        'confidence': 'medium',
+        'tokens': const [],
       },
     );
 
-    await translator.translate(
-      text: 'வணக்கம்',
-      sourceLang: 'ta',
-      targetLang: 'en',
-    );
-    expect(capturedSource, 'ta');
-    expect(capturedTarget, 'en');
+    final result = await translator.translate(messageId: _messageId);
+    expect(result.mode, LearningAidMode.correction);
+    expect(result.translation, 'Machst du ...?');
+    expect(result.interfaceText, 'What are you doing?');
+    expect(result.explanation, 'The verb must agree with "du".');
+    expect(result.confidence, CorrectionConfidence.medium);
   });
 
-  test('trims input before invoking', () async {
+  test('sends only the trimmed message ID to the invoker', () async {
     String? captured;
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async {
-        captured = text;
-        return {'translation': 'x', 'tokens': <Map<String, dynamic>>[]};
+      invoke: ({required String messageId}) async {
+        captured = messageId;
+        return _success();
       },
     );
 
-    await translator.translate(
-      text: '  வணக்கம்  ',
-      sourceLang: 'ta',
-      targetLang: 'en',
-    );
-    expect(captured, 'வணக்கம்');
+    await translator.translate(messageId: '  $_messageId  ');
+    expect(captured, _messageId);
   });
 
-  test('throws MessageTranslationFailed when invoker throws', () async {
+  test('preserves the stable quota failure reason', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async {
-        throw Exception('boom');
+      invoke: ({required String messageId}) async {
+        throw MessageTranslationFailed('translation_limit_reached');
       },
     );
 
     expect(
-      translator.translate(text: 'hi', sourceLang: 'ta', targetLang: 'en'),
+      translator.translate(messageId: _messageId),
+      throwsA(
+        isA<MessageTranslationFailed>().having(
+          (error) => error.reason,
+          'reason',
+          'translation_limit_reached',
+        ),
+      ),
+    );
+  });
+
+  test('does not expose arbitrary invoker errors', () async {
+    final translator = MessageTranslator(
+      invoke: ({required String messageId}) async {
+        throw Exception('sensitive provider response');
+      },
+    );
+
+    expect(
+      translator.translate(messageId: _messageId),
+      throwsA(
+        isA<MessageTranslationFailed>().having(
+          (error) => error.reason,
+          'reason',
+          'invoke_failed',
+        ),
+      ),
+    );
+  });
+
+  test('throws when response is malformed', () async {
+    final translator = MessageTranslator(
+      invoke: ({required String messageId}) async => {'translation': null},
+    );
+
+    expect(
+      translator.translate(messageId: _messageId),
       throwsA(isA<MessageTranslationFailed>()),
     );
   });
 
-  test('throws MessageTranslationFailed when response is malformed', () async {
+  test('rejects an empty message ID', () async {
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async => {'translation': null},
+      invoke: ({required String messageId}) async => _success(),
     );
 
     expect(
-      translator.translate(text: 'hi', sourceLang: 'ta', targetLang: 'en'),
-      throwsA(isA<MessageTranslationFailed>()),
-    );
-  });
-
-  test('rejects empty / whitespace-only input', () async {
-    final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) async => {},
-    );
-
-    expect(
-      translator.translate(text: '   ', sourceLang: 'ta', targetLang: 'en'),
+      translator.translate(messageId: '   '),
       throwsA(isA<MessageTranslationFailed>()),
     );
   });
@@ -134,23 +143,15 @@ void main() {
   test('times out when invoker never completes', () async {
     final never = Completer<Map<String, dynamic>>();
     final translator = MessageTranslator(
-      invoke: ({
-        required String text,
-        required String sourceLang,
-        required String targetLang,
-      }) => never.future,
+      invoke: ({required String messageId}) => never.future,
       timeout: const Duration(milliseconds: 10),
     );
 
     try {
-      await translator.translate(
-        text: 'வணக்கம்',
-        sourceLang: 'ta',
-        targetLang: 'en',
-      );
+      await translator.translate(messageId: _messageId);
       fail('expected MessageTranslationFailed');
-    } on MessageTranslationFailed catch (e) {
-      expect(e.reason, 'timeout');
+    } on MessageTranslationFailed catch (error) {
+      expect(error.reason, 'timeout');
     }
   });
 }

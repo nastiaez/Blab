@@ -101,8 +101,7 @@ class _MessageTextState extends ConsumerState<MessageText> {
       }
 
       final key = _wordKeys.putIfAbsent(i, () => GlobalKey());
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () => _onWordTap(i, t);
+      final recognizer = TapGestureRecognizer()..onTap = () => _onWordTap(i, t);
       _recognizers.add(recognizer);
 
       children.add(

@@ -26,10 +26,7 @@ class ExchangeCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: BlabColors.divider,
-          width: 1,
-        ),
+        border: Border.all(color: BlabColors.divider, width: 1),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -37,11 +34,7 @@ class ExchangeCard extends StatelessWidget {
         children: [
           _Row(flag: topFlag, label: topLabel),
           const SizedBox(height: 10),
-          const Icon(
-            Icons.swap_vert,
-            color: BlabColors.brand,
-            size: 22,
-          ),
+          const Icon(Icons.swap_vert, color: BlabColors.brand, size: 22),
           const SizedBox(height: 10),
           _Row(flag: bottomFlag, label: bottomLabel),
         ],

@@ -13,21 +13,21 @@ const String inviteShareBlurb =
 /// Opens WhatsApp (app if installed, web otherwise) with the invite
 /// pre-filled. `wa.me` needs no phone number for a share-style compose.
 Uri whatsAppShareUri(String link) => Uri.parse(
-      'https://wa.me/?text=${Uri.encodeComponent(inviteShareText(link))}',
-    );
+  'https://wa.me/?text=${Uri.encodeComponent(inviteShareText(link))}',
+);
 
 /// Opens Telegram's share dialog with the link + blurb pre-filled.
 Uri telegramShareUri(String link) => Uri.parse(
-      'https://t.me/share/url'
-      '?url=${Uri.encodeComponent(link)}'
-      '&text=${Uri.encodeComponent(inviteShareBlurb)}',
-    );
+  'https://t.me/share/url'
+  '?url=${Uri.encodeComponent(link)}'
+  '&text=${Uri.encodeComponent(inviteShareBlurb)}',
+);
 
 /// Opens the default mail composer with subject + body pre-filled.
 /// `Uri.encodeComponent` keeps spaces as `%20` (not `+`) so every mail
 /// client renders the body correctly.
 Uri emailShareUri(String link) => Uri.parse(
-      'mailto:'
-      '?subject=${Uri.encodeComponent("Join me on Blab")}'
-      '&body=${Uri.encodeComponent(inviteShareText(link))}',
-    );
+  'mailto:'
+  '?subject=${Uri.encodeComponent("Join me on Blab")}'
+  '&body=${Uri.encodeComponent(inviteShareText(link))}',
+);

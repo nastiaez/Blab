@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/widgets/picker_card.dart';
@@ -24,23 +27,36 @@ class _InterfaceLanguageScreenState
   @override
   Widget build(BuildContext context) {
     final current = ref.watch(interfaceLanguageProvider);
-    final sorted = [...kBlabLanguages]
+    final localizations = context.l10n;
+    final sorted = [...kInterfaceLanguages]
       ..sort((a, b) => a.name.compareTo(b.name));
 
     final selection = _picked ?? current;
     final hasChange = selection.code != current.code;
 
-    void apply() {
+    Future<void> apply() async {
       final previous = current;
+      try {
+        await ref.read(interfaceLanguageProvider.notifier).set(selection);
+      } catch (_) {
+        if (!context.mounted) return;
+        showAppSnack(context.l10n.couldNotSaveLanguage);
+        return;
+      }
+      if (!context.mounted) return;
       context.pop();
-      ref.read(interfaceLanguageProvider.notifier).set(selection);
       showAppSnack(
-        'Switched to ${selection.nativeName}',
+        context.l10n.switchedToLanguage(
+          localizedInterfaceLanguageName(context.l10n, selection.code),
+        ),
         action: SnackBarAction(
-          label: 'Undo',
+          label: context.l10n.undo,
           textColor: BlabColors.brand,
-          onPressed: () =>
+          onPressed: () {
+            unawaited(
               ref.read(interfaceLanguageProvider.notifier).set(previous),
+            );
+          },
         ),
       );
     }
@@ -53,14 +69,14 @@ class _InterfaceLanguageScreenState
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: localizations.back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
           onPressed: () => context.pop(),
         ),
-        title: const Text(
-          'Interface language',
-          style: TextStyle(
+        title: Text(
+          localizations.interfaceLanguage,
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -92,7 +108,7 @@ class _InterfaceLanguageScreenState
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
               child: BrandButton(
-                label: 'Apply',
+                label: localizations.apply,
                 onPressed: hasChange ? apply : null,
               ),
             ),
@@ -102,4 +118,3 @@ class _InterfaceLanguageScreenState
     );
   }
 }
-

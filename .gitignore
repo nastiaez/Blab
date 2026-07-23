@@ -46,3 +46,8 @@ app.*.map.json
 
 # Local build-time config (Sentry DSN, etc.) — not committed
 /env/
+/supabase/.temp/
+
+# Local Supabase Edge Function secrets
+/supabase/.env.*
+/supabase/.branches/

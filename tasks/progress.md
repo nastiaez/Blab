@@ -81,7 +81,7 @@
 - **Scope:** US-013, US-014, US-015, US-016, US-017, US-023.
 - **Done when:**
   - Chat header: back, avatar, name, "● Online" indicator, ··· menu
-  - ··· menu: Show translations toggle + Learning language ›
+  - ··· menu: Show translations and corrections toggle + Learning language ›
   - Translations toggle hides/shows all `transl-line` rows in messages only
   - Incoming bubbles (white, left) with translation subtitle render
   - Outgoing bubbles (purple, right) with SVG double-tick (gray → purple after 1500ms)
@@ -218,21 +218,24 @@
 
 ---
 
-### Step 2.7 — Translation in real chats (pivot-English model) `[x]`
-- **Scope (revised 2026-06-09):** ship live translation for **all 10 non-English languages**, not just Tamil + Ukrainian. Both sides type English; each viewer sees a translation into their own learning language in the main bubble slot + English original in subtitle. The "Translation coming soon" gate for the other 9 languages was **dropped** (decision 2026-06-09) — the LLM translator is language-agnostic and covers every supported language for free, so deliberately disabling 8 of them made no sense. Pivot from the original bundled-dictionary plan because Tamil agglutination + names + typos make flat lookups miss too often — LLM-backed translation gives ~100% coverage at ~$0.001/message.
+### Step 2.7 — Translation in real chats (bilingual-authoring model) `[x]`
+- **Scope (revised 2026-07-18 by L-15):** users may write in any language. On success, each viewer gets a learning-language top lane and interface-language bottom lane; an author who writes in neither selected language keeps the original in the bottom lane. Author mistakes in their learning language use inline correction marks, while recipients see only clean corrected output. Exact source remains authoritative and available in the View original sheet. Turning learning aids off prevents new OpenRouter calls and shows only the original. All 11 learning targets remain available; interface localization is limited to English, Ukrainian, German, and Spanish.
 - **Done when:**
-  - Real chats translate via Supabase Edge Function `translate-message` (OpenRouter → gpt-4o-mini); source=English, target=viewer's learning language, any of the 10 supported codes
-  - All bubbles in supported chats (incoming + outgoing) show shimmer → target-lang main slot + tappable tokens, English original in subtitle
-  - Word popup pulls English gloss + romanization from the live translation tokens (no bundled dictionary)
-  - Failure (offline / 5xx / timeout) → muted "Translation unavailable" in main slot, English in subtitle
-  - Translations cached in Postgres so reopening a chat doesn't re-fire the LLM
+  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → an eligible ZDR endpoint for `openai/gpt-4o-mini`); the client supplies only a message ID, and the server derives source, learning target, and interface locale
+  - Successful bubbles show learning output on top and interface output below, deduplicate matching lanes, and preserve an unexpected third-language original for its author
+  - Word popup pulls an interface-language gloss + romanization from the live translation tokens (no bundled dictionary)
+  - Failure (offline / 5xx / timeout) → authored text remains usable with muted "Translation unavailable" above it
+  - Retryable learning-aid failures show an error icon and isolated Retry action; tapping message padding opens an action sheet that displays the exact original beside a visibility icon without intercepting word-definition taps
+  - Server-verified learning and interface outputs are cached in Postgres by message, learning language, and interface language. Matching senders/receivers reuse translations, corrections, and `none` results; clients cannot write cache rows
 - **Progress:**
-  - [x] Edge function `translate-message` deployed — language-agnostic across all 11 `LANG_NAMES`, romanization guidance for non-Latin scripts (ta/uk/hi), JWT-verified, 400-char cap
+  - [x] Edge function `translate-message` implemented across all 11 `LANG_NAMES`, romanization guidance for non-Latin scripts (ta/uk/hi), JWT-verified, 2,000-character cap
   - [x] `MessageTranslator` service + `messageTranslationsProvider` per-chat cache landed (Riverpod)
-  - [x] Real chat bubble wired: trigger fires for every `kSupportedLearningLanguages` code (all 10), source='en', target=viewer's learning language; renders shimmer/data/error via `TranslationSubtitle`
+  - [x] Real chat bubble wired: trigger uses source=`auto`, target=viewer's learning language, and renders authored/loading/normalized/error states via `TranslationSubtitle`
   - [x] Live verification (Tamil) on Samsung S931B: Nastia sends English in real chat with Aswin → shimmer → Tamil bubble + tappable tokens + English subtitle
   - [x] DB-side cache shipped: `message_translations` table (migration `20260607000001`, applied on remote, RLS scoped to chat members), prefetch-on-open + per-message writeback + bulk hydrate. Cold reopen reads cached rows instead of re-firing the LLM
   - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
+  - [x] L-13 security controls (2026-07-17, provider policy revised 2026-07-21): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, ZDR/data-collection-denied routing across eligible endpoints, and retirement of the unused public portfolio translator.
+  - [x] L-15 writing correction extension (2026-07-18): provider modes `translation|correction|none`, author-only inline correction marks, recipient-clean corrected output, localized author explanations, shared authorized cache/RLS, and dual learning/interface output lanes.
 
 ---
 
@@ -284,7 +287,10 @@
   - [x] Message plaintext redacted: `beforeBreadcrumb` strips everything but safe metadata (method/url/status) from HTTP breadcrumbs; `beforeSend` rebuilds the request with the body replaced by `[redacted]`. `sendDefaultPii = false`, tracing off. Pure scrub helpers unit-tested (`test/sentry_scrub_test.dart`, 5 cases).
   - [x] Dev-menu "Throw test error" button (uncaught throw → framework handler → Sentry) for end-to-end verification on device.
   - [x] `flutter analyze` clean; `flutter test` 54/54 green; **release** APK builds with the DSN wired (`flutter build apk --release --dart-define=SENTRY_DSN=…`).
-  - [x] Sentry project created (EU region, `de.sentry.io`); DSN stored in gitignored `env/sentry.json`; release App Bundle builds with `--dart-define-from-file=env/sentry.json`.
+  - [x] **L-18 re-verification:** distinct staging and production Sentry DSNs
+    are present only in ignored environment config, both guarded release builds
+    pass, and a deliberate staging error arrived with redacted message content
+    and the correct `staging` environment label.
   - [ ] **Live check during manual test** (Nastia): on the installed release build, dev menu → "Throw test error" → confirm the event lands in Sentry within ~1 min and carries no message text.
 
 ### Step 3.1 — iOS build  `[ ]` — **DEFERRED to post-launch** (2026-06-01 ship-fast decision)
@@ -401,6 +407,8 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 Append one line per non-trivial edit to this file (step added, scope changed, blocker logged, step split). Format: `YYYY-MM-DD — what changed and why`.
 
+- 2026-07-18 — Removed animation between the Chats and Profile bottom tabs so switching is instantaneous like YouTube; deeper push navigation keeps its existing transitions.
+- 2026-07-18 — Fixed the first-open unread-badge race introduced by fail-closed privacy hydration: incoming messages that become visible while the saved Read receipts preference is loading now stay queued, flush together when it resolves ON, and are discarded without transport when it resolves OFF. Added ON/OFF regression coverage; focused chat/privacy/list tests pass, and the full suite reaches 137 tests with only the pre-existing invite-picker copy assertion failing.
 - 2026-05-25 — initial plan created from PRD + tech-spec.
 - 2026-05-25 — tech-spec decisions locked: Riverpod, Supabase, Sentry. Backend-dependent steps in Phase 2 now have a concrete target (Supabase Auth, Postgres, Realtime, Storage; FCM via edge function).
 - 2026-05-25 — Step 0.1 complete. Flutter 3.41.9 project scaffolded (org `sh.aswin`, name `blab`, Android-only platforms). `minSdk` set to 24 per tech-spec § Platform Targets. AVD `blab_pixel` (Pixel 7, API 34, arm64-v8a) created. `flutter analyze` clean. Debug APK installed + launched on emulator-5554; counter app rendered (screenshot `/tmp/blab-step-0.1.png`). `.gitignore` covers build/, .dart_tool/, *.iml, .idea/; `android/.gitignore` covers local.properties.

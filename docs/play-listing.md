@@ -39,10 +39,12 @@ the hosted Privacy Policy (`web/privacy.html`) exactly — keep them in sync.
 
 **Tags/keywords:** language learning, language exchange, chat, translate
 
-**Contact email:** me@aswin.sh
+**Contact email:** nastia.ez@gmail.com
 
 **Privacy Policy URL:** https://blab-gray.vercel.app/privacy.html
 *(swap to the real domain when Step 3.7 lands)*
+
+**Account deletion URL:** https://blab-gray.vercel.app/delete-account
 
 ---
 
@@ -62,7 +64,7 @@ Google asks, section by section. Answer like this:
 
 **Is all of the user data collected by your app encrypted in transit?** → **Yes**
 
-**Do you provide a way for users to request that their data is deleted?** → **Yes** (in-app: Profile → Delete account)
+**Do you provide a way for users to request that their data is deleted?** → **Yes** (in-app: Profile → Delete account; web: `/delete-account`)
 
 ### Data types — collected (none "shared" in Google's sense; providers below are processors acting on our behalf only)
 
@@ -70,14 +72,14 @@ Google asks, section by section. Answer like this:
 |---|---|---|---|
 | Email address | Yes | Account management, app functionality | Not shared |
 | Name | Yes | App functionality (display name) | Not shared |
-| Photos (optional) | Yes | App functionality (profile picture) | Only if the user sets one |
-| Messages (in-app) | Yes | App functionality | Stored to deliver chats; text sent to a translation provider to produce translations |
+| Messages (in-app) | Yes | App functionality | Stored to deliver chats; text sent to a translation provider; original text also goes through Firebase when notification previews are enabled |
+| Device or other IDs | Yes | App functionality | Firebase notification token used only to route Android notifications |
 | Crash logs | Yes | Diagnostics / app stability | Scrubbed — no message content |
 | App interactions | Yes | App functionality | Read/typing state per the privacy toggles |
 
 For each row, when asked "Is this data shared with third parties?" → **No**
-(service providers that only process on our behalf — Supabase, the translation
-provider, Sentry — are not "sharing" under Google's definition).
+(service providers that only process on our behalf — Supabase, Google Firebase,
+the translation provider, Sentry — are not "sharing" under Google's definition).
 
 When asked "Is this data processed ephemerally?" → No for messages (stored),
 crash logs (sent to Sentry).
@@ -108,12 +110,13 @@ Answer honestly — Blab has user-to-user messaging:
 Google Play requires apps with social features to declare child-safety standards
 and a reporting path. We have:
 - A **zero-tolerance CSAE** section in the Terms (`/terms.html#child-safety`).
-- **In-app Report + Block** (Step 3.6a).
-- A **point of contact**: me@aswin.sh.
+- Separate **in-app Report + Block** controls.
+- Validated report intake, a private operator queue, audited enforcement, and the staffed response process in `docs/operations/moderation-and-deletion.md`.
+- A **point of contact**: nastia.ez@gmail.com.
 
 In Play Console:
 - **App content → Child safety standards**: provide the Terms URL (the CSAE
-  section) as the published standards, and me@aswin.sh as the contact.
+  section) as the published standards, and nastia.ez@gmail.com as the contact.
 - Affirm compliance with Google's CSAE policy when prompted.
 
 ---
@@ -142,48 +145,48 @@ thing on this whole list you can't speed up. Invite copy is in
 Do these last, right before submitting to production:
 
 - [ ] **Run the full manual test pass** on a real phone (`docs/manual-test-plan.md`), ideally on the signed release build. Don't submit until it passes.
-- [ ] **Fill the operator legal name** in `web/privacy.html` — replace
-      `[OPERATOR NAME]` (location is already set to Berlin, Germany). This is
-      legally required (GDPR controller identity). Re-deploy the page after.
+- [x] **Fill the operator legal name and address** in `web/privacy.html`.
+      Re-deploy the page after any controller-detail change.
       *No EU representative needed — the operator is based in the EU.*
 - [ ] Deploy `web/privacy.html` + `web/terms.html` (Vercel) and confirm both
       open in a browser.
 - [ ] Paste the Privacy Policy URL into the Play listing.
 - [ ] Fill the **Data Safety** form using the answers above.
 - [ ] Complete the **content rating** questionnaire (lands at Teen).
-- [ ] Fill **Child safety standards** (Terms `#child-safety` URL + me@aswin.sh).
+- [ ] Fill **Child safety standards** (Terms `#child-safety` URL + nastia.ez@gmail.com).
 - [ ] Upload the **feature graphic** (1024×500) + screenshots.
 - [ ] Add the **reviewer demo account** credentials.
-- [x] **Sentry DSN** set (in gitignored `env/sentry.json`; builds use `--dart-define-from-file=env/sentry.json`).
+- [ ] **Production environment config** validates, including the Sentry DSN
+      and matching Firebase file (`scripts/blab_environment.sh validate production`).
 - [ ] Confirm **Report + Block** is live in the build (Step 3.6a).
 - [ ] Closed test: **12+ testers, 14 continuous days** complete.
 
 ---
 
-## Release signing (one-time keystore)  [YOU]
+## Release signing (one-time upload key)
 
-The app build is Play-ready, but the release must be signed with YOUR upload
-key (currently it falls back to the debug key). One-time setup:
+Release builds fail when upload signing is unavailable. For a new Play app,
+create the owner-controlled upload key once:
 
-1. Create an upload keystore (keep it safe + backed up — losing it means you
-   can't update the app):
+1. Run the setup helper. It generates a strong password without printing it,
+   stores the keystore outside Git, and writes gitignored Gradle properties:
    ```
-   keytool -genkey -v -keystore ~/blab-upload.jks -keyalg RSA -keysize 2048 \
-     -validity 10000 -alias upload
+   scripts/setup_android_signing.sh
    ```
-2. Create `android/key.properties` (already gitignored — never commit it):
+2. Back up both files in the owner's 1Password vault and confirm the item has
+   synchronized to another trusted device:
+   - `~/.config/blab/signing/blab-upload.jks`
+   - `android/key.properties`
+
+   Never commit or share either private file. The properties path may need to
+   be updated when restoring on a different machine.
+3. Build the upload-signed bundle:
    ```
-   storePassword=<the password you set>
-   keyPassword=<the password you set>
-   keyAlias=upload
-   storeFile=/Users/anastasiiayezhyzhanska/blab-upload.jks
-   ```
-3. Build the signed bundle for upload:
-   ```
-   flutter build appbundle --release --dart-define-from-file=env/sentry.json
+   scripts/blab_environment.sh build production
    ```
    → upload `build/app/outputs/bundle/release/app-release.aab` to Play.
-4. Enable **Play App Signing** (Play's default). After the first upload, copy
-   the **app-signing SHA-256** from Play Console → and update
-   `web/.well-known/assetlinks.json` with it so invite App Links verify on
-   production builds (the file currently lists the debug fingerprint).
+4. Use Google-generated **Play App Signing** (the recommended default). After
+   the first upload, copy the **app-signing SHA-256** from Play Console's App
+   integrity page. Add it to `web/.well-known/assetlinks.json` alongside the
+   controlled upload fingerprint, deploy the web directory, and verify a build
+   installed from the Play internal track.

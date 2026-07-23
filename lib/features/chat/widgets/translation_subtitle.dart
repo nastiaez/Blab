@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../shared/models/message_token.dart';
+import 'message_text.dart';
 
 enum TranslationSubtitleState { ready, pending, unavailable }
 
-/// Renders the line that sits under a message bubble's main text. Owns the
-/// thin divider above it. Used for both incoming and outgoing bubbles; the
-/// caller picks the colors via [isOutgoing].
+/// Renders the learning-language aid alongside the exact authored message.
+/// Owns the separating divider and keeps learning words tappable when token
+/// metadata is available.
 ///
 /// Pending state shows a single-line gradient shimmer (no extra package).
 /// Unavailable state shows a muted italic "Translation unavailable" label.
@@ -16,11 +18,29 @@ class TranslationSubtitle extends StatelessWidget {
     required this.state,
     required this.text,
     required this.isOutgoing,
+    this.tokens,
+    this.languageCode,
+    this.popupTopInset = 0,
+    this.unavailableText = 'Translation unavailable',
+    this.retryText = 'Retry',
+    this.onRetry,
+    this.label,
+    this.supportingText,
+    this.dividerAfter = false,
   });
 
   final TranslationSubtitleState state;
   final String text;
   final bool isOutgoing;
+  final List<MessageToken>? tokens;
+  final String? languageCode;
+  final double popupTopInset;
+  final String unavailableText;
+  final String retryText;
+  final VoidCallback? onRetry;
+  final String? label;
+  final String? supportingText;
+  final bool dividerAfter;
 
   @override
   Widget build(BuildContext context) {
@@ -37,46 +57,112 @@ class TranslationSubtitle extends StatelessWidget {
     final Widget body;
     switch (state) {
       case TranslationSubtitleState.ready:
-        body = Text(
-          text,
-          style: TextStyle(
-            fontSize: 14,
-            color: isOutgoing
-                ? Colors.white.withValues(alpha: 0.85)
-                : BlabColors.textMuted,
-            height: 1.3,
-          ),
+        final style = TextStyle(
+          fontSize: 14,
+          color: isOutgoing
+              ? Colors.white.withValues(alpha: 0.85)
+              : BlabColors.textMuted,
+          height: 1.3,
+        );
+        final message = languageCode == null
+            ? Text(text, style: style)
+            : MessageText(
+                text: text,
+                tokens: tokens,
+                languageCode: languageCode!,
+                popupTopInset: popupTopInset,
+                style: style,
+              );
+        body = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (label != null) ...[
+              Text(
+                label!,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isOutgoing
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : BlabColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 2),
+            ],
+            message,
+            if (supportingText != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                supportingText!,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: isOutgoing
+                      ? Colors.white.withValues(alpha: 0.72)
+                      : BlabColors.textMuted,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ],
         );
       case TranslationSubtitleState.pending:
         body = ShimmerLine(isOutgoing: isOutgoing);
       case TranslationSubtitleState.unavailable:
-        body = Text(
-          'Translation unavailable',
-          style: TextStyle(
-            fontSize: 14,
-            fontStyle: FontStyle.italic,
-            color: isOutgoing
-                ? Colors.white.withValues(alpha: 0.6)
-                : BlabColors.textMuted,
-            height: 1.3,
-          ),
+        final color = isOutgoing
+            ? Colors.white.withValues(alpha: 0.78)
+            : BlabColors.textMuted;
+        body = Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          runSpacing: 2,
+          children: [
+            Icon(
+              Icons.error_outline,
+              key: const ValueKey('translation-error'),
+              size: 17,
+              color: color,
+            ),
+            Text(
+              unavailableText,
+              style: TextStyle(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: color,
+                height: 1.3,
+              ),
+            ),
+            if (onRetry != null)
+              TextButton.icon(
+                key: const ValueKey('translation-retry'),
+                onPressed: onRetry,
+                style: TextButton.styleFrom(
+                  foregroundColor: color,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.refresh, size: 16),
+                label: Text(
+                  retryText,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+          ],
         );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
-      children: [divider, body],
+      children: [if (!dividerAfter) divider, body, if (dividerAfter) divider],
     );
   }
 }
 
 class ShimmerLine extends StatefulWidget {
-  const ShimmerLine({
-    super.key,
-    required this.isOutgoing,
-    this.height = 14,
-  });
+  const ShimmerLine({super.key, required this.isOutgoing, this.height = 14});
   final bool isOutgoing;
   final double height;
 

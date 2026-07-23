@@ -28,15 +28,23 @@ class FlowPlaceholder extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.w700)),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 12),
-              Text(userStories,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 14, color: BlabColors.textMuted)),
+              Text(
+                userStories,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: BlabColors.textMuted,
+                ),
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Coming soon.',

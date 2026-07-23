@@ -12,18 +12,18 @@ BlabLanguage _lang(String code) =>
     kBlabLanguages.firstWhere((l) => l.code == code);
 
 Chat _chat(String id, String partnerId) => Chat(
-      id: id,
-      partnerId: partnerId,
-      partnerName: 'P$id',
-      partnerInitial: 'P',
-      learningLanguage: _lang('ta'),
-      partnerNativeLanguage: _lang('ta'),
-      partnerLearningLanguage: _lang('uk'),
-      lastMessage: 'hi',
-      lastMessageTranslation: '',
-      timestamp: DateTime.parse('2026-06-09T00:00:00Z'),
-      unreadCount: 0,
-    );
+  id: id,
+  partnerId: partnerId,
+  partnerName: 'P$id',
+  partnerInitial: 'P',
+  learningLanguage: _lang('ta'),
+  partnerNativeLanguage: _lang('ta'),
+  partnerLearningLanguage: _lang('uk'),
+  lastMessage: 'hi',
+  lastMessageTranslation: '',
+  timestamp: DateTime.parse('2026-06-09T00:00:00Z'),
+  unreadCount: 0,
+);
 
 void main() {
   test('filterBlockedChats hides chats whose partner is blocked', () {
@@ -62,46 +62,96 @@ void main() {
     }
   });
 
-  Widget host(Message message) => MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => showMessageActionSheet(
-                context,
-                message: message,
-                onAction: (_) {},
-              ),
-              child: const Text('open'),
-            ),
+  Widget host(Message message, {DateTime? now}) => MaterialApp(
+    home: Scaffold(
+      body: Builder(
+        builder: (context) => ElevatedButton(
+          onPressed: () => showMessageActionSheet(
+            context,
+            message: message,
+            onAction: (_) {},
+            now: now,
           ),
+          child: const Text('open'),
         ),
-      );
+      ),
+    ),
+  );
 
-  Message msg({required bool outgoing}) => Message(
-        id: 'm1',
-        chatId: 'c1',
-        isOutgoing: outgoing,
-        originalText: 'hello',
-        translation: '',
-        sentAt: DateTime.parse('2026-06-09T00:00:00Z'),
-        status: MessageStatus.delivered,
-      );
+  Message msg({
+    required bool outgoing,
+    MessageStatus status = MessageStatus.delivered,
+    DateTime? sentAt,
+  }) => Message(
+    id: 'm1',
+    chatId: 'c1',
+    isOutgoing: outgoing,
+    originalText: 'hello',
+    translation: '',
+    sentAt: sentAt ?? DateTime.parse('2026-06-09T00:00:00Z'),
+    status: status,
+  );
 
-  testWidgets('action sheet shows Report on incoming messages',
-      (tester) async {
+  testWidgets('action sheet shows Report on incoming messages', (tester) async {
     await tester.pumpWidget(host(msg(outgoing: false)));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.text('Report'), findsOneWidget);
+    expect(find.text('View original'), findsOneWidget);
+    expect(find.text('hello'), findsOneWidget);
+    expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     expect(find.text('Edit'), findsNothing); // incoming: no edit
   });
 
-  testWidgets('action sheet hides Report on your own messages',
-      (tester) async {
+  testWidgets('action sheet hides Report on your own messages', (tester) async {
     await tester.pumpWidget(host(msg(outgoing: true)));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     expect(find.text('Report'), findsNothing);
     expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('Edit is shown only for recent delivered outgoing messages', (
+    tester,
+  ) async {
+    final now = DateTime.parse('2026-07-17T12:00:00Z');
+    await tester.pumpWidget(
+      host(
+        msg(outgoing: true, sentAt: now.subtract(const Duration(hours: 23))),
+        now: now,
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('Edit is hidden after 24 hours while Delete remains', (
+    tester,
+  ) async {
+    final now = DateTime.parse('2026-07-17T12:00:00Z');
+    await tester.pumpWidget(
+      host(
+        msg(outgoing: true, sentAt: now.subtract(const Duration(hours: 25))),
+        now: now,
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsNothing);
+    expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('pending messages cannot be replied to or edited', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(msg(outgoing: true, status: MessageStatus.pending)),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reply'), findsNothing);
+    expect(find.text('Edit'), findsNothing);
   });
 }

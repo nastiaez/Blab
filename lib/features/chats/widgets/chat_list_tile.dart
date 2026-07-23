@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
-import '../../../features/chat/state/message_translations_state.dart';
-import '../../../shared/data/translation_support.dart';
+import '../../../l10n/l10n.dart';
+import '../../../features/chat/state/typing_state.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/util/relative_time.dart';
 
@@ -15,39 +15,9 @@ class ChatListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Resolve the preview text in the viewer's learning language when
-    // we have a last message id, the learning language is one we
-    // translate, and there's a cached translation (either in memory or
-    // hydrated from the DB via the chat screen's prefetch).
-    final code = chat.learningLanguage.code;
-    final supported = kSupportedLearningLanguages.contains(code);
-    String previewText = chat.lastMessage;
-    if (supported &&
-        chat.lastMessageId != null &&
-        chat.lastMessage.isNotEmpty &&
-        !chat.isNewInvite) {
-      // Watch the translation cache so the tile rebuilds when a fetch
-      // lands. Fire ensure() so the tile can populate its own preview
-      // even when the chat screen hasn't been opened yet.
-      final key = '${chat.lastMessageId}|$code';
-      final entry = ref.watch(messageTranslationsProvider(chat.id))[key];
-      final ready = entry?.value;
-      if (ready != null) {
-        previewText = ready.translation;
-      } else {
-        Future.microtask(() {
-          ref
-              .read(messageTranslationsProvider(chat.id).notifier)
-              .ensure(
-                messageId: chat.lastMessageId!,
-                text: chat.lastMessage,
-                sourceLang: 'en',
-                targetLang: code,
-              );
-        });
-      }
-    }
-
+    final partnerTyping =
+        !chat.isNewInvite &&
+        (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -69,7 +39,7 @@ class ChatListTile extends ConsumerWidget {
                               child: Text(
                                 chat.partnerName.isNotEmpty
                                     ? chat.partnerName[0].toUpperCase() +
-                                        chat.partnerName.substring(1)
+                                          chat.partnerName.substring(1)
                                     : chat.partnerName,
                                 style: const TextStyle(
                                   fontSize: 16,
@@ -80,8 +50,10 @@ class ChatListTile extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text(chat.learningLanguage.flag,
-                                style: const TextStyle(fontSize: 14)),
+                            Text(
+                              chat.learningLanguage.flag,
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ],
                         ),
                       ),
@@ -90,7 +62,9 @@ class ChatListTile extends ConsumerWidget {
                         const _NewPill()
                       else
                         Text(
-                          relativeTime(chat.timestamp),
+                          relativeTime(chat.timestamp) == 'Now'
+                              ? context.l10n.now
+                              : relativeTime(chat.timestamp),
                           style: const TextStyle(
                             fontSize: 12,
                             color: BlabColors.textMuted,
@@ -105,14 +79,22 @@ class ChatListTile extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           chat.isNewInvite
-                              ? 'New connection · say hi'
-                              : previewText,
+                              ? context.l10n.newConnectionSayHi
+                              : partnerTyping
+                              ? context.l10n.typing
+                              : chat.lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: BlabColors.textMuted,
-                            fontWeight: FontWeight.w400,
+                            color: partnerTyping
+                                ? BlabColors.brand
+                                : chat.unreadCount > 0
+                                ? BlabColors.textPrimary
+                                : BlabColors.textMuted,
+                            fontWeight: partnerTyping || chat.unreadCount > 0
+                                ? FontWeight.w600
+                                : FontWeight.w400,
                           ),
                         ),
                       ),
@@ -170,9 +152,9 @@ class _NewPill extends StatelessWidget {
         color: BlabColors.brand,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Text(
-        'New',
-        style: TextStyle(
+      child: Text(
+        context.l10n.newLabel,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.w700,

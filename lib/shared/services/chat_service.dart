@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/chat_mappers.dart';
@@ -34,6 +36,42 @@ class InviteMetadata {
   final String? claimedByName;
 }
 
+class MessageCursor {
+  const MessageCursor({required this.createdAt, required this.id});
+
+  final DateTime createdAt;
+  final String id;
+}
+
+class MessagePage {
+  const MessagePage({
+    required this.messages,
+    required this.hasMore,
+    this.nextCursor,
+  });
+
+  final List<Message> messages;
+  final bool hasMore;
+  final MessageCursor? nextCursor;
+}
+
+enum MessageChangeType { upsert, remove, resync }
+
+class MessageChange {
+  const MessageChange._(this.type, this.row);
+
+  const MessageChange.upsert(Map<String, dynamic> row)
+    : this._(MessageChangeType.upsert, row);
+
+  const MessageChange.remove(Map<String, dynamic> row)
+    : this._(MessageChangeType.remove, row);
+
+  const MessageChange.resync() : this._(MessageChangeType.resync, null);
+
+  final MessageChangeType type;
+  final Map<String, dynamic>? row;
+}
+
 class ChatService {
   ChatService(this._client);
   final SupabaseClient _client;
@@ -45,27 +83,132 @@ class ChatService {
   }
 
   Future<List<Message>> fetchMessages(String chatId, {int limit = 50}) async {
-    final rows = await _client
+    return (await fetchMessagePage(chatId, limit: limit)).messages;
+  }
+
+  Future<MessagePage> fetchMessagePage(
+    String chatId, {
+    int limit = 50,
+    MessageCursor? before,
+  }) async {
+    assert(limit > 0);
+    var query = _client
         .from('messages')
         .select()
         .eq('chat_id', chatId)
-        .filter('deleted_at', 'is', null)
+        .filter('deleted_at', 'is', null);
+    if (before != null) {
+      final timestamp = before.createdAt.toUtc().toIso8601String();
+      query = query.or(
+        'created_at.lt.$timestamp,and(created_at.eq.$timestamp,id.lt.${before.id})',
+      );
+    }
+    final rows = await query
         .order('created_at', ascending: false)
-        .limit(limit);
-    final list = (rows as List)
-        .map((r) => messageFromRow(r as Map<String, dynamic>, currentUserId: _uid))
-        .toList()
-        .reversed
+        .order('id', ascending: false)
+        .limit(limit + 1);
+    final pageRows = (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
         .toList();
-    return list;
+    final hasMore = pageRows.length > limit;
+    if (hasMore) pageRows.removeLast();
+    final messages = await _mapMessageRows(pageRows);
+    final oldest = pageRows.lastOrNull;
+    return MessagePage(
+      messages: messages,
+      hasMore: hasMore,
+      nextCursor: oldest == null
+          ? null
+          : MessageCursor(
+              createdAt: DateTime.parse(oldest['created_at'] as String),
+              id: oldest['id'] as String,
+            ),
+    );
   }
 
-  Stream<List<Map<String, dynamic>>> watchMessages(String chatId) {
-    return _client
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('chat_id', chatId)
-        .order('created_at');
+  Future<List<Message>> _mapMessageRows(
+    List<Map<String, dynamic>> pageRows,
+  ) async {
+    final pageIds = pageRows.map((row) => row['id'] as String).toSet();
+    final missingReplyIds = pageRows
+        .map((row) => row['reply_to'] as String?)
+        .whereType<String>()
+        .where((id) => !pageIds.contains(id))
+        .toSet();
+    var replyRows = <Map<String, dynamic>>[];
+    if (missingReplyIds.isNotEmpty) {
+      final extra = await _client
+          .from('messages')
+          .select()
+          .inFilter('id', missingReplyIds.toList());
+      replyRows = (extra as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+    }
+    return messagesFromRows(
+      pageRows.reversed,
+      currentUserId: _uid,
+      additionalReplyRows: replyRows,
+    );
+  }
+
+  /// Emits individual message changes rather than an ever-growing table
+  /// snapshot. A resync marker is emitted after a channel reconnect so the
+  /// caller can refresh only its bounded, currently loaded window.
+  Stream<MessageChange> watchMessageChanges(String chatId) {
+    late final RealtimeChannel channel;
+    late final StreamController<MessageChange> controller;
+    controller = StreamController<MessageChange>(
+      onListen: () {
+        channel = _client.channel(
+          'messages:$chatId:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'messages',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'chat_id',
+                value: chatId,
+              ),
+              callback: (payload) {
+                if (controller.isClosed) return;
+                if (payload.eventType == PostgresChangeEvent.delete) {
+                  controller.add(MessageChange.remove(payload.oldRecord));
+                  return;
+                }
+                final row = payload.newRecord;
+                if (row['deleted_at'] != null) {
+                  controller.add(MessageChange.remove(row));
+                } else {
+                  controller.add(MessageChange.upsert(row));
+                }
+              },
+            )
+            .subscribe((status, [error]) {
+              if (status != RealtimeSubscribeStatus.subscribed ||
+                  controller.isClosed) {
+                return;
+              }
+              // Also resync on the first subscription. This closes the small
+              // gap between the initial page query and channel readiness;
+              // later subscriptions use the same marker after reconnect.
+              controller.add(const MessageChange.resync());
+            });
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
+  }
+
+  Future<Message?> messageFromRealtimeRow(Map<String, dynamic> row) async {
+    if (row['deleted_at'] != null) return null;
+    final messages = await _mapMessageRows([row]);
+    return messages.firstOrNull;
   }
 
   Stream<List<Map<String, dynamic>>> watchReads(String chatId) {
@@ -78,20 +221,46 @@ class ChatService {
   Future<({String id, DateTime createdAt})> sendMessage({
     required String chatId,
     required String body,
+    String? clientMessageId,
+    String? replyToId,
   }) async {
-    final row = await _client
-        .from('messages')
-        .insert({'chat_id': chatId, 'sender_id': _uid, 'body': body})
-        .select()
-        .single();
+    final payload = {
+      'id': ?clientMessageId,
+      'chat_id': chatId,
+      'sender_id': _uid,
+      'body': body,
+      'reply_to': ?replyToId,
+    };
+    Map<String, dynamic> row;
+    try {
+      row = await _client.from('messages').insert(payload).select().single();
+    } on PostgrestException catch (error) {
+      if (clientMessageId == null || error.code != '23505') rethrow;
+      final existing = await _client
+          .from('messages')
+          .select('id,chat_id,sender_id,body,created_at,reply_to,deleted_at')
+          .eq('id', clientMessageId)
+          .maybeSingle();
+      if (existing == null ||
+          existing['chat_id'] != chatId ||
+          existing['sender_id'] != _uid ||
+          existing['body'] != body ||
+          existing['reply_to'] != replyToId ||
+          existing['deleted_at'] != null) {
+        throw StateError('idempotency_conflict');
+      }
+      row = existing;
+    }
     return (
       id: row['id'] as String,
-      createdAt:
-          DateTime.parse(row['created_at'] as String).toLocal(),
+      createdAt: DateTime.parse(row['created_at'] as String).toLocal(),
     );
   }
 
-  Future<void> markRead({required String chatId, required List<String> messageIds}) async {
+  Future<void> markRead({
+    required String chatId,
+    required List<String> messageIds,
+  }) async {
     if (messageIds.isEmpty) return;
     final rows = messageIds
         .map((id) => {'message_id': id, 'user_id': _uid, 'chat_id': chatId})
@@ -99,15 +268,16 @@ class ChatService {
     // ON CONFLICT DO NOTHING — read receipts are insert-once. Using the
     // default upsert (DO UPDATE) hit the missing UPDATE policy on
     // message_reads and got rejected by RLS.
-    await _client
-        .from('message_reads')
-        .upsert(rows, ignoreDuplicates: true);
+    await _client.from('message_reads').upsert(rows, ignoreDuplicates: true);
   }
 
-  Future<void> editMessage({required String messageId, required String newBody}) async {
+  Future<void> editMessage({
+    required String messageId,
+    required String newBody,
+  }) async {
     await _client
         .from('messages')
-        .update({'body': newBody, 'edited_at': DateTime.now().toUtc().toIso8601String()})
+        .update({'body': newBody})
         .eq('id', messageId);
   }
 
@@ -132,10 +302,7 @@ class ChatService {
   /// Use the one-shot fetcher [fetchChatList] in a polling loop tied to the
   /// source tables. Later tasks wire that up via Riverpod.
   Future<List<Map<String, dynamic>>> fetchChatList() async {
-    final rows = await _client
-        .from('chat_list')
-        .select()
-        .eq('viewer_id', _uid);
+    final rows = await _client.from('chat_list').select().eq('viewer_id', _uid);
     return (rows as List).cast<Map<String, dynamic>>();
   }
 
@@ -145,6 +312,35 @@ class ChatService {
         .from('chat_members')
         .stream(primaryKey: ['chat_id', 'user_id'])
         .eq('user_id', _uid);
+  }
+
+  /// Emits when an authorized message insert, edit, or removal can change a
+  /// chat-list preview. Postgres Changes applies message RLS before invoking
+  /// the callback and does not send an initial message-history snapshot.
+  Stream<void> watchChatListMessageChanges() {
+    late final RealtimeChannel channel;
+    late final StreamController<void> controller;
+    controller = StreamController<void>(
+      onListen: () {
+        channel = _client.channel(
+          'chat-list-messages:$_uid:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'messages',
+              callback: (_) {
+                if (!controller.isClosed) controller.add(null);
+              },
+            )
+            .subscribe();
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
   }
 
   /// Persist a new learning language on the caller's chat_members row.
@@ -164,16 +360,32 @@ class ChatService {
   /// Fetch a cached translation for [messageId] into [targetLang], if
   /// any. Returns null on cache miss (so the caller falls back to the
   /// live translator).
-  Future<({String text, List<Map<String, dynamic>> tokens})?>
-      fetchCachedTranslation({
+  Future<
+    ({
+      String text,
+      String interfaceText,
+      String interfaceLang,
+      String sourceLang,
+      String mode,
+      String? explanation,
+      String? confidence,
+      List<Map<String, dynamic>> tokens,
+    })?
+  >
+  fetchCachedTranslation({
     required String messageId,
     required String targetLang,
+    required String interfaceLang,
   }) async {
     final row = await _client
         .from('message_translations')
-        .select('translation_text, tokens')
+        .select(
+          'translation_text, interface_text, interface_lang, source_lang, aid_mode, '
+          'explanation, confidence, tokens',
+        )
         .eq('message_id', messageId)
         .eq('target_lang', targetLang)
+        .eq('interface_lang', interfaceLang)
         .maybeSingle();
     if (row == null) return null;
     final rawTokens = row['tokens'];
@@ -183,33 +395,64 @@ class ChatService {
         if (t is Map) tokens.add(Map<String, dynamic>.from(t));
       }
     }
-    return (text: row['translation_text'] as String, tokens: tokens);
+    return (
+      text: row['translation_text'] as String,
+      interfaceText: row['interface_text'] as String,
+      interfaceLang: row['interface_lang'] as String,
+      sourceLang: row['source_lang'] as String,
+      mode: row['aid_mode'] as String,
+      explanation: row['explanation'] as String?,
+      confidence: row['confidence'] as String?,
+      tokens: tokens,
+    );
   }
 
-  /// Bulk-fetch every cached translation for messages belonging to
-  /// [chatId] in [targetLang]. Returned as a map keyed by message id.
-  /// Used to hydrate the in-memory translation cache on chat open and
-  /// on learning-language change so old messages don't need to be
-  /// scrolled past to translate.
-  Future<Map<String, ({String text, List<Map<String, dynamic>> tokens})>>
-      fetchCachedTranslationsForChat({
-    required String chatId,
+  /// Bulk-fetch cached translations only for the currently loaded message
+  /// ids. Returned as a map keyed by message id.
+  Future<
+    Map<
+      String,
+      ({
+        String text,
+        String interfaceText,
+        String interfaceLang,
+        String sourceLang,
+        String mode,
+        String? explanation,
+        String? confidence,
+        List<Map<String, dynamic>> tokens,
+      })
+    >
+  >
+  fetchCachedTranslationsForMessages({
+    required List<String> messageIds,
     required String targetLang,
+    required String interfaceLang,
   }) async {
-    final msgRows = await _client
-        .from('messages')
-        .select('id')
-        .eq('chat_id', chatId)
-        .filter('deleted_at', 'is', null);
-    final ids = (msgRows as List).map((r) => r['id'] as String).toList();
-    if (ids.isEmpty) return {};
+    if (messageIds.isEmpty) return {};
     final transRows = await _client
         .from('message_translations')
-        .select('message_id, translation_text, tokens')
+        .select(
+          'message_id, translation_text, interface_text, interface_lang, source_lang, '
+          'aid_mode, explanation, confidence, tokens',
+        )
         .eq('target_lang', targetLang)
-        .inFilter('message_id', ids);
+        .eq('interface_lang', interfaceLang)
+        .inFilter('message_id', messageIds);
     final result =
-        <String, ({String text, List<Map<String, dynamic>> tokens})>{};
+        <
+          String,
+          ({
+            String text,
+            String interfaceText,
+            String interfaceLang,
+            String sourceLang,
+            String mode,
+            String? explanation,
+            String? confidence,
+            List<Map<String, dynamic>> tokens,
+          })
+        >{};
     for (final row in transRows as List) {
       final id = row['message_id'] as String;
       final text = row['translation_text'] as String;
@@ -220,61 +463,54 @@ class ChatService {
           if (t is Map) tokens.add(Map<String, dynamic>.from(t));
         }
       }
-      result[id] = (text: text, tokens: tokens);
+      result[id] = (
+        text: text,
+        interfaceText: row['interface_text'] as String,
+        interfaceLang: row['interface_lang'] as String,
+        sourceLang: row['source_lang'] as String,
+        mode: row['aid_mode'] as String,
+        explanation: row['explanation'] as String?,
+        confidence: row['confidence'] as String?,
+        tokens: tokens,
+      );
     }
     return result;
-  }
-
-  /// Persist a translation result so future viewers + sessions skip the
-  /// LLM round-trip. Idempotent — duplicate (message_id, target_lang)
-  /// keys are ignored.
-  Future<void> saveCachedTranslation({
-    required String messageId,
-    required String targetLang,
-    required String translationText,
-    required List<Map<String, dynamic>> tokens,
-  }) async {
-    await _client.from('message_translations').upsert(
-      {
-        'message_id': messageId,
-        'target_lang': targetLang,
-        'translation_text': translationText,
-        'tokens': tokens,
-      },
-      onConflict: 'message_id,target_lang',
-      ignoreDuplicates: true,
-    );
   }
 
   // ---- Report + Block (Step 3.6a, Play UGC/CSAE policy) ----
 
   /// File an abuse report. Any of [reportedUserId] / [chatId] / [messageId]
   /// may be null depending on what's being reported.
-  Future<void> reportContent({
+  Future<String> reportContent({
     required String reason,
     String? reportedUserId,
     String? chatId,
     String? messageId,
     String? details,
   }) async {
-    await _client.from('reports').insert({
-      'reporter_id': _uid,
-      'reported_user_id': reportedUserId,
-      'chat_id': chatId,
-      'message_id': messageId,
-      'reason': reason,
-      'details': details,
-    });
+    final reportId = await _client.rpc(
+      'submit_report',
+      params: {
+        'p_reason': reason,
+        'p_reported_user_id': reportedUserId,
+        'p_chat_id': chatId,
+        'p_message_id': messageId,
+        'p_details': details,
+      },
+    );
+    return reportId as String;
   }
 
   /// Block [userId] so they can no longer message the current user. The
   /// messages-insert RLS enforces this server-side. Idempotent.
   Future<void> blockUser(String userId) async {
-    await _client.from('blocks').upsert(
-      {'blocker_id': _uid, 'blocked_id': userId},
-      onConflict: 'blocker_id,blocked_id',
-      ignoreDuplicates: true,
-    );
+    await _client
+        .from('blocks')
+        .upsert(
+          {'blocker_id': _uid, 'blocked_id': userId},
+          onConflict: 'blocker_id,blocked_id',
+          ignoreDuplicates: true,
+        );
   }
 
   /// Remove a block.
@@ -311,9 +547,10 @@ class ChatService {
   Future<({String token, DateTime expiresAt})> createInvite({
     required String myLearningLanguage,
   }) async {
-    final res = await _client.rpc('create_invite', params: {
-      'my_learning_language': myLearningLanguage,
-    });
+    final res = await _client.rpc(
+      'create_invite',
+      params: {'my_learning_language': myLearningLanguage},
+    );
     final row = (res as List).first as Map<String, dynamic>;
     return (
       token: row['token'] as String,
@@ -325,9 +562,10 @@ class ChatService {
   /// token isn't recognised (404). The RPC is callable by anon callers
   /// so the landing renders even before sign-in.
   Future<InviteMetadata?> getInvite(String token) async {
-    final res = await _client.rpc('get_invite', params: {
-      'invite_token': token,
-    });
+    final res = await _client.rpc(
+      'get_invite',
+      params: {'invite_token': token},
+    );
     final rows = res as List;
     if (rows.isEmpty) return null;
     final row = rows.first as Map<String, dynamic>;
@@ -346,9 +584,10 @@ class ChatService {
     );
   }
 
-  /// "Accept & join" path. Atomically marks the invite used, creates the
-  /// chat row + both `chat_members` rows, and returns the new chat's
-  /// id. Throws a [PostgrestException] with one of the documented
+  /// "Accept & join" path. Atomically marks the invite used, creates or
+  /// reuses the pair's canonical chat, applies both selected learning
+  /// languages, and returns that chat's id. Throws a [PostgrestException]
+  /// with one of the documented
   /// `message` codes on failure: `invite_not_found`, `invite_expired`,
   /// `invite_already_claimed`, `invite_self_claim`, `not_signed_in`,
   /// `invalid_language`.
@@ -356,24 +595,14 @@ class ChatService {
     required String token,
     required String myLearningLanguage,
   }) async {
-    final res = await _client.rpc('claim_invite', params: {
-      'invite_token': token,
-      'my_learning_language': myLearningLanguage,
-    });
+    final res = await _client.rpc(
+      'claim_invite',
+      params: {
+        'invite_token': token,
+        'my_learning_language': myLearningLanguage,
+      },
+    );
     final row = (res as List).first as Map<String, dynamic>;
     return row['chat_id'] as String;
-  }
-
-  Future<String> pairWithEmail({
-    required String partnerEmail,
-    required String myLearning,
-    required String partnerLearning,
-  }) async {
-    final res = await _client.rpc('pair_with_email', params: {
-      'partner_email': partnerEmail,
-      'my_learning': myLearning,
-      'partner_learning': partnerLearning,
-    });
-    return res as String;
   }
 }

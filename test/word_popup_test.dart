@@ -9,11 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// Stand-in [TtsService] that never hits platform channels — keeps the
 /// widget test free of `MissingPluginException`s.
 class _FakeTtsService implements TtsService {
-  bool available;
-  _FakeTtsService({this.available = false});
-
   @override
-  Future<bool> isLanguageAvailable(String languageCode) async => available;
+  Future<bool> isLanguageAvailable(String languageCode) async => false;
 
   @override
   Future<void> speak(String text, String languageCode) async {}
@@ -29,8 +26,7 @@ class _FakeTtsService implements TtsService {
 }
 
 void main() {
-  testWidgets('tapping a content token opens the word popup',
-      (tester) async {
+  testWidgets('tapping a content token opens the word popup', (tester) async {
     final message = Message(
       id: 'm1',
       chatId: 'aswin',
@@ -40,17 +36,15 @@ void main() {
       sentAt: DateTime(2026, 5, 25, 9, 30),
       status: MessageStatus.delivered,
       tokens: const [
-        MessageToken(text: 'காலை', romanization: 'kālai', english: 'morning'),
+        MessageToken(text: 'காலை', romanization: 'kālai', gloss: 'morning'),
         MessageToken(text: ' ', isContent: false),
-        MessageToken(text: 'எப்படி', romanization: 'eppadi', english: 'how'),
+        MessageToken(text: 'எப்படி', romanization: 'eppadi', gloss: 'how'),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          ttsServiceProvider.overrideWithValue(_FakeTtsService()),
-        ],
+        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
         child: MaterialApp(
           home: Scaffold(
             body: Center(
@@ -78,8 +72,7 @@ void main() {
     expect(find.text('morning'), findsOneWidget);
   });
 
-  testWidgets('falls back to plain Text when tokens are null',
-      (tester) async {
+  testWidgets('falls back to plain Text when tokens are null', (tester) async {
     final message = Message(
       id: 'm2',
       chatId: 'aswin',
@@ -92,9 +85,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          ttsServiceProvider.overrideWithValue(_FakeTtsService()),
-        ],
+        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
         child: MaterialApp(
           home: Scaffold(
             body: MessageText(

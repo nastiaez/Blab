@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/app_messenger.dart';
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import 'share_targets.dart';
 
 /// Launches a deep-link / compose URI. Returns `true` if a handler app
@@ -19,8 +20,7 @@ Future<bool> _defaultLaunch(Uri uri) =>
     launchUrl(uri, mode: LaunchMode.externalApplication);
 
 Future<bool> _defaultShare(String text) async {
-  final result =
-      await SharePlus.instance.share(ShareParams(text: text));
+  final result = await SharePlus.instance.share(ShareParams(text: text));
   return result.status == ShareResultStatus.success;
 }
 
@@ -68,7 +68,7 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
   bool _copied = false;
 
   static const List<({String label, Color bg, IconData icon, _Target target})>
-      _apps = [
+  _apps = [
     (
       label: 'WhatsApp',
       bg: Color(0xFF25D366),
@@ -120,7 +120,7 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
     if (!mounted) return;
     Navigator.of(context).pop();
     // "Invite sent ✓" only after the share actually went through.
-    if (ok) showAppSnack('Invite sent ✓');
+    if (ok) showAppSnack(context.l10n.inviteSent);
   }
 
   void _copy() {
@@ -145,13 +145,16 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Share invite link',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  context.l10n.shareInviteLink,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -166,7 +169,11 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
                 itemBuilder: (context, i) {
                   final a = _apps[i];
                   return _AppTile(
-                    label: a.label,
+                    label: a.target == _Target.more
+                        ? context.l10n.more
+                        : a.target == _Target.email
+                        ? context.l10n.email
+                        : a.label,
                     bg: a.bg,
                     icon: a.icon,
                     onTap: () => _onTap(a.target),
@@ -190,9 +197,9 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
                     ),
                   ),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(
+                  child: Text(
+                    context.l10n.cancel,
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: BlabColors.textPrimary,
@@ -224,8 +231,7 @@ class _CopyRow extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             child: Row(
               children: [
                 Icon(
@@ -235,19 +241,18 @@ class _CopyRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  copied ? 'Link copied' : 'Copy link',
+                  copied ? context.l10n.linkCopied : context.l10n.copyLink,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color:
-                        copied ? BlabColors.brand : BlabColors.textPrimary,
+                    color: copied ? BlabColors.brand : BlabColors.textPrimary,
                   ),
                 ),
                 if (copied) ...[
                   const Spacer(),
-                  const Text(
-                    'Now paste it in a chat',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.pasteInChat,
+                    style: const TextStyle(
                       fontSize: 12,
                       color: BlabColors.textMuted,
                     ),

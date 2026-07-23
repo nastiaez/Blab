@@ -1,135 +1,47 @@
-// Real-chat translator. Calls OpenRouter (OpenAI-compatible) with a
-// parametrized prompt that returns { translation, tokens[] } JSON
-// matching the curated chat shape. Model is whatever MODEL is set to
-// below (currently openai/gpt-4o-mini — Anthropic Haiku ran here
-// previously and remains a swap-in option).
-// Auth required (Supabase JWT). Basic guards:
-//   - POST only
-//   - 400-char hard cap on `text`
-//   - sourceLang + targetLang required, must be supported codes
+// Server-authoritative real-chat translator. The client supplies only a
+// message ID. Postgres validates the caller and derives source text and target
+// language before quota-limited provider work begins.
 //
-// Deploy:  supabase functions deploy translate-message
-// Reuses ANTHROPIC_API_KEY / OPEN_ROUTER_KEY secret already set on the
-// project for translate-portfolio.
+// Deploy: supabase functions deploy translate-message
+// OPEN_ROUTER_KEY remains server-side.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+import {
+  INTERFACE_RESPONSE_FORMAT,
+  interfaceOutputNeedsRetry,
+  LANG_NAMES,
+  OPENROUTER_PROVIDER,
+  parseProviderResult,
+  providerResultFailureReason,
+  systemPrompt,
+  TRANSLATION_RESPONSE_FORMAT,
+  validateRequest,
+} from "./contract.ts";
 
-const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
 const MODEL = "openai/gpt-4o-mini";
-const MAX_CHARS = 400;
-
-const LANG_NAMES: Record<string, string> = {
-  en: "English",
-  ta: "Tamil",
-  uk: "Ukrainian",
-  es: "Spanish",
-  de: "German",
-  fr: "French",
-  it: "Italian",
-  pt: "Portuguese",
-  nl: "Dutch",
-  tr: "Turkish",
-  hi: "Hindi",
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
-const NON_LATIN: Set<string> = new Set(["ta", "uk", "hi"]);
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
-
-function systemPrompt(sourceLang: string, targetLang: string): string {
-  const sourceName = LANG_NAMES[sourceLang];
-  const targetName = LANG_NAMES[targetLang];
-  const romanGuidance = NON_LATIN.has(targetLang)
-    ? `- For each content token (a ${targetName} word) include "roman" (Latin-script romanization, e.g. IAST for Tamil — "Vaṇakkam", "Eppadi").`
-    : `- "roman" may be omitted on content tokens when ${targetName} is already in Latin script.`;
-
-  return `You translate ${sourceName} sentences into ${targetName} for a
-language-learning app.
-
-DIRECTION: source = ${sourceName}, target = ${targetName}.
-The user sends a ${sourceName} sentence. You MUST return a ${targetName}
-translation. The "translation" field must be in ${targetName}, never
-${sourceName}.
-
-You ALWAYS reply with strict JSON in this exact shape and nothing else
-(no prose, no markdown fences):
-
-{
-  "translation": "<full ${targetName} translation as one string>",
-  "tokens": [
-    { "text": "<segment of the ${targetName} TRANSLATION>", "english": "<1-3 word ${sourceName} gloss of this ${targetName} segment>", "roman": "<Latin-script romanization of the ${targetName} segment>", "isContent": true },
-    { "text": " ", "isContent": false }
-  ]
-}
-
-Rules:
-- The "translation" top-level field is the full natural ${targetName}
-  sentence — colloquial, not word-for-word. Always in ${targetName}.
-- The "tokens" array's "text" fields, concatenated in order, MUST exactly
-  reproduce the "translation" string (whitespace and punctuation
-  included). Tokens are segments of the ${targetName} TRANSLATION, NOT
-  of the ${sourceName} input.
-- Content tokens (${targetName} words) have isContent=true and include
-  "english" (the ${sourceName} meaning of this ${targetName} word — 1-3
-  words) and "roman".
-- Whitespace, punctuation, and emoji are separate tokens with
-  isContent=false and MUST NOT include "english" or "roman".
-${romanGuidance}
-
-EXAMPLE — source=English, target=Tamil, input "morning! how are you?":
-{
-  "translation": "காலை வணக்கம், எப்படி இருக்கீங்க?",
-  "tokens": [
-    { "text": "காலை", "english": "morning", "roman": "kaalai", "isContent": true },
-    { "text": " ", "isContent": false },
-    { "text": "வணக்கம்", "english": "greeting", "roman": "vanakkam", "isContent": true },
-    { "text": ",", "isContent": false },
-    { "text": " ", "isContent": false },
-    { "text": "எப்படி", "english": "how", "roman": "eppadi", "isContent": true },
-    { "text": " ", "isContent": false },
-    { "text": "இருக்கீங்க", "english": "are you", "roman": "irukkeenga", "isContent": true },
-    { "text": "?", "isContent": false }
-  ]
-}`;
-}
-
-Deno.serve(async (req) => {
-  if (req.method !== "POST") {
-    return json({ error: "method_not_allowed" }, 405);
-  }
-  let body: { text?: unknown; sourceLang?: unknown; targetLang?: unknown };
+async function repairInterfaceText(
+  learningText: string,
+  targetLang: string,
+  interfaceLang: string,
+): Promise<string | null> {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  let response: Response;
   try {
-    body = await req.json();
-  } catch {
-    return json({ error: "invalid_json" }, 400);
-  }
-  const text = body.text;
-  const sourceLang = body.sourceLang;
-  const targetLang = body.targetLang;
-  if (typeof text !== "string" || text.trim().length === 0) {
-    return json({ error: "missing_text" }, 400);
-  }
-  if (text.length > MAX_CHARS) {
-    return json({ error: "text_too_long" }, 400);
-  }
-  if (typeof sourceLang !== "string" || !(sourceLang in LANG_NAMES)) {
-    return json({ error: "unsupported_source" }, 400);
-  }
-  if (typeof targetLang !== "string" || !(targetLang in LANG_NAMES)) {
-    return json({ error: "unsupported_target" }, 400);
-  }
-  if (sourceLang === targetLang) {
-    return json({ error: "same_language" }, 400);
-  }
-
-  let llm: Response;
-  try {
-    llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -137,49 +49,270 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2048,
-        response_format: { type: "json_object" },
+        temperature: 0,
+        max_completion_tokens: 4000,
+        response_format: INTERFACE_RESPONSE_FORMAT,
+        provider: OPENROUTER_PROVIDER,
         messages: [
-          { role: "system", content: systemPrompt(sourceLang, targetLang) },
-          { role: "user", content: text.trim() },
+          {
+            role: "system",
+            content:
+              `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation. Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`,
+          },
+          { role: "user", content: learningText },
         ],
       }),
     });
-  } catch (e) {
-    return json({ error: `upstream_unreachable: ${e}` }, 502);
-  }
-  if (!llm.ok) {
-    const detail = await llm.text();
-    return json({ error: "upstream_error", status: llm.status, detail }, 502);
-  }
-  const payload = await llm.json();
-  const content = payload?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") {
-    return json({ error: "upstream_unexpected_shape" }, 502);
-  }
-  let cleaned = content
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const firstBrace = cleaned.indexOf("{");
-  const lastBrace = cleaned.lastIndexOf("}");
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(cleaned);
   } catch {
-    return json({ error: "upstream_non_json", raw: content.slice(0, 800) }, 502);
+    return null;
   }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") return null;
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  try {
+    const parsed = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+    const interfaceText = parsed?.interfaceText;
+    return typeof interfaceText === "string" && interfaceText.trim().length > 0
+      ? interfaceText
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function json(
+  body: unknown,
+  status = 200,
+  headers: Record<string, string> = {},
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...CORS_HEADERS,
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "method_not_allowed" }, 405);
+  }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return json({ error: "authentication_required" }, 401);
+  }
+
+  let body: { messageId?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "invalid_json" }, 400);
+  }
+  const validation = validateRequest(body);
+  if ("error" in validation) return json({ error: validation.error }, 400);
+  const { messageId } = validation.request;
+
+  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: userData, error: userError } = await userClient.auth.getUser();
+  if (userError || !userData.user) {
+    return json({ error: "authentication_required" }, 401);
+  }
+
+  const { data: preparedData, error: preparedError } = await userClient.rpc(
+    "request_message_translation",
+    { p_message_id: messageId },
+  );
   if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    typeof (parsed as { translation?: unknown }).translation !== "string" ||
-    !Array.isArray((parsed as { tokens?: unknown }).tokens)
+    preparedError || typeof preparedData !== "object" || preparedData === null
   ) {
-    return json({ error: "upstream_malformed" }, 502);
+    console.error("translation prepare failed");
+    return json({ error: "translation_unavailable" }, 500);
   }
-  return json(parsed);
+  const prepared = preparedData as Record<string, unknown>;
+  if (prepared.status === "cached") {
+    return json({
+      translation: prepared.translation,
+      interfaceText: prepared.interfaceText,
+      mode: prepared.mode,
+      sourceLang: prepared.sourceLang,
+      interfaceLang: prepared.interfaceLang,
+      explanation: prepared.explanation,
+      confidence: prepared.confidence,
+      tokens: prepared.tokens,
+    });
+  }
+  if (prepared.status === "rate_limited") {
+    const retryAfter = typeof prepared.retryAfterSeconds === "number"
+      ? Math.max(1, Math.ceil(prepared.retryAfterSeconds))
+      : 60;
+    return json(
+      { error: "translation_limit_reached", retryAfterSeconds: retryAfter },
+      429,
+      { "Retry-After": String(retryAfter) },
+    );
+  }
+  if (prepared.status === "forbidden" || prepared.status === "not_eligible") {
+    return json({ error: "translation_not_allowed" }, 403);
+  }
+
+  const text = prepared.text;
+  const sourceLang = prepared.sourceLang;
+  const targetLang = prepared.targetLang;
+  const interfaceLang = prepared.interfaceLang;
+  const sourceHash = prepared.sourceHash;
+  if (
+    prepared.status !== "ready" ||
+    typeof text !== "string" ||
+    typeof sourceLang !== "string" ||
+    typeof targetLang !== "string" ||
+    typeof interfaceLang !== "string" ||
+    typeof sourceHash !== "string"
+  ) {
+    return json({ error: "translation_unavailable" }, 500);
+  }
+  if (!OPEN_ROUTER_KEY) {
+    console.error("translation provider key is missing");
+    return json({ error: "translation_unavailable" }, 500);
+  }
+
+  let result: ReturnType<typeof parseProviderResult> = null;
+  let providerFailure = "unknown";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+    const retryGuidance = attempt === 0
+      ? ""
+      : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
+    let llm: Response;
+    try {
+      llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          temperature: 0,
+          max_completion_tokens: 12000,
+          response_format: TRANSLATION_RESPONSE_FORMAT,
+          provider: OPENROUTER_PROVIDER,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt(sourceLang, targetLang, interfaceLang) +
+                retryGuidance,
+            },
+            { role: "user", content: text },
+          ],
+        }),
+      });
+    } catch {
+      providerFailure = "unreachable";
+      continue;
+    }
+    if (!llm.ok) {
+      providerFailure = `http_${llm.status}`;
+      continue;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await llm.json();
+    } catch {
+      providerFailure = "invalid_json";
+      continue;
+    }
+    const content = (payload as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    })?.choices?.[0]?.message?.content;
+    if (typeof content !== "string") {
+      providerFailure = "missing_content";
+      continue;
+    }
+    const candidate = parseProviderResult(
+      content,
+      text,
+      targetLang,
+      interfaceLang,
+    );
+    if (candidate === null) {
+      providerFailure = providerResultFailureReason(content);
+      continue;
+    }
+    if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
+      const repaired = await repairInterfaceText(
+        candidate.translation,
+        targetLang,
+        interfaceLang,
+      );
+      if (repaired !== null) {
+        candidate.interfaceText = repaired;
+        result = candidate;
+        break;
+      }
+      providerFailure = "interface_repair";
+      continue;
+    }
+    result = candidate;
+    break;
+  }
+  if (result === null) {
+    console.error("translation provider failed after retry", {
+      reason: providerFailure,
+    });
+    return json({
+      error: "translation_unavailable",
+      reason: providerFailure,
+    }, 502);
+  }
+
+  const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: completed, error: completionError } = await admin.rpc(
+    "complete_message_translation",
+    {
+      p_message_id: messageId,
+      p_requester_id: userData.user.id,
+      p_target_lang: targetLang,
+      p_interface_lang: interfaceLang,
+      p_source_hash: sourceHash,
+      p_translation_text: result.translation,
+      p_interface_text: result.interfaceText,
+      p_source_lang: result.sourceLang,
+      p_aid_mode: result.mode,
+      p_explanation: result.explanation,
+      p_confidence: result.confidence,
+      p_tokens: result.tokens,
+    },
+  );
+  if (completionError) {
+    console.error("translation cache completion failed");
+    return json({ error: "translation_unavailable" }, 500);
+  }
+  if (completed !== true) {
+    return json({ error: "translation_stale" }, 409);
+  }
+  return json({ ...result, interfaceLang });
 });

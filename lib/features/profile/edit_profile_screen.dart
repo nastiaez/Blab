@@ -1,23 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
+import '../../shared/services/profile_service.dart';
+import '../../shared/state/profile_state.dart';
 import '../auth/widgets/blab_text_field.dart';
 
-/// PRD US-011.
-class EditProfileScreen extends StatefulWidget {
+String? validateDisplayName(String input) {
+  final value = input.trim();
+  if (value.isEmpty) return 'Enter your display name';
+  if (value.runes.length > 50) {
+    return 'Display name must be 50 characters or fewer';
+  }
+  if (RegExp(r'[\x00-\x1F\x7F]').hasMatch(value)) {
+    return 'Display name contains unsupported characters';
+  }
+  return null;
+}
+
+class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
-  // Mock current name — Phase 2 wires this to backend.
-  final _name = TextEditingController(text: 'Nastia');
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
+  final _name = TextEditingController();
+  String? _initialName;
+  String? _error;
+  bool _busy = false;
 
-  // No persisted photo until Phase 2.2. Remove-photo row hides while false.
-  final bool _hasPhoto = false;
+  bool get _canSubmit =>
+      !_busy && _initialName != null && _name.text.trim() != _initialName;
 
   @override
   void dispose() {
@@ -25,224 +44,176 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  void _save() {
-    context.pop();
+  Future<void> _save() async {
+    if (_busy) return;
+    HapticFeedback.mediumImpact();
+    final value = _name.text.trim();
+    final error = value.isEmpty
+        ? context.l10n.enterDisplayName
+        : value.runes.length > 50
+        ? context.l10n.displayNameTooLong
+        : RegExp(r'[\x00-\x1F\x7F]').hasMatch(value)
+        ? context.l10n.displayNameUnsupported
+        : null;
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    final next = _name.text.trim();
+    if (next == _initialName) return;
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final saved = await ref.read(updateDisplayNameActionProvider)(next);
+      if (!mounted) return;
+      _initialName = saved;
+      showAppSnack(context.l10n.profileUpdated);
+      context.go('/profile');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = context.l10n.couldNotUpdateProfile;
+      });
+    }
   }
 
-  // Real picker wiring lands later. Stubbed for now so the rows give
-  // feedback instead of dead-tapping.
-  void _photoAction(String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(label), duration: const Duration(seconds: 1)),
-    );
+  void _initialize(UserProfile profile) {
+    if (_initialName != null) return;
+    _initialName = profile.displayName;
+    _name.text = profile.displayName;
   }
 
   @override
   Widget build(BuildContext context) {
-    final initial =
-        _name.text.isNotEmpty ? _name.text[0].toUpperCase() : '?';
-    return Scaffold(
-      backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
+    final profile = ref.watch(currentProfileProvider);
+
+    return PopScope(
+      canPop: !_busy,
+      child: Scaffold(
         backgroundColor: BlabColors.appBackground,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          color: BlabColors.textPrimary,
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Edit profile',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
+        appBar: AppBar(
+          backgroundColor: BlabColors.appBackground,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
             color: BlabColors.textPrimary,
+            onPressed: _busy ? null : () => context.pop(),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _save,
-            child: const Text(
-              'Save',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: BlabColors.brand,
-              ),
+          title: Text(
+            context.l10n.editProfile,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: BlabColors.textPrimary,
             ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 8),
-            Center(
-              child: Container(
-                width: 112,
-                height: 112,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: BlabColors.avatarColorFor(_name.text),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 44,
+          actions: [
+            TextButton(
+              onPressed: _canSubmit ? _save : null,
+              child: _busy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      context.l10n.save,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: _canSubmit
+                            ? BlabColors.brand
+                            : BlabColors.textMuted,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+        body: profile.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => _ProfileLoadError(
+            onRetry: () => ref.invalidate(currentProfileProvider),
+          ),
+          data: (value) {
+            _initialize(value);
+            final initial = _name.text.trim().isEmpty
+                ? '?'
+                : _name.text.trim().characters.first.toUpperCase();
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Container(
+                      width: 112,
+                      height: 112,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: BlabColors.avatarColorFor(_name.text.trim()),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        initial,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 44,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  BlabTextField(
+                    controller: _name,
+                    label: context.l10n.displayName,
+                    hint: context.l10n.yourName,
+                    errorText: _error,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    onEditingComplete: _canSubmit ? _save : null,
+                    onChanged: (_) {
+                      setState(() => _error = null);
+                    },
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
-            const _SectionLabel('Profile photo'),
-            const SizedBox(height: 6),
-            _PhotoActionsCard(
-              hasPhoto: _hasPhoto,
-              onTake: () => _photoAction('Take photo'),
-              onChoose: () => _photoAction('Choose from library'),
-              onRemove: () => _photoAction('Remove photo'),
-            ),
-            const SizedBox(height: 20),
-            BlabTextField(
-              controller: _name,
-              label: 'Display name',
-              hint: 'Your name',
-              onChanged: (_) => setState(() {}),
-              textInputAction: TextInputAction.done,
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
+class _ProfileLoadError extends StatelessWidget {
+  const _ProfileLoadError({required this.onRetry});
+
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.6,
-        color: BlabColors.textMuted,
-      ),
-    );
-  }
-}
-
-class _PhotoActionsCard extends StatelessWidget {
-  const _PhotoActionsCard({
-    required this.hasPhoto,
-    required this.onTake,
-    required this.onChoose,
-    required this.onRemove,
-  });
-
-  final bool hasPhoto;
-  final VoidCallback onTake;
-  final VoidCallback onChoose;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          children: [
-            _PhotoActionRow(
-              icon: Icons.photo_camera_outlined,
-              label: 'Take photo',
-              onTap: onTake,
-            ),
-            const _RowDivider(),
-            _PhotoActionRow(
-              icon: Icons.photo_library_outlined,
-              label: 'Choose from library',
-              onTap: onChoose,
-            ),
-            if (hasPhoto) ...[
-              const _RowDivider(),
-              _PhotoActionRow(
-                icon: Icons.delete_outline,
-                label: 'Remove photo',
-                destructive: true,
-                onTap: onRemove,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PhotoActionRow extends StatelessWidget {
-  const _PhotoActionRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.destructive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = destructive ? Colors.red.shade400 : BlabColors.textPrimary;
-    final iconColor =
-        destructive ? Colors.red.shade400 : BlabColors.textMuted;
-    return InkWell(
-      onTap: onTap,
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: iconColor),
-            const SizedBox(width: 14),
             Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
+              context.l10n.couldNotLoadProfile,
+              style: const TextStyle(color: BlabColors.textPrimary),
             ),
+            const SizedBox(height: 12),
+            TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 52),
-      child: Divider(height: 1, color: Colors.grey.shade100),
     );
   }
 }

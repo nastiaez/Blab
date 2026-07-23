@@ -1,0 +1,136 @@
+-- Local-only accounts for repeatable invite, messaging, and RLS testing.
+-- This file is applied by `supabase db reset`; it is never pushed remotely.
+
+delete from auth.users
+where id in (
+  '00000000-0000-4000-8000-00000000000a',
+  '00000000-0000-4000-8000-00000000000b',
+  '00000000-0000-4000-8000-00000000000c'
+);
+
+insert into auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  reauthentication_token,
+  phone_change,
+  phone_change_token,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+values
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-4000-8000-00000000000a',
+    'authenticated',
+    'authenticated',
+    'alice@blab.test',
+    extensions.crypt('Blab-local-123!', extensions.gen_salt('bf')),
+    now(),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"name":"Alice Local"}'::jsonb,
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-4000-8000-00000000000b',
+    'authenticated',
+    'authenticated',
+    'bob@blab.test',
+    extensions.crypt('Blab-local-123!', extensions.gen_salt('bf')),
+    now(),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"name":"Bob Local"}'::jsonb,
+    now(),
+    now()
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-4000-8000-00000000000c',
+    'authenticated',
+    'authenticated',
+    'carol@blab.test',
+    extensions.crypt('Blab-local-123!', extensions.gen_salt('bf')),
+    now(),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"name":"Carol Local"}'::jsonb,
+    now(),
+    now()
+  );
+
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+select
+  id::text,
+  id,
+  jsonb_build_object(
+    'sub', id::text,
+    'email', email,
+    'email_verified', true,
+    'phone_verified', false
+  ),
+  'email',
+  now(),
+  now(),
+  now()
+from auth.users
+where id in (
+  '00000000-0000-4000-8000-00000000000a',
+  '00000000-0000-4000-8000-00000000000b',
+  '00000000-0000-4000-8000-00000000000c'
+);
+
+-- Local integration cleanup and expiry setup use the local service-role key.
+-- Keep these grants limited to the tables touched by that harness.
+grant select, delete on table public.chats to service_role;
+grant select on table public.chat_members to service_role;
+grant select, update on table public.messages to service_role;
+grant select on table public.message_reads to service_role;
+grant select, insert, update, delete on table public.message_translations
+  to service_role;
+grant select, insert, update, delete on table public.translation_usage
+  to service_role;
+grant select, update, delete on table public.invites to service_role;

@@ -25,11 +25,12 @@ class SupabaseAuthService {
     required String name,
     required String email,
     required String password,
+    String interfaceLanguage = 'en',
   }) {
     return _auth.signUp(
       email: email.trim(),
       password: password,
-      data: {'name': name.trim()},
+      data: {'name': name.trim(), 'interface_language': interfaceLanguage},
     );
   }
 
@@ -37,10 +38,7 @@ class SupabaseAuthService {
     required String email,
     required String password,
   }) {
-    return _auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
+    return _auth.signInWithPassword(email: email.trim(), password: password);
   }
 
   Future<void> sendPasswordReset(String email) {
@@ -54,6 +52,23 @@ class SupabaseAuthService {
   /// recovery deep link has installed a session on the client.
   Future<UserResponse> updatePassword(String newPassword) {
     return _auth.updateUser(UserAttributes(password: newPassword));
+  }
+
+  /// Reauthenticates an email/password user immediately before changing the
+  /// credential. Social-only accounts must not silently gain a password.
+  Future<UserResponse> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final email = currentUser?.email;
+    if (email == null) {
+      throw const AuthException('Not signed in');
+    }
+    if (!hasPasswordIdentity) {
+      throw const AuthException('Password sign-in is not enabled');
+    }
+    await _auth.signInWithPassword(email: email, password: currentPassword);
+    return updatePassword(newPassword);
   }
 
   /// PRD US-039. Sends a confirmation email to the NEW address; the
@@ -71,7 +86,9 @@ class SupabaseAuthService {
   Future<void> signOut() async {
     await _auth.signOut();
     try {
-      final google = GoogleSignIn(serverClientId: SupabaseConfig.googleWebClientId);
+      final google = GoogleSignIn(
+        serverClientId: SupabaseConfig.googleWebClientId,
+      );
       if (await google.isSignedIn()) {
         await google.signOut();
       }
@@ -80,11 +97,20 @@ class SupabaseAuthService {
     }
   }
 
+  static bool isRevokedSessionError(Object error) {
+    if (error is! AuthException) return false;
+    final message = error.message.toLowerCase();
+    return message.contains('refresh token') &&
+        (message.contains('not found') || message.contains('invalid'));
+  }
+
   /// Native Google Sign-In → returns idToken → exchanges with Supabase
   /// via `signInWithIdToken`. Throws [SocialSignInCancelled] if the user
   /// dismisses the picker.
   Future<AuthResponse> signInWithGoogle() async {
-    final google = GoogleSignIn(serverClientId: SupabaseConfig.googleWebClientId);
+    final google = GoogleSignIn(
+      serverClientId: SupabaseConfig.googleWebClientId,
+    );
     final account = await google.signIn();
     if (account == null) {
       throw const SocialSignInCancelled();
@@ -114,7 +140,10 @@ class SupabaseAuthService {
   /// the user from Supabase Auth. The server-side edge function
   /// validates the JWT, so omitting [password] (for social-login
   /// users) is still authenticated end-to-end.
-  Future<void> deleteAccount({String? password}) async {
+  Future<void> deleteAccount({
+    String? password,
+    required Future<void> Function() clearLocalData,
+  }) async {
     final email = _auth.currentUser?.email;
     if (email == null) {
       throw const AuthException('Not signed in');
@@ -129,7 +158,11 @@ class SupabaseAuthService {
       final code = body is Map ? body['error']?.toString() : null;
       throw Exception(code ?? 'delete_failed');
     }
-    await _auth.signOut();
+    try {
+      await clearLocalData();
+    } finally {
+      await _auth.signOut();
+    }
   }
 
   /// Map a Supabase AuthException to a short, user-facing message.
@@ -137,16 +170,34 @@ class SupabaseAuthService {
   static String messageFor(Object error) {
     if (error is AuthException) {
       final msg = error.message.toLowerCase();
-      if (msg.contains('invalid login')) {
+      final code = error.code?.toLowerCase();
+      if (code == 'invalid_credentials' ||
+          msg.contains('invalid login') ||
+          msg.contains('invalid credentials')) {
         return 'Email or password is incorrect';
       }
-      if (msg.contains('already registered') ||
+      if (code == 'email_exists' ||
+          code == 'user_already_exists' ||
+          msg.contains('already registered') ||
           msg.contains('user already') ||
           msg.contains('already exists')) {
         return 'An account with this email already exists';
       }
-      if (msg.contains('password') && msg.contains('6')) {
+      if (code == 'weak_password' ||
+          (msg.contains('password') && msg.contains('6'))) {
         return 'Password must be at least 6 characters';
+      }
+      if (code == 'email_address_invalid' ||
+          msg.contains('email address is invalid') ||
+          msg.contains('invalid email')) {
+        return 'Enter a valid email address';
+      }
+      if (code == 'over_email_send_rate_limit' ||
+          code == 'over_request_rate_limit' ||
+          code == 'too_many_enrolled_mfa_factors' ||
+          msg.contains('rate limit') ||
+          msg.contains('too many requests')) {
+        return 'Too many attempts. Try again later.';
       }
       if (msg.contains('email') && msg.contains('confirm')) {
         return 'Check your inbox to confirm your email';
@@ -154,5 +205,26 @@ class SupabaseAuthService {
       return error.message;
     }
     return 'Something went wrong. Try again.';
+  }
+
+  static String passwordChangeMessageFor(Object error) {
+    if (error is AuthException) {
+      final message = error.message.toLowerCase();
+      if (message.contains('invalid login') ||
+          message.contains('invalid credentials')) {
+        return 'Current password is incorrect';
+      }
+      if (message.contains('same password') ||
+          message.contains('different from the old')) {
+        return 'Choose a different password';
+      }
+      if (message.contains('reauth') || message.contains('not signed in')) {
+        return 'Please sign in again before changing your password';
+      }
+      if (message.contains('rate') || message.contains('too many')) {
+        return 'Too many attempts. Try again later.';
+      }
+    }
+    return 'Could not update your password. Try again.';
   }
 }

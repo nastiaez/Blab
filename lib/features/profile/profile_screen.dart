@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../shared/data/languages.dart';
-import '../../shared/widgets/blab_icon.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
-import 'widgets/photo_sheet.dart';
-import 'widgets/pressable_avatar.dart';
+import '../../shared/state/profile_state.dart';
+import '../../shared/state/push_notifications_state.dart';
+import '../../shared/widgets/blab_icon.dart';
 
 /// PRD US-010, US-035.
 class ProfileScreen extends ConsumerWidget {
@@ -18,14 +18,12 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(interfaceLanguageProvider);
     final session = ref.watch(authSessionProvider).value;
-    final metaName = session?.user.userMetadata?['name'] as String?;
+    final profile = ref.watch(currentProfileProvider);
+    final hasPasswordIdentity = ref.watch(hasPasswordIdentityProvider);
+    final pushNotifications = ref.watch(pushNotificationsProvider);
     final emailLocal = session?.user.email?.split('@').first;
-    final displayName = (metaName?.trim().isNotEmpty ?? false)
-        ? metaName!
-        : (emailLocal ?? 'You');
-    // Learning language stays mocked until profile table lands in 2.2.
-    final BlabLanguage learning =
-        kBlabLanguages.firstWhere((l) => l.code == 'ta');
+    final displayName =
+        profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
@@ -33,9 +31,9 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
-          'Profile',
-          style: TextStyle(
+        title: Text(
+          context.l10n.profile,
+          style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             color: BlabColors.textPrimary,
@@ -47,13 +45,13 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ProfileHero(name: displayName, learning: learning),
+            _ProfileHero(name: displayName),
             const SizedBox(height: 28),
             _SettingsCard(
               children: [
                 _SettingsRow(
                   icon: Icons.language_outlined,
-                  label: 'Interface language',
+                  label: context.l10n.interfaceLanguage,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -65,54 +63,82 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right,
-                          color: BlabColors.textMuted),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: BlabColors.textMuted,
+                      ),
                     ],
                   ),
-                  onTap: () =>
-                      context.push('/profile/interface-language'),
+                  onTap: () => context.push('/profile/interface-language'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.edit_outlined,
-                  label: 'Edit profile',
-                  trailing: const Icon(Icons.chevron_right,
-                      color: BlabColors.textMuted),
+                  label: context.l10n.editProfile,
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: BlabColors.textMuted,
+                  ),
                   onTap: () => context.push('/profile/edit'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.alternate_email,
-                  label: 'Change email',
-                  trailing: const Icon(Icons.chevron_right,
-                      color: BlabColors.textMuted),
+                  label: context.l10n.changeEmail,
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: BlabColors.textMuted,
+                  ),
                   onTap: () => context.push('/profile/email'),
                 ),
-                const _RowDivider(),
-                _SettingsRow(
-                  icon: Icons.lock_outline,
-                  label: 'Change password',
-                  trailing: const Icon(Icons.chevron_right,
-                      color: BlabColors.textMuted),
-                  onTap: () => context.push('/profile/password'),
-                ),
+                if (hasPasswordIdentity) ...[
+                  const _RowDivider(),
+                  _SettingsRow(
+                    icon: Icons.lock_outline,
+                    label: context.l10n.changePassword,
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: BlabColors.textMuted,
+                    ),
+                    onTap: () => context.push('/profile/password'),
+                  ),
+                ],
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.shield_outlined,
-                  label: 'Privacy',
-                  trailing: const Icon(Icons.chevron_right,
-                      color: BlabColors.textMuted),
+                  label: context.l10n.privacy,
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: BlabColors.textMuted,
+                  ),
                   onTap: () => context.push('/profile/privacy'),
                 ),
+                if (pushNotifications.isSupported) ...[
+                  const _RowDivider(),
+                  _SettingsRow(
+                    icon: Icons.notifications_outlined,
+                    label: context.l10n.notifications,
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: BlabColors.textMuted,
+                    ),
+                    onTap: () => context.push('/profile/notifications'),
+                  ),
+                ],
                 const _RowDivider(),
                 _SettingsRow(
                   icon: Icons.logout_outlined,
-                  label: 'Log out',
-                  trailing: const Icon(Icons.chevron_right,
-                      color: BlabColors.textMuted),
+                  label: context.l10n.logOut,
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: BlabColors.textMuted,
+                  ),
                   onTap: () async {
                     final confirmed = await _confirmLogout(context);
                     if (confirmed != true) return;
+                    await ref
+                        .read(pushNotificationsProvider.notifier)
+                        .prepareForSignOut();
                     await ref.read(supabaseAuthServiceProvider).signOut();
                     if (!context.mounted) return;
                     context.go('/auth?mode=login');
@@ -125,10 +151,12 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _SettingsRow(
                   icon: Icons.delete_outline,
-                  label: 'Delete account',
+                  label: context.l10n.deleteAccount,
                   destructive: true,
-                  trailing: Icon(Icons.chevron_right,
-                      color: Colors.red.shade400),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: Colors.red.shade400,
+                  ),
                   onTap: () => context.push('/profile/delete-account'),
                 ),
               ],
@@ -147,21 +175,25 @@ Future<bool?> _confirmLogout(BuildContext context) {
     builder: (ctx) => AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        'Log out?',
-        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+      title: Text(
+        context.l10n.logOutQuestion,
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
       ),
-      content: const Text(
-        "You'll need your email and password (or Google) to sign back in.",
-        style: TextStyle(fontSize: 14, color: BlabColors.textMuted, height: 1.4),
+      content: Text(
+        context.l10n.logOutHelp,
+        style: const TextStyle(
+          fontSize: 14,
+          color: BlabColors.textMuted,
+          height: 1.4,
+        ),
       ),
       actionsPadding: const EdgeInsets.only(right: 8, bottom: 8),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(
+          child: Text(
+            context.l10n.cancel,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
               color: BlabColors.textPrimary,
@@ -170,9 +202,9 @@ Future<bool?> _confirmLogout(BuildContext context) {
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text(
-            'Log out',
-            style: TextStyle(
+          child: Text(
+            context.l10n.logOut,
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: BlabColors.brand,
@@ -185,38 +217,32 @@ Future<bool?> _confirmLogout(BuildContext context) {
 }
 
 class _ProfileHero extends StatelessWidget {
-  const _ProfileHero({required this.name, required this.learning});
+  const _ProfileHero({required this.name});
 
   final String name;
-  final BlabLanguage learning;
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final initial = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
     return Column(
       children: [
-        Builder(builder: (ctx) {
-          return PressableAvatar(
-            onTap: () => showPhotoSheet(ctx),
-            child: Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: BlabColors.avatarColorFor(name),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 38,
-                ),
-              ),
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: BlabColors.avatarColorFor(name),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initial,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 38,
             ),
-          );
-        }),
+          ),
+        ),
         const SizedBox(height: 14),
         Text(
           name,
@@ -226,54 +252,7 @@ class _ProfileHero extends StatelessWidget {
             color: BlabColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Learning',
-              style: TextStyle(
-                fontSize: 13,
-                color: BlabColors.textMuted,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _LearningChip(language: learning),
-          ],
-        ),
       ],
-    );
-  }
-}
-
-class _LearningChip extends StatelessWidget {
-  const _LearningChip({required this.language});
-
-  final BlabLanguage language;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: BlabColors.brand.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(language.flag, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(
-            language.name,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: BlabColors.brand,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -316,10 +295,12 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color iconColor =
-        destructive ? Colors.red.shade400 : BlabColors.textMuted;
-    final Color labelColor =
-        destructive ? Colors.red.shade400 : BlabColors.textPrimary;
+    final Color iconColor = destructive
+        ? Colors.red.shade400
+        : BlabColors.textMuted;
+    final Color labelColor = destructive
+        ? Colors.red.shade400
+        : BlabColors.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -380,13 +361,13 @@ class _BottomTabs extends StatelessWidget {
             children: [
               _TabItem(
                 iconName: 'chat',
-                label: 'Chats',
+                label: context.l10n.chats,
                 selected: active == _Tab.chats,
                 onTap: () => context.go('/chats'),
               ),
               _TabItem(
                 iconName: 'profile',
-                label: 'Profile',
+                label: context.l10n.profile,
                 selected: active == _Tab.profile,
                 onTap: () {},
               ),

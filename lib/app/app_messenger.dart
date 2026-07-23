@@ -6,7 +6,11 @@ import 'package:flutter/material.dart';
 final GlobalKey<ScaffoldMessengerState> appMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-void showAppSnack(String message, {SnackBarAction? action, Duration? duration}) {
+void showAppSnack(
+  String message, {
+  SnackBarAction? action,
+  Duration? duration,
+}) {
   final m = appMessengerKey.currentState;
   if (m == null) return;
   m.hideCurrentSnackBar();
@@ -17,7 +21,8 @@ void showAppSnack(String message, {SnackBarAction? action, Duration? duration}) 
       // Floating + close (×) button come from the global snackBarTheme.
       // Plain confirmations clear quickly; ones with an action (e.g. Undo)
       // linger a little longer so the action stays tappable.
-      duration: duration ??
+      duration:
+          duration ??
           (action != null
               ? const Duration(seconds: 4)
               : const Duration(milliseconds: 2200)),
