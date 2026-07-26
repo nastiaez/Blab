@@ -260,10 +260,18 @@ class ChatService {
   Future<void> markRead({
     required String chatId,
     required List<String> messageIds,
+    bool receiptVisible = true,
   }) async {
     if (messageIds.isEmpty) return;
     final rows = messageIds
-        .map((id) => {'message_id': id, 'user_id': _uid, 'chat_id': chatId})
+        .map(
+          (id) => {
+            'message_id': id,
+            'user_id': _uid,
+            'chat_id': chatId,
+            'receipt_visible': receiptVisible,
+          },
+        )
         .toList();
     // ON CONFLICT DO NOTHING — read receipts are insert-once. Using the
     // default upsert (DO UPDATE) hit the missing UPDATE policy on

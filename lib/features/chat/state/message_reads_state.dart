@@ -7,13 +7,18 @@ import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/privacy_settings.dart';
 
-typedef MarkReadFn = Future<void> Function(List<String> ids);
+typedef MarkReadFn =
+    Future<void> Function(List<String> ids, {required bool receiptVisible});
 typedef WatchReadsFn = Stream<List<Map<String, dynamic>>> Function();
 
 /// Per-chat function pointer for marking ids read. Overridable in tests.
 final markReadFnProvider = Provider.family<MarkReadFn, String>((ref, chatId) {
   final svc = ref.watch(chatServiceProvider);
-  return (ids) => svc.markRead(chatId: chatId, messageIds: ids);
+  return (ids, {required receiptVisible}) => svc.markRead(
+    chatId: chatId,
+    messageIds: ids,
+    receiptVisible: receiptVisible,
+  );
 });
 
 /// Per-chat read stream pointer for transport-boundary tests.
@@ -47,11 +52,7 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   @override
   Set<String> build() {
     final privacy = ref.watch(readReceiptsTransportStateProvider);
-    if (privacy.isLoaded && !privacy.enabled) {
-      _flush?.cancel();
-      _flush = null;
-      _pending.clear();
-    } else if (privacy.canTransmit && _pending.isNotEmpty) {
+    if (privacy.isLoaded && _pending.isNotEmpty) {
       _scheduleFlush();
     }
     ref.onDispose(() => _flush?.cancel());
@@ -60,10 +61,9 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
 
   void reportVisible(String id) {
     final privacy = ref.read(readReceiptsTransportStateProvider);
-    if (privacy.isLoaded && !privacy.enabled) return;
     if (!_pending.add(id)) return;
     state = Set<String>.unmodifiable(_pending);
-    if (!privacy.canTransmit) return;
+    if (!privacy.isLoaded) return;
     _scheduleFlush();
   }
 
@@ -75,18 +75,13 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   Future<void> _flushNow() async {
     final privacy = ref.read(readReceiptsTransportStateProvider);
     if (!privacy.isLoaded) return;
-    if (!privacy.enabled) {
-      _pending.clear();
-      state = <String>{};
-      return;
-    }
     final ids = _pending.toList();
     if (ids.isEmpty) return;
     _pending.clear();
     state = <String>{};
     final fn = ref.read(markReadFnProvider(chatId));
     try {
-      await fn(ids);
+      await fn(ids, receiptVisible: privacy.enabled);
       // Nudge the chat list so the unread badge updates immediately
       // rather than waiting for the next tile rebuild. Best-effort —
       // a missing chat-list provider (e.g. headless tests without
@@ -122,6 +117,7 @@ final readsForChatProvider = StreamProvider.family<Set<String>, String>((
   final uid = ref.watch(readReceiptUserIdProvider);
   return watchReads().map((rows) {
     return rows
+        .where((r) => r['receipt_visible'] != false)
         .where((r) => r['user_id'] != uid)
         .map((r) => r['message_id'] as String)
         .toSet();
