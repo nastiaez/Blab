@@ -4,7 +4,9 @@ import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
-    id("com.google.gms.google-services")
+    // Applied below only when google-services.json is present. Local debug runs
+    // deliberately ship without Firebase configuration (docs/push-notifications.md).
+    id("com.google.gms.google-services") apply false
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -27,6 +29,9 @@ if (releaseBuildRequested && !googleServicesFile.isFile) {
         "Firebase Android configuration is required for release builds. " +
             "Place google-services.json in android/app/.",
     )
+}
+if (googleServicesFile.isFile) {
+    apply(plugin = "com.google.gms.google-services")
 }
 val requiredSigningProperties = listOf(
     "storeFile",

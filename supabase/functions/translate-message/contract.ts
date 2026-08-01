@@ -149,6 +149,41 @@ export type TranslationResult = {
   tokens: unknown[];
 };
 
+/// Short greetings and one-word replies ("yes", "hello", "thanks") are the
+/// inputs providers most often echo back untranslated, which leaves the
+/// learning line showing the author's own language. Only plain alphabetic text
+/// qualifies, so names with digits, URLs, and emoji never trip the check.
+const SHORT_INPUT_MAX_CHARS = 24;
+const SHORT_ALPHABETIC_TEXT = /^[\p{L}\p{M}][\p{L}\p{M}\s'’-]*$/u;
+
+export function isShortAlphabeticText(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length === 0 || trimmed.length > SHORT_INPUT_MAX_CHARS) {
+    return false;
+  }
+  return SHORT_ALPHABETIC_TEXT.test(trimmed);
+}
+
+/// An echoed learning line on short alphabetic input is a retry signal, not a
+/// hard validation failure: a few words are genuinely spelled the same across
+/// languages, so the second attempt's answer is accepted either way.
+export function translationOutputNeedsRetry(
+  result: TranslationResult,
+  text: string,
+  targetLang: string,
+): boolean {
+  if (result.mode !== "translation") return false;
+  if (result.sourceLang === targetLang) return false;
+  if (!isShortAlphabeticText(text)) return false;
+  return result.translation.trim().toLocaleLowerCase() ===
+    text.trim().toLocaleLowerCase();
+}
+
+export function shortInputRetryGuidance(targetLang: string): string {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  return `\n\nThe previous response returned the input unchanged as "translation". A short message is still a message: single words and greetings such as yes, no, hello, thanks, and sorry all have ordinary ${targetName} (${targetLang}) equivalents, and mode=translation requires "translation" to be written in ${targetName}. Repeat the input verbatim only when the ${targetName} wording is genuinely identical, such as a proper noun or brand name. Return the full tokens array for the new ${targetName} translation as well: a one-word translation is a single content token whose text is the whole word, and concatenating every tokens[].text must still reproduce "translation" exactly.`;
+}
+
 /// A copied learning line is usually a provider mistake when the viewer's
 /// interface uses another language. It is only a retry signal, not a hard
 /// validation failure, because names and language-neutral text can legitimately
@@ -266,17 +301,28 @@ export function parseProviderResult(
     result.confidence = null;
   }
 
+  // Token metadata powers optional word lookup. A malformed token list must
+  // not hide an otherwise valid full-message translation.
+  result.tokens = tokensReproducing(result.tokens, result.translation) ?? [];
+  return result;
+}
+
+function isWhitespaceToken(token: unknown): boolean {
+  return typeof token === "object" && token !== null &&
+    typeof (token as { text?: unknown }).text === "string" &&
+    (token as { text: string }).text.trim().length === 0;
+}
+
+function concatenatedTokenText(tokens: unknown[]): string | null {
   let reproduced = "";
-  let validTokens = true;
-  for (const token of result.tokens) {
+  for (const token of tokens) {
     if (
       typeof token !== "object" ||
       token === null ||
       typeof (token as { text?: unknown }).text !== "string" ||
       typeof (token as { isContent?: unknown }).isContent !== "boolean"
     ) {
-      validTokens = false;
-      break;
+      return null;
     }
     if (
       (token as { isContent: boolean }).isContent &&
@@ -285,17 +331,34 @@ export function parseProviderResult(
         (token as { gloss: string }).gloss.trim().length === 0
       )
     ) {
-      validTokens = false;
-      break;
+      return null;
     }
     reproduced += (token as { text: string }).text;
   }
-  if (!validTokens || reproduced !== result.translation) {
-    // Token metadata powers optional word lookup. A malformed token list must
-    // not hide an otherwise valid full-message translation.
-    result.tokens = [];
-  }
-  return result;
+  return reproduced;
+}
+
+/// Providers commonly pad a token list with a leading or trailing
+/// whitespace-only token the translation itself does not contain. That padding
+/// is the single most likely reason a one-word translation loses every
+/// tappable token, so drop the edges when doing so makes the list reproduce
+/// the translation exactly. Any other mismatch still discards the list.
+function tokensReproducing(
+  tokens: unknown[],
+  translation: string,
+): unknown[] | null {
+  const reproduced = concatenatedTokenText(tokens);
+  if (reproduced === null) return null;
+  if (reproduced === translation) return tokens;
+
+  let start = 0;
+  let end = tokens.length;
+  while (start < end && isWhitespaceToken(tokens[start])) start++;
+  while (end > start && isWhitespaceToken(tokens[end - 1])) end--;
+  if (start === 0 && end === tokens.length) return null;
+
+  const trimmed = tokens.slice(start, end);
+  return concatenatedTokenText(trimmed) === translation ? trimmed : null;
 }
 
 export function providerResultFailureReason(content: string): string {
@@ -379,6 +442,7 @@ Rules:
 - Preserve meaning, tone, names, URLs, emoji, and punctuation.
 - First detect sourceLang, then choose exactly one mode.
 - If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
+- Short inputs are translated like any other. A one-word message or greeting such as yes, no, hello, thanks, or sorry has an ordinary ${targetName} equivalent; for mode=translation, never return the input unchanged unless the ${targetName} wording is genuinely identical, such as a proper noun or brand name.
 - mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
 - Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
 - mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.

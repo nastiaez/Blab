@@ -14,8 +14,10 @@ import {
   OPENROUTER_PROVIDER,
   parseProviderResult,
   providerResultFailureReason,
+  shortInputRetryGuidance,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
+  translationOutputNeedsRetry,
   validateRequest,
 } from "./contract.ts";
 
@@ -198,10 +200,13 @@ Deno.serve(async (req) => {
 
   let result: ReturnType<typeof parseProviderResult> = null;
   let providerFailure = "unknown";
+  let echoedShortInput = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
     const retryGuidance = attempt === 0
       ? ""
+      : echoedShortInput
+      ? shortInputRetryGuidance(targetLang)
       : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
     let llm: Response;
     try {
@@ -258,6 +263,15 @@ Deno.serve(async (req) => {
     );
     if (candidate === null) {
       providerFailure = providerResultFailureReason(content);
+      continue;
+    }
+    // Checked before the interface repair below, which would otherwise accept
+    // an echoed learning line by "repairing" it back into the same wording.
+    if (
+      attempt === 0 && translationOutputNeedsRetry(candidate, text, targetLang)
+    ) {
+      echoedShortInput = true;
+      providerFailure = "untranslated_short_input";
       continue;
     }
     if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {

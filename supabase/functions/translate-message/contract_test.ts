@@ -2,12 +2,15 @@ import {
   characterCount,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
+  isShortAlphabeticText,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseProviderResult,
   providerResultFailureReason,
+  shortInputRetryGuidance,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
+  translationOutputNeedsRetry,
   validateRequest,
 } from "./contract.ts";
 
@@ -445,4 +448,181 @@ Deno.test("server keeps duplicate target and interface lanes identical", () => {
 
 Deno.test("maximum character contract remains 2000", () => {
   assert(characterCount("a".repeat(MAX_CHARS)) === MAX_CHARS, "maximum length");
+});
+
+function tamilCandidate(
+  text: string,
+  translation: string,
+  roman: string,
+  gloss: string,
+) {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation,
+      interfaceText: text,
+      explanation: null,
+      confidence: null,
+      tokens: [{ text: translation, gloss, roman, isContent: true }],
+    }),
+    text,
+    "ta",
+    "en",
+  );
+  assert(result !== null, `provider result for "${text}" should parse`);
+  return result!;
+}
+
+Deno.test("one-word English echoed as Tamil is retried", () => {
+  for (const word of ["yes", "hello", "thanks"]) {
+    const echoed = tamilCandidate(word, word, word, word);
+    assert(
+      translationOutputNeedsRetry(echoed, word, "ta"),
+      `untranslated "${word}" must be retried`,
+    );
+  }
+});
+
+Deno.test("one-word English translated into Tamil is accepted", () => {
+  const cases: Array<[string, string, string, string]> = [
+    ["yes", "ஆம்", "ām", "yes"],
+    ["hello", "வணக்கம்", "vaṇakkam", "hello"],
+    ["thanks", "நன்றி", "naṉṟi", "thanks"],
+  ];
+  for (const [word, translation, roman, gloss] of cases) {
+    const translated = tamilCandidate(word, translation, roman, gloss);
+    assert(
+      translated.translation === translation,
+      `"${word}" must keep its Tamil learning line`,
+    );
+    assert(
+      !translationOutputNeedsRetry(translated, word, "ta"),
+      `translated "${word}" must not be retried`,
+    );
+    assert(
+      translated.tokens.length === 1,
+      `"${word}" must keep its tappable token`,
+    );
+  }
+});
+
+Deno.test("echo retry ignores same-language and non-alphabetic input", () => {
+  const unchanged = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "ta",
+      translation: "ஆம்",
+      interfaceText: "yes",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+    }),
+    "ஆம்",
+    "ta",
+    "en",
+  );
+  assert(unchanged !== null, "same-language result should parse");
+  assert(
+    !translationOutputNeedsRetry(unchanged!, "ஆம்", "ta"),
+    "mode=none is never an echo failure",
+  );
+
+  const brand = tamilCandidate("Google", "Google", "Google", "Google");
+  assert(
+    translationOutputNeedsRetry(brand, "Google", "ta"),
+    "a short echoed word is retried once even when it may be a proper noun",
+  );
+
+  assert(!isShortAlphabeticText("blab.app/i/abc123"), "URLs are not retried");
+  assert(!isShortAlphabeticText("see you at 8"), "digits are not retried");
+  assert(!isShortAlphabeticText("thanks 🙏"), "emoji are not retried");
+  assert(
+    !isShortAlphabeticText("thanks so much for all of your help today"),
+    "long messages are not retried",
+  );
+  assert(isShortAlphabeticText("thank you"), "short phrases are retried");
+});
+
+Deno.test("one-word translation keeps its tappable token despite padding", () => {
+  const cases: Array<[string, string, string, string]> = [
+    ["yes", "ஆம்", "aam", "yes"],
+    ["hello", "வணக்கம்", "vaṇakkam", "greeting"],
+    ["thanks", "நன்றி", "nandri", "thank you"],
+  ];
+  for (const [word, translation, roman, gloss] of cases) {
+    const result = parseProviderResult(
+      JSON.stringify({
+        mode: "translation",
+        sourceLang: "en",
+        translation,
+        interfaceText: word,
+        explanation: null,
+        confidence: null,
+        tokens: [
+          { text: translation, gloss, roman, isContent: true },
+          { text: " ", gloss: null, roman: null, isContent: false },
+        ],
+      }),
+      word,
+      "ta",
+      "en",
+    );
+    assert(result !== null, `"${word}" should parse`);
+    assert(
+      result?.translation === translation,
+      `"${word}" must translate into Tamil`,
+    );
+    assert(
+      result?.tokens.length === 1,
+      `"${word}" must keep one tappable token despite the padding token`,
+    );
+  }
+});
+
+Deno.test("token padding repair never invents a matching list", () => {
+  const mismatched = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "வணக்கம் நண்பா",
+      interfaceText: "hello friend",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        { text: "வணக்கம்", gloss: "hello", roman: "vaṇakkam", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+      ],
+    }),
+    "hello friend",
+    "ta",
+    "en",
+  );
+  assert(mismatched !== null, "translation should survive bad tokens");
+  assert(
+    mismatched?.translation === "வணக்கம் நண்பா",
+    "learning line is preserved",
+  );
+  assert(
+    mismatched?.tokens.length === 0,
+    "a token list that drops words is discarded, not trimmed into shape",
+  );
+});
+
+Deno.test("echo retry guidance names the learning language", () => {
+  const guidance = shortInputRetryGuidance("ta");
+  assert(guidance.includes("Tamil"), "guidance names the target language");
+  assert(guidance.includes("yes"), "guidance cites a one-word example");
+  assert(
+    guidance.includes("tokens"),
+    "guidance keeps the tappable-word contract on the retry",
+  );
+});
+
+Deno.test("system prompt requires short inputs to be translated", () => {
+  const prompt = systemPrompt("auto", "ta", "en");
+  assert(
+    prompt.includes("Short inputs are translated like any other."),
+    "prompt carries the short-input rule",
+  );
 });
