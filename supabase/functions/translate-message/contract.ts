@@ -192,6 +192,11 @@ export type TranslationResult = {
   explanation: string | null;
   confidence: CorrectionConfidence | null;
   tokens: unknown[];
+  /// Set when the provider offered a real translation but claimed the input was
+  /// already the learning language, so the unsafe-rewrite branch discarded it.
+  /// Server-side retry signal only; never part of the response body. Optional
+  /// so callers that only inspect the display lines need not carry it.
+  collapsedRewrite?: boolean;
 };
 
 /// Short greetings and one-word replies ("yes", "hello", "thanks") are the
@@ -217,9 +222,16 @@ export function translationOutputNeedsRetry(
   text: string,
   targetLang: string,
 ): boolean {
+  if (!isShortAlphabeticText(text)) return false;
+  // A misdetected source language is the other way a short message loses its
+  // learning line: the provider translates correctly but labels the input as
+  // the learning language, so the unsafe-rewrite branch throws the translation
+  // away and restores the authored text. Worth one more attempt. A genuinely
+  // same-language message is unaffected — the provider returns it unchanged,
+  // which lands in the `translation === text` branch instead.
+  if (result.collapsedRewrite) return true;
   if (result.mode !== "translation") return false;
   if (result.sourceLang === targetLang) return false;
-  if (!isShortAlphabeticText(text)) return false;
   return result.translation.trim().toLocaleLowerCase() ===
     text.trim().toLocaleLowerCase();
 }
@@ -298,6 +310,7 @@ export function parseProviderResult(
     explanation,
     confidence,
     tokens: Array.isArray(raw.tokens) ? raw.tokens : [],
+    collapsedRewrite: false,
   };
   const sourceMatchesTarget = result.sourceLang === targetLang;
   if (!sourceMatchesTarget) {
@@ -320,6 +333,7 @@ export function parseProviderResult(
     result.explanation = null;
     result.confidence = null;
     result.tokens = [];
+    result.collapsedRewrite = true;
   }
   // These display lines are fully determined by trusted inputs. Normalize
   // them instead of rejecting an otherwise valid provider translation when

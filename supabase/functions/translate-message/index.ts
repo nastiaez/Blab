@@ -336,5 +336,7 @@ Deno.serve(async (req) => {
   if (completed !== true) {
     return json({ error: "translation_stale" }, 409);
   }
-  return json({ ...result, interfaceLang });
+  // collapsedRewrite is a server-side retry signal, not part of the contract.
+  const { collapsedRewrite: _collapsedRewrite, ...response } = result;
+  return json({ ...response, interfaceLang });
 });

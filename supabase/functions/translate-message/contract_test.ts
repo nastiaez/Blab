@@ -613,6 +613,112 @@ Deno.test("token padding repair never invents a matching list", () => {
   );
 });
 
+Deno.test("misdetected source on a short word is retried", () => {
+  // The provider translates "sorry" correctly but labels the English input as
+  // Tamil, so the unsafe-rewrite branch discards the translation.
+  const collapsed = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "ta",
+      translation: "மன்னிக்கவும்",
+      interfaceText: "sorry",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "மன்னிக்கவும்",
+          gloss: "sorry",
+          roman: "mannikkavum",
+          isContent: true,
+        },
+      ],
+    }),
+    "sorry",
+    "ta",
+    "en",
+  );
+  assert(collapsed !== null, "the result should still parse");
+  assert(collapsed?.mode === "none", "the rewrite is still collapsed");
+  assert(
+    collapsed?.translation === "sorry",
+    "the authored line is still preserved on the collapsed result",
+  );
+  assert(
+    translationOutputNeedsRetry(collapsed!, "sorry", "ta"),
+    "a discarded short-word translation must be retried",
+  );
+});
+
+Deno.test("a genuine same-language short message is not retried", () => {
+  // Author really did write Tamil, so the provider returns it unchanged.
+  const unchanged = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "ta",
+      translation: "நன்றி",
+      interfaceText: "thanks",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+    }),
+    "நன்றி",
+    "ta",
+    "en",
+  );
+  assert(unchanged !== null, "same-language result should parse");
+  assert(unchanged?.mode === "none", "mode stays none");
+  assert(
+    !translationOutputNeedsRetry(unchanged!, "நன்றி", "ta"),
+    "writing in the learning language is not a failure",
+  );
+});
+
+Deno.test("a real same-language correction is not retried", () => {
+  const corrected = parseProviderResult(
+    JSON.stringify({
+      mode: "correction",
+      sourceLang: "ta",
+      translation: "நன்றி",
+      interfaceText: "thanks",
+      explanation: "Corrected the spelling.",
+      confidence: "high",
+      tokens: [{ text: "நன்றி", gloss: "thanks", roman: "nandri", isContent: true }],
+    }),
+    "நன்ரி",
+    "ta",
+    "en",
+  );
+  assert(corrected !== null, "correction should parse");
+  assert(corrected?.mode === "correction", "mode stays correction");
+  assert(
+    !translationOutputNeedsRetry(corrected!, "நன்ரி", "ta"),
+    "a bounded correction is a valid short-input result",
+  );
+});
+
+Deno.test("collapse retry still respects the short-input guard", () => {
+  const longInput = "sorry about missing the call yesterday afternoon";
+  const collapsed = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "ta",
+      translation: "மன்னிக்கவும் நேற்று",
+      interfaceText: longInput,
+      explanation: null,
+      confidence: null,
+      tokens: [],
+    }),
+    longInput,
+    "ta",
+    "en",
+  );
+  assert(collapsed !== null, "long collapsed result should parse");
+  assert(
+    !translationOutputNeedsRetry(collapsed!, longInput, "ta"),
+    "the retry stays limited to short alphabetic input",
+  );
+});
+
 Deno.test("echo retry guidance names the learning language", () => {
   const guidance = shortInputRetryGuidance("ta");
   assert(guidance.includes("Tamil"), "guidance names the target language");
