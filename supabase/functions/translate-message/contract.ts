@@ -1,5 +1,50 @@
 export const MAX_CHARS = 2000;
 
+/// Every provider call is bounded. Without this a stalled provider holds the
+/// request open until the platform kills it, and the viewer sees a bubble stuck
+/// on the pending shimmer instead of a retryable failure. Two attempts plus one
+/// interface repair stay well inside the function's own wall-clock budget.
+export const PROVIDER_TIMEOUT_MS = 12_000;
+
+export class ProviderTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`provider call exceeded ${timeoutMs}ms`);
+    this.name = "ProviderTimeoutError";
+  }
+}
+
+export type ProviderResponse = {
+  ok: boolean;
+  status: number;
+  body: string;
+};
+
+/// The timer spans the body read as well as the connection: a provider that
+/// answers with headers and then stalls mid-stream hangs exactly like one that
+/// never answers at all.
+export async function fetchProviderWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number = PROVIDER_TIMEOUT_MS,
+): Promise<ProviderResponse> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    const body = await response.text();
+    return { ok: response.ok, status: response.status, body };
+  } catch (error) {
+    if (controller.signal.aborted) throw new ProviderTimeoutError(timeoutMs);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export function providerCallFailureReason(error: unknown): string {
+  return error instanceof ProviderTimeoutError ? "timeout" : "unreachable";
+}
+
 export const OPENROUTER_PROVIDER = {
   allow_fallbacks: true,
   require_parameters: true,

@@ -8,11 +8,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  fetchProviderWithTimeout,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   LANG_NAMES,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  providerCallFailureReason,
   providerResultFailureReason,
   shortInputRetryGuidance,
   systemPrompt,
@@ -41,30 +43,33 @@ async function repairInterfaceText(
 ): Promise<string | null> {
   const targetName = LANG_NAMES[targetLang] ?? targetLang;
   const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
-  let response: Response;
+  let response: Awaited<ReturnType<typeof fetchProviderWithTimeout>>;
   try {
-    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+    response = await fetchProviderWithTimeout(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          temperature: 0,
+          max_completion_tokens: 4000,
+          response_format: INTERFACE_RESPONSE_FORMAT,
+          provider: OPENROUTER_PROVIDER,
+          messages: [
+            {
+              role: "system",
+              content:
+                `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation. Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`,
+            },
+            { role: "user", content: learningText },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model: MODEL,
-        temperature: 0,
-        max_completion_tokens: 4000,
-        response_format: INTERFACE_RESPONSE_FORMAT,
-        provider: OPENROUTER_PROVIDER,
-        messages: [
-          {
-            role: "system",
-            content:
-              `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation. Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`,
-          },
-          { role: "user", content: learningText },
-        ],
-      }),
-    });
+    );
   } catch {
     return null;
   }
@@ -72,7 +77,7 @@ async function repairInterfaceText(
 
   let payload: unknown;
   try {
-    payload = await response.json();
+    payload = JSON.parse(response.body);
   } catch {
     return null;
   }
@@ -208,32 +213,35 @@ Deno.serve(async (req) => {
       : echoedShortInput
       ? shortInputRetryGuidance(targetLang)
       : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
-    let llm: Response;
+    let llm: Awaited<ReturnType<typeof fetchProviderWithTimeout>>;
     try {
-      llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+      llm = await fetchProviderWithTimeout(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            temperature: 0,
+            max_completion_tokens: 12000,
+            response_format: TRANSLATION_RESPONSE_FORMAT,
+            provider: OPENROUTER_PROVIDER,
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt(sourceLang, targetLang, interfaceLang) +
+                  retryGuidance,
+              },
+              { role: "user", content: text },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          model: MODEL,
-          temperature: 0,
-          max_completion_tokens: 12000,
-          response_format: TRANSLATION_RESPONSE_FORMAT,
-          provider: OPENROUTER_PROVIDER,
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt(sourceLang, targetLang, interfaceLang) +
-                retryGuidance,
-            },
-            { role: "user", content: text },
-          ],
-        }),
-      });
-    } catch {
-      providerFailure = "unreachable";
+      );
+    } catch (error) {
+      providerFailure = providerCallFailureReason(error);
       continue;
     }
     if (!llm.ok) {
@@ -243,7 +251,7 @@ Deno.serve(async (req) => {
 
     let payload: unknown;
     try {
-      payload = await llm.json();
+      payload = JSON.parse(llm.body);
     } catch {
       providerFailure = "invalid_json";
       continue;

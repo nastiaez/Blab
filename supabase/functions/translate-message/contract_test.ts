@@ -1,11 +1,15 @@
 import {
   characterCount,
+  fetchProviderWithTimeout,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   isShortAlphabeticText,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  providerCallFailureReason,
+  PROVIDER_TIMEOUT_MS,
+  ProviderTimeoutError,
   providerResultFailureReason,
   shortInputRetryGuidance,
   systemPrompt,
@@ -616,6 +620,136 @@ Deno.test("echo retry guidance names the learning language", () => {
   assert(
     guidance.includes("tokens"),
     "guidance keeps the tappable-word contract on the retry",
+  );
+});
+
+async function withServer(
+  handler: (request: Request) => Response | Promise<Response>,
+  run: (url: string) => Promise<void>,
+): Promise<void> {
+  const controller = new AbortController();
+  const server = Deno.serve(
+    { port: 0, signal: controller.signal, onListen: () => {} },
+    handler,
+  );
+  const port = (server.addr as Deno.NetAddr).port;
+  try {
+    await run(`http://127.0.0.1:${port}`);
+  } finally {
+    controller.abort();
+    await server.finished;
+  }
+}
+
+Deno.test("provider call that never answers fails as a timeout", async () => {
+  await withServer(
+    () => new Promise<Response>(() => {}),
+    async (url) => {
+      const started = Date.now();
+      let thrown: unknown = null;
+      try {
+        await fetchProviderWithTimeout(url, { method: "POST" }, 250);
+      } catch (error) {
+        thrown = error;
+      }
+      assert(
+        thrown instanceof ProviderTimeoutError,
+        "a stalled provider must raise a timeout, not hang",
+      );
+      assert(
+        Date.now() - started < 5_000,
+        "the call must abort near its deadline",
+      );
+      assert(
+        providerCallFailureReason(thrown) === "timeout",
+        "a timeout is reported as timeout, not unreachable",
+      );
+    },
+  );
+});
+
+Deno.test("provider that stalls mid-body fails as a timeout", async () => {
+  await withServer(
+    () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"choices":'));
+          },
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      ),
+    async (url) => {
+      let thrown: unknown = null;
+      try {
+        await fetchProviderWithTimeout(url, { method: "POST" }, 250);
+      } catch (error) {
+        thrown = error;
+      }
+      assert(
+        thrown instanceof ProviderTimeoutError,
+        "headers followed by a stalled body must also time out",
+      );
+    },
+  );
+});
+
+Deno.test("provider answering in time returns its status and body", async () => {
+  await withServer(
+    () => new Response('{"ok":true}', { status: 200 }),
+    async (url) => {
+      const response = await fetchProviderWithTimeout(
+        url,
+        { method: "POST" },
+        5_000,
+      );
+      assert(response.ok, "a prompt answer stays successful");
+      assert(response.status === 200, "status is surfaced");
+      assert(response.body === '{"ok":true}', "body is read in full");
+    },
+  );
+});
+
+Deno.test("provider error responses are surfaced, not swallowed", async () => {
+  await withServer(
+    () => new Response("upstream is busy", { status: 503 }),
+    async (url) => {
+      const response = await fetchProviderWithTimeout(
+        url,
+        { method: "POST" },
+        5_000,
+      );
+      assert(!response.ok, "a 503 is not a success");
+      assert(response.status === 503, "the caller can build http_503");
+    },
+  );
+});
+
+Deno.test("unreachable providers stay distinct from timeouts", async () => {
+  let thrown: unknown = null;
+  try {
+    // Port 1 is reserved and refuses immediately, so this is a connection
+    // failure rather than a deadline.
+    await fetchProviderWithTimeout("http://127.0.0.1:1", { method: "POST" }, 5_000);
+  } catch (error) {
+    thrown = error;
+  }
+  assert(thrown !== null, "a refused connection still throws");
+  assert(
+    !(thrown instanceof ProviderTimeoutError),
+    "a refused connection is not a timeout",
+  );
+  assert(
+    providerCallFailureReason(thrown) === "unreachable",
+    "a refused connection is reported as unreachable",
+  );
+});
+
+Deno.test("provider deadline is bounded for two attempts plus a repair", () => {
+  assert(PROVIDER_TIMEOUT_MS > 0, "a deadline is set");
+  assert(
+    PROVIDER_TIMEOUT_MS * 3 <= 60_000,
+    "worst-case provider time stays inside the function budget",
   );
 });
 
