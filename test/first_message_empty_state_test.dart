@@ -41,12 +41,18 @@ void main() {
   });
 
   test('chat header uses viewer-centered learning copy', () {
-    final source = File('lib/features/chat/chat_screen.dart').readAsStringSync();
+    final source = File(
+      'lib/features/chat/chat_screen.dart',
+    ).readAsStringSync();
 
     expect(source, contains('youAreLearningLanguageWithPerson'));
     expect(
       source,
-      isNot(contains(r'${context.l10n.learningLanguage}: ${chat.learningLanguage.name}')),
+      isNot(
+        contains(
+          r'${context.l10n.learningLanguage}: ${chat.learningLanguage.name}',
+        ),
+      ),
     );
   });
 
