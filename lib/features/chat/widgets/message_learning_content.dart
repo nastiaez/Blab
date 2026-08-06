@@ -7,6 +7,8 @@ import 'inline_correction_text.dart';
 import 'message_text.dart';
 import 'translation_subtitle.dart';
 
+const double kTranslatedMessageMinContentWidth = 156;
+
 /// Renders the final L-15 two-lane message contract: learning language on top
 /// and interface language below, with a third-language author exception.
 class MessageLearningContent extends StatelessWidget {
@@ -22,8 +24,6 @@ class MessageLearningContent extends StatelessWidget {
     required this.unavailableText,
     required this.retryText,
     this.onRetry,
-    required this.correctionLabel,
-    required this.possibleCorrectionLabel,
   });
 
   final String authoredText;
@@ -36,8 +36,6 @@ class MessageLearningContent extends StatelessWidget {
   final String unavailableText;
   final String retryText;
   final VoidCallback? onRetry;
-  final String correctionLabel;
-  final String possibleCorrectionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -93,11 +91,21 @@ class MessageLearningContent extends StatelessWidget {
     }
 
     final value = (result as AsyncData<MessageTranslation>).value;
+    if (value.mode == LearningAidMode.none) {
+      return Text(authoredText, style: primaryStyle);
+    }
+
     final senderThirdLanguage =
         isOutgoing &&
         value.sourceLang != learningLanguageCode &&
         value.sourceLang != interfaceLanguageCode;
-    final bottomText = senderThirdLanguage ? authoredText : value.interfaceText;
+    final recipientCorrection =
+        !isOutgoing && value.mode == LearningAidMode.correction;
+    final bottomText = recipientCorrection
+        ? value.interfaceText
+        : senderThirdLanguage
+        ? authoredText
+        : value.interfaceText;
     final showBottom = bottomText != value.translation;
     final authorCorrection =
         isOutgoing && value.mode == LearningAidMode.correction;
@@ -116,31 +124,29 @@ class MessageLearningContent extends StatelessWidget {
             style: primaryStyle,
           );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        learningLine,
-        if (authorCorrection) ...[
-          const SizedBox(height: 4),
-          Text(
-            '${value.confidence == CorrectionConfidence.high ? correctionLabel : possibleCorrectionLabel}: ${value.explanation}',
-            style: secondaryStyle.copyWith(fontStyle: FontStyle.italic),
-          ),
-        ],
-        if (showBottom) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Container(
-              height: 1,
-              color: isOutgoing
-                  ? Colors.white.withValues(alpha: 0.25)
-                  : Colors.grey.shade200,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: kTranslatedMessageMinContentWidth,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          learningLine,
+          if (showBottom) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Container(
+                height: 1,
+                color: isOutgoing
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : Colors.grey.shade200,
+              ),
             ),
-          ),
-          Text(bottomText, style: secondaryStyle),
+            Text(bottomText, style: secondaryStyle),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

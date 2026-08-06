@@ -11,13 +11,17 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'app/app_messenger.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
+import 'features/chat/state/chat_state.dart';
 import 'features/chat/state/message_translations_state.dart';
+import 'features/share/android_share_intent_service.dart';
 import 'l10n/l10n.dart';
 import 'shared/data/invite_host.dart';
 import 'shared/data/firebase_config.dart';
 import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
+import 'shared/services/push_tap_router.dart';
 import 'shared/services/supabase_auth_service.dart';
+import 'shared/state/chat_list_state.dart';
 import 'shared/state/interface_language.dart';
 import 'shared/state/push_notifications_state.dart';
 
@@ -81,6 +85,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   String? _knownEmail;
   String? _knownUserId;
   bool _checkingUserOnResume = false;
+  final PushTapRouter _pushTapRouter = PushTapRouter();
+  final AndroidShareIntentService _shareIntentService =
+      const AndroidShareIntentService();
 
   @override
   void initState() {
@@ -116,12 +123,19 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
           }
           _knownEmail = u?.email;
           _knownUserId = u?.id;
+          if (s.event == AuthChangeEvent.signedIn &&
+              ref.read(pendingSharedImageProvider) != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) blabRouter.go('/share/image');
+            });
+          }
         }
       }, onError: _handleAuthStreamError);
     } catch (_) {
       // Test environment without Supabase. Skip silently.
     }
     _initInviteDeepLinks();
+    _initAndroidShareIntents();
   }
 
   void _handleAuthStreamError(Object error, StackTrace stackTrace) {
@@ -168,6 +182,34 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     } catch (_) {
       // app_links unavailable (tests, headless) — ignore.
     }
+  }
+
+  void _initAndroidShareIntents() {
+    _shareIntentService.setOnSharedImage(_handleSharedImage);
+    unawaited(_routeInitialSharedImage());
+  }
+
+  Future<void> _routeInitialSharedImage() async {
+    try {
+      final image = await _shareIntentService.getInitialSharedImage();
+      if (image != null) _handleSharedImage(image);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Android share intent ignored: type=${error.runtimeType}, '
+          'error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    }
+  }
+
+  void _handleSharedImage(AndroidSharedImage image) {
+    ref.read(pendingSharedImageProvider.notifier).set(image);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      blabRouter.go('/share/image');
+    });
   }
 
   void _routeIncomingLink(Uri uri) {
@@ -246,13 +288,12 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     final interfaceLanguage = ref.watch(interfaceLanguageProvider);
     final push = ref.watch(pushNotificationsProvider);
     final pendingChatId = push.pendingChatId;
-    if (_knownUserId != null && pendingChatId != null) {
+    if (_knownUserId != null &&
+        pendingChatId != null &&
+        !_pushTapRouter.hasInFlightRoute) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final current = ref.read(pushNotificationsProvider).pendingChatId;
-        if (current != pendingChatId) return;
-        ref.read(pushNotificationsProvider.notifier).consumePendingChat();
-        blabRouter.go('/chat/$pendingChatId');
+        unawaited(_routePendingPushTap(pendingChatId));
       });
     }
     // Status-bar bg transparent + dark icons everywhere.
@@ -274,6 +315,34 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
         routerConfig: blabRouter,
         scaffoldMessengerKey: appMessengerKey,
       ),
+    );
+  }
+
+  Future<void> _routePendingPushTap(String pendingChatId) async {
+    await _pushTapRouter.route(
+      chatId: pendingChatId,
+      currentPendingChatId: () =>
+          ref.read(pushNotificationsProvider).pendingChatId,
+      invalidateChat: (chatId) {
+        ref.invalidate(chatMessagesProvider(chatId));
+        ref.invalidate(chatPaginationProvider(chatId));
+      },
+      refreshChatList: () => ref.read(chatListProvider.notifier).refresh(),
+      consumePendingChat: () =>
+          ref.read(pushNotificationsProvider.notifier).consumePendingChat(),
+      goToChat: (chatId) {
+        if (kDebugMode) {
+          debugPrint('Push tap routing opened chatId=$chatId');
+        }
+        blabRouter.go('/chat/$chatId');
+      },
+      onError: (error, stackTrace) {
+        if (!kDebugMode) return;
+        debugPrint(
+          'Push tap routing deferred: type=${error.runtimeType}, error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      },
     );
   }
 }

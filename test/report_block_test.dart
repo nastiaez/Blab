@@ -62,7 +62,11 @@ void main() {
     }
   });
 
-  Widget host(Message message, {DateTime? now}) => MaterialApp(
+  Widget host(
+    Message message, {
+    DateTime? now,
+    void Function(String emoji)? onReact,
+  }) => MaterialApp(
     home: Scaffold(
       body: Builder(
         builder: (context) => ElevatedButton(
@@ -70,6 +74,7 @@ void main() {
             context,
             message: message,
             onAction: (_) {},
+            onReact: onReact,
             now: now,
           ),
           child: const Text('open'),
@@ -82,11 +87,12 @@ void main() {
     required bool outgoing,
     MessageStatus status = MessageStatus.delivered,
     DateTime? sentAt,
+    String originalText = 'hello',
   }) => Message(
     id: 'm1',
     chatId: 'c1',
     isOutgoing: outgoing,
-    originalText: 'hello',
+    originalText: originalText,
     translation: '',
     sentAt: sentAt ?? DateTime.parse('2026-06-09T00:00:00Z'),
     status: status,
@@ -101,6 +107,59 @@ void main() {
     expect(find.text('hello'), findsOneWidget);
     expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
     expect(find.text('Edit'), findsNothing); // incoming: no edit
+  });
+
+  testWidgets('action sheet keeps the exact original text with mistakes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(msg(outgoing: false, originalText: 'I goed to the shop yesterday.')),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('View original'), findsOneWidget);
+    expect(find.text('I goed to the shop yesterday.'), findsOneWidget);
+  });
+
+  testWidgets('message action sheet content stays compact on wide screens', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(800, 1000);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(host(msg(outgoing: false)));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('original-message'))).width,
+      lessThanOrEqualTo(392),
+    );
+  });
+
+  testWidgets('action sheet offers free quick reactions and expanded emoji', (
+    tester,
+  ) async {
+    final picked = <String>[];
+    await tester.pumpWidget(host(msg(outgoing: false), onReact: picked.add));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('❤️'), findsOneWidget);
+    expect(find.text('😂'), findsOneWidget);
+    expect(find.text('👍'), findsOneWidget);
+    expect(find.byKey(const ValueKey('more-reactions')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('more-reactions')));
+    await tester.pumpAndSettle();
+    expect(find.text('🔥'), findsOneWidget);
+
+    await tester.tap(find.text('🔥'));
+    await tester.pumpAndSettle();
+    expect(picked, ['🔥']);
   });
 
   testWidgets('action sheet hides Report on your own messages', (tester) async {

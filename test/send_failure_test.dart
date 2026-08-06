@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,10 +18,12 @@ import 'package:blab/shared/state/connectivity_state.dart';
 /// is counted so tests can assert whether the network was actually hit.
 class _FakeChatService implements ChatService {
   int sendCalls = 0;
+  int photoSendCalls = 0;
   bool throwOnSend = false;
   bool loseFirstResponse = false;
   final List<String> attemptedIds = <String>[];
   final List<String?> attemptedReplyIds = <String?>[];
+  final List<String> attemptedPhotoCaptions = <String>[];
   final Set<String> committedIds = <String>{};
 
   @override
@@ -40,6 +43,37 @@ class _FakeChatService implements ChatService {
     }
     committedIds.add(id);
     return (id: id, createdAt: DateTime.parse('2026-06-09T00:00:00Z'));
+  }
+
+  @override
+  Future<({String id, DateTime createdAt, MessageAttachment attachment})>
+  sendPhotoMessage({
+    required String chatId,
+    required PickedChatImage image,
+    required String caption,
+    String? clientMessageId,
+    String? replyToId,
+  }) async {
+    photoSendCalls++;
+    if (throwOnSend) throw Exception('server_500');
+    final id = clientMessageId ?? 'photo-server-$photoSendCalls';
+    attemptedIds.add(id);
+    attemptedReplyIds.add(replyToId);
+    attemptedPhotoCaptions.add(caption);
+    return (
+      id: id,
+      createdAt: DateTime.parse('2026-06-09T00:00:00Z'),
+      attachment: MessageAttachment(
+        id: 'att-$id',
+        messageId: id,
+        chatId: chatId,
+        storageBucket: 'message-media',
+        storagePath: '$chatId/user-a/$id.jpg',
+        mimeType: image.mimeType,
+        byteSize: image.bytes.length,
+        url: 'https://example.test/$id.jpg',
+      ),
+    );
   }
 
   @override
@@ -119,6 +153,112 @@ void main() {
     expect(q.length, 1);
     expect(q.single.status, MessageStatus.delivered);
     expect(q.single.id, _id(1));
+  });
+
+  test('online photo send upgrades to delivered image bubble', () async {
+    final fake = _FakeChatService();
+    final c = _container(fake, online: true);
+    addTearDown(c.dispose);
+
+    await c
+        .read(chatMessagesProvider('c1').notifier)
+        .addOutgoingPhoto(
+          PickedChatImage(
+            bytes: Uint8List.fromList([1, 2, 3]),
+            mimeType: 'image/jpeg',
+            fileName: 'photo.jpg',
+          ),
+          caption: 'look at this',
+        );
+
+    expect(fake.photoSendCalls, 1);
+    expect(fake.attemptedPhotoCaptions, ['look at this']);
+    final q = _queue(c, 'c1');
+    expect(q.length, 1);
+    expect(q.single.status, MessageStatus.delivered);
+    expect(q.single.type, MessageType.image);
+    expect(q.single.originalText, 'look at this');
+    expect(q.single.attachment?.url, 'https://example.test/${_id(1)}.jpg');
+  });
+
+  test('online photo send without caption keeps an empty caption', () async {
+    final fake = _FakeChatService();
+    final c = _container(fake, online: true);
+    addTearDown(c.dispose);
+
+    await c
+        .read(chatMessagesProvider('c1').notifier)
+        .addOutgoingPhoto(
+          PickedChatImage(
+            bytes: Uint8List.fromList([4, 5, 6]),
+            mimeType: 'image/png',
+            fileName: 'no-caption.png',
+          ),
+        );
+
+    expect(fake.photoSendCalls, 1);
+    expect(fake.attemptedPhotoCaptions, ['']);
+    final q = _queue(c, 'c1');
+    expect(q.single.status, MessageStatus.delivered);
+    expect(q.single.type, MessageType.image);
+    expect(q.single.originalText, isEmpty);
+    expect(q.single.attachment?.mimeType, 'image/png');
+  });
+
+  test('failed photo send can retry with same id and caption', () async {
+    final fake = _FakeChatService()..throwOnSend = true;
+    final c = _container(fake, online: true);
+    addTearDown(c.dispose);
+
+    await c
+        .read(chatMessagesProvider('c1').notifier)
+        .addOutgoingPhoto(
+          PickedChatImage(
+            bytes: Uint8List.fromList([7, 8, 9]),
+            mimeType: 'image/jpeg',
+            fileName: 'retry.jpg',
+          ),
+          caption: 'retry this photo',
+        );
+
+    final failed = _queue(c, 'c1').single;
+    expect(fake.photoSendCalls, 1);
+    expect(failed.status, MessageStatus.failed);
+    expect(failed.type, MessageType.image);
+
+    fake.throwOnSend = false;
+    await c.read(chatMessagesProvider('c1').notifier).retryFailed(failed.id);
+
+    final delivered = _queue(c, 'c1').single;
+    expect(fake.photoSendCalls, 2);
+    expect(fake.attemptedIds, [failed.id]);
+    expect(fake.attemptedPhotoCaptions, ['retry this photo']);
+    expect(delivered.status, MessageStatus.delivered);
+    expect(delivered.id, failed.id);
+    expect(delivered.attachment?.url, 'https://example.test/${failed.id}.jpg');
+  });
+
+  test('failed photo send can be deleted from the pending queue', () async {
+    final fake = _FakeChatService()..throwOnSend = true;
+    final c = _container(fake, online: true);
+    addTearDown(c.dispose);
+
+    await c
+        .read(chatMessagesProvider('c1').notifier)
+        .addOutgoingPhoto(
+          PickedChatImage(
+            bytes: Uint8List.fromList([10, 11, 12]),
+            mimeType: 'image/jpeg',
+            fileName: 'delete.jpg',
+          ),
+        );
+
+    final failed = _queue(c, 'c1').single;
+    expect(failed.status, MessageStatus.failed);
+
+    c.read(chatMessagesProvider('c1').notifier).dropPending(failed.id);
+
+    expect(_queue(c, 'c1'), isEmpty);
   });
 
   test('offline send stays queued (clock), no network hit', () async {

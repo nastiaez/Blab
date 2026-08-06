@@ -6,6 +6,56 @@ import 'message_token.dart';
 /// PRD US-016 (read receipts) + US-031 (offline / failure).
 enum MessageStatus { pending, delivered, read, failed }
 
+enum MessageType { text, image }
+
+class MessageAttachment {
+  const MessageAttachment({
+    required this.id,
+    required this.messageId,
+    required this.chatId,
+    required this.storageBucket,
+    required this.storagePath,
+    required this.mimeType,
+    required this.byteSize,
+    this.url,
+    this.localBytes,
+  });
+
+  final String id;
+  final String messageId;
+  final String chatId;
+  final String storageBucket;
+  final String storagePath;
+  final String mimeType;
+  final int byteSize;
+  final String? url;
+  final List<int>? localBytes;
+
+  MessageAttachment copyWith({
+    String? id,
+    String? messageId,
+    String? chatId,
+    String? storageBucket,
+    String? storagePath,
+    String? mimeType,
+    int? byteSize,
+    String? url,
+    List<int>? localBytes,
+  }) {
+    return MessageAttachment(
+      id: id ?? this.id,
+      messageId: messageId ?? this.messageId,
+      chatId: chatId ?? this.chatId,
+      storageBucket: storageBucket ?? this.storageBucket,
+      storagePath: storagePath ?? this.storagePath,
+      mimeType: mimeType ?? this.mimeType,
+      byteSize: byteSize ?? this.byteSize,
+      url: url ?? this.url,
+      localBytes: localBytes ?? this.localBytes,
+    );
+  }
+}
+
 /// A single chat message. Backed by the live Supabase stream (Step 2.2).
 ///
 /// PRD US-013…US-017, US-023.
@@ -18,6 +68,8 @@ class Message {
     required this.translation,
     required this.sentAt,
     required this.status,
+    this.type = MessageType.text,
+    this.attachment,
     this.tokens,
     this.replyTo,
     this.isEdited = false,
@@ -45,6 +97,8 @@ class Message {
 
   final DateTime sentAt;
   final MessageStatus status;
+  final MessageType type;
+  final MessageAttachment? attachment;
 
   /// The message this one replies to. Null when not a reply.
   final Message? replyTo;
@@ -58,6 +112,8 @@ class Message {
     String? originalText,
     String? translation,
     List<MessageToken>? tokens,
+    MessageType? type,
+    MessageAttachment? attachment,
     Message? replyTo,
     bool? isEdited,
   }) {
@@ -70,6 +126,8 @@ class Message {
       tokens: tokens ?? this.tokens,
       sentAt: sentAt,
       status: status ?? this.status,
+      type: type ?? this.type,
+      attachment: attachment ?? this.attachment,
       replyTo: replyTo ?? this.replyTo,
       isEdited: isEdited ?? this.isEdited,
     );

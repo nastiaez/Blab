@@ -8,22 +8,31 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
+  interfaceRepairSystemPrompt,
   LANG_NAMES,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  type ProviderCredential,
+  providerCredentials,
+  providerMessages,
   providerResultFailureReason,
-  systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
+  type TranslationContextMessage,
   validateRequest,
 } from "./contract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const BLAB_ENV = Deno.env.get("BLAB_ENV");
 const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
-const MODEL = "openai/gpt-4o-mini";
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
+const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
+const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -32,36 +41,60 @@ const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 };
 
+function providerName(credential: ProviderCredential): string {
+  return credential.provider === "openrouter" ? "OpenRouter" : "OpenAI";
+}
+
+function chatCompletionEndpoint(credential: ProviderCredential): string {
+  return credential.provider === "openrouter"
+    ? "https://openrouter.ai/api/v1/chat/completions"
+    : "https://api.openai.com/v1/chat/completions";
+}
+
+function chatCompletionModel(credential: ProviderCredential): string {
+  return credential.model;
+}
+
+async function fetchChatCompletion(
+  credential: ProviderCredential,
+  body: Record<string, unknown>,
+): Promise<Response> {
+  return await fetch(chatCompletionEndpoint(credential), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${credential.apiKey}`,
+    },
+    body: JSON.stringify({
+      ...body,
+      model: chatCompletionModel(credential),
+      ...(credential.provider === "openrouter" &&
+          credential.useOpenRouterProviderPolicy
+        ? { provider: OPENROUTER_PROVIDER }
+        : {}),
+    }),
+  });
+}
+
 async function repairInterfaceText(
+  credential: ProviderCredential,
   learningText: string,
   targetLang: string,
   interfaceLang: string,
 ): Promise<string | null> {
-  const targetName = LANG_NAMES[targetLang] ?? targetLang;
-  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
   let response: Response;
   try {
-    response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        temperature: 0,
-        max_completion_tokens: 4000,
-        response_format: INTERFACE_RESPONSE_FORMAT,
-        provider: OPENROUTER_PROVIDER,
-        messages: [
-          {
-            role: "system",
-            content:
-              `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation. Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`,
-          },
-          { role: "user", content: learningText },
-        ],
-      }),
+    response = await fetchChatCompletion(credential, {
+      temperature: 0,
+      max_completion_tokens: 4000,
+      response_format: INTERFACE_RESPONSE_FORMAT,
+      messages: [
+        {
+          role: "system",
+          content: interfaceRepairSystemPrompt(targetLang, interfaceLang),
+        },
+        { role: "user", content: learningText },
+      ],
     });
   } catch {
     return null;
@@ -181,6 +214,7 @@ Deno.serve(async (req) => {
   const targetLang = prepared.targetLang;
   const interfaceLang = prepared.interfaceLang;
   const sourceHash = prepared.sourceHash;
+  const rawContext = prepared.context;
   if (
     prepared.status !== "ready" ||
     typeof text !== "string" ||
@@ -191,91 +225,151 @@ Deno.serve(async (req) => {
   ) {
     return json({ error: "translation_unavailable" }, 500);
   }
-  if (!OPEN_ROUTER_KEY) {
+  const context: TranslationContextMessage[] = Array.isArray(rawContext)
+    ? rawContext.flatMap((entry) => {
+      if (typeof entry !== "object" || entry === null) return [];
+      const speaker = (entry as Record<string, unknown>).speaker;
+      const contextText = (entry as Record<string, unknown>).text;
+      return (speaker === "viewer" || speaker === "partner") &&
+          typeof contextText === "string" && contextText.trim().length > 0
+        ? [{ speaker, text: contextText }]
+        : [];
+    })
+    : [];
+  const providerKeys = providerCredentials({
+    openRouterKey: OPEN_ROUTER_KEY,
+    openAiKey: OPENAI_API_KEY,
+    openRouterModel: OPENROUTER_MODEL,
+    openAiModel: OPENAI_MODEL,
+    openRouterProviderPolicy: OPENROUTER_PROVIDER_POLICY,
+    environment: BLAB_ENV,
+  });
+  if (providerKeys.length === 0) {
     console.error("translation provider key is missing");
     return json({ error: "translation_unavailable" }, 500);
   }
 
   let result: ReturnType<typeof parseProviderResult> = null;
   let providerFailure = "unknown";
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
-    const retryGuidance = attempt === 0
-      ? ""
-      : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages.`;
-    let llm: Response;
-    try {
-      llm = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPEN_ROUTER_KEY}`,
-        },
-        body: JSON.stringify({
-          model: MODEL,
+  for (const credential of providerKeys) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+      const retryGuidance = attempt === 0
+        ? ""
+        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. For Ukrainian, do not use parenthetical or slash gender alternatives such as "був(ла)", "радий(а)", "був/була", or "радий/рада"; rewrite with impersonal neutral wording instead.`;
+      let llm: Response;
+      try {
+        llm = await fetchChatCompletion(credential, {
           temperature: 0,
           max_completion_tokens: 12000,
           response_format: TRANSLATION_RESPONSE_FORMAT,
-          provider: OPENROUTER_PROVIDER,
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt(sourceLang, targetLang, interfaceLang) +
-                retryGuidance,
-            },
-            { role: "user", content: text },
-          ],
-        }),
-      });
-    } catch {
-      providerFailure = "unreachable";
-      continue;
-    }
-    if (!llm.ok) {
-      providerFailure = `http_${llm.status}`;
-      continue;
-    }
+          messages: providerMessages({
+            sourceLang,
+            targetLang,
+            interfaceLang,
+            text,
+            context,
+            retryGuidance,
+          }),
+        });
+      } catch {
+        providerFailure = `${credential.provider}_unreachable`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      if (!llm.ok) {
+        providerFailure = `${credential.provider}_http_${llm.status}`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
 
-    let payload: unknown;
-    try {
-      payload = await llm.json();
-    } catch {
-      providerFailure = "invalid_json";
-      continue;
-    }
-    const content = (payload as {
-      choices?: Array<{ message?: { content?: unknown } }>;
-    })?.choices?.[0]?.message?.content;
-    if (typeof content !== "string") {
-      providerFailure = "missing_content";
-      continue;
-    }
-    const candidate = parseProviderResult(
-      content,
-      text,
-      targetLang,
-      interfaceLang,
-    );
-    if (candidate === null) {
-      providerFailure = providerResultFailureReason(content);
-      continue;
-    }
-    if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
-      const repaired = await repairInterfaceText(
-        candidate.translation,
+      let payload: unknown;
+      try {
+        payload = await llm.json();
+      } catch {
+        providerFailure = `${credential.provider}_invalid_json`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      const content = (payload as {
+        choices?: Array<{ message?: { content?: unknown } }>;
+      })?.choices?.[0]?.message?.content;
+      if (typeof content !== "string") {
+        providerFailure = `${credential.provider}_missing_content`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      const candidate = parseProviderResult(
+        content,
+        text,
         targetLang,
         interfaceLang,
       );
-      if (repaired !== null) {
-        candidate.interfaceText = repaired;
-        result = candidate;
-        break;
+      if (candidate === null) {
+        providerFailure = `${credential.provider}_${
+          providerResultFailureReason(content)
+        }`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
       }
-      providerFailure = "interface_repair";
-      continue;
+      if (
+        genderedAmbiguityNeedsRetry(candidate, sourceLang, targetLang, text)
+      ) {
+        providerFailure = `${credential.provider}_gendered_ambiguity`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
+        const repaired = await repairInterfaceText(
+          credential,
+          candidate.translation,
+          targetLang,
+          interfaceLang,
+        );
+        if (repaired !== null) {
+          candidate.interfaceText = repaired;
+          result = candidate;
+          break;
+        }
+        providerFailure = `${credential.provider}_interface_repair`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      console.log(
+        `translation provider succeeded via ${providerName(credential)}`,
+      );
+      result = candidate;
+      break;
     }
-    result = candidate;
-    break;
+    if (result !== null) break;
   }
   if (result === null) {
     console.error("translation provider failed after retry", {

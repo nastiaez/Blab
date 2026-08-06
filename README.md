@@ -86,6 +86,12 @@ OPEN_ROUTER_KEY=<development-key>
 ```
 
 Never commit `supabase/.env.local` or put production provider credentials in it.
+For Blab work, always use the approved "OpenRouter API Key - Blab Staging" value
+as `OPEN_ROUTER_KEY` in `supabase/.env.local`. Do not use OpenRouter keys from
+workspace env files, shell env, `~/clawd/.env`, or unrelated project env files
+for Blab functions, translation QA, or provider tests. If a hotfix worktree has
+its own `supabase/.env.local`, copy the same approved Blab key there before
+starting `scripts/local_test.sh functions`.
 
 ### Start the local backend
 

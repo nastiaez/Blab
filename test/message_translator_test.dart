@@ -7,7 +7,7 @@ const _messageId = '10000000-0000-4000-8000-000000000001';
 
 Map<String, dynamic> _success() => {
   'mode': 'translation',
-  'translation': 'Hello!',
+  'translation': 'வணக்கம்!',
   'interfaceText': 'Привіт!',
   'interfaceLang': 'uk',
   'sourceLang': 'ta',
@@ -31,7 +31,7 @@ void main() {
     );
 
     final result = await translator.translate(messageId: _messageId);
-    expect(result.translation, 'Hello!');
+    expect(result.translation, 'வணக்கம்!');
     expect(result.interfaceText, 'Привіт!');
     expect(result.interfaceLang, 'uk');
     expect(result.sourceLang, 'ta');
@@ -65,6 +65,34 @@ void main() {
     expect(result.interfaceText, 'What are you doing?');
     expect(result.explanation, 'The verb must agree with "du".');
     expect(result.confidence, CorrectionConfidence.medium);
+  });
+
+  test('drops phrase-sized token metadata from live responses', () async {
+    final translator = MessageTranslator(
+      invoke: ({required String messageId}) async => {
+        'mode': 'translation',
+        'translation': 'You can use Google speech.',
+        'interfaceText': 'Можна використовувати Google speech.',
+        'interfaceLang': 'uk',
+        'sourceLang': 'uk',
+        'explanation': null,
+        'confidence': null,
+        'tokens': [
+          {
+            'text': 'You can use Google speech',
+            'gloss': 'whole phrase',
+            'roman': null,
+            'isContent': true,
+          },
+          {'text': '.', 'gloss': null, 'roman': null, 'isContent': false},
+        ],
+      },
+    );
+
+    final result = await translator.translate(messageId: _messageId);
+
+    expect(result.translation, 'You can use Google speech.');
+    expect(result.tokens, isEmpty);
   });
 
   test('sends only the trimmed message ID to the invoker', () async {

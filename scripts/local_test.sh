@@ -92,6 +92,8 @@ run_integration() {
       --concurrency=1 \
       --dart-define=RUN_LOCAL_SUPABASE_INTEGRATION=true \
       --dart-define=RUN_LOCAL_OPENROUTER_INTEGRATION=true \
+      --dart-define=BLAB_OPENROUTER_TEST_TIMEOUT_MINUTES="${BLAB_OPENROUTER_TEST_TIMEOUT_MINUTES:-5}" \
+      --dart-define=BLAB_OPENROUTER_CALL_TIMEOUT_SECONDS="${BLAB_OPENROUTER_CALL_TIMEOUT_SECONDS:-90}" \
       --dart-define=BLAB_ENV=local \
       --dart-define=SUPABASE_PROJECT_REF=local \
       --dart-define=SENTRY_ENV=local \

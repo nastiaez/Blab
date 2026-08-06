@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Chat _chat({bool withLastMessageId = false}) {
+Chat _chat({bool withLastMessageId = false, int unreadCount = 0}) {
   final german = kBlabLanguages.firstWhere((language) => language.code == 'de');
   final english = kBlabLanguages.firstWhere(
     (language) => language.code == 'en',
@@ -24,12 +24,12 @@ Chat _chat({bool withLastMessageId = false}) {
     lastMessageTranslation: '',
     lastMessageId: withLastMessageId ? 'message-1' : null,
     timestamp: DateTime(2026, 7, 16),
-    unreadCount: 0,
+    unreadCount: unreadCount,
   );
 }
 
-Widget _app({required bool partnerTyping}) {
-  final chat = _chat();
+Widget _app({required bool partnerTyping, Chat? chat}) {
+  chat ??= _chat(withLastMessageId: true);
   return ProviderScope(
     overrides: [
       partnerTypingProvider(
@@ -65,6 +65,20 @@ void main() {
     expect(find.text('typing...'), findsNothing);
     expect(find.text('Last message'), findsOneWidget);
   });
+
+  testWidgets(
+    'empty chat renders connection state without stale preview or unread badge',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(partnerTyping: false, chat: _chat(unreadCount: 3)),
+      );
+      await tester.pump();
+
+      expect(find.text('New connection · say hi'), findsOneWidget);
+      expect(find.text('Last message'), findsNothing);
+      expect(find.text('3'), findsNothing);
+    },
+  );
 
   testWidgets('chat preview preserves authored text without AI requests', (
     tester,

@@ -1,9 +1,57 @@
 import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/chat_mappers.dart';
 import '../models/message.dart';
+import '../models/message_reaction.dart';
+
+typedef CachedMessageTranslation = ({
+  String text,
+  String interfaceText,
+  String interfaceLang,
+  String sourceLang,
+  String mode,
+  String? explanation,
+  String? confidence,
+  List<Map<String, dynamic>> tokens,
+});
+
+String _newStorageSafeId() {
+  final random = Random.secure();
+  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  final hex = bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
+  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
+      '${hex.substring(20)}';
+}
+
+String _extensionForMime(String mimeType) => switch (mimeType) {
+  'image/png' => 'png',
+  'image/webp' => 'webp',
+  'image/gif' => 'gif',
+  _ => 'jpg',
+};
+
+class MessageTranslationChange {
+  const MessageTranslationChange({
+    required this.messageId,
+    required this.targetLang,
+    required this.interfaceLang,
+    required this.translation,
+  });
+
+  final String messageId;
+  final String targetLang;
+  final String interfaceLang;
+  final CachedMessageTranslation translation;
+}
 
 /// Public-facing invite metadata returned by [ChatService.getInvite].
 class InviteMetadata {
@@ -70,6 +118,18 @@ class MessageChange {
 
   final MessageChangeType type;
   final Map<String, dynamic>? row;
+}
+
+class PickedChatImage {
+  const PickedChatImage({
+    required this.bytes,
+    required this.mimeType,
+    required this.fileName,
+  });
+
+  final Uint8List bytes;
+  final String mimeType;
+  final String fileName;
 }
 
 class ChatService {
@@ -145,11 +205,51 @@ class ChatService {
           .map((row) => Map<String, dynamic>.from(row as Map))
           .toList();
     }
+    final attachmentRows = await _fetchAttachmentsForMessages(
+      <String>{
+        ...pageRows.map((row) => row['id'] as String),
+        ...replyRows.map((row) => row['id'] as String),
+      }.toList(),
+    );
     return messagesFromRows(
       pageRows.reversed,
       currentUserId: _uid,
       additionalReplyRows: replyRows,
+      attachmentsByMessageId: attachmentRows,
     );
+  }
+
+  Future<Map<String, List<Map<String, dynamic>>>> _fetchAttachmentsForMessages(
+    List<String> messageIds,
+  ) async {
+    if (messageIds.isEmpty) return const {};
+    final rows = await _client
+        .from('message_attachments')
+        .select()
+        .inFilter('message_id', messageIds);
+    final attachments = (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+    final paths = attachments
+        .where((row) => row['storage_bucket'] == 'message-media')
+        .map((row) => row['storage_path'] as String)
+        .toList();
+    final signedUrls = paths.isEmpty
+        ? const <SignedUrl>[]
+        : await _client.storage
+              .from('message-media')
+              .createSignedUrls(paths, 60 * 60);
+    final urlsByPath = {
+      for (final signed in signedUrls) signed.path: signed.signedUrl,
+    };
+    final byMessage = <String, List<Map<String, dynamic>>>{};
+    for (final row in attachments) {
+      final path = row['storage_path'] as String;
+      row['url'] = urlsByPath[path];
+      final messageId = row['message_id'] as String;
+      byMessage.putIfAbsent(messageId, () => []).add(row);
+    }
+    return byMessage;
   }
 
   /// Emits individual message changes rather than an ever-growing table
@@ -184,6 +284,21 @@ class ChatService {
                   controller.add(MessageChange.remove(row));
                 } else {
                   controller.add(MessageChange.upsert(row));
+                }
+              },
+            )
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'message_attachments',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'chat_id',
+                value: chatId,
+              ),
+              callback: (_) {
+                if (!controller.isClosed) {
+                  controller.add(const MessageChange.resync());
                 }
               },
             )
@@ -257,6 +372,104 @@ class ChatService {
     );
   }
 
+  Future<({String id, DateTime createdAt, MessageAttachment attachment})>
+  sendPhotoMessage({
+    required String chatId,
+    required PickedChatImage image,
+    required String caption,
+    String? clientMessageId,
+    String? replyToId,
+  }) async {
+    final localId = clientMessageId ?? _newStorageSafeId();
+    final extension = _extensionForMime(image.mimeType);
+    final storagePath = '$chatId/$_uid/$localId.$extension';
+    await _client.storage
+        .from('message-media')
+        .uploadBinary(
+          storagePath,
+          image.bytes,
+          fileOptions: FileOptions(
+            contentType: image.mimeType,
+            cacheControl: '3600',
+            upsert: true,
+          ),
+        );
+
+    Map<String, dynamic> row;
+    final payload = {
+      'id': localId,
+      'chat_id': chatId,
+      'sender_id': _uid,
+      'body': caption.trim(),
+      'message_type': 'image',
+      'reply_to': ?replyToId,
+    };
+    try {
+      row = await _client.from('messages').insert(payload).select().single();
+    } on PostgrestException catch (error) {
+      if (error.code != '23505') rethrow;
+      final existing = await _client
+          .from('messages')
+          .select(
+            'id,chat_id,sender_id,body,message_type,created_at,reply_to,deleted_at',
+          )
+          .eq('id', localId)
+          .maybeSingle();
+      if (existing == null ||
+          existing['chat_id'] != chatId ||
+          existing['sender_id'] != _uid ||
+          existing['body'] != caption.trim() ||
+          existing['message_type'] != 'image' ||
+          existing['reply_to'] != replyToId ||
+          existing['deleted_at'] != null) {
+        throw StateError('idempotency_conflict');
+      }
+      row = existing;
+    }
+
+    final attachmentPayload = {
+      'message_id': row['id'],
+      'chat_id': chatId,
+      'storage_bucket': 'message-media',
+      'storage_path': storagePath,
+      'mime_type': image.mimeType,
+      'byte_size': image.bytes.length,
+    };
+    Map<String, dynamic>? attachmentRow;
+    try {
+      attachmentRow = await _client
+          .from('message_attachments')
+          .insert(attachmentPayload)
+          .select()
+          .single();
+    } on PostgrestException catch (error) {
+      if (error.code != '23505') rethrow;
+      attachmentRow = await _client
+          .from('message_attachments')
+          .select()
+          .eq('message_id', row['id'] as String)
+          .maybeSingle();
+    }
+    final url = await _client.storage
+        .from('message-media')
+        .createSignedUrl(storagePath, 60 * 60);
+    final attachment = MessageAttachment(
+      id: attachmentRow?['id'] as String? ?? row['id'] as String,
+      messageId: row['id'] as String,
+      chatId: chatId,
+      storageBucket: 'message-media',
+      storagePath: storagePath,
+      mimeType: image.mimeType,
+      byteSize: image.bytes.length,
+      url: url,
+    );
+    return (
+      id: row['id'] as String,
+      createdAt: DateTime.parse(row['created_at'] as String).toLocal(),
+      attachment: attachment,
+    );
+  }
+
   Future<void> markRead({
     required String chatId,
     required List<String> messageIds,
@@ -305,6 +518,101 @@ class ChatService {
         .eq('id', messageId);
   }
 
+  Future<List<Map<String, dynamic>>> fetchMessageReactions(
+    String chatId,
+  ) async {
+    final rows = await _client
+        .from('message_reactions')
+        .select('message_id,user_id,emoji,created_at')
+        .eq('chat_id', chatId)
+        .order('created_at', ascending: true);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  Stream<MessageReactionChange> watchMessageReactionChanges(String chatId) {
+    late final RealtimeChannel channel;
+    late final StreamController<MessageReactionChange> controller;
+    controller = StreamController<MessageReactionChange>(
+      onListen: () {
+        channel = _client.channel(
+          'message-reactions:$chatId:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'message_reactions',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'chat_id',
+                value: chatId,
+              ),
+              callback: (payload) {
+                if (controller.isClosed) return;
+                if (payload.eventType == PostgresChangeEvent.delete) {
+                  controller.add(
+                    MessageReactionChange.remove(payload.oldRecord),
+                  );
+                  return;
+                }
+                controller.add(MessageReactionChange.upsert(payload.newRecord));
+              },
+            )
+            .subscribe((status, [error]) {
+              if (status != RealtimeSubscribeStatus.subscribed ||
+                  controller.isClosed) {
+                return;
+              }
+              controller.add(const MessageReactionChange.resync());
+            });
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
+  }
+
+  Future<void> upsertMessageReaction({
+    required String chatId,
+    required String messageId,
+    required String emoji,
+  }) async {
+    final updated = await _client
+        .from('message_reactions')
+        .update({'emoji': emoji})
+        .eq('message_id', messageId)
+        .eq('user_id', _uid)
+        .select('message_id')
+        .maybeSingle();
+    if (updated != null) return;
+    try {
+      await _client.from('message_reactions').insert({
+        'message_id': messageId,
+        'chat_id': chatId,
+        'user_id': _uid,
+        'emoji': emoji,
+      });
+    } on PostgrestException catch (error) {
+      if (error.code != '23505') rethrow;
+      await _client
+          .from('message_reactions')
+          .update({'emoji': emoji})
+          .eq('message_id', messageId)
+          .eq('user_id', _uid);
+    }
+  }
+
+  Future<void> deleteMessageReaction({required String messageId}) async {
+    await _client
+        .from('message_reactions')
+        .delete()
+        .eq('message_id', messageId)
+        .eq('user_id', _uid);
+  }
+
   /// Chat list rows for the current user from the chat_list view.
   /// Note: `chat_list` is a view — Supabase Realtime can't stream it directly.
   /// Use the one-shot fetcher [fetchChatList] in a polling loop tied to the
@@ -351,6 +659,32 @@ class ChatService {
     return controller.stream;
   }
 
+  Stream<void> watchChatListTranslationChanges() {
+    late final RealtimeChannel channel;
+    late final StreamController<void> controller;
+    controller = StreamController<void>(
+      onListen: () {
+        channel = _client.channel(
+          'chat-list-translations:$_uid:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'message_translations',
+              callback: (_) {
+                if (!controller.isClosed) controller.add(null);
+              },
+            )
+            .subscribe();
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
+  }
+
   /// Persist a new learning language on the caller's chat_members row.
   /// PRD US-022 — picking a language in the ⋯ menu must survive cold
   /// start and any realtime refresh of `chat_list`.
@@ -368,19 +702,7 @@ class ChatService {
   /// Fetch a cached translation for [messageId] into [targetLang], if
   /// any. Returns null on cache miss (so the caller falls back to the
   /// live translator).
-  Future<
-    ({
-      String text,
-      String interfaceText,
-      String interfaceLang,
-      String sourceLang,
-      String mode,
-      String? explanation,
-      String? confidence,
-      List<Map<String, dynamic>> tokens,
-    })?
-  >
-  fetchCachedTranslation({
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
     required String messageId,
     required String targetLang,
     required String interfaceLang,
@@ -415,23 +737,94 @@ class ChatService {
     );
   }
 
+  MessageTranslationChange? _translationChangeFromRow(
+    Map<String, dynamic> row,
+  ) {
+    final messageId = row['message_id'];
+    final targetLang = row['target_lang'];
+    final interfaceLang = row['interface_lang'];
+    final text = row['translation_text'];
+    final interfaceText = row['interface_text'];
+    final sourceLang = row['source_lang'];
+    final mode = row['aid_mode'];
+    if (messageId is! String ||
+        targetLang is! String ||
+        interfaceLang is! String ||
+        text is! String ||
+        interfaceText is! String ||
+        sourceLang is! String ||
+        mode is! String) {
+      return null;
+    }
+    final rawTokens = row['tokens'];
+    final tokens = <Map<String, dynamic>>[];
+    if (rawTokens is List) {
+      for (final t in rawTokens) {
+        if (t is Map) tokens.add(Map<String, dynamic>.from(t));
+      }
+    }
+    return MessageTranslationChange(
+      messageId: messageId,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+      translation: (
+        text: text,
+        interfaceText: interfaceText,
+        interfaceLang: interfaceLang,
+        sourceLang: sourceLang,
+        mode: mode,
+        explanation: row['explanation'] as String?,
+        confidence: row['confidence'] as String?,
+        tokens: tokens,
+      ),
+    );
+  }
+
+  Stream<MessageTranslationChange> watchMessageTranslationChanges({
+    required String targetLang,
+    required String interfaceLang,
+  }) {
+    late final RealtimeChannel channel;
+    late final StreamController<MessageTranslationChange> controller;
+    controller = StreamController<MessageTranslationChange>(
+      onListen: () {
+        channel = _client.channel(
+          'message-translations:$targetLang:$interfaceLang:${DateTime.now().microsecondsSinceEpoch}',
+        );
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'message_translations',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'target_lang',
+                value: targetLang,
+              ),
+              callback: (payload) {
+                if (controller.isClosed ||
+                    payload.eventType == PostgresChangeEvent.delete) {
+                  return;
+                }
+                final change = _translationChangeFromRow(payload.newRecord);
+                if (change == null || change.interfaceLang != interfaceLang) {
+                  return;
+                }
+                controller.add(change);
+              },
+            )
+            .subscribe();
+      },
+      onCancel: () async {
+        await _client.removeChannel(channel);
+      },
+    );
+    return controller.stream;
+  }
+
   /// Bulk-fetch cached translations only for the currently loaded message
   /// ids. Returned as a map keyed by message id.
-  Future<
-    Map<
-      String,
-      ({
-        String text,
-        String interfaceText,
-        String interfaceLang,
-        String sourceLang,
-        String mode,
-        String? explanation,
-        String? confidence,
-        List<Map<String, dynamic>> tokens,
-      })
-    >
-  >
+  Future<Map<String, CachedMessageTranslation>>
   fetchCachedTranslationsForMessages({
     required List<String> messageIds,
     required String targetLang,
@@ -447,20 +840,7 @@ class ChatService {
         .eq('target_lang', targetLang)
         .eq('interface_lang', interfaceLang)
         .inFilter('message_id', messageIds);
-    final result =
-        <
-          String,
-          ({
-            String text,
-            String interfaceText,
-            String interfaceLang,
-            String sourceLang,
-            String mode,
-            String? explanation,
-            String? confidence,
-            List<Map<String, dynamic>> tokens,
-          })
-        >{};
+    final result = <String, CachedMessageTranslation>{};
     for (final row in transRows as List) {
       final id = row['message_id'] as String;
       final text = row['translation_text'] as String;

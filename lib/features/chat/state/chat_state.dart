@@ -254,6 +254,49 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     await _attemptSend(tempId, trimmed, replyToId: replyTo?.id);
   }
 
+  Future<void> addOutgoingPhoto(
+    PickedChatImage image, {
+    String caption = '',
+    Message? replyTo,
+  }) async {
+    final trimmed = caption.trim();
+    final tempId = ref.read(clientMessageIdFactoryProvider)();
+    final pending = Message(
+      id: tempId,
+      chatId: chatId,
+      isOutgoing: true,
+      originalText: trimmed,
+      translation: '',
+      sentAt: DateTime.now(),
+      status: MessageStatus.pending,
+      type: MessageType.image,
+      attachment: MessageAttachment(
+        id: tempId,
+        messageId: tempId,
+        chatId: chatId,
+        storageBucket: 'message-media',
+        storagePath: '',
+        mimeType: image.mimeType,
+        byteSize: image.bytes.length,
+        localBytes: image.bytes,
+      ),
+      replyTo: replyTo,
+    );
+    ref.read(pendingSendsProvider(chatId).notifier).add(pending);
+    if (!_online) {
+      ref
+          .read(pendingSendsProvider(chatId).notifier)
+          .update(tempId, (m) => m.copyWith(status: MessageStatus.failed));
+      return;
+    }
+    await _attemptSendPhoto(
+      tempId,
+      image,
+      caption: trimmed,
+      replyToId: replyTo?.id,
+    );
+  }
+
   /// Push one queued message to the server. On success the pending row is
   /// upgraded in place (clock → tick) keeping its widget identity; the
   /// realtime stream later dedupes it by the server id. On error, a
@@ -318,6 +361,61 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
   }
 
+  Future<void> _attemptSendPhoto(
+    String localId,
+    PickedChatImage image, {
+    required String caption,
+    String? replyToId,
+  }) async {
+    if (_inFlight.contains(localId)) return;
+    if (!_online) return;
+    _inFlight.add(localId);
+    var simulatedFailure = false;
+    try {
+      if (ref.read(simulateFailureProvider.notifier).consume()) {
+        simulatedFailure = true;
+        throw Exception('simulated_failure');
+      }
+      final server = await ref
+          .read(chatServiceProvider)
+          .sendPhotoMessage(
+            chatId: chatId,
+            image: image,
+            caption: caption,
+            clientMessageId: localId,
+            replyToId: replyToId,
+          );
+      ref
+          .read(pendingSendsProvider(chatId).notifier)
+          .upgrade(
+            tempId: localId,
+            newId: server.id,
+            newSentAt: server.createdAt,
+            attachment: server.attachment,
+          );
+      ref.read(chatListProvider.notifier).refresh();
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint(
+          'Photo send failed: type=${error.runtimeType}, error=$error',
+        );
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      final backendReachable =
+          simulatedFailure ||
+          await ref.read(backendReachabilityCheckProvider)();
+      if (backendReachable) {
+        ref
+            .read(pendingSendsProvider(chatId).notifier)
+            .update(localId, (m) => m.copyWith(status: MessageStatus.failed));
+      } else {
+        ref.invalidate(onlineProvider);
+      }
+    } finally {
+      _inFlight.remove(localId);
+    }
+  }
+
   /// Re-attempt every still-pending queued send for this chat. Triggered
   /// when connectivity returns and on chat open, so sends interrupted by
   /// going offline or by an app kill go out automatically. No-op while
@@ -329,7 +427,30 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         .where((m) => m.status == MessageStatus.pending)
         .toList();
     for (final m in queued) {
-      await _attemptSend(m.id, m.originalText, replyToId: m.replyTo?.id);
+      if (m.type == MessageType.image) {
+        final bytes = m.attachment?.localBytes;
+        if (bytes == null) {
+          ref
+              .read(pendingSendsProvider(chatId).notifier)
+              .update(
+                m.id,
+                (message) => message.copyWith(status: MessageStatus.failed),
+              );
+          continue;
+        }
+        await _attemptSendPhoto(
+          m.id,
+          PickedChatImage(
+            bytes: Uint8List.fromList(bytes),
+            mimeType: m.attachment!.mimeType,
+            fileName: m.attachment!.storagePath.split('/').last,
+          ),
+          caption: m.originalText,
+          replyToId: m.replyTo?.id,
+        );
+      } else {
+        await _attemptSend(m.id, m.originalText, replyToId: m.replyTo?.id);
+      }
     }
   }
 
@@ -351,11 +472,31 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
           localId,
           (message) => message.copyWith(status: MessageStatus.pending),
         );
-    await _attemptSend(
-      localId,
-      target.originalText,
-      replyToId: target.replyTo?.id,
-    );
+    if (target.type == MessageType.image) {
+      final bytes = target.attachment?.localBytes;
+      if (bytes == null) {
+        ref
+            .read(pendingSendsProvider(chatId).notifier)
+            .update(localId, (m) => m.copyWith(status: MessageStatus.failed));
+        return;
+      }
+      await _attemptSendPhoto(
+        localId,
+        PickedChatImage(
+          bytes: Uint8List.fromList(bytes),
+          mimeType: target.attachment!.mimeType,
+          fileName: target.attachment!.storagePath.split('/').last,
+        ),
+        caption: target.originalText,
+        replyToId: target.replyTo?.id,
+      );
+    } else {
+      await _attemptSend(
+        localId,
+        target.originalText,
+        replyToId: target.replyTo?.id,
+      );
+    }
   }
 
   /// Drop a pending or failed message from the queue without retrying.

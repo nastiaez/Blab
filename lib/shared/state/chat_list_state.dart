@@ -45,6 +45,7 @@ Chat _rowToChat(Map<String, dynamic> r) {
 class ChatListNotifier extends AsyncNotifier<List<Chat>> {
   StreamSubscription<dynamic>? _membershipsSub;
   StreamSubscription<void>? _messagesSub;
+  StreamSubscription<void>? _translationsSub;
   Timer? _refreshDebounce;
   Future<void>? _refreshInFlight;
 
@@ -57,6 +58,7 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
 
     _membershipsSub?.cancel();
     _messagesSub?.cancel();
+    _translationsSub?.cancel();
     _refreshDebounce?.cancel();
     // Subscribe to my chat_members changes so the list refreshes when a new
     // chat is created or a member leaves. Errors (e.g. transient network
@@ -69,10 +71,15 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
       (_) => _scheduleRefresh(),
       onError: (Object _) {},
     );
+    _translationsSub = svc.watchChatListTranslationChanges().listen(
+      (_) => _scheduleRefresh(),
+      onError: (Object _) {},
+    );
     ref.onDispose(() {
       _refreshDebounce?.cancel();
       _membershipsSub?.cancel();
       _messagesSub?.cancel();
+      _translationsSub?.cancel();
     });
 
     try {

@@ -15,9 +15,12 @@ class ChatListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hasActualMessage = chat.lastMessageId != null;
     final partnerTyping =
+        hasActualMessage &&
         !chat.isNewInvite &&
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
+    final hasUnread = hasActualMessage && chat.unreadCount > 0;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -58,9 +61,9 @@ class ChatListTile extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      if (chat.isNewInvite)
+                      if (chat.isNewInvite && !hasActualMessage)
                         const _NewPill()
-                      else
+                      else if (hasActualMessage)
                         Text(
                           relativeTime(chat.timestamp) == 'Now'
                               ? context.l10n.now
@@ -78,7 +81,7 @@ class ChatListTile extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          chat.isNewInvite
+                          !hasActualMessage
                               ? context.l10n.newConnectionSayHi
                               : partnerTyping
                               ? context.l10n.typing
@@ -89,16 +92,16 @@ class ChatListTile extends ConsumerWidget {
                             fontSize: 14,
                             color: partnerTyping
                                 ? BlabColors.brand
-                                : chat.unreadCount > 0
+                                : hasUnread
                                 ? BlabColors.textPrimary
                                 : BlabColors.textMuted,
-                            fontWeight: partnerTyping || chat.unreadCount > 0
+                            fontWeight: partnerTyping || hasUnread
                                 ? FontWeight.w600
                                 : FontWeight.w400,
                           ),
                         ),
                       ),
-                      if (!chat.isNewInvite && chat.unreadCount > 0) ...[
+                      if (hasUnread) ...[
                         const SizedBox(width: 8),
                         _UnreadBadge(count: chat.unreadCount),
                       ],

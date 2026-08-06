@@ -4,10 +4,17 @@ Message messageFromRow(
   Map<String, dynamic> row, {
   required String currentUserId,
   Map<String, Map<String, dynamic>> messageRowsById = const {},
+  Map<String, List<Map<String, dynamic>>> attachmentsByMessageId = const {},
 }) {
   final senderId = row['sender_id'] as String;
   final replyId = row['reply_to'] as String?;
   final replyRow = replyId == null ? null : messageRowsById[replyId];
+  final attachmentRows =
+      attachmentsByMessageId[row['id'] as String] ?? const [];
+  final type = switch (row['message_type'] as String? ?? 'text') {
+    'image' => MessageType.image,
+    _ => MessageType.text,
+  };
   return Message(
     id: row['id'] as String,
     chatId: row['chat_id'] as String,
@@ -16,10 +23,18 @@ Message messageFromRow(
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),
     status: MessageStatus.delivered,
+    type: type,
+    attachment: attachmentRows.isEmpty
+        ? null
+        : _attachmentFromRow(attachmentRows.first),
     isEdited: row['edited_at'] != null,
     replyTo: replyRow == null
         ? null
-        : _replyPreviewFromRow(replyRow, currentUserId: currentUserId),
+        : _replyPreviewFromRow(
+            replyRow,
+            currentUserId: currentUserId,
+            attachmentsByMessageId: attachmentsByMessageId,
+          ),
   );
 }
 
@@ -27,6 +42,7 @@ List<Message> messagesFromRows(
   Iterable<Map<String, dynamic>> rows, {
   required String currentUserId,
   Iterable<Map<String, dynamic>> additionalReplyRows = const [],
+  Map<String, List<Map<String, dynamic>>> attachmentsByMessageId = const {},
 }) {
   final sourceRows = rows.toList();
   final byId = <String, Map<String, dynamic>>{
@@ -40,6 +56,7 @@ List<Message> messagesFromRows(
           row,
           currentUserId: currentUserId,
           messageRowsById: byId,
+          attachmentsByMessageId: attachmentsByMessageId,
         ),
       )
       .toList();
@@ -48,8 +65,15 @@ List<Message> messagesFromRows(
 Message _replyPreviewFromRow(
   Map<String, dynamic> row, {
   required String currentUserId,
+  Map<String, List<Map<String, dynamic>>> attachmentsByMessageId = const {},
 }) {
   final deleted = row['deleted_at'] != null;
+  final attachmentRows =
+      attachmentsByMessageId[row['id'] as String] ?? const [];
+  final type = switch (row['message_type'] as String? ?? 'text') {
+    'image' => MessageType.image,
+    _ => MessageType.text,
+  };
   return Message(
     id: row['id'] as String,
     chatId: row['chat_id'] as String,
@@ -58,6 +82,23 @@ Message _replyPreviewFromRow(
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),
     status: MessageStatus.delivered,
+    type: deleted ? MessageType.text : type,
+    attachment: deleted || attachmentRows.isEmpty
+        ? null
+        : _attachmentFromRow(attachmentRows.first),
     isEdited: row['edited_at'] != null,
+  );
+}
+
+MessageAttachment _attachmentFromRow(Map<String, dynamic> row) {
+  return MessageAttachment(
+    id: row['id'] as String,
+    messageId: row['message_id'] as String,
+    chatId: row['chat_id'] as String,
+    storageBucket: row['storage_bucket'] as String,
+    storagePath: row['storage_path'] as String,
+    mimeType: row['mime_type'] as String,
+    byteSize: row['byte_size'] as int,
+    url: row['url'] as String?,
   );
 }

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Regression guard for the chat bubble's two competing gestures:
 ///   - tap a learning-language word  → word popup (US-018)
+///   - tap message padding           → nothing; no accidental action sheet
 ///   - long-press the bubble         → message action sheet (US-019/020,
 ///                                      now incl. Report from Step 3.6a)
 ///
@@ -28,8 +29,8 @@ class _FakeTtsService implements TtsService {
 
 Widget _harness({
   required VoidCallback onLongPress,
-  VoidCallback? onTap,
   VoidCallback? onFailedTap,
+  VoidCallback? onSwipeReply,
   bool isFailed = false,
 }) {
   return ProviderScope(
@@ -40,8 +41,8 @@ Widget _harness({
           child: MessageInteractionTarget(
             isFailed: isFailed,
             onLongPress: onLongPress,
-            onTap: onTap ?? () {},
             onFailedTap: onFailedTap ?? () {},
+            onSwipeReply: onSwipeReply,
             child: const Padding(
               key: ValueKey('message-padding'),
               padding: EdgeInsets.all(20),
@@ -114,13 +115,11 @@ void main() {
     );
   });
 
-  testWidgets('tapping non-word message space opens the action sheet', (
+  testWidgets('tapping non-word message space does not open the action sheet', (
     tester,
   ) async {
-    var tapped = false;
-    await tester.pumpWidget(
-      _harness(onLongPress: () {}, onTap: () => tapped = true),
-    );
+    var longPressed = false;
+    await tester.pumpWidget(_harness(onLongPress: () => longPressed = true));
 
     await tester.tapAt(
       tester.getTopLeft(find.byKey(const ValueKey('message-padding'))) +
@@ -128,7 +127,52 @@ void main() {
     );
     await tester.pump();
 
-    expect(tapped, isTrue);
+    expect(longPressed, isFalse);
+    expect(find.text('Reply'), findsNothing);
+  });
+
+  testWidgets('swiping a delivered message left triggers reply', (
+    tester,
+  ) async {
+    var replied = false;
+    var longPressed = false;
+    await tester.pumpWidget(
+      _harness(
+        onLongPress: () => longPressed = true,
+        onSwipeReply: () => replied = true,
+      ),
+    );
+
+    await tester.dragFrom(
+      tester.getCenter(find.byType(MessageInteractionTarget)),
+      const Offset(-90, 0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(replied, isTrue);
+    expect(longPressed, isFalse);
+    expect(find.text('Reply'), findsNothing);
+  });
+
+  testWidgets('swiping a failed message does not trigger reply', (
+    tester,
+  ) async {
+    var replied = false;
+    await tester.pumpWidget(
+      _harness(
+        isFailed: true,
+        onLongPress: () {},
+        onSwipeReply: () => replied = true,
+      ),
+    );
+
+    await tester.dragFrom(
+      tester.getCenter(find.byType(MessageInteractionTarget)),
+      const Offset(90, 0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(replied, isFalse);
   });
 
   testWidgets(

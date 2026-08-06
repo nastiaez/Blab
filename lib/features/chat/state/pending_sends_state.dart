@@ -145,6 +145,7 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
     required String tempId,
     required String newId,
     required DateTime newSentAt,
+    MessageAttachment? attachment,
   }) {
     _replace([
       for (final m in _latest)
@@ -158,6 +159,8 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
             tokens: m.tokens,
             sentAt: newSentAt,
             status: MessageStatus.delivered,
+            type: m.type,
+            attachment: attachment ?? m.attachment,
             replyTo: m.replyTo,
             isEdited: m.isEdited,
           )
@@ -173,6 +176,19 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
     'originalText': m.originalText,
     'sentAt': m.sentAt.toIso8601String(),
     'status': m.status.name,
+    'type': m.type.name,
+    'attachment': m.attachment == null
+        ? null
+        : {
+            'id': m.attachment!.id,
+            'messageId': m.attachment!.messageId,
+            'chatId': m.attachment!.chatId,
+            'storageBucket': m.attachment!.storageBucket,
+            'storagePath': m.attachment!.storagePath,
+            'mimeType': m.attachment!.mimeType,
+            'byteSize': m.attachment!.byteSize,
+            'url': m.attachment!.url,
+          },
     'replyToId': m.replyTo?.id,
     'replyToText': m.replyTo?.originalText,
     'replyToWasOutgoing': m.replyTo?.isOutgoing,
@@ -198,6 +214,25 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
         status: MessageStatus.delivered,
       );
     }
+    final rawAttachment = j['attachment'];
+    MessageAttachment? attachment;
+    if (rawAttachment is Map) {
+      final map = Map<String, dynamic>.from(rawAttachment);
+      attachment = MessageAttachment(
+        id: map['id'] as String,
+        messageId: map['messageId'] as String,
+        chatId: map['chatId'] as String,
+        storageBucket: map['storageBucket'] as String,
+        storagePath: map['storagePath'] as String,
+        mimeType: map['mimeType'] as String,
+        byteSize: map['byteSize'] as int,
+        url: map['url'] as String?,
+      );
+    }
+    final type = MessageType.values.firstWhere(
+      (t) => t.name == (j['type'] as String? ?? 'text'),
+      orElse: () => MessageType.text,
+    );
     return Message(
       id: j['id'] as String,
       chatId: j['chatId'] as String,
@@ -209,6 +244,8 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
         (s) => s.name == (j['status'] as String),
         orElse: () => MessageStatus.failed,
       ),
+      type: type,
+      attachment: attachment,
       replyTo: replyTo,
     );
   }

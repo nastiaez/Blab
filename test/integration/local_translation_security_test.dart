@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +14,18 @@ const _url = String.fromEnvironment('SUPABASE_URL');
 const _publicKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 const _serviceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY');
 const _password = 'Blab-local-123!';
+const _providerTestTimeoutMinutes = int.fromEnvironment(
+  'BLAB_OPENROUTER_TEST_TIMEOUT_MINUTES',
+  defaultValue: 5,
+);
+const _providerCallTimeoutSeconds = int.fromEnvironment(
+  'BLAB_OPENROUTER_CALL_TIMEOUT_SECONDS',
+  defaultValue: 90,
+);
+const _providerSmokeTimeout = Timeout(
+  Duration(minutes: _providerTestTimeoutMinutes),
+);
+const _providerCallTimeout = Duration(seconds: _providerCallTimeoutSeconds);
 
 SupabaseClient _client(String key) {
   return SupabaseClient(
@@ -30,6 +45,47 @@ Future<void> _signIn(SupabaseClient client, String email) async {
 
 Map<String, dynamic> _map(dynamic value) =>
     Map<String, dynamic>.from(value as Map);
+
+Future<Map<String, dynamic>> _invokeProviderTranslation(
+  SupabaseClient client, {
+  required String messageId,
+  required String stage,
+}) async {
+  final stopwatch = Stopwatch()..start();
+  try {
+    final response = await client.functions
+        .invoke('translate-message', body: {'messageId': messageId})
+        .timeout(_providerCallTimeout);
+    debugPrint(
+      'Live translate-message "$stage" finished in '
+      '${stopwatch.elapsedMilliseconds}ms with status ${response.status}.',
+    );
+    expect(response.status, 200);
+    return _map(response.data);
+  } on TimeoutException catch (error) {
+    fail(
+      'Live translate-message "$stage" timed out after '
+              '${_providerCallTimeout.inSeconds}s. Check the local functions terminal '
+              'for OpenRouter/provider logs. ${error.message ?? ''}'
+          .trim(),
+    );
+  } on FunctionException catch (error) {
+    debugPrint(
+      'Live translate-message "$stage" failed in '
+      '${stopwatch.elapsedMilliseconds}ms with status ${error.status}: '
+      '${error.details}',
+    );
+    rethrow;
+  } catch (error) {
+    debugPrint(
+      'Live translate-message "$stage" failed in '
+      '${stopwatch.elapsedMilliseconds}ms: $error',
+    );
+    rethrow;
+  } finally {
+    stopwatch.stop();
+  }
+}
 
 Future<List<({SupabaseClient client, String language})>> _setInterfaceLanguage(
   Iterable<SupabaseClient> clients,
@@ -321,11 +377,10 @@ void main() {
           bob,
         ).sendMessage(chatId: chatId, body: 'Hello from the secure route');
 
-        final first = _map(
-          (await alice.functions.invoke(
-            'translate-message',
-            body: {'messageId': message.id},
-          )).data,
+        final first = await _invokeProviderTranslation(
+          alice,
+          messageId: message.id,
+          stage: 'ZDR first request',
         );
         expect(first['translation'], isA<String>());
         expect((first['translation'] as String).trim(), isNotEmpty);
@@ -333,11 +388,10 @@ void main() {
         expect(first['sourceLang'], 'en');
         expect(first['interfaceText'], 'Hello from the secure route');
 
-        final second = _map(
-          (await alice.functions.invoke(
-            'translate-message',
-            body: {'messageId': message.id},
-          )).data,
+        final second = await _invokeProviderTranslation(
+          alice,
+          messageId: message.id,
+          stage: 'ZDR cached request',
         );
         expect(second, first);
         expect(
@@ -368,7 +422,7 @@ void main() {
     skip: _enabled && _providerEnabled
         ? false
         : 'Requires local functions plus a development OpenRouter key.',
-    timeout: const Timeout(Duration(minutes: 2)),
+    timeout: _providerSmokeTimeout,
   );
 
   test(
@@ -399,11 +453,10 @@ void main() {
           alice,
         ).sendMessage(chatId: chatId, body: 'Machen du');
 
-        final authorResult = _map(
-          (await alice.functions.invoke(
-            'translate-message',
-            body: {'messageId': message.id},
-          )).data,
+        final authorResult = await _invokeProviderTranslation(
+          alice,
+          messageId: message.id,
+          stage: 'same-language author correction',
         );
         expect(authorResult['mode'], 'correction');
         expect(authorResult['sourceLang'], 'de');
@@ -412,11 +465,10 @@ void main() {
         expect((authorResult['explanation'] as String).trim(), isNotEmpty);
         expect(authorResult['confidence'], anyOf('low', 'medium', 'high'));
 
-        final recipientResult = _map(
-          (await carol.functions.invoke(
-            'translate-message',
-            body: {'messageId': message.id},
-          )).data,
+        final recipientResult = await _invokeProviderTranslation(
+          carol,
+          messageId: message.id,
+          stage: 'same-language recipient correction',
         );
         expect(recipientResult['mode'], 'correction');
         expect(recipientResult['translation'], isNot('Machen du'));
@@ -426,11 +478,10 @@ void main() {
         final greeting = await ChatService(
           alice,
         ).sendMessage(chatId: chatId, body: 'Hallo!!');
-        final greetingResult = _map(
-          (await alice.functions.invoke(
-            'translate-message',
-            body: {'messageId': greeting.id},
-          )).data,
+        final greetingResult = await _invokeProviderTranslation(
+          alice,
+          messageId: greeting.id,
+          stage: 'same-language clean greeting',
         );
         expect(greetingResult['mode'], 'none');
         expect(greetingResult['sourceLang'], 'de');
@@ -446,11 +497,10 @@ void main() {
             'update_my_interface_language',
             params: {'p_interface_language': locale.key},
           );
-          final localizedGreeting = _map(
-            (await alice.functions.invoke(
-              'translate-message',
-              body: {'messageId': greeting.id},
-            )).data,
+          final localizedGreeting = await _invokeProviderTranslation(
+            alice,
+            messageId: greeting.id,
+            stage: 'same-language clean greeting locale ${locale.key}',
           );
           expect(localizedGreeting['mode'], 'none');
           expect(localizedGreeting['sourceLang'], 'de');
@@ -504,6 +554,103 @@ void main() {
     skip: _enabled && _providerEnabled
         ? false
         : 'Requires local functions plus a development OpenRouter key.',
-    timeout: const Timeout(Duration(minutes: 2)),
+    timeout: _providerSmokeTimeout,
+  );
+
+  test(
+    'reported English correction cases keep signal without paragraph-only noise',
+    () async {
+      final admin = _client(_serviceRoleKey);
+      final alice = _client(_publicKey);
+      final bob = _client(_publicKey);
+      final clients = [admin, alice, bob];
+      String? chatId;
+      String? inviteToken;
+      var previousLocales = <({SupabaseClient client, String language})>[];
+
+      try {
+        await Future.wait([
+          _signIn(alice, 'alice@blab.test'),
+          _signIn(bob, 'bob@blab.test'),
+        ]);
+        await _clearTranslationUsage(admin, [alice, bob]);
+        previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
+        final invite = await ChatService(
+          alice,
+        ).createInvite(myLearningLanguage: 'en');
+        inviteToken = invite.token;
+        chatId = await ChatService(
+          bob,
+        ).claimInvite(token: invite.token, myLearningLanguage: 'en');
+
+        final clean = await ChatService(alice).sendMessage(
+          chatId: chatId,
+          body:
+              'I went to the shop yesterday and bought milk for dinner tonight.',
+        );
+        final cleanResult = await _invokeProviderTranslation(
+          alice,
+          messageId: clean.id,
+          stage: 'English paragraph-only correction guard',
+        );
+        expect(cleanResult['mode'], 'none');
+        expect(
+          cleanResult['translation'],
+          'I went to the shop yesterday and bought milk for dinner tonight.',
+        );
+        expect((cleanResult['translation'] as String), isNot(contains('\n')));
+
+        final spelling = await ChatService(
+          alice,
+        ).sendMessage(chatId: chatId, body: 'I goed to the shop yesterday.');
+        final spellingResult = await _invokeProviderTranslation(
+          alice,
+          messageId: spelling.id,
+          stage: 'English small spelling mistake',
+        );
+        expect(spellingResult['mode'], 'correction');
+        expect(
+          (spellingResult['translation'] as String).toLowerCase(),
+          contains('went'),
+        );
+
+        final wrongWord = await ChatService(
+          alice,
+        ).sendMessage(chatId: chatId, body: 'I did a mistake yesterday.');
+        final wrongWordResult = await _invokeProviderTranslation(
+          alice,
+          messageId: wrongWord.id,
+          stage: 'English contextual wrong word',
+        );
+        expect(wrongWordResult['mode'], 'correction');
+        expect(
+          (wrongWordResult['translation'] as String).toLowerCase(),
+          contains('made'),
+        );
+
+        final recipientResult = await _invokeProviderTranslation(
+          bob,
+          messageId: spelling.id,
+          stage: 'English correction recipient cache',
+        );
+        expect(recipientResult['mode'], 'correction');
+        expect(recipientResult['translation'], spellingResult['translation']);
+        expect((recipientResult['interfaceText'] as String).trim(), isNotEmpty);
+      } finally {
+        await _clearTranslationUsage(admin, [alice, bob]);
+        if (inviteToken != null) {
+          await admin.from('invites').delete().eq('token', inviteToken);
+        }
+        if (chatId != null) {
+          await admin.from('chats').delete().eq('id', chatId);
+        }
+        await _restoreInterfaceLanguages(previousLocales);
+        await Future.wait(clients.map((client) => client.dispose()));
+      }
+    },
+    skip: _enabled && _providerEnabled
+        ? false
+        : 'Requires local functions plus a development OpenRouter key.',
+    timeout: _providerSmokeTimeout,
   );
 }

@@ -99,8 +99,12 @@ if [[ "$needs_android_config" == '1' ]]; then
   [[ -f "$firebase_file" ]] || fail "Missing $firebase_file."
   configured_firebase_project="$(jq -er '.project_info.project_id' "$firebase_file")"
   configured_package="$(jq -er '.client[0].client_info.android_client_info.package_name' "$firebase_file")"
+  configured_api_key="$(jq -er '.client[0].api_key[0].current_key // ""' "$firebase_file")"
   [[ "$configured_firebase_project" == "$firebase_project_id" ]] || fail 'Firebase file does not match FIREBASE_PROJECT_ID.'
   [[ "$configured_package" == 'blab.nastia.ez' ]] || fail 'Firebase Android package must be blab.nastia.ez.'
+  if [[ "$configured_firebase_project" == 'blab-ci-only' || "$configured_api_key" == *'CI_ONLY_NOT_A_REAL_FIREBASE_API_KEY'* ]]; then
+    fail 'CI-only Firebase configuration cannot be used for hosted builds.'
+  fi
   cp "$firebase_file" android/app/google-services.json
 fi
 

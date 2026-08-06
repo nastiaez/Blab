@@ -131,4 +131,29 @@ void main() {
       );
     },
   );
+
+  test('OpenRouter smoke test has live-provider timeouts and diagnostics', () {
+    final integration = File(
+      'test/integration/local_translation_security_test.dart',
+    ).readAsStringSync();
+    final helper = File('scripts/local_test.sh').readAsStringSync();
+
+    expect(integration, contains('BLAB_OPENROUTER_TEST_TIMEOUT_MINUTES'));
+    expect(integration, contains('BLAB_OPENROUTER_CALL_TIMEOUT_SECONDS'));
+    expect(integration, contains('_invokeProviderTranslation'));
+    expect(integration, contains('Live translate-message'));
+    expect(integration, contains('timeout: _providerSmokeTimeout'));
+    expect(
+      helper,
+      contains(
+        r'BLAB_OPENROUTER_TEST_TIMEOUT_MINUTES="${BLAB_OPENROUTER_TEST_TIMEOUT_MINUTES:-5}"',
+      ),
+    );
+    expect(
+      helper,
+      contains(
+        r'BLAB_OPENROUTER_CALL_TIMEOUT_SECONDS="${BLAB_OPENROUTER_CALL_TIMEOUT_SECONDS:-90}"',
+      ),
+    );
+  });
 }

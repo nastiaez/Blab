@@ -51,11 +51,15 @@ void main() {
           unavailableText: 'Translation unavailable',
           retryText: 'Retry',
           onRetry: onRetry,
-          correctionLabel: 'Correction',
-          possibleCorrectionLabel: 'Possible correction',
         ),
       ),
     );
+  }
+
+  void expectWords(Iterable<String> words) {
+    for (final word in words) {
+      expect(find.text(word), findsOneWidget);
+    }
   }
 
   test(
@@ -71,7 +75,7 @@ void main() {
     },
   );
 
-  testWidgets('author sees inline learning correction above interface text', (
+  testWidgets('author sees inline learning correction without extra label', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -93,7 +97,8 @@ void main() {
 
     expect(find.byKey(const ValueKey('inline-correction')), findsOneWidget);
     expect(find.text('What are you doing?'), findsOneWidget);
-    expect(find.textContaining('Correction:'), findsOneWidget);
+    expect(find.textContaining('Correction:'), findsNothing);
+    expect(find.textContaining('Possible correction:'), findsNothing);
     expect(find.text('was machen du'), findsNothing);
   });
 
@@ -121,11 +126,70 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
-    expect(find.text('What are you doing?'), findsOneWidget);
+    expectWords(const ['What', 'are', 'you', 'doing']);
     expect(find.text('Що ти робиш?'), findsOneWidget);
     expect(find.textContaining('Correction:'), findsNothing);
     expect(find.text('What is you doing?'), findsNothing);
   });
+
+  testWidgets(
+    'recipient learning source language sees only corrected message',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(
+              learning: 'I went to the shop yesterday.',
+              interfaceText: 'I went to the shop yesterday.',
+              source: 'en',
+              learningCode: 'en',
+              interfaceCode: 'en',
+              mode: LearningAidMode.correction,
+              explanation: 'Use went as the past tense of go.',
+              confidence: CorrectionConfidence.high,
+            ),
+          ),
+          authoredText: 'I goed to the shop yesterday.',
+          learningCode: 'en',
+          interfaceCode: 'en',
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+      expectWords(const ['I', 'went', 'to', 'the', 'shop', 'yesterday']);
+      expect(find.text('I goed to the shop yesterday.'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'recipient learning another language gets corrected source below',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(
+              learning: 'Fui a la tienda ayer.',
+              interfaceText: 'I went to the shop yesterday.',
+              source: 'en',
+              learningCode: 'es',
+              interfaceCode: 'en',
+              mode: LearningAidMode.correction,
+              explanation: 'Use went as the past tense of go.',
+              confidence: CorrectionConfidence.high,
+            ),
+          ),
+          authoredText: 'I goed to the shop yesterday.',
+          learningCode: 'es',
+          interfaceCode: 'en',
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+      expectWords(const ['Fui', 'a', 'la', 'tienda', 'ayer']);
+      expect(find.text('I went to the shop yesterday.'), findsOneWidget);
+      expect(find.text('I goed to the shop yesterday.'), findsNothing);
+    },
+  );
 
   testWidgets('third-language author keeps exact original in bottom lane', (
     tester,
@@ -144,7 +208,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Was machst du?'), findsOneWidget);
+    expectWords(const ['Was', 'machst', 'du']);
     expect(find.text('Що ти робиш?'), findsOneWidget);
     expect(find.text('What are you doing?'), findsNothing);
   });
@@ -165,12 +229,37 @@ void main() {
       ),
     );
 
-    expect(find.text('Was machst du?'), findsOneWidget);
+    expectWords(const ['Was', 'machst', 'du']);
     expect(find.text('What are you doing?'), findsOneWidget);
     expect(find.text('¿Qué estás haciendo?'), findsNothing);
   });
 
-  testWidgets('source-interface message stays exact in the bottom lane', (
+  testWidgets(
+    'recipient keeps interface text when source is their interface language',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(
+              learning: 'Go to the link.',
+              interfaceText: 'Перейди за посиланням.',
+              source: 'uk',
+              learningCode: 'en',
+              interfaceCode: 'uk',
+            ),
+          ),
+          authoredText: 'Перейди за посиланням.',
+          learningCode: 'en',
+          interfaceCode: 'uk',
+        ),
+      );
+
+      expectWords(const ['Go', 'to', 'the', 'link']);
+      expect(find.text('Перейди за посиланням.'), findsOneWidget);
+    },
+  );
+
+  testWidgets('source-interface message uses normalized bottom lane', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -178,7 +267,7 @@ void main() {
         AsyncData(
           result(
             learning: 'Was machst du?',
-            interfaceText: 'What is you doing?',
+            interfaceText: 'What are you doing?',
             source: 'en',
           ),
         ),
@@ -187,8 +276,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Was machst du?'), findsOneWidget);
-    expect(find.text('What is you doing?'), findsOneWidget);
+    expectWords(const ['Was', 'machst', 'du']);
+    expect(find.text('What are you doing?'), findsOneWidget);
+    expect(find.text('What is you doing?'), findsNothing);
   });
 
   testWidgets('identical learning and interface output renders once', (
@@ -208,10 +298,48 @@ void main() {
       ),
     );
 
-    expect(find.text('Was machst du?'), findsOneWidget);
+    expectWords(const ['Was', 'machst', 'du']);
   });
 
-  testWidgets('correct learning-language text still gets interface meaning', (
+  testWidgets('short tokenized translations keep a readable minimum width', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: IntrinsicWidth(
+              child: MessageLearningContent(
+                authoredText: 'hi',
+                translation: AsyncData(
+                  result(
+                    learning: 'வா',
+                    interfaceText: 'hi',
+                    source: 'en',
+                    learningCode: 'ta',
+                  ),
+                ),
+                showTranslation: true,
+                learningLanguageCode: 'ta',
+                interfaceLanguageCode: 'en',
+                isOutgoing: false,
+                popupTopInset: 0,
+                unavailableText: 'Translation unavailable',
+                retryText: 'Retry',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byType(MessageLearningContent)).width,
+      greaterThanOrEqualTo(156),
+    );
+  });
+
+  testWidgets('aid mode none renders only the exact original message', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -230,7 +358,8 @@ void main() {
     );
 
     expect(find.text('Was machst du?'), findsOneWidget);
-    expect(find.text('What are you doing?'), findsOneWidget);
+    expect(find.text('What are you doing?'), findsNothing);
+    expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
     expect(find.textContaining('Correction:'), findsNothing);
   });
 
