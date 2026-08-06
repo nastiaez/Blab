@@ -29,6 +29,12 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Android share sheet target: Gallery / Photos -> Share -> Blab. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
             <!-- Supabase password-reset deep link: blab://auth/reset?code=... -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW"/>

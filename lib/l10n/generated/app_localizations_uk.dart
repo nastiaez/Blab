@@ -448,6 +448,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get message => 'Повідомлення';
 
   @override
+  String get sayHi => 'Привітайтеся';
+
+  @override
   String replyingTo(Object name) {
     return 'Відповідь для $name';
   }
@@ -633,6 +636,11 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String personLearnsLanguage(Object language, Object name) {
     return '$name вивчає $language';
+  }
+
+  @override
+  String youAreLearningLanguageWithPerson(Object language, Object name) {
+    return 'Ви вивчаєте $language з $name';
   }
 
   @override

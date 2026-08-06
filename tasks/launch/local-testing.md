@@ -82,6 +82,11 @@ Create `supabase/.env.local` with:
 OPEN_ROUTER_KEY=<your-development-openrouter-key>
 ```
 
+For Blab development, this must be the approved "OpenRouter API Key - Blab
+Staging" value. Do not use OpenRouter keys from workspace env files, shell env,
+`~/clawd/.env`, or unrelated project env files for Blab local functions,
+translation QA, or provider tests.
+
 The file is gitignored. Never commit or paste the key into task records. Then keep
 the local functions server running in a separate terminal:
 

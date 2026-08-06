@@ -24,7 +24,12 @@ void main() {
     ).readAsStringSync();
 
     expect(source, contains('reason: providerFailure'));
-    expect(source, contains(r'providerFailure = `http_${llm.status}`'));
+    expect(
+      source,
+      contains(
+        r'providerFailure = `${credential.provider}_http_${llm.status}`',
+      ),
+    );
     expect(source, contains('providerResultFailureReason(content)'));
     expect(source, isNot(contains('reason: await llm.text()')));
   });

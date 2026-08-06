@@ -72,7 +72,9 @@ void main() {
     expect(find.text('morning'), findsOneWidget);
   });
 
-  testWidgets('falls back to plain Text when tokens are null', (tester) async {
+  testWidgets('splits visible text into tappable words without metadata', (
+    tester,
+  ) async {
     final message = Message(
       id: 'm2',
       chatId: 'aswin',
@@ -99,6 +101,48 @@ void main() {
       ),
     );
 
-    expect(find.text('Hello world'), findsOneWidget);
+    expect(find.text('Hello'), findsOneWidget);
+    expect(find.text('world'), findsOneWidget);
+
+    await tester.tap(find.text('world'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('world'), findsWidgets);
+  });
+
+  testWidgets('phrase-sized token metadata still leaves words tappable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: MessageText(
+              text: 'You can use Google speech.',
+              tokens: [
+                MessageToken(
+                  text: 'You can use Google speech',
+                  gloss: 'whole phrase',
+                ),
+                MessageToken(text: '.', isContent: false),
+              ],
+              languageCode: 'en',
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('You'), findsOneWidget);
+    expect(find.text('Google'), findsOneWidget);
+    expect(find.text('speech'), findsOneWidget);
+
+    await tester.tap(find.text('Google'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Google'), findsWidgets);
+    expect(find.text('whole phrase'), findsNothing);
   });
 }

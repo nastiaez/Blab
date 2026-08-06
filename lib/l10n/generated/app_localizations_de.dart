@@ -452,6 +452,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get message => 'Nachricht';
 
   @override
+  String get sayHi => 'Sag Hallo';
+
+  @override
   String replyingTo(Object name) {
     return 'Antwort an $name';
   }
@@ -637,6 +640,11 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String personLearnsLanguage(Object language, Object name) {
     return '$name lernt $language';
+  }
+
+  @override
+  String youAreLearningLanguageWithPerson(Object language, Object name) {
+    return 'Du lernst $language mit $name';
   }
 
   @override

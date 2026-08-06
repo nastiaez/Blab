@@ -7,6 +7,95 @@ export const OPENROUTER_PROVIDER = {
   zdr: true,
 } as const;
 
+export type TranslationProvider = "openrouter" | "openai";
+
+export type ProviderCredential = {
+  provider: TranslationProvider;
+  apiKey: string;
+  model: string;
+  useOpenRouterProviderPolicy: boolean;
+};
+
+export type TranslationContextMessage = {
+  speaker: "viewer" | "partner";
+  text: string;
+};
+
+const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
+const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+
+export function providerCredentials(env: {
+  openRouterKey?: string | null;
+  openAiKey?: string | null;
+  openRouterModel?: string | null;
+  openAiModel?: string | null;
+  openRouterProviderPolicy?: string | null;
+  environment?: string | null;
+}): ProviderCredential[] {
+  const providers: ProviderCredential[] = [];
+  const openRouterKey = env.openRouterKey?.trim();
+  const openAiKey = env.openAiKey?.trim();
+  const openRouterModel = env.openRouterModel?.trim() ||
+    DEFAULT_OPENROUTER_MODEL;
+  const openAiModel = env.openAiModel?.trim() || DEFAULT_OPENAI_MODEL;
+  const disableOpenRouterProviderPolicy =
+    env.environment?.trim().toLocaleLowerCase() === "local" &&
+    ["0", "false"].includes(
+      env.openRouterProviderPolicy?.trim().toLocaleLowerCase() ?? "",
+    );
+  const useOpenRouterProviderPolicy = !disableOpenRouterProviderPolicy;
+  if (openRouterKey) {
+    providers.push({
+      provider: "openrouter",
+      apiKey: openRouterKey,
+      model: openRouterModel,
+      useOpenRouterProviderPolicy,
+    });
+  }
+  if (openAiKey) {
+    providers.push({
+      provider: "openai",
+      apiKey: openAiKey,
+      model: openAiModel,
+      useOpenRouterProviderPolicy: false,
+    });
+  }
+  return providers;
+}
+
+export function providerMessages({
+  sourceLang,
+  targetLang,
+  interfaceLang,
+  text,
+  context = [],
+  retryGuidance = "",
+}: {
+  sourceLang: string;
+  targetLang: string;
+  interfaceLang: string;
+  text: string;
+  context?: TranslationContextMessage[];
+  retryGuidance?: string;
+}): Array<{ role: "system" | "user"; content: string }> {
+  const contextText = context.length === 0
+    ? ""
+    : `\n\nRecent chat context, oldest to newest. Use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, and dates. Never infer gender from names or casual text in this context. Do not translate this context block; translate only the current user message.\n${
+      context
+        .map((entry) => `${entry.speaker}: ${entry.text}`)
+        .join("\n")
+    }`;
+  return [
+    {
+      role: "system",
+      content: systemPrompt(sourceLang, targetLang, interfaceLang) +
+        contextText +
+        retryGuidance,
+    },
+    { role: "user", content: text },
+  ];
+}
+
 export const TRANSLATION_RESPONSE_FORMAT = {
   type: "json_schema",
   json_schema: {
@@ -102,6 +191,13 @@ export const LANG_NAMES: Record<string, string> = {
 const NON_LATIN = new Set(["ta", "uk", "hi"]);
 export const INTERFACE_LANGS = new Set(["en", "uk", "de", "es"]);
 export const OTHER_SOURCE_LANG = "other";
+export const GENDER_ADDRESS_RULES =
+  `Never guess gender from a name, profile name, username, message topic, or text style.
+Use gendered wording only when explicit pronouns or gender metadata are provided.
+If the source language is ambiguous, use neutral wording that avoids adding gender.
+Do not use parenthetical or slash gender alternatives such as "був(ла)", "радий(а)", "був/була", or "радий/рада"; rewrite the sentence with impersonal neutral wording instead.
+Preserve informal/formal address exactly when the source marks it. Keep "du" informal and "Sie" formal in German, and keep equivalent formality distinctions in other languages. Address example: Ukrainian "Ти дивишся..." to German: prefer informal "Du schaust..." over formal "Sie schauen...".
+Gender examples: English "I was happy to help" to Ukrainian: prefer "Мені було приємно допомогти" over gendered "Я був радий/була рада допомогти". English "I was glad to see you" to Ukrainian: prefer "Мені було приємно побачитись з тобою" over stiff or gendered wording. English "I am your friend" to Ukrainian: prefer "Ми з тобою друзі" over guessing "Я твій друг" or "Я твоя подруга". English "I am your friend" to German: prefer "Ich bin mit dir befreundet" over guessing "Freund" or "Freundin".`;
 export const LEARNING_AID_MODES = new Set([
   "translation",
   "correction",
@@ -165,6 +261,37 @@ export function interfaceOutputNeedsRetry(
     /\p{L}/u.test(result.translation);
 }
 
+export function genderedAmbiguityNeedsRetry(
+  result: TranslationResult,
+  sourceLang: string,
+  targetLang: string,
+  sourceText = "",
+): boolean {
+  if (
+    result.mode !== "translation" ||
+    result.sourceLang !== "en" ||
+    sourceLang !== "auto" && sourceLang !== "en" ||
+    targetLang !== "uk"
+  ) return false;
+  const ukrainianLetters = "A-Za-zА-Яа-яІіЇїЄєҐґ";
+  const parentheticalGender = new RegExp(
+    `[${ukrainianLetters}]+\\([${ukrainianLetters}]+\\)`,
+    "u",
+  );
+  const slashGender = new RegExp(
+    `[${ukrainianLetters}]+\\/[${ukrainianLetters}]+`,
+    "u",
+  );
+  if (
+    parentheticalGender.test(result.translation) ||
+    slashGender.test(result.translation)
+  ) return true;
+  if (/\b(he|him|his|she|her|hers)\b/i.test(sourceText)) return false;
+  return /(^|[^\p{L}])(друг|подруга)($|[^\p{L}])/iu.test(
+    result.translation,
+  );
+}
+
 export function parseProviderResult(
   content: string,
   text: string,
@@ -211,9 +338,9 @@ export function parseProviderResult(
       ? raw.mode as LearningAidMode
       : "translation",
     sourceLang,
-    translation: raw.translation,
+    translation: normalizeProviderLineBreaks(raw.translation, text),
     interfaceText: typeof raw.interfaceText === "string"
-      ? raw.interfaceText
+      ? normalizeProviderLineBreaks(raw.interfaceText, text)
       : "",
     explanation,
     confidence,
@@ -246,7 +373,7 @@ export function parseProviderResult(
   // the model rewrites a typo or returns two slightly different copies.
   if (interfaceLang === targetLang) {
     result.interfaceText = result.translation;
-  } else if (result.sourceLang === interfaceLang) {
+  } else if (result.interfaceText.trim().length === 0) {
     result.interfaceText = text;
   }
   if (result.mode === "none") {
@@ -281,6 +408,7 @@ export function parseProviderResult(
     if (
       (token as { isContent: boolean }).isContent &&
       (
+        /\s/.test((token as { text: string }).text.trim()) ||
         typeof (token as { gloss?: unknown }).gloss !== "string" ||
         (token as { gloss: string }).gloss.trim().length === 0
       )
@@ -296,6 +424,15 @@ export function parseProviderResult(
     result.tokens = [];
   }
   return result;
+}
+
+function normalizeProviderLineBreaks(
+  value: string,
+  sourceText: string,
+): string {
+  const source = sourceText.trim();
+  if (/[\r\n]/.test(source)) return value;
+  return value.replace(/\s*[\r\n]+\s*/g, " ");
 }
 
 export function providerResultFailureReason(content: string): string {
@@ -377,21 +514,34 @@ Return strict JSON only:
 
 Rules:
 - Preserve meaning, tone, names, URLs, emoji, and punctuation.
+- Preserve paragraph breaks exactly. If the input is one paragraph, translation and interfaceText must also be one paragraph with no newline characters.
+- ${GENDER_ADDRESS_RULES.replaceAll("\n", "\n- ")}
 - First detect sourceLang, then choose exactly one mode.
 - If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
-- mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then use mode=correction only for a clear, objective grammar, spelling, inflection, agreement, or wrong-word error. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
+- mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then carefully check the complete input for real learning mistakes: grammar, spelling, inflection, agreement, word order, missing/extra words, or wrong-word errors. Even one wrong word or misspelled word is enough for mode=correction. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
 - Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
 - mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
 - For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.
 - For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
 - For mode=translation, explanation/confidence are null.
-- "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction.
+- "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction or when a translated source has clear grammar, spelling, inflection, agreement, word order, missing/extra word, or wrong-word errors.
 - mode=none applies only to correction of the ${targetName} learning line. When ${interfaceName} is a different language, interfaceText must still translate the complete message into ${interfaceName}; do not copy the ${targetName} text into interfaceText.
-- If sourceLang is ${interfaceLang} and differs from ${targetLang}, "interfaceText" must exactly equal the trimmed input, including any mistakes.
+- If sourceLang is ${interfaceLang} and differs from ${targetLang}, "interfaceText" stays in ${interfaceName}; preserve the trimmed input when it is already correct, but fix clear language mistakes so the main chat shows clean communication.
 - If ${interfaceLang} and ${targetName} are the same language, "interfaceText" must exactly equal "translation".
 - sourceLang must be one of the listed codes, or ${OTHER_SOURCE_LANG} for any other input language.
 - For every mode, concatenating every tokens[].text must exactly reproduce "translation".
-- Content tokens are segments of the translated/corrected text and include a short ${interfaceName} gloss.
+- Content tokens are one translated/corrected word or one non-whitespace term at a time, never a phrase or full sentence, and include a short ${interfaceName} gloss.
 - Whitespace, punctuation, and emoji use isContent=false and omit glosses.
 - ${romanGuidance}`;
+}
+
+export function interfaceRepairSystemPrompt(
+  targetLang: string,
+  interfaceLang: string,
+): string {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  return `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation.
+${GENDER_ADDRESS_RULES}
+Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`;
 }

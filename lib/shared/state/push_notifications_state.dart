@@ -352,6 +352,11 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
 
   void _handleOpenEvent(PushOpenEvent event) {
     if (!ref.mounted) return;
+    if (kDebugMode) {
+      debugPrint(
+        'Push tap received: type=${event.type}, chatId=${event.chatId}',
+      );
+    }
     state = state.copyWith(pendingChatId: event.chatId);
   }
 

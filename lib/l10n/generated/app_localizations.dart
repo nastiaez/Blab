@@ -924,6 +924,12 @@ abstract class AppLocalizations {
   /// **'Message'**
   String get message;
 
+  /// No description provided for @sayHi.
+  ///
+  /// In en, this message translates to:
+  /// **'Say hi'**
+  String get sayHi;
+
   /// No description provided for @replyingTo.
   ///
   /// In en, this message translates to:
@@ -1253,6 +1259,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} learns {language}'**
   String personLearnsLanguage(Object language, Object name);
+
+  /// No description provided for @youAreLearningLanguageWithPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re learning {language} with {name}'**
+  String youAreLearningLanguageWithPerson(Object language, Object name);
 
   /// No description provided for @sendAnyMessage.
   ///

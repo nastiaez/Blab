@@ -11,6 +11,7 @@ class _FakeChatService implements ChatService {
   final List<Map<String, dynamic>> rows;
   final _memberships = StreamController<List<Map<String, dynamic>>>.broadcast();
   final _messages = StreamController<void>.broadcast();
+  final _translations = StreamController<void>.broadcast();
 
   @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => rows;
@@ -22,7 +23,11 @@ class _FakeChatService implements ChatService {
   @override
   Stream<void> watchChatListMessageChanges() => _messages.stream;
 
+  @override
+  Stream<void> watchChatListTranslationChanges() => _translations.stream;
+
   void emitMessageChange() => _messages.add(null);
+  void emitTranslationChange() => _translations.add(null);
 
   // Unused in this test:
   @override
@@ -103,5 +108,40 @@ void main() {
     final chat = container.read(chatListProvider).value!.single;
     expect(chat.lastMessage, 'after');
     expect(chat.unreadCount, 1);
+  });
+
+  test('translation changes refresh the chat-list preview', () async {
+    final fake = _FakeChatService([
+      {
+        'viewer_id': 'me',
+        'chat_id': 'c1',
+        'partner_id': 'u2',
+        'partner_name': 'Bob',
+        'my_learning': 'de',
+        'partner_learning': 'en',
+        'last_body': 'before',
+        'last_at': '2026-07-21T10:00:00Z',
+        'unread_count': 0,
+      },
+    ]);
+    final container = ProviderContainer(
+      overrides: [chatServiceProvider.overrideWithValue(fake)],
+    );
+    addTearDown(container.dispose);
+    await container.read(chatListProvider.future);
+
+    fake.rows.single['last_body'] = 'after translation refresh';
+    fake.emitTranslationChange();
+
+    final deadline = DateTime.now().add(const Duration(seconds: 1));
+    while (container.read(chatListProvider).value?.single.lastMessage !=
+            'after translation refresh' &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(
+      container.read(chatListProvider).value!.single.lastMessage,
+      'after translation refresh',
+    );
   });
 }

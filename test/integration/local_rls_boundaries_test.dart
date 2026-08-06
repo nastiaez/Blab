@@ -229,6 +229,30 @@ void main() {
               .eq('user_id', bobId),
           1,
         );
+        final hiddenReadSource = await ChatService(
+          alice,
+        ).sendMessage(chatId: aliceBobChat, body: 'Alice hidden read source');
+        await ChatService(bob).markRead(
+          chatId: aliceBobChat,
+          messageIds: [hiddenReadSource.id],
+          receiptVisible: false,
+        );
+        final bobHiddenReads = List<Map<String, dynamic>>.from(
+          await bob
+              .from('message_reads')
+              .select('message_id,receipt_visible')
+              .eq('message_id', hiddenReadSource.id),
+        );
+        expect(bobHiddenReads, hasLength(1));
+        expect(bobHiddenReads.single['receipt_visible'], isFalse);
+        final aliceHiddenReads = List<Map<String, dynamic>>.from(
+          await alice
+              .from('message_reads')
+              .select('message_id,receipt_visible')
+              .eq('message_id', hiddenReadSource.id)
+              .eq('user_id', bobId),
+        );
+        expect(aliceHiddenReads, isEmpty);
         await expectLater(
           ChatService(
             bob,

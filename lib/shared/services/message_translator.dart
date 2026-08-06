@@ -108,14 +108,14 @@ class MessageTranslator {
             confidence == null)) {
       throw MessageTranslationFailed('missing_correction_details');
     }
-    final tokens = <MessageToken>[];
+    final rawParsedTokens = <MessageToken>[];
     if (rawTokens is List) {
       for (final t in rawTokens) {
         if (t is! Map) continue;
         final tokenText = t['text'];
         if (tokenText is! String) continue;
         final isContent = t['isContent'] as bool? ?? true;
-        tokens.add(
+        rawParsedTokens.add(
           MessageToken(
             text: tokenText,
             gloss: t['gloss'] as String?,
@@ -130,7 +130,7 @@ class MessageTranslator {
       interfaceText: interfaceText,
       interfaceLang: interfaceLang,
       sourceLang: detectedSourceLang,
-      tokens: tokens,
+      tokens: sanitizeMessageTokens(rawParsedTokens, translation),
       mode: mode,
       explanation: mode == LearningAidMode.correction
           ? (rawExplanation as String).trim()

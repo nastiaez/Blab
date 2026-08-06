@@ -401,6 +401,11 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 Append one line per non-trivial edit to this file (step added, scope changed, blocker logged, step split). Format: `YYYY-MM-DD — what changed and why`.
 
+- 2026-08-05 — Hotfix photo preview: attachment preview now uses a full-screen dark composer with centered image, close button, caption bar, recipient chip, and send action, matching the approved reference pattern.
+- 2026-08-03 — Hotfix translation strip: `aid_mode: none` now collapses back to the exact original message only, so no learning-aid divider or loading strip remains after the backend says no aid is needed.
+- 2026-08-03 — Hotfix empty chat preview: chat-list rows without a real last message now render the muted `New connection · say hi` state, suppress unread badges, and empty chats use `Say hi` as the composer placeholder.
+- 2026-08-03 — Hotfix stale translation UI: open chats now subscribe to live `message_translations` changes for loaded bubbles, refresh chat-list state on translation changes, auto-retry transient failures after reconnect, and time out stuck loading into a retryable unavailable state.
+- 2026-07-31 — Hotfix word popup: visible message text now owns word tap zones, with AI token output used only as optional romanization/gloss metadata. Bad phrase-sized AI chunks no longer remove word lookup or create whole-sentence popups.
 - 2026-07-18 — Removed animation between the Chats and Profile bottom tabs so switching is instantaneous like YouTube; deeper push navigation keeps its existing transitions.
 - 2026-07-18 — Fixed the first-open unread-badge race introduced by fail-closed privacy hydration: incoming messages that become visible while the saved Read receipts preference is loading now stay queued, flush together when it resolves ON, and are discarded without transport when it resolves OFF. Added ON/OFF regression coverage; focused chat/privacy/list tests pass, and the full suite reaches 137 tests with only the pre-existing invite-picker copy assertion failing.
 - 2026-05-25 — initial plan created from PRD + tech-spec.

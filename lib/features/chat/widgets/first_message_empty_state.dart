@@ -4,7 +4,7 @@ import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
 
-/// Shown in a chat that has no messages yet: who learns what, plus a nudge
+/// Shown in a chat that has no messages yet: what you are learning here, plus a nudge
 /// to send the first message. Plain text — no flags, card, or icons. Clears
 /// as soon as a message is sent. US-026.
 class FirstMessageEmptyState extends StatelessWidget {
@@ -33,14 +33,8 @@ class FirstMessageEmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                context.l10n.youLearnLanguage(chat.learningLanguage.name),
-                textAlign: TextAlign.center,
-                style: lineStyle,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                context.l10n.personLearnsLanguage(
-                  chat.partnerLearningLanguage.name,
+                context.l10n.youAreLearningLanguageWithPerson(
+                  chat.learningLanguage.name,
                   chat.partnerName,
                 ),
                 textAlign: TextAlign.center,

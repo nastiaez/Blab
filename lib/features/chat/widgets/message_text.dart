@@ -8,12 +8,9 @@ import 'word_popup.dart';
 
 /// PRD US-018, FR-12.
 ///
-/// Renders the learning-language portion of a message. When [tokens] is
-/// present, each content token becomes an independently tappable inline
-/// span that opens a word popup pointing at the tapped word. Punctuation
-/// and whitespace tokens stay as plain inline text (no tap target).
-///
-/// Falls back to a plain [Text] if `tokens` is null.
+/// Renders the learning-language portion of a message. The visible text is
+/// split locally so each word becomes an independently tappable inline span.
+/// Provider [tokens] are optional enrichment for romanization/gloss only.
 class MessageText extends ConsumerStatefulWidget {
   const MessageText({
     super.key,
@@ -24,10 +21,10 @@ class MessageText extends ConsumerStatefulWidget {
     this.popupTopInset = 0,
   });
 
-  /// Plain-text fallback when [tokens] is null/empty.
+  /// Visible learning-language text.
   final String text;
 
-  /// Tokens of the learning-language version of the message.
+  /// Optional metadata for the learning-language version of the message.
   final List<MessageToken>? tokens;
 
   /// Target-language Blab code (e.g. `ta`) used to pick a TTS voice.
@@ -85,8 +82,8 @@ class _MessageTextState extends ConsumerState<MessageText> {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = widget.tokens;
-    if (tokens == null || tokens.isEmpty) {
+    final tokens = messageTokensForText(widget.text, metadata: widget.tokens);
+    if (tokens.isEmpty || !tokens.any((t) => t.isContent)) {
       return Text(widget.text, style: widget.style);
     }
 

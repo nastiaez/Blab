@@ -26,6 +26,7 @@ import '../features/profile/interface_language_screen.dart';
 import '../features/profile/privacy_screen.dart';
 import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/share/share_image_screen.dart';
 import '../l10n/l10n.dart';
 import 'dev_menu.dart';
 
@@ -179,6 +180,10 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/chats/empty',
       builder: (context, state) => const ChatsScreen(preview: true),
+    ),
+    GoRoute(
+      path: '/share/image',
+      builder: (context, state) => const ShareImageScreen(),
     ),
     GoRoute(
       path: '/chat',

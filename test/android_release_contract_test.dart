@@ -15,6 +15,49 @@ const obsoleteDebugFingerprints = <String>{
 };
 
 void main() {
+  test('hosted environment validation rejects CI-only Firebase config', () {
+    final envDir = Directory('env');
+    final firebaseDir = Directory('env/firebase/staging');
+    final stagingFile = File('env/staging.json');
+    final stagingFirebaseFile = File(
+      'env/firebase/staging/google-services.json',
+    );
+
+    addTearDown(() {
+      if (stagingFile.existsSync()) stagingFile.deleteSync();
+      if (stagingFirebaseFile.existsSync()) stagingFirebaseFile.deleteSync();
+      if (firebaseDir.existsSync()) firebaseDir.deleteSync(recursive: true);
+    });
+
+    envDir.createSync(recursive: true);
+    firebaseDir.createSync(recursive: true);
+    stagingFile.writeAsStringSync(
+      jsonEncode({
+        'BLAB_ENV': 'staging',
+        'SUPABASE_PROJECT_REF': 'stagingprojectref123',
+        'SUPABASE_URL': 'https://stagingprojectref123.supabase.co',
+        'SUPABASE_PUBLISHABLE_KEY':
+            'sb_publishable_abcdefghijklmnopqrstuvwxyz0123456789',
+        'GOOGLE_WEB_CLIENT_ID': '123456789-example.apps.googleusercontent.com',
+        'FIREBASE_PROJECT_ID': 'blab-ci-only',
+        'SENTRY_DSN': '',
+        'SENTRY_ENV': 'staging',
+      }),
+    );
+    stagingFirebaseFile.writeAsStringSync(
+      File('config/ci/google-services.json').readAsStringSync(),
+    );
+
+    final result = Process.runSync('bash', [
+      'scripts/blab_environment.sh',
+      'validate',
+      'staging',
+    ]);
+
+    expect(result.exitCode, 2);
+    expect(result.stderr, contains('CI-only Firebase configuration'));
+  });
+
   test('release signing fails closed and signing material is ignored', () {
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     final gitignore = File('android/.gitignore').readAsStringSync();
@@ -112,6 +155,46 @@ void main() {
     },
   );
 
+  test('Android gallery share target and bridge stay configured', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final activity = File(
+      'android/app/src/main/kotlin/blab/nastia/ez/MainActivity.kt',
+    ).readAsStringSync();
+
+    expect(manifest, contains('android.intent.action.SEND'));
+    expect(manifest, contains('android:mimeType="image/*"'));
+    expect(manifest, contains('android.intent.category.DEFAULT'));
+    expect(activity, contains('blab/share_intent'));
+    expect(activity, contains('getInitialSharedImage'));
+    expect(activity, contains('onNewIntent'));
+    expect(activity, contains('Intent.ACTION_SEND'));
+    expect(activity, contains('Intent.EXTRA_STREAM'));
+    expect(activity, contains('contentResolver.openInputStream'));
+    expect(activity, contains('catch (_: Exception)'));
+  });
+
+  test('shared Android gallery images route into Blab chat picker', () {
+    final mainSource = File('lib/main.dart').readAsStringSync();
+    final routerSource = File('lib/app/router.dart').readAsStringSync();
+
+    expect(
+      mainSource,
+      contains("import 'features/share/android_share_intent_service.dart';"),
+    );
+    expect(mainSource, contains('AndroidShareIntentService'));
+    expect(mainSource, contains('getInitialSharedImage'));
+    expect(mainSource, contains('pendingSharedImageProvider'));
+    expect(mainSource, contains("blabRouter.go('/share/image')"));
+    expect(
+      routerSource,
+      contains("import '../features/share/share_image_screen.dart';"),
+    );
+    expect(routerSource, contains("path: '/share/image'"));
+    expect(routerSource, contains('ShareImageScreen'));
+  });
+
   test('push webhook stays asynchronous, private, and fail-open', () {
     final migration = File(
       'supabase/migrations/20260720000002_push_notification_webhook.sql',
@@ -139,6 +222,36 @@ void main() {
     expect(worker, contains('completeClaimedEvent(supabase, eventId'));
     expect(worker, contains('console.error("firebase_auth_failed",'));
     expect(worker, isNot(contains('console.error(error)')));
+  });
+
+  test('notification chat opens force a fresh chat data fetch', () {
+    final mainSource = File('lib/main.dart').readAsStringSync();
+    final routerSource = File(
+      'lib/shared/services/push_tap_router.dart',
+    ).readAsStringSync();
+    final smoke = File('scripts/push_tap_smoke.sh').readAsStringSync();
+
+    expect(
+      mainSource,
+      contains("import 'features/chat/state/chat_state.dart';"),
+    );
+    expect(mainSource, contains("import 'shared/state/chat_list_state.dart';"));
+    expect(
+      mainSource,
+      contains("import 'shared/services/push_tap_router.dart';"),
+    );
+    expect(
+      routerSource,
+      contains('await refreshChatList().timeout(refreshTimeout)'),
+    );
+    expect(routerSource, contains('currentPendingChatId() != chatId'));
+    expect(routerSource, contains('consumePendingChat()'));
+    expect(smoke, contains('Push tap received:'));
+    expect(smoke, contains('Push tap routing opened chatId='));
+    expect(
+      smoke,
+      contains('CI-only Firebase configuration cannot receive real FCM pushes'),
+    );
   });
 
   test('hosted environments fail closed and production runs are guarded', () {

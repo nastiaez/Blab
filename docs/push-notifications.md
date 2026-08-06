@@ -78,6 +78,11 @@ commit, so FCM failure cannot fail or roll back a message or invite claim.
   invite.
 - Confirm previews ON sends sender plus original message only. Previews OFF
   sends generic copy. Neither payload may contain translations or email.
+- Confirm a real device/emulator push tap routes to the correct chat from both
+  background and killed-process states. Use:
+  `scripts/push_tap_smoke.sh <staging|production> <device-id> <background|killed> <chat-id>`.
+  The script captures logcat and requires both `Push tap received` and
+  `Push tap routing opened chatId=<chat-id>` before passing.
 - On an FCM `UNREGISTERED` response, confirm the stale token row is deleted.
 - To disable push without an app release, remove either Blab push Vault secret
   or disable the `send_push_notification_event` database trigger first.

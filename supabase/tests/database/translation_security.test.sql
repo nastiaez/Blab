@@ -1,6 +1,6 @@
 begin;
 
-select plan(22);
+select plan(24);
 
 select has_table(
   'public',
@@ -109,6 +109,30 @@ insert into public.messages (
     'Deleted source',
     now(),
     now()
+  ),
+  (
+    '52000000-0000-4000-8000-000000000005',
+    '51000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-00000000000a',
+    'Talking about mum',
+    now() + interval '1 minute',
+    null
+  ),
+  (
+    '52000000-0000-4000-8000-000000000007',
+    '51000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-00000000000b',
+    '😂',
+    now() + interval '1 minute 30 seconds',
+    null
+  ),
+  (
+    '52000000-0000-4000-8000-000000000006',
+    '51000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-00000000000b',
+    'Short implied subject',
+    now() + interval '2 minutes',
+    null
   );
 
 update public.chat_members
@@ -149,6 +173,32 @@ select is(
   'target language comes from the caller membership row'
 );
 
+insert into l13_prepared (label, value)
+values (
+  'with-context',
+  public.request_message_translation(
+    '52000000-0000-4000-8000-000000000006'
+  )
+);
+
+select is(
+  jsonb_array_length(
+    (select value -> 'context' from l13_prepared where label = 'with-context')
+  ),
+  3,
+  'a cache miss includes recent same-chat context'
+);
+
+select is(
+  (
+    select value #>> '{context,2,text}'
+    from l13_prepared
+    where label = 'with-context'
+  ),
+  'Talking about mum',
+  'context is ordered oldest to newest before the current message'
+);
+
 reset role;
 
 select is(
@@ -157,8 +207,8 @@ select is(
     from public.translation_usage
     where user_id = '00000000-0000-4000-8000-00000000000a'
   ),
-  1,
-  'a cache miss reserves one quota request'
+  2,
+  'cache misses reserve quota requests'
 );
 
 select set_config(
@@ -210,7 +260,7 @@ select is(
     from public.translation_usage
     where user_id = '00000000-0000-4000-8000-00000000000a'
   ),
-  1,
+  2,
   'a cache hit consumes no additional quota'
 );
 

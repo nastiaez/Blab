@@ -1,10 +1,14 @@
 import {
   characterCount,
+  genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
+  interfaceRepairSystemPrompt,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseProviderResult,
+  providerCredentials,
+  providerMessages,
   providerResultFailureReason,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
@@ -41,6 +45,232 @@ Deno.test("provider route permits every eligible ZDR endpoint", () => {
   assert(OPENROUTER_PROVIDER.zdr, "ZDR required");
   assert(OPENROUTER_PROVIDER.data_collection === "deny", "collection denied");
   assert(OPENROUTER_PROVIDER.require_parameters, "parameters required");
+});
+
+Deno.test("provider credentials prefer OpenRouter and fall back to OpenAI", () => {
+  const both = providerCredentials({
+    openRouterKey: "router-key",
+    openAiKey: "openai-key",
+  });
+  assert(both.length === 2, "both providers are available");
+  assert(both[0].provider === "openrouter", "OpenRouter remains first");
+  assert(
+    both[0].model === "openai/gpt-4o-mini",
+    "OpenRouter uses the production model by default",
+  );
+  assert(
+    both[0].useOpenRouterProviderPolicy,
+    "OpenRouter provider policy is enabled by default",
+  );
+  assert(both[1].provider === "openai", "OpenAI is the fallback");
+  assert(both[1].model === "gpt-4o-mini", "OpenAI uses its native model ID");
+
+  const openAiOnly = providerCredentials({
+    openRouterKey: "",
+    openAiKey: "openai-key",
+  });
+  assert(openAiOnly.length === 1, "empty OpenRouter key is ignored");
+  assert(openAiOnly[0].provider === "openai", "OpenAI can run locally alone");
+
+  const localOverride = providerCredentials({
+    openRouterKey: "router-key",
+    openRouterModel: "openai/gpt-oss-20b:free",
+    openRouterProviderPolicy: "false",
+    environment: "local",
+  });
+  assert(
+    localOverride[0].model === "openai/gpt-oss-20b:free",
+    "local OpenRouter model can be overridden",
+  );
+  assert(
+    !localOverride[0].useOpenRouterProviderPolicy,
+    "local OpenRouter provider policy can be disabled",
+  );
+
+  const hostedOverrideIgnored = providerCredentials({
+    openRouterKey: "router-key",
+    openRouterProviderPolicy: "false",
+    environment: "production",
+  });
+  assert(
+    hostedOverrideIgnored[0].useOpenRouterProviderPolicy,
+    "hosted environments keep the OpenRouter provider policy",
+  );
+});
+
+Deno.test("provider messages include recent context but translate only current text", () => {
+  const messages = providerMessages({
+    sourceLang: "auto",
+    targetLang: "en",
+    interfaceLang: "uk",
+    text: "Їде 01.08",
+    context: [
+      { speaker: "viewer", text: "О то вона ще не їде до тебе?" },
+      { speaker: "viewer", text: "Я думала вона 30-го десь назад" },
+    ],
+  });
+
+  assert(messages.length === 2, "context is folded into system prompt");
+  assert(
+    messages[0].content.includes("Recent chat context"),
+    "system prompt should include context",
+  );
+  assert(
+    messages[0].content.includes("Use context only"),
+    "context must not become translation input",
+  );
+  assert(
+    messages[0].content.includes("viewer: О то вона ще не їде до тебе?"),
+    "previous chat lines should be available",
+  );
+  assert(
+    messages[1].content === "Їде 01.08",
+    "current provider user message remains only the text to translate",
+  );
+});
+
+Deno.test("provider prompt forbids gender guessing and preserves address", () => {
+  const prompt = systemPrompt("auto", "uk", "de");
+  assert(
+    prompt.includes(
+      "Never guess gender from a name, profile name, username, message topic, or text style.",
+    ),
+    "provider must not infer gender from weak signals",
+  );
+  assert(
+    prompt.includes(
+      "Use gendered wording only when explicit pronouns or gender metadata are provided.",
+    ),
+    "gendered wording needs explicit metadata",
+  );
+  assert(
+    prompt.includes(
+      "If the source language is ambiguous, use neutral wording that avoids adding gender.",
+    ),
+    "ambiguous sources need neutral output",
+  );
+  assert(
+    prompt.includes(
+      "Preserve informal/formal address exactly when the source marks it.",
+    ),
+    "du/Sie and equivalent address should be preserved",
+  );
+});
+
+Deno.test("English to Ukrainian rejects parenthetical gender alternatives", () => {
+  const gendered = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Я був(ла) радий(а) бачити тебе.",
+      interfaceText: "Я був(ла) радий(а) бачити тебе.",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+    }),
+    "I was glad to see you.",
+    "uk",
+    "uk",
+  );
+  assert(gendered !== null, "provider output is structurally valid");
+  assert(
+    genderedAmbiguityNeedsRetry(gendered!, "en", "uk"),
+    "parenthetical masculine/feminine Ukrainian forms must be retried",
+  );
+
+  const masculineDefault = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Я твій друг.",
+      interfaceText: "Я твій друг.",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+    }),
+    "I am your friend.",
+    "uk",
+    "uk",
+  );
+  assert(
+    masculineDefault !== null,
+    "plain masculine default output is structurally valid",
+  );
+  assert(
+    genderedAmbiguityNeedsRetry(masculineDefault!, "en", "uk"),
+    "unsupported masculine Ukrainian defaults must be retried",
+  );
+
+  const neutral = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Мені було приємно побачитись з тобою.",
+      interfaceText: "Мені було приємно побачитись з тобою.",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+    }),
+    "I was glad to see you.",
+    "uk",
+    "uk",
+  );
+  assert(neutral !== null, "neutral output is structurally valid");
+  assert(
+    !genderedAmbiguityNeedsRetry(neutral!, "en", "uk"),
+    "impersonal Ukrainian wording should pass",
+  );
+
+  assert(
+    systemPrompt("auto", "uk", "uk").includes(
+      "Do not use parenthetical or slash gender alternatives",
+    ),
+    "prompt must explicitly reject both-gender workaround forms",
+  );
+});
+
+Deno.test("prompt includes Ukrainian and German neutral-gender examples", () => {
+  const prompt = systemPrompt("auto", "de", "en");
+  assert(
+    prompt.includes(
+      'English "I was happy to help" to Ukrainian: prefer "Мені було приємно допомогти"',
+    ),
+    "Ukrainian ambiguous speaker examples should avoid gendered past-tense adjectives",
+  );
+  assert(
+    prompt.includes(
+      'English "I was glad to see you" to Ukrainian: prefer "Мені було приємно побачитись з тобою"',
+    ),
+    "Ukrainian ambiguous speaker examples should still use natural conversational wording",
+  );
+  assert(
+    prompt.includes(
+      'English "I am your friend" to German: prefer "Ich bin mit dir befreundet"',
+    ),
+    "German ambiguous speaker examples should avoid Freund/Freundin guesses",
+  );
+});
+
+Deno.test("prompt includes Ukrainian to German informal address example", () => {
+  const prompt = systemPrompt("auto", "de", "en");
+  assert(
+    prompt.includes(
+      'Ukrainian "Ти дивишся..." to German: prefer informal "Du schaust..."',
+    ),
+    "Ukrainian informal address must be anchored to German du examples",
+  );
+});
+
+Deno.test("interface repair prompt reuses the gender and address rules", () => {
+  const prompt = interfaceRepairSystemPrompt("de", "uk");
+  assert(
+    prompt.includes("Never guess gender from a name"),
+    "interface repair must not lose the main translation gender/address contract",
+  );
+  assert(
+    prompt.includes('English "I was happy to help" to Ukrainian'),
+    "interface repair should keep the Ukrainian neutral-gender example",
+  );
 });
 
 Deno.test("provider responses use strict schemas", () => {
@@ -121,6 +351,81 @@ Deno.test("provider keeps full text when optional token metadata is invalid", ()
   );
   assert(degraded?.translation === "Hallo!", "full translation should pass");
   assert(degraded?.tokens.length === 0, "invalid tokens should be discarded");
+});
+
+Deno.test("provider discards phrase-sized content tokens", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "uk",
+      translation: "You can use Google speech.",
+      interfaceText: "Можна використовувати Google speech.",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "You can use Google speech",
+          gloss: "whole phrase",
+          roman: null,
+          isContent: true,
+        },
+        { text: ".", gloss: null, roman: null, isContent: false },
+      ],
+    }),
+    "Можна використовувати Google speech.",
+    "en",
+    "uk",
+  );
+
+  assert(result !== null, "valid full-message translation should pass");
+  assert(
+    result?.translation === "You can use Google speech.",
+    "full translation should be retained",
+  );
+  assert(
+    result?.tokens.length === 0,
+    "phrase-sized content tokens should be discarded",
+  );
+});
+
+Deno.test("provider-added paragraph breaks are removed for single-paragraph input", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "de",
+      translation:
+        "I need the document from you.\n\nSo I have a better understanding of what happened.",
+      interfaceText:
+        "I need the document from you.\n\nSo I have a better understanding of what happened.",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text:
+            "I need the document from you.\n\nSo I have a better understanding of what happened.",
+          gloss: "full message",
+          isContent: true,
+        },
+      ],
+    }),
+    "Ich brauche das Dokument von dir, damit ich besser verstehe was passiert ist.",
+    "en",
+    "en",
+  );
+  assert(result !== null, "valid translation should pass");
+  assert(
+    result?.translation ===
+      "I need the document from you. So I have a better understanding of what happened.",
+    "provider must not introduce paragraph breaks",
+  );
+  assert(
+    result?.interfaceText === result?.translation,
+    "interface lane follows normalized learning lane",
+  );
+  assert(
+    result?.tokens.length === 0,
+    "tokens containing provider-added line breaks should be discarded",
+  );
 });
 
 Deno.test("provider mode drift is normalized instead of hiding translation", () => {
@@ -267,8 +572,12 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
     "none still requires interface translation",
   );
   assert(
-    prompt.includes("clear, objective grammar"),
-    "corrections require an objective error",
+    prompt.includes("carefully check the complete input"),
+    "corrections require a full-message error check",
+  );
+  assert(
+    prompt.includes("Even one wrong word or misspelled word is enough"),
+    "small real mistakes should still become corrections",
   );
   assert(
     prompt.includes("Do not correct capitalization, punctuation"),
@@ -277,6 +586,10 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
   assert(
     prompt.includes("never depends on whether the viewer authored"),
     "provider output stays neutral between author and recipient",
+  );
+  assert(
+    prompt.includes("Preserve paragraph breaks exactly"),
+    "provider must not invent paragraph breaks",
   );
 });
 
@@ -365,7 +678,7 @@ Deno.test("same-language correction is available to any eligible viewer", () => 
   assert(correction?.mode === "correction", "recipient correction should pass");
 });
 
-Deno.test("server preserves authored interface-language text", () => {
+Deno.test("server accepts corrected interface-language text for translated source mistakes", () => {
   const valid = parseProviderResult(
     JSON.stringify({
       mode: "translation",
@@ -410,8 +723,8 @@ Deno.test("server preserves authored interface-language text", () => {
   );
   assert(rewritten !== null, "valid translation should not be discarded");
   assert(
-    rewritten?.interfaceText === "What is you doing?",
-    "server must restore the exact authored interface text",
+    rewritten?.interfaceText === "What are you doing?",
+    "server should keep the corrected interface line for main-chat display",
   );
 });
 

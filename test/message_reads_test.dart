@@ -25,7 +25,10 @@ void main() {
         readReceiptsTransportStateProvider.overrideWithValue(
           const PrivacySettingState.ready(true),
         ),
-        markReadFnProvider('c1').overrideWithValue((ids) async {
+        markReadFnProvider('c1').overrideWithValue((
+          ids, {
+          required receiptVisible,
+        }) async {
           calls.add(List.of(ids));
         }),
       ],
@@ -50,10 +53,16 @@ void main() {
         readReceiptsTransportStateProvider.overrideWithValue(
           const PrivacySettingState.ready(true),
         ),
-        markReadFnProvider('a').overrideWithValue((ids) async {
+        markReadFnProvider('a').overrideWithValue((
+          ids, {
+          required receiptVisible,
+        }) async {
           callsA.add(List.of(ids));
         }),
-        markReadFnProvider('b').overrideWithValue((ids) async {
+        markReadFnProvider('b').overrideWithValue((
+          ids, {
+          required receiptVisible,
+        }) async {
           callsB.add(List.of(ids));
         }),
       ],
@@ -67,36 +76,47 @@ void main() {
     expect(callsB.first, ['y']);
   });
 
-  test('read receipts OFF never queue or call the write transport', () async {
-    final calls = <List<String>>[];
-    final container = ProviderContainer(
-      overrides: [
-        readReceiptsTransportStateProvider.overrideWithValue(
-          const PrivacySettingState.ready(false),
-        ),
-        markReadFnProvider('c1').overrideWithValue((ids) async {
-          calls.add(List.of(ids));
-        }),
-      ],
-    );
-    addTearDown(container.dispose);
+  test(
+    'read receipts OFF still marks visible messages as locally read',
+    () async {
+      final calls = <({List<String> ids, bool receiptVisible})>[];
+      final container = ProviderContainer(
+        overrides: [
+          readReceiptsTransportStateProvider.overrideWithValue(
+            const PrivacySettingState.ready(false),
+          ),
+          markReadFnProvider('c1').overrideWithValue((
+            ids, {
+            required receiptVisible,
+          }) async {
+            calls.add((ids: List.of(ids), receiptVisible: receiptVisible));
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    container.read(messageReadsProvider('c1').notifier).reportVisible('m1');
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+      container.read(messageReadsProvider('c1').notifier).reportVisible('m1');
+      await Future<void>.delayed(const Duration(milliseconds: 400));
 
-    expect(container.read(messageReadsProvider('c1')), isEmpty);
-    expect(calls, isEmpty);
-  });
+      expect(container.read(messageReadsProvider('c1')), isEmpty);
+      expect(calls, hasLength(1));
+      expect(calls.single.ids, ['m1']);
+      expect(calls.single.receiptVisible, isFalse);
+    },
+  );
 
-  test('turning receipts OFF drops an already queued batch', () async {
-    final calls = <List<String>>[];
+  test('turning receipts OFF sends a queued local read as hidden', () async {
+    final calls = <({List<String> ids, bool receiptVisible})>[];
     final container = ProviderContainer(
       overrides: [
         readReceiptsTransportStateProvider.overrideWith(
           (ref) => PrivacySettingState.ready(ref.watch(_readEnabledProvider)),
         ),
-        markReadFnProvider('c1').overrideWithValue((ids) async {
-          calls.add(List.of(ids));
+        markReadFnProvider('c1').overrideWithValue((
+          ids, {
+          required receiptVisible,
+        }) async {
+          calls.add((ids: List.of(ids), receiptVisible: receiptVisible));
         }),
       ],
     );
@@ -106,8 +126,10 @@ void main() {
     container.read(_readEnabledProvider.notifier).set(false);
     await Future<void>.delayed(const Duration(milliseconds: 400));
 
-    expect(calls, isEmpty);
     expect(container.read(messageReadsProvider('c1')), isEmpty);
+    expect(calls, hasLength(1));
+    expect(calls.single.ids, ['m1']);
+    expect(calls.single.receiptVisible, isFalse);
   });
 
   test('visible messages wait for an enabled preference to load', () async {
@@ -115,7 +137,10 @@ void main() {
     final calls = <List<String>>[];
     final container = ProviderContainer(
       overrides: [
-        markReadFnProvider('c1').overrideWithValue((ids) async {
+        markReadFnProvider('c1').overrideWithValue((
+          ids, {
+          required receiptVisible,
+        }) async {
           calls.add(List.of(ids));
         }),
       ],
@@ -143,14 +168,17 @@ void main() {
   });
 
   test(
-    'visible messages are dropped when the loaded preference is OFF',
+    'visible messages wait for preference load, then mark local reads hidden when OFF',
     () async {
       SharedPreferences.setMockInitialValues({kPrivacyReadReceiptsKey: false});
-      final calls = <List<String>>[];
+      final calls = <({List<String> ids, bool receiptVisible})>[];
       final container = ProviderContainer(
         overrides: [
-          markReadFnProvider('c1').overrideWithValue((ids) async {
-            calls.add(List.of(ids));
+          markReadFnProvider('c1').overrideWithValue((
+            ids, {
+            required receiptVisible,
+          }) async {
+            calls.add((ids: List.of(ids), receiptVisible: receiptVisible));
           }),
         ],
       );
@@ -167,7 +195,9 @@ void main() {
 
       expect(container.read(readReceiptsEnabledProvider), isFalse);
       expect(container.read(messageReadsProvider('c1')), isEmpty);
-      expect(calls, isEmpty);
+      expect(calls, hasLength(1));
+      expect(calls.single.ids, ['m1']);
+      expect(calls.single.receiptVisible, isFalse);
     },
   );
 
@@ -203,36 +233,44 @@ void main() {
     expect(subscriptions, 0);
   });
 
-  test('read receipts ON subscribes and maps only partner rows', () async {
-    final values = <Set<String>>[];
-    final container = ProviderContainer(
-      overrides: [
-        readReceiptsTransportStateProvider.overrideWithValue(
-          const PrivacySettingState.ready(true),
-        ),
-        readReceiptUserIdProvider.overrideWithValue('me'),
-        watchReadsFnProvider('c1').overrideWithValue(
-          () => Stream.value([
-            {'message_id': 'mine', 'user_id': 'me'},
-            {'message_id': 'theirs', 'user_id': 'partner'},
-          ]),
-        ),
-      ],
-    );
-    final subscription = container.listen(readsForChatProvider('c1'), (
-      _,
-      next,
-    ) {
-      final value = next.value;
-      if (value != null) values.add(value);
-    }, fireImmediately: true);
-    addTearDown(subscription.close);
-    addTearDown(container.dispose);
+  test(
+    'read receipts ON subscribes and maps only visible partner rows',
+    () async {
+      final values = <Set<String>>[];
+      final container = ProviderContainer(
+        overrides: [
+          readReceiptsTransportStateProvider.overrideWithValue(
+            const PrivacySettingState.ready(true),
+          ),
+          readReceiptUserIdProvider.overrideWithValue('me'),
+          watchReadsFnProvider('c1').overrideWithValue(
+            () => Stream.value([
+              {'message_id': 'mine', 'user_id': 'me'},
+              {'message_id': 'theirs', 'user_id': 'partner'},
+              {
+                'message_id': 'hidden',
+                'user_id': 'partner',
+                'receipt_visible': false,
+              },
+            ]),
+          ),
+        ],
+      );
+      final subscription = container.listen(readsForChatProvider('c1'), (
+        _,
+        next,
+      ) {
+        final value = next.value;
+        if (value != null) values.add(value);
+      }, fireImmediately: true);
+      addTearDown(subscription.close);
+      addTearDown(container.dispose);
 
-    await Future<void>.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(const Duration(milliseconds: 10));
 
-    expect(values, [
-      <String>{'theirs'},
-    ]);
-  });
+      expect(values, [
+        <String>{'theirs'},
+      ]);
+    },
+  );
 }
