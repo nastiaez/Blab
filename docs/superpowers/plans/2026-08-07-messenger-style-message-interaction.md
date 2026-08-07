@@ -284,16 +284,18 @@ void main() {
   });
 
   test('short bubble near the top clamps to press position, not flush', () {
-    final bubbleRect = const Rect.fromLTWH(20, 40, 200, 50);
-    final pressPosition = const Offset(120, 65);
+    final bubbleRect = const Rect.fromLTWH(20, 90, 200, 50);
+    final pressPosition = const Offset(120, 130);
     final top = computeReactionRowTop(
       bubbleRect: bubbleRect,
       pressPosition: pressPosition,
       rowHeight: rowHeight,
       minTop: minTop,
     );
-    // flush (40 - 44 = -4) is below minTop, so it anchors near the press
-    // point instead, clamped to never go above minTop.
+    // flush (90 - 44 = 46) is below minTop, so it anchors near the press
+    // point instead: 130 - 44 - 8 = 78, which clears minTop on its own
+    // (no further clamp needed) and sits below the bubble's true top.
+    expect(top, pressPosition.dy - rowHeight - 8);
     expect(top, greaterThanOrEqualTo(minTop));
     expect(top, lessThan(bubbleRect.top));
   });
