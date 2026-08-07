@@ -29,11 +29,15 @@ import 'state/message_reactions_state.dart';
 import 'state/message_translations_state.dart';
 import 'state/pending_sends_state.dart';
 import 'state/typing_state.dart';
+import 'reaction_row_positioning.dart';
 import 'services/chat_image_picker.dart';
 import 'widgets/chat_composer_input.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
+import 'widgets/floating_reaction_row.dart';
+import 'widgets/full_emoji_picker_sheet.dart';
 import 'widgets/learning_language_sheet.dart';
+import 'widgets/message_action_row.dart';
 import 'widgets/message_action_sheet.dart';
 import 'widgets/message_interaction_target.dart';
 import 'widgets/message_learning_content.dart';
@@ -62,11 +66,15 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
+  final GlobalKey _stackKey = GlobalKey();
   bool _menuOpen = false;
   bool _hasText = false;
   int _textLength = 0;
   double _lastBottomInset = 0;
   int _lastMessageCount = 0;
+  Message? _selectedMessage;
+  Rect? _selectedBubbleRect;
+  Offset? _selectedPressPosition;
 
   /// Hard cap from PRD US-036.
   static const int _maxMessageLength = kMaxMessageCharacters;
@@ -263,6 +271,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (_menuOpen) setState(() => _menuOpen = false);
   }
 
+  void _selectMessage(Message message, Rect bubbleRect, Offset pressPosition) {
+    FocusScope.of(context).unfocus();
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _selectedMessage = message;
+      _selectedBubbleRect = bubbleRect;
+      _selectedPressPosition = pressPosition;
+    });
+  }
+
+  void _closeSelection() {
+    if (_selectedMessage == null) return;
+    setState(() {
+      _selectedMessage = null;
+      _selectedBubbleRect = null;
+      _selectedPressPosition = null;
+    });
+  }
+
+  String? _viewerReactionEmoji(String messageId) {
+    final reactions = ref
+        .read(messageReactionsProvider(widget.chatId))
+        .value?[messageId];
+    if (reactions == null) return null;
+    for (final reaction in reactions) {
+      if (reaction.reactedByMe) return reaction.emoji;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Resolve the chat via the last-known chat list. Using `.value` instead
@@ -448,6 +486,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         top: false,
         bottom: false,
         child: Stack(
+          key: _stackKey,
           children: [
             Column(
               children: [
@@ -483,159 +522,157 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Expanded(
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
-                    onTap: _closeMenu,
-                    child: FutureBuilder<void>(
-                      future: _ready,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState != ConnectionState.done) {
-                          return const ChatViewSkeleton();
-                        }
-                        // Show the skeleton only while we have NO data at
-                        // all. If the stream errored after a successful
-                        // initial yield (e.g. user toggled airplane mode),
-                        // keep showing the last-known messages rather than
-                        // collapsing to the loading shimmer.
-                        final knownMessages = messagesAsync.value;
-                        if (knownMessages == null) {
-                          return const ChatViewSkeleton();
-                        }
-                        return Builder(
-                          builder: (context) {
-                            final messages = knownMessages;
-                            final pending = ref.watch(
-                              pendingSendsProvider(widget.chatId),
-                            );
-                            // In-place upgrade: after the server confirms
-                            // a send, the pending bubble carries the server's
-                            // id + timestamp. As soon as the realtime stream
-                            // emits the canonical row the merge layer dedupes
-                            // by id, dropping the pending without a flicker.
-                            final messageIds = messages
-                                .map((m) => m.id)
-                                .toSet();
-                            final pendingVisible = pending
-                                .where((p) => !messageIds.contains(p.id))
-                                .toList();
-                            // Optimistic delete overlay: hide anything the
-                            // user just deleted, instantly, without waiting
-                            // for the realtime row update. US-019.
-                            final hidden = ref.watch(
-                              hiddenMessagesProvider(widget.chatId),
-                            );
-                            // Auto-flush queued sends once we're back online
-                            // (covers reconnect after airplane mode and
-                            // sends interrupted by an app kill, re-hydrated
-                            // from disk on cold launch). flushPending guards
-                            // in-flight ids, so re-running it per rebuild is
-                            // safe. PRD US-030, US-031.
-                            if (online &&
-                                pendingVisible.any(
-                                  (m) => m.status == MessageStatus.pending,
-                                )) {
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                ref
-                                    .read(
-                                      chatMessagesProvider(
-                                        widget.chatId,
-                                      ).notifier,
-                                    )
-                                    .flushPending();
-                              });
-                            }
-                            final all =
-                                [...messages, ...pendingVisible]
-                                    .where((m) => !hidden.contains(m.id))
-                                    .toList()
-                                  ..sort(
-                                    (a, b) => a.sentAt.compareTo(b.sentAt),
-                                  );
-                            final reactionsByMessage =
-                                ref
-                                    .watch(
-                                      messageReactionsProvider(widget.chatId),
-                                    )
-                                    .value ??
-                                const <String, List<MessageReactionSummary>>{};
-                            return _MessageList(
-                              chatId: widget.chatId,
-                              messages: all,
-                              reactionsByMessage: reactionsByMessage,
-                              showTranslations: showTransl,
-                              scrollController: _scroll,
-                              languageCode: learningLang.code,
-                              interfaceLanguageCode: interfaceLang.code,
-                              translationCutoffAt: translationCutoffAt,
-                              hasOlderMessages: pagination.hasMore,
-                              isLoadingOlder: pagination.isLoading,
-                              // BUG-009: keep the word popup from drawing on
-                              // top of the chat header. Account for the
-                              // safe-area notch as well.
-                              popupTopInset:
-                                  MediaQuery.paddingOf(context).top +
-                                  kChatHeaderHeight,
-                              emptyState: FirstMessageEmptyState(chat: chat),
-                              onLongPress: (m, rect, pressPosition) {
-                                HapticFeedback.mediumImpact();
-                                showMessageActionSheet(
-                                  context,
-                                  message: m,
-                                  onAction: (a) => _handleAction(m, a, chat),
-                                  onReact: canReplyToMessage(m)
-                                      ? (emoji) => ref
-                                            .read(
-                                              messageReactionsProvider(
-                                                widget.chatId,
-                                              ).notifier,
-                                            )
-                                            .react(
-                                              messageId: m.id,
-                                              emoji: emoji,
-                                            )
-                                      : null,
-                                );
-                              },
-                              onReply: (m) {
-                                HapticFeedback.selectionClick();
-                                ref
-                                    .read(
-                                      replyingToProvider(
-                                        widget.chatId,
-                                      ).notifier,
-                                    )
-                                    .set(m);
-                              },
-                              onFailedTap: (m) {
-                                final notifier = ref.read(
-                                  chatMessagesProvider(widget.chatId).notifier,
-                                );
-                                showFailedMessageSheet(
-                                  context,
-                                  onAction: (action) {
-                                    switch (action) {
-                                      case FailedMessageAction.retry:
-                                        notifier.retryFailed(m.id);
-                                        break;
-                                      case FailedMessageAction.delete:
-                                        notifier.dropPending(m.id);
-                                        break;
-                                    }
-                                  },
-                                );
-                              },
-                              onReact: (m) => showReactionPickerSheet(
-                                context,
-                                onReact: (emoji) => ref
-                                    .read(
-                                      messageReactionsProvider(
-                                        widget.chatId,
-                                      ).notifier,
-                                    )
-                                    .react(messageId: m.id, emoji: emoji),
-                              ),
-                            );
-                          },
-                        );
+                    onTap: () {
+                      _closeMenu();
+                      _closeSelection();
+                    },
+                    child: NotificationListener<ScrollStartNotification>(
+                      onNotification: (_) {
+                        if (_selectedMessage != null) _closeSelection();
+                        return false;
                       },
+                      child: FutureBuilder<void>(
+                        future: _ready,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState !=
+                              ConnectionState.done) {
+                            return const ChatViewSkeleton();
+                          }
+                          // Show the skeleton only while we have NO data at
+                          // all. If the stream errored after a successful
+                          // initial yield (e.g. user toggled airplane mode),
+                          // keep showing the last-known messages rather than
+                          // collapsing to the loading shimmer.
+                          final knownMessages = messagesAsync.value;
+                          if (knownMessages == null) {
+                            return const ChatViewSkeleton();
+                          }
+                          return Builder(
+                            builder: (context) {
+                              final messages = knownMessages;
+                              final pending = ref.watch(
+                                pendingSendsProvider(widget.chatId),
+                              );
+                              // In-place upgrade: after the server confirms
+                              // a send, the pending bubble carries the server's
+                              // id + timestamp. As soon as the realtime stream
+                              // emits the canonical row the merge layer dedupes
+                              // by id, dropping the pending without a flicker.
+                              final messageIds = messages
+                                  .map((m) => m.id)
+                                  .toSet();
+                              final pendingVisible = pending
+                                  .where((p) => !messageIds.contains(p.id))
+                                  .toList();
+                              // Optimistic delete overlay: hide anything the
+                              // user just deleted, instantly, without waiting
+                              // for the realtime row update. US-019.
+                              final hidden = ref.watch(
+                                hiddenMessagesProvider(widget.chatId),
+                              );
+                              // Auto-flush queued sends once we're back online
+                              // (covers reconnect after airplane mode and
+                              // sends interrupted by an app kill, re-hydrated
+                              // from disk on cold launch). flushPending guards
+                              // in-flight ids, so re-running it per rebuild is
+                              // safe. PRD US-030, US-031.
+                              if (online &&
+                                  pendingVisible.any(
+                                    (m) => m.status == MessageStatus.pending,
+                                  )) {
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  ref
+                                      .read(
+                                        chatMessagesProvider(
+                                          widget.chatId,
+                                        ).notifier,
+                                      )
+                                      .flushPending();
+                                });
+                              }
+                              final all =
+                                  [...messages, ...pendingVisible]
+                                      .where((m) => !hidden.contains(m.id))
+                                      .toList()
+                                    ..sort(
+                                      (a, b) => a.sentAt.compareTo(b.sentAt),
+                                    );
+                              final reactionsByMessage =
+                                  ref
+                                      .watch(
+                                        messageReactionsProvider(widget.chatId),
+                                      )
+                                      .value ??
+                                  const <
+                                    String,
+                                    List<MessageReactionSummary>
+                                  >{};
+                              return _MessageList(
+                                chatId: widget.chatId,
+                                messages: all,
+                                reactionsByMessage: reactionsByMessage,
+                                showTranslations: showTransl,
+                                scrollController: _scroll,
+                                languageCode: learningLang.code,
+                                interfaceLanguageCode: interfaceLang.code,
+                                translationCutoffAt: translationCutoffAt,
+                                hasOlderMessages: pagination.hasMore,
+                                isLoadingOlder: pagination.isLoading,
+                                // BUG-009: keep the word popup from drawing on
+                                // top of the chat header. Account for the
+                                // safe-area notch as well.
+                                popupTopInset:
+                                    MediaQuery.paddingOf(context).top +
+                                    kChatHeaderHeight,
+                                emptyState: FirstMessageEmptyState(chat: chat),
+                                onLongPress: _selectMessage,
+                                onReply: (m) {
+                                  HapticFeedback.selectionClick();
+                                  ref
+                                      .read(
+                                        replyingToProvider(
+                                          widget.chatId,
+                                        ).notifier,
+                                      )
+                                      .set(m);
+                                },
+                                onFailedTap: (m) {
+                                  final notifier = ref.read(
+                                    chatMessagesProvider(
+                                      widget.chatId,
+                                    ).notifier,
+                                  );
+                                  showFailedMessageSheet(
+                                    context,
+                                    onAction: (action) {
+                                      switch (action) {
+                                        case FailedMessageAction.retry:
+                                          notifier.retryFailed(m.id);
+                                          break;
+                                        case FailedMessageAction.delete:
+                                          notifier.dropPending(m.id);
+                                          break;
+                                      }
+                                    },
+                                  );
+                                },
+                                onReact: (m) => showReactionPickerSheet(
+                                  context,
+                                  onReact: (emoji) => ref
+                                      .read(
+                                        messageReactionsProvider(
+                                          widget.chatId,
+                                        ).notifier,
+                                      )
+                                      .react(messageId: m.id, emoji: emoji),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -653,20 +690,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         .read(editingProvider(widget.chatId).notifier)
                         .clear(),
                   ),
-                _InputBar(
-                  controller: _input,
-                  hasText: _hasText,
-                  hintText: chatIsEmpty
-                      ? context.l10n.sayHi
-                      : context.l10n.message,
-                  textLength: _textLength,
-                  maxLength: _maxMessageLength,
-                  counterShowAt: _counterShowAt,
-                  onAttach: () =>
-                      _attachImage(recipientName: chat.partnerName),
-                  onSend: _send,
-                  autofocus: chatIsEmpty,
-                ),
+                _selectedMessage != null
+                    ? MessageActionRow(
+                        message: _selectedMessage!,
+                        onAction: (action) {
+                          final message = _selectedMessage!;
+                          _closeSelection();
+                          _handleAction(message, action, chat);
+                        },
+                      )
+                    : _InputBar(
+                        controller: _input,
+                        hasText: _hasText,
+                        hintText: chatIsEmpty
+                            ? context.l10n.sayHi
+                            : context.l10n.message,
+                        textLength: _textLength,
+                        maxLength: _maxMessageLength,
+                        counterShowAt: _counterShowAt,
+                        onAttach: () =>
+                            _attachImage(recipientName: chat.partnerName),
+                        onSend: _send,
+                        autofocus: chatIsEmpty,
+                      ),
               ],
             ),
             if (_menuOpen)
@@ -707,6 +753,64 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     }
                   },
                 ),
+              ),
+            if (_selectedMessage != null &&
+                _selectedBubbleRect != null &&
+                _selectedPressPosition != null)
+              Builder(
+                builder: (_) {
+                  final stackBox =
+                      _stackKey.currentContext?.findRenderObject()
+                          as RenderBox?;
+                  if (stackBox == null) return const SizedBox.shrink();
+                  const rowHeight = 44.0;
+                  const rowWidth = 7 * 38.0;
+                  final minTop = MediaQuery.paddingOf(context).top + 4;
+                  final globalTop = computeReactionRowTop(
+                    bubbleRect: _selectedBubbleRect!,
+                    pressPosition: _selectedPressPosition!,
+                    rowHeight: rowHeight,
+                    minTop: minTop,
+                  );
+                  final localTopLeft = stackBox.globalToLocal(
+                    Offset(_selectedBubbleRect!.center.dx, globalTop),
+                  );
+                  final screenWidth = MediaQuery.sizeOf(context).width;
+                  final left = (localTopLeft.dx - rowWidth / 2).clamp(
+                    8.0,
+                    screenWidth - rowWidth - 8.0,
+                  );
+                  return Positioned(
+                    top: localTopLeft.dy,
+                    left: left,
+                    child: FloatingReactionRow(
+                      selectedEmoji: _viewerReactionEmoji(_selectedMessage!.id),
+                      onPick: (emoji) {
+                        final message = _selectedMessage!;
+                        _closeSelection();
+                        ref
+                            .read(
+                              messageReactionsProvider(widget.chatId).notifier,
+                            )
+                            .react(messageId: message.id, emoji: emoji);
+                      },
+                      onMore: () {
+                        final message = _selectedMessage!;
+                        _closeSelection();
+                        showFullEmojiPickerSheet(
+                          context,
+                          onPick: (emoji) => ref
+                              .read(
+                                messageReactionsProvider(
+                                  widget.chatId,
+                                ).notifier,
+                              )
+                              .react(messageId: message.id, emoji: emoji),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
           ],
         ),
