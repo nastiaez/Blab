@@ -844,4 +844,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get photoMessagePreview => 'Фото';
+
+  @override
+  String get searchEmoji => 'Пошук емодзі';
 }

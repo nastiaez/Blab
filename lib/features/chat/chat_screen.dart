@@ -683,6 +683,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 },
                                 onReact: (m) => showFullEmojiPickerSheet(
                                   context,
+                                  interfaceLanguageCode: interfaceLang.code,
                                   onPick: (emoji) => ref
                                       .read(
                                         messageReactionsProvider(
@@ -827,6 +828,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         _closeSelection();
                         showFullEmojiPickerSheet(
                           context,
+                          interfaceLanguageCode: interfaceLang.code,
                           onPick: (emoji) => ref
                               .read(
                                 messageReactionsProvider(

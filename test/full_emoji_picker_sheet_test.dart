@@ -15,6 +15,7 @@ void main() {
             builder: (context) => ElevatedButton(
               onPressed: () => showFullEmojiPickerSheet(
                 context,
+                interfaceLanguageCode: 'en',
                 onPick: (emoji) => picked = emoji,
               ),
               child: const Text('open'),
@@ -35,5 +36,33 @@ void main() {
 
     expect(picked, '🎉');
     expect(find.byType(EmojiPicker), findsNothing);
+  });
+
+  testWidgets('search runs in the interface language, not always English', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showFullEmojiPickerSheet(
+                context,
+                interfaceLanguageCode: 'de',
+                onPick: (_) {},
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    final picker = tester.widget<EmojiPicker>(find.byType(EmojiPicker));
+    expect(picker.config.locale, const Locale('de'));
+    expect(picker.config.searchViewConfig.hintText, isNotEmpty);
   });
 }

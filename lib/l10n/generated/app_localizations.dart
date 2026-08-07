@@ -1607,6 +1607,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Photo'**
   String get photoMessagePreview;
+
+  /// No description provided for @searchEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Search emoji'**
+  String get searchEmoji;
 }
 
 class _AppLocalizationsDelegate

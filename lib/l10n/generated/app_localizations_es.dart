@@ -850,4 +850,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get photoMessagePreview => 'Foto';
+
+  @override
+  String get searchEmoji => 'Buscar emoji';
 }

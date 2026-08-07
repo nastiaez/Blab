@@ -1,12 +1,18 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
+
 /// Opened from the floating reaction row's "+" (and from tapping an
 /// existing reaction badge) — the full emoji set with search, half the
 /// screen height, standard drag-to-dismiss.
+///
+/// [interfaceLanguageCode] drives both the search hint and the picker's own
+/// keyword matching, so search works in the language the app is set to.
 Future<void> showFullEmojiPickerSheet(
   BuildContext context, {
   required void Function(String emoji) onPick,
+  required String interfaceLanguageCode,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -40,12 +46,13 @@ Future<void> showFullEmojiPickerSheet(
                   },
                   config: Config(
                     height: sheetHeight,
+                    locale: Locale(interfaceLanguageCode),
                     emojiViewConfig: const EmojiViewConfig(
                       columns: 8,
                       emojiSizeMax: 28,
                     ),
-                    searchViewConfig: const SearchViewConfig(
-                      hintText: 'Search emoji',
+                    searchViewConfig: SearchViewConfig(
+                      hintText: sheetCtx.l10n.searchEmoji,
                     ),
                   ),
                 ),
