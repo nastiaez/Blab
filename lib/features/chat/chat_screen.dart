@@ -756,7 +756,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             if (_selectedMessage != null &&
                 _selectedBubbleRect != null &&
-                _selectedPressPosition != null)
+                _selectedPressPosition != null &&
+                canReplyToMessage(_selectedMessage!))
               Builder(
                 builder: (_) {
                   final stackBox =
