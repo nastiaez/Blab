@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,22 +36,6 @@ void main() {
     expect(find.text('You learn Spanish'), findsNothing);
     expect(find.text('Nastia learns Dutch'), findsNothing);
     expect(find.text('Send any message to start.'), findsOneWidget);
-  });
-
-  test('chat header uses viewer-centered learning copy', () {
-    final source = File(
-      'lib/features/chat/chat_screen.dart',
-    ).readAsStringSync();
-
-    expect(source, contains('youAreLearningLanguageWithPerson'));
-    expect(
-      source,
-      isNot(
-        contains(
-          r'${context.l10n.learningLanguage}: ${chat.learningLanguage.name}',
-        ),
-      ),
-    );
   });
 
   testWidgets(

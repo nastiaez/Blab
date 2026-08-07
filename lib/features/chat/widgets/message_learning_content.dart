@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,6 +16,7 @@ const double kTranslatedMessageMinContentWidth = 156;
 class MessageLearningContent extends StatelessWidget {
   const MessageLearningContent({
     super.key,
+    required this.messageId,
     required this.authoredText,
     required this.translation,
     required this.showTranslation,
@@ -26,6 +29,7 @@ class MessageLearningContent extends StatelessWidget {
     this.onRetry,
   });
 
+  final String messageId;
   final String authoredText;
   final AsyncValue<MessageTranslation>? translation;
   final bool showTranslation;
@@ -57,18 +61,14 @@ class MessageLearningContent extends StatelessWidget {
       return Text(authoredText, style: primaryStyle);
     }
     if (result is AsyncLoading<MessageTranslation>) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TranslationSubtitle(
-            state: TranslationSubtitleState.pending,
-            text: '',
-            isOutgoing: isOutgoing,
-            dividerAfter: true,
-          ),
-          Text(authoredText, style: primaryStyle),
-        ],
+      // Most messages resolve to "no aid needed" (same-language chat) —
+      // delay the shimmer so that common instant/fast resolutions never
+      // flash it. A translation that genuinely takes longer still shows it.
+      return _PendingTranslation(
+        key: ValueKey('pending-$messageId'),
+        authoredText: authoredText,
+        primaryStyle: primaryStyle,
+        isOutgoing: isOutgoing,
       );
     }
     if (result is AsyncError<MessageTranslation>) {
@@ -147,6 +147,63 @@ class MessageLearningContent extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _PendingTranslation extends StatefulWidget {
+  const _PendingTranslation({
+    super.key,
+    required this.authoredText,
+    required this.primaryStyle,
+    required this.isOutgoing,
+  });
+
+  final String authoredText;
+  final TextStyle primaryStyle;
+  final bool isOutgoing;
+
+  @override
+  State<_PendingTranslation> createState() => _PendingTranslationState();
+}
+
+class _PendingTranslationState extends State<_PendingTranslation> {
+  static const _showShimmerAfter = Duration(milliseconds: 350);
+
+  Timer? _timer;
+  bool _showShimmer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(_showShimmerAfter, () {
+      if (mounted) setState(() => _showShimmer = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_showShimmer) {
+      return Text(widget.authoredText, style: widget.primaryStyle);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TranslationSubtitle(
+          state: TranslationSubtitleState.pending,
+          text: '',
+          isOutgoing: widget.isOutgoing,
+          dividerAfter: true,
+        ),
+        Text(widget.authoredText, style: widget.primaryStyle),
+      ],
     );
   }
 }

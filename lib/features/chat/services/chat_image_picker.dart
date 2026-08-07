@@ -1,30 +1,24 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/services/chat_service.dart';
-
-enum ChatImageSource { gallery, camera }
+import '../widgets/gallery_picker_screen.dart';
 
 class ChatImagePicker {
-  ChatImagePicker({ImagePicker? picker}) : _picker = picker ?? ImagePicker();
+  const ChatImagePicker();
 
-  final ImagePicker _picker;
-
-  Future<PickedChatImage?> pick(ChatImageSource source) async {
-    final picked = await _picker.pickImage(
-      source: source == ChatImageSource.camera
-          ? ImageSource.camera
-          : ImageSource.gallery,
-      imageQuality: 88,
-      maxWidth: 2400,
-    );
-    if (picked == null) return null;
-    final bytes = await picked.readAsBytes();
+  /// Opens the gallery sheet, which also owns the camera tile — the same
+  /// sheet returns a file whether the source was a picked photo or a fresh
+  /// camera capture, so the caller doesn't need to know which.
+  Future<PickedChatImage?> pick(BuildContext context) async {
+    final file = await showGalleryPickerSheet(context);
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
     if (bytes.isEmpty) return null;
     return PickedChatImage(
       bytes: bytes,
-      mimeType: picked.mimeType ?? _mimeTypeFromName(picked.name),
-      fileName: picked.name,
+      mimeType: _mimeTypeFromName(file.path),
+      fileName: file.uri.pathSegments.last,
     );
   }
 }
@@ -38,5 +32,5 @@ String _mimeTypeFromName(String name) {
 }
 
 final chatImagePickerProvider = Provider<ChatImagePicker>(
-  (ref) => ChatImagePicker(),
+  (ref) => const ChatImagePicker(),
 );

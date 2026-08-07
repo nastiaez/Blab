@@ -7,6 +7,7 @@ void main() {
   testWidgets('reaction bar renders counts and highlights my reaction', (
     tester,
   ) async {
+    var tapped = false;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -16,14 +17,18 @@ void main() {
               MessageReactionSummary(emoji: '😂', count: 1, reactedByMe: false),
             ],
             isOutgoing: false,
-            onTap: (_) {},
+            onTap: () => tapped = true,
           ),
         ),
       ),
     );
 
-    expect(find.text('❤️ 2'), findsOneWidget);
+    expect(find.text('❤️'), findsOneWidget);
     expect(find.text('😂'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(find.byKey(const ValueKey('my-reaction-❤️')), findsOneWidget);
+
+    await tester.tap(find.text('❤️'));
+    expect(tapped, isTrue);
   });
 }

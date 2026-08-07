@@ -30,7 +30,6 @@ import 'state/message_translations_state.dart';
 import 'state/pending_sends_state.dart';
 import 'state/typing_state.dart';
 import 'services/chat_image_picker.dart';
-import 'widgets/chat_attachment_sheet.dart';
 import 'widgets/chat_composer_input.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
@@ -64,7 +63,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
   bool _menuOpen = false;
-  bool _attachmentTrayOpen = false;
   bool _hasText = false;
   int _textLength = 0;
   double _lastBottomInset = 0;
@@ -164,28 +162,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (replyingTo != null) {
       ref.read(replyingToProvider(widget.chatId).notifier).clear();
     }
-    if (_attachmentTrayOpen) {
-      setState(() => _attachmentTrayOpen = false);
-    }
     _input.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
-  void _toggleAttachmentTray() {
+  Future<void> _attachImage({required String recipientName}) async {
     FocusScope.of(context).unfocus();
-    setState(() => _attachmentTrayOpen = !_attachmentTrayOpen);
-  }
-
-  Future<void> _attachImage(
-    ChatImageSource source, {
-    required String recipientName,
-  }) async {
-    if (_attachmentTrayOpen) {
-      setState(() => _attachmentTrayOpen = false);
-    }
     PickedChatImage? image;
     try {
-      image = await ref.read(chatImagePickerProvider).pick(source);
+      image = await ref.read(chatImagePickerProvider).pick(context);
     } catch (_) {
       if (!mounted) return;
       showAppSnack('Could not open photos. Try again.');
@@ -441,11 +426,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     // Snap back to the bottom when the keyboard opens, so the input field
-    // and the most-recent bubble stay co-visible.
+    // and the most-recent bubble stay co-visible — but only if the user was
+    // already near the bottom. Otherwise this fires on any keyboard-inset
+    // change (e.g. the action sheet briefly shifting focus) and yanks the
+    // view away from wherever the user actually was, such as a message they
+    // just reacted to further up the history.
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     if ((bottomInset - _lastBottomInset).abs() > 1) {
       _lastBottomInset = bottomInset;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scroll.hasClients) return;
+        if (_scroll.position.pixels > 200) return;
+        _scrollToBottom();
+      });
     }
 
     return Scaffold(
@@ -629,13 +622,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   },
                                 );
                               },
-                              onReact: (m, emoji) => ref
-                                  .read(
-                                    messageReactionsProvider(
-                                      widget.chatId,
-                                    ).notifier,
-                                  )
-                                  .react(messageId: m.id, emoji: emoji),
+                              onReact: (m) => showReactionPickerSheet(
+                                context,
+                                onReact: (emoji) => ref
+                                    .read(
+                                      messageReactionsProvider(
+                                        widget.chatId,
+                                      ).notifier,
+                                    )
+                                    .react(messageId: m.id, emoji: emoji),
+                              ),
                             );
                           },
                         );
@@ -666,10 +662,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   textLength: _textLength,
                   maxLength: _maxMessageLength,
                   counterShowAt: _counterShowAt,
-                  showAttachmentTray: _attachmentTrayOpen,
-                  onAttach: _toggleAttachmentTray,
-                  onPickAttachment: (source) =>
-                      _attachImage(source, recipientName: chat.partnerName),
+                  onAttach: () =>
+                      _attachImage(recipientName: chat.partnerName),
                   onSend: _send,
                   autofocus: chatIsEmpty,
                 ),
@@ -835,30 +829,26 @@ class _ChatHeader extends ConsumerWidget {
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 1),
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 150),
-                              child: Text(
-                                partnerTyping
-                                    ? context.l10n.typing
-                                    : context.l10n
-                                          .youAreLearningLanguageWithPerson(
-                                            chat.learningLanguage.name,
-                                            _capitaliseName(chat.partnerName),
-                                          ),
-                                key: ValueKey(partnerTyping),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: partnerTyping
-                                      ? BlabColors.brand
-                                      : BlabColors.textMuted,
-                                  fontWeight: partnerTyping
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                ),
-                              ),
+                              child: partnerTyping
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(top: 1),
+                                      child: Text(
+                                        context.l10n.typing,
+                                        key: const ValueKey(true),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: BlabColors.brand,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey(false),
+                                    ),
                             ),
                           ],
                         ),
@@ -1048,7 +1038,7 @@ class _MessageList extends StatelessWidget {
   final void Function(Message) onLongPress;
   final void Function(Message) onReply;
   final void Function(Message) onFailedTap;
-  final void Function(Message, String emoji) onReact;
+  final void Function(Message) onReact;
   final Widget? emptyState;
 
   @override
@@ -1139,7 +1129,7 @@ class _MessageList extends StatelessWidget {
             onLongPress: () => onLongPress(item.message),
             onReply: () => onReply(item.message),
             onFailedTap: () => onFailedTap(item.message),
-            onReact: (emoji) => onReact(item.message, emoji),
+            onReact: () => onReact(item.message),
           );
         }
         return const SizedBox.shrink();
@@ -1255,7 +1245,7 @@ class _MessageRow extends ConsumerWidget {
   final VoidCallback onLongPress;
   final VoidCallback onReply;
   final VoidCallback onFailedTap;
-  final void Function(String emoji) onReact;
+  final VoidCallback onReact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1386,7 +1376,7 @@ class _Bubble extends ConsumerWidget {
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
   final double popupTopInset;
-  final void Function(String emoji) onReact;
+  final VoidCallback onReact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1433,14 +1423,25 @@ class _Bubble extends ConsumerWidget {
             bottomRight: Radius.circular(18),
           );
 
-    return Column(
-      crossAxisAlignment: isOut
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IntrinsicWidth(
-          child: ConstrainedBox(
+    // Reactions overlap the bubble's bottom corner (WhatsApp-style) instead
+    // of pushing content down in normal flow, so the row needs a little
+    // reserved space below for the badge to hang into without crowding the
+    // next bubble.
+    const reactionBadgeHeight = 22.0;
+    const reactionBadgeOverlap = 12.0;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: reactions.isNotEmpty
+            ? reactionBadgeHeight - reactionBadgeOverlap
+            : 0,
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: isOut ? Alignment.topRight : Alignment.topLeft,
+        children: [
+          IntrinsicWidth(
+            child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Container(
               decoration: BoxDecoration(
@@ -1467,6 +1468,7 @@ class _Bubble extends ConsumerWidget {
                   ],
                   if (message.originalText.trim().isNotEmpty)
                     MessageLearningContent(
+                      messageId: message.id,
                       authoredText: message.originalText,
                       translation: liveTranslation,
                       showTranslation: showTranslation,
@@ -1519,18 +1521,19 @@ class _Bubble extends ConsumerWidget {
             ),
           ),
         ),
-        if (reactions.isNotEmpty) ...[
-          const SizedBox(height: 3),
-          Padding(
-            padding: EdgeInsets.only(left: isOut ? 0 : 8, right: isOut ? 8 : 0),
-            child: MessageReactionBar(
-              reactions: reactions,
-              isOutgoing: isOut,
-              onTap: onReact,
+          if (reactions.isNotEmpty)
+            Positioned(
+              bottom: -reactionBadgeOverlap,
+              left: isOut ? null : 4,
+              right: isOut ? 4 : null,
+              child: MessageReactionBar(
+                reactions: reactions,
+                isOutgoing: isOut,
+                onTap: onReact,
+              ),
             ),
-          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -1584,22 +1587,22 @@ class _Meta extends StatelessWidget {
   }
 }
 
+ImageProvider<Object>? _attachmentImageProvider(MessageAttachment attachment) {
+  final bytes = attachment.localBytes;
+  if (bytes != null) return MemoryImage(Uint8List.fromList(bytes));
+  final url = attachment.url;
+  if (url != null && url.isNotEmpty) return NetworkImage(url);
+  return null;
+}
+
 class _PhotoAttachmentView extends StatelessWidget {
   const _PhotoAttachmentView({required this.attachment});
 
   final MessageAttachment attachment;
 
-  ImageProvider<Object>? get _provider {
-    final bytes = attachment.localBytes;
-    if (bytes != null) return MemoryImage(Uint8List.fromList(bytes));
-    final url = attachment.url;
-    if (url != null && url.isNotEmpty) return NetworkImage(url);
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final provider = _provider;
+    final provider = _attachmentImageProvider(attachment);
     final image = ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
@@ -1738,9 +1741,7 @@ class _InputBar extends StatelessWidget {
     required this.textLength,
     required this.maxLength,
     required this.counterShowAt,
-    required this.showAttachmentTray,
     required this.onAttach,
-    required this.onPickAttachment,
     required this.onSend,
     this.autofocus = false,
   });
@@ -1751,9 +1752,7 @@ class _InputBar extends StatelessWidget {
   final int textLength;
   final int maxLength;
   final int counterShowAt;
-  final bool showAttachmentTray;
   final VoidCallback onAttach;
-  final ValueChanged<ChatImageSource> onPickAttachment;
   final VoidCallback onSend;
   final bool autofocus;
 
@@ -1835,8 +1834,6 @@ class _InputBar extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (showAttachmentTray)
-                ChatAttachmentTray(onPick: onPickAttachment),
             ],
           ),
         ),
@@ -1870,12 +1867,16 @@ class _QuotedReply extends StatelessWidget {
         : BlabColors.textMuted;
 
     final author = replyTo.isOutgoing ? context.l10n.you : context.l10n.partner;
-    final previewText = switch (translation) {
+    final rawPreviewText = switch (translation) {
       AsyncData<MessageTranslation>(value: final value)
           when value.mode != LearningAidMode.none =>
         value.translation,
       _ => replyTo.originalText,
     };
+    final previewText = rawPreviewText.trim().isEmpty && replyTo.attachment != null
+        ? context.l10n.photoMessagePreview
+        : rawPreviewText;
+    final attachment = replyTo.attachment;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -1887,6 +1888,10 @@ class _QuotedReply extends StatelessWidget {
           children: [
             Container(width: 4, height: 44, color: barColor),
             const SizedBox(width: 8),
+            if (attachment != null) ...[
+              _ReplyThumbnail(attachment: attachment),
+              const SizedBox(width: 8),
+            ],
             Flexible(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(2, 5, 8, 5),
@@ -1920,6 +1925,27 @@ class _QuotedReply extends StatelessWidget {
   }
 }
 
+class _ReplyThumbnail extends StatelessWidget {
+  const _ReplyThumbnail({required this.attachment});
+
+  final MessageAttachment attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = _attachmentImageProvider(attachment);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: provider == null
+            ? Container(color: Colors.black.withValues(alpha: 0.08))
+            : Image(image: provider, fit: BoxFit.cover),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────── reply bar ───────────────────────────────────────
 
 class _ReplyBar extends StatelessWidget {
@@ -1936,6 +1962,10 @@ class _ReplyBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final whose = message.isOutgoing ? context.l10n.yourself : partnerName;
+    final attachment = message.attachment;
+    final previewText = message.originalText.trim().isEmpty && attachment != null
+        ? context.l10n.photoMessagePreview
+        : message.originalText;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1948,6 +1978,10 @@ class _ReplyBar extends StatelessWidget {
           children: [
             Container(width: 4, color: BlabColors.brand),
             const SizedBox(width: 10),
+            if (attachment != null) ...[
+              _ReplyThumbnail(attachment: attachment),
+              const SizedBox(width: 10),
+            ],
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1963,7 +1997,7 @@ class _ReplyBar extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    message.originalText,
+                    previewText,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

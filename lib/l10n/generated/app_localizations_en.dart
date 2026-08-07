@@ -823,4 +823,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dismiss => 'Dismiss';
+
+  @override
+  String get photos => 'Photos';
+
+  @override
+  String get photoAccessNeeded => 'Photo access needed';
+
+  @override
+  String get photoAccessNeededBody =>
+      'Allow access to your photos to share one in chat.';
+
+  @override
+  String get openSettings => 'Open Settings';
+
+  @override
+  String get noPhotosFound => 'No photos yet';
+
+  @override
+  String get photoMessagePreview => 'Photo';
 }

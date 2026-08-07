@@ -21,6 +21,7 @@ import {
   providerResultFailureReason,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
+  translationNeedsRetry,
   validateRequest,
 } from "./contract.ts";
 
@@ -251,16 +252,22 @@ Deno.serve(async (req) => {
 
   let result: ReturnType<typeof parseProviderResult> = null;
   let providerFailure = "unknown";
+  let lastFailedSourceLang: string | null = null;
   for (const credential of providerKeys) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+      const targetName = LANG_NAMES[targetLang] ?? targetLang;
+      const wrongModeGuidance = lastFailedSourceLang !== null &&
+          lastFailedSourceLang !== targetLang
+        ? ` Your previous response detected sourceLang=${lastFailedSourceLang}, which is not ${targetLang}, so mode=none/correction was invalid there — mode must be translation, and "translation" must be a genuine full-sentence rendering in ${targetName}, not a copy of the input.`
+        : "";
       const retryGuidance = attempt === 0
         ? ""
-        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. For Ukrainian, do not use parenthetical or slash gender alternatives such as "був(ла)", "радий(а)", "був/була", or "радий/рада"; rewrite with impersonal neutral wording instead.`;
+        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text — the per-word "tokens" gloss is a supplement to the translation, never a substitute for it. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. For Ukrainian, do not use parenthetical or slash gender alternatives such as "був(ла)", "радий(а)", "був/була", or "радий/рада"; rewrite with impersonal neutral wording instead.${wrongModeGuidance}`;
       let llm: Response;
       try {
         llm = await fetchChatCompletion(credential, {
-          temperature: 0,
+          temperature: attempt === 0 ? 0 : 0.4,
           max_completion_tokens: 12000,
           response_format: TRANSLATION_RESPONSE_FORMAT,
           messages: providerMessages({
@@ -336,6 +343,16 @@ Deno.serve(async (req) => {
         genderedAmbiguityNeedsRetry(candidate, sourceLang, targetLang, text)
       ) {
         providerFailure = `${credential.provider}_gendered_ambiguity`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      if (translationNeedsRetry(candidate, targetLang, text)) {
+        lastFailedSourceLang = candidate.sourceLang;
+        providerFailure = `${credential.provider}_untranslated`;
         console.error("translation provider attempt failed", {
           provider: credential.provider,
           model: credential.model,

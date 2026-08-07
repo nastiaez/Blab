@@ -123,8 +123,13 @@ Future<void> showMessageActionSheet(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          // heightFactor: 1 keeps this shrink-wrapped to its content's
+          // height. Without it, Align fills the whole route height with a
+          // transparent hit-testable area, which swallows taps that should
+          // fall through to the modal barrier and dismiss the sheet.
           child: Align(
             alignment: Alignment.bottomCenter,
+            heightFactor: 1,
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: kMessageActionSheetMaxWidth,
@@ -159,6 +164,63 @@ Future<void> showMessageActionSheet(
                         ...rows,
                       ],
                     ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Shows just the emoji reaction row on its own — used to let the viewer
+/// change an existing reaction by tapping its badge, without surfacing the
+/// full reply/edit/delete menu.
+Future<void> showReactionPickerSheet(
+  BuildContext context, {
+  required void Function(String emoji) onReact,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.32),
+    elevation: 0,
+    isScrollControlled: true,
+    builder: (sheetCtx) {
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: kMessageActionSheetMaxWidth,
+              ),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: BlabColors.divider,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _ReactionPicker(onReact: onReact),
+                    ],
                   ),
                 ),
               ),

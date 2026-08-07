@@ -55,6 +55,8 @@ dependencies:
   firebase_core: ^4.12.1
   firebase_messaging: ^16.4.3
   image_picker: ^1.2.3
+  photo_manager: ^3.11.0
+  emoji_picker_flutter: ^4.5.3
 
 dev_dependencies:
   flutter_test:

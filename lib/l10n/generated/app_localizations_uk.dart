@@ -825,4 +825,23 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get dismiss => 'Закрити';
+
+  @override
+  String get photos => 'Фото';
+
+  @override
+  String get photoAccessNeeded => 'Потрібен доступ до фото';
+
+  @override
+  String get photoAccessNeededBody =>
+      'Дозвольте доступ до фото, щоб надіслати одне в чаті.';
+
+  @override
+  String get openSettings => 'Відкрити налаштування';
+
+  @override
+  String get noPhotosFound => 'Поки що немає фото';
+
+  @override
+  String get photoMessagePreview => 'Фото';
 }

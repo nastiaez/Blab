@@ -836,4 +836,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dismiss => 'Schließen';
+
+  @override
+  String get photos => 'Fotos';
+
+  @override
+  String get photoAccessNeeded => 'Fotozugriff erforderlich';
+
+  @override
+  String get photoAccessNeededBody =>
+      'Erlaube den Zugriff auf deine Fotos, um eines im Chat zu teilen.';
+
+  @override
+  String get openSettings => 'Einstellungen öffnen';
+
+  @override
+  String get noPhotosFound => 'Noch keine Fotos';
+
+  @override
+  String get photoMessagePreview => 'Foto';
 }

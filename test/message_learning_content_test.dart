@@ -41,6 +41,7 @@ void main() {
     return MaterialApp(
       home: Scaffold(
         body: MessageLearningContent(
+          messageId: 'msg-1',
           authoredText: authoredText,
           translation: translation,
           showTranslation: showTranslation,
@@ -310,6 +311,7 @@ void main() {
           body: Center(
             child: IntrinsicWidth(
               child: MessageLearningContent(
+                messageId: 'msg-2',
                 authoredText: 'hi',
                 translation: AsyncData(
                   result(

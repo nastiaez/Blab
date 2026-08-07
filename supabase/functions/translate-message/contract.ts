@@ -261,6 +261,21 @@ export function interfaceOutputNeedsRetry(
     /\p{L}/u.test(result.translation);
 }
 
+/// A provider sometimes returns the untranslated source as "translation"
+/// while still filling in per-word gloss/roman tokens, as if word-level aid
+/// were a substitute for the required full-sentence translation. That must
+/// never reach the viewer as their learning-language line.
+export function translationNeedsRetry(
+  result: TranslationResult,
+  targetLang: string,
+  sourceText: string,
+): boolean {
+  return result.mode === "translation" &&
+    result.sourceLang !== targetLang &&
+    result.translation.trim().toLocaleLowerCase() ===
+      sourceText.trim().toLocaleLowerCase();
+}
+
 export function genderedAmbiguityNeedsRetry(
   result: TranslationResult,
   sourceLang: string,
@@ -373,6 +388,11 @@ export function parseProviderResult(
   // the model rewrites a typo or returns two slightly different copies.
   if (interfaceLang === targetLang) {
     result.interfaceText = result.translation;
+  } else if (sourceLang === interfaceLang) {
+    // Same-language display line: the DB requires this to exactly match the
+    // original message, so never trust the provider's copy of it (models
+    // routinely "fix" punctuation/capitalization, which breaks that check).
+    result.interfaceText = text;
   } else if (result.interfaceText.trim().length === 0) {
     result.interfaceText = text;
   }

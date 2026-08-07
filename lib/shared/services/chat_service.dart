@@ -580,14 +580,12 @@ class ChatService {
     required String messageId,
     required String emoji,
   }) async {
-    final updated = await _client
-        .from('message_reactions')
-        .update({'emoji': emoji})
-        .eq('message_id', messageId)
-        .eq('user_id', _uid)
-        .select('message_id')
-        .maybeSingle();
-    if (updated != null) return;
+    // Insert-first, fall back to update on conflict. (A prior update-first
+    // variant used `.update(...).select().maybeSingle()` to detect "no
+    // existing row", but postgrest-dart's maybeSingle() only absorbs a
+    // zero-row response for GET requests — for an UPDATE with zero matches
+    // it throws PGRST116 instead of returning null, so every first-time
+    // reaction failed silently.)
     try {
       await _client.from('message_reactions').insert({
         'message_id': messageId,

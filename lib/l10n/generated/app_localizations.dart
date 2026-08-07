@@ -1571,6 +1571,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get dismiss;
+
+  /// No description provided for @photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photos;
+
+  /// No description provided for @photoAccessNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access needed'**
+  String get photoAccessNeeded;
+
+  /// No description provided for @photoAccessNeededBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow access to your photos to share one in chat.'**
+  String get photoAccessNeededBody;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get openSettings;
+
+  /// No description provided for @noPhotosFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet'**
+  String get noPhotosFound;
+
+  /// No description provided for @photoMessagePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get photoMessagePreview;
 }
 
 class _AppLocalizationsDelegate
