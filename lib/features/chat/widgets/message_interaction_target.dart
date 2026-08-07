@@ -17,7 +17,7 @@ class MessageInteractionTarget extends StatefulWidget {
   });
 
   final bool isFailed;
-  final VoidCallback onLongPress;
+  final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onFailedTap;
   final VoidCallback? onSwipeReply;
   final Widget child;
@@ -64,6 +64,13 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
     if (shouldReply) widget.onSwipeReply!();
   }
 
+  void _handleLongPressStart(LongPressStartDetails details) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    widget.onLongPress(rect, details.globalPosition);
+  }
+
   @override
   Widget build(BuildContext context) {
     final replyOpacity = (_visualOffset.abs() / _replyTriggerDistance).clamp(
@@ -78,7 +85,7 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onLongPress: widget.onLongPress,
+        onLongPressStart: _handleLongPressStart,
         onTap: widget.isFailed ? widget.onFailedTap : null,
         onHorizontalDragUpdate: _canSwipeReply ? _updateSwipe : null,
         onHorizontalDragEnd: _canSwipeReply ? (_) => _finishSwipe() : null,

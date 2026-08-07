@@ -28,7 +28,7 @@ class _FakeTtsService implements TtsService {
 }
 
 Widget _harness({
-  required VoidCallback onLongPress,
+  required void Function(Rect, Offset) onLongPress,
   VoidCallback? onFailedTap,
   VoidCallback? onSwipeReply,
   bool isFailed = false,
@@ -77,7 +77,7 @@ void main() {
     tester,
   ) async {
     var longPressed = false;
-    await tester.pumpWidget(_harness(onLongPress: () => longPressed = true));
+    await tester.pumpWidget(_harness(onLongPress: (_, _) => longPressed = true));
 
     await tester.tapAt(tester.getCenter(find.text('காலை')));
     await tester.pumpAndSettle();
@@ -98,7 +98,7 @@ void main() {
     tester,
   ) async {
     var longPressed = false;
-    await tester.pumpWidget(_harness(onLongPress: () => longPressed = true));
+    await tester.pumpWidget(_harness(onLongPress: (_, _) => longPressed = true));
 
     await tester.longPress(find.text('காலை'));
     await tester.pumpAndSettle();
@@ -119,7 +119,7 @@ void main() {
     tester,
   ) async {
     var longPressed = false;
-    await tester.pumpWidget(_harness(onLongPress: () => longPressed = true));
+    await tester.pumpWidget(_harness(onLongPress: (_, _) => longPressed = true));
 
     await tester.tapAt(
       tester.getTopLeft(find.byKey(const ValueKey('message-padding'))) +
@@ -138,7 +138,7 @@ void main() {
     var longPressed = false;
     await tester.pumpWidget(
       _harness(
-        onLongPress: () => longPressed = true,
+        onLongPress: (_, _) => longPressed = true,
         onSwipeReply: () => replied = true,
       ),
     );
@@ -161,7 +161,7 @@ void main() {
     await tester.pumpWidget(
       _harness(
         isFailed: true,
-        onLongPress: () {},
+        onLongPress: (_, _) {},
         onSwipeReply: () => replied = true,
       ),
     );
@@ -182,7 +182,7 @@ void main() {
       await tester.pumpWidget(
         _harness(
           isFailed: true,
-          onLongPress: () {},
+          onLongPress: (_, _) {},
           onFailedTap: () => failedTapped = true,
         ),
       );

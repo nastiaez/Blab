@@ -574,7 +574,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   MediaQuery.paddingOf(context).top +
                                   kChatHeaderHeight,
                               emptyState: FirstMessageEmptyState(chat: chat),
-                              onLongPress: (m) {
+                              onLongPress: (m, rect, pressPosition) {
                                 HapticFeedback.mediumImpact();
                                 showMessageActionSheet(
                                   context,
@@ -1035,7 +1035,7 @@ class _MessageList extends StatelessWidget {
   final bool hasOlderMessages;
   final bool isLoadingOlder;
   final double popupTopInset;
-  final void Function(Message) onLongPress;
+  final void Function(Message, Rect, Offset) onLongPress;
   final void Function(Message) onReply;
   final void Function(Message) onFailedTap;
   final void Function(Message) onReact;
@@ -1126,7 +1126,8 @@ class _MessageList extends StatelessWidget {
             ),
             translationCutoffAt: translationCutoffAt,
             popupTopInset: popupTopInset,
-            onLongPress: () => onLongPress(item.message),
+            onLongPress: (rect, position) =>
+                onLongPress(item.message, rect, position),
             onReply: () => onReply(item.message),
             onFailedTap: () => onFailedTap(item.message),
             onReact: () => onReact(item.message),
@@ -1242,7 +1243,7 @@ class _MessageRow extends ConsumerWidget {
   final bool shouldTranslate;
   final DateTime? translationCutoffAt;
   final double popupTopInset;
-  final VoidCallback onLongPress;
+  final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onReply;
   final VoidCallback onFailedTap;
   final VoidCallback onReact;
