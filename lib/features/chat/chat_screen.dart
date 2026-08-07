@@ -658,9 +658,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     },
                                   );
                                 },
-                                onReact: (m) => showReactionPickerSheet(
+                                onReact: (m) => showFullEmojiPickerSheet(
                                   context,
-                                  onReact: (emoji) => ref
+                                  onPick: (emoji) => ref
                                       .read(
                                         messageReactionsProvider(
                                           widget.chatId,
