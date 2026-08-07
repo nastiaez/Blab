@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -272,12 +273,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _selectMessage(Message message, Rect bubbleRect, Offset pressPosition) {
+    // Selecting swaps the composer for the action row, so any open keyboard
+    // is about to go away. The message list is bottom-anchored, so losing the
+    // keyboard inset slides every bubble down by exactly that inset. Bake the
+    // shift into the geometry we freeze here, otherwise the floating row
+    // lands where the bubble *was* rather than where it ends up.
+    final keyboardShift = Offset(0, MediaQuery.viewInsetsOf(context).bottom);
     FocusScope.of(context).unfocus();
     HapticFeedback.mediumImpact();
     setState(() {
       _selectedMessage = message;
-      _selectedBubbleRect = bubbleRect;
-      _selectedPressPosition = pressPosition;
+      _selectedBubbleRect = bubbleRect.shift(keyboardShift);
+      _selectedPressPosition = pressPosition + keyboardShift;
     });
   }
 
@@ -471,8 +478,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // just reacted to further up the history.
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     if ((bottomInset - _lastBottomInset).abs() > 1) {
+      // A keyboard that *appears* under a live selection shifts the message
+      // list up by an amount we can't compensate for after the fact — the
+      // bubble geometry behind the floating row was frozen at long-press
+      // time. Drop the selection rather than leave a row stranded away from
+      // its bubble. A shrinking inset is the keyboard we ourselves dismissed
+      // in _selectMessage, which is already accounted for there.
+      final keyboardAppeared = bottomInset > _lastBottomInset;
       _lastBottomInset = bottomInset;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (keyboardAppeared) _closeSelection();
         if (!_scroll.hasClients) return;
         if (_scroll.position.pixels > 200) return;
         _scrollToBottom();
@@ -527,8 +543,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       _closeSelection();
                     },
                     child: NotificationListener<ScrollStartNotification>(
-                      onNotification: (_) {
-                        if (_selectedMessage != null) _closeSelection();
+                      onNotification: (notification) {
+                        // Only a real finger drag dismisses the selection.
+                        // Programmatic scrolls (the keyboard-inset snap-back
+                        // below calls jumpTo) report no drag details and must
+                        // not close the row out from under the user.
+                        final isUserDrag = notification.dragDetails != null;
+                        if (isUserDrag && _selectedMessage != null) {
+                          _closeSelection();
+                        }
                         return false;
                       },
                       child: FutureBuilder<void>(
@@ -764,23 +787,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       _stackKey.currentContext?.findRenderObject()
                           as RenderBox?;
                   if (stackBox == null) return const SizedBox.shrink();
-                  const rowHeight = 44.0;
-                  const rowWidth = 7 * 38.0;
                   final minTop = MediaQuery.paddingOf(context).top + 4;
                   final globalTop = computeReactionRowTop(
                     bubbleRect: _selectedBubbleRect!,
                     pressPosition: _selectedPressPosition!,
-                    rowHeight: rowHeight,
+                    rowHeight: kFloatingReactionRowHeight,
                     minTop: minTop,
                   );
                   final localTopLeft = stackBox.globalToLocal(
                     Offset(_selectedBubbleRect!.center.dx, globalTop),
                   );
                   final screenWidth = MediaQuery.sizeOf(context).width;
-                  final left = (localTopLeft.dx - rowWidth / 2).clamp(
+                  // max() guard: in a narrow window (split-screen, freeform)
+                  // the row can be wider than the screen, which would make
+                  // the clamp bounds cross and throw.
+                  final maxLeft = math.max(
                     8.0,
-                    screenWidth - rowWidth - 8.0,
+                    screenWidth - kFloatingReactionRowWidth - 8.0,
                   );
+                  final left = (localTopLeft.dx - kFloatingReactionRowWidth / 2)
+                      .clamp(8.0, maxLeft)
+                      .toDouble();
                   return Positioned(
                     top: localTopLeft.dy,
                     left: left,
