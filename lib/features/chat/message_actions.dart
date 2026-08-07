@@ -1,6 +1,6 @@
 import '../../../shared/models/message.dart';
 
-/// The action picked from the long-press sheet. PRD US-019, US-020;
+/// The action picked from the long-press action row. PRD US-019, US-020;
 /// `report` added for Step 3.6a.
 enum MessageAction { reply, edit, copy, delete, report }
 

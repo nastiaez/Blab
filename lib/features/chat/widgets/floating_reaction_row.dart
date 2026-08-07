@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
-import 'message_action_sheet.dart' show kQuickMessageReactions;
+import '../message_actions.dart' show kQuickMessageReactions;
 
 /// The compact horizontal emoji row that floats above a long-pressed
 /// message bubble, Messenger-style. Packed closer together than the old

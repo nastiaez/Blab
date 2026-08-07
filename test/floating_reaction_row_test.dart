@@ -1,5 +1,5 @@
 import 'package:blab/features/chat/widgets/floating_reaction_row.dart';
-import 'package:blab/features/chat/widgets/message_action_sheet.dart'
+import 'package:blab/features/chat/message_actions.dart'
     show kQuickMessageReactions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

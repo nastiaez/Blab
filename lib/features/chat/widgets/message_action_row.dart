@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/message.dart';
-import 'message_action_sheet.dart'
+import '../message_actions.dart'
     show MessageAction, canEditMessage, canReplyToMessage;
 
 /// Icon + label action row that replaces the composer, Messenger-style,

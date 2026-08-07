@@ -1,5 +1,5 @@
 import 'package:blab/features/chat/widgets/message_action_row.dart';
-import 'package:blab/features/chat/widgets/message_action_sheet.dart'
+import 'package:blab/features/chat/message_actions.dart'
     show MessageAction;
 import 'package:blab/shared/models/message.dart';
 import 'package:flutter/material.dart';
