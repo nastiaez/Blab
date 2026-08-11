@@ -143,6 +143,7 @@ class MessageLearningContent extends StatelessWidget {
             originalText: authoredText,
             correctedText: value.translation,
             learningLanguageCode: learningLanguageCode,
+            explanation: value.explanation,
             popupTopInset: popupTopInset,
             style: primaryStyle,
           )

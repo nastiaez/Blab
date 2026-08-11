@@ -1,6 +1,12 @@
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../shared/models/message_token.dart';
+import '../../../shared/services/tts_service.dart';
+import 'word_popup.dart';
 
 @immutable
 class CorrectionSegment {
@@ -150,55 +156,152 @@ List<CorrectionSegment> correctionSegments(
   return segments;
 }
 
-class InlineCorrectionText extends StatelessWidget {
+/// Renders a word-level correction diff with independently tappable
+/// segments: corrected text opens the word popup (PRD US-018, FR-12), and
+/// struck-through text opens an explanation popup with the correction
+/// reasoning (Task 11). Mirrors [MessageText]'s per-word
+/// `TapGestureRecognizer`/`GlobalKey` pattern, but at [CorrectionSegment]
+/// granularity rather than per individual word.
+class InlineCorrectionText extends ConsumerStatefulWidget {
   const InlineCorrectionText({
     super.key,
     required this.originalText,
     required this.correctedText,
     required this.style,
-    this.learningLanguageCode,
-    this.popupTopInset = 0,
+    required this.learningLanguageCode,
+    required this.explanation,
+    required this.popupTopInset,
   });
 
   final String originalText;
   final String correctedText;
   final TextStyle style;
 
-  /// Reserved for Task 11's split tap-target rewrite (word-level popups on
-  /// the corrected text). Unused until then.
-  final String? learningLanguageCode;
+  /// Target-language Blab code used to pick a TTS voice for the corrected
+  /// (non-struck) segments' word popup.
+  final String learningLanguageCode;
 
-  /// Reserved for Task 11's split tap-target rewrite (word popup clamping).
-  /// Unused until then.
+  /// Correction reasoning shown when a struck-through segment is tapped.
+  /// `null` disables the tap on struck segments (no explanation to show).
+  final String? explanation;
+
+  /// Minimum top-Y either popup is allowed to occupy (global coords). Used
+  /// to keep popups from drawing over the chat header. BUG-009.
   final double popupTopInset;
 
   @override
+  ConsumerState<InlineCorrectionText> createState() =>
+      _InlineCorrectionTextState();
+}
+
+class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
+  final Map<int, GlobalKey> _keys = <int, GlobalKey>{};
+  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
+
+  @override
+  void dispose() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    super.dispose();
+  }
+
+  void _resetRecognizers() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  void _onStruckTap(int index) {
+    final explanation = widget.explanation;
+    if (explanation == null) return;
+    final ctx = _keys[index]?.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    showExplanationPopup(
+      context,
+      explanation: explanation,
+      anchorTopLeft: box.localToGlobal(Offset.zero),
+      anchorSize: box.size,
+      topInset: widget.popupTopInset,
+    );
+  }
+
+  void _onCorrectedTap(int index, String word) {
+    final ctx = _keys[index]?.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final tts = ref.read(ttsServiceProvider);
+    showWordPopup(
+      context,
+      token: MessageToken(text: word.trim(), isContent: true),
+      wordTopLeft: box.localToGlobal(Offset.zero),
+      wordSize: box.size,
+      languageCode: widget.learningLanguageCode,
+      tts: tts,
+      topInset: widget.popupTopInset,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final struckColor = style.color?.withValues(alpha: 0.68);
+    final struckColor = widget.style.color?.withValues(alpha: 0.68);
+    _resetRecognizers();
+
+    final segments = correctionSegments(
+      widget.originalText,
+      widget.correctedText,
+    );
+    final spans = <InlineSpan>[];
+    for (var i = 0; i < segments.length; i++) {
+      final segment = segments[i];
+      if (segment.text.trim().isEmpty) {
+        spans.add(TextSpan(text: segment.text, style: widget.style));
+        continue;
+      }
+
+      final key = _keys.putIfAbsent(i, () => GlobalKey());
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () =>
+            segment.struck ? _onStruckTap(i) : _onCorrectedTap(i, segment.text);
+      _recognizers.add(recognizer);
+
+      spans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: Padding(
+            // Extra vertical padding gives tap targets breathing room on
+            // wrapped lines, same as MessageText's per-word spans.
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text.rich(
+              TextSpan(
+                text: segment.text,
+                recognizer: recognizer,
+                style: segment.struck
+                    ? widget.style.copyWith(
+                        color: struckColor,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: struckColor,
+                        decorationThickness: 2,
+                      )
+                    : widget.style,
+              ),
+              key: key,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Semantics(
-      label: correctedText,
+      label: widget.correctedText,
       child: ExcludeSemantics(
         child: Text.rich(
-          TextSpan(
-            style: style,
-            children: [
-              for (final segment in correctionSegments(
-                originalText,
-                correctedText,
-              ))
-                TextSpan(
-                  text: segment.text,
-                  style: segment.struck
-                      ? style.copyWith(
-                          color: struckColor,
-                          decoration: TextDecoration.lineThrough,
-                          decorationColor: struckColor,
-                          decorationThickness: 2,
-                        )
-                      : style,
-                ),
-            ],
-          ),
+          TextSpan(style: widget.style, children: spans),
           key: const ValueKey('inline-correction'),
         ),
       ),
