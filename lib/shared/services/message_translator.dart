@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../data/translation_support.dart';
 import '../models/message_token.dart';
 
 enum LearningAidMode { translation, correction, none }
@@ -82,8 +83,12 @@ class MessageTranslator {
     if (interfaceText is! String || interfaceText.trim().isEmpty) {
       throw MessageTranslationFailed('missing_interface_text');
     }
+    // modes-known-languages spec: the server's `interfaceLang` slot is the
+    // reader's primary known language (falling back to interface_language
+    // only when unset) — any of the 11 learning languages, not just the 4
+    // interface-language locales.
     if (interfaceLang is! String ||
-        !const {'en', 'uk', 'de', 'es'}.contains(interfaceLang)) {
+        !kSupportedLearningLanguages.contains(interfaceLang)) {
       throw MessageTranslationFailed('missing_interface_language');
     }
     if (detectedSourceLang is! String || detectedSourceLang.isEmpty) {

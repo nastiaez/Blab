@@ -19,6 +19,7 @@ Chat _chat(String id, String name) {
     partnerName: name,
     partnerInitial: name[0],
     learningLanguage: german,
+    mode: ChatMode.practice,
     partnerNativeLanguage: german,
     partnerLearningLanguage: english,
     lastMessage: 'Last message',

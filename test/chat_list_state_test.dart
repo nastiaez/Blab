@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 
@@ -48,6 +49,7 @@ void main() {
         'last_body': 'hi',
         'last_at': '2026-05-30T12:00:00Z',
         'unread_count': 2,
+        'my_mode': 'practice',
       },
     ]);
     final container = ProviderContainer(
@@ -63,6 +65,32 @@ void main() {
     expect(chats.first.learningLanguage.code, 'ta');
     expect(chats.first.partnerLearningLanguage.code, 'uk');
     expect(chats.first.lastMessage, 'hi');
+    expect(chats.first.mode, ChatMode.practice);
+  });
+
+  test('null my_mode defaults to practice', () async {
+    final fake = _FakeChatService([
+      {
+        'viewer_id': 'me',
+        'chat_id': 'c1',
+        'partner_id': 'u2',
+        'partner_name': 'Aswin',
+        'partner_avatar': null,
+        'my_learning': 'ta',
+        'partner_learning': 'uk',
+        'last_body': 'hi',
+        'last_at': '2026-05-30T12:00:00Z',
+        'unread_count': 2,
+        'my_mode': null,
+      },
+    ]);
+    final container = ProviderContainer(
+      overrides: [chatServiceProvider.overrideWithValue(fake)],
+    );
+    addTearDown(container.dispose);
+
+    final chats = await container.read(chatListProvider.future);
+    expect(chats.first.mode, ChatMode.practice);
   });
 
   test('empty rows → empty list', () async {

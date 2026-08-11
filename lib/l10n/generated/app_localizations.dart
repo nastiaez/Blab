@@ -213,7 +213,7 @@ abstract class AppLocalizations {
   /// No description provided for @interfaceLanguageHelp.
   ///
   /// In en, this message translates to:
-  /// **'Pick the language for menus, buttons, message subtitles, and word definitions across the app.'**
+  /// **'Pick the language for menus, buttons, and other system text across the app.'**
   String get interfaceLanguageHelp;
 
   /// No description provided for @switchedToLanguage.
@@ -227,6 +227,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save the interface language. Try again.'**
   String get couldNotSaveLanguage;
+
+  /// No description provided for @knownLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Known languages'**
+  String get knownLanguages;
+
+  /// No description provided for @setPrimaryLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as primary language'**
+  String get setPrimaryLanguage;
 
   /// No description provided for @languageEnglish.
   ///
@@ -834,12 +846,6 @@ abstract class AppLocalizations {
   /// **'No connection — messages will send when you\'re back online'**
   String get noConnection;
 
-  /// No description provided for @showTranslations.
-  ///
-  /// In en, this message translates to:
-  /// **'Show translations and corrections'**
-  String get showTranslations;
-
   /// No description provided for @learningLanguage.
   ///
   /// In en, this message translates to:
@@ -857,6 +863,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Chat menu'**
   String get chatMenu;
+
+  /// No description provided for @normalMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get normalMode;
+
+  /// No description provided for @practiceMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get practiceMode;
 
   /// No description provided for @translationLimitReached.
   ///

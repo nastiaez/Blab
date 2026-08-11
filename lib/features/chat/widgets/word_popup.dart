@@ -31,6 +31,17 @@ void _dismissCurrent() {
   _currentEntry = null;
 }
 
+/// Dismisses any currently-open word/explanation popup, if one is showing.
+/// No-op otherwise.
+///
+/// Exposed for [ModeToggle]'s mode-switch handler — design spec § Bubble
+/// layout: "Switching modes resets the chat's open UI state: ... any open
+/// word popup ... closes." `_dismissCurrent` is library-private (both
+/// [showWordPopup] and [showExplanationPopup] already call it to swap in a
+/// new popup); this just gives an outside caller the same ability without a
+/// currently-open popup of its own to open.
+void dismissWordPopup() => _dismissCurrent();
+
 /// Maximum popup card width (PRD FR-12).
 const double _kMaxPopupWidth = 280;
 
@@ -70,6 +81,45 @@ void showWordPopup(
       wordSize: wordSize,
       languageCode: languageCode,
       tts: tts,
+      topInset: topInset,
+      onDismiss: () {
+        if (_currentEntry == entry) {
+          _currentEntry = null;
+        }
+        entry.remove();
+      },
+    ),
+  );
+
+  _currentEntry = entry;
+  overlayState.insert(entry);
+}
+
+/// Open an explanation popup pointing at the supplied anchor rectangle.
+///
+/// Mirrors [showWordPopup]'s positioning contract but shows free-text
+/// correction-reasoning copy instead of a word/romanization/gloss card —
+/// used by the struck-through half of a correction (Task 11).
+///
+/// [anchorTopLeft] and [anchorSize] are in global screen coordinates of the
+/// tapped struck-through span; [topInset] is the minimum global-Y the
+/// popup's top edge is allowed to reach, same as [showWordPopup]. BUG-009.
+void showExplanationPopup(
+  BuildContext context, {
+  required String explanation,
+  required Offset anchorTopLeft,
+  required Size anchorSize,
+  double topInset = 0,
+}) {
+  _dismissCurrent();
+
+  final overlayState = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (ctx) => _ExplanationPopupOverlay(
+      explanation: explanation,
+      wordTopLeft: anchorTopLeft,
+      wordSize: anchorSize,
       topInset: topInset,
       onDismiss: () {
         if (_currentEntry == entry) {
@@ -145,13 +195,60 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
           ),
         ),
         _PositionedPopup(
-          token: widget.token,
+          card: _PopupCard(
+            token: widget.token,
+            ttsAvailable: _ttsAvailable,
+            onSpeak: _onSpeak,
+          ),
           wordTopLeft: widget.wordTopLeft,
           wordSize: widget.wordSize,
           screen: screen,
           topInset: widget.topInset,
-          ttsAvailable: _ttsAvailable,
-          onSpeak: _onSpeak,
+        ),
+      ],
+    );
+  }
+}
+
+/// Overlay shell for [showExplanationPopup] — same dismiss-barrier `Stack`
+/// as [_WordPopupOverlay], sharing [_PositionedPopup]'s flip/clamp
+/// positioning math via its generic `card` slot instead of duplicating it.
+class _ExplanationPopupOverlay extends StatelessWidget {
+  const _ExplanationPopupOverlay({
+    required this.explanation,
+    required this.wordTopLeft,
+    required this.wordSize,
+    required this.topInset,
+    required this.onDismiss,
+  });
+
+  final String explanation;
+  final Offset wordTopLeft;
+  final Size wordSize;
+  final double topInset;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final screen = mq.size;
+
+    return Stack(
+      children: [
+        // Invisible dismiss barrier.
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onDismiss,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        _PositionedPopup(
+          card: _ExplanationCard(explanation: explanation),
+          wordTopLeft: wordTopLeft,
+          wordSize: wordSize,
+          screen: screen,
+          topInset: topInset,
         ),
       ],
     );
@@ -159,25 +256,26 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
 }
 
 /// Builds the card + tail and positions it relative to the tapped word.
-/// Measures itself to clamp horizontally / flip vertically.
+/// Measures itself to clamp horizontally / flip vertically. Shared by
+/// [showWordPopup] and [showExplanationPopup] — [card] is whichever content
+/// widget the caller wants inside the positioned/clamped/flipped shell, so
+/// the flip/clamp math lives in exactly one place.
 class _PositionedPopup extends StatefulWidget {
   const _PositionedPopup({
-    required this.token,
+    required this.card,
     required this.wordTopLeft,
     required this.wordSize,
     required this.screen,
     required this.topInset,
-    required this.ttsAvailable,
-    required this.onSpeak,
   });
 
-  final MessageToken token;
+  /// Popup content (word card or explanation card). Wrapped internally in a
+  /// measuring [KeyedSubtree], so the caller doesn't need to attach a key.
+  final Widget card;
   final Offset wordTopLeft;
   final Size wordSize;
   final Size screen;
   final double topInset;
-  final bool? ttsAvailable;
-  final VoidCallback onSpeak;
 
   @override
   State<_PositionedPopup> createState() => _PositionedPopupState();
@@ -211,12 +309,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
 
   @override
   Widget build(BuildContext context) {
-    final card = _PopupCard(
-      key: _cardKey,
-      token: widget.token,
-      ttsAvailable: widget.ttsAvailable,
-      onSpeak: widget.onSpeak,
-    );
+    final card = KeyedSubtree(key: _cardKey, child: widget.card);
 
     // First frame: render off-screen / invisible to measure.
     final size = _cardSize;
@@ -304,7 +397,6 @@ class _PositionedPopupState extends State<_PositionedPopup> {
 
 class _PopupCard extends StatefulWidget {
   const _PopupCard({
-    super.key,
     required this.token,
     required this.ttsAvailable,
     required this.onSpeak,
@@ -438,6 +530,47 @@ class _PopupCardState extends State<_PopupCard> {
               const SizedBox(width: 10),
               Flexible(child: wordBlock),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Free-text card shown by [showExplanationPopup] for a struck-through
+/// correction span. Same card decoration as [_PopupCard] but with a single
+/// explanation paragraph instead of the word/romanization/gloss layout.
+class _ExplanationCard extends StatelessWidget {
+  const _ExplanationCard({required this.explanation});
+
+  final String explanation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _kMaxPopupWidth),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Text(
+            explanation,
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: BlabColors.textPrimary,
+            ),
           ),
         ),
       ),

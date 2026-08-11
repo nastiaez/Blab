@@ -1,5 +1,6 @@
 import 'package:blab/features/chat/widgets/inline_correction_text.dart';
 import 'package:blab/features/chat/widgets/message_learning_content.dart';
+import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,13 @@ void main() {
     bool showTranslation = true,
     String learningCode = 'de',
     String interfaceCode = 'en',
+    // Defaults reproduce the pre-mode always-dual-lane behavior so existing
+    // fixtures below don't all need touching: practice mode, expanded.
+    // Tests exercising the new mode-based branching pass these explicitly.
+    ChatMode mode = ChatMode.practice,
+    List<String> knownLanguageCodes = const [],
+    bool expanded = true,
+    VoidCallback? onToggleExpanded,
     VoidCallback? onRetry,
   }) {
     return MaterialApp(
@@ -46,12 +54,15 @@ void main() {
           translation: translation,
           showTranslation: showTranslation,
           learningLanguageCode: learningCode,
-          interfaceLanguageCode: interfaceCode,
           isOutgoing: isOutgoing,
           popupTopInset: 0,
           unavailableText: 'Translation unavailable',
           retryText: 'Retry',
           onRetry: onRetry,
+          mode: mode,
+          knownLanguageCodes: knownLanguageCodes,
+          expanded: expanded,
+          onToggleExpanded: onToggleExpanded ?? () {},
         ),
       ),
     );
@@ -192,28 +203,6 @@ void main() {
     },
   );
 
-  testWidgets('third-language author keeps exact original in bottom lane', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      host(
-        AsyncData(
-          result(
-            learning: 'Was machst du?',
-            interfaceText: 'What are you doing?',
-            source: 'uk',
-          ),
-        ),
-        authoredText: 'Що ти робиш?',
-        isOutgoing: true,
-      ),
-    );
-
-    expectWords(const ['Was', 'machst', 'du']);
-    expect(find.text('Що ти робиш?'), findsOneWidget);
-    expect(find.text('What are you doing?'), findsNothing);
-  });
-
   testWidgets('third-language recipient gets their interface lane', (
     tester,
   ) async {
@@ -323,11 +312,14 @@ void main() {
                 ),
                 showTranslation: true,
                 learningLanguageCode: 'ta',
-                interfaceLanguageCode: 'en',
                 isOutgoing: false,
                 popupTopInset: 0,
                 unavailableText: 'Translation unavailable',
                 retryText: 'Retry',
+                mode: ChatMode.practice,
+                knownLanguageCodes: const [],
+                expanded: false,
+                onToggleExpanded: () {},
               ),
             ),
           ),
@@ -402,5 +394,142 @@ void main() {
     expect(find.text('Was machst du?'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('translation-retry')));
     expect(retried, isTrue);
+  });
+
+  // Finding #3 (final whole-branch review): normal mode must never show
+  // AI-request chrome (shimmer, unavailable/retry) for a message that might
+  // turn out to already be known — the source language isn't known until
+  // the request resolves, so loading/error states render plain original
+  // text in normal mode. Practice mode always needs the learning-language
+  // line regardless of known status, so its shimmer/retry treatment is
+  // unchanged — covered first here as a regression guard.
+
+  testWidgets('practice mode still shows the pending shimmer while loading', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(const AsyncLoading(), authoredText: 'Was machst du?'),
+    );
+    // The shimmer is delayed — advance past _PendingTranslation's threshold.
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const ValueKey('translation-shimmer')), findsOneWidget);
+    expect(find.text('Was machst du?'), findsOneWidget);
+  });
+
+  testWidgets(
+    'normal mode never shows the pending shimmer, even while loading',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          const AsyncLoading(),
+          authoredText: 'Was machst du?',
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['en'],
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
+      expect(find.text('Was machst du?'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'normal mode never shows the unavailable/retry subtitle, even on error',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncError(Exception('offline'), StackTrace.empty),
+          authoredText: 'Was machst du?',
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['en'],
+        ),
+      );
+
+      expect(find.text('Translation unavailable'), findsNothing);
+      expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
+      expect(find.text('Was machst du?'), findsOneWidget);
+    },
+  );
+
+  // FR-23: single-lane default + known-language bypass.
+
+  testWidgets('normal mode, known source language shows original only', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        AsyncData(
+          result(learning: 'Привіт', interfaceText: 'Hi', source: 'uk'),
+        ),
+        authoredText: 'Привіт',
+        mode: ChatMode.normal,
+        knownLanguageCodes: const ['en', 'uk'],
+        expanded: false,
+      ),
+    );
+
+    expect(find.text('Привіт'), findsOneWidget);
+    expect(find.text('Hi'), findsNothing);
+  });
+
+  testWidgets(
+    'normal mode, unknown source language shows the translation, no second lane',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(result(learning: 'Hi', interfaceText: 'Hi', source: 'pl')),
+          authoredText: 'Cześć',
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['en'],
+          expanded: false,
+        ),
+      );
+
+      expect(find.text('Hi'), findsOneWidget);
+      // Original not shown by default in the normal-mode-unknown case.
+      expect(find.text('Cześć'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'practice mode, not expanded, shows only the learning-language line',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(learning: 'hallo', interfaceText: 'hello', source: 'en'),
+          ),
+          authoredText: 'hello',
+          mode: ChatMode.practice,
+          knownLanguageCodes: const ['en'],
+          expanded: false,
+        ),
+      );
+
+      expect(find.text('hallo'), findsOneWidget);
+      // Second lane not shown until expanded.
+      expect(find.text('hello'), findsNothing);
+    },
+  );
+
+  testWidgets('practice mode, expanded, shows the second lane too', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        AsyncData(
+          result(learning: 'hallo', interfaceText: 'hello', source: 'en'),
+        ),
+        authoredText: 'hello',
+        mode: ChatMode.practice,
+        knownLanguageCodes: const ['en'],
+        expanded: true,
+      ),
+    );
+
+    expect(find.text('hallo'), findsOneWidget);
+    expect(find.text('hello'), findsOneWidget);
   });
 }

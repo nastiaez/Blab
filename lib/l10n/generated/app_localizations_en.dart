@@ -64,7 +64,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get interfaceLanguageHelp =>
-      'Pick the language for menus, buttons, message subtitles, and word definitions across the app.';
+      'Pick the language for menus, buttons, and other system text across the app.';
 
   @override
   String switchedToLanguage(String language) {
@@ -74,6 +74,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couldNotSaveLanguage =>
       'Could not save the interface language. Try again.';
+
+  @override
+  String get knownLanguages => 'Known languages';
+
+  @override
+  String get setPrimaryLanguage => 'Set as primary language';
 
   @override
   String get languageEnglish => 'English';
@@ -401,9 +407,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'No connection — messages will send when you\'re back online';
 
   @override
-  String get showTranslations => 'Show translations and corrections';
-
-  @override
   String get learningLanguage => 'Learning language';
 
   @override
@@ -412,6 +415,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatMenu => 'Chat menu';
+
+  @override
+  String get normalMode => 'Normal';
+
+  @override
+  String get practiceMode => 'Practice';
 
   @override
   String get translationLimitReached => 'Translation limit reached';

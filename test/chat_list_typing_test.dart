@@ -18,6 +18,7 @@ Chat _chat({bool withLastMessageId = false, int unreadCount = 0}) {
     partnerName: 'Bob',
     partnerInitial: 'B',
     learningLanguage: german,
+    mode: ChatMode.practice,
     partnerNativeLanguage: german,
     partnerLearningLanguage: english,
     lastMessage: 'Last message',

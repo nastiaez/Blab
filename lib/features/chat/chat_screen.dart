@@ -16,12 +16,13 @@ import '../../shared/models/message_reaction.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/connectivity_state.dart';
-import '../../shared/widgets/blab_switch.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
+import '../../shared/services/tts_service.dart';
 import '../../shared/state/interface_language.dart';
+import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/push_notifications_state.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
@@ -43,6 +44,7 @@ import 'widgets/message_action_row.dart';
 import 'widgets/message_interaction_target.dart';
 import 'widgets/message_learning_content.dart';
 import 'widgets/message_reaction_bar.dart';
+import 'widgets/mode_toggle.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
@@ -349,21 +351,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // gate starts fail-closed; watching it here lets queued visibility events
     // resume as soon as the saved read-receipt preference finishes loading.
     ref.watch(messageReadsProvider(widget.chatId));
-    final showTransl = ref.watch(showTranslationsProvider(widget.chatId));
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+    // Account interface language — UI copy only (menus, system text, the
+    // emoji-picker locale below). Never a translation target; see
+    // translationInterfaceLang below for the pipeline's actual "interface"
+    // slot.
     final interfaceLang = ref.watch(interfaceLanguageProvider);
     final online = ref.watch(isOnlineProvider);
     final pushNotifications = ref.watch(pushNotificationsProvider);
     final translationCutoffAt = chat.translationCutoffAt;
+    // FR-23 / modes-known-languages spec: practice mode always targets the
+    // chat's learning language; normal mode targets the reader's primary
+    // known language instead. The server's cache "interface" slot (second
+    // lane, and the DB cache-row key) is always the primary known language
+    // too — never profiles.interface_language. Both stay '' (never a
+    // supported-language match below) until knownLanguagesProvider resolves,
+    // so nothing gets translated against a guessed target/interface pair in
+    // the meantime (a wrong pair either 404s the cache lookup or trips the
+    // client's own interface-language-changed staleness check).
+    final chatMode = ref.watch(chatModeProvider(widget.chatId));
+    final knownLanguages = ref.watch(knownLanguagesProvider).value;
+    final targetLang = knownLanguages == null
+        ? ''
+        : resolveTranslationTarget(
+            mode: chatMode,
+            learningLanguageCode: learningLang.code,
+            primaryKnownLanguageCode: knownLanguages.primary,
+          );
+    final translationInterfaceLang = knownLanguages?.primary ?? '';
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
     // Hydrate translations one loaded page at a time. History before a
     // language change stays as authored and never enters the AI path.
-    final localeKey = '${learningLang.code}|${interfaceLang.code}';
+    final localeKey = '$targetLang|$translationInterfaceLang';
     if (_prefetchedLocaleKey != localeKey) {
       _prefetchedLocaleKey = localeKey;
       _prefetchedMessageIds.clear();
@@ -373,8 +397,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     for (final message in loadedMessages) {
       void addIfEligible(Message candidate) {
         if (!shouldRequestBubbleTranslation(
-          showTranslations: showTransl,
-          learningLanguageCode: learningLang.code,
+          targetLanguageCode: targetLang,
           text: candidate.originalText,
           sentAt: candidate.sentAt,
           translationCutoffAt: translationCutoffAt,
@@ -392,8 +415,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final eligibleMessages = translationCandidates.values
         .where((message) => !_prefetchedMessageIds.contains(message.id))
         .toList();
-    if (showTransl &&
-        kSupportedLearningLanguages.contains(learningLang.code) &&
+    if (kSupportedLearningLanguages.contains(targetLang) &&
         allEligibleMessageIds.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -401,28 +423,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             .read(messageTranslationsProvider(widget.chatId).notifier)
             .watchDbRows(
               allEligibleMessageIds,
-              learningLang.code,
-              interfaceLang.code,
+              targetLang,
+              translationInterfaceLang,
             );
       });
     }
-    if (online &&
-        showTransl &&
-        kSupportedLearningLanguages.contains(learningLang.code)) {
+    if (online && kSupportedLearningLanguages.contains(targetLang)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         unawaited(
           ref
               .read(messageTranslationsProvider(widget.chatId).notifier)
               .retryTransientFailures(
-                targetLang: learningLang.code,
-                interfaceLang: interfaceLang.code,
+                targetLang: targetLang,
+                interfaceLang: translationInterfaceLang,
               ),
         );
       });
     }
-    if (showTransl &&
-        kSupportedLearningLanguages.contains(learningLang.code) &&
+    if (kSupportedLearningLanguages.contains(targetLang) &&
         eligibleMessages.isNotEmpty) {
       _prefetchedMessageIds.addAll(eligibleMessages.map((m) => m.id));
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -432,8 +451,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
         await notifier.prefetchFromDb(
           eligibleMessages.map((m) => m.id).toList(),
-          learningLang.code,
-          interfaceLang.code,
+          targetLang,
+          translationInterfaceLang,
         );
       });
     }
@@ -636,10 +655,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 chatId: widget.chatId,
                                 messages: all,
                                 reactionsByMessage: reactionsByMessage,
-                                showTranslations: showTransl,
                                 scrollController: _scroll,
                                 languageCode: learningLang.code,
-                                interfaceLanguageCode: interfaceLang.code,
+                                translationInterfaceLanguageCode:
+                                    translationInterfaceLang,
                                 translationCutoffAt: translationCutoffAt,
                                 hasOlderMessages: pagination.hasMore,
                                 isLoadingOlder: pagination.isLoading,
@@ -870,7 +889,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
 // ─────────────────────────── header ──────────────────────────────────────────
 
-const double kChatHeaderHeight = 60;
+/// Height of the header's back/avatar/name/menu row.
+const double kChatHeaderTopRowHeight = 60;
+
+/// Height of the mode-toggle row underneath it — the toggle itself (~32,
+/// see [ModeToggle]) plus its bottom padding.
+const double kChatHeaderToggleRowHeight = 40;
+
+/// Total header height: consumers (word-popup top inset, the ··· menu's
+/// dropdown position) key off this so they stay pinned below the whole
+/// header, not just its top row.
+const double kChatHeaderHeight =
+    kChatHeaderTopRowHeight + kChatHeaderToggleRowHeight;
 
 class _NotificationReminder extends StatelessWidget {
   const _NotificationReminder({required this.onDismiss});
@@ -938,88 +968,102 @@ class _ChatHeader extends ConsumerWidget {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.fromLTRB(4, topInset, 4, 0),
-      child: SizedBox(
-        height: kChatHeaderHeight,
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: context.l10n.back,
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 20,
-                color: BlabColors.textPrimary,
-              ),
-              onPressed: onBack,
-              splashRadius: 22,
-            ),
-            Expanded(
-              child: InkWell(
-                onTap: onTapPartner,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 6,
-                    horizontal: 4,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: kChatHeaderTopRowHeight,
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: context.l10n.back,
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    size: 20,
+                    color: BlabColors.textPrimary,
                   ),
-                  child: Row(
-                    children: [
-                      _HeaderAvatar(
-                        name: chat.partnerName,
-                        initial: chat.partnerInitial,
+                  onPressed: onBack,
+                  splashRadius: 22,
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: onTapPartner,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 4,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _capitaliseName(chat.partnerName),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: BlabColors.textPrimary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 150),
-                              child: partnerTyping
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(top: 1),
-                                      child: Text(
-                                        context.l10n.typing,
-                                        key: const ValueKey(true),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: BlabColors.brand,
-                                          fontWeight: FontWeight.w600,
+                      child: Row(
+                        children: [
+                          _HeaderAvatar(
+                            name: chat.partnerName,
+                            initial: chat.partnerInitial,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _capitaliseName(chat.partnerName),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: BlabColors.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 150),
+                                  child: partnerTyping
+                                      ? Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 1,
+                                          ),
+                                          child: Text(
+                                            context.l10n.typing,
+                                            key: const ValueKey(true),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: BlabColors.brand,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(
+                                          key: ValueKey(false),
                                         ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(
-                                      key: ValueKey(false),
-                                    ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                IconButton(
+                  tooltip: context.l10n.chatMenu,
+                  icon: const Icon(Icons.more_vert, size: 22),
+                  color: BlabColors.textMuted,
+                  onPressed: onMenu,
+                  splashRadius: 22,
+                ),
+              ],
             ),
-            IconButton(
-              tooltip: context.l10n.chatMenu,
-              icon: const Icon(Icons.more_vert, size: 22),
-              color: BlabColors.textMuted,
-              onPressed: onMenu,
-              splashRadius: 22,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ModeToggle(chatId: chat.id),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1062,7 +1106,6 @@ class _ChatMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showTransl = ref.watch(showTranslationsProvider(chatId));
     final learningLang = ref.watch(learningLanguageProvider(chatId));
 
     return Material(
@@ -1084,29 +1127,6 @@ class _ChatMenu extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      context.l10n.showTranslations,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: BlabColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    BlabSwitch(
-                      value: showTransl,
-                      onChanged: (_) => ref
-                          .read(showTranslationsProvider(chatId).notifier)
-                          .toggle(),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: Colors.grey.shade200),
               InkWell(
                 onTap: onLearningLanguageTap,
                 child: Padding(
@@ -1162,10 +1182,9 @@ class _MessageList extends StatelessWidget {
     required this.chatId,
     required this.messages,
     required this.reactionsByMessage,
-    required this.showTranslations,
     required this.scrollController,
     required this.languageCode,
-    required this.interfaceLanguageCode,
+    required this.translationInterfaceLanguageCode,
     required this.translationCutoffAt,
     required this.hasOlderMessages,
     required this.isLoadingOlder,
@@ -1180,10 +1199,13 @@ class _MessageList extends StatelessWidget {
   final String chatId;
   final List<Message> messages;
   final Map<String, List<MessageReactionSummary>> reactionsByMessage;
-  final bool showTranslations;
   final ScrollController scrollController;
   final String languageCode;
-  final String interfaceLanguageCode;
+
+  /// The reader's primary known language (modes-known-languages spec): the
+  /// translation pipeline's "interface" slot — cache-row key and second-lane
+  /// target — never `profiles.interface_language`.
+  final String translationInterfaceLanguageCode;
   final DateTime? translationCutoffAt;
   final bool hasOlderMessages;
   final bool isLoadingOlder;
@@ -1268,11 +1290,10 @@ class _MessageList extends StatelessWidget {
             chatId: chatId,
             message: item.message,
             reactions: reactionsByMessage[item.message.id] ?? const [],
-            showTranslation: showTranslations,
             isFirstInGroup: item.isFirstInGroup,
             isLastInGroup: item.isLastInGroup,
             languageCode: languageCode,
-            interfaceLanguageCode: interfaceLanguageCode,
+            translationInterfaceLanguageCode: translationInterfaceLanguageCode,
             shouldTranslate: shouldTranslateMessage(
               sentAt: item.message.sentAt,
               translationCutoffAt: translationCutoffAt,
@@ -1371,11 +1392,10 @@ class _MessageRow extends ConsumerWidget {
     required this.chatId,
     required this.message,
     required this.reactions,
-    required this.showTranslation,
     required this.isFirstInGroup,
     required this.isLastInGroup,
     required this.languageCode,
-    required this.interfaceLanguageCode,
+    required this.translationInterfaceLanguageCode,
     required this.shouldTranslate,
     required this.translationCutoffAt,
     required this.popupTopInset,
@@ -1388,11 +1408,14 @@ class _MessageRow extends ConsumerWidget {
   final String chatId;
   final Message message;
   final List<MessageReactionSummary> reactions;
-  final bool showTranslation;
   final bool isFirstInGroup;
   final bool isLastInGroup;
   final String languageCode;
-  final String interfaceLanguageCode;
+
+  /// The reader's primary known language — the translation pipeline's
+  /// "interface" slot (cache-row key, second-lane target). See
+  /// [_MessageList.translationInterfaceLanguageCode].
+  final String translationInterfaceLanguageCode;
   final bool shouldTranslate;
   final DateTime? translationCutoffAt;
   final double popupTopInset;
@@ -1410,17 +1433,35 @@ class _MessageRow extends ConsumerWidget {
     final isFailed = message.status == MessageStatus.failed;
     final replyTo = message.replyTo;
 
+    // FR-23 / modes-known-languages spec: practice mode always targets the
+    // chat's learning language; normal mode targets the reader's primary
+    // known language. Stays '' (never a supported-language match below)
+    // until knownLanguagesProvider resolves, so no translation is requested
+    // against a guessed target in the meantime (finding: a normal-mode chat
+    // was briefly firing requests at the *learning* language before this).
+    final mode = ref.watch(chatModeProvider(chatId));
+    final knownLanguages = ref.watch(knownLanguagesProvider).value;
+    final targetLang = knownLanguages == null
+        ? ''
+        : resolveTranslationTarget(
+            mode: mode,
+            learningLanguageCode: languageCode,
+            primaryKnownLanguageCode: knownLanguages.primary,
+          );
+    final knownLanguageCodes = knownLanguages?.codes ?? [languageCode];
+
     final canRequestTranslation =
-        showTranslation &&
         shouldTranslate &&
-        kSupportedLearningLanguages.contains(languageCode) &&
-        message.originalText.trim().isNotEmpty;
+        shouldRequestTranslation(
+          targetLanguageCode: targetLang,
+          text: message.originalText,
+          sentAt: message.sentAt,
+          translationCutoffAt: translationCutoffAt,
+        );
     final canRequestReplyTranslation =
-        showTranslation &&
         replyTo != null &&
         shouldRequestBubbleTranslation(
-          showTranslations: showTranslation,
-          learningLanguageCode: languageCode,
+          targetLanguageCode: targetLang,
           text: replyTo.originalText,
           sentAt: replyTo.sentAt,
           translationCutoffAt: translationCutoffAt,
@@ -1433,25 +1474,32 @@ class _MessageRow extends ConsumerWidget {
         ? ref.read(messageReadsProvider(chatId).notifier)
         : null;
 
-    Widget bubble = MessageInteractionTarget(
+    // MessageInteractionTarget (long-press / swipe-reply gesture surface) is
+    // wired here but applied inside _Bubble, around the bubble content only
+    // — never around the practice-mode translate icon beside it. It measures
+    // its own RenderBox to position the floating reaction row
+    // (_selectedBubbleRect), so if it wrapped the icon+bubble Row too, that
+    // rect would include the icon and throw off the row's horizontal
+    // centering on every practice-mode long-press.
+    Widget bubble = _Bubble(
+      chatId: chatId,
+      message: message,
+      maxWidth: maxBubble,
+      isLastInGroup: isLastInGroup,
+      languageCode: languageCode,
+      targetLanguageCode: targetLang,
+      translationInterfaceLanguageCode: translationInterfaceLanguageCode,
+      mode: mode,
+      knownLanguageCodes: knownLanguageCodes,
+      shouldTranslate: canRequestTranslation,
+      replyToShouldTranslate: canRequestReplyTranslation,
+      popupTopInset: popupTopInset,
+      reactions: reactions,
+      onReact: onReact,
       isFailed: isFailed,
       onLongPress: onLongPress,
       onFailedTap: onFailedTap,
       onSwipeReply: canReplyToMessage(message) ? onReply : null,
-      child: _Bubble(
-        chatId: chatId,
-        message: message,
-        showTranslation: showTranslation,
-        maxWidth: maxBubble,
-        isLastInGroup: isLastInGroup,
-        languageCode: languageCode,
-        interfaceLanguageCode: interfaceLanguageCode,
-        shouldTranslate: shouldTranslate,
-        replyToShouldTranslate: canRequestReplyTranslation,
-        popupTopInset: popupTopInset,
-        reactions: reactions,
-        onReact: onReact,
-      ),
     );
 
     // Cache hydration happens by loaded page, but a live LLM request starts
@@ -1466,8 +1514,8 @@ class _MessageRow extends ConsumerWidget {
               visibleFraction: info.visibleFraction,
               messageId: message.id,
               text: message.originalText,
-              targetLang: languageCode,
-              interfaceLang: interfaceLanguageCode,
+              targetLang: targetLang,
+              interfaceLang: translationInterfaceLanguageCode,
               priority: message.type == MessageType.image,
             );
           }
@@ -1476,8 +1524,8 @@ class _MessageRow extends ConsumerWidget {
               visibleFraction: info.visibleFraction,
               messageId: replyTo.id,
               text: replyTo.originalText,
-              targetLang: languageCode,
-              interfaceLang: interfaceLanguageCode,
+              targetLang: targetLang,
+              interfaceLang: translationInterfaceLanguageCode,
             );
           }
           // Threshold lowered to 0.5 so partially-visible bubbles still
@@ -1503,47 +1551,114 @@ class _MessageRow extends ConsumerWidget {
   }
 }
 
-class _Bubble extends ConsumerWidget {
+class _Bubble extends ConsumerStatefulWidget {
   const _Bubble({
     required this.chatId,
     required this.message,
     required this.reactions,
-    required this.showTranslation,
     required this.maxWidth,
     required this.isLastInGroup,
     required this.languageCode,
-    required this.interfaceLanguageCode,
+    required this.targetLanguageCode,
+    required this.translationInterfaceLanguageCode,
+    required this.mode,
+    required this.knownLanguageCodes,
     required this.shouldTranslate,
     required this.replyToShouldTranslate,
     required this.popupTopInset,
     required this.onReact,
+    required this.isFailed,
+    required this.onLongPress,
+    required this.onFailedTap,
+    this.onSwipeReply,
   });
 
   final String chatId;
   final Message message;
   final List<MessageReactionSummary> reactions;
-  final bool showTranslation;
   final double maxWidth;
   final bool isLastInGroup;
+
+  /// The chat's learning language — used for word-popup/TTS lookups.
   final String languageCode;
-  final String interfaceLanguageCode;
+
+  /// The mode-resolved translation target (FR-23): the learning language in
+  /// practice mode, or the reader's primary known language in normal mode.
+  final String targetLanguageCode;
+
+  /// The reader's primary known language (modes-known-languages spec): the
+  /// translation pipeline's "interface" slot — cache-row key and second-lane
+  /// target. Never `profiles.interface_language`.
+  final String translationInterfaceLanguageCode;
+
+  /// FR-23: drives MessageLearningContent's single-lane-default branching.
+  final ChatMode mode;
+
+  /// The reader's known-language codes — normal mode's source-language
+  /// bypass check.
+  final List<String> knownLanguageCodes;
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
   final double popupTopInset;
+
+  /// [MessageInteractionTarget]'s gesture-surface inputs — applied inside
+  /// this widget's build around the bubble content only (never around the
+  /// practice-mode translate icon beside it), so the long-press rect it
+  /// measures for the floating reaction row stays the bubble's true bounds.
+  final bool isFailed;
+  final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
+  final VoidCallback onFailedTap;
+  final VoidCallback? onSwipeReply;
   final VoidCallback onReact;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Bubble> createState() => _BubbleState();
+}
+
+class _BubbleState extends ConsumerState<_Bubble> {
+  /// Practice mode's second (interface-language) lane, toggled by the
+  /// translate/play-sentence icon beside the bubble (FR-23). Owned here —
+  /// not by [MessageLearningContent], which only reads it — so it can be
+  /// force-collapsed below whenever the mode-switch reset signal fires.
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Task 7's mode-switch bump: force-collapse so a stale expanded second
+    // lane never survives a mode change.
+    ref.listen(chatModeResetSignalProvider(widget.chatId), (previous, next) {
+      if (mounted) setState(() => _expanded = false);
+    });
+
+    final message = widget.message;
+    final chatId = widget.chatId;
+    final reactions = widget.reactions;
+    final maxWidth = widget.maxWidth;
+    final isLastInGroup = widget.isLastInGroup;
+    final languageCode = widget.languageCode;
+    final targetLanguageCode = widget.targetLanguageCode;
+    final translationInterfaceLanguageCode =
+        widget.translationInterfaceLanguageCode;
+    final mode = widget.mode;
+    final knownLanguageCodes = widget.knownLanguageCodes;
+    final shouldTranslate = widget.shouldTranslate;
+    final replyToShouldTranslate = widget.replyToShouldTranslate;
+    final popupTopInset = widget.popupTopInset;
+    final onReact = widget.onReact;
+    final isFailed = widget.isFailed;
+    final onLongPress = widget.onLongPress;
+    final onFailedTap = widget.onFailedTap;
+    final onSwipeReply = widget.onSwipeReply;
+
     final isOut = message.isOutgoing;
 
     final liveTranslation =
-        showTranslation &&
-            shouldTranslate &&
-            kSupportedLearningLanguages.contains(languageCode)
+        shouldTranslate &&
+            kSupportedLearningLanguages.contains(targetLanguageCode)
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             message.id,
-            languageCode,
-            interfaceLanguageCode,
+            targetLanguageCode,
+            translationInterfaceLanguageCode,
           )]
         : null;
     final liveTranslationError =
@@ -1552,16 +1667,28 @@ class _Bubble extends ConsumerWidget {
         : null;
     final replyTo = message.replyTo;
     final replyTranslation =
-        showTranslation &&
-            replyTo != null &&
+        replyTo != null &&
             replyToShouldTranslate &&
-            kSupportedLearningLanguages.contains(languageCode)
+            kSupportedLearningLanguages.contains(targetLanguageCode)
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             replyTo.id,
-            languageCode,
-            interfaceLanguageCode,
+            targetLanguageCode,
+            translationInterfaceLanguageCode,
           )]
         : null;
+    // Task 10 fix (finding #6): the practice-mode second lane's "play full
+    // sentence" icon speaks whatever the learning-language line actually
+    // shows — the resolved translation/correction result, or the plain
+    // original when there's no learning-aid content yet (still loading, or
+    // `LearningAidMode.none`).
+    final resolvedTranslation = liveTranslation is AsyncData<MessageTranslation>
+        ? liveTranslation.value
+        : null;
+    final speakText =
+        resolvedTranslation != null &&
+            resolvedTranslation.mode != LearningAidMode.none
+        ? resolvedTranslation.translation
+        : message.originalText;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
@@ -1586,7 +1713,8 @@ class _Bubble extends ConsumerWidget {
     const reactionBadgeOverlap = 21.0;
     const reactionRowGap = 8.0;
 
-    return Padding(
+    final bubbleStack = Padding(
+      key: ValueKey('bubble-content-${message.id}'),
       padding: EdgeInsets.only(
         bottom: reactions.isNotEmpty
             ? (reactionBadgeHeight - reactionBadgeOverlap) + reactionRowGap
@@ -1614,6 +1742,8 @@ class _Bubble extends ConsumerWidget {
                       replyTo: replyTo,
                       parentIsOutgoing: isOut,
                       translation: replyTranslation,
+                      mode: mode,
+                      knownLanguageCodes: knownLanguageCodes,
                     ),
                     const SizedBox(height: 6),
                   ],
@@ -1627,11 +1757,19 @@ class _Bubble extends ConsumerWidget {
                       messageId: message.id,
                       authoredText: message.originalText,
                       translation: liveTranslation,
-                      showTranslation: showTranslation,
+                      showTranslation:
+                          shouldTranslate &&
+                          kSupportedLearningLanguages.contains(
+                            targetLanguageCode,
+                          ),
                       learningLanguageCode: languageCode,
-                      interfaceLanguageCode: interfaceLanguageCode,
                       isOutgoing: isOut,
                       popupTopInset: popupTopInset,
+                      mode: mode,
+                      knownLanguageCodes: knownLanguageCodes,
+                      expanded: _expanded,
+                      onToggleExpanded: () =>
+                          setState(() => _expanded = !_expanded),
                       unavailableText:
                           liveTranslationError is MessageTranslationFailed &&
                               liveTranslationError.reason ==
@@ -1655,8 +1793,8 @@ class _Bubble extends ConsumerWidget {
                                   .retry(
                                     messageId: message.id,
                                     text: message.originalText,
-                                    targetLang: languageCode,
-                                    interfaceLang: interfaceLanguageCode,
+                                    targetLang: targetLanguageCode,
+                                    interfaceLang: translationInterfaceLanguageCode,
                                   );
                             }
                           : null,
@@ -1696,6 +1834,145 @@ class _Bubble extends ConsumerWidget {
             ),
         ],
       ),
+    );
+
+    // The long-press / swipe-reply gesture surface wraps the bubble content
+    // ONLY, never the practice-mode icon beside it — it measures its own
+    // RenderBox to position the floating reaction row, and that rect must
+    // stay the bubble's true bounds regardless of whether an icon sits next
+    // to it.
+    final interactiveBubble = MessageInteractionTarget(
+      isFailed: isFailed,
+      onLongPress: onLongPress,
+      onFailedTap: onFailedTap,
+      onSwipeReply: onSwipeReply,
+      child: bubbleStack,
+    );
+
+    // FR-23: practice mode gets a translate/play-sentence icon beside the
+    // bubble, toward the screen's horizontal center (left of an outgoing
+    // bubble, right of an incoming one). Normal mode has no second lane to
+    // expand, so no icon and no reserved gap for it — the bubble stays
+    // flush to the edge exactly as before this task.
+    if (mode != ChatMode.practice) {
+      return interactiveBubble;
+    }
+
+    final icon = _TranslateOrPlayIcon(
+      expanded: _expanded,
+      onExpand: () => setState(() => _expanded = true),
+      onCollapse: () => setState(() => _expanded = false),
+      speakText: speakText,
+      languageCode: languageCode,
+      tts: ref.watch(ttsServiceProvider),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: isOut ? MainAxisAlignment.end : MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: isOut
+          ? [icon, const SizedBox(width: 6), Flexible(child: interactiveBubble)]
+          : [Flexible(child: interactiveBubble), const SizedBox(width: 6), icon],
+    );
+  }
+}
+
+/// Collapsed: a single translate icon that expands the second lane.
+/// Expanded (design spec § Bubble layout): two independently-tappable
+/// elements in the same visual slot — a speaker that plays the full
+/// learning-language sentence via TTS, and a chevron that collapses back.
+/// Previously these were compressed into one icon that only ever
+/// re-collapsed regardless of which half was tapped; splitting them wires up
+/// the "play full sentence" behavior the spec always called for (Task 10 gap).
+class _TranslateOrPlayIcon extends StatelessWidget {
+  const _TranslateOrPlayIcon({
+    required this.expanded,
+    required this.onExpand,
+    required this.onCollapse,
+    required this.speakText,
+    required this.languageCode,
+    required this.tts,
+  });
+
+  final bool expanded;
+  final VoidCallback onExpand;
+  final VoidCallback onCollapse;
+
+  /// The full learning-language sentence to speak — never a single word.
+  final String speakText;
+  final String languageCode;
+  final TtsService tts;
+
+  Future<void> _speak() async {
+    if (speakText.trim().isEmpty) return;
+    await tts.stop();
+    await tts.speak(speakText, languageCode);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!expanded) {
+      return SizedBox(
+        width: 32,
+        height: 32,
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            key: const ValueKey('translate-icon'),
+            customBorder: const CircleBorder(),
+            onTap: onExpand,
+            child: const Icon(
+              Icons.translate_outlined,
+              size: 20,
+              color: BlabColors.textMuted,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              key: const ValueKey('play-sentence-icon'),
+              customBorder: const CircleBorder(),
+              onTap: _speak,
+              child: const Icon(
+                Icons.volume_up_outlined,
+                size: 20,
+                color: BlabColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              key: const ValueKey('collapse-icon'),
+              customBorder: const CircleBorder(),
+              onTap: onCollapse,
+              child: const Icon(
+                Icons.expand_less,
+                size: 16,
+                color: BlabColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2011,11 +2288,20 @@ class _QuotedReply extends StatelessWidget {
     required this.replyTo,
     required this.parentIsOutgoing,
     required this.translation,
+    required this.mode,
+    required this.knownLanguageCodes,
   });
 
   final Message replyTo;
   final bool parentIsOutgoing;
   final AsyncValue<MessageTranslation>? translation;
+
+  /// FR-23 / modes-known-languages spec: this preview follows the same
+  /// three display rules as [MessageLearningContent] via
+  /// [resolveMessageDisplayText] — a second message-rendering path that
+  /// Task 9's rewrite didn't reach, fixed here rather than duplicated.
+  final ChatMode mode;
+  final List<String> knownLanguageCodes;
 
   @override
   Widget build(BuildContext context) {
@@ -2030,9 +2316,13 @@ class _QuotedReply extends StatelessWidget {
 
     final author = replyTo.isOutgoing ? context.l10n.you : context.l10n.partner;
     final rawPreviewText = switch (translation) {
-      AsyncData<MessageTranslation>(value: final value)
-          when value.mode != LearningAidMode.none =>
-        value.translation,
+      AsyncData<MessageTranslation>(value: final value) =>
+        resolveMessageDisplayText(
+          authoredText: replyTo.originalText,
+          value: value,
+          mode: mode,
+          knownLanguageCodes: knownLanguageCodes,
+        ),
       _ => replyTo.originalText,
     };
     final previewText = rawPreviewText.trim().isEmpty && replyTo.attachment != null

@@ -64,7 +64,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get interfaceLanguageHelp =>
-      'Виберіть мову меню, кнопок, субтитрів повідомлень і визначень слів у застосунку.';
+      'Виберіть мову меню, кнопок та інших системних текстів у застосунку.';
 
   @override
   String switchedToLanguage(String language) {
@@ -74,6 +74,12 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get couldNotSaveLanguage =>
       'Не вдалося зберегти мову інтерфейсу. Спробуйте ще раз.';
+
+  @override
+  String get knownLanguages => 'Відомі мови';
+
+  @override
+  String get setPrimaryLanguage => 'Зробити основною мовою';
 
   @override
   String get languageEnglish => 'Англійська';
@@ -402,9 +408,6 @@ class AppLocalizationsUk extends AppLocalizations {
       'Немає з\'єднання — повідомлення надішлються, коли ви знову будете онлайн';
 
   @override
-  String get showTranslations => 'Показувати переклади та виправлення';
-
-  @override
   String get learningLanguage => 'Мова вивчення';
 
   @override
@@ -413,6 +416,12 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get chatMenu => 'Меню чату';
+
+  @override
+  String get normalMode => 'Звичайний';
+
+  @override
+  String get practiceMode => 'Практика';
 
   @override
   String get translationLimitReached => 'Ліміт перекладів вичерпано';

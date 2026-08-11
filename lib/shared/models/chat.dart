@@ -1,11 +1,20 @@
 import '../data/languages.dart';
 
+enum ChatMode { normal, practice }
+
+ChatMode chatModeFromDb(String? value) =>
+    value == 'normal' ? ChatMode.normal : ChatMode.practice;
+
+String chatModeToDb(ChatMode mode) =>
+    mode == ChatMode.normal ? 'normal' : 'practice';
+
 class Chat {
   const Chat({
     required this.id,
     required this.partnerName,
     required this.partnerInitial,
     required this.learningLanguage,
+    required this.mode,
     required this.partnerNativeLanguage,
     required this.partnerLearningLanguage,
     required this.lastMessage,
@@ -30,6 +39,9 @@ class Chat {
 
   /// What the local user is learning from the partner (= partner's native).
   final BlabLanguage learningLanguage;
+
+  /// The local user's mode for this chat: normal or practice.
+  final ChatMode mode;
 
   /// Partner's native language (what they teach you).
   final BlabLanguage partnerNativeLanguage;

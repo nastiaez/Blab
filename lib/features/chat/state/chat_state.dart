@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/data/languages.dart';
+import '../../../shared/models/chat.dart';
 import '../../../shared/models/message.dart';
 import '../../../shared/services/chat_service.dart';
 import '../../../shared/state/auth_state.dart';
@@ -565,22 +566,66 @@ final chatMessagesProvider =
       ChatNotifier.new,
     );
 
-/// Per-chat translation visibility. Default `true`. Flipping this only
-/// affects the chat with the matching `chatId` — PRD FR-23.
-class ShowTranslationsNotifier extends Notifier<bool> {
-  ShowTranslationsNotifier(this.chatId);
-
+/// Per-chat mode (practice vs. normal). Seeded from the live chat list —
+/// when the chat row is present we use its `mode`, otherwise we default to
+/// `ChatMode.practice`. Mutating this updates only the chat with the
+/// matching `chatId`. PRD FR-23.
+class ChatModeNotifier extends Notifier<ChatMode> {
+  ChatModeNotifier(this.chatId);
   final String chatId;
 
   @override
-  bool build() => true;
+  ChatMode build() {
+    final chats = ref.watch(chatListProvider).value;
+    if (chats == null) return ChatMode.practice;
+    for (final c in chats) {
+      if (c.id == chatId) return c.mode;
+    }
+    return ChatMode.practice;
+  }
 
-  void toggle() => state = !state;
+  /// Optimistically flips local state before the network call resolves —
+  /// unlike [LearningLanguageNotifier], which sets state only after
+  /// success — so the mode toggle feels instant. On failure the change is
+  /// rolled back to the prior mode and the error rethrown so the caller
+  /// can surface it.
+  Future<void> set(ChatMode mode) async {
+    final previous = state;
+    state = mode; // optimistic — the toggle should feel instant
+    try {
+      await ref
+          .read(chatServiceProvider)
+          .setChatMode(chatId: chatId, mode: mode);
+      await ref.read(chatListProvider.notifier).refresh();
+    } catch (e) {
+      state = previous;
+      rethrow;
+    }
+  }
 }
 
-final showTranslationsProvider =
-    NotifierProvider.family<ShowTranslationsNotifier, bool, String>(
-      ShowTranslationsNotifier.new,
+final chatModeProvider =
+    NotifierProvider.family<ChatModeNotifier, ChatMode, String>(
+      ChatModeNotifier.new,
+    );
+
+/// Per-chat "collapse everything" bump counter. [ModeToggle] increments this
+/// the instant the user switches mode — before the [ChatModeNotifier.set]
+/// network call resolves — so widgets watching it (bubble expand/collapse
+/// state, the word popup) can reset in lockstep with the mode switch rather
+/// than waiting on the network. The value itself is meaningless; only
+/// changes to it matter. PRD FR-23.
+class ChatModeResetSignalNotifier extends Notifier<int> {
+  ChatModeResetSignalNotifier(this.chatId);
+  final String chatId;
+  @override
+  int build() => 0;
+  void bump() => state++;
+}
+
+final chatModeResetSignalProvider =
+    NotifierProvider.family<ChatModeResetSignalNotifier, int, String>(
+      ChatModeResetSignalNotifier.new,
     );
 
 /// Per-chat "currently replying to" message. Null when not replying.

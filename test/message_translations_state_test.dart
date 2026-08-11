@@ -557,13 +557,12 @@ void main() {
     );
   });
 
-  test('translation requests require the display toggle to be enabled', () {
+  test('translation requests require the target language to be supported', () {
     final sentAt = DateTime.utc(2026, 7, 17, 12);
 
     expect(
       shouldRequestTranslation(
-        showTranslations: false,
-        learningLanguageCode: 'de',
+        targetLanguageCode: 'xx',
         text: 'Hello',
         sentAt: sentAt,
         translationCutoffAt: null,
@@ -572,8 +571,7 @@ void main() {
     );
     expect(
       shouldRequestTranslation(
-        showTranslations: true,
-        learningLanguageCode: 'de',
+        targetLanguageCode: 'de',
         text: 'Hello',
         sentAt: sentAt,
         translationCutoffAt: null,
@@ -587,8 +585,7 @@ void main() {
 
     expect(
       shouldRequestBubbleTranslation(
-        showTranslations: true,
-        learningLanguageCode: 'en',
+        targetLanguageCode: 'en',
         text: 'Already English',
         sentAt: sentAt,
         translationCutoffAt: null,
@@ -597,8 +594,7 @@ void main() {
     );
     expect(
       shouldRequestBubbleTranslation(
-        showTranslations: true,
-        learningLanguageCode: 'en',
+        targetLanguageCode: 'en',
         text: 'Kannst du mich verstehen?',
         sentAt: sentAt,
         translationCutoffAt: null,
