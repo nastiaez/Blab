@@ -198,6 +198,11 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
   final Map<int, GlobalKey> _keys = <int, GlobalKey>{};
   final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
 
+  /// Flat counter assigning each tappable unit (one per struck run, one per
+  /// word inside a non-struck run) a unique, stable-within-a-build [_keys]
+  /// index. Reset to 0 at the start of every [build].
+  int _nextKeyIndex = 0;
+
   @override
   void dispose() {
     for (final r in _recognizers) {
@@ -237,7 +242,7 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     final tts = ref.read(ttsServiceProvider);
     showWordPopup(
       context,
-      token: MessageToken(text: word.trim(), isContent: true),
+      token: MessageToken(text: word, isContent: true),
       wordTopLeft: box.localToGlobal(Offset.zero),
       wordSize: box.size,
       languageCode: widget.learningLanguageCode,
@@ -246,55 +251,87 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     );
   }
 
+  /// Builds one tappable [WidgetSpan] and registers its recognizer + key
+  /// under a fresh, flat index shared across the whole widget (not scoped
+  /// per [CorrectionSegment]) so every word across every segment gets its
+  /// own independent hit area.
+  InlineSpan _tappableSpan({
+    required String text,
+    required bool struck,
+    required TextStyle style,
+  }) {
+    final index = _nextKeyIndex++;
+    final key = _keys.putIfAbsent(index, () => GlobalKey());
+    final recognizer = TapGestureRecognizer()
+      ..onTap = () =>
+          struck ? _onStruckTap(index) : _onCorrectedTap(index, text);
+    _recognizers.add(recognizer);
+
+    return WidgetSpan(
+      alignment: PlaceholderAlignment.baseline,
+      baseline: TextBaseline.alphabetic,
+      child: Padding(
+        // Extra vertical padding gives tap targets breathing room on
+        // wrapped lines, same as MessageText's per-word spans.
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Text.rich(
+          TextSpan(text: text, recognizer: recognizer, style: style),
+          key: key,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final struckColor = widget.style.color?.withValues(alpha: 0.68);
     _resetRecognizers();
+    _nextKeyIndex = 0;
+
+    final struckStyle = widget.style.copyWith(
+      color: struckColor,
+      decoration: TextDecoration.lineThrough,
+      decorationColor: struckColor,
+      decorationThickness: 2,
+    );
 
     final segments = correctionSegments(
       widget.originalText,
       widget.correctedText,
     );
     final spans = <InlineSpan>[];
-    for (var i = 0; i < segments.length; i++) {
-      final segment = segments[i];
-      if (segment.text.trim().isEmpty) {
-        spans.add(TextSpan(text: segment.text, style: widget.style));
+    for (final segment in segments) {
+      if (segment.struck) {
+        // An explanation is about the whole mistake, not one word within
+        // it — a struck run stays a single tap target that opens the
+        // explanation popup, same as before.
+        if (segment.text.trim().isEmpty) {
+          spans.add(TextSpan(text: segment.text, style: widget.style));
+          continue;
+        }
+        spans.add(
+          _tappableSpan(text: segment.text, struck: true, style: struckStyle),
+        );
         continue;
       }
 
-      final key = _keys.putIfAbsent(i, () => GlobalKey());
-      final recognizer = TapGestureRecognizer()
-        ..onTap = () =>
-            segment.struck ? _onStruckTap(i) : _onCorrectedTap(i, segment.text);
-      _recognizers.add(recognizer);
-
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: Padding(
-            // Extra vertical padding gives tap targets breathing room on
-            // wrapped lines, same as MessageText's per-word spans.
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text.rich(
-              TextSpan(
-                text: segment.text,
-                recognizer: recognizer,
-                style: segment.struck
-                    ? widget.style.copyWith(
-                        color: struckColor,
-                        decoration: TextDecoration.lineThrough,
-                        decorationColor: struckColor,
-                        decorationThickness: 2,
-                      )
-                    : widget.style,
-              ),
-              key: key,
-            ),
-          ),
-        ),
-      );
+      // Non-struck (corrected/unchanged) segment: correctionSegments()
+      // merges consecutive non-struck words into one run, but each word
+      // still needs its own word-popup tap target — the same granularity
+      // MessageText gives a plain message. Split via messageTokensForText,
+      // the same word-splitting MessageText already uses, so a corrected
+      // word behaves identically to any other tappable word (FR-12).
+      // Non-word characters (spaces, punctuation) render as plain,
+      // non-tappable text.
+      for (final token in messageTokensForText(segment.text)) {
+        if (!token.isContent) {
+          spans.add(TextSpan(text: token.text, style: widget.style));
+          continue;
+        }
+        spans.add(
+          _tappableSpan(text: token.text, struck: false, style: widget.style),
+        );
+      }
     }
 
     return Semantics(
