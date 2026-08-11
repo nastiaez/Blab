@@ -135,15 +135,21 @@ class MessageLearningContent extends StatelessWidget {
         );
       }
       // Practice mode falls through to the rich rendering below.
-    } else if (mode == ChatMode.normal) {
-      // Finding: normal mode was showing the pending shimmer / a permanent
-      // "unavailable + retry" subtitle for messages that might turn out to
-      // already be known (source language isn't known yet — the request
-      // hasn't resolved). Neither AsyncLoading nor AsyncError carries
-      // `sourceLang`, so there's no way to tell here; the safe choice is the
-      // plain original with zero AI-request chrome either way — the final
-      // answer if the source turns out to be known, an acceptable brief
-      // transient state otherwise.
+    } else if (mode == ChatMode.normal &&
+        result is AsyncLoading<MessageTranslation>) {
+      // Normal mode was showing the pending shimmer for messages that might
+      // turn out to already be known (source language isn't known yet — the
+      // request hasn't resolved). AsyncLoading never carries `sourceLang`,
+      // so there's no way to tell here; the plain original with no shimmer
+      // is the final answer if the source turns out to be known, and an
+      // acceptable brief transient state otherwise.
+      //
+      // AsyncError deliberately does NOT take this branch: suppressing it
+      // here too silently swallowed genuine translation failures for
+      // messages in a language the reader does not know — the one case
+      // where they have no other way to read the message. Those fall
+      // through to the shared error/retry rendering below, same as
+      // practice mode.
       return Text(authoredText, style: primaryStyle);
     }
 

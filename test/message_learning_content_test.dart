@@ -396,12 +396,17 @@ void main() {
     expect(retried, isTrue);
   });
 
-  // Finding #3 (final whole-branch review): normal mode must never show
-  // AI-request chrome (shimmer, unavailable/retry) for a message that might
-  // turn out to already be known — the source language isn't known until
-  // the request resolves, so loading/error states render plain original
-  // text in normal mode. Practice mode always needs the learning-language
-  // line regardless of known status, so its shimmer/retry treatment is
+  // Finding #3 (final whole-branch review): normal mode must never show the
+  // pending shimmer for a message that might turn out to already be known —
+  // the source language isn't known until the request resolves, so the
+  // loading state renders plain original text in normal mode. Error is
+  // different: normal mode still shows the unavailable/retry subtitle on
+  // failure, same as practice mode, because a message in a language the
+  // reader does NOT know has no other way to be read if translation
+  // genuinely fails — silently swallowing that error left the reader stuck
+  // with no signal and no retry path (caught in the final-review fix's own
+  // re-review). Practice mode always needs the learning-language line
+  // regardless of known status, so its shimmer/retry treatment is
   // unchanged — covered first here as a regression guard.
 
   testWidgets('practice mode still shows the pending shimmer while loading', (
@@ -436,20 +441,25 @@ void main() {
   );
 
   testWidgets(
-    'normal mode never shows the unavailable/retry subtitle, even on error',
+    'normal mode still shows the unavailable/retry subtitle on error '
+    '(regression guard: this must never go silent, since an unknown-'
+    'language message has no other way to be read if translation fails)',
     (tester) async {
+      var retried = false;
       await tester.pumpWidget(
         host(
           AsyncError(Exception('offline'), StackTrace.empty),
           authoredText: 'Was machst du?',
           mode: ChatMode.normal,
           knownLanguageCodes: const ['en'],
+          onRetry: () => retried = true,
         ),
       );
 
-      expect(find.text('Translation unavailable'), findsNothing);
-      expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
+      expect(find.text('Translation unavailable'), findsOneWidget);
       expect(find.text('Was machst du?'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('translation-retry')));
+      expect(retried, isTrue);
     },
   );
 
