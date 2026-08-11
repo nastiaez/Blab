@@ -17,7 +17,6 @@ import '../../shared/models/message_reaction.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/connectivity_state.dart';
-import '../../shared/widgets/blab_switch.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
@@ -349,7 +348,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // gate starts fail-closed; watching it here lets queued visibility events
     // resume as soon as the saved read-receipt preference finishes loading.
     ref.watch(messageReadsProvider(widget.chatId));
-    final showTransl = ref.watch(showTranslationsProvider(widget.chatId));
+    // TODO(Task 8): derive from ref.watch(chatModeProvider(widget.chatId))
+    // once the real mode-driven display rules land. Placeholder keeps
+    // pre-Task-8 behavior unchanged.
+    const showTransl = true;
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
@@ -1043,7 +1045,6 @@ class _ChatMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showTransl = ref.watch(showTranslationsProvider(chatId));
     final learningLang = ref.watch(learningLanguageProvider(chatId));
 
     return Material(
@@ -1065,29 +1066,6 @@ class _ChatMenu extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      context.l10n.showTranslations,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: BlabColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    BlabSwitch(
-                      value: showTransl,
-                      onChanged: (_) => ref
-                          .read(showTranslationsProvider(chatId).notifier)
-                          .toggle(),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(height: 1, color: Colors.grey.shade200),
               InkWell(
                 onTap: onLearningLanguageTap,
                 child: Padding(
