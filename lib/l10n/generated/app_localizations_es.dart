@@ -422,6 +422,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatMenu => 'Menú del chat';
 
   @override
+  String get normalMode => 'Normal';
+
+  @override
+  String get practiceMode => 'Práctica';
+
+  @override
   String get translationLimitReached => 'Límite de traducción alcanzado';
 
   @override

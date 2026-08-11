@@ -421,6 +421,12 @@ class AppLocalizationsUk extends AppLocalizations {
   String get chatMenu => 'Меню чату';
 
   @override
+  String get normalMode => 'Звичайний';
+
+  @override
+  String get practiceMode => 'Практика';
+
+  @override
   String get translationLimitReached => 'Ліміт перекладів вичерпано';
 
   @override

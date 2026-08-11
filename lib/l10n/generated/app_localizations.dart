@@ -870,6 +870,18 @@ abstract class AppLocalizations {
   /// **'Chat menu'**
   String get chatMenu;
 
+  /// No description provided for @normalMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get normalMode;
+
+  /// No description provided for @practiceMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get practiceMode;
+
   /// No description provided for @translationLimitReached.
   ///
   /// In en, this message translates to:

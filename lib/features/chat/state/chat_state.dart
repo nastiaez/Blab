@@ -609,6 +609,25 @@ final chatModeProvider =
       ChatModeNotifier.new,
     );
 
+/// Per-chat "collapse everything" bump counter. [ModeToggle] increments this
+/// the instant the user switches mode — before the [ChatModeNotifier.set]
+/// network call resolves — so widgets watching it (bubble expand/collapse
+/// state, the word popup) can reset in lockstep with the mode switch rather
+/// than waiting on the network. The value itself is meaningless; only
+/// changes to it matter. PRD FR-23.
+class ChatModeResetSignalNotifier extends Notifier<int> {
+  ChatModeResetSignalNotifier(this.chatId);
+  final String chatId;
+  @override
+  int build() => 0;
+  void bump() => state++;
+}
+
+final chatModeResetSignalProvider =
+    NotifierProvider.family<ChatModeResetSignalNotifier, int, String>(
+      ChatModeResetSignalNotifier.new,
+    );
+
 /// Per-chat "currently replying to" message. Null when not replying.
 /// Setting a reply target clears any in-flight edit (the two modes are
 /// mutually exclusive). PRD US-021.

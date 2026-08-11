@@ -420,6 +420,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatMenu => 'Chat menu';
 
   @override
+  String get normalMode => 'Normal';
+
+  @override
+  String get practiceMode => 'Practice';
+
+  @override
   String get translationLimitReached => 'Translation limit reached';
 
   @override

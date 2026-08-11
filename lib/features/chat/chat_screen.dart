@@ -42,6 +42,7 @@ import 'widgets/message_action_row.dart';
 import 'widgets/message_interaction_target.dart';
 import 'widgets/message_learning_content.dart';
 import 'widgets/message_reaction_bar.dart';
+import 'widgets/mode_toggle.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
@@ -853,7 +854,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
 // ─────────────────────────── header ──────────────────────────────────────────
 
-const double kChatHeaderHeight = 60;
+/// Height of the header's back/avatar/name/menu row.
+const double kChatHeaderTopRowHeight = 60;
+
+/// Height of the mode-toggle row underneath it — the toggle itself (~32,
+/// see [ModeToggle]) plus its bottom padding.
+const double kChatHeaderToggleRowHeight = 40;
+
+/// Total header height: consumers (word-popup top inset, the ··· menu's
+/// dropdown position) key off this so they stay pinned below the whole
+/// header, not just its top row.
+const double kChatHeaderHeight =
+    kChatHeaderTopRowHeight + kChatHeaderToggleRowHeight;
 
 class _NotificationReminder extends StatelessWidget {
   const _NotificationReminder({required this.onDismiss});
@@ -921,88 +933,102 @@ class _ChatHeader extends ConsumerWidget {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.fromLTRB(4, topInset, 4, 0),
-      child: SizedBox(
-        height: kChatHeaderHeight,
-        child: Row(
-          children: [
-            IconButton(
-              tooltip: context.l10n.back,
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 20,
-                color: BlabColors.textPrimary,
-              ),
-              onPressed: onBack,
-              splashRadius: 22,
-            ),
-            Expanded(
-              child: InkWell(
-                onTap: onTapPartner,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 6,
-                    horizontal: 4,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: kChatHeaderTopRowHeight,
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: context.l10n.back,
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new,
+                    size: 20,
+                    color: BlabColors.textPrimary,
                   ),
-                  child: Row(
-                    children: [
-                      _HeaderAvatar(
-                        name: chat.partnerName,
-                        initial: chat.partnerInitial,
+                  onPressed: onBack,
+                  splashRadius: 22,
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: onTapPartner,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 6,
+                        horizontal: 4,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _capitaliseName(chat.partnerName),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: BlabColors.textPrimary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 150),
-                              child: partnerTyping
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(top: 1),
-                                      child: Text(
-                                        context.l10n.typing,
-                                        key: const ValueKey(true),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: BlabColors.brand,
-                                          fontWeight: FontWeight.w600,
+                      child: Row(
+                        children: [
+                          _HeaderAvatar(
+                            name: chat.partnerName,
+                            initial: chat.partnerInitial,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _capitaliseName(chat.partnerName),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: BlabColors.textPrimary,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 150),
+                                  child: partnerTyping
+                                      ? Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 1,
+                                          ),
+                                          child: Text(
+                                            context.l10n.typing,
+                                            key: const ValueKey(true),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: BlabColors.brand,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(
+                                          key: ValueKey(false),
                                         ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(
-                                      key: ValueKey(false),
-                                    ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                IconButton(
+                  tooltip: context.l10n.chatMenu,
+                  icon: const Icon(Icons.more_vert, size: 22),
+                  color: BlabColors.textMuted,
+                  onPressed: onMenu,
+                  splashRadius: 22,
+                ),
+              ],
             ),
-            IconButton(
-              tooltip: context.l10n.chatMenu,
-              icon: const Icon(Icons.more_vert, size: 22),
-              color: BlabColors.textMuted,
-              onPressed: onMenu,
-              splashRadius: 22,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ModeToggle(chatId: chat.id),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

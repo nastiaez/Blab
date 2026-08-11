@@ -425,6 +425,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chatMenu => 'Chat-Menü';
 
   @override
+  String get normalMode => 'Normal';
+
+  @override
+  String get practiceMode => 'Übung';
+
+  @override
   String get translationLimitReached => 'Übersetzungslimit erreicht';
 
   @override
