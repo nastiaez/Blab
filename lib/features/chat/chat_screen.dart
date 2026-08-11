@@ -22,6 +22,7 @@ import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
 import '../../shared/state/interface_language.dart';
+import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/push_notifications_state.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
@@ -349,10 +350,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // gate starts fail-closed; watching it here lets queued visibility events
     // resume as soon as the saved read-receipt preference finishes loading.
     ref.watch(messageReadsProvider(widget.chatId));
-    // TODO(Task 8): derive from ref.watch(chatModeProvider(widget.chatId))
-    // once the real mode-driven display rules land. Placeholder keeps
-    // pre-Task-8 behavior unchanged.
-    const showTransl = true;
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
@@ -360,13 +357,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final online = ref.watch(isOnlineProvider);
     final pushNotifications = ref.watch(pushNotificationsProvider);
     final translationCutoffAt = chat.translationCutoffAt;
+    // FR-23: practice mode always targets the chat's learning language;
+    // normal mode targets the reader's primary known language. Falls back
+    // to the learning language until known languages finish loading.
+    final chatMode = ref.watch(chatModeProvider(widget.chatId));
+    final knownLanguages = ref.watch(knownLanguagesProvider).value;
+    final targetLang = knownLanguages == null
+        ? learningLang.code
+        : resolveTranslationTarget(
+            mode: chatMode,
+            learningLanguageCode: learningLang.code,
+            primaryKnownLanguageCode: knownLanguages.primary,
+          );
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
     // Hydrate translations one loaded page at a time. History before a
     // language change stays as authored and never enters the AI path.
-    final localeKey = '${learningLang.code}|${interfaceLang.code}';
+    final localeKey = '$targetLang|${interfaceLang.code}';
     if (_prefetchedLocaleKey != localeKey) {
       _prefetchedLocaleKey = localeKey;
       _prefetchedMessageIds.clear();
@@ -376,8 +385,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     for (final message in loadedMessages) {
       void addIfEligible(Message candidate) {
         if (!shouldRequestBubbleTranslation(
-          showTranslations: showTransl,
-          learningLanguageCode: learningLang.code,
+          targetLanguageCode: targetLang,
           text: candidate.originalText,
           sentAt: candidate.sentAt,
           translationCutoffAt: translationCutoffAt,
@@ -395,37 +403,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final eligibleMessages = translationCandidates.values
         .where((message) => !_prefetchedMessageIds.contains(message.id))
         .toList();
-    if (showTransl &&
-        kSupportedLearningLanguages.contains(learningLang.code) &&
+    if (kSupportedLearningLanguages.contains(targetLang) &&
         allEligibleMessageIds.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref
             .read(messageTranslationsProvider(widget.chatId).notifier)
-            .watchDbRows(
-              allEligibleMessageIds,
-              learningLang.code,
-              interfaceLang.code,
-            );
+            .watchDbRows(allEligibleMessageIds, targetLang, interfaceLang.code);
       });
     }
-    if (online &&
-        showTransl &&
-        kSupportedLearningLanguages.contains(learningLang.code)) {
+    if (online && kSupportedLearningLanguages.contains(targetLang)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         unawaited(
           ref
               .read(messageTranslationsProvider(widget.chatId).notifier)
               .retryTransientFailures(
-                targetLang: learningLang.code,
+                targetLang: targetLang,
                 interfaceLang: interfaceLang.code,
               ),
         );
       });
     }
-    if (showTransl &&
-        kSupportedLearningLanguages.contains(learningLang.code) &&
+    if (kSupportedLearningLanguages.contains(targetLang) &&
         eligibleMessages.isNotEmpty) {
       _prefetchedMessageIds.addAll(eligibleMessages.map((m) => m.id));
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -435,7 +435,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
         await notifier.prefetchFromDb(
           eligibleMessages.map((m) => m.id).toList(),
-          learningLang.code,
+          targetLang,
           interfaceLang.code,
         );
       });
@@ -639,7 +639,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 chatId: widget.chatId,
                                 messages: all,
                                 reactionsByMessage: reactionsByMessage,
-                                showTranslations: showTransl,
                                 scrollController: _scroll,
                                 languageCode: learningLang.code,
                                 interfaceLanguageCode: interfaceLang.code,
@@ -1147,7 +1146,6 @@ class _MessageList extends StatelessWidget {
     required this.chatId,
     required this.messages,
     required this.reactionsByMessage,
-    required this.showTranslations,
     required this.scrollController,
     required this.languageCode,
     required this.interfaceLanguageCode,
@@ -1165,7 +1163,6 @@ class _MessageList extends StatelessWidget {
   final String chatId;
   final List<Message> messages;
   final Map<String, List<MessageReactionSummary>> reactionsByMessage;
-  final bool showTranslations;
   final ScrollController scrollController;
   final String languageCode;
   final String interfaceLanguageCode;
@@ -1253,7 +1250,6 @@ class _MessageList extends StatelessWidget {
             chatId: chatId,
             message: item.message,
             reactions: reactionsByMessage[item.message.id] ?? const [],
-            showTranslation: showTranslations,
             isFirstInGroup: item.isFirstInGroup,
             isLastInGroup: item.isLastInGroup,
             languageCode: languageCode,
@@ -1356,7 +1352,6 @@ class _MessageRow extends ConsumerWidget {
     required this.chatId,
     required this.message,
     required this.reactions,
-    required this.showTranslation,
     required this.isFirstInGroup,
     required this.isLastInGroup,
     required this.languageCode,
@@ -1373,7 +1368,6 @@ class _MessageRow extends ConsumerWidget {
   final String chatId;
   final Message message;
   final List<MessageReactionSummary> reactions;
-  final bool showTranslation;
   final bool isFirstInGroup;
   final bool isLastInGroup;
   final String languageCode;
@@ -1395,17 +1389,31 @@ class _MessageRow extends ConsumerWidget {
     final isFailed = message.status == MessageStatus.failed;
     final replyTo = message.replyTo;
 
+    // FR-23: practice mode always targets the chat's learning language;
+    // normal mode targets the reader's primary known language. Falls back
+    // to the learning language until known languages finish loading.
+    final mode = ref.watch(chatModeProvider(chatId));
+    final knownLanguages = ref.watch(knownLanguagesProvider).value;
+    final targetLang = knownLanguages == null
+        ? languageCode
+        : resolveTranslationTarget(
+            mode: mode,
+            learningLanguageCode: languageCode,
+            primaryKnownLanguageCode: knownLanguages.primary,
+          );
+
     final canRequestTranslation =
-        showTranslation &&
         shouldTranslate &&
-        kSupportedLearningLanguages.contains(languageCode) &&
-        message.originalText.trim().isNotEmpty;
+        shouldRequestTranslation(
+          targetLanguageCode: targetLang,
+          text: message.originalText,
+          sentAt: message.sentAt,
+          translationCutoffAt: translationCutoffAt,
+        );
     final canRequestReplyTranslation =
-        showTranslation &&
         replyTo != null &&
         shouldRequestBubbleTranslation(
-          showTranslations: showTranslation,
-          learningLanguageCode: languageCode,
+          targetLanguageCode: targetLang,
           text: replyTo.originalText,
           sentAt: replyTo.sentAt,
           translationCutoffAt: translationCutoffAt,
@@ -1426,12 +1434,12 @@ class _MessageRow extends ConsumerWidget {
       child: _Bubble(
         chatId: chatId,
         message: message,
-        showTranslation: showTranslation,
         maxWidth: maxBubble,
         isLastInGroup: isLastInGroup,
         languageCode: languageCode,
+        targetLanguageCode: targetLang,
         interfaceLanguageCode: interfaceLanguageCode,
-        shouldTranslate: shouldTranslate,
+        shouldTranslate: canRequestTranslation,
         replyToShouldTranslate: canRequestReplyTranslation,
         popupTopInset: popupTopInset,
         reactions: reactions,
@@ -1451,7 +1459,7 @@ class _MessageRow extends ConsumerWidget {
               visibleFraction: info.visibleFraction,
               messageId: message.id,
               text: message.originalText,
-              targetLang: languageCode,
+              targetLang: targetLang,
               interfaceLang: interfaceLanguageCode,
               priority: message.type == MessageType.image,
             );
@@ -1461,7 +1469,7 @@ class _MessageRow extends ConsumerWidget {
               visibleFraction: info.visibleFraction,
               messageId: replyTo.id,
               text: replyTo.originalText,
-              targetLang: languageCode,
+              targetLang: targetLang,
               interfaceLang: interfaceLanguageCode,
             );
           }
@@ -1493,10 +1501,10 @@ class _Bubble extends ConsumerWidget {
     required this.chatId,
     required this.message,
     required this.reactions,
-    required this.showTranslation,
     required this.maxWidth,
     required this.isLastInGroup,
     required this.languageCode,
+    required this.targetLanguageCode,
     required this.interfaceLanguageCode,
     required this.shouldTranslate,
     required this.replyToShouldTranslate,
@@ -1507,10 +1515,15 @@ class _Bubble extends ConsumerWidget {
   final String chatId;
   final Message message;
   final List<MessageReactionSummary> reactions;
-  final bool showTranslation;
   final double maxWidth;
   final bool isLastInGroup;
+
+  /// The chat's learning language — used for word-popup/TTS lookups.
   final String languageCode;
+
+  /// The mode-resolved translation target (FR-23): the learning language in
+  /// practice mode, or the reader's primary known language in normal mode.
+  final String targetLanguageCode;
   final String interfaceLanguageCode;
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
@@ -1522,12 +1535,11 @@ class _Bubble extends ConsumerWidget {
     final isOut = message.isOutgoing;
 
     final liveTranslation =
-        showTranslation &&
-            shouldTranslate &&
-            kSupportedLearningLanguages.contains(languageCode)
+        shouldTranslate &&
+            kSupportedLearningLanguages.contains(targetLanguageCode)
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             message.id,
-            languageCode,
+            targetLanguageCode,
             interfaceLanguageCode,
           )]
         : null;
@@ -1537,13 +1549,12 @@ class _Bubble extends ConsumerWidget {
         : null;
     final replyTo = message.replyTo;
     final replyTranslation =
-        showTranslation &&
-            replyTo != null &&
+        replyTo != null &&
             replyToShouldTranslate &&
-            kSupportedLearningLanguages.contains(languageCode)
+            kSupportedLearningLanguages.contains(targetLanguageCode)
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             replyTo.id,
-            languageCode,
+            targetLanguageCode,
             interfaceLanguageCode,
           )]
         : null;
@@ -1610,7 +1621,11 @@ class _Bubble extends ConsumerWidget {
                       messageId: message.id,
                       authoredText: message.originalText,
                       translation: liveTranslation,
-                      showTranslation: showTranslation,
+                      showTranslation:
+                          shouldTranslate &&
+                          kSupportedLearningLanguages.contains(
+                            targetLanguageCode,
+                          ),
                       learningLanguageCode: languageCode,
                       interfaceLanguageCode: interfaceLanguageCode,
                       isOutgoing: isOut,
@@ -1638,7 +1653,7 @@ class _Bubble extends ConsumerWidget {
                                   .retry(
                                     messageId: message.id,
                                     text: message.originalText,
-                                    targetLang: languageCode,
+                                    targetLang: targetLanguageCode,
                                     interfaceLang: interfaceLanguageCode,
                                   );
                             }

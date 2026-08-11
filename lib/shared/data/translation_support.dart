@@ -1,3 +1,5 @@
+import '../models/chat.dart';
+
 /// Learning-language codes the live translator covers. Source language is
 /// detected by the translation function, so English is also a valid target.
 const Set<String> kSupportedLearningLanguages = {
@@ -25,15 +27,31 @@ bool shouldTranslateMessage({
   required DateTime? translationCutoffAt,
 }) => translationCutoffAt == null || !sentAt.isBefore(translationCutoffAt);
 
-bool shouldRequestTranslation({
-  required bool showTranslations,
+/// Resolves which language a message's learning aid should target.
+///
+/// Practice mode always targets the chat's learning language — there is no
+/// known-language exception, full stop (PRD FR-23). Normal mode targets the
+/// reader's primary known language instead, so a bilingual conversation
+/// reads in whichever language the reader is fluent in.
+String resolveTranslationTarget({
+  required ChatMode mode,
   required String learningLanguageCode,
+  required String primaryKnownLanguageCode,
+}) => mode == ChatMode.practice
+    ? learningLanguageCode
+    : primaryKnownLanguageCode;
+
+/// Whether a live/cached translation should be requested for [text], given
+/// the resolved [targetLanguageCode]. There is no global on/off switch
+/// anymore — eligibility is purely a function of mode-resolved target,
+/// translator coverage, message content, and the translation cutoff.
+bool shouldRequestTranslation({
+  required String targetLanguageCode,
   required String text,
   required DateTime sentAt,
   required DateTime? translationCutoffAt,
 }) =>
-    showTranslations &&
-    kSupportedLearningLanguages.contains(learningLanguageCode) &&
+    kSupportedLearningLanguages.contains(targetLanguageCode) &&
     text.trim().isNotEmpty &&
     shouldTranslateMessage(
       sentAt: sentAt,
@@ -41,14 +59,12 @@ bool shouldRequestTranslation({
     );
 
 bool shouldRequestBubbleTranslation({
-  required bool showTranslations,
-  required String learningLanguageCode,
+  required String targetLanguageCode,
   required String text,
   required DateTime sentAt,
   required DateTime? translationCutoffAt,
 }) => shouldRequestTranslation(
-  showTranslations: showTranslations,
-  learningLanguageCode: learningLanguageCode,
+  targetLanguageCode: targetLanguageCode,
   text: text,
   sentAt: sentAt,
   translationCutoffAt: translationCutoffAt,
