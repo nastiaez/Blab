@@ -8,10 +8,6 @@
 
 **Tech Stack:** Flutter/Dart, Riverpod (`Notifier`/`AsyncNotifier`/`.family`), Supabase Postgres (plpgsql, RLS), go_router, `flutter_test`.
 
-## Known gap — not covered by this plan
-
-The spec's Privacy section ("learning language never visible to the chat partner") has no task here. Checked during self-review: `lib/features/chat/widgets/partner_profile_sheet.dart:84` already shows `chat.partnerLearningLanguage` in the partner's profile sheet, and the exchange-card copy (US-008, US-024, US-027 — "she teaches you Ukrainian ⇄ you teach her Tamil") reveals both people's learning language to each other by design — that's how a chat gets set up today. Enforcing the spec's privacy line as written would mean reworking that setup flow and its copy, which goes beyond what was scoped in the brainstorm. Flagging this back to the owner rather than deciding it here; not implemented in this plan.
-
 ## Global Constraints
 
 - Interface language (`profiles.interface_language`) is never a translation target anywhere in this feature — only `primary_known_language` is. (Spec §Known languages.)

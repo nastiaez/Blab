@@ -67,7 +67,7 @@ Switching modes resets the chat's open UI state: every expanded message re-colla
 
 ## Privacy
 
-Learning language is never visible to the chat partner — not in the empty state, not in their view of your profile, not on the bubble. (Known languages are not private in the same way — they're a fact about you, not a vulnerability, so no equivalent restriction applies there.)
+Dropped. Considered making learning language invisible to the chat partner, but the exchange-card setup flow ("she teaches you Ukrainian ⇄ you teach her Tamil") and the partner profile sheet already reveal it to both sides by design — that's how a chat gets set up. Reworking that is a separate, larger decision, not part of this feature. Known languages were never private to begin with — they're a fact about you, not a vulnerability.
 
 ## Explicitly dropped / out of scope
 
