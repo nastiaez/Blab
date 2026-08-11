@@ -846,12 +846,6 @@ abstract class AppLocalizations {
   /// **'No connection — messages will send when you\'re back online'**
   String get noConnection;
 
-  /// No description provided for @showTranslations.
-  ///
-  /// In en, this message translates to:
-  /// **'Show translations and corrections'**
-  String get showTranslations;
-
   /// No description provided for @learningLanguage.
   ///
   /// In en, this message translates to:

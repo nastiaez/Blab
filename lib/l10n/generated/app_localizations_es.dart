@@ -409,9 +409,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Sin conexión — los mensajes se enviarán cuando vuelvas a conectarte';
 
   @override
-  String get showTranslations => 'Mostrar traducciones y correcciones';
-
-  @override
   String get learningLanguage => 'Idioma de aprendizaje';
 
   @override

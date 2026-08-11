@@ -407,9 +407,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'No connection — messages will send when you\'re back online';
 
   @override
-  String get showTranslations => 'Show translations and corrections';
-
-  @override
   String get learningLanguage => 'Learning language';
 
   @override

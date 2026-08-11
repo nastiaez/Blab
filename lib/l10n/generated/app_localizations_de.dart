@@ -412,9 +412,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine Verbindung — Nachrichten werden gesendet, sobald du wieder online bist';
 
   @override
-  String get showTranslations => 'Übersetzungen und Korrekturen anzeigen';
-
-  @override
   String get learningLanguage => 'Lernsprache';
 
   @override

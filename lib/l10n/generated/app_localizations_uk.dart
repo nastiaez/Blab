@@ -408,9 +408,6 @@ class AppLocalizationsUk extends AppLocalizations {
       'Немає з\'єднання — повідомлення надішлються, коли ви знову будете онлайн';
 
   @override
-  String get showTranslations => 'Показувати переклади та виправлення';
-
-  @override
   String get learningLanguage => 'Мова вивчення';
 
   @override
