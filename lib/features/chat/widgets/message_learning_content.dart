@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
+import '../../../shared/models/chat.dart';
 import '../../../shared/services/message_translator.dart';
 import 'inline_correction_text.dart';
 import 'message_text.dart';
@@ -11,8 +12,14 @@ import 'translation_subtitle.dart';
 
 const double kTranslatedMessageMinContentWidth = 156;
 
-/// Renders the final L-15 two-lane message contract: learning language on top
-/// and interface language below, with a third-language author exception.
+/// Renders the mode-aware message display contract (FR-23): a single
+/// collapsed lane by default. Normal mode either shows the exact original
+/// (source language already known) or the bare translation (source
+/// unknown) — never both. Practice mode always shows the learning-language
+/// line, with a second, interface-language lane that only appears when
+/// [expanded] is true. [expanded]/[onToggleExpanded] are lifted state this
+/// widget only reads — `_Bubble` owns and resets them (Task 10); this
+/// widget has no tappable affordance of its own.
 class MessageLearningContent extends StatelessWidget {
   const MessageLearningContent({
     super.key,
@@ -26,6 +33,10 @@ class MessageLearningContent extends StatelessWidget {
     required this.popupTopInset,
     required this.unavailableText,
     required this.retryText,
+    required this.mode,
+    required this.knownLanguageCodes,
+    required this.expanded,
+    required this.onToggleExpanded,
     this.onRetry,
   });
 
@@ -40,6 +51,21 @@ class MessageLearningContent extends StatelessWidget {
   final String unavailableText;
   final String retryText;
   final VoidCallback? onRetry;
+
+  /// FR-23: practice targets the learning language; normal targets the
+  /// reader's known languages, with the source-language bypass below.
+  final ChatMode mode;
+
+  /// The reader's known-language codes (normal mode's bypass check only).
+  final List<String> knownLanguageCodes;
+
+  /// Whether the practice-mode second (interface-language) lane is open.
+  /// Owned by `_Bubble` (Task 10) — this widget only reads it.
+  final bool expanded;
+
+  /// Invoked by the icon `_Bubble` builds beside the bubble (Task 10). Not
+  /// called from anywhere inside this widget.
+  final VoidCallback onToggleExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -91,22 +117,24 @@ class MessageLearningContent extends StatelessWidget {
     }
 
     final value = (result as AsyncData<MessageTranslation>).value;
+    // Same-language chat needs no learning aid in either mode — always the
+    // exact original, full stop.
     if (value.mode == LearningAidMode.none) {
       return Text(authoredText, style: primaryStyle);
     }
 
-    final senderThirdLanguage =
-        isOutgoing &&
-        value.sourceLang != learningLanguageCode &&
-        value.sourceLang != interfaceLanguageCode;
-    final recipientCorrection =
-        !isOutgoing && value.mode == LearningAidMode.correction;
-    final bottomText = recipientCorrection
-        ? value.interfaceText
-        : senderThirdLanguage
-        ? authoredText
-        : value.interfaceText;
-    final showBottom = bottomText != value.translation;
+    if (mode == ChatMode.normal) {
+      final known = knownLanguageCodes.contains(value.sourceLang);
+      if (known) {
+        return Text(authoredText, style: primaryStyle);
+      }
+      // Unknown source language: single lane, the translation itself, no
+      // second lane and no expand affordance.
+      return Text(value.translation, style: primaryStyle);
+    }
+
+    // Practice mode: always the learning-language line, collapsible second
+    // (interface-language) lane driven by the externally-owned [expanded].
     final authorCorrection =
         isOutgoing && value.mode == LearningAidMode.correction;
 
@@ -114,6 +142,8 @@ class MessageLearningContent extends StatelessWidget {
         ? InlineCorrectionText(
             originalText: authoredText,
             correctedText: value.translation,
+            learningLanguageCode: learningLanguageCode,
+            popupTopInset: popupTopInset,
             style: primaryStyle,
           )
         : MessageText(
@@ -133,7 +163,7 @@ class MessageLearningContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           learningLine,
-          if (showBottom) ...[
+          if (expanded) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Container(
@@ -143,7 +173,7 @@ class MessageLearningContent extends StatelessWidget {
                     : Colors.grey.shade200,
               ),
             ),
-            Text(bottomText, style: secondaryStyle),
+            Text(value.interfaceText, style: secondaryStyle),
           ],
         ],
       ),

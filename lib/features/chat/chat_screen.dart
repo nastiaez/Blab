@@ -1401,6 +1401,7 @@ class _MessageRow extends ConsumerWidget {
             learningLanguageCode: languageCode,
             primaryKnownLanguageCode: knownLanguages.primary,
           );
+    final knownLanguageCodes = knownLanguages?.codes ?? [languageCode];
 
     final canRequestTranslation =
         shouldTranslate &&
@@ -1439,6 +1440,8 @@ class _MessageRow extends ConsumerWidget {
         languageCode: languageCode,
         targetLanguageCode: targetLang,
         interfaceLanguageCode: interfaceLanguageCode,
+        mode: mode,
+        knownLanguageCodes: knownLanguageCodes,
         shouldTranslate: canRequestTranslation,
         replyToShouldTranslate: canRequestReplyTranslation,
         popupTopInset: popupTopInset,
@@ -1506,6 +1509,8 @@ class _Bubble extends ConsumerWidget {
     required this.languageCode,
     required this.targetLanguageCode,
     required this.interfaceLanguageCode,
+    required this.mode,
+    required this.knownLanguageCodes,
     required this.shouldTranslate,
     required this.replyToShouldTranslate,
     required this.popupTopInset,
@@ -1525,6 +1530,13 @@ class _Bubble extends ConsumerWidget {
   /// practice mode, or the reader's primary known language in normal mode.
   final String targetLanguageCode;
   final String interfaceLanguageCode;
+
+  /// FR-23: drives MessageLearningContent's single-lane-default branching.
+  final ChatMode mode;
+
+  /// The reader's known-language codes — normal mode's source-language
+  /// bypass check.
+  final List<String> knownLanguageCodes;
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
   final double popupTopInset;
@@ -1630,6 +1642,14 @@ class _Bubble extends ConsumerWidget {
                       interfaceLanguageCode: interfaceLanguageCode,
                       isOutgoing: isOut,
                       popupTopInset: popupTopInset,
+                      mode: mode,
+                      knownLanguageCodes: knownLanguageCodes,
+                      // TODO(Task 10): _Bubble becomes stateful and owns
+                      // real expand state reset by
+                      // chatModeResetSignalProvider. Until then this is a
+                      // fixed stopgap — there is no icon yet to toggle it.
+                      expanded: false,
+                      onToggleExpanded: () {},
                       unavailableText:
                           liveTranslationError is MessageTranslationFailed &&
                               liveTranslationError.reason ==

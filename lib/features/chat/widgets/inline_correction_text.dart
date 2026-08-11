@@ -156,11 +156,21 @@ class InlineCorrectionText extends StatelessWidget {
     required this.originalText,
     required this.correctedText,
     required this.style,
+    this.learningLanguageCode,
+    this.popupTopInset = 0,
   });
 
   final String originalText;
   final String correctedText;
   final TextStyle style;
+
+  /// Reserved for Task 11's split tap-target rewrite (word-level popups on
+  /// the corrected text). Unused until then.
+  final String? learningLanguageCode;
+
+  /// Reserved for Task 11's split tap-target rewrite (word popup clamping).
+  /// Unused until then.
+  final double popupTopInset;
 
   @override
   Widget build(BuildContext context) {
