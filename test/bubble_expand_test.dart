@@ -19,13 +19,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-/// Minimal fake covering only what a practice-mode chat with a single,
-/// already-translated message needs — everything else falls through to
-/// [noSuchMethod], following the same convention as
-/// `reply_translation_preview_test.dart`. Defaults to an incoming message;
-/// pass `isOutgoing: true` for the outgoing-bubble icon-side test.
+/// Minimal fake covering only what a chat with a single, already-translated
+/// message needs — everything else falls through to [noSuchMethod],
+/// following the same convention as `reply_translation_preview_test.dart`.
+/// Defaults to an incoming message in practice mode; pass `isOutgoing: true`
+/// for the outgoing-bubble icon-side test, or `mode: 'normal'` for the
+/// no-icon-in-normal-mode test.
 class _BubbleExpandChatService implements ChatService {
-  _BubbleExpandChatService({bool isOutgoing = false})
+  _BubbleExpandChatService({bool isOutgoing = false, this.mode = 'practice'})
     : message = Message(
         id: isOutgoing ? 'outgoing-message' : 'incoming-message',
         chatId: 'chat-1',
@@ -37,6 +38,7 @@ class _BubbleExpandChatService implements ChatService {
       );
 
   final Message message;
+  final String mode;
 
   @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => [
@@ -46,7 +48,7 @@ class _BubbleExpandChatService implements ChatService {
       'partner_name': 'Bob',
       'my_learning': 'de',
       'partner_learning': 'en',
-      'my_mode': 'practice',
+      'my_mode': mode,
       'last_body': 'hallo',
       'last_at': message.sentAt.toIso8601String(),
       'last_message_id': message.id,
@@ -307,6 +309,20 @@ void main() {
       expect(iconRect.right, lessThanOrEqualTo(bubbleRect.left));
     },
   );
+
+  testWidgets('normal mode has no translate/play-sentence icon', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      _BubbleExpandChatService(mode: 'normal'),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey('translate-icon')), findsNothing);
+    expect(find.byKey(const ValueKey('play-sentence-icon')), findsNothing);
+  });
 
   testWidgets('switching mode collapses an expanded message', (tester) async {
     final container = _buildContainer(_BubbleExpandChatService());
