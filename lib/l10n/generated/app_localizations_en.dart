@@ -76,6 +76,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save the interface language. Try again.';
 
   @override
+  String get knownLanguages => 'Known languages';
+
+  @override
+  String get setPrimaryLanguage => 'Set as primary language';
+
+  @override
   String get languageEnglish => 'English';
 
   @override

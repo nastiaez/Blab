@@ -228,6 +228,18 @@ abstract class AppLocalizations {
   /// **'Could not save the interface language. Try again.'**
   String get couldNotSaveLanguage;
 
+  /// No description provided for @knownLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Known languages'**
+  String get knownLanguages;
+
+  /// No description provided for @setPrimaryLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as primary language'**
+  String get setPrimaryLanguage;
+
   /// No description provided for @languageEnglish.
   ///
   /// In en, this message translates to:

@@ -76,6 +76,12 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося зберегти мову інтерфейсу. Спробуйте ще раз.';
 
   @override
+  String get knownLanguages => 'Відомі мови';
+
+  @override
+  String get setPrimaryLanguage => 'Зробити основною мовою';
+
+  @override
   String get languageEnglish => 'Англійська';
 
   @override

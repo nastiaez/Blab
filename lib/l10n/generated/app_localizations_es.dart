@@ -76,6 +76,12 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo guardar el idioma de la interfaz. Inténtalo de nuevo.';
 
   @override
+  String get knownLanguages => 'Idiomas que conoces';
+
+  @override
+  String get setPrimaryLanguage => 'Establecer como idioma principal';
+
+  @override
   String get languageEnglish => 'Inglés';
 
   @override

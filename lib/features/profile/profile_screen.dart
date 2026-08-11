@@ -73,6 +73,16 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const _RowDivider(),
                 _SettingsRow(
+                  icon: Icons.translate_outlined,
+                  label: context.l10n.knownLanguages,
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: BlabColors.textMuted,
+                  ),
+                  onTap: () => context.push('/profile/known-languages'),
+                ),
+                const _RowDivider(),
+                _SettingsRow(
                   icon: Icons.edit_outlined,
                   label: context.l10n.editProfile,
                   trailing: const Icon(
