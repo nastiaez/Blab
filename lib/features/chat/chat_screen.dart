@@ -1499,7 +1499,7 @@ class _MessageRow extends ConsumerWidget {
   }
 }
 
-class _Bubble extends ConsumerWidget {
+class _Bubble extends ConsumerStatefulWidget {
   const _Bubble({
     required this.chatId,
     required this.message,
@@ -1543,7 +1543,39 @@ class _Bubble extends ConsumerWidget {
   final VoidCallback onReact;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Bubble> createState() => _BubbleState();
+}
+
+class _BubbleState extends ConsumerState<_Bubble> {
+  /// Practice mode's second (interface-language) lane, toggled by the
+  /// translate/play-sentence icon beside the bubble (FR-23). Owned here —
+  /// not by [MessageLearningContent], which only reads it — so it can be
+  /// force-collapsed below whenever the mode-switch reset signal fires.
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Task 7's mode-switch bump: force-collapse so a stale expanded second
+    // lane never survives a mode change.
+    ref.listen(chatModeResetSignalProvider(widget.chatId), (previous, next) {
+      if (mounted) setState(() => _expanded = false);
+    });
+
+    final message = widget.message;
+    final chatId = widget.chatId;
+    final reactions = widget.reactions;
+    final maxWidth = widget.maxWidth;
+    final isLastInGroup = widget.isLastInGroup;
+    final languageCode = widget.languageCode;
+    final targetLanguageCode = widget.targetLanguageCode;
+    final interfaceLanguageCode = widget.interfaceLanguageCode;
+    final mode = widget.mode;
+    final knownLanguageCodes = widget.knownLanguageCodes;
+    final shouldTranslate = widget.shouldTranslate;
+    final replyToShouldTranslate = widget.replyToShouldTranslate;
+    final popupTopInset = widget.popupTopInset;
+    final onReact = widget.onReact;
+
     final isOut = message.isOutgoing;
 
     final liveTranslation =
@@ -1592,7 +1624,8 @@ class _Bubble extends ConsumerWidget {
     const reactionBadgeHeight = 22.0;
     const reactionBadgeOverlap = 12.0;
 
-    return Padding(
+    final bubbleStack = Padding(
+      key: ValueKey('bubble-content-${message.id}'),
       padding: EdgeInsets.only(
         bottom: reactions.isNotEmpty
             ? reactionBadgeHeight - reactionBadgeOverlap
@@ -1644,12 +1677,9 @@ class _Bubble extends ConsumerWidget {
                       popupTopInset: popupTopInset,
                       mode: mode,
                       knownLanguageCodes: knownLanguageCodes,
-                      // TODO(Task 10): _Bubble becomes stateful and owns
-                      // real expand state reset by
-                      // chatModeResetSignalProvider. Until then this is a
-                      // fixed stopgap — there is no icon yet to toggle it.
-                      expanded: false,
-                      onToggleExpanded: () {},
+                      expanded: _expanded,
+                      onToggleExpanded: () =>
+                          setState(() => _expanded = !_expanded),
                       unavailableText:
                           liveTranslationError is MessageTranslationFailed &&
                               liveTranslationError.reason ==
@@ -1707,6 +1737,73 @@ class _Bubble extends ConsumerWidget {
               ),
             ),
         ],
+      ),
+    );
+
+    // FR-23: practice mode gets a translate/play-sentence icon beside the
+    // bubble, toward the screen's horizontal center (left of an outgoing
+    // bubble, right of an incoming one). Normal mode has no second lane to
+    // expand, so no icon and no reserved gap for it — the bubble stays
+    // flush to the edge exactly as before this task.
+    if (mode != ChatMode.practice) {
+      return bubbleStack;
+    }
+
+    final icon = _TranslateOrPlayIcon(
+      expanded: _expanded,
+      onTap: () => setState(() => _expanded = !_expanded),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: isOut ? MainAxisAlignment.end : MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: isOut
+          ? [icon, const SizedBox(width: 6), Flexible(child: bubbleStack)]
+          : [Flexible(child: bubbleStack), const SizedBox(width: 6), icon],
+    );
+  }
+}
+
+class _TranslateOrPlayIcon extends StatelessWidget {
+  const _TranslateOrPlayIcon({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          key: ValueKey(expanded ? 'play-sentence-icon' : 'translate-icon'),
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                expanded ? Icons.volume_up_outlined : Icons.translate_outlined,
+                size: 20,
+                color: BlabColors.textMuted,
+              ),
+              if (expanded)
+                const Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Icon(
+                    Icons.expand_less,
+                    size: 14,
+                    color: BlabColors.textMuted,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
