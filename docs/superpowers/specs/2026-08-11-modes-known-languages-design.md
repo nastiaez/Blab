@@ -38,6 +38,8 @@ Corrections (the crossed-word treatment) only ever render for the person who mad
 
 Historical messages are not migrated or re-cached when known languages change. Rendering always reflects the reader's *current* settings, exactly as it does today — add Polish to your known list and every past Polish message switches to original-only immediately, no backfill needed.
 
+This is different from changing your **learning language** for a chat, which already has separate, unchanged behavior: it starts a new translation "era" (`translation_cutoff_at`). Messages sent before the change freeze to plain original — no dual-lane, and they don't get retroactively translated into either the old or the new learning language. Only messages sent after the change get rule 1's treatment for the newly selected language. Known-language changes are live and retroactive; learning-language changes are not — this spec doesn't touch that distinction, just documenting it since it affects what a reader sees after either kind of change.
+
 A language can be both known and a chat's learning language at once — no exclusivity enforced. Rule 1 above means the learning-language treatment wins for that specific chat regardless of known status, so nothing breaks: known controls every *other* language, learning controls this one, for this chat. Real case for allowing it: someone who already speaks a language casually but wants grammar polish in one particular chat.
 
 ## Bubble layout
