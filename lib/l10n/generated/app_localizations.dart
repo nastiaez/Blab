@@ -1613,6 +1613,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search emoji'**
   String get searchEmoji;
+
+  /// No description provided for @reactionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} reaction} other{{count} reactions}}'**
+  String reactionsCount(int count);
+
+  /// No description provided for @tapToRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to remove'**
+  String get tapToRemove;
 }
 
 class _AppLocalizationsDelegate

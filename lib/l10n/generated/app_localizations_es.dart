@@ -853,4 +853,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get searchEmoji => 'Buscar emoji';
+
+  @override
+  String reactionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reacciones',
+      one: '$count reacción',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tapToRemove => 'Toca para quitar';
 }

@@ -1,6 +1,7 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 
 /// Opened from the floating reaction row's "+" (and from tapping an
@@ -50,9 +51,27 @@ Future<void> showFullEmojiPickerSheet(
                     emojiViewConfig: const EmojiViewConfig(
                       columns: 8,
                       emojiSizeMax: 28,
+                      backgroundColor: Colors.white,
+                    ),
+                    categoryViewConfig: const CategoryViewConfig(
+                      // Skip the "Recents" landing tab — on a fresh
+                      // install (or after force-stop) it's always empty,
+                      // so start on a populated category instead.
+                      initCategory: Category.SMILEYS,
+                      backgroundColor: Colors.white,
+                      indicatorColor: BlabColors.brand,
+                      iconColorSelected: BlabColors.brand,
+                      backspaceColor: BlabColors.brand,
                     ),
                     searchViewConfig: SearchViewConfig(
                       hintText: sheetCtx.l10n.searchEmoji,
+                      backgroundColor: Colors.white,
+                      buttonIconColor: BlabColors.textMuted,
+                    ),
+                    bottomActionBarConfig: const BottomActionBarConfig(
+                      backgroundColor: Colors.white,
+                      buttonColor: Colors.white,
+                      buttonIconColor: BlabColors.brand,
                     ),
                   ),
                 ),

@@ -52,7 +52,10 @@ class MessageActionRow extends StatelessWidget {
         ),
     ];
     return Container(
-      color: BlabColors.cream,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: BlabColors.divider)),
+      ),
       child: SafeArea(
         top: false,
         child: SizedBox(

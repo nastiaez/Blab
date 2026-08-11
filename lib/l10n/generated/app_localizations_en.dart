@@ -845,4 +845,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchEmoji => 'Search emoji';
+
+  @override
+  String reactionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reactions',
+      one: '$count reaction',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tapToRemove => 'Tap to remove';
 }

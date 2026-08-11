@@ -858,4 +858,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get searchEmoji => 'Emoji suchen';
+
+  @override
+  String reactionsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Reaktionen',
+      one: '$count Reaktion',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tapToRemove => 'Tippen zum Entfernen';
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,6 +37,7 @@ import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
 import 'widgets/floating_reaction_row.dart';
 import 'widgets/full_emoji_picker_sheet.dart';
+import 'widgets/reaction_details_sheet.dart';
 import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_row.dart';
 import 'widgets/message_interaction_target.dart';
@@ -681,10 +681,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     },
                                   );
                                 },
-                                onReact: (m) => showFullEmojiPickerSheet(
+                                onReact: (m) => showReactionDetailsSheet(
                                   context,
-                                  interfaceLanguageCode: interfaceLang.code,
-                                  onPick: (emoji) => ref
+                                  reactions:
+                                      reactionsByMessage[m.id] ?? const [],
+                                  partnerName: chat.partnerName,
+                                  onChangeReaction: (emoji) => ref
                                       .read(
                                         messageReactionsProvider(
                                           widget.chatId,
@@ -787,7 +789,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   final stackBox =
                       _stackKey.currentContext?.findRenderObject()
                           as RenderBox?;
-                  if (stackBox == null) return const SizedBox.shrink();
+                  if (stackBox == null || !stackBox.hasSize) {
+                    return const SizedBox.shrink();
+                  }
                   final minTop = MediaQuery.paddingOf(context).top + 4;
                   final globalTop = computeReactionRowTop(
                     bubbleRect: _selectedBubbleRect!,
@@ -795,22 +799,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     rowHeight: kFloatingReactionRowHeight,
                     minTop: minTop,
                   );
-                  final localTopLeft = stackBox.globalToLocal(
-                    Offset(_selectedBubbleRect!.center.dx, globalTop),
-                  );
-                  final screenWidth = MediaQuery.sizeOf(context).width;
-                  // max() guard: in a narrow window (split-screen, freeform)
-                  // the row can be wider than the screen, which would make
-                  // the clamp bounds cross and throw.
-                  final maxLeft = math.max(
-                    8.0,
-                    screenWidth - kFloatingReactionRowWidth - 8.0,
-                  );
-                  final left = (localTopLeft.dx - kFloatingReactionRowWidth / 2)
-                      .clamp(8.0, maxLeft)
-                      .toDouble();
+                  // Reading live render-tree geometry mid-build can race a
+                  // route transition — e.g. tapping a photo right after
+                  // picking an emoji, while this frame's tree is still
+                  // mid-layout from the selection closing. Fail soft: skip
+                  // the row for that one frame instead of crashing; it's
+                  // gone by the next frame regardless since the selection
+                  // just closed.
+                  double localTop;
+                  try {
+                    localTop = stackBox.globalToLocal(Offset(0, globalTop)).dy;
+                  } catch (_) {
+                    return const SizedBox.shrink();
+                  }
+                  // Centered on the stack rather than the bubble, so the
+                  // row sits the same distance from both edges regardless
+                  // of which side the bubble is on. Measured against the
+                  // stack's own width (not the full screen) so it lines up
+                  // even when SafeArea reserves horizontal space, and kept
+                  // clear of the physical edges — curved-edge phones and
+                  // Android's edge-swipe-back gesture both eat touches in
+                  // the outermost strip, which made the leftmost/rightmost
+                  // buttons unreliable to tap.
+                  final stackWidth = stackBox.size.width;
+                  const edgeMargin = 16.0;
+                  final centered = (stackWidth - kFloatingReactionRowWidth) / 2;
+                  final maxLeft = stackWidth - kFloatingReactionRowWidth - edgeMargin;
+                  final left = maxLeft >= edgeMargin
+                      ? centered.clamp(edgeMargin, maxLeft)
+                      : centered;
                   return Positioned(
-                    top: localTopLeft.dy,
+                    top: localTop,
                     left: left,
                     child: FloatingReactionRow(
                       selectedEmoji: _viewerReactionEmoji(_selectedMessage!.id),
@@ -1559,16 +1578,18 @@ class _Bubble extends ConsumerWidget {
           );
 
     // Reactions overlap the bubble's bottom corner (WhatsApp-style) instead
-    // of pushing content down in normal flow, so the row needs a little
-    // reserved space below for the badge to hang into without crowding the
-    // next bubble.
-    const reactionBadgeHeight = 22.0;
-    const reactionBadgeOverlap = 12.0;
+    // of pushing content down in normal flow. Only the top third of the
+    // badge sits over the bubble — the rest hangs below it — plus extra
+    // reserved space so it's unambiguous which bubble a reaction belongs
+    // to when the next message follows close behind.
+    const reactionBadgeHeight = 32.0;
+    const reactionBadgeOverlap = 21.0;
+    const reactionRowGap = 8.0;
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: reactions.isNotEmpty
-            ? reactionBadgeHeight - reactionBadgeOverlap
+            ? (reactionBadgeHeight - reactionBadgeOverlap) + reactionRowGap
             : 0,
       ),
       child: Stack(
@@ -1659,8 +1680,14 @@ class _Bubble extends ConsumerWidget {
           if (reactions.isNotEmpty)
             Positioned(
               bottom: -reactionBadgeOverlap,
-              left: isOut ? null : 4,
-              right: isOut ? 4 : null,
+              // Inset further from the bubble's outer edge than it looks
+              // like it needs — the bubble itself sits flush against the
+              // screen's 12px margin, so a small offset here still lands
+              // the badge close to the physical screen edge, where Android's
+              // edge-swipe-back gesture (and curved-edge bezels) can steal
+              // the tap before it reaches the badge.
+              left: isOut ? null : 14,
+              right: isOut ? 14 : null,
               child: MessageReactionBar(
                 reactions: reactions,
                 isOutgoing: isOut,

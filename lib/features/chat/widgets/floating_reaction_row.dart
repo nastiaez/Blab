@@ -41,18 +41,23 @@ class FloatingReactionRow extends StatelessWidget {
       elevation: 4,
       shadowColor: Colors.black.withValues(alpha: 0.2),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: _rowPaddingH,
-          vertical: _rowPaddingV,
-        ),
+        // Horizontal inset moved off this shared padding and onto the
+        // outermost buttons' own margin below — same total row width, but
+        // now every pixel of it belongs to a button's tap target instead of
+        // a chunk being dead Material background. Without that, the first
+        // and last buttons had no neighbor to "catch" an overshoot toward
+        // the row's edge (unlike the middle ones, where a miss still lands
+        // on an adjacent button), so they read as unresponsive.
+        padding: const EdgeInsets.symmetric(vertical: _rowPaddingV),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final emoji in kQuickMessageReactions)
+            for (final (index, emoji) in kQuickMessageReactions.indexed)
               _EmojiButton(
                 emoji: emoji,
                 selected: emoji == selectedEmoji,
                 onTap: () => onPick(emoji),
+                extraLeadingMargin: index == 0 ? _rowPaddingH : 0,
               ),
             _MoreButton(onTap: onMore),
           ],
@@ -67,11 +72,13 @@ class _EmojiButton extends StatelessWidget {
     required this.emoji,
     required this.selected,
     required this.onTap,
+    this.extraLeadingMargin = 0,
   });
 
   final String emoji;
   final bool selected;
   final VoidCallback onTap;
+  final double extraLeadingMargin;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +93,10 @@ class _EmojiButton extends StatelessWidget {
         child: Container(
           width: _buttonSize,
           height: _buttonSize,
-          margin: const EdgeInsets.symmetric(horizontal: _buttonMargin),
+          margin: EdgeInsets.only(
+            left: _buttonMargin + extraLeadingMargin,
+            right: _buttonMargin,
+          ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected ? BlabColors.selectedTint : Colors.transparent,
@@ -118,7 +128,10 @@ class _MoreButton extends StatelessWidget {
         child: Container(
           width: _buttonSize,
           height: _buttonSize,
-          margin: const EdgeInsets.symmetric(horizontal: _buttonMargin),
+          margin: const EdgeInsets.only(
+            left: _buttonMargin,
+            right: _buttonMargin + _rowPaddingH,
+          ),
           alignment: Alignment.center,
           child: const Icon(Icons.add, size: 20, color: BlabColors.textMuted),
         ),
