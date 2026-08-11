@@ -12,6 +12,34 @@ import 'translation_subtitle.dart';
 
 const double kTranslatedMessageMinContentWidth = 156;
 
+/// Resolves which text to show for a translated message, per the modes/
+/// known-languages design spec's § Display logic three rules:
+/// - `LearningAidMode.none` (server decided no learning aid is needed, e.g.
+///   a same-language chat) → always the exact original.
+/// - Practice mode → the learning-language result (`value.translation`,
+///   already corrected in place when the author made a mistake).
+/// - Normal mode → the exact original when the reader already knows the
+///   detected source language, the translation otherwise.
+///
+/// Shared by [MessageLearningContent]'s normal-mode/no-aid branches below
+/// and chat_screen.dart's `_QuotedReply` single-line preview — a second
+/// message-rendering path that used to apply none of these rules — so the
+/// three-way branch lives in exactly one place.
+String resolveMessageDisplayText({
+  required String authoredText,
+  required MessageTranslation value,
+  required ChatMode mode,
+  required List<String> knownLanguageCodes,
+}) {
+  if (value.mode == LearningAidMode.none) return authoredText;
+  if (mode == ChatMode.normal) {
+    return knownLanguageCodes.contains(value.sourceLang)
+        ? authoredText
+        : value.translation;
+  }
+  return value.translation;
+}
+
 /// Renders the mode-aware message display contract (FR-23): a single
 /// collapsed lane by default. Normal mode either shows the exact original
 /// (source language already known) or the bare translation (source
@@ -28,7 +56,6 @@ class MessageLearningContent extends StatelessWidget {
     required this.translation,
     required this.showTranslation,
     required this.learningLanguageCode,
-    required this.interfaceLanguageCode,
     required this.isOutgoing,
     required this.popupTopInset,
     required this.unavailableText,
@@ -45,7 +72,6 @@ class MessageLearningContent extends StatelessWidget {
   final AsyncValue<MessageTranslation>? translation;
   final bool showTranslation;
   final String learningLanguageCode;
-  final String interfaceLanguageCode;
   final bool isOutgoing;
   final double popupTopInset;
   final String unavailableText;
@@ -86,6 +112,44 @@ class MessageLearningContent extends StatelessWidget {
     if (!showTranslation || result == null) {
       return Text(authoredText, style: primaryStyle);
     }
+
+    // Resolve `AsyncData` first — its `value.sourceLang` is what normal
+    // mode's known-language bypass needs. Handling it ahead of the
+    // loading/error branches (rather than after, as before) means that
+    // branching never has to run without the data it needs.
+    if (result is AsyncData<MessageTranslation>) {
+      final value = result.value;
+      if (value.mode == LearningAidMode.none || mode == ChatMode.normal) {
+        // Same-language chat (no aid needed, either mode) or normal mode
+        // (known source → exact original, unknown → translation only, no
+        // second lane): a single plain line, never the shimmer/error chrome
+        // or the expand affordance below.
+        return Text(
+          resolveMessageDisplayText(
+            authoredText: authoredText,
+            value: value,
+            mode: mode,
+            knownLanguageCodes: knownLanguageCodes,
+          ),
+          style: primaryStyle,
+        );
+      }
+      // Practice mode falls through to the rich rendering below.
+    } else if (mode == ChatMode.normal) {
+      // Finding: normal mode was showing the pending shimmer / a permanent
+      // "unavailable + retry" subtitle for messages that might turn out to
+      // already be known (source language isn't known yet — the request
+      // hasn't resolved). Neither AsyncLoading nor AsyncError carries
+      // `sourceLang`, so there's no way to tell here; the safe choice is the
+      // plain original with zero AI-request chrome either way — the final
+      // answer if the source turns out to be known, an acceptable brief
+      // transient state otherwise.
+      return Text(authoredText, style: primaryStyle);
+    }
+
+    // Practice mode only from here — always needs the learning-language
+    // line regardless of known status, so the existing shimmer/retry
+    // treatment while it resolves is unchanged.
     if (result is AsyncLoading<MessageTranslation>) {
       // Most messages resolve to "no aid needed" (same-language chat) —
       // delay the shimmer so that common instant/fast resolutions never
@@ -117,21 +181,6 @@ class MessageLearningContent extends StatelessWidget {
     }
 
     final value = (result as AsyncData<MessageTranslation>).value;
-    // Same-language chat needs no learning aid in either mode — always the
-    // exact original, full stop.
-    if (value.mode == LearningAidMode.none) {
-      return Text(authoredText, style: primaryStyle);
-    }
-
-    if (mode == ChatMode.normal) {
-      final known = knownLanguageCodes.contains(value.sourceLang);
-      if (known) {
-        return Text(authoredText, style: primaryStyle);
-      }
-      // Unknown source language: single lane, the translation itself, no
-      // second lane and no expand affordance.
-      return Text(value.translation, style: primaryStyle);
-    }
 
     // Practice mode: always the learning-language line, collapsible second
     // (interface-language) lane driven by the externally-owned [expanded].

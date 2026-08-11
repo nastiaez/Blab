@@ -1,4 +1,5 @@
 import 'package:blab/features/chat/widgets/message_text.dart';
+import 'package:blab/features/chat/widgets/word_popup.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/tts_service.dart';
@@ -144,5 +145,53 @@ void main() {
 
     expect(find.text('Google'), findsWidgets);
     expect(find.text('whole phrase'), findsNothing);
+  });
+
+  testWidgets('dismissWordPopup closes an open popup', (tester) async {
+    final message = Message(
+      id: 'm1',
+      chatId: 'aswin',
+      isOutgoing: false,
+      originalText: 'காலை எப்படி',
+      translation: 'morning how',
+      sentAt: DateTime(2026, 5, 25, 9, 30),
+      status: MessageStatus.delivered,
+      tokens: const [
+        MessageToken(text: 'காலை', romanization: 'kālai', gloss: 'morning'),
+        MessageToken(text: ' ', isContent: false),
+        MessageToken(text: 'எப்படி', romanization: 'eppadi', gloss: 'how'),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: MessageText(
+                text: message.originalText,
+                tokens: message.tokens,
+                languageCode: 'ta',
+                style: const TextStyle(fontSize: 16, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('காலை'));
+    await tester.pumpAndSettle();
+    expect(find.text('morning'), findsOneWidget);
+
+    // Design spec § Bubble layout: switching modes closes any open word
+    // popup. ModeToggle calls this directly (Task 10 fix) — exercise the
+    // exported function itself here rather than round-tripping through a
+    // full chat screen.
+    dismissWordPopup();
+    await tester.pumpAndSettle();
+
+    expect(find.text('morning'), findsNothing);
   });
 }

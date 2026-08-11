@@ -64,7 +64,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get interfaceLanguageHelp =>
-      'Elige el idioma de los menús, botones, subtítulos de mensajes y definiciones de palabras de la aplicación.';
+      'Elige el idioma de los menús, botones y otros textos del sistema de la aplicación.';
 
   @override
   String switchedToLanguage(String language) {

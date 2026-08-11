@@ -64,7 +64,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get interfaceLanguageHelp =>
-      'Wähle die Sprache für Menüs, Schaltflächen, Nachrichtenuntertitel und Wortdefinitionen in der App.';
+      'Wähle die Sprache für Menüs, Schaltflächen und andere Systemtexte in der App.';
 
   @override
   String switchedToLanguage(String language) {

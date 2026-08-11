@@ -64,7 +64,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get interfaceLanguageHelp =>
-      'Виберіть мову меню, кнопок, субтитрів повідомлень і визначень слів у застосунку.';
+      'Виберіть мову меню, кнопок та інших системних текстів у застосунку.';
 
   @override
   String switchedToLanguage(String language) {

@@ -7,12 +7,15 @@ import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
+import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/services/push_notification_gateway.dart';
 import 'package:blab/shared/services/push_token_repository.dart';
+import 'package:blab/shared/services/tts_service.dart';
 import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/connectivity_state.dart';
 import 'package:blab/shared/state/privacy_settings.dart';
+import 'package:blab/shared/state/profile_state.dart';
 import 'package:blab/shared/state/push_notifications_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,22 +27,29 @@ import 'package:visibility_detector/visibility_detector.dart';
 /// message needs — everything else falls through to [noSuchMethod],
 /// following the same convention as `reply_translation_preview_test.dart`.
 /// Defaults to an incoming message in practice mode; pass `isOutgoing: true`
-/// for the outgoing-bubble icon-side test, or `mode: 'normal'` for the
-/// no-icon-in-normal-mode test.
+/// for the outgoing-bubble icon-side test, `mode: 'normal'` for the
+/// no-icon-in-normal-mode test, or `text:` for a fixture whose learning-line
+/// content should differ from the shared 'hallo' default (e.g. the TTS test,
+/// which wants a multi-word sentence to prove the full line is spoken).
 class _BubbleExpandChatService implements ChatService {
-  _BubbleExpandChatService({bool isOutgoing = false, this.mode = 'practice'})
-    : message = Message(
-        id: isOutgoing ? 'outgoing-message' : 'incoming-message',
-        chatId: 'chat-1',
-        isOutgoing: isOutgoing,
-        originalText: 'hallo',
-        translation: '',
-        sentAt: DateTime.utc(2026, 8, 3, 12),
-        status: MessageStatus.delivered,
-      );
+  _BubbleExpandChatService({
+    bool isOutgoing = false,
+    this.mode = 'practice',
+    String text = 'hallo',
+  }) : message = Message(
+         id: isOutgoing ? 'outgoing-message' : 'incoming-message',
+         chatId: 'chat-1',
+         isOutgoing: isOutgoing,
+         originalText: text,
+         translation: '',
+         sentAt: DateTime.utc(2026, 8, 3, 12),
+         status: MessageStatus.delivered,
+       ),
+       _learningText = text;
 
   final Message message;
   final String mode;
+  final String _learningText;
 
   @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => [
@@ -88,7 +98,7 @@ class _BubbleExpandChatService implements ChatService {
   }) async {
     if (messageId != message.id) return null;
     return (
-      text: 'hallo',
+      text: _learningText,
       interfaceText: 'hello',
       interfaceLang: interfaceLang,
       sourceLang: 'de',
@@ -184,7 +194,32 @@ class _NoopTyping implements TypingTransport {
   Future<void> close() async {}
 }
 
-ProviderContainer _buildContainer(ChatService service) {
+/// Stand-in [TtsService] that records `speak` calls instead of hitting
+/// platform channels — lets the "play full sentence" test (finding #6)
+/// assert exactly what text/language the speaker icon requested.
+class _RecordingTtsService implements TtsService {
+  final List<(String text, String languageCode)> spokenCalls = [];
+
+  @override
+  Future<bool> isLanguageAvailable(String languageCode) async => true;
+
+  @override
+  Future<void> speak(String text, String languageCode) async {
+    spokenCalls.add((text, languageCode));
+  }
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+ProviderContainer _buildContainer(ChatService service, {TtsService? tts}) {
+  // Default to a recording fake (never a real platform-channel TtsService)
+  // so every test in this file stays free of MissingPluginException, even
+  // ones that don't care about the speak calls.
+  final resolvedTts = tts ?? _RecordingTtsService();
   return ProviderContainer(
     overrides: [
       chatServiceProvider.overrideWithValue(service),
@@ -202,6 +237,20 @@ ProviderContainer _buildContainer(ChatService service) {
         throw MessageTranslationFailed('unexpected_live_translation');
       }),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
+      // Finding #1/#5 (final whole-branch review): the translation pipeline
+      // now targets the reader's primary known language, not
+      // profiles.interface_language, and gates every request on this
+      // provider having actually resolved. Every fixture in this file needs
+      // a resolved profile for translations to fire at all.
+      currentProfileProvider.overrideWith(
+        (_) async => const UserProfile(
+          displayName: 'Alice',
+          interfaceLanguage: 'en',
+          knownLanguages: ['en'],
+          primaryKnownLanguage: 'en',
+        ),
+      ),
+      ttsServiceProvider.overrideWithValue(resolvedTts),
     ],
   );
 }
@@ -233,7 +282,8 @@ void main() {
   });
 
   testWidgets(
-    'tapping the translate icon expands the second lane and swaps the icon',
+    'tapping the translate icon expands the second lane and swaps to a '
+    'speaker + chevron',
     (tester) async {
       final container = _buildContainer(_BubbleExpandChatService());
       addTearDown(container.dispose);
@@ -242,6 +292,7 @@ void main() {
 
       expect(find.byKey(const ValueKey('translate-icon')), findsOneWidget);
       expect(find.byKey(const ValueKey('play-sentence-icon')), findsNothing);
+      expect(find.byKey(const ValueKey('collapse-icon')), findsNothing);
       expect(find.text('hello'), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('translate-icon')));
@@ -249,20 +300,71 @@ void main() {
 
       expect(find.byKey(const ValueKey('translate-icon')), findsNothing);
       expect(find.byKey(const ValueKey('play-sentence-icon')), findsOneWidget);
+      expect(find.byKey(const ValueKey('collapse-icon')), findsOneWidget);
       expect(find.text('hello'), findsOneWidget);
 
-      // Tapping the swapped icon collapses it back.
+      // Finding #6 (final whole-branch review): expanded state used to
+      // compress "play audio" and "collapse" into one icon that only ever
+      // re-collapsed, regardless of which half was tapped — the play
+      // behavior was never wired up. Tapping the speaker now plays audio
+      // (see the dedicated TTS test below) and does NOT collapse.
       await tester.tap(find.byKey(const ValueKey('play-sentence-icon')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('play-sentence-icon')), findsOneWidget);
+      expect(find.byKey(const ValueKey('collapse-icon')), findsOneWidget);
+      expect(find.text('hello'), findsOneWidget);
+
+      // Only the chevron collapses.
+      await tester.tap(find.byKey(const ValueKey('collapse-icon')));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('translate-icon')), findsOneWidget);
       expect(find.byKey(const ValueKey('play-sentence-icon')), findsNothing);
+      expect(find.byKey(const ValueKey('collapse-icon')), findsNothing);
       expect(find.text('hello'), findsNothing);
 
       // Expanding/collapsing changes the bubble's height, which re-fires the
       // VisibilityDetector and can (re)schedule MessageReadsNotifier's 250ms
       // read-receipt debounce timer (unrelated to this task) — drain it so
       // it doesn't outlive the test.
+      await _settle(tester);
+    },
+  );
+
+  testWidgets(
+    'the speaker icon plays the full learning-language sentence via TTS, '
+    'the chevron only collapses',
+    (tester) async {
+      final tts = _RecordingTtsService();
+      final container = _buildContainer(
+        _BubbleExpandChatService(text: 'hallo mein freund'),
+        tts: tts,
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+
+      await tester.tap(find.byKey(const ValueKey('translate-icon')));
+      await tester.pumpAndSettle();
+      expect(tts.spokenCalls, isEmpty);
+
+      await tester.tap(find.byKey(const ValueKey('play-sentence-icon')));
+      await tester.pumpAndSettle();
+
+      // The full learning-language line — not a single word/token, unlike
+      // the word popup's per-word speak call.
+      expect(tts.spokenCalls, hasLength(1));
+      expect(tts.spokenCalls.single.$1, 'hallo mein freund');
+      expect(tts.spokenCalls.single.$2, 'de'); // chat's learning language
+
+      await tester.tap(find.byKey(const ValueKey('collapse-icon')));
+      await tester.pumpAndSettle();
+
+      // Collapsing never speaks.
+      expect(tts.spokenCalls, hasLength(1));
+      expect(find.byKey(const ValueKey('translate-icon')), findsOneWidget);
+
       await _settle(tester);
     },
   );

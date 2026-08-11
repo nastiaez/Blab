@@ -11,6 +11,7 @@ import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
 import '../state/chat_state.dart';
+import 'word_popup.dart';
 
 class ModeToggle extends ConsumerWidget {
   const ModeToggle({super.key, required this.chatId});
@@ -49,6 +50,9 @@ class ModeToggle extends ConsumerWidget {
     final current = ref.read(chatModeProvider(chatId));
     if (current == next) return;
     ref.read(chatModeResetSignalProvider(chatId).notifier).bump();
+    // Design spec § Bubble layout: switching modes closes any open word
+    // popup alongside the bubble-collapse the reset signal above drives.
+    dismissWordPopup();
     await ref.read(chatModeProvider(chatId).notifier).set(next);
   }
 }

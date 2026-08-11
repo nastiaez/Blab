@@ -21,6 +21,7 @@ import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
 import '../../shared/services/message_translator.dart';
+import '../../shared/services/tts_service.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/push_notifications_state.dart';
@@ -353,29 +354,40 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+    // Account interface language — UI copy only (menus, system text, the
+    // emoji-picker locale below). Never a translation target; see
+    // translationInterfaceLang below for the pipeline's actual "interface"
+    // slot.
     final interfaceLang = ref.watch(interfaceLanguageProvider);
     final online = ref.watch(isOnlineProvider);
     final pushNotifications = ref.watch(pushNotificationsProvider);
     final translationCutoffAt = chat.translationCutoffAt;
-    // FR-23: practice mode always targets the chat's learning language;
-    // normal mode targets the reader's primary known language. Falls back
-    // to the learning language until known languages finish loading.
+    // FR-23 / modes-known-languages spec: practice mode always targets the
+    // chat's learning language; normal mode targets the reader's primary
+    // known language instead. The server's cache "interface" slot (second
+    // lane, and the DB cache-row key) is always the primary known language
+    // too — never profiles.interface_language. Both stay '' (never a
+    // supported-language match below) until knownLanguagesProvider resolves,
+    // so nothing gets translated against a guessed target/interface pair in
+    // the meantime (a wrong pair either 404s the cache lookup or trips the
+    // client's own interface-language-changed staleness check).
     final chatMode = ref.watch(chatModeProvider(widget.chatId));
     final knownLanguages = ref.watch(knownLanguagesProvider).value;
     final targetLang = knownLanguages == null
-        ? learningLang.code
+        ? ''
         : resolveTranslationTarget(
             mode: chatMode,
             learningLanguageCode: learningLang.code,
             primaryKnownLanguageCode: knownLanguages.primary,
           );
+    final translationInterfaceLang = knownLanguages?.primary ?? '';
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
     // Hydrate translations one loaded page at a time. History before a
     // language change stays as authored and never enters the AI path.
-    final localeKey = '$targetLang|${interfaceLang.code}';
+    final localeKey = '$targetLang|$translationInterfaceLang';
     if (_prefetchedLocaleKey != localeKey) {
       _prefetchedLocaleKey = localeKey;
       _prefetchedMessageIds.clear();
@@ -409,7 +421,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (!mounted) return;
         ref
             .read(messageTranslationsProvider(widget.chatId).notifier)
-            .watchDbRows(allEligibleMessageIds, targetLang, interfaceLang.code);
+            .watchDbRows(
+              allEligibleMessageIds,
+              targetLang,
+              translationInterfaceLang,
+            );
       });
     }
     if (online && kSupportedLearningLanguages.contains(targetLang)) {
@@ -420,7 +436,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               .read(messageTranslationsProvider(widget.chatId).notifier)
               .retryTransientFailures(
                 targetLang: targetLang,
-                interfaceLang: interfaceLang.code,
+                interfaceLang: translationInterfaceLang,
               ),
         );
       });
@@ -436,7 +452,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         await notifier.prefetchFromDb(
           eligibleMessages.map((m) => m.id).toList(),
           targetLang,
-          interfaceLang.code,
+          translationInterfaceLang,
         );
       });
     }
@@ -641,7 +657,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 reactionsByMessage: reactionsByMessage,
                                 scrollController: _scroll,
                                 languageCode: learningLang.code,
-                                interfaceLanguageCode: interfaceLang.code,
+                                translationInterfaceLanguageCode:
+                                    translationInterfaceLang,
                                 translationCutoffAt: translationCutoffAt,
                                 hasOlderMessages: pagination.hasMore,
                                 isLoadingOlder: pagination.isLoading,
@@ -1148,7 +1165,7 @@ class _MessageList extends StatelessWidget {
     required this.reactionsByMessage,
     required this.scrollController,
     required this.languageCode,
-    required this.interfaceLanguageCode,
+    required this.translationInterfaceLanguageCode,
     required this.translationCutoffAt,
     required this.hasOlderMessages,
     required this.isLoadingOlder,
@@ -1165,7 +1182,11 @@ class _MessageList extends StatelessWidget {
   final Map<String, List<MessageReactionSummary>> reactionsByMessage;
   final ScrollController scrollController;
   final String languageCode;
-  final String interfaceLanguageCode;
+
+  /// The reader's primary known language (modes-known-languages spec): the
+  /// translation pipeline's "interface" slot — cache-row key and second-lane
+  /// target — never `profiles.interface_language`.
+  final String translationInterfaceLanguageCode;
   final DateTime? translationCutoffAt;
   final bool hasOlderMessages;
   final bool isLoadingOlder;
@@ -1253,7 +1274,7 @@ class _MessageList extends StatelessWidget {
             isFirstInGroup: item.isFirstInGroup,
             isLastInGroup: item.isLastInGroup,
             languageCode: languageCode,
-            interfaceLanguageCode: interfaceLanguageCode,
+            translationInterfaceLanguageCode: translationInterfaceLanguageCode,
             shouldTranslate: shouldTranslateMessage(
               sentAt: item.message.sentAt,
               translationCutoffAt: translationCutoffAt,
@@ -1355,7 +1376,7 @@ class _MessageRow extends ConsumerWidget {
     required this.isFirstInGroup,
     required this.isLastInGroup,
     required this.languageCode,
-    required this.interfaceLanguageCode,
+    required this.translationInterfaceLanguageCode,
     required this.shouldTranslate,
     required this.translationCutoffAt,
     required this.popupTopInset,
@@ -1371,7 +1392,11 @@ class _MessageRow extends ConsumerWidget {
   final bool isFirstInGroup;
   final bool isLastInGroup;
   final String languageCode;
-  final String interfaceLanguageCode;
+
+  /// The reader's primary known language — the translation pipeline's
+  /// "interface" slot (cache-row key, second-lane target). See
+  /// [_MessageList.translationInterfaceLanguageCode].
+  final String translationInterfaceLanguageCode;
   final bool shouldTranslate;
   final DateTime? translationCutoffAt;
   final double popupTopInset;
@@ -1389,13 +1414,16 @@ class _MessageRow extends ConsumerWidget {
     final isFailed = message.status == MessageStatus.failed;
     final replyTo = message.replyTo;
 
-    // FR-23: practice mode always targets the chat's learning language;
-    // normal mode targets the reader's primary known language. Falls back
-    // to the learning language until known languages finish loading.
+    // FR-23 / modes-known-languages spec: practice mode always targets the
+    // chat's learning language; normal mode targets the reader's primary
+    // known language. Stays '' (never a supported-language match below)
+    // until knownLanguagesProvider resolves, so no translation is requested
+    // against a guessed target in the meantime (finding: a normal-mode chat
+    // was briefly firing requests at the *learning* language before this).
     final mode = ref.watch(chatModeProvider(chatId));
     final knownLanguages = ref.watch(knownLanguagesProvider).value;
     final targetLang = knownLanguages == null
-        ? languageCode
+        ? ''
         : resolveTranslationTarget(
             mode: mode,
             learningLanguageCode: languageCode,
@@ -1441,7 +1469,7 @@ class _MessageRow extends ConsumerWidget {
       isLastInGroup: isLastInGroup,
       languageCode: languageCode,
       targetLanguageCode: targetLang,
-      interfaceLanguageCode: interfaceLanguageCode,
+      translationInterfaceLanguageCode: translationInterfaceLanguageCode,
       mode: mode,
       knownLanguageCodes: knownLanguageCodes,
       shouldTranslate: canRequestTranslation,
@@ -1468,7 +1496,7 @@ class _MessageRow extends ConsumerWidget {
               messageId: message.id,
               text: message.originalText,
               targetLang: targetLang,
-              interfaceLang: interfaceLanguageCode,
+              interfaceLang: translationInterfaceLanguageCode,
               priority: message.type == MessageType.image,
             );
           }
@@ -1478,7 +1506,7 @@ class _MessageRow extends ConsumerWidget {
               messageId: replyTo.id,
               text: replyTo.originalText,
               targetLang: targetLang,
-              interfaceLang: interfaceLanguageCode,
+              interfaceLang: translationInterfaceLanguageCode,
             );
           }
           // Threshold lowered to 0.5 so partially-visible bubbles still
@@ -1513,7 +1541,7 @@ class _Bubble extends ConsumerStatefulWidget {
     required this.isLastInGroup,
     required this.languageCode,
     required this.targetLanguageCode,
-    required this.interfaceLanguageCode,
+    required this.translationInterfaceLanguageCode,
     required this.mode,
     required this.knownLanguageCodes,
     required this.shouldTranslate,
@@ -1538,7 +1566,11 @@ class _Bubble extends ConsumerStatefulWidget {
   /// The mode-resolved translation target (FR-23): the learning language in
   /// practice mode, or the reader's primary known language in normal mode.
   final String targetLanguageCode;
-  final String interfaceLanguageCode;
+
+  /// The reader's primary known language (modes-known-languages spec): the
+  /// translation pipeline's "interface" slot — cache-row key and second-lane
+  /// target. Never `profiles.interface_language`.
+  final String translationInterfaceLanguageCode;
 
   /// FR-23: drives MessageLearningContent's single-lane-default branching.
   final ChatMode mode;
@@ -1586,7 +1618,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final isLastInGroup = widget.isLastInGroup;
     final languageCode = widget.languageCode;
     final targetLanguageCode = widget.targetLanguageCode;
-    final interfaceLanguageCode = widget.interfaceLanguageCode;
+    final translationInterfaceLanguageCode =
+        widget.translationInterfaceLanguageCode;
     final mode = widget.mode;
     final knownLanguageCodes = widget.knownLanguageCodes;
     final shouldTranslate = widget.shouldTranslate;
@@ -1606,7 +1639,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             message.id,
             targetLanguageCode,
-            interfaceLanguageCode,
+            translationInterfaceLanguageCode,
           )]
         : null;
     final liveTranslationError =
@@ -1621,9 +1654,22 @@ class _BubbleState extends ConsumerState<_Bubble> {
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             replyTo.id,
             targetLanguageCode,
-            interfaceLanguageCode,
+            translationInterfaceLanguageCode,
           )]
         : null;
+    // Task 10 fix (finding #6): the practice-mode second lane's "play full
+    // sentence" icon speaks whatever the learning-language line actually
+    // shows — the resolved translation/correction result, or the plain
+    // original when there's no learning-aid content yet (still loading, or
+    // `LearningAidMode.none`).
+    final resolvedTranslation = liveTranslation is AsyncData<MessageTranslation>
+        ? liveTranslation.value
+        : null;
+    final speakText =
+        resolvedTranslation != null &&
+            resolvedTranslation.mode != LearningAidMode.none
+        ? resolvedTranslation.translation
+        : message.originalText;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
@@ -1675,6 +1721,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
                       replyTo: replyTo,
                       parentIsOutgoing: isOut,
                       translation: replyTranslation,
+                      mode: mode,
+                      knownLanguageCodes: knownLanguageCodes,
                     ),
                     const SizedBox(height: 6),
                   ],
@@ -1694,7 +1742,6 @@ class _BubbleState extends ConsumerState<_Bubble> {
                             targetLanguageCode,
                           ),
                       learningLanguageCode: languageCode,
-                      interfaceLanguageCode: interfaceLanguageCode,
                       isOutgoing: isOut,
                       popupTopInset: popupTopInset,
                       mode: mode,
@@ -1726,7 +1773,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
                                     messageId: message.id,
                                     text: message.originalText,
                                     targetLang: targetLanguageCode,
-                                    interfaceLang: interfaceLanguageCode,
+                                    interfaceLang: translationInterfaceLanguageCode,
                                   );
                             }
                           : null,
@@ -1786,7 +1833,11 @@ class _BubbleState extends ConsumerState<_Bubble> {
 
     final icon = _TranslateOrPlayIcon(
       expanded: _expanded,
-      onTap: () => setState(() => _expanded = !_expanded),
+      onExpand: () => setState(() => _expanded = true),
+      onCollapse: () => setState(() => _expanded = false),
+      speakText: speakText,
+      languageCode: languageCode,
+      tts: ref.watch(ttsServiceProvider),
     );
 
     return Row(
@@ -1800,46 +1851,101 @@ class _BubbleState extends ConsumerState<_Bubble> {
   }
 }
 
+/// Collapsed: a single translate icon that expands the second lane.
+/// Expanded (design spec § Bubble layout): two independently-tappable
+/// elements in the same visual slot — a speaker that plays the full
+/// learning-language sentence via TTS, and a chevron that collapses back.
+/// Previously these were compressed into one icon that only ever
+/// re-collapsed regardless of which half was tapped; splitting them wires up
+/// the "play full sentence" behavior the spec always called for (Task 10 gap).
 class _TranslateOrPlayIcon extends StatelessWidget {
-  const _TranslateOrPlayIcon({required this.expanded, required this.onTap});
+  const _TranslateOrPlayIcon({
+    required this.expanded,
+    required this.onExpand,
+    required this.onCollapse,
+    required this.speakText,
+    required this.languageCode,
+    required this.tts,
+  });
 
   final bool expanded;
-  final VoidCallback onTap;
+  final VoidCallback onExpand;
+  final VoidCallback onCollapse;
+
+  /// The full learning-language sentence to speak — never a single word.
+  final String speakText;
+  final String languageCode;
+  final TtsService tts;
+
+  Future<void> _speak() async {
+    if (speakText.trim().isEmpty) return;
+    await tts.stop();
+    await tts.speak(speakText, languageCode);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: Material(
-        color: Colors.transparent,
-        shape: const CircleBorder(),
-        child: InkWell(
-          key: ValueKey(expanded ? 'play-sentence-icon' : 'translate-icon'),
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(
-                expanded ? Icons.volume_up_outlined : Icons.translate_outlined,
+    if (!expanded) {
+      return SizedBox(
+        width: 32,
+        height: 32,
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            key: const ValueKey('translate-icon'),
+            customBorder: const CircleBorder(),
+            onTap: onExpand,
+            child: const Icon(
+              Icons.translate_outlined,
+              size: 20,
+              color: BlabColors.textMuted,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 32,
+          height: 32,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              key: const ValueKey('play-sentence-icon'),
+              customBorder: const CircleBorder(),
+              onTap: _speak,
+              child: const Icon(
+                Icons.volume_up_outlined,
                 size: 20,
                 color: BlabColors.textMuted,
               ),
-              if (expanded)
-                const Positioned(
-                  right: 2,
-                  top: 2,
-                  child: Icon(
-                    Icons.expand_less,
-                    size: 14,
-                    color: BlabColors.textMuted,
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
-      ),
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              key: const ValueKey('collapse-icon'),
+              customBorder: const CircleBorder(),
+              onTap: onCollapse,
+              child: const Icon(
+                Icons.expand_less,
+                size: 16,
+                color: BlabColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -2155,11 +2261,20 @@ class _QuotedReply extends StatelessWidget {
     required this.replyTo,
     required this.parentIsOutgoing,
     required this.translation,
+    required this.mode,
+    required this.knownLanguageCodes,
   });
 
   final Message replyTo;
   final bool parentIsOutgoing;
   final AsyncValue<MessageTranslation>? translation;
+
+  /// FR-23 / modes-known-languages spec: this preview follows the same
+  /// three display rules as [MessageLearningContent] via
+  /// [resolveMessageDisplayText] — a second message-rendering path that
+  /// Task 9's rewrite didn't reach, fixed here rather than duplicated.
+  final ChatMode mode;
+  final List<String> knownLanguageCodes;
 
   @override
   Widget build(BuildContext context) {
@@ -2174,9 +2289,13 @@ class _QuotedReply extends StatelessWidget {
 
     final author = replyTo.isOutgoing ? context.l10n.you : context.l10n.partner;
     final rawPreviewText = switch (translation) {
-      AsyncData<MessageTranslation>(value: final value)
-          when value.mode != LearningAidMode.none =>
-        value.translation,
+      AsyncData<MessageTranslation>(value: final value) =>
+        resolveMessageDisplayText(
+          authoredText: replyTo.originalText,
+          value: value,
+          mode: mode,
+          knownLanguageCodes: knownLanguageCodes,
+        ),
       _ => replyTo.originalText,
     };
     final previewText = rawPreviewText.trim().isEmpty && replyTo.attachment != null

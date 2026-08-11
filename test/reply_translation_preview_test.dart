@@ -7,12 +7,14 @@ import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
+import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/services/push_notification_gateway.dart';
 import 'package:blab/shared/services/push_token_repository.dart';
 import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/connectivity_state.dart';
 import 'package:blab/shared/state/privacy_settings.dart';
+import 'package:blab/shared/state/profile_state.dart';
 import 'package:blab/shared/state/push_notifications_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -205,6 +207,18 @@ Widget _host(ChatService service) {
         throw MessageTranslationFailed('unexpected_live_translation');
       }),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
+      // Finding #1/#5 (final whole-branch review): the translation pipeline
+      // now targets the reader's primary known language and gates every
+      // request on this provider having resolved — without an override it
+      // never resolves in a test container, so no translation would fire.
+      currentProfileProvider.overrideWith(
+        (_) async => const UserProfile(
+          displayName: 'Alice',
+          interfaceLanguage: 'en',
+          knownLanguages: ['en'],
+          primaryKnownLanguage: 'en',
+        ),
+      ),
     ],
     child: const MaterialApp(
       supportedLocales: AppLocalizations.supportedLocales,

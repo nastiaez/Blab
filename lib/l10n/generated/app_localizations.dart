@@ -213,7 +213,7 @@ abstract class AppLocalizations {
   /// No description provided for @interfaceLanguageHelp.
   ///
   /// In en, this message translates to:
-  /// **'Pick the language for menus, buttons, message subtitles, and word definitions across the app.'**
+  /// **'Pick the language for menus, buttons, and other system text across the app.'**
   String get interfaceLanguageHelp;
 
   /// No description provided for @switchedToLanguage.

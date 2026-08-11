@@ -54,7 +54,6 @@ void main() {
           translation: translation,
           showTranslation: showTranslation,
           learningLanguageCode: learningCode,
-          interfaceLanguageCode: interfaceCode,
           isOutgoing: isOutgoing,
           popupTopInset: 0,
           unavailableText: 'Translation unavailable',
@@ -313,7 +312,6 @@ void main() {
                 ),
                 showTranslation: true,
                 learningLanguageCode: 'ta',
-                interfaceLanguageCode: 'en',
                 isOutgoing: false,
                 popupTopInset: 0,
                 unavailableText: 'Translation unavailable',
@@ -397,6 +395,63 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('translation-retry')));
     expect(retried, isTrue);
   });
+
+  // Finding #3 (final whole-branch review): normal mode must never show
+  // AI-request chrome (shimmer, unavailable/retry) for a message that might
+  // turn out to already be known — the source language isn't known until
+  // the request resolves, so loading/error states render plain original
+  // text in normal mode. Practice mode always needs the learning-language
+  // line regardless of known status, so its shimmer/retry treatment is
+  // unchanged — covered first here as a regression guard.
+
+  testWidgets('practice mode still shows the pending shimmer while loading', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(const AsyncLoading(), authoredText: 'Was machst du?'),
+    );
+    // The shimmer is delayed — advance past _PendingTranslation's threshold.
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const ValueKey('translation-shimmer')), findsOneWidget);
+    expect(find.text('Was machst du?'), findsOneWidget);
+  });
+
+  testWidgets(
+    'normal mode never shows the pending shimmer, even while loading',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          const AsyncLoading(),
+          authoredText: 'Was machst du?',
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['en'],
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
+      expect(find.text('Was machst du?'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'normal mode never shows the unavailable/retry subtitle, even on error',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncError(Exception('offline'), StackTrace.empty),
+          authoredText: 'Was machst du?',
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['en'],
+        ),
+      );
+
+      expect(find.text('Translation unavailable'), findsNothing);
+      expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
+      expect(find.text('Was machst du?'), findsOneWidget);
+    },
+  );
 
   // FR-23: single-lane default + known-language bypass.
 

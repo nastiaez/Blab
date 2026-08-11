@@ -31,6 +31,17 @@ void _dismissCurrent() {
   _currentEntry = null;
 }
 
+/// Dismisses any currently-open word/explanation popup, if one is showing.
+/// No-op otherwise.
+///
+/// Exposed for [ModeToggle]'s mode-switch handler — design spec § Bubble
+/// layout: "Switching modes resets the chat's open UI state: ... any open
+/// word popup ... closes." `_dismissCurrent` is library-private (both
+/// [showWordPopup] and [showExplanationPopup] already call it to swap in a
+/// new popup); this just gives an outside caller the same ability without a
+/// currently-open popup of its own to open.
+void dismissWordPopup() => _dismissCurrent();
+
 /// Maximum popup card width (PRD FR-12).
 const double _kMaxPopupWidth = 280;
 
