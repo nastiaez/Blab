@@ -2,6 +2,7 @@ import 'package:blab/features/chat/chat_screen.dart';
 import 'package:blab/features/chat/state/chat_state.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
+import 'package:blab/features/chat/widgets/message_interaction_target.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -307,6 +308,37 @@ void main() {
       );
 
       expect(iconRect.right, lessThanOrEqualTo(bubbleRect.left));
+    },
+  );
+
+  testWidgets(
+    'the long-press gesture surface measures the bubble alone, not the '
+    'icon+bubble combo (regression: floating reaction row centering)',
+    (tester) async {
+      final container = _buildContainer(_BubbleExpandChatService());
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+
+      // chat_screen.dart's _handleLongPressStart captures
+      // MessageInteractionTarget's own RenderBox to position the floating
+      // reaction row (via _selectedBubbleRect). In practice mode the icon
+      // sits beside the bubble in a Row — MessageInteractionTarget must wrap
+      // only the bubble content, or that captured rect (and therefore the
+      // reaction row's horizontal centering) would include the icon's width
+      // and shift off the bubble's true center on every long-press.
+      final targetRect = tester.getRect(
+        find.byType(MessageInteractionTarget),
+      );
+      final bubbleRect = tester.getRect(
+        find.byKey(const ValueKey('bubble-content-incoming-message')),
+      );
+      final iconRect = tester.getRect(
+        find.byKey(const ValueKey('translate-icon')),
+      );
+
+      expect(targetRect, bubbleRect);
+      expect(targetRect.right, lessThanOrEqualTo(iconRect.left));
     },
   );
 

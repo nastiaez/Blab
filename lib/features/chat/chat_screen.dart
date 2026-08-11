@@ -1427,27 +1427,32 @@ class _MessageRow extends ConsumerWidget {
         ? ref.read(messageReadsProvider(chatId).notifier)
         : null;
 
-    Widget bubble = MessageInteractionTarget(
+    // MessageInteractionTarget (long-press / swipe-reply gesture surface) is
+    // wired here but applied inside _Bubble, around the bubble content only
+    // — never around the practice-mode translate icon beside it. It measures
+    // its own RenderBox to position the floating reaction row
+    // (_selectedBubbleRect), so if it wrapped the icon+bubble Row too, that
+    // rect would include the icon and throw off the row's horizontal
+    // centering on every practice-mode long-press.
+    Widget bubble = _Bubble(
+      chatId: chatId,
+      message: message,
+      maxWidth: maxBubble,
+      isLastInGroup: isLastInGroup,
+      languageCode: languageCode,
+      targetLanguageCode: targetLang,
+      interfaceLanguageCode: interfaceLanguageCode,
+      mode: mode,
+      knownLanguageCodes: knownLanguageCodes,
+      shouldTranslate: canRequestTranslation,
+      replyToShouldTranslate: canRequestReplyTranslation,
+      popupTopInset: popupTopInset,
+      reactions: reactions,
+      onReact: onReact,
       isFailed: isFailed,
       onLongPress: onLongPress,
       onFailedTap: onFailedTap,
       onSwipeReply: canReplyToMessage(message) ? onReply : null,
-      child: _Bubble(
-        chatId: chatId,
-        message: message,
-        maxWidth: maxBubble,
-        isLastInGroup: isLastInGroup,
-        languageCode: languageCode,
-        targetLanguageCode: targetLang,
-        interfaceLanguageCode: interfaceLanguageCode,
-        mode: mode,
-        knownLanguageCodes: knownLanguageCodes,
-        shouldTranslate: canRequestTranslation,
-        replyToShouldTranslate: canRequestReplyTranslation,
-        popupTopInset: popupTopInset,
-        reactions: reactions,
-        onReact: onReact,
-      ),
     );
 
     // Cache hydration happens by loaded page, but a live LLM request starts
@@ -1515,6 +1520,10 @@ class _Bubble extends ConsumerStatefulWidget {
     required this.replyToShouldTranslate,
     required this.popupTopInset,
     required this.onReact,
+    required this.isFailed,
+    required this.onLongPress,
+    required this.onFailedTap,
+    this.onSwipeReply,
   });
 
   final String chatId;
@@ -1540,6 +1549,15 @@ class _Bubble extends ConsumerStatefulWidget {
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
   final double popupTopInset;
+
+  /// [MessageInteractionTarget]'s gesture-surface inputs — applied inside
+  /// this widget's build around the bubble content only (never around the
+  /// practice-mode translate icon beside it), so the long-press rect it
+  /// measures for the floating reaction row stays the bubble's true bounds.
+  final bool isFailed;
+  final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
+  final VoidCallback onFailedTap;
+  final VoidCallback? onSwipeReply;
   final VoidCallback onReact;
 
   @override
@@ -1575,6 +1593,10 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final replyToShouldTranslate = widget.replyToShouldTranslate;
     final popupTopInset = widget.popupTopInset;
     final onReact = widget.onReact;
+    final isFailed = widget.isFailed;
+    final onLongPress = widget.onLongPress;
+    final onFailedTap = widget.onFailedTap;
+    final onSwipeReply = widget.onSwipeReply;
 
     final isOut = message.isOutgoing;
 
@@ -1740,13 +1762,26 @@ class _BubbleState extends ConsumerState<_Bubble> {
       ),
     );
 
+    // The long-press / swipe-reply gesture surface wraps the bubble content
+    // ONLY, never the practice-mode icon beside it — it measures its own
+    // RenderBox to position the floating reaction row, and that rect must
+    // stay the bubble's true bounds regardless of whether an icon sits next
+    // to it.
+    final interactiveBubble = MessageInteractionTarget(
+      isFailed: isFailed,
+      onLongPress: onLongPress,
+      onFailedTap: onFailedTap,
+      onSwipeReply: onSwipeReply,
+      child: bubbleStack,
+    );
+
     // FR-23: practice mode gets a translate/play-sentence icon beside the
     // bubble, toward the screen's horizontal center (left of an outgoing
     // bubble, right of an incoming one). Normal mode has no second lane to
     // expand, so no icon and no reserved gap for it — the bubble stays
     // flush to the edge exactly as before this task.
     if (mode != ChatMode.practice) {
-      return bubbleStack;
+      return interactiveBubble;
     }
 
     final icon = _TranslateOrPlayIcon(
@@ -1759,8 +1794,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
       mainAxisAlignment: isOut ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: isOut
-          ? [icon, const SizedBox(width: 6), Flexible(child: bubbleStack)]
-          : [Flexible(child: bubbleStack), const SizedBox(width: 6), icon],
+          ? [icon, const SizedBox(width: 6), Flexible(child: interactiveBubble)]
+          : [Flexible(child: interactiveBubble), const SizedBox(width: 6), icon],
     );
   }
 }
