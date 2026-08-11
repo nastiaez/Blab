@@ -1285,7 +1285,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `ChatMode`, `KnownLanguages` (codes list), `MessageTranslation.sourceLang`.
-- Produces: rewritten `MessageLearningContent` taking `mode: ChatMode` and `knownLanguageCodes: List<String>` in place of the old always-dual-lane logic; internal `_expanded` state (`StatefulWidget`, was `StatelessWidget`) reset by `chatModeResetSignalProvider` (Task 7).
+- Produces: rewritten `MessageLearningContent` (stays a `StatelessWidget`) taking `mode: ChatMode`, `knownLanguageCodes: List<String>`, `expanded: bool`, and `onToggleExpanded: VoidCallback` in place of the old always-dual-lane logic. `expanded`/`onToggleExpanded` are lifted state — this widget does not own or reset them; `_Bubble` does (Task 10), including the `chatModeResetSignalProvider`-driven reset. The translate/play-sentence icon itself is not part of this widget — it lives beside the bubble, built by Task 10, and calls `onToggleExpanded` from outside.
 
 - [ ] **Step 1: Read the existing test file in full**
 
@@ -1294,58 +1294,62 @@ Read `test/message_learning_content_test.dart` completely — note its local `ho
 - [ ] **Step 2: Write the new failing tests** (appended to the same file)
 
 ```dart
-testWidgets('normal mode, known source language shows original only, no expand icon', (tester) async {
+testWidgets('normal mode, known source language shows original only', (tester) async {
   await tester.pumpWidget(host(
     messageId: 'm1',
     authoredText: 'Привіт',
     translation: AsyncData(result(sourceLang: 'uk', mode: LearningAidMode.translation)),
     mode: ChatMode.normal,
     knownLanguageCodes: const ['en', 'uk'],
+    expanded: false,
+    onToggleExpanded: () {},
   ));
   expect(find.text('Привіт'), findsOneWidget);
-  expect(find.byKey(const ValueKey('translate-icon')), findsNothing);
 });
 
-testWidgets('normal mode, unknown source language shows the translation, collapsed', (tester) async {
+testWidgets('normal mode, unknown source language shows the translation, no second lane', (tester) async {
   await tester.pumpWidget(host(
     messageId: 'm2',
     authoredText: 'Cześć',
     translation: AsyncData(result(sourceLang: 'pl', translation: 'Hi', mode: LearningAidMode.translation)),
     mode: ChatMode.normal,
     knownLanguageCodes: const ['en'],
+    expanded: false,
+    onToggleExpanded: () {},
   ));
   expect(find.text('Hi'), findsOneWidget);
   expect(find.text('Cześć'), findsNothing); // original not shown by default in normal-unknown case
 });
 
-testWidgets('practice mode collapses to the learning-language line with a translate icon', (tester) async {
+testWidgets('practice mode, not expanded, shows only the learning-language line', (tester) async {
   await tester.pumpWidget(host(
     messageId: 'm3',
     authoredText: 'hello',
     translation: AsyncData(result(sourceLang: 'en', translation: 'hallo', interfaceText: 'hello', mode: LearningAidMode.translation)),
     mode: ChatMode.practice,
     knownLanguageCodes: const ['en'],
+    expanded: false,
+    onToggleExpanded: () {},
   ));
   expect(find.text('hallo'), findsOneWidget);
   expect(find.text('hello'), findsNothing); // second lane not shown until expanded
-  expect(find.byKey(const ValueKey('translate-icon')), findsOneWidget);
 });
 
-testWidgets('practice mode expands to show the second lane on icon tap', (tester) async {
+testWidgets('practice mode, expanded, shows the second lane too', (tester) async {
   await tester.pumpWidget(host(
     messageId: 'm4',
     authoredText: 'hello',
     translation: AsyncData(result(sourceLang: 'en', translation: 'hallo', interfaceText: 'hello', mode: LearningAidMode.translation)),
     mode: ChatMode.practice,
     knownLanguageCodes: const ['en'],
+    expanded: true,
+    onToggleExpanded: () {},
   ));
-  await tester.tap(find.byKey(const ValueKey('translate-icon')));
-  await tester.pumpAndSettle();
+  expect(find.text('hallo'), findsOneWidget);
   expect(find.text('hello'), findsOneWidget);
-  expect(find.byKey(const ValueKey('play-sentence-icon')), findsOneWidget);
 });
 ```
-(Adjust `host(...)`'s signature call to match Step 1's actual helper once `mode`/`knownLanguageCodes` params are added to it.)
+`expanded`/`onToggleExpanded` are passed directly by the test, not driven by a tapped icon — this widget has no icon of its own (that's Task 10's job, tested there). (Adjust `host(...)`'s signature call to match Step 1's actual helper once `mode`/`knownLanguageCodes`/`expanded`/`onToggleExpanded` params are added to it.)
 
 - [ ] **Step 3: Run to verify failure**
 
@@ -1354,7 +1358,7 @@ Expected: FAIL — new params don't exist yet on `MessageLearningContent`/`host`
 
 - [ ] **Step 4: Rewrite `MessageLearningContent`**
 
-Convert from `StatelessWidget` to `StatefulWidget` (needed for `_expanded` state). Add `required this.mode` and `required this.knownLanguageCodes` params. Core branching, replacing the old always-dual-lane block (lines 93-151 of the original file):
+Keep `MessageLearningContent` as a `StatelessWidget`. Add `required this.mode`, `required this.knownLanguageCodes`, `required this.expanded`, and `required this.onToggleExpanded` params (the last two are supplied by `_Bubble` in Task 10, which owns the actual state — this widget only reads them). Core branching, replacing the old always-dual-lane block (lines 93-151 of the original file):
 
 ```dart
 final value = (result as AsyncData<MessageTranslation>).value;
@@ -1393,7 +1397,7 @@ return ConstrainedBox(
     mainAxisSize: MainAxisSize.min,
     children: [
       learningLine,
-      if (_expanded) ...[
+      if (expanded) ...[
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Container(
@@ -1407,7 +1411,7 @@ return ConstrainedBox(
   ),
 );
 ```
-The translate/play-sentence icon itself is Task 10's job (it lives beside the bubble, not inside `MessageLearningContent` — this widget only needs to expose whether it's expanded and a callback to toggle, since Task 10's icon in `_Bubble` needs to control it). Restructure `MessageLearningContent` to accept `required this.expanded` and `required this.onToggleExpanded` (lifted state — the parent `_Bubble`, not this widget, owns `_expanded`, since Task 10's icon sits outside this widget's own bounds). Revise the `_expanded` references above to `widget.expanded`, and drop the `StatefulWidget` conversion from this file — move the expand/collapse state itself up into `_Bubble` in Task 10 instead. Keep `MessageLearningContent` as a `StatelessWidget` reading `expanded`/`onToggleExpanded` params, matching this file's existing style rather than introducing new local state here.
+The translate/play-sentence icon itself is Task 10's job — it lives beside the bubble, not inside `MessageLearningContent`. This widget only reads the `expanded` param to decide whether to render the second lane; it never calls `onToggleExpanded` itself (nothing in this widget is tappable to trigger it — that's the icon Task 10 builds outside this widget's bounds). Pass `onToggleExpanded` straight through as an unused-for-now field if nothing here needs to invoke it yet; Task 10 is what actually wires a tap to it.
 
 - [ ] **Step 5: Add `learningLanguageCode` param to `InlineCorrectionText`**
 
@@ -1416,7 +1420,7 @@ Task 11 does the real tap-target rewrite of `InlineCorrectionText`; for this tas
 - [ ] **Step 6: Run tests**
 
 Run: `flutter test test/message_learning_content_test.dart`
-Expected: PASS (adjust `host(...)` in Step 1's file to thread `expanded`/`onToggleExpanded` instead of `mode` internally driving its own state, per Step 4's final design — keep the test file and implementation in sync on which side owns expand state).
+Expected: PASS.
 
 - [ ] **Step 7: Commit**
 
