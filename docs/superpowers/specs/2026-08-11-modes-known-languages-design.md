@@ -46,9 +46,9 @@ This is different from changing your **learning language** for a chat, which alr
 
 ## Bubble layout
 
-Collapsed by default: always exactly one lane (whichever line the rules above select), full stop — no per-language or per-user adaptive default. Below it, a translate icon — only present in practice mode (rule 1), since that's the only case with a second lane to offer. Normal mode (rules 2 and 3) always renders a single lane with nothing to expand. Tap the message or the icon to expand the second lane: divider, translation into the reader's primary known language below. Once expanded, the translate icon is replaced by a "play full sentence" audio icon, with a chevron to collapse back. Scrolling a message out of view re-collapses it.
+Collapsed by default: always exactly one lane (whichever line the rules above select), full stop — no per-language or per-user adaptive default. A translate icon sits beside the bubble, toward the center of the screen — not below the text — and only appears in practice mode (rule 1), since that's the only case with a second lane to offer. Normal mode (rules 2 and 3) always renders a single lane with no icon. Tapping the icon (not the message itself — that's already spoken for by word taps and long-press) expands the second lane: divider, translation into the reader's primary known language below. Once expanded, the icon swaps to a "play full sentence" audio icon, with a chevron to collapse back. Scrolling a message out of view re-collapses it.
 
-Tapping a word (not the bubble padding) opens the existing word-lookup popup; dotted underlines only appear once a message is expanded.
+No dotted underlines on tappable words — words are tappable at all times regardless of collapsed/expanded state, so an underline that only shows up on expand would misrepresent when tapping actually works.
 
 **Seeing the true original:** switching the whole chat to normal mode is the mechanism — no separate "view original" link on the bubble. This only surfaces the original for languages already on your known list (rule 2 above); for a message in a language you don't know at all, there's nothing on it to unlock even in normal mode — add that language in Profile if you want to see it un-translated, same as any other known language.
 
@@ -57,9 +57,13 @@ Switching modes resets the chat's open UI state: every expanded message re-colla
 ## Corrections detail
 
 - Mechanical mistakes (capitalization, apostrophes, commas, a stray foreign word swapped back into the learning language) fix silently, no marks.
-- Meaning-level mistakes: the corrected word sits in the learning-language line. Tapping it opens the existing word popup with one added line — why it was corrected. No separate block under the bubble. (The explanation text is already generated and stored by the translation service today; it's just never rendered — this wires it into the popup for the first time.)
-- Two visual treatments for corrected words: brand-color for a word you were missing entirely (insertion), muted strikethrough for a word you got wrong (replacement). Today's implementation only has the strikethrough treatment — the insertion color is new.
-- Mixed-language input is never flagged as an error — type mostly in the learning language, drop in one word from elsewhere, and that word renders as a normal correction gap (highlighted as "missing"), not a special warning state.
+- Meaning-level mistakes keep today's single visual treatment — muted strikethrough on the wrong part, corrected text right after it. No second color for insertions; not worth the extra visual complexity.
+- The struck-through (wrong) text and the corrected text next to it are two separate tap targets, each opening a popup, reusing the existing word-popup card:
+  - Tap the **corrected** text → the normal word-definition popup (word, romanization, translation, audio), same as any other tappable word.
+  - Tap the **struck-through** text → a similar-looking popup, but showing the explanation of what was wrong instead of a definition. (The explanation text is already generated and stored by the translation service today; it's just never rendered — this wires it into the popup for the first time.) Kept as a separate popup rather than merging both into one, since a combined card gets cramped on short words.
+  - Both spans need a reliably tappable hit area even when the words themselves are short — the two targets must stay independently tappable, not just visually distinct.
+- No separate block under the bubble for corrections — this replaces that.
+- Mixed-language input is never flagged as an error — type mostly in the learning language, drop in one word from elsewhere, and that word renders as a normal correction gap, not a special warning state.
 
 ## Privacy
 
