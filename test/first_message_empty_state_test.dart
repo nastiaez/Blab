@@ -15,6 +15,7 @@ Chat _chat() => Chat(
   partnerName: 'Nastia',
   partnerInitial: 'N',
   learningLanguage: _lang('es'), // you learn Spanish
+  mode: ChatMode.practice,
   partnerNativeLanguage: _lang('es'),
   partnerLearningLanguage: _lang('nl'), // Nastia learns Dutch
   lastMessage: '',

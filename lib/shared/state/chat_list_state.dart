@@ -27,6 +27,7 @@ Chat _rowToChat(Map<String, dynamic> r) {
     partnerName: name,
     partnerInitial: name == '?' ? '?' : name[0].toUpperCase(),
     learningLanguage: myLearn,
+    mode: chatModeFromDb(r['my_mode'] as String?),
     partnerNativeLanguage: myLearn,
     partnerLearningLanguage: partnerLearn,
     translationCutoffAt: r['translation_cutoff_at'] == null

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/chat_mappers.dart';
+import '../models/chat.dart';
 import '../models/message.dart';
 import '../models/message_reaction.dart';
 
@@ -693,6 +694,17 @@ class ChatService {
     await _client
         .from('chat_members')
         .update({'learning_language': langCode})
+        .eq('chat_id', chatId)
+        .eq('user_id', _uid);
+  }
+
+  Future<void> setChatMode({
+    required String chatId,
+    required ChatMode mode,
+  }) async {
+    await _client
+        .from('chat_members')
+        .update({'mode': chatModeToDb(mode)})
         .eq('chat_id', chatId)
         .eq('user_id', _uid);
   }
