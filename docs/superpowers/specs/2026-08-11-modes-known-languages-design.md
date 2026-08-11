@@ -28,27 +28,29 @@ Onboarding flow for seeding the known-languages list is deferred to a separate d
 
 ## Display logic
 
-Applied per message, per reader, in this order:
+Mode decides everything — known languages only matter in normal mode:
 
-1. **Practice mode and the message is in the chat's learning language** → show the learning-language line: corrected if the author wrote it in that language, translated into it if they wrote it in something else. This fires even if that language also happens to be on the reader's known list — deliberately practicing a language you already know (e.g. grammar polish for a heritage speaker) still gets corrected.
-2. **Otherwise, message language is on the reader's known list** → show as authored. No translation, no correction.
-3. **Otherwise (not known, and not rule 1)** → translate. Normal mode targets the reader's primary known language. Practice mode also targets the learning language, matching today's behavior of translating anything into the language being practiced.
+1. **Practice mode** → every message shows the learning-language line, full stop. Corrected if the author wrote it in that language, translated into it if they wrote it in anything else — regardless of whether the source language happens to be on the reader's known list. Known status has no effect in practice mode at all; the whole point is immersion in the language being practiced. To see a message as the author actually typed it, switch the chat to normal mode.
+2. **Normal mode, message language is on the reader's known list** → show as authored. No translation, no correction.
+3. **Normal mode, message language is not known** → translate into the reader's primary known language.
+
+When practice mode's second lane is expanded (see Bubble layout below), it always translates into the reader's primary known language too — one consistent target, not chosen per-message based on what the author wrote.
 
 Corrections (the crossed-word treatment) only ever render for the person who made the mistake, viewing their own message. Everyone else always sees the clean result — unchanged from today's behavior.
 
-Historical messages are not migrated or re-cached when known languages change. Rendering always reflects the reader's *current* settings, exactly as it does today — add Polish to your known list and every past Polish message switches to original-only immediately, no backfill needed.
+A language can be both known and a chat's learning language at once — no exclusivity enforced, and no special-casing needed: rule 1 already applies uniformly to every message in practice mode regardless of known status, so nothing to reconcile. Real case for allowing the overlap: someone who already speaks a language casually but wants grammar polish in one particular chat.
+
+Historical messages are not migrated or re-cached when known languages change. Rendering always reflects the reader's *current* settings, exactly as it does today — add Polish to your known list and every past Polish message (in a normal-mode view) switches to original-only immediately, no backfill needed.
 
 This is different from changing your **learning language** for a chat, which already has separate, unchanged behavior: it starts a new translation "era" (`translation_cutoff_at`). Messages sent before the change freeze to plain original — no dual-lane, and they don't get retroactively translated into either the old or the new learning language. Only messages sent after the change get rule 1's treatment for the newly selected language. Known-language changes are live and retroactive; learning-language changes are not — this spec doesn't touch that distinction, just documenting it since it affects what a reader sees after either kind of change.
 
-A language can be both known and a chat's learning language at once — no exclusivity enforced. Rule 1 above means the learning-language treatment wins for that specific chat regardless of known status, so nothing breaks: known controls every *other* language, learning controls this one, for this chat. Real case for allowing it: someone who already speaks a language casually but wants grammar polish in one particular chat.
-
 ## Bubble layout
 
-Collapsed by default: always exactly one lane (whichever line the rules above select), full stop — no per-language or per-user adaptive default. Below it, a translate icon — only present for rule 1's case (practice mode, learning-language line), since that's the only case with a second lane to offer. Rule 2 (known language) and rule 3 (translated-because-unknown) each render a single lane with nothing to expand. Tap the message or the icon to expand rule 1's second lane: divider, known-language translation below. Once expanded, the translate icon is replaced by a "play full sentence" audio icon, with a chevron to collapse back. Scrolling a message out of view re-collapses it.
+Collapsed by default: always exactly one lane (whichever line the rules above select), full stop — no per-language or per-user adaptive default. Below it, a translate icon — only present in practice mode (rule 1), since that's the only case with a second lane to offer. Normal mode (rules 2 and 3) always renders a single lane with nothing to expand. Tap the message or the icon to expand the second lane: divider, translation into the reader's primary known language below. Once expanded, the translate icon is replaced by a "play full sentence" audio icon, with a chevron to collapse back. Scrolling a message out of view re-collapses it.
 
 Tapping a word (not the bubble padding) opens the existing word-lookup popup; dotted underlines only appear once a message is expanded.
 
-**Seeing the true original:** switching the whole chat to normal mode is the mechanism — no separate "view original" link on the bubble. This only surfaces the original for languages already on your known list (rule 2 above); for a message in a language you don't know at all, there's nothing on it to unlock — add that language in Profile if you want to see it un-translated, same as any other known language.
+**Seeing the true original:** switching the whole chat to normal mode is the mechanism — no separate "view original" link on the bubble. This only surfaces the original for languages already on your known list (rule 2 above); for a message in a language you don't know at all, there's nothing on it to unlock even in normal mode — add that language in Profile if you want to see it un-translated, same as any other known language.
 
 Switching modes resets the chat's open UI state: every expanded message re-collapses, any open word popup or reaction picker closes. Animated transition, not a hard cut.
 
