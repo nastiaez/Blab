@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blab — the translating moment</title>
+<style>
+  :root {
+    --bg: #EFEBE2;
+    --surface: #FBF9F5;
+    --surface-2: #F3EFE6;
+    --text: #1F3340;
+    --text-muted: #6B7A84;
+    --line: #E0D8C8;
+    --accent: #D4694A;
+    --accent-soft: #F3DAD0;
+    --canvas: #EFEBE2;
+    --bubble-in: #D6E2E7;
+    --bubble-in-text: #1F3340;
+    --bubble-out: #D4694A;
+    --bubble-out-text: #FFFFFF;
+    --shell: #FFFFFF;
+    --shell-line: #DED6C6;
+
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-data: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141F27;
+      --surface: #1C2A33;
+      --surface-2: #23323C;
+      --text: #E9E4DA;
+      --text-muted: #94A5B0;
+      --line: #2C3D48;
+      --accent: #E58362;
+      --accent-soft: #3A2A27;
+      --canvas: #182530;
+      --bubble-in: #2B3B46;
+      --bubble-in-text: #E9E4DA;
+      --bubble-out: #C25E41;
+      --bubble-out-text: #FFF6F2;
+      --shell: #1C2A33;
+      --shell-line: #32424E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #141F27;
+    --surface: #1C2A33;
+    --surface-2: #23323C;
+    --text: #E9E4DA;
+    --text-muted: #94A5B0;
+    --line: #2C3D48;
+    --accent: #E58362;
+    --accent-soft: #3A2A27;
+    --canvas: #182530;
+    --bubble-in: #2B3B46;
+    --bubble-in-text: #E9E4DA;
+    --bubble-out: #C25E41;
+    --bubble-out-text: #FFF6F2;
+    --shell: #1C2A33;
+    --shell-line: #32424E;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #EFEBE2;
+    --surface: #FBF9F5;
+    --surface-2: #F3EFE6;
+    --text: #1F3340;
+    --text-muted: #6B7A84;
+    --line: #E0D8C8;
+    --accent: #D4694A;
+    --accent-soft: #F3DAD0;
+    --canvas: #EFEBE2;
+    --bubble-in: #D6E2E7;
+    --bubble-in-text: #1F3340;
+    --bubble-out: #D4694A;
+    --bubble-out-text: #FFFFFF;
+    --shell: #FFFFFF;
+    --shell-line: #DED6C6;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  header { display: flex; flex-direction: column; gap: 12px; max-width: 62ch; }
+
+  .eyebrow {
+    font-family: var(--font-data);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-size: clamp(30px, 4.4vw, 44px);
+    line-height: 1.08;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  header p { margin: 0; color: var(--text-muted); font-size: 17px; }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.012em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  /* ---------- control bar ---------- */
+
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 6px 20px -14px rgba(0,0,0,0.45);
+  }
+
+  .ctrl-group { display: flex; align-items: center; gap: 10px; }
+
+  .ctrl-label {
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .send {
+    appearance: none;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 120ms ease, filter 120ms ease;
+  }
+  .send:hover { filter: brightness(1.06); }
+  .send:active { transform: scale(0.97); }
+  .send:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  .seg {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-data);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-muted); }
+  .switch input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  .hint { margin-left: auto; font-size: 13px; color: var(--text-muted); }
+
+  /* ---------- variant grid ---------- */
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+    gap: 26px;
+  }
+
+  .variant { display: flex; flex-direction: column; gap: 12px; }
+
+  .band { display: flex; flex-direction: column; gap: 20px; }
+  .band-head { display: flex; flex-direction: column; gap: 4px; max-width: 64ch; }
+  .band-head p { margin: 0; color: var(--text-muted); font-size: 15px; }
+  .settled-tag {
+    align-self: flex-start;
+    font-family: var(--font-data);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+
+  .variant-head { display: flex; flex-direction: column; gap: 3px; }
+  .variant-name { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+  .variant-name .tag {
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-right: 8px;
+  }
+  .variant-desc { font-size: 14px; color: var(--text-muted); line-height: 1.45; }
+
+  .shell {
+    max-width: 320px;
+    background: var(--shell);
+    border: 1px solid var(--shell-line);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 14px 34px -22px rgba(0,0,0,0.5);
+  }
+
+  .shell-bar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--shell-line);
+    background: var(--shell);
+  }
+  .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #5E8B8C; color: #fff;
+    font-size: 12px; font-weight: 600;
+    display: grid; place-items: center;
+  }
+  .shell-name { font-size: 14px; font-weight: 600; }
+  .shell-sub { font-size: 11px; color: var(--text-muted); margin-left: auto; font-family: var(--font-data); }
+
+  .canvas {
+    background: var(--canvas);
+    padding: 16px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 208px;
+    justify-content: flex-end;
+  }
+
+  /* Positioned so the hidden measuring copy of the bubble resolves its
+     84% max-width against exactly the same box the real one does. */
+  .row { display: flex; position: relative; }
+  .row.out { justify-content: flex-end; }
+
+  .bubble {
+    max-width: 84%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .bubble.in {
+    background: var(--bubble-in);
+    color: var(--bubble-in-text);
+    border-bottom-left-radius: 6px;
+  }
+  .bubble.out {
+    background: var(--bubble-out);
+    color: var(--bubble-out-text);
+    border-bottom-right-radius: 6px;
+  }
+
+  .stack {
+    position: relative;
+    overflow: hidden;
+    transition:
+      width 240ms cubic-bezier(0.22,0.72,0.24,1),
+      height 240ms cubic-bezier(0.22,0.72,0.24,1);
+  }
+  .stack .line { margin: 0; }
+
+  /* Both lines are lifted out of flow during the swap and pinned to their
+     own measured width, so neither re-wraps while the box morphs.
+
+     The corner each one is pinned to matters. An outgoing bubble grows
+     leftward and upward, so a line pinned top-left is pinned to the two
+     edges that move — which is why the English used to drift up and to
+     the left as the bubble opened. Pinned bottom-right it sits perfectly
+     still and the bubble opens up behind it. The German is pinned
+     top-left, its final resting place, so it never moves either. */
+  .stack .line.hold { position: absolute; bottom: 0; right: 0; }
+  .stack .line.land { position: absolute; top: 0; left: 0; }
+
+  .bubble.measuring {
+    position: absolute;
+    top: 0; left: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .replay {
+    align-self: flex-start;
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+  .replay:hover { border-color: var(--accent); color: var(--accent); }
+  .replay:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .meta {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    align-items: center;
+    font-family: var(--font-data);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-right: 4px;
+  }
+  .meta .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: 0; transition: opacity 200ms; }
+  .meta.busy .dot { opacity: 1; }
+
+  /* ---------- shimmer treatments ---------- */
+
+  /* The waiting signal, shared by both: a band of light travelling across
+     the glyphs of the message you just sent. */
+  .sweeping {
+    background-image: linear-gradient(
+      100deg,
+      rgba(255,255,255,0.42) 0%, rgba(255,255,255,0.42) 36%,
+      rgba(255,255,255,1) 50%,
+      rgba(255,255,255,0.42) 64%, rgba(255,255,255,0.42) 100%
+    );
+    background-size: 260% 100%;
+    background-position: 130% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: sweep 1700ms linear infinite;
+  }
+  @keyframes sweep {
+    from { background-position: 130% 0; }
+    to   { background-position: -30% 0; }
+  }
+
+  /* Per-word motion. Following Material's rule, only the arriving text
+     moves — the departing text just goes, so nothing appears to slide
+     out from under the reader. */
+  .w {
+    display: inline-block;
+    transition: opacity 140ms ease-out, transform 140ms ease-out;
+  }
+  .w.gone { opacity: 0; transition-duration: 110ms; }
+  .w.pending { opacity: 0; transform: translateY(4px); }
+
+  /* ---------- notes ---------- */
+
+  .notes {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 26px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .qa { display: flex; flex-direction: column; gap: 5px; }
+  .qa dt { font-weight: 650; font-size: 15px; }
+  .qa dd { margin: 0; color: var(--text-muted); font-size: 15px; max-width: 68ch; }
+  dl { margin: 0; display: flex; flex-direction: column; gap: 18px; }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    padding-left: 16px;
+    color: var(--text-muted);
+    font-size: 15px;
+    max-width: 66ch;
+  }
+  .callout strong { color: var(--text); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sweeping { animation: none; color: inherit; background: none; -webkit-text-fill-color: currentColor; }
+    .stack, .w { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Blab · practice mode</div>
+    <h1>What happens in the four seconds after you hit send</h1>
+    <p>You type English. Blab has to turn it into German, and for a few seconds there is nothing to show but the words you wrote. This is what fills that gap.</p>
+  </header>
+
+  <div class="controls">
+    <button class="send" id="send">Send message</button>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">Wait</span>
+      <div class="seg" id="delay" role="group" aria-label="Simulated translation delay">
+        <button data-ms="400" aria-pressed="false">0.4s fast</button>
+        <button data-ms="3000" aria-pressed="true">3s typical</button>
+        <button data-ms="7000" aria-pressed="false">7s slow</button>
+      </div>
+    </div>
+
+    <div class="ctrl-group">
+      <span class="ctrl-label">German is</span>
+      <div class="seg" id="length" role="group" aria-label="Length of the translated line">
+        <button data-len="longer" aria-pressed="true">longer</button>
+        <button data-len="shorter" aria-pressed="false">shorter</button>
+      </div>
+    </div>
+
+    <label class="switch">
+      <input type="checkbox" id="grace" checked>
+      Hold the animation for the first 350ms
+    </label>
+
+    <span class="hint">Send replays both at once · each has its own replay</span>
+  </div>
+
+  <section class="band">
+    <div class="band-head">
+      <span class="settled-tag">The wave</span>
+      <h2>Only your own messages do this</h2>
+      <p>The band sweeps while Blab works. Then your words clear out left to right, the bubble changes shape while it is empty, and the German words land in the same direction the band was travelling.</p>
+    </div>
+    <section class="grid">
+      <div class="variant" data-side="out" data-mode="wave">
+        <div class="variant-head">
+          <div class="variant-name">You, in practice mode</div>
+          <div class="variant-desc">You type English, the chat is set to German.</div>
+        </div>
+        <div class="shell">
+          <div class="shell-bar">
+            <div class="avatar">A</div>
+            <div class="shell-name">Aswin</div>
+            <div class="shell-sub">German</div>
+          </div>
+          <div class="canvas">
+            <div class="row"><div class="bubble in">Wann kommst du?</div></div>
+            <div class="row out"><div class="bubble out"><div class="stack"></div></div></div>
+            <div class="meta"><span class="dot"></span><span class="stamp">14:32</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+
+  <section class="notes">
+    <h2>The decisions hiding inside this</h2>
+    <dl>
+      <div class="qa">
+        <dt>Your own words never disappear</dt>
+        <dd>Both keep your English on screen the whole time you're waiting. You wrote it, you should see it — nothing goes blank, nothing gets replaced by a spinner.</dd>
+      </div>
+      <div class="qa">
+        <dt>One lane, start to finish</dt>
+        <dd>No second line under the bubble at any point. What you're watching is the same single line changing language.</dd>
+      </div>
+      <div class="qa">
+        <dt>Strictly one thing at a time</dt>
+        <dd>The English is completely gone before the bubble starts changing shape, and the bubble has completely stopped before the first German word arrives. A bubble in motion drags whatever is inside it, so the answer is to have nothing inside it while it moves.</dd>
+      </div>
+      <div class="qa">
+        <dt>Their messages don't do any of this</dt>
+        <dd>A message from the other person only appears once its translation is ready, so there is no gap to fill and no animation at all — it simply lands, already in your learning language. If the translation fails it lands in the original language rather than never arriving.</dd>
+      </div>
+      <div class="qa">
+        <dt>The two languages never share the same pixels</dt>
+        <dd>Two texts at half opacity in one spot smear into each other, worst at the opening words where both languages start at the same point. The wave avoids it in time: the original clears a spot before the translation reaches it.</dd>
+      </div>
+      <div class="qa">
+        <dt>The first 350ms stay still</dt>
+        <dd>Toggle it off and set the wait to 0.4s to see why — when Blab answers instantly, an animation that starts and stops immediately reads as a glitch. Holding still for a third of a second means fast replies just appear.</dd>
+      </div>
+      <div class="qa">
+        <dt>The bubble knows its final size before it moves</dt>
+        <dd>The German line is measured, hidden, in a real copy of the bubble before anything animates, so the bubble travels straight to its final shape — width and height together, as one motion — instead of resizing again once the text lands. Try <em>shorter</em> as well as <em>longer</em>; both directions are one move.</dd>
+      </div>
+      <div class="qa">
+        <dt>If it fails, it stays quiet</dt>
+        <dd>The band stops and your English simply stays. No error, no retry button — Blab keeps trying in the background and the line turns to German whenever it succeeds.</dd>
+      </div>
+    </dl>
+    <p class="callout"><strong>Still open:</strong> what Blab does with a message that has nothing to translate — laughter, emoji, a time, a name, a keyboard mash. Sound words get respelled in the learning language; everything else stays exactly as typed.</p>
+  </section>
+</div>
+
+<script>
+  const PAIRS = {
+    longer: {
+      src: "I'll be a bit late, sorry!",
+      dst: "Ich komme leider ein bisschen später, Entschuldigung!",
+    },
+    shorter: {
+      src: "Do you want to meet tomorrow evening at the station?",
+      dst: "Treffen wir uns morgen Abend?",
+    },
+  };
+  const GRACE = 350;
+
+  // Strictly one thing at a time. The English is completely gone before
+  // the bubble starts moving, and the bubble has completely stopped before
+  // the German starts arriving. Nothing can be dragged by a box in motion
+  // because nothing is on screen while the box is in motion.
+  const T = {
+    outStep: 10,   // English clears left to right, per word
+    outDur: 110,
+    morph: 200,    // bubble changes shape, empty
+    inStep: 18,    // German lands left to right, per word
+    inDur: 140,
+  };
+
+  let delayMs = 3000;
+  let pair = PAIRS.longer;
+  const graceBox = document.getElementById("grace");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  document.getElementById("delay").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-ms]");
+    if (!btn) return;
+    for (const b of document.querySelectorAll("#delay button")) {
+      b.setAttribute("aria-pressed", String(b === btn));
+    }
+    delayMs = Number(btn.dataset.ms);
+  });
+
+  document.getElementById("length").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-len]");
+    if (!btn) return;
+    for (const b of document.querySelectorAll("#length button")) {
+      b.setAttribute("aria-pressed", String(b === btn));
+    }
+    pair = PAIRS[btn.dataset.len];
+    play();
+  });
+
+  // Always round text boxes UP. A line that really wants 147.09px, pinned
+  // to a rounded-down 147px, wraps its last word onto a second line — one
+  // pixel is enough to change the whole shape of the bubble.
+  function box(el) {
+    const r = el.getBoundingClientRect();
+    return { w: Math.ceil(r.width), h: Math.ceil(r.height) };
+  }
+
+  // Measure the German line by rendering it, hidden, inside a real copy of
+  // the bubble. Working the available width out by hand is where this kept
+  // going wrong — the arithmetic missed the bubble's own padding, so every
+  // measurement came back too narrow and therefore too tall.
+  function measure(row, bubble, text) {
+    const clone = bubble.cloneNode(false);
+    clone.classList.add("measuring");
+    const stack = document.createElement("div");
+    stack.className = "stack";
+    stack.style.transition = "none";
+    const line = document.createElement("p");
+    line.className = "line";
+    line.textContent = text;
+    stack.appendChild(line);
+    clone.appendChild(stack);
+    row.appendChild(clone);
+    const size = box(stack);
+    clone.remove();
+    return size;
+  }
+
+  function fillWords(el, text) {
+    const list = [];
+    text.split(" ").forEach((word, i) => {
+      if (i) el.appendChild(document.createTextNode(" "));
+      const s = document.createElement("span");
+      s.className = "w";
+      s.textContent = word;
+      el.appendChild(s);
+      list.push(s);
+    });
+    return list;
+  }
+
+  class Tile {
+    constructor(root) {
+      this.stack = root.querySelector(".stack");
+      this.bubble = this.stack.closest(".bubble");
+      this.row = this.stack.closest(".row");
+      this.meta = root.querySelector(".meta");
+      this.timers = [];
+
+      const replay = document.createElement("button");
+      replay.className = "replay";
+      replay.type = "button";
+      replay.textContent = "Replay this one";
+      replay.addEventListener("click", () => this.run());
+      root.appendChild(replay);
+    }
+
+    clear() {
+      this.timers.forEach(clearTimeout);
+      this.timers = [];
+      this.stack.className = "stack";
+      this.stack.style.width = "";
+      this.stack.style.height = "";
+      this.stack.innerHTML = "";
+      this.meta.classList.remove("busy");
+    }
+
+    at(ms, fn) { this.timers.push(setTimeout(fn, ms)); }
+
+    run() {
+      this.clear();
+      this.pair = pair;
+
+      const src = document.createElement("p");
+      src.className = "line src";
+      src.textContent = this.pair.src;
+      this.stack.appendChild(src);
+      this.meta.classList.add("busy");
+
+      const grace = graceBox.checked ? GRACE : 0;
+      if (!reduced && delayMs > grace) {
+        this.at(grace, () => src.classList.add("sweeping"));
+      }
+      this.at(delayMs, () => this.arrive(src));
+    }
+
+    arrive(src) {
+      this.meta.classList.remove("busy");
+
+      const raw = this.stack.getBoundingClientRect().width;
+      const from = box(this.stack);
+      const to = measure(this.row, this.bubble, this.pair.dst);
+
+      // Freeze the box and pin the English to the width it already has so
+      // it cannot re-wrap on its way out. Rounding that width up is what
+      // stops the last word wrapping; undo the fraction of a pixel on the
+      // right so the line does not twitch sideways at the handover.
+      this.stack.style.width = from.w + "px";
+      this.stack.style.height = from.h + "px";
+      src.style.width = from.w + "px";
+      src.style.right = -(from.w - raw) + "px";
+      src.classList.add("hold");
+
+      const dst = document.createElement("p");
+      dst.className = "line dst land";
+      dst.style.width = to.w + "px";
+      this.stack.appendChild(dst);
+
+      const morph = () => {
+        this.stack.style.width = to.w + "px";
+        this.stack.style.height = to.h + "px";
+      };
+
+      if (reduced) {
+        src.remove();
+        morph();
+        dst.textContent = this.pair.dst;
+        this.settle(dst);
+        return;
+      }
+
+      src.classList.remove("sweeping");
+      this.wave(src, dst, morph);
+    }
+
+    // The change travels in the same direction the band did — English out
+    // left to right, German in left to right — but the two never share the
+    // screen, and neither shares it with a bubble that is still moving.
+    wave(src, dst, morph) {
+      const outgoing = fillWords(src, this.pair.src);
+      outgoing.forEach((s, i) =>
+        this.at(i * T.outStep, () => s.classList.add("gone"))
+      );
+
+      // The last word starts fading last, so this is when the line is
+      // genuinely empty — not when the first word started leaving.
+      const empty = (outgoing.length - 1) * T.outStep + T.outDur;
+      this.at(empty, () => src.remove());
+      this.at(empty, morph);
+
+      const landAt = empty + T.morph;
+      const incoming = fillWords(dst, this.pair.dst);
+      incoming.forEach((s) => s.classList.add("pending"));
+      incoming.forEach((s, i) =>
+        this.at(landAt + i * T.inStep, () => s.classList.remove("pending"))
+      );
+      this.at(landAt + (incoming.length - 1) * T.inStep + T.inDur, () =>
+        this.settle(dst)
+      );
+    }
+
+
+    settle(dst) {
+      dst.classList.remove("land", "pending");
+      dst.style.width = "";
+      // Never rebuild the text here — the words are individual elements
+      // that have just finished animating, and replacing them wholesale
+      // reads as one last unexplained flicker.
+      const stale = this.stack.querySelector(".line.src");
+      if (stale) stale.remove();
+      // Hand sizing back to the content. The box is already this shape, so
+      // nothing visibly changes.
+      this.stack.style.width = "";
+      this.stack.style.height = "";
+    }
+  }
+
+  const tiles = [...document.querySelectorAll(".variant")].map((v) => new Tile(v));
+  const send = document.getElementById("send");
+
+  function play() { tiles.forEach((t) => t.run()); }
+
+  send.addEventListener("click", play);
+  play();
+</script>
+</body>
+</html>
