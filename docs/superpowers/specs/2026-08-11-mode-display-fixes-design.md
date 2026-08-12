@@ -1,6 +1,6 @@
 # Design: Mode display fixes (device-pass findings)
 
-Status: draft — one open question flagged below
+Status: approved, ready for planning
 Follows: `2026-08-11-modes-known-languages-design.md` (this fixes gaps found in that feature's first on-device pass)
 
 ## Problem
@@ -49,15 +49,13 @@ This is the fix that makes normal mode honest: for a chat where both people writ
 
 This is deliberately narrower than the current behavior, which shows error chrome on *any* normal-mode failure. It resolves the tension that made the previous two attempts wrong in opposite directions: suppressing all errors hid genuine failures on unreadable messages; showing all errors put retry buttons on messages nobody needed translated.
 
-## Open question
+## Resolved: failure before source language is known
 
-**What should a reader see when translation fails permanently for a message in a language they don't know — before any successful resolution ever recorded its source language?**
+**Decision: stay silent, rely on background auto-retry.** When translation fails for a message whose source language has never been resolved, the reader sees the authored text with no error and no retry button. The existing background retry keeps working and the message resolves itself the moment a request succeeds.
 
-Under the fix above, the first-sighting case renders the original text silently (with background retry). If those retries never succeed — a persistently unsupported pair, a sustained backend outage — the reader is left looking at text they can't read, with no explanation and no manual retry.
+Accepted risk: if retries never succeed — a persistently unsupported pair, a sustained backend outage — the reader is left looking at text they can't read, with no explanation. This is narrow (it needs both a never-before-resolved message *and* persistent failure) and self-heals on any successful retry. Chosen over surfacing chrome because the far more common case is a message the reader can already read, where an error affordance is pure noise — which is the bug that prompted this spec.
 
-This is a narrow case (it needs both a never-before-resolved message *and* persistent failure), and it self-heals the moment any retry succeeds. But it's the one path where silence could strand someone.
-
-Options: leave it silent and rely on auto-retry; show a neutral non-error hint after N failed attempts; or always show retry chrome on repeated failure regardless of what we know about the source language. Not decided.
+Revisit if real usage shows persistent failures stranding readers.
 
 ## Out of scope
 
