@@ -12,6 +12,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
+  String unsupportedLanguageHint(String learningLanguage) {
+    return 'Blab поки не знає цієї мови — спробуйте $learningLanguage.';
+  }
+
+  @override
   String get back => 'Назад';
 
   @override
@@ -25,6 +30,12 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get viewOriginal => 'Показати оригінал';
+
+  @override
+  String get original => 'Оригінал';
+
+  @override
+  String get listen => 'Слухати';
 
   @override
   String get save => 'Зберегти';
@@ -424,10 +435,27 @@ class AppLocalizationsUk extends AppLocalizations {
   String get practiceMode => 'Практика';
 
   @override
+  String practiceComposerHint(String learningLanguage, String knownLanguage) {
+    return 'Пишіть: $learningLanguage або $knownLanguage';
+  }
+
+  @override
   String get translationLimitReached => 'Ліміт перекладів вичерпано';
 
   @override
   String get translationUnavailable => 'Переклад недоступний';
+
+  @override
+  String get translating => 'Переклад…';
+
+  @override
+  String get checking => 'Перевірка…';
+
+  @override
+  String get couldntTranslateRetry => 'Не вдалося перекласти · Повторити';
+
+  @override
+  String get couldntCheckRetry => 'Не вдалося перевірити · Повторити';
 
   @override
   String get correction => 'Виправлення';
@@ -448,7 +476,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get read => 'Прочитано';
 
   @override
-  String get failedToSend => 'Не вдалося надіслати. Натисніть, щоб повторити.';
+  String get failedToSend => 'Не надіслано · Натисніть, щоб повторити';
 
   @override
   String get attach => 'Прикріпити';
@@ -465,7 +493,7 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get editingMessage => 'Редагування повідомлення';
+  String get editingMessage => 'Редагувати повідомлення';
 
   @override
   String get messageFailed => 'Не вдалося надіслати повідомлення';
@@ -475,6 +503,14 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get messageDeleted => 'Повідомлення видалено';
+
+  @override
+  String get deleteMessageQuestion => 'Видалити повідомлення?';
+
+  @override
+  String deleteMessageBody(String name) {
+    return 'Ви впевнені, що хочете видалити це повідомлення? Його також буде видалено для $name.';
+  }
 
   @override
   String get thanksReport => 'Дякуємо — ми це перевіримо.';

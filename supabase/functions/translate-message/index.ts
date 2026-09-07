@@ -8,12 +8,20 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  confirmedFormAlternativesMatchAudit,
+  correctionNeedsRetry,
+  type FormParticipantContext,
+  FORM_AUDIT_RESPONSE_FORMAT,
+  formAuditSystemPrompt,
+  formAlternativesFromConfirmedAudit,
   genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
   LANG_NAMES,
+  missingFormAlternativesNeedsAudit,
   OPENROUTER_PROVIDER,
+  parseFormAuditResult,
   parseProviderResult,
   type ProviderCredential,
   providerCredentials,
@@ -24,6 +32,7 @@ import {
   translationNeedsRetry,
   validateRequest,
 } from "./contract.ts";
+import { workerJobId } from "../prepare-message-jobs/contract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -126,6 +135,48 @@ async function repairInterfaceText(
   }
 }
 
+async function auditGrammaticalForm(
+  credential: ProviderCredential,
+  sourceText: string,
+  translatedText: string,
+  sourceLang: string,
+  targetLang: string,
+  formContext: FormParticipantContext,
+) {
+  let response: Response;
+  try {
+    response = await fetchChatCompletion(credential, {
+      temperature: 0,
+      max_completion_tokens: 1000,
+      response_format: FORM_AUDIT_RESPONSE_FORMAT,
+      messages: [
+        {
+          role: "system",
+          content: formAuditSystemPrompt(sourceLang, targetLang, formContext),
+        },
+        {
+          role: "user",
+          content: `Source message:\n${sourceText}\n\nCandidate translation:\n${translatedText}`,
+        },
+      ],
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  return typeof content === "string" ? parseFormAuditResult(content) : null;
+}
+
 function json(
   body: unknown,
   status = 200,
@@ -141,6 +192,29 @@ function json(
   });
 }
 
+function formContextFrom(value: unknown): FormParticipantContext | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const raw = value as Record<string, unknown>;
+  const isForm = (form: unknown): form is "feminine" | "masculine" | null =>
+    form === "feminine" || form === "masculine" || form === null;
+  if (
+    typeof raw.viewerName !== "string" ||
+    typeof raw.partnerName !== "string" ||
+    (raw.messageAuthor !== "viewer" && raw.messageAuthor !== "partner") ||
+    !isForm(raw.viewerForm) ||
+    !isForm(raw.partnerForm) ||
+    (raw.tone !== "informal" && raw.tone !== "respectful")
+  ) return undefined;
+  return {
+    viewerName: raw.viewerName,
+    partnerName: raw.partnerName,
+    messageAuthor: raw.messageAuthor,
+    viewerForm: raw.viewerForm,
+    partnerForm: raw.partnerForm,
+    tone: raw.tone,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -154,29 +228,58 @@ Deno.serve(async (req) => {
     return json({ error: "authentication_required" }, 401);
   }
 
-  let body: { messageId?: unknown };
+  let body: { messageId?: unknown; forceRefresh?: unknown; jobId?: unknown };
   try {
     body = await req.json();
   } catch {
     return json({ error: "invalid_json" }, 400);
   }
-  const validation = validateRequest(body);
-  if ("error" in validation) return json({ error: validation.error }, 400);
-  const { messageId } = validation.request;
-
-  const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) {
-    return json({ error: "authentication_required" }, 401);
+  const internalJobId = workerJobId(body);
+  const isWorker = internalJobId !== null &&
+    authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+  let messageId: string;
+  let requesterId: string | null = null;
+  let preparedData: unknown;
+  let preparedError: unknown;
+  if (isWorker) {
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const response = await admin.rpc("request_message_translation_job", {
+      p_job_id: internalJobId,
+    });
+    preparedData = response.data;
+    preparedError = response.error;
+    const preparedRecord = preparedData as Record<string, unknown> | null;
+    messageId = typeof preparedRecord?.messageId === "string"
+      ? preparedRecord.messageId
+      : "";
+    requesterId = typeof preparedRecord?.requesterId === "string"
+      ? preparedRecord.requesterId
+      : null;
+  } else {
+    const validation = validateRequest(body);
+    if ("error" in validation) return json({ error: validation.error }, 400);
+    messageId = validation.request.messageId;
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    if (userError || !userData.user) {
+      return json({ error: "authentication_required" }, 401);
+    }
+    requesterId = userData.user.id;
+    const forceRefresh = body.forceRefresh === true;
+    const response = await userClient.rpc(
+      forceRefresh
+        ? "request_message_translation_fresh"
+        : "request_message_translation",
+      { p_message_id: messageId },
+    );
+    preparedData = response.data;
+    preparedError = response.error;
   }
-
-  const { data: preparedData, error: preparedError } = await userClient.rpc(
-    "request_message_translation",
-    { p_message_id: messageId },
-  );
   if (
     preparedError || typeof preparedData !== "object" || preparedData === null
   ) {
@@ -184,7 +287,10 @@ Deno.serve(async (req) => {
     return json({ error: "translation_unavailable" }, 500);
   }
   const prepared = preparedData as Record<string, unknown>;
-  if (prepared.status === "cached") {
+  // "no_aid_needed": normal-mode caller, message already in a language they
+  // know. Postgres answers with the authored text and aid mode "none"; no
+  // provider call, no cache write.
+  if (prepared.status === "cached" || prepared.status === "no_aid_needed") {
     return json({
       translation: prepared.translation,
       interfaceText: prepared.interfaceText,
@@ -194,6 +300,7 @@ Deno.serve(async (req) => {
       explanation: prepared.explanation,
       confidence: prepared.confidence,
       tokens: prepared.tokens,
+      formAlternatives: prepared.formAlternatives,
     });
   }
   if (prepared.status === "rate_limited") {
@@ -206,6 +313,9 @@ Deno.serve(async (req) => {
       { "Retry-After": String(retryAfter) },
     );
   }
+  if (prepared.status === "stale") {
+    return json({ error: "translation_stale" }, 409);
+  }
   if (prepared.status === "forbidden" || prepared.status === "not_eligible") {
     return json({ error: "translation_not_allowed" }, 403);
   }
@@ -216,6 +326,7 @@ Deno.serve(async (req) => {
   const interfaceLang = prepared.interfaceLang;
   const sourceHash = prepared.sourceHash;
   const rawContext = prepared.context;
+  const rawFormContext = prepared.formContext;
   if (
     prepared.status !== "ready" ||
     typeof text !== "string" ||
@@ -237,6 +348,7 @@ Deno.serve(async (req) => {
         : [];
     })
     : [];
+  const formContext = formContextFrom(rawFormContext);
   const providerKeys = providerCredentials({
     openRouterKey: OPEN_ROUTER_KEY,
     openAiKey: OPENAI_API_KEY,
@@ -254,6 +366,12 @@ Deno.serve(async (req) => {
   let providerFailure = "unknown";
   let lastFailedSourceLang: string | null = null;
   for (const credential of providerKeys) {
+    let formChoiceConfirmedRequired = false;
+    let auditedSubjectIsViewer: boolean | null = null;
+    let auditedBefore: string | null = null;
+    let auditedFeminine: string | null = null;
+    let auditedMasculine: string | null = null;
+    let auditedAfter: string | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
       const targetName = LANG_NAMES[targetLang] ?? targetLang;
@@ -261,9 +379,12 @@ Deno.serve(async (req) => {
           lastFailedSourceLang !== targetLang
         ? ` Your previous response detected sourceLang=${lastFailedSourceLang}, which is not ${targetLang}, so mode=none/correction was invalid there — mode must be translation, and "translation" must be a genuine full-sentence rendering in ${targetName}, not a copy of the input.`
         : "";
+      const formAuditGuidance = formChoiceConfirmedRequired
+        ? ` A separate grammatical-form audit confirmed that this sentence requires a feminine/masculine choice for the ${auditedSubjectIsViewer ? "viewer" : "partner"}. The exact minimal split is ${JSON.stringify({before: auditedBefore, feminine: auditedFeminine, masculine: auditedMasculine, after: auditedAfter})}. You MUST set translation to before + feminine + after and return those exact minimal fragments in formAlternatives with the affected participant and correct subjectIsViewer value. Do not repeat the whole sentence inside feminine or masculine. A null value is invalid.`
+        : "";
       const retryGuidance = attempt === 0
         ? ""
-        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled text. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text — the per-word "tokens" gloss is a supplement to the translation, never a substitute for it. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. For Ukrainian, do not use parenthetical or slash gender alternatives such as "був(ла)", "радий(а)", "був/була", or "радий/рада"; rewrite with impersonal neutral wording instead.${wrongModeGuidance}`;
+        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${wrongModeGuidance}${formAuditGuidance}`;
       let llm: Response;
       try {
         llm = await fetchChatCompletion(credential, {
@@ -276,6 +397,7 @@ Deno.serve(async (req) => {
             interfaceLang,
             text,
             context,
+            formContext,
             retryGuidance,
           }),
         });
@@ -350,6 +472,80 @@ Deno.serve(async (req) => {
         });
         continue;
       }
+      if (correctionNeedsRetry(candidate, text)) {
+        providerFailure = `${credential.provider}_incomplete_correction`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      if (formChoiceConfirmedRequired) {
+        const confirmedAudit = {
+          requiresChoice: true,
+          subjectIsViewer: auditedSubjectIsViewer,
+          before: auditedBefore,
+          feminine: auditedFeminine,
+          masculine: auditedMasculine,
+          after: auditedAfter,
+        };
+        if (
+          !confirmedFormAlternativesMatchAudit(
+            candidate.formAlternatives,
+            confirmedAudit,
+          )
+        ) {
+          candidate.formAlternatives = formAlternativesFromConfirmedAudit(
+            candidate,
+            confirmedAudit,
+            formContext!,
+          );
+        }
+        if (
+          !confirmedFormAlternativesMatchAudit(
+            candidate.formAlternatives,
+            confirmedAudit,
+          )
+        ) {
+          providerFailure = `${credential.provider}_missing_confirmed_form_alternatives`;
+          continue;
+        }
+      }
+      const needsFormAudit = formContext !== undefined &&
+        missingFormAlternativesNeedsAudit(
+          candidate,
+          targetLang,
+          formContext,
+          attempt,
+        );
+      if (needsFormAudit) {
+        const audit = await auditGrammaticalForm(
+          credential,
+          text,
+          candidate.translation,
+          candidate.sourceLang,
+          targetLang,
+          formContext!,
+        );
+        if (audit === null) {
+          providerFailure = `${credential.provider}_form_audit_unavailable`;
+          break;
+        }
+        if (!audit.requiresChoice) {
+          // The focused audit confirmed this sentence is naturally identical
+          // for both participant forms, so the null alternatives are valid.
+        } else {
+          formChoiceConfirmedRequired = true;
+          auditedSubjectIsViewer = audit.subjectIsViewer;
+          auditedBefore = audit.before;
+          auditedFeminine = audit.feminine;
+          auditedMasculine = audit.masculine;
+          auditedAfter = audit.after;
+          providerFailure = `${credential.provider}_missing_form_alternatives`;
+          continue;
+        }
+      }
       if (translationNeedsRetry(candidate, targetLang, text)) {
         lastFailedSourceLang = candidate.sourceLang;
         providerFailure = `${credential.provider}_untranslated`;
@@ -401,11 +597,21 @@ Deno.serve(async (req) => {
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: completed, error: completionError } = await admin.rpc(
-    "complete_message_translation",
-    {
+  const completion = isWorker
+    ? await admin.rpc("complete_message_translation_job", {
+      p_job_id: internalJobId,
+      p_translation_text: result.translation,
+      p_interface_text: result.interfaceText,
+      p_source_lang: result.sourceLang,
+      p_aid_mode: result.mode,
+      p_explanation: result.explanation,
+      p_confidence: result.confidence,
+      p_tokens: result.tokens,
+      p_form_alternatives: result.formAlternatives,
+    })
+    : await admin.rpc("complete_message_translation", {
       p_message_id: messageId,
-      p_requester_id: userData.user.id,
+      p_requester_id: requesterId,
       p_target_lang: targetLang,
       p_interface_lang: interfaceLang,
       p_source_hash: sourceHash,
@@ -416,8 +622,9 @@ Deno.serve(async (req) => {
       p_explanation: result.explanation,
       p_confidence: result.confidence,
       p_tokens: result.tokens,
-    },
-  );
+      p_form_alternatives: result.formAlternatives,
+    });
+  const { data: completed, error: completionError } = completion;
   if (completionError) {
     console.error("translation cache completion failed");
     return json({ error: "translation_unavailable" }, 500);

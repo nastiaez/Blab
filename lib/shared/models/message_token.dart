@@ -30,6 +30,10 @@ class MessageToken {
 
 final _internalWhitespace = RegExp(r'\s');
 final _wordCharacter = RegExp(r'[\p{L}\p{M}\p{N}]', unicode: true);
+final _letterCharacter = RegExp(r'\p{L}', unicode: true);
+final _markOrNumberCharacter = RegExp(r'[\p{M}\p{N}]', unicode: true);
+final _latinLetter = RegExp(r'[A-Za-z\u00C0-\u024F]');
+const _wordConnectors = <String>{"'", '’', '-', '‐', '‑'};
 
 /// Word popup tokens are optional metadata. If the provider returns a whole
 /// phrase as one content token, discard the token list and keep plain text.
@@ -62,9 +66,11 @@ List<MessageToken> messageTokensForText(
       : sanitizeMessageTokens(metadata, text);
   if (sanitized.isEmpty) return displayTokens;
 
-  final metadataByText = <String, List<MessageToken>>{};
+  final metadataByKey = <String, List<MessageToken>>{};
   for (final token in sanitized.where((t) => t.isContent)) {
-    metadataByText.putIfAbsent(token.text, () => <MessageToken>[]).add(token);
+    final key = _contentKey(token.text);
+    if (key.isEmpty) continue;
+    metadataByKey.putIfAbsent(key, () => <MessageToken>[]).add(token);
   }
 
   return [
@@ -72,7 +78,7 @@ List<MessageToken> messageTokensForText(
       if (!token.isContent)
         token
       else
-        _enrichedToken(token, metadataByText[token.text]),
+        _enrichedToken(token, metadataByKey[_contentKey(token.text)]),
   ];
 }
 
@@ -80,6 +86,7 @@ List<MessageToken> _splitVisibleText(String text) {
   final tokens = <MessageToken>[];
   final current = StringBuffer();
   bool? currentIsContent;
+  final characters = text.runes.map(String.fromCharCode).toList();
 
   void flush() {
     if (current.isEmpty) return;
@@ -89,9 +96,16 @@ List<MessageToken> _splitVisibleText(String text) {
     current.clear();
   }
 
-  for (final rune in text.runes) {
-    final char = String.fromCharCode(rune);
-    final isContent = _wordCharacter.hasMatch(char);
+  for (var index = 0; index < characters.length; index++) {
+    final char = characters[index];
+    final isConnector = _wordConnectors.contains(char);
+    final isContent =
+        _wordCharacter.hasMatch(char) ||
+        (isConnector &&
+            index > 0 &&
+            index + 1 < characters.length &&
+            _wordCharacter.hasMatch(characters[index - 1]) &&
+            _wordCharacter.hasMatch(characters[index + 1]));
     if (currentIsContent != null && currentIsContent != isContent) {
       flush();
     }
@@ -110,8 +124,33 @@ MessageToken _enrichedToken(
   final match = candidates.removeAt(0);
   return MessageToken(
     text: visibleToken.text,
-    romanization: match.romanization,
+    romanization:
+        match.romanization ??
+        (_usesLatinScript(visibleToken.text) ? visibleToken.text : null),
     gloss: match.gloss,
     isContent: true,
   );
+}
+
+String _contentKey(String value) => value.runes
+    .map(String.fromCharCode)
+    .where(_wordCharacter.hasMatch)
+    .join()
+    .toLowerCase();
+
+bool _usesLatinScript(String value) {
+  var hasLatinLetter = false;
+  for (final rune in value.runes) {
+    final character = String.fromCharCode(rune);
+    if (_latinLetter.hasMatch(character)) {
+      hasLatinLetter = true;
+      continue;
+    }
+    if (_letterCharacter.hasMatch(character)) return false;
+    if (_markOrNumberCharacter.hasMatch(character) ||
+        _wordConnectors.contains(character)) {
+      continue;
+    }
+  }
+  return hasLatinLetter;
 }

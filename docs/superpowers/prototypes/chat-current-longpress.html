@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blab — current corrected-message long press</title>
+<style>
+  :root {
+    --brand: #D4694A;
+    --brand-press: #BB573B;
+    --brand-soft: #F3DAD0;
+    --cream: #EFEBE2;
+    --surface: #FFFFFF;
+    --ink: #1F3340;
+    --muted: #5F6770;
+    --line: #E4DCCC;
+    --incoming: #D6E2E7;
+    --selected: #FAF1EC;
+    --danger: #C62828;
+    --shadow: rgba(31, 51, 64, .16);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { min-height: 100%; }
+
+  body {
+    margin: 0;
+    padding: 28px 16px 40px;
+    display: grid;
+    place-items: start center;
+    background: #DDD8CF;
+    color: var(--ink);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, input { font: inherit; }
+
+  .prototype {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    width: min(100%, 430px);
+  }
+
+  .phone {
+    width: min(390px, calc(100vw - 32px));
+    height: 844px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #D7CEC0;
+    border-radius: 44px;
+    background: var(--surface);
+    box-shadow: 0 22px 60px rgba(31, 51, 64, .18);
+  }
+
+  .status-bar {
+    height: 38px;
+    flex: 0 0 38px;
+    padding: 13px 22px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .system-icons {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink);
+  }
+
+  .signal {
+    display: flex;
+    align-items: end;
+    gap: 2px;
+    height: 12px;
+  }
+  .signal i { display: block; width: 2px; border-radius: 2px; background: currentColor; }
+  .signal i:nth-child(1) { height: 4px; }
+  .signal i:nth-child(2) { height: 6px; }
+  .signal i:nth-child(3) { height: 9px; }
+  .signal i:nth-child(4) { height: 12px; }
+
+  .wifi { font-size: 14px; transform: translateY(-2px); }
+  .battery { width: 17px; height: 9px; border: 1.5px solid currentColor; border-radius: 2px; position: relative; }
+  .battery::before { content: ""; position: absolute; inset: 1.5px; background: currentColor; border-radius: 1px; }
+  .battery::after { content: ""; position: absolute; right: -3px; top: 2px; width: 1.5px; height: 4px; background: currentColor; border-radius: 0 1px 1px 0; }
+
+  .chat-header {
+    flex: 0 0 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .person-row {
+    height: 60px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+  }
+
+  .icon-button {
+    appearance: none;
+    border: 0;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .icon-button:hover { background: var(--selected); }
+
+  .icon { width: 21px; height: 21px; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .person {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #5E8B8C;
+    color: #FFF;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .name { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+
+  .mode-switch {
+    margin-left: auto;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 20px;
+    background: var(--selected);
+  }
+
+  .mode-segment {
+    appearance: none;
+    border: 0;
+    min-height: 30px;
+    border-radius: 17px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .mode-segment.normal {
+    width: 34px;
+    display: grid;
+    place-items: center;
+  }
+
+  .mode-segment.practice {
+    padding: 0 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .mode-segment[aria-pressed="true"] {
+    background: var(--brand);
+    color: #FFF;
+  }
+
+  .messages {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    padding: 18px 12px 120px;
+    background: var(--cream);
+  }
+
+  .date-divider {
+    margin: 0 auto 22px;
+    width: fit-content;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .message-row {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    margin: 0 0 18px;
+  }
+  .message-row.incoming { justify-content: flex-start; }
+  .message-row.outgoing { justify-content: flex-end; }
+
+  .bubble {
+    max-width: 76%;
+    padding: 10px 12px;
+    position: relative;
+    font-size: 16px;
+    line-height: 1.5;
+    user-select: none;
+  }
+
+  .bubble.incoming {
+    border-radius: 18px 18px 18px 4px;
+    background: var(--incoming);
+    color: var(--ink);
+  }
+
+  .outgoing-wrap {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 6px;
+    max-width: 100%;
+    position: relative;
+  }
+
+  .bubble.outgoing {
+    max-width: 285px;
+    border-radius: 18px 4px 18px 18px;
+    background: var(--brand);
+    color: #FFF;
+    cursor: context-menu;
+    transform-origin: 85% 50%;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+  .bubble.outgoing.is-pressing { transform: scale(.985); }
+
+  .bubble-meta {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    font-size: 10px;
+    line-height: 1;
+    opacity: .74;
+  }
+
+  .ticks { width: 17px; height: 10px; overflow: visible; }
+  .ticks path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .wrong-word {
+    color: rgba(255,255,255,.68);
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    cursor: pointer;
+  }
+  .correct-word { color: #FFF; cursor: pointer; }
+  .wrong-word:hover, .correct-word:hover { text-decoration-color: #FFF; text-decoration-style: solid; }
+
+  .second-lane {
+    display: none;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid rgba(255,255,255,.25);
+    font-size: 15px;
+    color: rgba(255,255,255,.84);
+  }
+  .bubble.expanded .second-lane { display: block; }
+
+  .reaction-row {
+    position: absolute;
+    z-index: 20;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    height: 44px;
+    display: none;
+    align-items: center;
+    padding: 4px 6px;
+    border-radius: 28px;
+    background: #FFF;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    white-space: nowrap;
+  }
+  .selected .reaction-row { display: flex; }
+
+  .reaction-button {
+    appearance: none;
+    border: 0;
+    width: 38px;
+    height: 36px;
+    margin: 0 1px;
+    display: grid;
+    place-items: center;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .reaction-button:hover, .reaction-button[aria-pressed="true"] { background: var(--selected); }
+  .reaction-button.more { font-size: 20px; }
+
+  .reaction-badge {
+    display: none;
+    position: absolute;
+    right: 14px;
+    bottom: -21px;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 1px solid #EFAF9D;
+    border-radius: 50%;
+    background: #F7ECE7;
+    font-size: 17px;
+    color: var(--ink);
+  }
+  .reaction-badge.visible { display: grid; }
+
+  .composer, .message-actions {
+    flex: 0 0 76px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 8px 12px 16px;
+  }
+
+  .composer {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .composer[hidden], .message-actions[hidden] { display: none; }
+
+  .photo-button, .send-button {
+    appearance: none;
+    border: 0;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .photo-button {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    width: 36px;
+    height: 36px;
+    color: var(--muted);
+    background: transparent;
+  }
+  .photo-button:hover { background: var(--selected); }
+  .photo-button .icon { width: 20px; height: 20px; }
+  .send-button { background: var(--brand); color: #FFF; opacity: .4; }
+
+  .message-field {
+    min-width: 0;
+    flex: 1;
+    height: 44px;
+    position: relative;
+  }
+
+  .message-input {
+    width: 100%;
+    height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 0 48px 0 14px;
+    background: #FFF;
+    color: var(--ink);
+    outline: 0;
+  }
+  .message-input:focus { border-color: rgba(212,105,74,.75); }
+
+  .message-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-evenly;
+  }
+
+  .message-action {
+    appearance: none;
+    border: 0;
+    min-width: 62px;
+    min-height: 52px;
+    padding: 5px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .message-action:hover { background: var(--selected); }
+  .message-action.danger { color: var(--danger); }
+  .message-action .icon { width: 22px; height: 22px; }
+
+  .popup {
+    position: absolute;
+    z-index: 40;
+    width: min(250px, calc(100% - 32px));
+    display: none;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #FFF;
+    color: var(--ink);
+    box-shadow: 0 10px 28px var(--shadow);
+  }
+  .popup.visible { display: block; }
+  .popup-title { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+  .popup-copy { color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .popup-copy strong { color: var(--ink); }
+
+  .toast {
+    position: absolute;
+    z-index: 50;
+    left: 50%;
+    bottom: 92px;
+    transform: translate(-50%, 16px);
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: #FFF;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease, transform 150ms ease;
+  }
+  .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+  .prototype-hint {
+    margin: 0;
+    color: #53616A;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  @media (max-height: 900px) {
+    body { padding-top: 16px; }
+    .phone { height: min(844px, calc(100vh - 70px)); min-height: 690px; }
+  }
+
+  @media (max-width: 380px) {
+    body { padding-inline: 8px; }
+    .phone { width: calc(100vw - 16px); border-radius: 34px; }
+    .reaction-button { width: 34px; }
+    .reaction-row { padding-inline: 4px; }
+    .bubble { max-width: 79%; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 15a4 4 0 0 1-4 4H8l-5 3 1.5-5A8 8 0 1 1 20 15Z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="m9 8-5 4 5 4v-3h5c3.5 0 5 2 6 5-.2-5.5-2.6-9-8-9H9V8Z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M13.5 6.5 17.5 10.5M4 20l4.5-1 10-10a2.8 2.8 0 0 0-4-4l-10 10L4 20Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 2-2 5 5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 5v14"/></symbol>
+</svg>
+
+<main class="prototype">
+  <section class="phone" id="phone" aria-label="Current Blab chat, outgoing corrected message selected">
+    <div class="status-bar">
+      <span>9:41</span>
+      <span class="system-icons">
+        <span class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="wifi" aria-hidden="true">⌁</span>
+        <span class="battery" aria-hidden="true"></span>
+      </span>
+    </div>
+
+    <header class="chat-header">
+      <div class="person-row">
+        <button class="icon-button" type="button" aria-label="Back"><svg class="icon"><use href="#i-back"/></svg></button>
+        <div class="person">
+          <div class="avatar">AS</div>
+          <div class="name">Aswin</div>
+          <div class="mode-switch" aria-label="Chat mode">
+            <button class="mode-segment normal" type="button" aria-label="Normal chat" aria-pressed="false"><svg class="icon" style="width:17px;height:17px"><use href="#i-chat"/></svg></button>
+            <button class="mode-segment practice" type="button" aria-pressed="true"><svg class="icon" style="width:16px;height:16px"><use href="#i-zap"/></svg>Practice</button>
+          </div>
+        </div>
+        <button class="icon-button" type="button" aria-label="Chat menu"><svg class="icon"><use href="#i-more"/></svg></button>
+      </div>
+    </header>
+
+    <div class="messages" id="messages">
+      <div class="date-divider">Today</div>
+
+      <div class="message-row incoming">
+        <div class="bubble incoming">
+          <span class="practice-copy">Kommst du heute mit dem Bus?</span>
+          <span class="normal-copy" hidden>Are you coming by bus today?</span>
+          <div class="bubble-meta"><span>10:24</span></div>
+        </div>
+      </div>
+
+      <div class="message-row outgoing">
+        <div class="outgoing-wrap selected" id="selectedMessage">
+          <div class="bubble outgoing" id="outgoingBubble" aria-label="Your corrected message">
+            <span class="practice-copy" id="practiceSentence">Ja, ich fahre mit <span class="wrong-word" id="wrongWord">der</span> <span class="correct-word" id="correctWord">dem</span> Bus.</span>
+            <span class="normal-copy" id="normalSentence" hidden>Yes, I’m going by bus.</span>
+            <div class="second-lane">Yes, I’m going by bus.</div>
+            <div class="bubble-meta"><span>10:25</span><svg class="ticks" viewBox="0 0 18 10" aria-label="Read"><path d="M1 5.5 4 8.5 9 2.5"/><path d="M6 5.5 9 8.5 15 1.5"/></svg></div>
+          </div>
+
+          <div class="reaction-row" id="reactionRow" aria-label="Quick reactions">
+            <button class="reaction-button" type="button" aria-label="React with heart">❤️</button>
+            <button class="reaction-button" type="button" aria-label="React with laughing face">😂</button>
+            <button class="reaction-button" type="button" aria-label="React with thumbs up">👍</button>
+            <button class="reaction-button" type="button" aria-label="React with surprised face">😮</button>
+            <button class="reaction-button" type="button" aria-label="React with sad face">😢</button>
+            <button class="reaction-button" type="button" aria-label="React with raised hands">🙌</button>
+            <button class="reaction-button more" type="button" aria-label="More reactions"><svg class="icon"><use href="#i-plus"/></svg></button>
+          </div>
+
+          <button class="reaction-badge" id="reactionBadge" type="button" aria-label="Your reaction"></button>
+        </div>
+      </div>
+
+      <div class="message-row incoming" style="margin-top:30px">
+        <div class="bubble incoming">
+          <span class="practice-copy">Perfekt, bis später!</span>
+          <span class="normal-copy" hidden>Perfect, see you later!</span>
+          <div class="bubble-meta"><span>10:26</span></div>
+        </div>
+      </div>
+
+      <div class="popup" id="correctionPopup" role="dialog" aria-label="Correction explanation">
+        <div class="popup-title">Why it changed</div>
+        <div class="popup-copy"><strong>mit</strong> always takes the dative case. Masculine <strong>der Bus</strong> becomes <strong>dem Bus</strong>.</div>
+      </div>
+
+      <div class="popup" id="wordPopup" role="dialog" aria-label="Word detail">
+        <div class="popup-title">dem</div>
+        <div class="popup-copy">article · masculine dative<br><strong>Meaning:</strong> the<br><strong>Base form:</strong> der</div>
+      </div>
+    </div>
+
+    <div class="composer" id="composer" hidden>
+      <div class="message-field">
+        <input class="message-input" type="text" placeholder="Message" aria-label="Message">
+        <button class="photo-button" type="button" aria-label="Add photo"><svg class="icon"><use href="#i-image"/></svg></button>
+      </div>
+      <button class="send-button" type="button" aria-label="Send"><svg class="icon"><use href="#i-send"/></svg></button>
+    </div>
+
+    <div class="message-actions" id="messageActions" aria-label="Actions for your message">
+      <button class="message-action" type="button" data-action="Reply"><svg class="icon"><use href="#i-reply"/></svg><span>Reply</span></button>
+      <button class="message-action" type="button" data-action="Edit"><svg class="icon"><use href="#i-edit"/></svg><span>Edit</span></button>
+      <button class="message-action" type="button" data-action="Copy"><svg class="icon"><use href="#i-copy"/></svg><span>Copy</span></button>
+      <button class="message-action danger" type="button" data-action="Delete"><svg class="icon"><use href="#i-trash"/></svg><span>Delete</span></button>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+  </section>
+
+  <p class="prototype-hint">Tap outside to dismiss · tap message padding or hold it to reopen</p>
+</main>
+
+<script>
+  const phone = document.getElementById('phone');
+  const messages = document.getElementById('messages');
+  const selectedMessage = document.getElementById('selectedMessage');
+  const outgoingBubble = document.getElementById('outgoingBubble');
+  const composer = document.getElementById('composer');
+  const messageActions = document.getElementById('messageActions');
+  const reactionBadge = document.getElementById('reactionBadge');
+  const correctionPopup = document.getElementById('correctionPopup');
+  const wordPopup = document.getElementById('wordPopup');
+  const wrongWord = document.getElementById('wrongWord');
+  const correctWord = document.getElementById('correctWord');
+  const practiceCopies = document.querySelectorAll('.practice-copy');
+  const normalCopies = document.querySelectorAll('.normal-copy');
+  const normalMode = document.querySelector('.mode-segment.normal');
+  const practiceMode = document.querySelector('.mode-segment.practice');
+  const toast = document.getElementById('toast');
+  let holdTimer;
+  let toastTimer;
+
+  function setSelected(selected) {
+    selectedMessage.classList.toggle('selected', selected);
+    messageActions.hidden = !selected;
+    composer.hidden = selected;
+    closePopups();
+  }
+
+  function closePopups() {
+    correctionPopup.classList.remove('visible');
+    wordPopup.classList.remove('visible');
+  }
+
+  function positionPopup(popup, anchor) {
+    const messageBox = messages.getBoundingClientRect();
+    const anchorBox = anchor.getBoundingClientRect();
+    popup.style.left = Math.max(16, Math.min(anchorBox.left - messageBox.left - 90, messageBox.width - 266)) + 'px';
+    popup.style.top = Math.max(16, anchorBox.top - messageBox.top - 108) + 'px';
+    popup.classList.add('visible');
+  }
+
+  function showToast(text) {
+    clearTimeout(toastTimer);
+    toast.textContent = text;
+    toast.classList.add('visible');
+    toastTimer = setTimeout(() => toast.classList.remove('visible'), 1300);
+  }
+
+  outgoingBubble.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('.wrong-word, .correct-word')) return;
+    outgoingBubble.classList.add('is-pressing');
+    holdTimer = setTimeout(() => setSelected(true), 500);
+  });
+
+  outgoingBubble.addEventListener('pointerup', (event) => {
+    clearTimeout(holdTimer);
+    outgoingBubble.classList.remove('is-pressing');
+    if (!event.target.closest('.wrong-word, .correct-word')) setSelected(true);
+  });
+
+  outgoingBubble.addEventListener('pointercancel', () => {
+    clearTimeout(holdTimer);
+    outgoingBubble.classList.remove('is-pressing');
+  });
+
+  wrongWord.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setSelected(false);
+    positionPopup(correctionPopup, wrongWord);
+  });
+
+  correctWord.addEventListener('click', (event) => {
+    event.stopPropagation();
+    setSelected(false);
+    positionPopup(wordPopup, correctWord);
+  });
+
+  document.querySelectorAll('.reaction-button:not(.more)').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      reactionBadge.textContent = button.textContent.trim();
+      reactionBadge.classList.add('visible');
+      setSelected(false);
+    });
+  });
+
+  document.querySelector('.reaction-button.more').addEventListener('click', (event) => {
+    event.stopPropagation();
+    showToast('Full emoji picker');
+  });
+
+  document.querySelectorAll('[data-action]').forEach((button) => {
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      const action = button.dataset.action;
+      if (action === 'Copy' && navigator.clipboard) {
+        await navigator.clipboard.writeText('Ja, ich fahre mit der Bus.').catch(() => {});
+      }
+      setSelected(false);
+      showToast(action === 'Copy' ? 'Copied' : action);
+    });
+  });
+
+  function setMode(mode) {
+    const practice = mode === 'practice';
+    normalMode.setAttribute('aria-pressed', String(!practice));
+    practiceMode.setAttribute('aria-pressed', String(practice));
+    practiceCopies.forEach((copy) => { copy.hidden = !practice; });
+    normalCopies.forEach((copy) => { copy.hidden = practice; });
+    outgoingBubble.classList.remove('expanded');
+    setSelected(false);
+  }
+
+  normalMode.addEventListener('click', (event) => { event.stopPropagation(); setMode('normal'); });
+  practiceMode.addEventListener('click', (event) => { event.stopPropagation(); setMode('practice'); });
+
+  messages.addEventListener('click', (event) => {
+    if (!event.target.closest('#selectedMessage, .popup')) setSelected(false);
+  });
+</script>
+</body>
+</html>

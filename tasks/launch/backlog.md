@@ -7,6 +7,11 @@ Active item: `L-17` (`Awaiting manual`), with final physical Android verificatio
 deferred to the end-of-launch device pass. `L-04` remains externally blocked, so
 no not-started item is currently dependency-ready.
 
+Tracker coordination: the owner-facing tracker now groups the active local work under
+Current focus, begins with the invite flow, and preserves owner-confirmed task states.
+The tracker’s post-launch invite-urgency exploration is deliberately separate from the
+launch rule that an unclaimed link remains valid until successfully claimed.
+
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
 ## Launch blockers
@@ -38,6 +43,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 | 17 | L-17 | P1-06 | Approve and implement notifications, or explicitly constrain the launch | L-00 | Awaiting manual | [`items/L-17.md`](./items/L-17.md) |
 | 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Complete | [`items/L-18.md`](./items/L-18.md) |
 | 24 | L-24 | Follow-up | Repair Android warm invite-link routing; received links must navigate while Blab is already open | L-03, L-04 | Not started | `items/L-24.md` |
+| 25 | L-25 | Follow-up | Preserve each participant's completed learning-language history across a later language change | L-16, L-18 | Awaiting manual | [`items/L-25.md`](./items/L-25.md) |
 
 ## Release hardening
 

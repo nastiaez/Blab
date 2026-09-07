@@ -36,17 +36,11 @@ Future<void> _signIn(SupabaseClient client, String email) async {
   expect(client.auth.currentUser?.email, email);
 }
 
-Future<_ClaimResult> _attemptClaim(
-  SupabaseClient client,
-  String token,
-  String learningLanguage,
-) async {
+Future<_ClaimResult> _attemptClaim(SupabaseClient client, String token) async {
   final userId = client.auth.currentUser!.id;
   try {
-    final chatId = await ChatService(
-      client,
-    ).claimInvite(token: token, myLearningLanguage: learningLanguage);
-    return _ClaimResult.success(userId, chatId);
+    final result = await ChatService(client).claimInviteDetails(token: token);
+    return _ClaimResult.success(userId, result.chatId);
   } catch (error) {
     return _ClaimResult.failure(userId, error);
   }
@@ -58,7 +52,7 @@ String? _postgrestMessage(Object? error) {
 
 void main() {
   test(
-    'local Supabase preserves consent across signup, races, and expiry',
+    'local Supabase keeps unclaimed invites valid and never resets a pair',
     () async {
       expect(_url, isNotEmpty);
       expect(_publicKey, isNotEmpty);
@@ -82,10 +76,17 @@ void main() {
         ]);
         final aliceId = alice.auth.currentUser!.id;
 
-        final signupInvite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
+        final signupInvite = await ChatService(alice).createInvite();
         tokens.add(signupInvite.token);
+        await admin
+            .from('invites')
+            .update({
+              'created_at': DateTime.now()
+                  .subtract(const Duration(hours: 49))
+                  .toUtc()
+                  .toIso8601String(),
+            })
+            .eq('token', signupInvite.token);
         final beforeSignup = await ChatService(
           fresh,
         ).getInvite(signupInvite.token);
@@ -99,33 +100,39 @@ void main() {
         );
         freshUserId = signup.user?.id;
         expect(freshUserId, isNotNull);
+        final createdFreshUserId = freshUserId!;
         expect(
           signup.session,
           isNotNull,
           reason: 'local email confirmation must remain disabled',
         );
 
-        final signupChat = await ChatService(
+        final signupClaim = await ChatService(
           fresh,
-        ).claimInvite(token: signupInvite.token, myLearningLanguage: 'fr');
+        ).claimInviteDetails(token: signupInvite.token);
+        final signupChat = signupClaim.chatId;
         chatIds.add(signupChat);
+        expect(signupClaim.isNewConnection, isTrue);
 
         final signupMembers = List<Map<String, dynamic>>.from(
           await admin
               .from('chat_members')
-              .select('user_id,learning_language')
+              .select('user_id,learning_language,practice_language_selected_at')
               .eq('chat_id', signupChat),
         );
         expect(signupMembers, hasLength(2));
         expect(signupMembers.map((row) => row['user_id']).toSet(), {
           aliceId,
-          freshUserId,
+          createdFreshUserId,
+        });
+        expect(signupMembers.map((row) => row['learning_language']).toSet(), {
+          'en',
         });
         expect(
-          signupMembers.singleWhere(
-            (row) => row['user_id'] == freshUserId,
-          )['learning_language'],
-          'fr',
+          signupMembers
+              .map((row) => row['practice_language_selected_at'])
+              .toSet(),
+          {null},
         );
 
         final freshChatList = await ChatService(fresh).fetchChatList();
@@ -133,15 +140,48 @@ void main() {
           (row) => row['chat_id'] == signupChat,
         );
         expect(claimedChat['partner_id'], aliceId);
-        expect(claimedChat['my_learning'], 'fr');
+        expect(claimedChat['needs_practice_language_selection'], isTrue);
 
-        final raceInvite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'es');
+        await ChatService(fresh).setLearningLanguage(
+          chatId: signupChat,
+          langCode: 'fr',
+        );
+        await ChatService(alice).setLearningLanguage(
+          chatId: signupChat,
+          langCode: 'de',
+        );
+
+        final repeatInvite = await ChatService(alice).createInvite();
+        tokens.add(repeatInvite.token);
+        final repeatClaim = await ChatService(
+          fresh,
+        ).claimInviteDetails(token: repeatInvite.token);
+        expect(repeatClaim.chatId, signupChat);
+        expect(repeatClaim.isNewConnection, isFalse);
+        final repeatMembers = List<Map<String, dynamic>>.from(
+          await admin
+              .from('chat_members')
+              .select('user_id,learning_language,practice_language_selected_at')
+              .eq('chat_id', signupChat),
+        );
+        expect(
+          repeatMembers.singleWhere(
+            (row) => row['user_id'] == createdFreshUserId,
+          )['learning_language'],
+          'fr',
+        );
+        expect(
+          repeatMembers.singleWhere(
+            (row) => row['user_id'] == aliceId,
+          )['learning_language'],
+          'de',
+        );
+
+        final raceInvite = await ChatService(alice).createInvite();
         tokens.add(raceInvite.token);
         final race = await Future.wait([
-          _attemptClaim(bob, raceInvite.token, 'de'),
-          _attemptClaim(carol, raceInvite.token, 'it'),
+          _attemptClaim(bob, raceInvite.token),
+          _attemptClaim(carol, raceInvite.token),
         ]);
         final winner = race.singleWhere((result) => result.succeeded);
         final loser = race.singleWhere((result) => !result.succeeded);
@@ -165,40 +205,6 @@ void main() {
             .toSet();
         expect(raceMemberIds, {aliceId, winner.userId});
         expect(raceMemberIds, isNot(contains(loser.userId)));
-
-        final expiredInvite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
-        tokens.add(expiredInvite.token);
-        await admin
-            .from('invites')
-            .update({
-              'expires_at': DateTime.now()
-                  .subtract(const Duration(minutes: 1))
-                  .toUtc()
-                  .toIso8601String(),
-            })
-            .eq('token', expiredInvite.token);
-
-        final expiredClaim = await _attemptClaim(
-          bob,
-          expiredInvite.token,
-          'fr',
-        );
-        expect(expiredClaim.succeeded, isFalse);
-        expect(_postgrestMessage(expiredClaim.error), 'invite_expired');
-
-        final expiredMetadata = await ChatService(
-          fresh,
-        ).getInvite(expiredInvite.token);
-        expect(expiredMetadata?.status, 'expired');
-        final expiredRow = await admin
-            .from('invites')
-            .select('used_at,resulting_chat_id')
-            .eq('token', expiredInvite.token)
-            .single();
-        expect(expiredRow['used_at'], isNull);
-        expect(expiredRow['resulting_chat_id'], isNull);
       } finally {
         if (tokens.isNotEmpty) {
           await admin.from('invites').delete().inFilter('token', tokens);

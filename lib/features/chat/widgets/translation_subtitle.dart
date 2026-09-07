@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 import '../../../shared/models/message_token.dart';
+import '../../../shared/widgets/blab_icon.dart';
 import 'message_text.dart';
 
 enum TranslationSubtitleState { ready, pending, unavailable }
@@ -49,7 +50,7 @@ class TranslationSubtitle extends StatelessWidget {
       child: Container(
         height: 1,
         color: isOutgoing
-            ? Colors.white.withValues(alpha: 0.25)
+            ? BlabColors.bubbleInk.withValues(alpha: 0.22)
             : Colors.grey.shade200,
       ),
     );
@@ -60,7 +61,7 @@ class TranslationSubtitle extends StatelessWidget {
         final style = TextStyle(
           fontSize: 14,
           color: isOutgoing
-              ? Colors.white.withValues(alpha: 0.85)
+              ? BlabColors.bubbleInk.withValues(alpha: 0.78)
               : BlabColors.textMuted,
           height: 1.3,
         );
@@ -84,7 +85,7 @@ class TranslationSubtitle extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: isOutgoing
-                      ? Colors.white.withValues(alpha: 0.7)
+                      ? BlabColors.bubbleInk.withValues(alpha: 0.68)
                       : BlabColors.textMuted,
                 ),
               ),
@@ -99,7 +100,7 @@ class TranslationSubtitle extends StatelessWidget {
                   fontSize: 12,
                   fontStyle: FontStyle.italic,
                   color: isOutgoing
-                      ? Colors.white.withValues(alpha: 0.72)
+                      ? BlabColors.bubbleInk.withValues(alpha: 0.68)
                       : BlabColors.textMuted,
                   height: 1.3,
                 ),
@@ -111,19 +112,13 @@ class TranslationSubtitle extends StatelessWidget {
         body = ShimmerLine(isOutgoing: isOutgoing);
       case TranslationSubtitleState.unavailable:
         final color = isOutgoing
-            ? Colors.white.withValues(alpha: 0.78)
+            ? BlabColors.bubbleInk.withValues(alpha: 0.74)
             : BlabColors.textMuted;
         body = Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 6,
           runSpacing: 2,
           children: [
-            Icon(
-              Icons.error_outline,
-              key: const ValueKey('translation-error'),
-              size: 17,
-              color: color,
-            ),
             Text(
               unavailableText,
               style: TextStyle(
@@ -143,7 +138,12 @@ class TranslationSubtitle extends StatelessWidget {
                   minimumSize: const Size(0, 32),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                icon: const Icon(Icons.refresh, size: 16),
+                icon: BlabIcon(
+                  key: const ValueKey('translation-retry-icon'),
+                  name: 'refresh - 16',
+                  color: color,
+                  size: 16,
+                ),
                 label: Text(
                   retryText,
                   style: const TextStyle(fontWeight: FontWeight.w700),
@@ -192,10 +192,10 @@ class _ShimmerLineState extends State<ShimmerLine>
   @override
   Widget build(BuildContext context) {
     final base = widget.isOutgoing
-        ? Colors.white.withValues(alpha: 0.25)
+        ? BlabColors.bubbleInk.withValues(alpha: 0.18)
         : Colors.grey.shade200;
     final highlight = widget.isOutgoing
-        ? Colors.white.withValues(alpha: 0.5)
+        ? BlabColors.bubbleInk.withValues(alpha: 0.34)
         : Colors.grey.shade100;
     return AnimatedBuilder(
       key: const ValueKey('translation-shimmer'),

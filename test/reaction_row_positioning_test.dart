@@ -5,56 +5,69 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const rowHeight = 44.0;
   const minTop = 60.0;
+  const maxBottom = 700.0;
 
-  test('short bubble with room above sits flush against the bubble top', () {
+test('short bubble prefers the available space above by default', () {
     final bubbleRect = const Rect.fromLTWH(20, 300, 200, 50);
     final top = computeReactionRowTop(
       bubbleRect: bubbleRect,
       pressPosition: bubbleRect.center,
       rowHeight: rowHeight,
       minTop: minTop,
+      maxBottom: maxBottom,
     );
-    expect(top, bubbleRect.top - rowHeight);
+    expect(top, bubbleRect.top - rowHeight - 8);
   });
 
-  test('short bubble near the top clamps to press position, not flush', () {
-    final bubbleRect = const Rect.fromLTWH(20, 90, 200, 50);
-    final pressPosition = const Offset(120, 130);
+  test('short bubble can use the space below when requested', () {
+    final bubbleRect = const Rect.fromLTWH(20, 300, 200, 50);
     final top = computeReactionRowTop(
       bubbleRect: bubbleRect,
-      pressPosition: pressPosition,
+      pressPosition: bubbleRect.center,
       rowHeight: rowHeight,
       minTop: minTop,
+      maxBottom: maxBottom,
+      preferAbove: false,
     );
-    // flush (90 - 44 = 46) is below minTop, so it anchors near the press
-    // point instead: 130 - 44 - 8 = 78, which clears minTop on its own
-    // (no further clamp needed) and sits below the bubble's true top.
-    expect(top, pressPosition.dy - rowHeight - 8);
-    expect(top, greaterThanOrEqualTo(minTop));
-    expect(top, lessThan(bubbleRect.top));
+    expect(top, bubbleRect.bottom + 8);
   });
 
-  test('tall bubble anchors near the press point, not the true bubble top', () {
-    final bubbleRect = const Rect.fromLTWH(20, -300, 200, 500);
+  test('bubble near the bottom moves the row above it', () {
+    final bubbleRect = const Rect.fromLTWH(20, 640, 200, 50);
+    final top = computeReactionRowTop(
+      bubbleRect: bubbleRect,
+      pressPosition: bubbleRect.center,
+      rowHeight: rowHeight,
+      minTop: minTop,
+      maxBottom: maxBottom,
+    );
+    expect(top, bubbleRect.top - rowHeight - 8);
+  });
+
+  test('viewport-filling bubble overlaps near the press point', () {
+    final bubbleRect = const Rect.fromLTWH(20, 40, 200, 700);
     final pressPosition = const Offset(120, 250);
     final top = computeReactionRowTop(
       bubbleRect: bubbleRect,
       pressPosition: pressPosition,
       rowHeight: rowHeight,
       minTop: minTop,
+      maxBottom: maxBottom,
     );
     expect(top, pressPosition.dy - rowHeight - 8);
     expect(top, greaterThan(bubbleRect.top));
+    expect(top + rowHeight, lessThanOrEqualTo(maxBottom));
   });
 
-  test('tall bubble still respects the minimum top clamp', () {
-    final bubbleRect = const Rect.fromLTWH(20, -300, 200, 500);
+  test('overlap position stays inside both viewport bounds', () {
+    final bubbleRect = const Rect.fromLTWH(20, 40, 200, 700);
     final pressPosition = const Offset(120, 50);
     final top = computeReactionRowTop(
       bubbleRect: bubbleRect,
       pressPosition: pressPosition,
       rowHeight: rowHeight,
       minTop: minTop,
+      maxBottom: maxBottom,
     );
     expect(top, minTop);
   });

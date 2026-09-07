@@ -23,6 +23,7 @@ class Chat {
     required this.unreadCount,
     this.lastMessageId,
     this.isNewInvite = false,
+    this.needsPracticeLanguageSelection = false,
     this.startedAt,
     this.partnerId,
     this.translationCutoffAt,
@@ -65,6 +66,10 @@ class Chat {
   final DateTime timestamp;
   final int unreadCount;
   final bool isNewInvite;
+
+  /// True until this participant picks the language they want to practise in
+  /// this chat. New invite connections deliberately start unconfigured.
+  final bool needsPracticeLanguageSelection;
 
   /// When this chat was first started. Used for the "Started X ago" line on
   /// the partner profile sheet. Falls back to [timestamp] when null.

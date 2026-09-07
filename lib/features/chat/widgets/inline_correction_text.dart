@@ -10,10 +10,15 @@ import 'word_popup.dart';
 
 @immutable
 class CorrectionSegment {
-  const CorrectionSegment(this.text, {this.struck = false});
+  const CorrectionSegment(
+    this.text, {
+    this.struck = false,
+    this.corrected = false,
+  });
 
   final String text;
   final bool struck;
+  final bool corrected;
 }
 
 class _Word {
@@ -85,13 +90,23 @@ List<CorrectionSegment> correctionSegments(
   }
 
   final segments = <CorrectionSegment>[];
-  void append(String text, {bool struck = false}) {
+  void append(String text, {bool struck = false, bool corrected = false}) {
     if (text.isEmpty) return;
-    if (segments.isNotEmpty && segments.last.struck == struck) {
+    if (segments.isNotEmpty &&
+        segments.last.struck == struck &&
+        segments.last.corrected == corrected) {
       final previous = segments.removeLast();
-      segments.add(CorrectionSegment(previous.text + text, struck: struck));
+      segments.add(
+        CorrectionSegment(
+          previous.text + text,
+          struck: struck,
+          corrected: corrected,
+        ),
+      );
     } else {
-      segments.add(CorrectionSegment(text, struck: struck));
+      segments.add(
+        CorrectionSegment(text, struck: struck, corrected: corrected),
+      );
     }
   }
 
@@ -132,7 +147,7 @@ List<CorrectionSegment> correctionSegments(
         _containsWord(inserted)) {
       append(' ');
     }
-    append(inserted);
+    append(inserted, corrected: true);
     append(suffixText);
   }
 
@@ -294,6 +309,7 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       decorationColor: struckColor,
       decorationThickness: 2,
     );
+    final correctedStyle = widget.style.copyWith(fontWeight: FontWeight.w600);
 
     final segments = correctionSegments(
       widget.originalText,
@@ -325,11 +341,20 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       // non-tappable text.
       for (final token in messageTokensForText(segment.text)) {
         if (!token.isContent) {
-          spans.add(TextSpan(text: token.text, style: widget.style));
+          spans.add(
+            TextSpan(
+              text: token.text,
+              style: segment.corrected ? correctedStyle : widget.style,
+            ),
+          );
           continue;
         }
         spans.add(
-          _tappableSpan(text: token.text, struck: false, style: widget.style),
+          _tappableSpan(
+            text: token.text,
+            struck: false,
+            style: segment.corrected ? correctedStyle : widget.style,
+          ),
         );
       }
     }

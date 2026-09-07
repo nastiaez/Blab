@@ -105,18 +105,19 @@ class _MessageTextState extends ConsumerState<MessageText> {
         WidgetSpan(
           alignment: PlaceholderAlignment.baseline,
           baseline: TextBaseline.alphabetic,
-          child: Padding(
-            // Extra vertical padding gives tap targets breathing room on
-            // wrapped lines so words on the second line stay easy to hit.
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text.rich(
-              TextSpan(
-                text: t.text,
-                style: widget.style,
-                recognizer: recognizer,
-              ),
-              key: key,
+          // No padding around the word: it grew every word's painted box,
+          // which compounded into a visibly taller line box than the same
+          // message rendered as plain text in normal mode (mode-display-
+          // fixes spec § 2). Tap targets are unaffected — each word's box
+          // is a full line tall on its own, so taps anywhere on the line
+          // still land on the word under them.
+          child: Text.rich(
+            TextSpan(
+              text: t.text,
+              style: widget.style,
+              recognizer: recognizer,
             ),
+            key: key,
           ),
         ),
       );

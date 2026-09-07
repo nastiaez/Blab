@@ -1,47 +1,62 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../shared/data/local_storage_keys.dart';
 import '../../shared/state/chat_list_state.dart';
 
+/// Stores only the token needed to resume an invite after the regular email
+/// sign-in. It deliberately carries no language or account-choice state.
 class InviteContinuation {
   const InviteContinuation({
     required this.token,
-    required this.inviterName,
-    required this.learningLanguage,
+    this.inviterName,
+    this.learningLanguage,
   });
 
-  factory InviteContinuation.fromQuery(Map<String, String> query) {
-    return InviteContinuation(
-      token: query['invite'],
-      inviterName: query['inviter'],
-      learningLanguage: query['learn'],
-    );
-  }
+  factory InviteContinuation.fromQuery(Map<String, String> query) =>
+      InviteContinuation(
+        token: query['invite'],
+        inviterName: query['inviter'],
+        learningLanguage: query['learn'],
+      );
 
   final String? token;
   final String? inviterName;
   final String? learningLanguage;
 
-  bool get canResume =>
-      token?.trim().isNotEmpty == true &&
-      learningLanguage?.trim().isNotEmpty == true;
+  bool get canResume => token?.trim().isNotEmpty == true;
 
-  String authLocation({String mode = 'signup'}) {
-    return Uri(
-      path: '/auth',
-      queryParameters: {
-        'mode': mode,
-        if (token?.trim().isNotEmpty == true) 'invite': token!.trim(),
-        if (inviterName?.trim().isNotEmpty == true)
-          'inviter': inviterName!.trim(),
-        if (learningLanguage?.trim().isNotEmpty == true)
-          'learn': learningLanguage!.trim(),
-      },
-    ).toString();
-  }
+  String authLocation({String mode = 'signup'}) => Uri(
+    path: '/auth',
+    queryParameters: {
+      'mode': mode,
+      if (canResume) 'invite': token!.trim(),
+      if (inviterName?.trim().isNotEmpty == true)
+        'inviter': inviterName!.trim(),
+      if (learningLanguage?.trim().isNotEmpty == true)
+        'learn': learningLanguage!.trim(),
+    },
+  ).toString();
 
   String get resolverLocation => '/i/${Uri.encodeComponent(token!.trim())}';
+}
+
+Future<void> savePendingInvite(String token) async {
+  final preferences = await SharedPreferences.getInstance();
+  await preferences.setString(kPendingInviteTokenKey, token.trim());
+}
+
+Future<String?> loadPendingInvite() async {
+  final preferences = await SharedPreferences.getInstance();
+  final token = preferences.getString(kPendingInviteTokenKey)?.trim();
+  return token?.isEmpty ?? true ? null : token;
+}
+
+Future<void> clearPendingInvite() async {
+  final preferences = await SharedPreferences.getInstance();
+  await preferences.remove(kPendingInviteTokenKey);
 }
 
 enum InviteClaimFailure {
@@ -65,44 +80,24 @@ InviteClaimFailure inviteClaimFailureFor(Object error) {
   };
 }
 
-bool isTerminalInviteClaimFailure(InviteClaimFailure failure) {
-  return switch (failure) {
-    InviteClaimFailure.expired ||
-    InviteClaimFailure.alreadyClaimed ||
-    InviteClaimFailure.notFound ||
-    InviteClaimFailure.selfClaim => true,
-    InviteClaimFailure.invalidLanguage || InviteClaimFailure.unknown => false,
-  };
-}
-
-String inviteClaimMessage(InviteClaimFailure failure) {
-  return switch (failure) {
-    InviteClaimFailure.expired => 'This invite has expired.',
-    InviteClaimFailure.alreadyClaimed => 'This invite has already been used.',
-    InviteClaimFailure.notFound => "We couldn't find that invite.",
-    InviteClaimFailure.selfClaim => "You can't accept your own invite.",
-    InviteClaimFailure.invalidLanguage =>
-      'Choose a supported language and try again.',
-    InviteClaimFailure.unknown => "Couldn't accept the invite. Try again.",
-  };
-}
+bool isTerminalInviteClaimFailure(InviteClaimFailure failure) =>
+    failure != InviteClaimFailure.unknown &&
+    failure != InviteClaimFailure.invalidLanguage;
 
 String localizedInviteClaimMessage(
   AppLocalizations localizations,
   InviteClaimFailure failure,
-) {
-  return switch (failure) {
-    InviteClaimFailure.expired => localizations.inviteClaimExpired,
-    InviteClaimFailure.alreadyClaimed => localizations.inviteClaimUsed,
-    InviteClaimFailure.notFound => localizations.inviteNotFound,
-    InviteClaimFailure.selfClaim ||
-    InviteClaimFailure.invalidLanguage => localizations.inviteClaimInvalid,
-    InviteClaimFailure.unknown => localizations.inviteClaimFailed,
-  };
-}
+) => switch (failure) {
+  InviteClaimFailure.expired => 'This invite is no longer available.',
+  InviteClaimFailure.alreadyClaimed => 'This invite has already been claimed',
+  InviteClaimFailure.notFound => "We couldn’t find that invite.",
+  InviteClaimFailure.selfClaim => "You can’t use your own invite.",
+  InviteClaimFailure.invalidLanguage =>
+    'Choose a supported language and try again.',
+  InviteClaimFailure.unknown => 'Couldn’t accept the invite. Try again.',
+};
 
-typedef InviteClaimAction =
-    Future<String> Function(InviteContinuation continuation);
+typedef InviteClaimAction = Future<String> Function(InviteContinuation);
 
 final inviteClaimActionProvider = Provider<InviteClaimAction>((ref) {
   final service = ref.watch(chatServiceProvider);
@@ -110,11 +105,10 @@ final inviteClaimActionProvider = Provider<InviteClaimAction>((ref) {
     if (!continuation.canResume) {
       throw ArgumentError('Incomplete invite continuation');
     }
-    final chatId = await service.claimInvite(
+    final result = await service.claimInviteDetails(
       token: continuation.token!.trim(),
-      myLearningLanguage: continuation.learningLanguage!.trim(),
     );
     await ref.read(chatListProvider.notifier).refresh();
-    return chatId;
+    return result.chatId;
   };
 });

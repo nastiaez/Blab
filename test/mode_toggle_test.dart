@@ -24,42 +24,34 @@ class _FakeTtsService implements TtsService {
 }
 
 void main() {
-  testWidgets('tapping the toggle switches mode and calls set()', (tester) async {
+  testWidgets('tapping the toggle switches mode and calls set()', (
+    tester,
+  ) async {
     final fake = _FakeChatModeNotifier();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          chatModeProvider('chat-1').overrideWith(() => fake),
-        ],
+        overrides: [chatModeProvider('chat-1').overrideWith(() => fake)],
         child: const MaterialApp(
           home: Scaffold(body: ModeToggle(chatId: 'chat-1')),
         ),
       ),
     );
     await tester.pumpAndSettle();
-    // Both segment labels are always rendered (it's a two-segment control) —
-    // assert on the notifier call, not label presence, to actually exercise
-    // the switch rather than passing vacuously.
-    expect(find.text('Normal'), findsOneWidget);
-    expect(find.text('Practice'), findsOneWidget);
-
-    // Tap the inactive "Normal" segment directly — tapping the toggle's
-    // bounding-box center is unreliable since "Practice" renders wider than
-    // "Normal" and can shift the geometric center onto the already-active
-    // segment.
-    await tester.tap(find.text('Normal'));
+    await tester.tap(
+      find.byKey(const ValueKey('mode-toggle-segment-chat-bubble-empty - 16')),
+    );
     await tester.pumpAndSettle();
 
     expect(fake.setCalls, [ChatMode.normal]);
   });
 
-  testWidgets('tapping the already-active segment is a no-op', (tester) async {
+  testWidgets('tapping the active segment flips to the other mode', (
+    tester,
+  ) async {
     final fake = _FakeChatModeNotifier();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          chatModeProvider('chat-1').overrideWith(() => fake),
-        ],
+        overrides: [chatModeProvider('chat-1').overrideWith(() => fake)],
         child: const MaterialApp(
           home: Scaffold(body: ModeToggle(chatId: 'chat-1')),
         ),
@@ -69,11 +61,33 @@ void main() {
     expect(fake.setCalls, isEmpty);
 
     // Tap the "Practice" segment, which is already active.
-    await tester.tap(find.text('Practice'));
+    await tester.tap(
+      find.byKey(const ValueKey('mode-toggle-segment-flash - 16')),
+    );
     await tester.pumpAndSettle();
 
-    expect(fake.setCalls, isEmpty);
-    expect(find.text('Practice'), findsOneWidget);
+    expect(fake.setCalls, [ChatMode.normal]);
+  });
+
+  testWidgets('tapping the switch tap-target edge flips to the other mode', (
+    tester,
+  ) async {
+    final fake = _FakeChatModeNotifier();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [chatModeProvider('chat-1').overrideWith(() => fake)],
+        child: const MaterialApp(
+          home: Scaffold(body: ModeToggle(chatId: 'chat-1')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final switchRect = tester.getRect(find.byType(ModeToggle));
+    await tester.tapAt(Offset(switchRect.center.dx, switchRect.top + 1));
+    await tester.pumpAndSettle();
+
+    expect(fake.setCalls, [ChatMode.normal]);
   });
 
   testWidgets('bumps the reset signal before calling set()', (tester) async {
@@ -95,7 +109,9 @@ void main() {
 
     expect(container.read(chatModeResetSignalProvider('chat-1')), 0);
 
-    await tester.tap(find.text('Normal'));
+    await tester.tap(
+      find.byKey(const ValueKey('mode-toggle-segment-chat-bubble-empty - 16')),
+    );
     await tester.pumpAndSettle();
 
     expect(container.read(chatModeResetSignalProvider('chat-1')), 1);
@@ -116,9 +132,7 @@ void main() {
                 const ModeToggle(chatId: 'chat-1'),
                 MessageText(
                   text: 'hallo',
-                  tokens: const [
-                    MessageToken(text: 'hallo', gloss: 'hello'),
-                  ],
+                  tokens: const [MessageToken(text: 'hallo', gloss: 'hello')],
                   languageCode: 'de',
                   style: const TextStyle(fontSize: 16),
                 ),
@@ -142,11 +156,13 @@ void main() {
     // Invoke the segment's `onTap` directly (bypassing hit-testing) so this
     // test isolates and proves the toggle's own wiring.
     final segmentTap = tester
-        .widget<GestureDetector>(
+        .widget<InkWell>(
           find
-              .ancestor(
-                of: find.text('Normal'),
-                matching: find.byType(GestureDetector),
+              .descendant(
+                of: find.byKey(
+                  const ValueKey('mode-toggle-segment-chat-bubble-empty - 16'),
+                ),
+                matching: find.byType(InkWell),
               )
               .first,
         )

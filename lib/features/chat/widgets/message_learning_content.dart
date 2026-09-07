@@ -1,16 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
+import '../../../shared/data/translation_support.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/services/message_translator.dart';
 import 'inline_correction_text.dart';
 import 'message_text.dart';
-import 'translation_subtitle.dart';
-
-const double kTranslatedMessageMinContentWidth = 156;
+import 'grammatical_form_chooser.dart';
+import '../../../shared/models/grammatical_form.dart';
+import '../message_presentation.dart';
 
 /// Resolves which text to show for a translated message, per the modes/
 /// known-languages design spec's § Display logic three rules:
@@ -25,21 +24,6 @@ const double kTranslatedMessageMinContentWidth = 156;
 /// and chat_screen.dart's `_QuotedReply` single-line preview — a second
 /// message-rendering path that used to apply none of these rules — so the
 /// three-way branch lives in exactly one place.
-String resolveMessageDisplayText({
-  required String authoredText,
-  required MessageTranslation value,
-  required ChatMode mode,
-  required List<String> knownLanguageCodes,
-}) {
-  if (value.mode == LearningAidMode.none) return authoredText;
-  if (mode == ChatMode.normal) {
-    return knownLanguageCodes.contains(value.sourceLang)
-        ? authoredText
-        : value.translation;
-  }
-  return value.translation;
-}
-
 /// Renders the mode-aware message display contract (FR-23): a single
 /// collapsed lane by default. Normal mode either shows the exact original
 /// (source language already known) or the bare translation (source
@@ -51,7 +35,6 @@ String resolveMessageDisplayText({
 class MessageLearningContent extends StatelessWidget {
   const MessageLearningContent({
     super.key,
-    required this.messageId,
     required this.authoredText,
     required this.translation,
     required this.showTranslation,
@@ -64,10 +47,18 @@ class MessageLearningContent extends StatelessWidget {
     required this.knownLanguageCodes,
     required this.expanded,
     required this.onToggleExpanded,
+    this.showOriginal = false,
+    this.resolvedSourceLang,
+    this.pendingColor,
     this.onRetry,
+    this.onFormSelected,
+    this.onFormMarkerTap,
+    this.resolvedForm,
+    this.activeFormChoiceIndex = 0,
+    this.showFormExplanation = false,
+    this.formExplanation,
   });
 
-  final String messageId;
   final String authoredText;
   final AsyncValue<MessageTranslation>? translation;
   final bool showTranslation;
@@ -77,6 +68,12 @@ class MessageLearningContent extends StatelessWidget {
   final String unavailableText;
   final String retryText;
   final VoidCallback? onRetry;
+  final Future<void> Function(GrammaticalForm form)? onFormSelected;
+  final ValueChanged<int>? onFormMarkerTap;
+  final GrammaticalForm? resolvedForm;
+  final int activeFormChoiceIndex;
+  final bool showFormExplanation;
+  final String? formExplanation;
 
   /// FR-23: practice targets the learning language; normal targets the
   /// reader's known languages, with the source-language bypass below.
@@ -85,6 +82,15 @@ class MessageLearningContent extends StatelessWidget {
   /// The reader's known-language codes (normal mode's bypass check only).
   final List<String> knownLanguageCodes;
 
+  /// The source language a *resolution* recorded for this message, if any —
+  /// carried separately from [translation] because an `AsyncError` never
+  /// carries a value. Null means the app has never learned what language
+  /// this message is in. Mode-display-fixes spec § 3 (client-side): normal
+  /// mode shows error/retry chrome only when this is non-null and outside
+  /// [knownLanguageCodes] — i.e. only when the reader positively cannot
+  /// read the message without help.
+  final String? resolvedSourceLang;
+
   /// Whether the practice-mode second (interface-language) lane is open.
   /// Owned by `_Bubble` (Task 10) — this widget only reads it.
   final bool expanded;
@@ -92,19 +98,23 @@ class MessageLearningContent extends StatelessWidget {
   /// Invoked by the icon `_Bubble` builds beside the bubble (Task 10). Not
   /// called from anywhere inside this widget.
   final VoidCallback onToggleExpanded;
+  final bool showOriginal;
+  final Color? pendingColor;
 
   @override
   Widget build(BuildContext context) {
     final primaryStyle = TextStyle(
       fontSize: 16,
       height: 1.5,
-      color: isOutgoing ? Colors.white : BlabColors.textPrimary,
+      color:
+          pendingColor ??
+          (isOutgoing ? BlabColors.bubbleInk : BlabColors.textPrimary),
     );
     final secondaryStyle = TextStyle(
       fontSize: 14,
       height: 1.4,
       color: isOutgoing
-          ? Colors.white.withValues(alpha: 0.82)
+          ? BlabColors.bubbleInk.withValues(alpha: 0.72)
           : BlabColors.textMuted,
     );
     final result = translation;
@@ -119,71 +129,88 @@ class MessageLearningContent extends StatelessWidget {
     // branching never has to run without the data it needs.
     if (result is AsyncData<MessageTranslation>) {
       final value = result.value;
+      if (isUnsupportedSourceText(
+        sourceLang: value.sourceLang,
+        authoredText: authoredText,
+      )) {
+        return Text(authoredText, style: primaryStyle);
+      }
+      final formChoices = value.formChoices;
+      if (formChoices.isNotEmpty && onFormSelected != null) {
+        if (resolvedForm != null) {
+          return MessageText(
+            text: formChoices.first.resolved(resolvedForm!),
+            tokens: value.tokens,
+            languageCode: learningLanguageCode,
+            popupTopInset: popupTopInset,
+            style: primaryStyle,
+          );
+        }
+        return GrammaticalFormAlternativesText(
+          alternatives: formChoices.first,
+          alternativesList: formChoices,
+          style: primaryStyle,
+          onMarkerTap: onFormMarkerTap,
+          activeIndex: activeFormChoiceIndex,
+        );
+      }
       if (value.mode == LearningAidMode.none || mode == ChatMode.normal) {
         // Same-language chat (no aid needed, either mode) or normal mode
         // (known source → exact original, unknown → translation only, no
         // second lane): a single plain line, never the shimmer/error chrome
         // or the expand affordance below.
-        return Text(
-          resolveMessageDisplayText(
-            authoredText: authoredText,
-            value: value,
-            mode: mode,
-            knownLanguageCodes: knownLanguageCodes,
-          ),
-          style: primaryStyle,
+        final displayText = resolveMessageDisplayText(
+          authoredText: authoredText,
+          value: value,
+          mode: mode,
+          knownLanguageCodes: knownLanguageCodes,
+        );
+        if (!showOriginal || displayText == authoredText) {
+          return Text(displayText, style: primaryStyle);
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(displayText, style: primaryStyle),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Container(
+                height: 1,
+                color: isOutgoing
+                    ? BlabColors.bubbleInk.withValues(alpha: 0.22)
+                    : Colors.grey.shade200,
+              ),
+            ),
+            Text(authoredText, style: secondaryStyle),
+          ],
         );
       }
       // Practice mode falls through to the rich rendering below.
-    } else if (mode == ChatMode.normal &&
-        result is AsyncLoading<MessageTranslation>) {
-      // Normal mode was showing the pending shimmer for messages that might
-      // turn out to already be known (source language isn't known yet — the
-      // request hasn't resolved). AsyncLoading never carries `sourceLang`,
-      // so there's no way to tell here; the plain original with no shimmer
-      // is the final answer if the source turns out to be known, and an
-      // acceptable brief transient state otherwise.
-      //
-      // AsyncError deliberately does NOT take this branch: suppressing it
-      // here too silently swallowed genuine translation failures for
-      // messages in a language the reader does not know — the one case
-      // where they have no other way to read the message. Those fall
-      // through to the shared error/retry rendering below, same as
-      // practice mode.
+    }
+
+    // Loading, both modes: one lane, the authored text, no shimmer and no
+    // second lane. "Collapsed is always one lane" applies while the
+    // translation resolves too; the swap to the learning-language line is
+    // the completion signal.
+    if (result is AsyncLoading<MessageTranslation>) {
       return Text(authoredText, style: primaryStyle);
     }
 
-    // Practice mode only from here — always needs the learning-language
-    // line regardless of known status, so the existing shimmer/retry
-    // treatment while it resolves is unchanged.
-    if (result is AsyncLoading<MessageTranslation>) {
-      // Most messages resolve to "no aid needed" (same-language chat) —
-      // delay the shimmer so that common instant/fast resolutions never
-      // flash it. A translation that genuinely takes longer still shows it.
-      return _PendingTranslation(
-        key: ValueKey('pending-$messageId'),
-        authoredText: authoredText,
-        primaryStyle: primaryStyle,
-        isOutgoing: isOutgoing,
-      );
-    }
     if (result is AsyncError<MessageTranslation>) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TranslationSubtitle(
-            state: TranslationSubtitleState.unavailable,
-            text: '',
-            isOutgoing: isOutgoing,
-            unavailableText: unavailableText,
-            retryText: retryText,
-            onRetry: onRetry,
-            dividerAfter: true,
-          ),
-          Text(authoredText, style: primaryStyle),
-        ],
-      );
+      // Normal mode only surfaces the failure when the app positively knows
+      // the reader needs the translation. Source language never resolved, or
+      // resolved to one they already read, means the authored text is either
+      // the right answer or the harmless one — render it silently and let the
+      // background auto-retry recover. Practice mode always needs the
+      // learning-language line, so its failure is always worth reporting.
+      final needsTranslation =
+          resolvedSourceLang != null &&
+          !knownLanguageCodes.contains(resolvedSourceLang);
+      if (mode == ChatMode.normal && !needsTranslation) {
+        return Text(authoredText, style: primaryStyle);
+      }
+      return Text(authoredText, style: primaryStyle);
     }
 
     final value = (result as AsyncData<MessageTranslation>).value;
@@ -193,7 +220,24 @@ class MessageLearningContent extends StatelessWidget {
     final authorCorrection =
         isOutgoing && value.mode == LearningAidMode.correction;
 
-    final Widget learningLine = authorCorrection
+    final Widget learningLine =
+        value.formChoices.isNotEmpty && onFormSelected != null
+        ? resolvedForm != null
+              ? MessageText(
+                  text: value.formChoices.first.resolved(resolvedForm!),
+                  tokens: value.tokens,
+                  languageCode: learningLanguageCode,
+                  popupTopInset: popupTopInset,
+                  style: primaryStyle,
+                )
+              : GrammaticalFormAlternativesText(
+                  alternatives: value.formChoices.first,
+                  alternativesList: value.formChoices,
+                  style: primaryStyle,
+                  onMarkerTap: onFormMarkerTap,
+                  activeIndex: activeFormChoiceIndex,
+                )
+        : authorCorrection
         ? InlineCorrectionText(
             originalText: authoredText,
             correctedText: value.translation,
@@ -210,85 +254,23 @@ class MessageLearningContent extends StatelessWidget {
             style: primaryStyle,
           );
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        minWidth: kTranslatedMessageMinContentWidth,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          learningLine,
-          if (expanded) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Container(
-                height: 1,
-                color: isOutgoing
-                    ? Colors.white.withValues(alpha: 0.25)
-                    : Colors.grey.shade200,
-              ),
-            ),
-            Text(value.interfaceText, style: secondaryStyle),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _PendingTranslation extends StatefulWidget {
-  const _PendingTranslation({
-    super.key,
-    required this.authoredText,
-    required this.primaryStyle,
-    required this.isOutgoing,
-  });
-
-  final String authoredText;
-  final TextStyle primaryStyle;
-  final bool isOutgoing;
-
-  @override
-  State<_PendingTranslation> createState() => _PendingTranslationState();
-}
-
-class _PendingTranslationState extends State<_PendingTranslation> {
-  static const _showShimmerAfter = Duration(milliseconds: 350);
-
-  Timer? _timer;
-  bool _showShimmer = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer(_showShimmerAfter, () {
-      if (mounted) setState(() => _showShimmer = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_showShimmer) {
-      return Text(widget.authoredText, style: widget.primaryStyle);
-    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        TranslationSubtitle(
-          state: TranslationSubtitleState.pending,
-          text: '',
-          isOutgoing: widget.isOutgoing,
-          dividerAfter: true,
-        ),
-        Text(widget.authoredText, style: widget.primaryStyle),
+        learningLine,
+        if (expanded) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Container(
+              height: 1,
+              color: isOutgoing
+                  ? BlabColors.bubbleInk.withValues(alpha: 0.22)
+                  : Colors.grey.shade200,
+            ),
+          ),
+          Text(value.interfaceText, style: secondaryStyle),
+        ],
       ],
     );
   }

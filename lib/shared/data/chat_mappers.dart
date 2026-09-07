@@ -99,6 +99,16 @@ MessageAttachment _attachmentFromRow(Map<String, dynamic> row) {
     storagePath: row['storage_path'] as String,
     mimeType: row['mime_type'] as String,
     byteSize: row['byte_size'] as int,
+    previewStoragePath: row['preview_storage_path'] as String?,
+    previewMimeType: row['preview_mime_type'] as String?,
+    previewByteSize: (row['preview_byte_size'] as num?)?.toInt(),
     url: row['url'] as String?,
+    localBytes: row['localBytes'] is List
+        ? List<int>.from(row['localBytes'] as List)
+        : null,
+    previewUrl: row['preview_url'] as String?,
+    previewBytes: row['previewBytes'] is List
+        ? List<int>.from(row['previewBytes'] as List)
+        : null,
   );
 }

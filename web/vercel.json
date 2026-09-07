@@ -1,7 +1,8 @@
 {
   "rewrites": [
     { "source": "/i/:token", "destination": "/i.html" },
-    { "source": "/delete-account", "destination": "/delete-account.html" }
+    { "source": "/delete-account", "destination": "/delete-account.html" },
+    { "source": "/dev/design-system", "destination": "/dev/design-system.html" }
   ],
   "headers": [
     {

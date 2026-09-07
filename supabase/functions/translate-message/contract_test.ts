@@ -1,5 +1,6 @@
 import {
   characterCount,
+  correctionNeedsRetry,
   genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
@@ -12,8 +13,10 @@ import {
   providerResultFailureReason,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
+  translationNeedsRetry,
   validateRequest,
 } from "./contract.ts";
+import * as contract from "./contract.ts";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
@@ -22,6 +25,32 @@ function assert(condition: boolean, message: string): void {
 Deno.test("counts user-perceived characters", () => {
   assert(characterCount("a") === 1, "ASCII character count");
   assert(characterCount("👨‍👩‍👧‍👦") === 1, "joined emoji character count");
+});
+
+Deno.test("rejects a same-language correction that drops caption content", () => {
+  const base = {
+    mode: "correction" as const,
+    sourceLang: "en",
+    interfaceText: "I'm in a cafe. Jealous?",
+    explanation: "Corrected spelling.",
+    confidence: "high" as const,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    correctionNeedsRetry({
+      ...base,
+      translation: "Are you jealous?",
+    }, "I'm in a cafe. Jealouse?"),
+    "dropped caption sentence must retry",
+  );
+  assert(
+    !correctionNeedsRetry({
+      ...base,
+      translation: "I'm in a cafe. Jealous?",
+    }, "I'm in a cafe. Jealouse?"),
+    "complete spelling correction should pass",
+  );
 });
 
 Deno.test("accepts only a message UUID", () => {
@@ -229,6 +258,272 @@ Deno.test("English to Ukrainian rejects parenthetical gender alternatives", () =
   );
 });
 
+Deno.test("unresolved form forces one explicit audit before accepting a translation without alternatives", () => {
+  const candidate = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Ти ходив до супермаркету вчора?",
+      interfaceText: "Did you go to the supermarket yesterday?",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "Did you go to the supermarket yesterday?",
+    "uk",
+    "en",
+  );
+  assert(candidate !== null, "provider output is structurally valid");
+
+  const needsAudit = (contract as unknown as {
+    missingFormAlternativesNeedsAudit?: (
+      result: NonNullable<typeof candidate>,
+      targetLang: string,
+      formContext: {
+        viewerName: string;
+        partnerName: string;
+        messageAuthor: "viewer" | "partner";
+        viewerForm: "feminine" | "masculine" | null;
+        partnerForm: "feminine" | "masculine" | null;
+        tone: "informal" | "respectful";
+      },
+      attempt: number,
+    ) => boolean;
+  }).missingFormAlternativesNeedsAudit;
+  assert(
+    typeof needsAudit === "function",
+    "translations with unresolved participant forms need an explicit audit",
+  );
+
+  const formContext = {
+    viewerName: "Alice",
+    partnerName: "Bob",
+    messageAuthor: "viewer" as const,
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal" as const,
+  };
+  assert(
+    needsAudit!(candidate!, "uk", formContext, 0),
+    "the first masculine-only result must be audited",
+  );
+  assert(
+    !needsAudit!(candidate!, "uk", formContext, 1),
+    "the explicit audit must not create an endless retry loop",
+  );
+  assert(
+    !needsAudit!(candidate!, "en", formContext, 0),
+    "languages with natural gender-neutral wording do not need an audit",
+  );
+  assert(
+    !needsAudit!(
+      candidate!,
+      "uk",
+      { ...formContext, viewerForm: "feminine", partnerForm: "masculine" },
+      0,
+    ),
+    "fully resolved participant forms do not need an audit",
+  );
+});
+
+Deno.test("focused grammatical-form audit requires a participant when a choice is needed", () => {
+  const parseAudit = (contract as unknown as {
+    parseFormAuditResult?: (content: string) => {
+      requiresChoice: boolean;
+      subjectIsViewer: boolean | null;
+      before: string | null;
+      feminine: string | null;
+      masculine: string | null;
+      after: string | null;
+    } | null;
+  }).parseFormAuditResult;
+  assert(
+    typeof parseAudit === "function",
+    "the focused grammatical-form audit response must be validated",
+  );
+
+  const required = parseAudit!(
+    '{"requiresChoice":true,"subjectIsViewer":false,"before":"Ти ","feminine":"ходила","masculine":"ходив","after":" до супермаркету вчора?"}',
+  );
+  assert(
+    required?.requiresChoice === true &&
+      required.subjectIsViewer === false &&
+      required.before === "Ти " && required.feminine === "ходила" &&
+      required.masculine === "ходив" &&
+      required.after === " до супермаркету вчора?",
+    "a required partner form retains only the shortest changing fragment",
+  );
+  assert(
+    parseAudit!(
+      '{"requiresChoice":true,"subjectIsViewer":false,"before":null,"feminine":null,"masculine":null,"after":null}',
+    ) === null,
+    "a required choice without both exact fragments is rejected",
+  );
+
+  const neutral = parseAudit!(
+    '{"requiresChoice":false,"subjectIsViewer":null,"before":null,"feminine":null,"masculine":null,"after":null}',
+  );
+  assert(
+    neutral?.requiresChoice === false && neutral.subjectIsViewer === null &&
+      neutral.before === null && neutral.feminine === null &&
+      neutral.masculine === null && neutral.after === null,
+    "a genuinely form-neutral sentence is accepted",
+  );
+});
+
+Deno.test("confirmed alternatives must keep the audit's minimal changing fragment", () => {
+  const matchesAudit = (contract as unknown as {
+    confirmedFormAlternativesMatchAudit?: (
+      alternatives: {
+        before: string;
+        feminine: string;
+        masculine: string;
+        after: string;
+        subjectName: string;
+        subjectIsViewer: boolean;
+      } | null,
+      audit: {
+        requiresChoice: boolean;
+        subjectIsViewer: boolean | null;
+        before: string | null;
+        feminine: string | null;
+        masculine: string | null;
+        after: string | null;
+      },
+    ) => boolean;
+  }).confirmedFormAlternativesMatchAudit;
+  assert(
+    typeof matchesAudit === "function",
+    "confirmed alternatives must be checked against the focused audit",
+  );
+  const audit = {
+    requiresChoice: true,
+    subjectIsViewer: false,
+    before: "Ти ",
+    feminine: "ходила",
+    masculine: "ходив",
+    after: " до супермаркету вчора?",
+  };
+  assert(
+    matchesAudit!(
+      {
+        ...audit,
+        subjectName: "Bob",
+        subjectIsViewer: false,
+        before: "Ти ",
+        feminine: "ходила",
+        masculine: "ходив",
+        after: " до супермаркету вчора?",
+      },
+      audit,
+    ),
+    "the minimal verb alternatives match",
+  );
+  assert(
+    !matchesAudit!(
+      {
+        before: "",
+        feminine: "Ти ходила до супермаркету вчора?",
+        masculine: "Ти ходив до супермаркету вчора?",
+        after: "",
+        subjectName: "Bob",
+        subjectIsViewer: false,
+      },
+      audit,
+    ),
+    "whole-sentence options must be rejected",
+  );
+});
+
+Deno.test("focused audit can attach minimal alternatives to its exact feminine translation", () => {
+  const alternativesFromAudit = (contract as unknown as {
+    formAlternativesFromConfirmedAudit?: (
+      result: {
+        mode: "translation" | "correction" | "none";
+        sourceLang: string;
+        translation: string;
+        interfaceText: string;
+        explanation: string | null;
+        confidence: "low" | "medium" | "high" | null;
+        tokens: unknown[];
+        formAlternatives: null;
+      },
+      audit: {
+        requiresChoice: boolean;
+        subjectIsViewer: boolean | null;
+        before: string | null;
+        feminine: string | null;
+        masculine: string | null;
+        after: string | null;
+      },
+      formContext: {
+        viewerName: string;
+        partnerName: string;
+        messageAuthor: "viewer" | "partner";
+        viewerForm: "feminine" | "masculine" | null;
+        partnerForm: "feminine" | "masculine" | null;
+        tone: "informal" | "respectful";
+      },
+    ) => {
+      before: string;
+      feminine: string;
+      masculine: string;
+      after: string;
+      subjectName: string;
+      subjectIsViewer: boolean;
+    } | null;
+  }).formAlternativesFromConfirmedAudit;
+  assert(
+    typeof alternativesFromAudit === "function",
+    "a confirmed audit must be able to supply omitted alternatives",
+  );
+  const audit = {
+    requiresChoice: true,
+    subjectIsViewer: false,
+    before: "Ти ",
+    feminine: "ходила",
+    masculine: "ходив",
+    after: " до супермаркету вчора?",
+  };
+  const result = {
+    mode: "translation" as const,
+    sourceLang: "en",
+    translation: "Ти ходила до супермаркету вчора?",
+    interfaceText: "Did you go to the supermarket yesterday?",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  const formContext = {
+    viewerName: "Alice",
+    partnerName: "Bob",
+    messageAuthor: "viewer" as const,
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal" as const,
+  };
+  const alternatives = alternativesFromAudit!(result, audit, formContext);
+  assert(
+    alternatives?.before === "Ти " &&
+      alternatives.feminine === "ходила" &&
+      alternatives.masculine === "ходив" &&
+      alternatives.after === " до супермаркету вчора?" &&
+      alternatives.subjectName === "Bob" &&
+      alternatives.subjectIsViewer === false,
+    "the omitted provider object is rebuilt from the confirmed minimal split",
+  );
+  assert(
+    alternativesFromAudit!(
+      { ...result, translation: "Ти ходив до супермаркету вчора?" },
+      audit,
+      formContext,
+    ) === null,
+    "the audit cannot overwrite a different rendered translation",
+  );
+});
+
 Deno.test("prompt includes Ukrainian and German neutral-gender examples", () => {
   const prompt = systemPrompt("auto", "de", "en");
   assert(
@@ -294,6 +589,15 @@ Deno.test("provider responses use strict schemas", () => {
   );
 });
 
+Deno.test("provider response schema requires word metadata", () => {
+  const tokensSchema = TRANSLATION_RESPONSE_FORMAT.json_schema.schema.properties
+    .tokens as { minItems?: number };
+  assert(
+    tokensSchema.minItems === 1,
+    "a successful translation must include at least one token",
+  );
+});
+
 Deno.test("provider validation failures expose bounded structural reasons", () => {
   assert(
     providerResultFailureReason("not json") === "invalid_response_json",
@@ -351,6 +655,153 @@ Deno.test("provider keeps full text when optional token metadata is invalid", ()
   );
   assert(degraded?.translation === "Hallo!", "full translation should pass");
   assert(degraded?.tokens.length === 0, "invalid tokens should be discarded");
+});
+
+Deno.test("provider trims boundary-only token whitespace", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Привіт",
+      interfaceText: "Привіт",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "Привіт",
+          gloss: "Hello",
+          roman: "Pryvit",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+      ],
+      formAlternatives: null,
+    }),
+    "Hi",
+    "uk",
+    "uk",
+  );
+
+  assert(result !== null, "valid translation should pass");
+  assert(result?.tokens.length === 1, "trailing whitespace token is removed");
+  assert(
+    (result?.tokens[0] as { text?: string })?.text === "Привіт",
+    "word metadata stays attached to the translated word",
+  );
+});
+
+Deno.test("provider repairs token punctuation without losing word metadata", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Я набираю дуже довгий текст.",
+      interfaceText: "I am typing a very long text.",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        { text: "Я", gloss: "I", roman: "Ya", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "набираю",
+          gloss: "am typing",
+          roman: "nabyrayu",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "дуже", gloss: "very", roman: "duzhe", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "довгий",
+          gloss: "long",
+          roman: "dovhyi",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "текст",
+          gloss: "text",
+          roman: "tekst",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+      ],
+      formAlternatives: null,
+    }),
+    "I am typing a very long text.",
+    "uk",
+    "en",
+  );
+
+  assert(result !== null, "valid translation should pass");
+  assert(result !== null && result.tokens.length > 0, "word metadata is retained");
+  assert(
+    result?.tokens.map((token) => (token as { text: string }).text).join("") ===
+      "Я набираю дуже довгий текст.",
+    "repaired tokens reproduce the translated sentence exactly",
+  );
+});
+
+Deno.test("provider canonicalizes punctuation-bound Latin word metadata", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "¿Hola?",
+      interfaceText: "Hello?",
+      explanation: null,
+      confidence: null,
+      tokens: [
+        {
+          text: "¿Hola?",
+          gloss: "Hello",
+          roman: null,
+          isContent: true,
+        },
+      ],
+      formAlternatives: null,
+    }),
+    "Hello?",
+    "es",
+    "en",
+  );
+
+  assert(result !== null, "valid translation should pass");
+  assert(result?.tokens.length === 3, "punctuation becomes non-content");
+  assert(
+    (result?.tokens[1] as { text?: string }).text === "Hola",
+    "meaning metadata remains attached to the visible word",
+  );
+  assert(
+    (result?.tokens[1] as { roman?: string }).roman === "Hola",
+    "Latin words receive complete pronunciation metadata",
+  );
+});
+
+Deno.test("every learning language requests pronunciation metadata", () => {
+  for (
+    const language of [
+      "en",
+      "nl",
+      "fr",
+      "de",
+      "hi",
+      "it",
+      "pt",
+      "es",
+      "ta",
+      "tr",
+      "uk",
+    ]
+  ) {
+    const prompt = systemPrompt("auto", language, "en");
+    assert(
+      prompt.includes(
+        'For each content token include "roman", a Latin-script transliteration.',
+      ),
+      `${language} requires pronunciation metadata`,
+    );
+  }
 });
 
 Deno.test("provider discards phrase-sized content tokens", () => {
@@ -519,6 +970,7 @@ Deno.test("copied learning text requests an interface retry for every source", (
     explanation: null,
     confidence: null,
     tokens: [],
+    formAlternatives: null,
   };
   assert(
     !interfaceOutputNeedsRetry(translated, "de", "en"),
@@ -545,6 +997,62 @@ Deno.test("provider accepts a source outside the learning-language list", () => 
     "en",
   );
   assert(result?.sourceLang === "other", "arbitrary source should pass");
+});
+
+Deno.test("provider keeps a usable translation when optional word metadata is missing", () => {
+  const withoutTokens = {
+    mode: "translation" as const,
+    sourceLang: "en",
+    translation: "Привіт",
+    interfaceText: "Hello",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    !translationNeedsRetry(withoutTokens, "uk", "Hello"),
+    "missing popup metadata does not fail the translation",
+  );
+
+  const withoutRomanization = {
+    ...withoutTokens,
+    tokens: [
+      { text: "Привіт", gloss: "Hello", roman: null, isContent: true },
+    ],
+  };
+  assert(
+    !translationNeedsRetry(withoutRomanization, "uk", "Hello"),
+    "missing romanization does not fail the translation",
+  );
+
+  const emojiOnly = {
+    ...withoutTokens,
+    sourceLang: "uk",
+    translation: "👍",
+    interfaceText: "👍",
+  };
+  assert(
+    !translationNeedsRetry(emojiOnly, "uk", "👍"),
+    "messages without words do not need word metadata",
+  );
+});
+
+Deno.test("provider retries only when a cross-language result copies the source", () => {
+  const copied = {
+    mode: "translation" as const,
+    sourceLang: "uk",
+    translation: "Давай подивимось 🙈",
+    interfaceText: "Давай подивимось 🙈",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    translationNeedsRetry(copied, "en", "Давай подивимось 🙈"),
+    "copied cross-language output is still rejected",
+  );
 });
 
 Deno.test("auto-source prompt requests learning output with localized glosses", () => {
@@ -590,6 +1098,30 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
   assert(
     prompt.includes("Preserve paragraph breaks exactly"),
     "provider must not invent paragraph breaks",
+  );
+  assert(
+    prompt.includes(
+      "URLs, @mentions, hashtags, code, numbers, and emoji unchanged",
+    ),
+    "protected content stays exact while surrounding language moves naturally",
+  );
+  assert(
+    prompt.includes("brb and ttyl"),
+    "meaning-bearing chat abbreviations are translated naturally",
+  );
+  assert(
+    prompt.includes("repeated letters, stretched vowels or consonants"),
+    "expressive stretching does not become an unsupported source",
+  );
+  assert(
+    prompt.includes("likely personal name is not an unsupported language"),
+    "names are transliterated instead of treated as unsupported",
+  );
+  assert(
+    prompt.includes(
+      "capitalization, noun capitalization, apostrophes, commas, terminal punctuation, or spacing",
+    ),
+    "mechanical fixes stay silent",
   );
 });
 

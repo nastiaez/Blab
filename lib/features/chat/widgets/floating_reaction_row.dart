@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../shared/widgets/blab_icon.dart';
 import '../message_actions.dart' show kQuickMessageReactions;
 
 /// Button metrics, kept next to the widgets that lay them out so the
@@ -133,7 +134,11 @@ class _MoreButton extends StatelessWidget {
             right: _buttonMargin + _rowPaddingH,
           ),
           alignment: Alignment.center,
-          child: const Icon(Icons.add, size: 20, color: BlabColors.textMuted),
+          child: const BlabIcon(
+            name: 'plus-circle - 20',
+            size: 20,
+            color: BlabColors.textMuted,
+          ),
         ),
       ),
     );

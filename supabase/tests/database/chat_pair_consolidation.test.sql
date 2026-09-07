@@ -2,6 +2,18 @@ begin;
 
 select plan(14);
 
+delete from public.chats c
+where exists (
+  select 1 from public.chat_members cm
+  where cm.chat_id = c.id
+    and cm.user_id = '00000000-0000-4000-8000-00000000000a'
+)
+and exists (
+  select 1 from public.chat_members cm
+  where cm.chat_id = c.id
+    and cm.user_id = '00000000-0000-4000-8000-00000000000b'
+);
+
 insert into public.chats (id, created_at)
 values
   ('41000000-0000-4000-8000-000000000001', now() - interval '2 days'),
@@ -32,10 +44,12 @@ insert into public.message_translations (
   target_lang,
   interface_lang,
   translation_text,
+  interface_text,
   source_lang,
   source_hash
 ) values (
   '42000000-0000-4000-8000-000000000002', 'de', 'en', 'Duplikatverlauf',
+  'Duplicate history',
   'en',
   encode(
     extensions.digest(convert_to('duplicate history', 'UTF8'), 'sha256'),
@@ -46,14 +60,12 @@ insert into public.message_translations (
 insert into public.invites (
   token,
   inviter_user_id,
-  inviter_learning_language,
   used_at,
   used_by_user_id,
   resulting_chat_id
 ) values (
   'l11fixture01',
   '00000000-0000-4000-8000-00000000000a',
-  'es',
   now(),
   '00000000-0000-4000-8000-00000000000b',
   '41000000-0000-4000-8000-000000000002'

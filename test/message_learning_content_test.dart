@@ -1,5 +1,6 @@
 import 'package:blab/features/chat/widgets/inline_correction_text.dart';
 import 'package:blab/features/chat/widgets/message_learning_content.dart';
+import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/message_translator.dart';
@@ -42,6 +43,7 @@ void main() {
     // Tests exercising the new mode-based branching pass these explicitly.
     ChatMode mode = ChatMode.practice,
     List<String> knownLanguageCodes = const [],
+    String? resolvedSourceLang,
     bool expanded = true,
     VoidCallback? onToggleExpanded,
     VoidCallback? onRetry,
@@ -49,7 +51,6 @@ void main() {
     return MaterialApp(
       home: Scaffold(
         body: MessageLearningContent(
-          messageId: 'msg-1',
           authoredText: authoredText,
           translation: translation,
           showTranslation: showTranslation,
@@ -61,6 +62,7 @@ void main() {
           onRetry: onRetry,
           mode: mode,
           knownLanguageCodes: knownLanguageCodes,
+          resolvedSourceLang: resolvedSourceLang,
           expanded: expanded,
           onToggleExpanded: onToggleExpanded ?? () {},
         ),
@@ -73,6 +75,46 @@ void main() {
       expect(find.text(word), findsOneWidget);
     }
   }
+
+  testWidgets('unsupported source keeps the authored text visible', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        AsyncData(
+          result(learning: 'Hallo', interfaceText: 'Hello', source: 'other'),
+        ),
+        authoredText: '你好',
+        mode: ChatMode.practice,
+        learningCode: 'de',
+      ),
+    );
+
+    expect(find.text('你好'), findsOneWidget);
+    expect(find.text('Hallo'), findsNothing);
+  });
+
+  testWidgets('stylized source still shows its translated learning line', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        AsyncData(
+          result(
+            learning: 'Привіііііт!',
+            interfaceText: 'Hi!',
+            source: 'other',
+          ),
+        ),
+        authoredText: 'Heeeeeeey!',
+        mode: ChatMode.practice,
+        learningCode: 'uk',
+      ),
+    );
+
+    expect(find.byType(MessageText), findsOneWidget);
+    expect(find.text('Heeeeeeey!'), findsNothing);
+  });
 
   test(
     'inline correction keeps cosmetic edits clean and strikes replacement',
@@ -291,7 +333,7 @@ void main() {
     expectWords(const ['Was', 'machst', 'du']);
   });
 
-  testWidgets('short tokenized translations keep a readable minimum width', (
+  testWidgets('short tokenized translations keep their intrinsic width', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -300,7 +342,6 @@ void main() {
           body: Center(
             child: IntrinsicWidth(
               child: MessageLearningContent(
-                messageId: 'msg-2',
                 authoredText: 'hi',
                 translation: AsyncData(
                   result(
@@ -329,7 +370,7 @@ void main() {
 
     expect(
       tester.getSize(find.byType(MessageLearningContent)).width,
-      greaterThanOrEqualTo(156),
+      lessThan(156),
     );
   });
 
@@ -378,7 +419,7 @@ void main() {
     expect(find.text('Was machst du?'), findsNothing);
   });
 
-  testWidgets('unavailable state preserves original and exposes retry', (
+  testWidgets('unavailable state preserves original without inline chrome', (
     tester,
   ) async {
     var retried = false;
@@ -390,78 +431,184 @@ void main() {
       ),
     );
 
-    expect(find.text('Translation unavailable'), findsOneWidget);
+    expect(find.text('Translation unavailable'), findsNothing);
     expect(find.text('Was machst du?'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('translation-retry')));
-    expect(retried, isTrue);
+    expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
+    expect(retried, isFalse);
   });
 
-  // Finding #3 (final whole-branch review): normal mode must never show the
-  // pending shimmer for a message that might turn out to already be known —
-  // the source language isn't known until the request resolves, so the
-  // loading state renders plain original text in normal mode. Error is
-  // different: normal mode still shows the unavailable/retry subtitle on
-  // failure, same as practice mode, because a message in a language the
-  // reader does NOT know has no other way to be read if translation
-  // genuinely fails — silently swallowing that error left the reader stuck
-  // with no signal and no retry path (caught in the final-review fix's own
-  // re-review). Practice mode always needs the learning-language line
-  // regardless of known status, so its shimmer/retry treatment is
-  // unchanged — covered first here as a regression guard.
+  // Mode-display-fixes spec § 1: one lane while loading, in both modes. The
+  // authored text is readable throughout and the swap to the learning
+  // language is the completion signal — no shimmer, no second lane.
 
-  testWidgets('practice mode still shows the pending shimmer while loading', (
+  testWidgets('practice mode shows a single plain lane while loading', (
     tester,
   ) async {
     await tester.pumpWidget(
       host(const AsyncLoading(), authoredText: 'Was machst du?'),
     );
-    // The shimmer is delayed — advance past _PendingTranslation's threshold.
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.byKey(const ValueKey('translation-shimmer')), findsOneWidget);
+    expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
     expect(find.text('Was machst du?'), findsOneWidget);
   });
 
+  testWidgets('normal mode shows a single plain lane while loading', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const AsyncLoading(),
+        authoredText: 'Was machst du?',
+        mode: ChatMode.normal,
+        knownLanguageCodes: const ['en'],
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
+    expect(find.text('Was machst du?'), findsOneWidget);
+  });
+
+  // Mode-display-fixes spec § 3 (client-side): normal-mode failure chrome
+  // only where the reader positively cannot read the message on their own.
+
+  testWidgets('normal mode keeps failure chrome outside message content', (
+    tester,
+  ) async {
+    var retried = false;
+    await tester.pumpWidget(
+      host(
+        AsyncError(Exception('offline'), StackTrace.empty),
+        authoredText: 'Was machst du?',
+        mode: ChatMode.normal,
+        knownLanguageCodes: const ['en'],
+        resolvedSourceLang: 'de',
+        onRetry: () => retried = true,
+      ),
+    );
+
+    expect(find.text('Translation unavailable'), findsNothing);
+    expect(find.text('Was machst du?'), findsOneWidget);
+    expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
+    expect(retried, isFalse);
+  });
+
   testWidgets(
-    'normal mode never shows the pending shimmer, even while loading',
+    'normal mode stays silent on failure when the reader already knows the '
+    'source language',
     (tester) async {
       await tester.pumpWidget(
         host(
-          const AsyncLoading(),
-          authoredText: 'Was machst du?',
+          AsyncError(Exception('offline'), StackTrace.empty),
+          authoredText: 'What are you doing?',
           mode: ChatMode.normal,
-          knownLanguageCodes: const ['en'],
+          knownLanguageCodes: const ['en', 'uk'],
+          resolvedSourceLang: 'en',
+          onRetry: () {},
         ),
       );
-      await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
-      expect(find.text('Was machst du?'), findsOneWidget);
+      expect(find.text('What are you doing?'), findsOneWidget);
+      expect(find.text('Translation unavailable'), findsNothing);
+      expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
     },
   );
 
   testWidgets(
-    'normal mode still shows the unavailable/retry subtitle on error '
-    '(regression guard: this must never go silent, since an unknown-'
-    'language message has no other way to be read if translation fails)',
+    'normal mode stays silent on failure when the source language was never '
+    'resolved (background auto-retry recovers it)',
     (tester) async {
-      var retried = false;
       await tester.pumpWidget(
         host(
           AsyncError(Exception('offline'), StackTrace.empty),
           authoredText: 'Was machst du?',
           mode: ChatMode.normal,
           knownLanguageCodes: const ['en'],
-          onRetry: () => retried = true,
+          onRetry: () {},
         ),
       );
 
-      expect(find.text('Translation unavailable'), findsOneWidget);
       expect(find.text('Was machst du?'), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('translation-retry')));
-      expect(retried, isTrue);
+      expect(find.text('Translation unavailable'), findsNothing);
+      expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
     },
   );
+
+  testWidgets('practice failure keeps authored content free of inline chrome', (
+    tester,
+  ) async {
+    var retried = false;
+    await tester.pumpWidget(
+      host(
+        AsyncError(Exception('offline'), StackTrace.empty),
+        authoredText: 'What are you doing?',
+        mode: ChatMode.practice,
+        knownLanguageCodes: const ['en'],
+        resolvedSourceLang: 'en',
+        onRetry: () => retried = true,
+      ),
+    );
+
+    expect(find.text('What are you doing?'), findsOneWidget);
+    expect(find.text('Translation unavailable'), findsNothing);
+    expect(find.byKey(const ValueKey('translation-retry')), findsNothing);
+    expect(retried, isFalse);
+  });
+
+  // Mode-display-fixes spec § 2: identical content, identical height in
+  // both modes — practice mode's per-word tap targets must not inflate the
+  // line box.
+
+  testWidgets('the same message is the same height in both modes', (
+    tester,
+  ) async {
+    const authored = 'What are you doing this evening, and where?';
+    const learning = 'Was machst du heute Abend, und wo?';
+
+    Future<double> heightIn(ChatMode mode) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 220,
+                child: MessageLearningContent(
+                  authoredText: authored,
+                  translation: AsyncData(
+                    result(
+                      learning: learning,
+                      interfaceText: authored,
+                      source: 'en',
+                    ),
+                  ),
+                  showTranslation: true,
+                  learningLanguageCode: 'de',
+                  isOutgoing: false,
+                  popupTopInset: 0,
+                  unavailableText: 'Translation unavailable',
+                  retryText: 'Retry',
+                  mode: mode,
+                  knownLanguageCodes: const [],
+                  expanded: false,
+                  onToggleExpanded: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return tester.getSize(find.byType(MessageLearningContent).first).height;
+    }
+
+    // Both modes render the same string — normal mode as a plain line
+    // (unknown source → the translation), practice mode as tappable words.
+    final practiceHeight = await heightIn(ChatMode.practice);
+    final normalHeight = await heightIn(ChatMode.normal);
+
+    expect(practiceHeight, normalHeight);
+  });
 
   // FR-23: single-lane default + known-language bypass.
 

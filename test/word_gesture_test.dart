@@ -77,7 +77,9 @@ void main() {
     tester,
   ) async {
     var longPressed = false;
-    await tester.pumpWidget(_harness(onLongPress: (_, _) => longPressed = true));
+    await tester.pumpWidget(
+      _harness(onLongPress: (_, _) => longPressed = true),
+    );
 
     await tester.tapAt(tester.getCenter(find.text('காலை')));
     await tester.pumpAndSettle();
@@ -98,7 +100,9 @@ void main() {
     tester,
   ) async {
     var longPressed = false;
-    await tester.pumpWidget(_harness(onLongPress: (_, _) => longPressed = true));
+    await tester.pumpWidget(
+      _harness(onLongPress: (_, _) => longPressed = true),
+    );
 
     await tester.longPress(find.text('காலை'));
     await tester.pumpAndSettle();
@@ -119,7 +123,9 @@ void main() {
     tester,
   ) async {
     var longPressed = false;
-    await tester.pumpWidget(_harness(onLongPress: (_, _) => longPressed = true));
+    await tester.pumpWidget(
+      _harness(onLongPress: (_, _) => longPressed = true),
+    );
 
     await tester.tapAt(
       tester.getTopLeft(find.byKey(const ValueKey('message-padding'))) +
@@ -154,6 +160,40 @@ void main() {
     expect(find.text('Reply'), findsNothing);
   });
 
+  testWidgets('a mostly vertical gesture does not trigger reply', (
+    tester,
+  ) async {
+    var replied = false;
+    await tester.pumpWidget(
+      _harness(onLongPress: (_, _) {}, onSwipeReply: () => replied = true),
+    );
+
+    await tester.dragFrom(
+      tester.getCenter(find.byType(MessageInteractionTarget)),
+      const Offset(-90, -70),
+    );
+    await tester.pumpAndSettle();
+
+    expect(replied, isFalse);
+  });
+
+  testWidgets('a short horizontal movement does not trigger reply', (
+    tester,
+  ) async {
+    var replied = false;
+    await tester.pumpWidget(
+      _harness(onLongPress: (_, _) {}, onSwipeReply: () => replied = true),
+    );
+
+    await tester.dragFrom(
+      tester.getCenter(find.byType(MessageInteractionTarget)),
+      const Offset(-75, 0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(replied, isFalse);
+  });
+
   testWidgets('swiping a failed message does not trigger reply', (
     tester,
   ) async {
@@ -176,7 +216,7 @@ void main() {
   });
 
   testWidgets(
-    'clicking failed message text opens send options, not word popup',
+    'failed message text still opens word help; retry stays in its status row',
     (tester) async {
       var failedTapped = false;
       await tester.pumpWidget(
@@ -190,8 +230,8 @@ void main() {
       await tester.tapAt(tester.getCenter(find.text('காலை')));
       await tester.pumpAndSettle();
 
-      expect(failedTapped, isTrue);
-      expect(find.text('morning'), findsNothing);
+      expect(failedTapped, isFalse);
+      expect(find.text('morning'), findsOneWidget);
       expect(
         tester
             .widget<MouseRegion>(

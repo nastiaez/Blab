@@ -45,7 +45,7 @@
                 <data android:scheme="blab"/>
             </intent-filter>
             <!-- Verified Android App Link for invite URLs:
-                 https://blab-gray.vercel.app/i/<token>. autoVerify=true
+                 https://loveblab.com/i/<token>. autoVerify=true
                  tells Android to check the site's assetlinks.json against
                  the app's signing cert at install time. -->
             <intent-filter android:autoVerify="true">
@@ -53,7 +53,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
-                      android:host="blab-gray.vercel.app"
+                      android:host="loveblab.com"
                       android:pathPrefix="/i/"/>
             </intent-filter>
         </activity>

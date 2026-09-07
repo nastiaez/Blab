@@ -21,6 +21,15 @@ export type TranslationContextMessage = {
   text: string;
 };
 
+export type FormParticipantContext = {
+  viewerName: string;
+  partnerName: string;
+  messageAuthor: "viewer" | "partner";
+  viewerForm: "feminine" | "masculine" | null;
+  partnerForm: "feminine" | "masculine" | null;
+  tone: "informal" | "respectful";
+};
+
 const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
 
@@ -69,6 +78,7 @@ export function providerMessages({
   interfaceLang,
   text,
   context = [],
+  formContext,
   retryGuidance = "",
 }: {
   sourceLang: string;
@@ -76,6 +86,7 @@ export function providerMessages({
   interfaceLang: string;
   text: string;
   context?: TranslationContextMessage[];
+  formContext?: FormParticipantContext;
   retryGuidance?: string;
 }): Array<{ role: "system" | "user"; content: string }> {
   const contextText = context.length === 0
@@ -88,7 +99,8 @@ export function providerMessages({
   return [
     {
       role: "system",
-      content: systemPrompt(sourceLang, targetLang, interfaceLang) +
+      content:
+        systemPrompt(sourceLang, targetLang, interfaceLang, formContext) +
         contextText +
         retryGuidance,
     },
@@ -132,6 +144,7 @@ export const TRANSLATION_RESPONSE_FORMAT = {
         },
         tokens: {
           type: "array",
+          minItems: 1,
           items: {
             type: "object",
             additionalProperties: false,
@@ -144,6 +157,26 @@ export const TRANSLATION_RESPONSE_FORMAT = {
             required: ["text", "gloss", "roman", "isContent"],
           },
         },
+        formAlternatives: {
+          type: ["object", "null"],
+          additionalProperties: false,
+          properties: {
+            before: { type: "string" },
+            feminine: { type: "string", minLength: 1 },
+            masculine: { type: "string", minLength: 1 },
+            after: { type: "string" },
+            subjectName: { type: "string", minLength: 1 },
+            subjectIsViewer: { type: "boolean" },
+          },
+          required: [
+            "before",
+            "feminine",
+            "masculine",
+            "after",
+            "subjectName",
+            "subjectIsViewer",
+          ],
+        },
       },
       required: [
         "mode",
@@ -153,6 +186,7 @@ export const TRANSLATION_RESPONSE_FORMAT = {
         "explanation",
         "confidence",
         "tokens",
+        "formAlternatives",
       ],
     },
   },
@@ -174,6 +208,34 @@ export const INTERFACE_RESPONSE_FORMAT = {
   },
 } as const;
 
+export const FORM_AUDIT_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_grammatical_form_audit",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        requiresChoice: { type: "boolean" },
+        subjectIsViewer: { type: ["boolean", "null"] },
+        before: { type: ["string", "null"] },
+        feminine: { type: ["string", "null"] },
+        masculine: { type: ["string", "null"] },
+        after: { type: ["string", "null"] },
+      },
+      required: [
+        "requiresChoice",
+        "subjectIsViewer",
+        "before",
+        "feminine",
+        "masculine",
+        "after",
+      ],
+    },
+  },
+} as const;
+
 export const LANG_NAMES: Record<string, string> = {
   en: "English",
   ta: "Tamil",
@@ -188,16 +250,15 @@ export const LANG_NAMES: Record<string, string> = {
   hi: "Hindi",
 };
 
-const NON_LATIN = new Set(["ta", "uk", "hi"]);
+const LATIN_TARGETS = new Set(["en", "nl", "fr", "de", "it", "pt", "es", "tr"]);
 export const INTERFACE_LANGS = new Set(["en", "uk", "de", "es"]);
 export const OTHER_SOURCE_LANG = "other";
 export const GENDER_ADDRESS_RULES =
-  `Never guess gender from a name, profile name, username, message topic, or text style.
-Use gendered wording only when explicit pronouns or gender metadata are provided.
-If the source language is ambiguous, use neutral wording that avoids adding gender.
-Do not use parenthetical or slash gender alternatives such as "був(ла)", "радий(а)", "був/була", or "радий/рада"; rewrite the sentence with impersonal neutral wording instead.
-Preserve informal/formal address exactly when the source marks it. Keep "du" informal and "Sie" formal in German, and keep equivalent formality distinctions in other languages. Address example: Ukrainian "Ти дивишся..." to German: prefer informal "Du schaust..." over formal "Sie schauen...".
-Gender examples: English "I was happy to help" to Ukrainian: prefer "Мені було приємно допомогти" over gendered "Я був радий/була рада допомогти". English "I was glad to see you" to Ukrainian: prefer "Мені було приємно побачитись з тобою" over stiff or gendered wording. English "I am your friend" to Ukrainian: prefer "Ми з тобою друзі" over guessing "Я твій друг" or "Я твоя подруга". English "I am your friend" to German: prefer "Ich bin mit dir befreundet" over guessing "Freund" or "Freundin".`;
+  `Never infer grammatical form from a name, profile name, username, message topic, or text style.
+Use a saved grammatical form only for the participant it belongs to.
+If a natural translation needs feminine/masculine agreement and that participant has no saved form, return the two complete natural alternatives in formAlternatives. Do not replace them with an awkward neutral rewrite and never use parentheses or slash alternatives in translation.
+This applies to every target language where a natural sentence genuinely changes, including French, Hindi, Italian, Portuguese, Spanish, Ukrainian, and conditionally Dutch, German, and Tamil. English and Turkish normally do not need form alternatives.
+Preserve authored formality. When it is not explicit, use the supplied per-chat tone: informal or respectful.`;
 export const LEARNING_AID_MODES = new Set([
   "translation",
   "correction",
@@ -243,7 +304,163 @@ export type TranslationResult = {
   explanation: string | null;
   confidence: CorrectionConfidence | null;
   tokens: unknown[];
+  formAlternatives: FormAlternatives | null;
 };
+
+export type FormAlternatives = {
+  before: string;
+  feminine: string;
+  masculine: string;
+  after: string;
+  subjectName: string;
+  subjectIsViewer: boolean;
+};
+
+const FORM_RELEVANT_TARGET_LANGS = new Set([
+  "nl",
+  "fr",
+  "de",
+  "hi",
+  "it",
+  "pt",
+  "es",
+  "ta",
+  "uk",
+]);
+
+/// The first provider response is not allowed to silently settle an eligible
+/// gendered target while either participant still has no saved form. A second,
+/// explicit audit may confirm that the sentence is naturally form-neutral.
+export function missingFormAlternativesNeedsAudit(
+  result: TranslationResult,
+  targetLang: string,
+  formContext: FormParticipantContext,
+  attempt: number,
+): boolean {
+  return attempt === 0 &&
+    result.mode === "translation" &&
+    result.formAlternatives === null &&
+    FORM_RELEVANT_TARGET_LANGS.has(targetLang) &&
+    (formContext.viewerForm === null || formContext.partnerForm === null);
+}
+
+export type FormAuditResult = {
+  requiresChoice: boolean;
+  subjectIsViewer: boolean | null;
+  before: string | null;
+  feminine: string | null;
+  masculine: string | null;
+  after: string | null;
+};
+
+export function parseFormAuditResult(content: string): FormAuditResult | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const value = raw as Record<string, unknown>;
+  if (
+    typeof value.requiresChoice !== "boolean" ||
+    value.subjectIsViewer !== null &&
+      typeof value.subjectIsViewer !== "boolean" ||
+    value.before !== null && typeof value.before !== "string" ||
+    value.feminine !== null && typeof value.feminine !== "string" ||
+    value.masculine !== null && typeof value.masculine !== "string" ||
+    value.after !== null && typeof value.after !== "string"
+  ) return null;
+  if (value.requiresChoice) {
+    if (
+      typeof value.subjectIsViewer !== "boolean" ||
+      typeof value.before !== "string" ||
+      typeof value.feminine !== "string" || value.feminine.trim() === "" ||
+      typeof value.masculine !== "string" || value.masculine.trim() === "" ||
+      typeof value.after !== "string" ||
+      value.feminine === value.masculine
+    ) return null;
+  } else if (
+    value.subjectIsViewer !== null || value.before !== null ||
+    value.feminine !== null || value.masculine !== null || value.after !== null
+  ) {
+    return null;
+  }
+  return {
+    requiresChoice: value.requiresChoice,
+    subjectIsViewer: value.requiresChoice
+      ? value.subjectIsViewer as boolean
+      : null,
+    before: value.requiresChoice ? value.before as string : null,
+    feminine: value.requiresChoice ? value.feminine as string : null,
+    masculine: value.requiresChoice ? value.masculine as string : null,
+    after: value.requiresChoice ? value.after as string : null,
+  };
+}
+
+export function confirmedFormAlternativesMatchAudit(
+  alternatives: FormAlternatives | null,
+  audit: FormAuditResult,
+): boolean {
+  return audit.requiresChoice &&
+    alternatives !== null &&
+    alternatives.subjectIsViewer === audit.subjectIsViewer &&
+    alternatives.before === audit.before &&
+    alternatives.feminine === audit.feminine &&
+    alternatives.masculine === audit.masculine &&
+    alternatives.after === audit.after;
+}
+
+export function formAlternativesFromConfirmedAudit(
+  result: TranslationResult,
+  audit: FormAuditResult,
+  formContext: FormParticipantContext,
+): FormAlternatives | null {
+  if (
+    result.mode !== "translation" || !audit.requiresChoice ||
+    typeof audit.subjectIsViewer !== "boolean" ||
+    typeof audit.before !== "string" ||
+    typeof audit.feminine !== "string" ||
+    typeof audit.masculine !== "string" ||
+    typeof audit.after !== "string" ||
+    `${audit.before}${audit.feminine}${audit.after}` !== result.translation
+  ) return null;
+  return {
+    before: audit.before,
+    feminine: audit.feminine,
+    masculine: audit.masculine,
+    after: audit.after,
+    subjectName: audit.subjectIsViewer
+      ? formContext.viewerName
+      : formContext.partnerName,
+    subjectIsViewer: audit.subjectIsViewer,
+  };
+}
+
+export function formAuditSystemPrompt(
+  sourceLang: string,
+  targetLang: string,
+  formContext: FormParticipantContext,
+): string {
+  const sourceName = LANG_NAMES[sourceLang] ?? sourceLang;
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  return `You verify grammatical agreement in one translated chat message.
+The source language is ${sourceName} (${sourceLang}); the target is ${targetName} (${targetLang}).
+The current message author is the ${formContext.messageAuthor}. In direct first/second-person speech, “I” refers to the author and “you” refers to the other participant.
+Viewer saved form: ${
+    formContext.viewerForm ?? "not set"
+  }. Partner saved form: ${formContext.partnerForm ?? "not set"}.
+
+Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. Never infer a form from a name, topic, or writing style.
+
+Return strict JSON only: {"requiresChoice":true|false,"subjectIsViewer":true|false|null,"before":"shared prefix"|null,"feminine":"shortest complete feminine fragment"|null,"masculine":"shortest complete masculine fragment"|null,"after":"shared suffix"|null}.
+When a natural choice is required, identify the affected participant and split the target sentence around the shortest complete fragment containing every linked agreement change. Keep all identical text in before/after. For a single changing verb such as “Ти ходила/ходив до…”, return before="Ти ", feminine="ходила", masculine="ходив", and after=" до…"—never repeat the whole sentence in either option. When no choice is required, the participant and all four text fields must be null.`;
+}
 
 /// A copied learning line is usually a provider mistake when the viewer's
 /// interface uses another language. It is only a retry signal, not a hard
@@ -270,10 +487,64 @@ export function translationNeedsRetry(
   targetLang: string,
   sourceText: string,
 ): boolean {
+  // Word metadata powers optional tap-to-explain affordances. A provider can
+  // return a valid full-message translation while omitting or corrupting that
+  // metadata; parseProviderResult already degrades it to an empty token list.
+  // Never turn a usable translation into a request failure for that reason.
   return result.mode === "translation" &&
     result.sourceLang !== targetLang &&
     result.translation.trim().toLocaleLowerCase() ===
       sourceText.trim().toLocaleLowerCase();
+}
+
+/// Same-language corrections must preserve the complete authored message.
+/// A provider occasionally compresses a multi-sentence caption into only its
+/// last question, which is not a correction and must be retried.
+export function correctionNeedsRetry(
+  result: TranslationResult,
+  sourceText: string,
+): boolean {
+  if (result.mode !== "correction") return false;
+  const words = (value: string) =>
+    value.toLocaleLowerCase()
+      .replace(/[’‘]/g, "'")
+      .match(/[\p{L}\p{M}\p{N}']+/gu) ?? [];
+  const sourceWords = words(sourceText);
+  const correctedWords = words(result.translation);
+  if (sourceWords.length === 0 || correctedWords.length === 0) return true;
+  if (correctedWords.length < Math.max(1, sourceWords.length - 1)) return true;
+
+  const distance = (a: string, b: string): number => {
+    const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+    for (let i = 1; i <= a.length; i++) {
+      let diagonal = row[0];
+      row[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const previous = row[j];
+        row[j] = a[i - 1] === b[j - 1]
+          ? diagonal
+          : Math.min(diagonal, row[j - 1], row[j]) + 1;
+        diagonal = previous;
+      }
+    }
+    return row[b.length];
+  };
+  const similar = (a: string, b: string) =>
+    a === b || distance(a, b) <= Math.max(1, Math.floor(a.length * 0.4));
+
+  let cursor = 0;
+  let matched = 0;
+  for (const sourceWord of sourceWords) {
+    while (
+      cursor < correctedWords.length &&
+      !similar(sourceWord, correctedWords[cursor])
+    ) cursor++;
+    if (cursor < correctedWords.length) {
+      matched++;
+      cursor++;
+    }
+  }
+  return matched < Math.max(1, sourceWords.length - 1);
 }
 
 export function genderedAmbiguityNeedsRetry(
@@ -360,6 +631,7 @@ export function parseProviderResult(
     explanation,
     confidence,
     tokens: Array.isArray(raw.tokens) ? raw.tokens : [],
+    formAlternatives: parseFormAlternatives(raw.formAlternatives),
   };
   const sourceMatchesTarget = result.sourceLang === targetLang;
   if (!sourceMatchesTarget) {
@@ -412,6 +684,16 @@ export function parseProviderResult(
     result.explanation = null;
     result.confidence = null;
   }
+  if (result.mode !== "translation") {
+    result.formAlternatives = null;
+  } else if (result.formAlternatives !== null) {
+    const alternatives = result.formAlternatives;
+    if (
+      `${alternatives.before}${alternatives.feminine}${alternatives.after}` !==
+        result.translation ||
+      alternatives.feminine === alternatives.masculine
+    ) return null;
+  }
 
   let reproduced = "";
   let validTokens = true;
@@ -438,12 +720,96 @@ export function parseProviderResult(
     }
     reproduced += (token as { text: string }).text;
   }
+  if (validTokens) {
+    const repairedTokens = repairTokensToTranslation(
+      result.tokens,
+      result.translation,
+      targetLang,
+    );
+    if (repairedTokens !== null) {
+      result.tokens = repairedTokens;
+      reproduced = repairedTokens.map((token) => token.text as string).join("");
+    }
+  }
   if (!validTokens || reproduced !== result.translation) {
     // Token metadata powers optional word lookup. A malformed token list must
     // not hide an otherwise valid full-message translation.
     result.tokens = [];
   }
   return result;
+}
+
+function repairTokensToTranslation(
+  tokens: unknown[],
+  translation: string,
+  targetLang: string,
+): Array<Record<string, unknown>> | null {
+  const isWordCharacter = (character: string) =>
+    /[\p{L}\p{M}\p{N}]/u.test(character);
+  const contentTokens = tokens.filter((token) =>
+    (token as { isContent?: unknown }).isContent === true
+  ) as Array<Record<string, unknown>>;
+  if (contentTokens.length === 0) return null;
+
+  const contentKeys = contentTokens.map((token) =>
+    Array.from(token.text as string).filter(isWordCharacter).join("")
+  );
+  if (contentKeys.some((key) => key.length === 0)) return null;
+  const translationCharacters = Array.from(translation);
+  const translationKey = translationCharacters.filter(isWordCharacter).join("");
+  if (contentKeys.join("") !== translationKey) return null;
+
+  const repaired: Array<Record<string, unknown>> = [];
+  let cursor = 0;
+  for (let index = 0; index < contentTokens.length; index++) {
+    const separatorStart = cursor;
+    while (
+      cursor < translationCharacters.length &&
+      !isWordCharacter(translationCharacters[cursor])
+    ) {
+      cursor++;
+    }
+    if (cursor > separatorStart) {
+      repaired.push({
+        "text": translationCharacters.slice(separatorStart, cursor).join(""),
+        "gloss": null,
+        "roman": null,
+        "isContent": false,
+      });
+    }
+
+    const contentStart = cursor;
+    let matchedKey = "";
+    while (
+      cursor < translationCharacters.length &&
+      matchedKey.length < contentKeys[index].length
+    ) {
+      const character = translationCharacters[cursor++];
+      if (isWordCharacter(character)) matchedKey += character;
+    }
+    if (matchedKey !== contentKeys[index]) return null;
+    const text = translationCharacters.slice(contentStart, cursor).join("");
+    const roman = contentTokens[index].roman;
+    repaired.push({
+      ...contentTokens[index],
+      "text": text,
+      "roman": typeof roman === "string" && roman.trim().length > 0
+        ? roman
+        : LATIN_TARGETS.has(targetLang)
+        ? text
+        : null,
+    });
+  }
+
+  if (cursor < translationCharacters.length) {
+    repaired.push({
+      "text": translationCharacters.slice(cursor).join(""),
+      "gloss": null,
+      "roman": null,
+      "isContent": false,
+    });
+  }
+  return repaired;
 }
 
 function normalizeProviderLineBreaks(
@@ -494,10 +860,34 @@ function normalizeSourceLang(value: unknown): string {
   return OTHER_SOURCE_LANG;
 }
 
+function parseFormAlternatives(value: unknown): FormAlternatives | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const raw = value as Record<string, unknown>;
+  if (
+    typeof raw.before !== "string" ||
+    typeof raw.feminine !== "string" || raw.feminine.trim() === "" ||
+    typeof raw.masculine !== "string" || raw.masculine.trim() === "" ||
+    typeof raw.after !== "string" ||
+    typeof raw.subjectName !== "string" || raw.subjectName.trim() === "" ||
+    typeof raw.subjectIsViewer !== "boolean"
+  ) return null;
+  return {
+    before: raw.before,
+    feminine: raw.feminine,
+    masculine: raw.masculine,
+    after: raw.after,
+    subjectName: raw.subjectName,
+    subjectIsViewer: raw.subjectIsViewer,
+  };
+}
+
 export function systemPrompt(
   sourceLang: string,
   targetLang: string,
   interfaceLang: string,
+  formContext?: FormParticipantContext,
 ): string {
   const targetName = LANG_NAMES[targetLang];
   const interfaceName = LANG_NAMES[interfaceLang];
@@ -508,15 +898,22 @@ export function systemPrompt(
       )
     }. Infer the intended supported language when short text contains spelling or keyboard-adjacent typos. For ambiguous malformed text, use the viewer's ${interfaceName} (${interfaceLang}) interface language as a weak hint when its script and recognizable fragments fit; never override a clearly recognizable different language. Only use sourceLang=${OTHER_SOURCE_LANG} when no supported intended language can be inferred.`
     : `The input language is ${LANG_NAMES[sourceLang]} (${sourceLang}).`;
-  const romanGuidance = NON_LATIN.has(targetLang)
-    ? `For each content token include "roman", a Latin-script romanization.`
-    : `"roman" may be omitted when the target token already uses Latin script.`;
+  const romanGuidance =
+    `For each content token include "roman", a Latin-script transliteration. For a Latin-script target word, repeat the written word when no script conversion is needed.`;
 
+  const formInstruction = formContext === undefined
+    ? "No participant grammatical-form data is available."
+    : `Participants: viewer=${formContext.viewerName} (saved form: ${
+      formContext.viewerForm ?? "not set"
+    }); partner=${formContext.partnerName} (saved form: ${
+      formContext.partnerForm ?? "not set"
+    }); current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}. For a direct first/second-person message, "I" normally refers to the author and "you" to the other participant.`;
   return `You normalize a message for a language-learning chat.
 
 ${sourceInstruction}
 The viewer's learning language is ${targetName} (${targetLang}).
 The viewer's interface language is ${interfaceName} (${interfaceLang}).
+${formInstruction}
 
 Return strict JSON only:
 {
@@ -526,6 +923,7 @@ Return strict JSON only:
   "interfaceText": "<the complete ${interfaceName} interface-language line>",
   "explanation": "<short ${interfaceName} correction explanation, or null>",
   "confidence": "<low, medium, high, or null>",
+  "formAlternatives": { "before": "<unchanged prefix>", "feminine": "<complete feminine affected fragment>", "masculine": "<complete masculine affected fragment>", "after": "<unchanged suffix>", "subjectName": "<viewer or partner display name>", "subjectIsViewer": true },
   "tokens": [
     { "text": "<segment of translation>", "gloss": "<1-3 word ${interfaceName} gloss>", "roman": "<romanization>", "isContent": true },
     { "text": " ", "isContent": false }
@@ -533,17 +931,23 @@ Return strict JSON only:
 }
 
 Rules:
-- Preserve meaning, tone, names, URLs, emoji, and punctuation.
+- Preserve meaning and tone. Keep URLs, @mentions, hashtags, code, numbers, and emoji unchanged, and preserve names' identity rather than translating their meaning; transliterate a confidently identified name when the target script differs. Move protected content with the surrounding sentence when the target language needs a different natural word order.
+- Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
+- A likely personal name is not an unsupported language. Keep its identity, and when the target script differs, transliterate it rather than translating its meaning. Use conversation context and the supplied participant names when available; do not infer a name from capitalization alone.
+- Treat meaning-bearing chat abbreviations such as brb and ttyl as language: translate their meaning when the target language has a natural equivalent; otherwise preserve them.
 - Preserve paragraph breaks exactly. If the input is one paragraph, translation and interfaceText must also be one paragraph with no newline characters.
 - ${GENDER_ADDRESS_RULES.replaceAll("\n", "\n- ")}
 - First detect sourceLang, then choose exactly one mode.
 - If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
 - mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then carefully check the complete input for real learning mistakes: grammar, spelling, inflection, agreement, word order, missing/extra words, or wrong-word errors. Even one wrong word or misspelled word is enough for mode=correction. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
 - Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
+- Never create correction marks for capitalization, noun capitalization, apostrophes, commas, terminal punctuation, or spacing. Apply those mechanical fixes silently in translation/interfaceText when needed.
 - mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
 - For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.
 - For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
 - For mode=translation, explanation/confidence are null.
+- Set formAlternatives to null unless the target sentence genuinely requires a feminine/masculine choice for the viewer or partner and that person's saved form is not set. When it is required, set translation to the feminine rendering, and concatenate before + feminine + after to reproduce translation exactly. feminine and masculine must be complete, natural alternatives for the same shortest understandable affected fragment; include every linked agreement change together. subjectIsViewer identifies the affected participant and subjectName is their display name.
+- This is a required output rule, not a suggestion to make wording neutral. For example, when the viewer authored English "What did you do yesterday?" and both forms are not set, Ukrainian MUST return translation="Що ти робила вчора?" and formAlternatives={"before":"Що ти ","feminine":"робила","masculine":"робив","after":" вчора?","subjectName":"<partner name>","subjectIsViewer":false}. Apply the same rule to the natural feminine/masculine fragment in every supported target language; French/Hindi may need a multi-word fragment.
 - "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction or when a translated source has clear grammar, spelling, inflection, agreement, word order, missing/extra word, or wrong-word errors.
 - mode=none applies only to correction of the ${targetName} learning line. When ${interfaceName} is a different language, interfaceText must still translate the complete message into ${interfaceName}; do not copy the ${targetName} text into interfaceText.
 - If sourceLang is ${interfaceLang} and differs from ${targetLang}, "interfaceText" stays in ${interfaceName}; preserve the trimmed input when it is already correct, but fix clear language mistakes so the main chat shows clean communication.

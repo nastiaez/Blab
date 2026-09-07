@@ -57,6 +57,7 @@ dependencies:
   image_picker: ^1.2.3
   photo_manager: ^3.11.0
   emoji_picker_flutter: ^4.5.3
+  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:
@@ -106,6 +107,7 @@ flutter:
   assets:
     - assets/icons/
     - assets/blab-logo.svg
+    - assets/blab-logo 2.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

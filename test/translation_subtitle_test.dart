@@ -37,7 +37,9 @@ void main() {
     expect(find.text('Translation unavailable'), findsNothing);
   });
 
-  testWidgets('unavailable state renders the muted label', (tester) async {
+  testWidgets('unavailable state renders label and retry without error icon', (
+    tester,
+  ) async {
     var retried = false;
     await tester.pumpWidget(
       host(
@@ -50,8 +52,11 @@ void main() {
       ),
     );
     expect(find.text('Translation unavailable'), findsOneWidget);
-    expect(find.byKey(const ValueKey('translation-error')), findsOneWidget);
-    expect(find.byIcon(Icons.refresh), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsNothing);
+    expect(
+      find.byKey(const ValueKey('translation-retry-icon')),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
     await tester.tap(find.byKey(const ValueKey('translation-retry')));
     expect(retried, isTrue);

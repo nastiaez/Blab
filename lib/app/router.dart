@@ -6,16 +6,16 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_messenger.dart';
+import 'ui_workbench_screen.dart';
 
 import '../features/auth/auth_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/forgot_password_sent_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/chat/chat_screen.dart';
+import '../features/chat/translation_preferences_screen.dart';
 import '../features/chats/chats_screen.dart';
-import '../features/invite/invite_landing_screen.dart';
 import '../features/invite/invite_continuation.dart';
-import '../features/invite/invite_pick_language_screen.dart';
 import '../features/invite/invite_resolver_screen.dart';
 import '../features/invite/new_chat_screen.dart';
 import '../features/profile/change_email_screen.dart';
@@ -38,8 +38,6 @@ const _publicPaths = <String>{
   '/auth/forgot/sent',
   '/auth/reset',
   '/auth/email-changed',
-  '/invite',
-  '/invite/pick-language',
   '/i',
 };
 
@@ -122,8 +120,13 @@ final GoRouter blabRouter = GoRouter(
   },
   refreshListenable: _AuthRefresh(_authStreamOrNull()),
   routes: <RouteBase>[
-    if (kDebugMode)
+    if (kDebugMode) ...[
       GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
+      GoRoute(
+        path: '/dev/workbench',
+        builder: (context, state) => const UiWorkbenchScreen(),
+      ),
+    ],
     GoRoute(
       path: '/auth',
       builder: (context, state) {
@@ -176,7 +179,9 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/chats/new',
-      builder: (context, state) => const NewChatScreen(),
+      builder: (context, state) => NewChatScreen(
+        initialToken: state.uri.queryParameters['token'],
+      ),
     ),
     GoRoute(
       path: '/chats/empty',
@@ -196,30 +201,11 @@ final GoRouter blabRouter = GoRouter(
           ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
     ),
     GoRoute(
-      path: '/invite',
-      builder: (context, state) {
-        final q = state.uri.queryParameters;
-        final status = switch (q['status']) {
-          'expired' => InviteStatus.expired,
-          'used' => InviteStatus.used,
-          _ => InviteStatus.valid,
-        };
-        return InviteLandingScreen(
-          status: status,
-          inviterName: q['from'] ?? 'Nastia',
-          inviterLearningCode: q['learning'],
-        );
-      },
-    ),
-    GoRoute(
-      path: '/invite/pick-language',
-      builder: (context, state) {
-        final q = state.uri.queryParameters;
-        return InvitePickLanguageScreen(
-          inviterName: q['inviter'] ?? 'Nastia',
-          token: q['token'],
-        );
-      },
+      path: '/chat/:id/translation-preferences',
+      builder: (context, state) => TranslationPreferencesScreen(
+        chatId: state.pathParameters['id'],
+        partnerName: state.uri.queryParameters['name'],
+      ),
     ),
     GoRoute(
       path: '/i/:token',
@@ -236,6 +222,10 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/profile/edit',
       builder: (context, state) => const EditProfileScreen(),
+    ),
+    GoRoute(
+      path: '/profile/translation-preferences',
+      builder: (context, state) => const TranslationPreferencesScreen(),
     ),
     GoRoute(
       path: '/profile/password',

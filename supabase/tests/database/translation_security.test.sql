@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(28);
 
 select has_table(
   'public',
@@ -56,7 +56,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.complete_message_translation(uuid,uuid,text,text,text,text,text,text,text,text,text,jsonb)',
+    'public.complete_message_translation(uuid,uuid,text,text,text,text,text,text,text,text,text,jsonb,jsonb)',
     'execute'
   ),
   'authenticated users cannot complete cache writes'
@@ -139,6 +139,33 @@ update public.chat_members
 set translation_cutoff_at = now() - interval '1 day'
 where chat_id = '51000000-0000-4000-8000-000000000001'
   and user_id = '00000000-0000-4000-8000-00000000000a';
+
+insert into public.translation_usage (
+  user_id,
+  minute_started_at,
+  minute_requests,
+  day_started_at,
+  day_requests,
+  day_characters
+) values (
+  '00000000-0000-4000-8000-00000000000a',
+  date_trunc('minute', now()),
+  0,
+  (now() at time zone 'utc')::date,
+  0,
+  0
+)
+on conflict (user_id) do update set
+  minute_started_at = excluded.minute_started_at,
+  minute_requests = 0,
+  day_started_at = excluded.day_started_at,
+  day_requests = 0,
+  day_characters = 0;
+
+select 1
+from public.translation_usage
+where user_id = '00000000-0000-4000-8000-00000000000a'
+for update;
 
 create temp table l13_prepared (
   label text primary key,
@@ -231,7 +258,8 @@ select ok(
     'translation',
     null,
     null,
-    '[{"text":"Hallo aktuell","gloss":"Hello current","isContent":true}]'::jsonb
+    '[{"text":"Hallo aktuell","gloss":"Hello current","isContent":true}]'::jsonb,
+    null
   ),
   'service role can complete an unchanged authorized translation'
 );
@@ -291,8 +319,8 @@ select is(
   public.request_message_translation(
     '52000000-0000-4000-8000-000000000003'
   ) ->> 'status',
-  'not_eligible',
-  'messages before the caller translation cutoff are not eligible'
+  'ready',
+  'historical messages remain eligible after a later language change'
 );
 
 select is(
@@ -344,7 +372,8 @@ select is(
     'translation',
     null,
     null,
-    '[]'::jsonb
+    '[]'::jsonb,
+    null
   ),
   false,
   'completion rejects a source that changed after preparation'
@@ -401,6 +430,70 @@ select is(
   0::bigint,
   'a rejected stale completion leaves no cache row'
 );
+
+-- Mode-display-fixes spec § 3: in normal mode, a message already in a
+-- language the caller knows never reaches the provider. Message ...001 has a
+-- completed cache row recording source_lang 'en' from the run above.
+reset role;
+update public.chat_members
+set mode = 'normal'
+where chat_id = '51000000-0000-4000-8000-000000000001'
+  and user_id = '00000000-0000-4000-8000-00000000000a';
+update public.profiles
+set known_languages = array['en', 'uk'],
+    primary_known_language = 'uk'
+where id = '00000000-0000-4000-8000-00000000000a';
+
+set local role authenticated;
+
+insert into l13_prepared (label, value)
+values (
+  'known-source',
+  public.request_message_translation(
+    '52000000-0000-4000-8000-000000000001'
+  )
+);
+
+select is(
+  (select value ->> 'status' from l13_prepared where label = 'known-source'),
+  'no_aid_needed',
+  'normal mode skips the provider for an already-known source language'
+);
+
+select is(
+  (select value ->> 'mode' from l13_prepared where label = 'known-source'),
+  'none',
+  'the bypass answers with no learning aid'
+);
+
+select is(
+  (select value ->> 'translation' from l13_prepared where label = 'known-source'),
+  'Hello current',
+  'the bypass answers with the authored text'
+);
+
+-- The same caller, same normal mode, on a message whose language has never
+-- been resolved: still a full preparation.
+reset role;
+update public.translation_usage
+set minute_started_at = date_trunc('minute', now()),
+    minute_requests = 0,
+    day_started_at = (now() at time zone 'utc')::date,
+    day_requests = 0,
+    day_characters = 0
+where user_id = '00000000-0000-4000-8000-00000000000a';
+
+set local role authenticated;
+
+select is(
+  public.request_message_translation(
+    '52000000-0000-4000-8000-000000000005'
+  ) ->> 'status',
+  'ready',
+  'normal mode still prepares a message with no recorded source language'
+);
+
+reset role;
 
 select * from finish();
 rollback;

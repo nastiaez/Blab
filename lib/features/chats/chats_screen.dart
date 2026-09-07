@@ -24,13 +24,13 @@ class ChatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chatsAsync = ref.watch(visibleChatsProvider);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAF7F2),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFAF7F2),
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        title: SvgPicture.asset('assets/blab-logo.svg', height: 22),
+        title: SvgPicture.asset('assets/blab-logo 2.svg', height: 22),
       ),
       body: Column(
         children: [
@@ -77,13 +77,41 @@ class ChatsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/chats/new'),
-        backgroundColor: BlabColors.brand,
-        foregroundColor: Colors.white,
-        elevation: 3,
-        tooltip: context.l10n.newChat,
-        child: const Icon(Icons.add, size: 26),
+      floatingActionButton: Theme(
+        data: Theme.of(context).copyWith(
+          floatingActionButtonTheme: Theme.of(context).floatingActionButtonTheme
+              .copyWith(
+                sizeConstraints: const BoxConstraints.tightFor(
+                  width: 44,
+                  height: 44,
+                ),
+              ),
+        ),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x21231208),
+                offset: Offset(0, 2),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: () => context.push('/chats/new'),
+            shape: const CircleBorder(),
+            backgroundColor: const Color(0xFFF88C5A),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            tooltip: context.l10n.newChat,
+            child: const BlabIcon(
+              name: 'plus - 20',
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+        ),
       ),
       bottomNavigationBar: const _BottomTabs(active: _Tab.chats),
     );
@@ -172,7 +200,7 @@ class _BottomTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFAF7F2),
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
       child: SafeArea(
@@ -183,13 +211,13 @@ class _BottomTabs extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _TabItem(
-                iconName: 'chat',
+                iconName: 'chat-bubble-empty - 20',
                 label: context.l10n.chats,
                 selected: active == _Tab.chats,
                 onTap: () {},
               ),
               _TabItem(
-                iconName: 'profile',
+                iconName: 'profile-circle - 20',
                 label: context.l10n.profile,
                 selected: active == _Tab.profile,
                 onTap: () => context.go('/profile'),
@@ -226,7 +254,7 @@ class _TabItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            BlabIcon(name: iconName, color: color, size: 24),
+            BlabIcon(name: iconName, color: color, size: 20),
             const SizedBox(height: 2),
             Text(
               label,

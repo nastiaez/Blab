@@ -1,39 +1,56 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/models/chat.dart';
+import '../../shared/models/grammatical_form.dart';
 import '../../shared/models/message.dart';
 import '../../shared/models/message_reaction.dart';
 import '../../shared/services/chat_service.dart';
+import '../../shared/services/local_chat_history_cache.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
+import '../../shared/data/languages.dart';
+import '../../shared/data/local_storage_keys.dart';
 import '../../shared/services/message_translator.dart';
 import '../../shared/services/tts_service.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/push_notifications_state.dart';
+import '../../shared/widgets/blab_icon.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
+import 'state/unread_chat_state.dart';
 import 'state/message_reactions_state.dart';
 import 'state/message_translations_state.dart';
+import 'state/grammatical_form_preferences_state.dart';
 import 'state/pending_sends_state.dart';
 import 'state/typing_state.dart';
+import 'language_timeline.dart';
 import 'message_actions.dart';
+import 'message_presentation.dart';
+import 'message_translation_lifecycle.dart';
 import 'reaction_row_positioning.dart';
 import 'services/chat_image_picker.dart';
 import 'widgets/chat_composer_input.dart';
+import 'widgets/delayed_translation_status.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
 import 'widgets/floating_reaction_row.dart';
@@ -43,11 +60,13 @@ import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_row.dart';
 import 'widgets/message_interaction_target.dart';
 import 'widgets/message_learning_content.dart';
+import 'widgets/grammatical_form_chooser.dart';
 import 'widgets/message_reaction_bar.dart';
 import 'widgets/mode_toggle.dart';
 import 'widgets/partner_profile_sheet.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
+import 'widgets/translating_message_content.dart';
 
 // kSupportedLearningLanguages now lives in
 // lib/shared/data/translation_support.dart so the chat list tile can
@@ -66,18 +85,26 @@ class ChatScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
+enum _ModeTip { practice, normal }
+
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _input = TextEditingController();
+  final FocusNode _inputFocus = FocusNode();
   final ScrollController _scroll = ScrollController();
   final GlobalKey _stackKey = GlobalKey();
+  final GlobalKey _selectedBubbleKey = GlobalKey();
+  final GlobalKey _unreadDividerKey = GlobalKey();
+  final Map<String, GlobalKey> _messageAnchorKeys = <String, GlobalKey>{};
   bool _menuOpen = false;
   bool _hasText = false;
   int _textLength = 0;
   double _lastBottomInset = 0;
+  bool _translationResolveDeferred = false;
   int _lastMessageCount = 0;
   Message? _selectedMessage;
   Rect? _selectedBubbleRect;
   Offset? _selectedPressPosition;
+  bool _showSelectedOriginal = false;
 
   /// Hard cap from PRD US-036.
   static const int _maxMessageLength = kMaxMessageCharacters;
@@ -99,6 +126,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   String? _prefetchedLocaleKey;
   final Set<String> _prefetchedMessageIds = <String>{};
   bool _notificationPermissionTriggered = false;
+  bool _unreadDividerAnchored = false;
+  bool _sessionUnreadCaptured = false;
+  List<String> _sessionUnreadIds = const <String>[];
+  String? _modeAnchorMessageId;
+  double? _modeAnchorOffset;
+  bool _modeAnchorAtBottom = false;
+  bool _requiredLanguageSheetVisible = false;
+  _ModeTip? _visibleModeTip;
 
   @override
   void initState() {
@@ -126,6 +161,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     _scroll.removeListener(_loadOlderNearTop);
     _input.dispose();
+    _inputFocus.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -136,12 +172,160 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.jumpTo(0);
   }
 
+  void _showRequiredLanguageSheetIfNeeded(Chat chat) {
+    if (!chat.needsPracticeLanguageSelection || _requiredLanguageSheetVisible) {
+      return;
+    }
+    _requiredLanguageSheetVisible = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final picked = await showRequiredPracticeLanguageSheet(context);
+      if (!mounted) return;
+      try {
+        await ref
+            .read(learningLanguageProvider(widget.chatId).notifier)
+            .set(picked);
+        await _showModeTipOnce(_ModeTip.practice);
+      } finally {
+        _requiredLanguageSheetVisible = false;
+      }
+    });
+  }
+
+  Future<void> _showModeTipOnce(_ModeTip tip) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    final preferences = await SharedPreferences.getInstance();
+    final key = modeTipSeenStorageKey(userId: userId, mode: tip.name);
+    if (preferences.getBool(key) == true || !mounted) return;
+    await preferences.setBool(key, true);
+    if (mounted) setState(() => _visibleModeTip = tip);
+  }
+
   void _loadOlderNearTop() {
     if (!_scroll.hasClients) return;
     if (_scroll.position.maxScrollExtent - _scroll.position.pixels > 240) {
       return;
     }
     ref.read(chatMessagesProvider(widget.chatId).notifier).loadOlder();
+  }
+
+  void _markResolvedAtBottom() {
+    if (!_scroll.hasClients || _scroll.position.pixels > 1) return;
+    final messages =
+        ref.read(chatMessagesProvider(widget.chatId)).value ??
+        const <Message>[];
+    final known = ref.read(knownLanguagesProvider).value;
+    final mode = ref.read(chatModeProvider(widget.chatId));
+    final learning = ref.read(learningLanguageProvider(widget.chatId));
+    final timelineValue = ref.read(chatLanguageTimelineProvider(widget.chatId));
+    if (!timelineValue.hasValue && !timelineValue.hasError) return;
+    final timeline = parseChatLanguageTimeline(
+      timelineValue.value ?? const <Map<String, dynamic>>[],
+    );
+    final interfaceLang = known?.primary ?? '';
+    final translations = ref.read(messageTranslationsProvider(widget.chatId));
+    final reads = ref.read(messageReadsProvider(widget.chatId).notifier);
+    for (final message in messages) {
+      final era = languageEraForMessage(
+        sentAt: message.sentAt,
+        timeline: timeline,
+        fallbackLanguageCode: learning.code,
+      );
+      final target = known == null
+          ? ''
+          : resolveTranslationTarget(
+              mode: mode,
+              learningLanguageCode: era.languageCode,
+              primaryKnownLanguageCode: known.primary,
+            );
+      if (message.isOutgoing ||
+          !shouldRequestBubbleTranslation(
+            targetLanguageCode: target,
+            text: message.originalText,
+            sentAt: message.sentAt,
+            translationCutoffAt: null,
+          )) {
+        continue;
+      }
+      final entry =
+          translations[translationEntryKey(message.id, target, interfaceLang)];
+      if (entry is AsyncData<MessageTranslation> ||
+          entry is AsyncError<MessageTranslation>) {
+        reads.reportVisible(message.id);
+      }
+    }
+  }
+
+  void _captureModeAnchor() {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    _modeAnchorAtBottom = position.pixels <= 1;
+    _modeAnchorMessageId = null;
+    _modeAnchorOffset = null;
+    if (!_modeAnchorAtBottom) {
+      final viewport = position.context.storageContext.findRenderObject();
+      if (viewport is RenderBox) {
+        final viewportTop = viewport.localToGlobal(Offset.zero).dy;
+        final viewportBottom = viewportTop + viewport.size.height;
+        final visible = <({String id, double top})>[];
+        for (final entry in _messageAnchorKeys.entries) {
+          final render = entry.value.currentContext?.findRenderObject();
+          if (render is! RenderBox || !render.hasSize) continue;
+          final top = render.localToGlobal(Offset.zero).dy;
+          final bottom = top + render.size.height;
+          if (bottom > viewportTop && top < viewportBottom) {
+            visible.add((id: entry.key, top: top));
+          }
+        }
+        visible.sort((a, b) => a.top.compareTo(b.top));
+        if (visible.isNotEmpty) {
+          _modeAnchorMessageId = visible.first.id;
+          _modeAnchorOffset = visible.first.top - viewportTop;
+        }
+      }
+    }
+    final fallbackOffset = position.pixels;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final nextPosition = _scroll.position;
+      if (_modeAnchorAtBottom || _modeAnchorMessageId == null) {
+        nextPosition.jumpTo(
+          fallbackOffset.clamp(0.0, nextPosition.maxScrollExtent),
+        );
+        return;
+      }
+      final context = _messageAnchorKeys[_modeAnchorMessageId!]?.currentContext;
+      final render = context?.findRenderObject();
+      final anchorOffset = _modeAnchorOffset;
+      if (render is RenderBox && anchorOffset != null) {
+        final viewport = RenderAbstractViewport.of(render);
+        final reveal = viewport.getOffsetToReveal(render, 0);
+        nextPosition.jumpTo(
+          (reveal.offset - anchorOffset).clamp(
+            0.0,
+            nextPosition.maxScrollExtent,
+          ),
+        );
+        return;
+      }
+      nextPosition.jumpTo(
+        fallbackOffset.clamp(0.0, nextPosition.maxScrollExtent),
+      );
+    });
+  }
+
+  GlobalKey _messageAnchorKey(String messageId) =>
+      _messageAnchorKeys.putIfAbsent(messageId, GlobalKey.new);
+
+  void _anchorOldestUnread() {
+    if (!mounted || _unreadDividerAnchored) return;
+    final context = _unreadDividerKey.currentContext;
+    if (context == null) return;
+    _unreadDividerAnchored = true;
+    unawaited(
+      Scrollable.ensureVisible(context, alignment: 0, duration: Duration.zero),
+    );
   }
 
   Future<void> _send() async {
@@ -223,47 +407,128 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  void _handleAction(Message message, MessageAction action, Chat chat) {
+  Future<void> _confirmDelete(Message message, Chat chat) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(28)),
+          side: BorderSide(color: Color(0xFFE7D7D0)),
+        ),
+        title: Text(context.l10n.deleteMessageQuestion),
+        content: Text(context.l10n.deleteMessageBody(chat.partnerName)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              context.l10n.cancel,
+              style: const TextStyle(color: BlabColors.textMuted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              context.l10n.delete,
+              style: const TextStyle(color: BlabColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref
+        .read(chatMessagesProvider(widget.chatId).notifier)
+        .removeMessage(message.id);
+  }
+
+  void _showCopiedPill() {
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: 0,
+        right: 0,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 72,
+        child: IgnorePointer(
+          child: Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFFECE7E1),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
+                child: Text(
+                  context.l10n.copied,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: BlabColors.bubbleInk,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    Future<void>.delayed(const Duration(milliseconds: 800), entry.remove);
+  }
+
+  bool _needsClipboardPill() {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+    final match = RegExp(
+      r'(?:Version|Android)\s+(\d+)',
+    ).firstMatch(Platform.operatingSystemVersion);
+    final androidVersion = int.tryParse(match?.group(1) ?? '');
+    return androidVersion != null && androidVersion < 13;
+  }
+
+  void _handleAction(
+    Message message,
+    MessageAction action,
+    Chat chat,
+    MessagePresentation presentation,
+    String learningLanguageCode,
+  ) {
     switch (action) {
       case MessageAction.report:
         _reportMessage(message, chat);
         break;
       case MessageAction.reply:
-        ref.read(replyingToProvider(widget.chatId).notifier).set(message);
+        ref
+            .read(replyingToProvider(widget.chatId).notifier)
+            .set(message.copyWith(originalText: presentation.primaryText));
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _inputFocus.requestFocus();
+        });
         break;
       case MessageAction.edit:
         ref.read(editingProvider(widget.chatId).notifier).set(message);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _inputFocus.requestFocus();
+        });
         break;
       case MessageAction.copy:
-        Clipboard.setData(ClipboardData(text: message.originalText));
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.hideCurrentSnackBar();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.copied),
-            duration: const Duration(milliseconds: 1500),
-          ),
-        );
+        Clipboard.setData(ClipboardData(text: presentation.primaryText));
+        if (_needsClipboardPill()) {
+          _showCopiedPill();
+        }
+        break;
+      case MessageAction.listen:
+        final text = presentation.listenText;
+        if (text == null || !hasSpeakableText(text)) return;
+        final tts = ref.read(ttsServiceProvider);
+        unawaited(tts.speak(text, learningLanguageCode));
+        break;
+      case MessageAction.original:
         break;
       case MessageAction.delete:
-        final notifier = ref.read(chatMessagesProvider(widget.chatId).notifier);
-        final removedId = message.id;
-        notifier.removeMessage(removedId);
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.hideCurrentSnackBar();
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.messageDeleted),
-            duration: const Duration(seconds: 3),
-            action: SnackBarAction(
-              label: context.l10n.undo,
-              textColor: BlabColors.brand,
-              onPressed: () {
-                notifier.restoreMessage(removedId);
-              },
-            ),
-          ),
-        );
+        unawaited(_confirmDelete(message, chat));
         break;
     }
   }
@@ -275,6 +540,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _selectMessage(Message message, Rect bubbleRect, Offset pressPosition) {
+    if (ref.read(editingProvider(widget.chatId)) != null) return;
     // Selecting swaps the composer for the action row, so any open keyboard
     // is about to go away. The message list is bottom-anchored, so losing the
     // keyboard inset slides every bubble down by exactly that inset. Bake the
@@ -287,15 +553,38 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _selectedMessage = message;
       _selectedBubbleRect = bubbleRect.shift(keyboardShift);
       _selectedPressPosition = pressPosition + keyboardShift;
+      _showSelectedOriginal = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncSelectedBubbleGeometry(message.id);
     });
   }
 
+  void _syncSelectedBubbleGeometry(String messageId) {
+    if (!mounted || _selectedMessage?.id != messageId) return;
+    final renderObject = _selectedBubbleKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return;
+    final topLeft = renderObject.localToGlobal(Offset.zero);
+    final rect = topLeft & renderObject.size;
+    final previous = _selectedBubbleRect;
+    if (previous != null &&
+        (previous.top - rect.top).abs() < 0.5 &&
+        (previous.left - rect.left).abs() < 0.5 &&
+        (previous.width - rect.width).abs() < 0.5 &&
+        (previous.height - rect.height).abs() < 0.5) {
+      return;
+    }
+    setState(() => _selectedBubbleRect = rect);
+  }
+
   void _closeSelection() {
+    unawaited(ref.read(ttsServiceProvider).stop());
     if (_selectedMessage == null) return;
     setState(() {
       _selectedMessage = null;
       _selectedBubbleRect = null;
       _selectedPressPosition = null;
+      _showSelectedOriginal = false;
     });
   }
 
@@ -330,11 +619,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     if (resolved == null) {
       return const Scaffold(
-        backgroundColor: BlabColors.appBackground,
+        backgroundColor: BlabColors.chatCanvas,
         body: SafeArea(child: ChatViewSkeleton()),
       );
     }
     final chat = resolved;
+    _showRequiredLanguageSheetIfNeeded(chat);
     if (!_notificationPermissionTriggered) {
       _notificationPermissionTriggered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -351,9 +641,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // gate starts fail-closed; watching it here lets queued visibility events
     // resume as soon as the saved read-receipt preference finishes loading.
     ref.watch(messageReadsProvider(widget.chatId));
+    final unreadValue = ref
+        .watch(chatUnreadMessageIdsProvider(widget.chatId))
+        .value;
+    if (unreadValue != null && !_sessionUnreadCaptured) {
+      // Capture the entry boundary once. Read events may empty the provider
+      // while the user remains in the chat, but the divider is a session
+      // landmark and must not disappear row-by-row.
+      _sessionUnreadIds = List<String>.from(unreadValue);
+      _sessionUnreadCaptured = true;
+    }
+    final unreadIds = _sessionUnreadCaptured
+        ? _sessionUnreadIds
+        : const <String>[];
     final replyingTo = ref.watch(replyingToProvider(widget.chatId));
     final editing = ref.watch(editingProvider(widget.chatId));
     final learningLang = ref.watch(learningLanguageProvider(widget.chatId));
+    final languageTimelineValue = ref.watch(
+      chatLanguageTimelineProvider(widget.chatId),
+    );
+    // Wait for the first timeline attempt so old bubbles are never briefly
+    // resolved against the current language. Pre-migration/offline fallbacks
+    // may still return an error; in that case retain the legacy current-
+    // language behavior instead of hiding every learning aid indefinitely.
+    final languageTimelineReady = languageTimelineValue.hasValue;
+    final languageTimelineRows =
+        languageTimelineValue.value ?? const <Map<String, dynamic>>[];
+    final languageTimeline = parseChatLanguageTimeline(languageTimelineRows);
     // Account interface language — UI copy only (menus, system text, the
     // emoji-picker locale below). Never a translation target; see
     // translationInterfaceLang below for the pipeline's actual "interface"
@@ -361,7 +675,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final interfaceLang = ref.watch(interfaceLanguageProvider);
     final online = ref.watch(isOnlineProvider);
     final pushNotifications = ref.watch(pushNotificationsProvider);
-    final translationCutoffAt = chat.translationCutoffAt;
     // FR-23 / modes-known-languages spec: practice mode always targets the
     // chat's learning language; normal mode targets the reader's primary
     // known language instead. The server's cache "interface" slot (second
@@ -373,7 +686,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // client's own interface-language-changed staleness check).
     final chatMode = ref.watch(chatModeProvider(widget.chatId));
     final knownLanguages = ref.watch(knownLanguagesProvider).value;
-    final targetLang = knownLanguages == null
+    final targetLang =
+        chat.needsPracticeLanguageSelection || knownLanguages == null
         ? ''
         : resolveTranslationTarget(
             mode: chatMode,
@@ -381,51 +695,126 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             primaryKnownLanguageCode: knownLanguages.primary,
           );
     final translationInterfaceLang = knownLanguages?.primary ?? '';
+    ChatLanguageEra eraForMessage(Message message) => languageEraForMessage(
+      sentAt: message.sentAt,
+      timeline: languageTimeline,
+      fallbackLanguageCode: learningLang.code,
+    );
+    String targetForMessage(Message message) {
+      if (knownLanguages == null) return '';
+      final era = eraForMessage(message);
+      return resolveTranslationTarget(
+        mode: chatMode,
+        learningLanguageCode: era.languageCode,
+        primaryKnownLanguageCode: knownLanguages.primary,
+      );
+    }
+
+    final selectedMessage = _selectedMessage;
+    MessagePresentation? selectedPresentation;
+    if (selectedMessage != null &&
+        languageTimelineReady &&
+        selectedMessage.originalText.trim().isNotEmpty) {
+      final selectedTargetLang = targetForMessage(selectedMessage);
+      final selectedShouldTranslate = shouldRequestTranslation(
+        targetLanguageCode: selectedTargetLang,
+        text: selectedMessage.originalText,
+        sentAt: selectedMessage.sentAt,
+        translationCutoffAt: null,
+      );
+      final selectedTranslation = selectedShouldTranslate
+          ? ref.watch(
+              messageTranslationsProvider(widget.chatId),
+            )[translationEntryKey(
+              selectedMessage.id,
+              selectedTargetLang,
+              translationInterfaceLang,
+            )]
+          : null;
+      final selectedSourceLang =
+          selectedTranslation is AsyncData<MessageTranslation>
+          ? selectedTranslation.value.sourceLang
+          : ref
+                .read(messageTranslationsProvider(widget.chatId).notifier)
+                .resolvedSourceLangFor(selectedMessage.id);
+      selectedPresentation = resolveMessagePresentation(
+        authoredText: selectedMessage.originalText,
+        translation: selectedTranslation,
+        mode: chatMode,
+        knownLanguageCodes: knownLanguages?.codes ?? const <String>[],
+        resolvedSourceLang: selectedSourceLang,
+      );
+    }
     // Keep the auto-disposed composer alive for this chat while its input is
     // mounted. The controller listener reads the same instance on each edit.
     ref.watch(typingComposerProvider(widget.chatId));
 
-    // Hydrate translations one loaded page at a time. History before a
-    // language change stays as authored and never enters the AI path.
-    final localeKey = '$targetLang|$translationInterfaceLang';
+    // Hydrate each message against the viewer-private language era that was
+    // active when it arrived. A later language switch must not retarget a
+    // completed historical result (US-046 / FR-40).
+    final timelineKey = languageTimeline
+        .map((era) => '${era.revision}:${era.languageCode}')
+        .join(',');
+    final localeKey =
+        '${chatMode.name}|$targetLang|$translationInterfaceLang|$timelineKey';
     if (_prefetchedLocaleKey != localeKey) {
       _prefetchedLocaleKey = localeKey;
       _prefetchedMessageIds.clear();
     }
     final loadedMessages = messagesAsync.value ?? const <Message>[];
-    final translationCandidates = <String, Message>{};
+    final translationCandidateGroups =
+        <String, List<({Message message, ChatLanguageEra era})>>{};
+    final variantTargets = <String, String>{};
     for (final message in loadedMessages) {
       void addIfEligible(Message candidate) {
+        if (!languageTimelineReady) return;
+        // Translation begins after delivery. In particular, photo captions
+        // can spend a short time pending while the image uploads; starting
+        // the resolver then can finish before delivery and skip the wave.
+        if (candidate.isOutgoing &&
+            candidate.status != MessageStatus.delivered &&
+            candidate.status != MessageStatus.read) {
+          return;
+        }
+        final era = eraForMessage(candidate);
+        final candidateTarget = targetForMessage(candidate);
         if (!shouldRequestBubbleTranslation(
-          targetLanguageCode: targetLang,
+          targetLanguageCode: candidateTarget,
           text: candidate.originalText,
           sentAt: candidate.sentAt,
-          translationCutoffAt: translationCutoffAt,
+          translationCutoffAt: null,
         )) {
           return;
         }
-        translationCandidates[candidate.id] = candidate;
+        final variantKey =
+            '$candidateTarget|${era.languageCode}|${era.revision}';
+        variantTargets[variantKey] = candidateTarget;
+        final group = translationCandidateGroups.putIfAbsent(
+          variantKey,
+          () => <({Message message, ChatLanguageEra era})>[],
+        );
+        if (!group.any((entry) => entry.message.id == candidate.id)) {
+          group.add((message: candidate, era: era));
+        }
       }
 
       addIfEligible(message);
       final replyTo = message.replyTo;
       if (replyTo != null) addIfEligible(replyTo);
     }
-    final allEligibleMessageIds = translationCandidates.keys.toSet();
-    final eligibleMessages = translationCandidates.values
-        .where((message) => !_prefetchedMessageIds.contains(message.id))
-        .toList();
+    final liveMessageIds = translationCandidateGroups.entries
+        .where((entry) => variantTargets[entry.key] == targetLang)
+        .expand((entry) => entry.value)
+        .where((entry) => entry.era.languageCode == learningLang.code)
+        .map((entry) => entry.message.id)
+        .toSet();
     if (kSupportedLearningLanguages.contains(targetLang) &&
-        allEligibleMessageIds.isNotEmpty) {
+        liveMessageIds.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref
             .read(messageTranslationsProvider(widget.chatId).notifier)
-            .watchDbRows(
-              allEligibleMessageIds,
-              targetLang,
-              translationInterfaceLang,
-            );
+            .watchDbRows(liveMessageIds, targetLang, translationInterfaceLang);
       });
     }
     if (online && kSupportedLearningLanguages.contains(targetLang)) {
@@ -441,18 +830,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
       });
     }
-    if (kSupportedLearningLanguages.contains(targetLang) &&
-        eligibleMessages.isNotEmpty) {
-      _prefetchedMessageIds.addAll(eligibleMessages.map((m) => m.id));
+    for (final groupEntry in translationCandidateGroups.entries) {
+      final target = variantTargets[groupEntry.key]!;
+      final eligible = groupEntry.value
+          .where(
+            (entry) => !_prefetchedMessageIds.contains(
+              '${groupEntry.key}|${entry.message.id}',
+            ),
+          )
+          .toList();
+      if (!kSupportedLearningLanguages.contains(target) || eligible.isEmpty) {
+        continue;
+      }
+      _prefetchedMessageIds.addAll(
+        eligible.map((entry) => '${groupEntry.key}|${entry.message.id}'),
+      );
+      final era = eligible.first.era;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final notifier = ref.read(
           messageTranslationsProvider(widget.chatId).notifier,
         );
         await notifier.prefetchFromDb(
-          eligibleMessages.map((m) => m.id).toList(),
-          targetLang,
+          eligible.map((entry) => entry.message.id).toList(),
+          target,
           translationInterfaceLang,
+          packageLearningLanguage: era.languageCode,
+          packageLanguageRevision: era.revision,
+          sourceTexts: {
+            for (final entry in eligible)
+              entry.message.id: entry.message.originalText,
+          },
         );
       });
     }
@@ -467,6 +875,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           _input.selection = TextSelection.fromPosition(
             TextPosition(offset: _input.text.length),
           );
+          _inputFocus.requestFocus();
         } else {
           _input.clear();
         }
@@ -514,373 +923,569 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
     }
 
-    return Scaffold(
-      backgroundColor: BlabColors.appBackground,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        top: false,
-        bottom: false,
-        child: Stack(
-          key: _stackKey,
-          children: [
-            Column(
-              children: [
-                _ChatHeader(
-                  chat: chat,
-                  onBack: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/chats');
-                    }
-                  },
-                  onMenu: _toggleMenu,
-                  onTapPartner: () async {
-                    final result = await showPartnerProfileSheet(
-                      context,
-                      chat: chat,
-                    );
-                    // Blocking the partner hides this chat — leave the view.
-                    if (result == PartnerProfileResult.blocked &&
-                        context.mounted) {
-                      context.go('/chats');
-                    }
-                  },
-                ),
-                if (pushNotifications.reminderVisible)
-                  _NotificationReminder(
-                    onDismiss: () => ref
-                        .read(pushNotificationsProvider.notifier)
-                        .dismissReminder(),
-                  ),
-                const OfflineBanner(),
-                Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () {
-                      _closeMenu();
-                      _closeSelection();
+    final practiceHint = chatMode == ChatMode.practice
+        ? context.l10n.practiceComposerHint(
+            learningLang.name,
+            _languageNameForCode(knownLanguages?.primary),
+          )
+        : null;
+    final activePresentation =
+        selectedPresentation ??
+        MessagePresentation(
+          primaryText: selectedMessage?.originalText ?? '',
+          originalText: selectedMessage?.originalText ?? '',
+          canRevealOriginal: false,
+        );
+
+    if (_selectedMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _syncSelectedBubbleGeometry(_selectedMessage!.id);
+      });
+    }
+
+    return PopScope(
+      canPop: _selectedMessage == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _selectedMessage != null) _closeSelection();
+      },
+      child: Scaffold(
+        backgroundColor: BlabColors.chatCanvas,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          top: false,
+          bottom: false,
+          child: Stack(
+            key: _stackKey,
+            children: [
+              Column(
+                children: [
+                  _ChatHeader(
+                    chat: chat,
+                    onBeforeModeToggle: _captureModeAnchor,
+                    onModeChanged: (mode) {
+                      if (mode == ChatMode.normal) {
+                        unawaited(_showModeTipOnce(_ModeTip.normal));
+                      }
                     },
-                    child: NotificationListener<ScrollStartNotification>(
-                      onNotification: (notification) {
-                        // Only a real finger drag dismisses the selection.
-                        // Programmatic scrolls (the keyboard-inset snap-back
-                        // below calls jumpTo) report no drag details and must
-                        // not close the row out from under the user.
-                        final isUserDrag = notification.dragDetails != null;
-                        if (isUserDrag && _selectedMessage != null) {
-                          _closeSelection();
-                        }
-                        return false;
+                    practiceSetupRequired: chat.needsPracticeLanguageSelection,
+                    selectionActive: _selectedMessage != null,
+                    onDismissSelection: _closeSelection,
+                    onBack: () {
+                      if (_selectedMessage != null) {
+                        _closeSelection();
+                        return;
+                      }
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/chats');
+                      }
+                    },
+                    onMenu: () {
+                      if (_selectedMessage != null) {
+                        _closeSelection();
+                        return;
+                      }
+                      _toggleMenu();
+                    },
+                    onTapPartner: () async {
+                      if (_selectedMessage != null) {
+                        _closeSelection();
+                        return;
+                      }
+                      final result = await showPartnerProfileSheet(
+                        context,
+                        chat: chat,
+                      );
+                      // Blocking the partner hides this chat — leave the view.
+                      if (result == PartnerProfileResult.blocked &&
+                          context.mounted) {
+                        context.go('/chats');
+                      } else if (context.mounted && editing != null) {
+                        _inputFocus.requestFocus();
+                      }
+                    },
+                  ),
+                  if (pushNotifications.reminderVisible)
+                    _NotificationReminder(
+                      onDismiss: () => ref
+                          .read(pushNotificationsProvider.notifier)
+                          .dismissReminder(),
+                    ),
+                  const OfflineBanner(),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () {
+                        _closeMenu();
+                        _closeSelection();
                       },
-                      child: FutureBuilder<void>(
-                        future: _ready,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState !=
-                              ConnectionState.done) {
-                            return const ChatViewSkeleton();
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          // Only a real finger drag dismisses the selection.
+                          // Programmatic scrolls (the keyboard-inset snap-back
+                          // below calls jumpTo) report no drag details and must
+                          // not close the row out from under the user.
+                          final isUserDrag =
+                              notification is ScrollStartNotification &&
+                              notification.dragDetails != null;
+                          if (isUserDrag && _selectedMessage != null) {
+                            _closeSelection();
                           }
-                          // Show the skeleton only while we have NO data at
-                          // all. If the stream errored after a successful
-                          // initial yield (e.g. user toggled airplane mode),
-                          // keep showing the last-known messages rather than
-                          // collapsing to the loading shimmer.
-                          final knownMessages = messagesAsync.value;
-                          if (knownMessages == null) {
-                            return const ChatViewSkeleton();
+                          if (isUserDrag && !_translationResolveDeferred) {
+                            setState(() => _translationResolveDeferred = true);
+                          } else if (notification is ScrollEndNotification &&
+                              _translationResolveDeferred) {
+                            setState(() => _translationResolveDeferred = false);
                           }
-                          return Builder(
-                            builder: (context) {
-                              final messages = knownMessages;
-                              final pending = ref.watch(
-                                pendingSendsProvider(widget.chatId),
-                              );
-                              // In-place upgrade: after the server confirms
-                              // a send, the pending bubble carries the server's
-                              // id + timestamp. As soon as the realtime stream
-                              // emits the canonical row the merge layer dedupes
-                              // by id, dropping the pending without a flicker.
-                              final messageIds = messages
-                                  .map((m) => m.id)
-                                  .toSet();
-                              final pendingVisible = pending
-                                  .where((p) => !messageIds.contains(p.id))
-                                  .toList();
-                              // Optimistic delete overlay: hide anything the
-                              // user just deleted, instantly, without waiting
-                              // for the realtime row update. US-019.
-                              final hidden = ref.watch(
-                                hiddenMessagesProvider(widget.chatId),
-                              );
-                              // Auto-flush queued sends once we're back online
-                              // (covers reconnect after airplane mode and
-                              // sends interrupted by an app kill, re-hydrated
-                              // from disk on cold launch). flushPending guards
-                              // in-flight ids, so re-running it per rebuild is
-                              // safe. PRD US-030, US-031.
-                              if (online &&
-                                  pendingVisible.any(
-                                    (m) => m.status == MessageStatus.pending,
-                                  )) {
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  ref
+                          if (notification is ScrollEndNotification) {
+                            _markResolvedAtBottom();
+                          }
+                          return false;
+                        },
+                        child: FutureBuilder<void>(
+                          future: _ready,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState !=
+                                ConnectionState.done) {
+                              return const ChatViewSkeleton();
+                            }
+                            // Show the skeleton only while we have NO data at
+                            // all. If the stream errored after a successful
+                            // initial yield (e.g. user toggled airplane mode),
+                            // keep showing the last-known messages rather than
+                            // collapsing to the loading shimmer.
+                            final knownMessages = messagesAsync.value;
+                            if (knownMessages == null) {
+                              return const ChatViewSkeleton();
+                            }
+                            return Builder(
+                              builder: (context) {
+                                final messages = knownMessages;
+                                final pending = ref.watch(
+                                  pendingSendsProvider(widget.chatId),
+                                );
+                                // In-place upgrade: after the server confirms
+                                // a send, the pending bubble carries the server's
+                                // id + timestamp. As soon as the realtime stream
+                                // emits the canonical row the merge layer dedupes
+                                // by id, dropping the pending without a flicker.
+                                final messageIds = messages
+                                    .map((m) => m.id)
+                                    .toSet();
+                                final pendingVisible = pending
+                                    .where((p) => !messageIds.contains(p.id))
+                                    .toList();
+                                // Optimistic delete overlay: hide anything the
+                                // user just deleted, instantly, without waiting
+                                // for the realtime row update. US-019.
+                                final hidden = ref.watch(
+                                  hiddenMessagesProvider(widget.chatId),
+                                );
+                                // Auto-flush queued sends once we're back online
+                                // (covers reconnect after airplane mode and
+                                // sends interrupted by an app kill, re-hydrated
+                                // from disk on cold launch). flushPending guards
+                                // in-flight ids, so re-running it per rebuild is
+                                // safe. PRD US-030, US-031.
+                                if (online &&
+                                    pendingVisible.any(
+                                      (m) => m.status == MessageStatus.pending,
+                                    )) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    ref
+                                        .read(
+                                          chatMessagesProvider(
+                                            widget.chatId,
+                                          ).notifier,
+                                        )
+                                        .flushPending();
+                                  });
+                                }
+                                final all =
+                                    [...messages, ...pendingVisible]
+                                        .where((m) => !hidden.contains(m.id))
+                                        .toList()
+                                      ..sort(
+                                        (a, b) => a.sentAt.compareTo(b.sentAt),
+                                      );
+                                if (unreadIds.isNotEmpty &&
+                                    !_unreadDividerAnchored) {
+                                  WidgetsBinding.instance.addPostFrameCallback(
+                                    (_) => _anchorOldestUnread(),
+                                  );
+                                }
+                                final reactionsByMessage =
+                                    ref
+                                        .watch(
+                                          messageReactionsProvider(
+                                            widget.chatId,
+                                          ),
+                                        )
+                                        .value ??
+                                    const <
+                                      String,
+                                      List<MessageReactionSummary>
+                                    >{};
+                                return _MessageList(
+                                  chatId: widget.chatId,
+                                  partnerName: chat.partnerName,
+                                  messages: all,
+                                  reactionsByMessage: reactionsByMessage,
+                                  scrollController: _scroll,
+                                  languageCode: learningLang.code,
+                                  languageTimelineRows: languageTimelineRows,
+                                  languageTimelineReady: languageTimelineReady,
+                                  translationInterfaceLanguageCode:
+                                      translationInterfaceLang,
+                                  unreadMessageIds: unreadIds,
+                                  unreadDividerKey: _unreadDividerKey,
+                                  messageAnchorKey: _messageAnchorKey,
+                                  hasOlderMessages: pagination.hasMore,
+                                  isLoadingOlder: pagination.isLoading,
+                                  deferTranslationResolve:
+                                      _translationResolveDeferred,
+                                  // BUG-009: keep the word popup from drawing on
+                                  // top of the chat header. Account for the
+                                  // safe-area notch as well.
+                                  popupTopInset:
+                                      MediaQuery.paddingOf(context).top +
+                                      kChatHeaderHeight,
+                                  selectedMessageId: _selectedMessage?.id,
+                                  showSelectedOriginal: _showSelectedOriginal,
+                                  selectedBubbleKey: _selectedBubbleKey,
+                                  emptyState: FirstMessageEmptyState(
+                                    chat: chat,
+                                  ),
+                                  onLongPress: _selectMessage,
+                                  onReply: (m) {
+                                    if (editing != null) return;
+                                    _closeSelection();
+                                    HapticFeedback.selectionClick();
+                                    ref
+                                        .read(
+                                          replyingToProvider(
+                                            widget.chatId,
+                                          ).notifier,
+                                        )
+                                        .set(m);
+                                  },
+                                  onFailedTap: (m) {
+                                    final notifier = ref.read(
+                                      chatMessagesProvider(
+                                        widget.chatId,
+                                      ).notifier,
+                                    );
+                                    showFailedMessageSheet(
+                                      context,
+                                      onAction: (action) {
+                                        switch (action) {
+                                          case FailedMessageAction.retry:
+                                            notifier.retryFailed(m.id);
+                                            break;
+                                          case FailedMessageAction.delete:
+                                            notifier.dropPending(m.id);
+                                            break;
+                                        }
+                                      },
+                                    );
+                                  },
+                                  onFailedRetry: (m) => ref
                                       .read(
                                         chatMessagesProvider(
                                           widget.chatId,
                                         ).notifier,
                                       )
-                                      .flushPending();
-                                });
-                              }
-                              final all =
-                                  [...messages, ...pendingVisible]
-                                      .where((m) => !hidden.contains(m.id))
-                                      .toList()
-                                    ..sort(
-                                      (a, b) => a.sentAt.compareTo(b.sentAt),
-                                    );
-                              final reactionsByMessage =
-                                  ref
-                                      .watch(
-                                        messageReactionsProvider(widget.chatId),
-                                      )
-                                      .value ??
-                                  const <
-                                    String,
-                                    List<MessageReactionSummary>
-                                  >{};
-                              return _MessageList(
-                                chatId: widget.chatId,
-                                messages: all,
-                                reactionsByMessage: reactionsByMessage,
-                                scrollController: _scroll,
-                                languageCode: learningLang.code,
-                                translationInterfaceLanguageCode:
-                                    translationInterfaceLang,
-                                translationCutoffAt: translationCutoffAt,
-                                hasOlderMessages: pagination.hasMore,
-                                isLoadingOlder: pagination.isLoading,
-                                // BUG-009: keep the word popup from drawing on
-                                // top of the chat header. Account for the
-                                // safe-area notch as well.
-                                popupTopInset:
-                                    MediaQuery.paddingOf(context).top +
-                                    kChatHeaderHeight,
-                                emptyState: FirstMessageEmptyState(chat: chat),
-                                onLongPress: _selectMessage,
-                                onReply: (m) {
-                                  HapticFeedback.selectionClick();
-                                  ref
-                                      .read(
-                                        replyingToProvider(
-                                          widget.chatId,
-                                        ).notifier,
-                                      )
-                                      .set(m);
-                                },
-                                onFailedTap: (m) {
-                                  final notifier = ref.read(
-                                    chatMessagesProvider(
-                                      widget.chatId,
-                                    ).notifier,
-                                  );
-                                  showFailedMessageSheet(
+                                      .retryFailed(m.id),
+                                  onReact: (m) => showReactionDetailsSheet(
                                     context,
-                                    onAction: (action) {
-                                      switch (action) {
-                                        case FailedMessageAction.retry:
-                                          notifier.retryFailed(m.id);
-                                          break;
-                                        case FailedMessageAction.delete:
-                                          notifier.dropPending(m.id);
-                                          break;
-                                      }
-                                    },
-                                  );
-                                },
-                                onReact: (m) => showReactionDetailsSheet(
-                                  context,
-                                  reactions:
-                                      reactionsByMessage[m.id] ?? const [],
-                                  partnerName: chat.partnerName,
-                                  onChangeReaction: (emoji) => ref
-                                      .read(
-                                        messageReactionsProvider(
-                                          widget.chatId,
-                                        ).notifier,
-                                      )
-                                      .react(messageId: m.id, emoji: emoji),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                                    reactions:
+                                        reactionsByMessage[m.id] ?? const [],
+                                    partnerName: chat.partnerName,
+                                    onChangeReaction: (emoji) => ref
+                                        .read(
+                                          messageReactionsProvider(
+                                            widget.chatId,
+                                          ).notifier,
+                                        )
+                                        .react(messageId: m.id, emoji: emoji),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
+                  if (replyingTo != null)
+                    _ReplyBar(
+                      message: replyingTo,
+                      partnerName: chat.partnerName,
+                      onClose: () => ref
+                          .read(replyingToProvider(widget.chatId).notifier)
+                          .clear(),
+                    ),
+                  if (editing != null)
+                    _EditBar(
+                      onClose: () => ref
+                          .read(editingProvider(widget.chatId).notifier)
+                          .clear(),
+                    ),
+                  _selectedMessage != null
+                      ? MessageActionRow(
+                          message: _selectedMessage!,
+                          mode: chatMode,
+                          hasOriginal: activePresentation.canRevealOriginal,
+                          canListen:
+                              activePresentation.listenText != null &&
+                              hasSpeakableText(activePresentation.listenText!),
+                          isOriginalVisible: _showSelectedOriginal,
+                          onAction: (action) {
+                            final message = _selectedMessage!;
+                            if (action == MessageAction.original) {
+                              setState(
+                                () => _showSelectedOriginal =
+                                    !_showSelectedOriginal,
+                              );
+                              return;
+                            }
+                            if (action == MessageAction.listen) {
+                              _handleAction(
+                                message,
+                                action,
+                                chat,
+                                activePresentation,
+                                learningLang.code,
+                              );
+                              return;
+                            }
+                            _closeSelection();
+                            _handleAction(
+                              message,
+                              action,
+                              chat,
+                              activePresentation,
+                              learningLang.code,
+                            );
+                          },
+                        )
+                      : AbsorbPointer(
+                          absorbing: chat.needsPracticeLanguageSelection,
+                          child: Opacity(
+                            opacity: chat.needsPracticeLanguageSelection
+                                ? .45
+                                : 1,
+                            child: _InputBar(
+                              controller: _input,
+                              focusNode: _inputFocus,
+                              hasText: _hasText,
+                              hintText:
+                                  practiceHint ??
+                                  (chatIsEmpty
+                                      ? context.l10n.sayHi
+                                      : context.l10n.message),
+                              textLength: _textLength,
+                              maxLength: _maxMessageLength,
+                              counterShowAt: _counterShowAt,
+                              isPractice: chatMode == ChatMode.practice,
+                              showTopBorder: replyingTo == null,
+                              onAttach: () =>
+                                  _attachImage(recipientName: chat.partnerName),
+                              onSend: _send,
+                              autofocus:
+                                  chatIsEmpty ||
+                                  replyingTo != null ||
+                                  editing != null,
+                              allowAttachment: editing == null,
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+              if (_menuOpen)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: _closeMenu,
+                    child: const SizedBox.shrink(),
+                  ),
                 ),
-                if (replyingTo != null)
-                  _ReplyBar(
-                    message: replyingTo,
-                    partnerName: chat.partnerName,
-                    onClose: () => ref
-                        .read(replyingToProvider(widget.chatId).notifier)
-                        .clear(),
+              if (_menuOpen)
+                Positioned(
+                  top:
+                      MediaQuery.paddingOf(context).top + kChatHeaderHeight - 4,
+                  right: 8,
+                  child: _ChatMenu(
+                    chatId: widget.chatId,
+                    onLearningLanguageTap: () async {
+                      final saveError =
+                          context.l10n.couldNotSaveLearningLanguage;
+                      _closeMenu();
+                      final current = ref.read(
+                        learningLanguageProvider(widget.chatId),
+                      );
+                      final picked = await showLearningLanguageSheet(
+                        context,
+                        current: current,
+                      );
+                      if (picked != null) {
+                        try {
+                          await ref
+                              .read(
+                                learningLanguageProvider(
+                                  widget.chatId,
+                                ).notifier,
+                              )
+                              .set(picked);
+                        } catch (_) {
+                          if (!mounted) return;
+                          showAppSnack(saveError);
+                        }
+                      }
+                      if (mounted && editing != null) {
+                        _inputFocus.requestFocus();
+                      }
+                    },
+                    onTranslationPreferencesTap: () async {
+                      _closeMenu();
+                      await context.push(
+                        '/chat/${widget.chatId}/translation-preferences?name=${Uri.encodeComponent(chat.partnerName)}',
+                      );
+                      if (mounted && editing != null) {
+                        _inputFocus.requestFocus();
+                      }
+                    },
                   ),
-                if (editing != null)
-                  _EditBar(
-                    onClose: () => ref
-                        .read(editingProvider(widget.chatId).notifier)
-                        .clear(),
+                ),
+              if (_visibleModeTip != null)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () => setState(() => _visibleModeTip = null),
+                    child: const SizedBox.expand(),
                   ),
-                _selectedMessage != null
-                    ? MessageActionRow(
-                        message: _selectedMessage!,
-                        onAction: (action) {
+                ),
+              if (_visibleModeTip != null)
+                Positioned(
+                  top:
+                      MediaQuery.paddingOf(context).top + kChatHeaderHeight + 8,
+                  right: 16,
+                  child: _ModeTipCard(
+                    tip: _visibleModeTip!,
+                    practiceLanguage: learningLang.name,
+                    primaryKnownLanguage: _languageNameForCode(
+                      knownLanguages?.primary,
+                    ),
+                    onDismiss: () => setState(() => _visibleModeTip = null),
+                    onEditKnownLanguages: () {
+                      setState(() => _visibleModeTip = null);
+                      context.push('/profile/known-languages');
+                    },
+                  ),
+                ),
+              if (_selectedMessage != null &&
+                  _selectedBubbleRect != null &&
+                  _selectedPressPosition != null &&
+                  canReplyToMessage(_selectedMessage!))
+                Builder(
+                  builder: (_) {
+                    final stackBox =
+                        _stackKey.currentContext?.findRenderObject()
+                            as RenderBox?;
+                    if (stackBox == null || !stackBox.hasSize) {
+                      return const SizedBox.shrink();
+                    }
+                    // Reading live render-tree geometry mid-build can race a
+                    // route transition — e.g. tapping a photo right after
+                    // picking an emoji, while this frame's tree is still
+                    // mid-layout from the selection closing. Fail soft: skip
+                    // the row for that one frame instead of crashing; it's
+                    // gone by the next frame regardless since the selection
+                    // just closed.
+                    double localTop;
+                    try {
+                      final padding = MediaQuery.paddingOf(context);
+                      final minTop = padding.top + 4;
+                      final stackBottom = stackBox
+                          .localToGlobal(Offset(0, stackBox.size.height))
+                          .dy;
+                      final maxBottom =
+                          stackBottom -
+                          padding.bottom -
+                          kMessageActionRowMinHeight;
+                      final globalTop = computeReactionRowTop(
+                        bubbleRect: _selectedBubbleRect!,
+                        pressPosition: _selectedPressPosition!,
+                        rowHeight: kFloatingReactionRowHeight,
+                        minTop: minTop,
+                        maxBottom: maxBottom,
+                      );
+                      localTop = stackBox
+                          .globalToLocal(Offset(0, globalTop))
+                          .dy;
+                    } catch (_) {
+                      return const SizedBox.shrink();
+                    }
+                    // Centered on the stack rather than the bubble, so the
+                    // row sits the same distance from both edges regardless
+                    // of which side the bubble is on. Measured against the
+                    // stack's own width (not the full screen) so it lines up
+                    // even when SafeArea reserves horizontal space, and kept
+                    // clear of the physical edges — curved-edge phones and
+                    // Android's edge-swipe-back gesture both eat touches in
+                    // the outermost strip, which made the leftmost/rightmost
+                    // buttons unreliable to tap.
+                    final stackWidth = stackBox.size.width;
+                    const edgeMargin = 16.0;
+                    final centered =
+                        (stackWidth - kFloatingReactionRowWidth) / 2;
+                    final maxLeft =
+                        stackWidth - kFloatingReactionRowWidth - edgeMargin;
+                    final left = maxLeft >= edgeMargin
+                        ? centered.clamp(edgeMargin, maxLeft)
+                        : centered;
+                    return Positioned(
+                      top: localTop,
+                      left: left,
+                      child: FloatingReactionRow(
+                        selectedEmoji: _viewerReactionEmoji(
+                          _selectedMessage!.id,
+                        ),
+                        onPick: (emoji) {
                           final message = _selectedMessage!;
                           _closeSelection();
-                          _handleAction(message, action, chat);
-                        },
-                      )
-                    : _InputBar(
-                        controller: _input,
-                        hasText: _hasText,
-                        hintText: chatIsEmpty
-                            ? context.l10n.sayHi
-                            : context.l10n.message,
-                        textLength: _textLength,
-                        maxLength: _maxMessageLength,
-                        counterShowAt: _counterShowAt,
-                        onAttach: () =>
-                            _attachImage(recipientName: chat.partnerName),
-                        onSend: _send,
-                        autofocus: chatIsEmpty,
-                      ),
-              ],
-            ),
-            if (_menuOpen)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: _closeMenu,
-                  child: const SizedBox.shrink(),
-                ),
-              ),
-            if (_menuOpen)
-              Positioned(
-                top: MediaQuery.paddingOf(context).top + kChatHeaderHeight - 4,
-                right: 8,
-                child: _ChatMenu(
-                  chatId: widget.chatId,
-                  onLearningLanguageTap: () async {
-                    final saveError = context.l10n.couldNotSaveLearningLanguage;
-                    _closeMenu();
-                    final current = ref.read(
-                      learningLanguageProvider(widget.chatId),
-                    );
-                    final picked = await showLearningLanguageSheet(
-                      context,
-                      current: current,
-                    );
-                    if (picked != null) {
-                      try {
-                        await ref
-                            .read(
-                              learningLanguageProvider(widget.chatId).notifier,
-                            )
-                            .set(picked);
-                      } catch (_) {
-                        if (!mounted) return;
-                        showAppSnack(saveError);
-                      }
-                    }
-                  },
-                ),
-              ),
-            if (_selectedMessage != null &&
-                _selectedBubbleRect != null &&
-                _selectedPressPosition != null &&
-                canReplyToMessage(_selectedMessage!))
-              Builder(
-                builder: (_) {
-                  final stackBox =
-                      _stackKey.currentContext?.findRenderObject()
-                          as RenderBox?;
-                  if (stackBox == null || !stackBox.hasSize) {
-                    return const SizedBox.shrink();
-                  }
-                  final minTop = MediaQuery.paddingOf(context).top + 4;
-                  final globalTop = computeReactionRowTop(
-                    bubbleRect: _selectedBubbleRect!,
-                    pressPosition: _selectedPressPosition!,
-                    rowHeight: kFloatingReactionRowHeight,
-                    minTop: minTop,
-                  );
-                  // Reading live render-tree geometry mid-build can race a
-                  // route transition — e.g. tapping a photo right after
-                  // picking an emoji, while this frame's tree is still
-                  // mid-layout from the selection closing. Fail soft: skip
-                  // the row for that one frame instead of crashing; it's
-                  // gone by the next frame regardless since the selection
-                  // just closed.
-                  double localTop;
-                  try {
-                    localTop = stackBox.globalToLocal(Offset(0, globalTop)).dy;
-                  } catch (_) {
-                    return const SizedBox.shrink();
-                  }
-                  // Centered on the stack rather than the bubble, so the
-                  // row sits the same distance from both edges regardless
-                  // of which side the bubble is on. Measured against the
-                  // stack's own width (not the full screen) so it lines up
-                  // even when SafeArea reserves horizontal space, and kept
-                  // clear of the physical edges — curved-edge phones and
-                  // Android's edge-swipe-back gesture both eat touches in
-                  // the outermost strip, which made the leftmost/rightmost
-                  // buttons unreliable to tap.
-                  final stackWidth = stackBox.size.width;
-                  const edgeMargin = 16.0;
-                  final centered = (stackWidth - kFloatingReactionRowWidth) / 2;
-                  final maxLeft = stackWidth - kFloatingReactionRowWidth - edgeMargin;
-                  final left = maxLeft >= edgeMargin
-                      ? centered.clamp(edgeMargin, maxLeft)
-                      : centered;
-                  return Positioned(
-                    top: localTop,
-                    left: left,
-                    child: FloatingReactionRow(
-                      selectedEmoji: _viewerReactionEmoji(_selectedMessage!.id),
-                      onPick: (emoji) {
-                        final message = _selectedMessage!;
-                        _closeSelection();
-                        ref
-                            .read(
-                              messageReactionsProvider(widget.chatId).notifier,
-                            )
-                            .react(messageId: message.id, emoji: emoji);
-                      },
-                      onMore: () {
-                        final message = _selectedMessage!;
-                        _closeSelection();
-                        showFullEmojiPickerSheet(
-                          context,
-                          interfaceLanguageCode: interfaceLang.code,
-                          onPick: (emoji) => ref
+                          ref
                               .read(
                                 messageReactionsProvider(
                                   widget.chatId,
                                 ).notifier,
                               )
-                              .react(messageId: message.id, emoji: emoji),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-          ],
+                              .react(messageId: message.id, emoji: emoji);
+                        },
+                        onMore: () {
+                          final message = _selectedMessage!;
+                          _closeSelection();
+                          showFullEmojiPickerSheet(
+                            context,
+                            interfaceLanguageCode: interfaceLang.code,
+                            onPick: (emoji) => ref
+                                .read(
+                                  messageReactionsProvider(
+                                    widget.chatId,
+                                  ).notifier,
+                                )
+                                .react(messageId: message.id, emoji: emoji),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -890,17 +1495,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 // ─────────────────────────── header ──────────────────────────────────────────
 
 /// Height of the header's back/avatar/name/menu row.
-const double kChatHeaderTopRowHeight = 60;
-
-/// Height of the mode-toggle row underneath it — the toggle itself (~32,
-/// see [ModeToggle]) plus its bottom padding.
-const double kChatHeaderToggleRowHeight = 40;
-
-/// Total header height: consumers (word-popup top inset, the ··· menu's
-/// dropdown position) key off this so they stay pinned below the whole
-/// header, not just its top row.
-const double kChatHeaderHeight =
-    kChatHeaderTopRowHeight + kChatHeaderToggleRowHeight;
+const double kChatHeaderTopRowHeight = 56;
+const double kChatHeaderHeight = 56;
 
 class _NotificationReminder extends StatelessWidget {
   const _NotificationReminder({required this.onDismiss});
@@ -950,15 +1546,25 @@ class _NotificationReminder extends StatelessWidget {
 class _ChatHeader extends ConsumerWidget {
   const _ChatHeader({
     required this.chat,
+    required this.onBeforeModeToggle,
+    required this.onModeChanged,
+    required this.practiceSetupRequired,
     required this.onBack,
     required this.onMenu,
     required this.onTapPartner,
+    required this.selectionActive,
+    required this.onDismissSelection,
   });
 
   final Chat chat;
+  final VoidCallback onBeforeModeToggle;
+  final ValueChanged<ChatMode> onModeChanged;
+  final bool practiceSetupRequired;
   final VoidCallback onBack;
   final VoidCallback onMenu;
   final VoidCallback onTapPartner;
+  final bool selectionActive;
+  final VoidCallback onDismissSelection;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -966,130 +1572,233 @@ class _ChatHeader extends ConsumerWidget {
         ref.watch(partnerTypingProvider(chat.id)).value ?? false;
     final topInset = MediaQuery.paddingOf(context).top;
     return Container(
-      color: Colors.white,
       padding: EdgeInsets.fromLTRB(4, topInset, 4, 0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: kChatHeaderTopRowHeight,
-            child: Row(
-              children: [
-                IconButton(
-                  tooltip: context.l10n.back,
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 20,
-                    color: BlabColors.textPrimary,
-                  ),
-                  onPressed: onBack,
-                  splashRadius: 22,
+      decoration: const BoxDecoration(
+        color: BlabColors.chatSurface,
+        border: Border(bottom: BorderSide(color: BlabColors.chatDivider)),
+      ),
+      child: SizedBox(
+        height: kChatHeaderTopRowHeight,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 44,
+              height: 56,
+              child: IconButton(
+                tooltip: context.l10n.back,
+                padding: const EdgeInsets.only(left: 4),
+                icon: const BlabIcon(
+                  name: 'nav-arrow-left - 20',
+                  color: BlabColors.textPrimary,
+                  size: 20,
                 ),
-                Expanded(
-                  child: InkWell(
-                    onTap: onTapPartner,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 4,
-                      ),
-                      child: Row(
+                onPressed: onBack,
+                splashRadius: 22,
+              ),
+            ),
+            Expanded(
+              child: InkWell(
+                onTap: onTapPartner,
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    _HeaderAvatar(name: chat.partnerName),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _HeaderAvatar(
-                            name: chat.partnerName,
-                            initial: chat.partnerInitial,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _capitaliseName(chat.partnerName),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: BlabColors.textPrimary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 150),
-                                  child: partnerTyping
-                                      ? Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 1,
-                                          ),
-                                          child: Text(
-                                            context.l10n.typing,
-                                            key: const ValueKey(true),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: BlabColors.brand,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink(
-                                          key: ValueKey(false),
-                                        ),
-                                ),
-                              ],
+                          Text(
+                            _capitaliseName(chat.partnerName),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              height: 1.2,
+                              fontWeight: FontWeight.w800,
+                              color: BlabColors.sendButton,
                             ),
                           ),
+                          if (partnerTyping)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: Text(
+                                context.l10n.typing,
+                                key: const ValueKey(true),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: BlabColors.brand,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
-                IconButton(
-                  tooltip: context.l10n.chatMenu,
-                  icon: const Icon(Icons.more_vert, size: 22),
-                  color: BlabColors.textMuted,
-                  onPressed: onMenu,
-                  splashRadius: 22,
+              ),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: selectionActive ? onDismissSelection : null,
+              child: AbsorbPointer(
+                absorbing: selectionActive || practiceSetupRequired,
+                child: ModeToggle(
+                  chatId: chat.id,
+                  onBeforeToggle: onBeforeModeToggle,
+                  onModeChanged: onModeChanged,
                 ),
-              ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8, bottom: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: ModeToggle(chatId: chat.id),
+            SizedBox(
+              width: 44,
+              height: 56,
+              child: IconButton(
+                tooltip: context.l10n.chatMenu,
+                icon: const BlabIcon(
+                  name: 'more-vert - 20',
+                  color: BlabColors.textPrimary,
+                  size: 20,
+                ),
+                onPressed: practiceSetupRequired ? null : onMenu,
+                splashRadius: 22,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _HeaderAvatar extends StatelessWidget {
-  const _HeaderAvatar({required this.name, required this.initial});
+  const _HeaderAvatar({required this.name});
   final String name;
-  final String initial;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 32,
-      height: 32,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: BlabColors.avatarColorFor(name),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x21231208),
+            offset: Offset(0, 2),
+            blurRadius: 4,
+          ),
+        ],
       ),
       alignment: Alignment.center,
       child: Text(
-        initial,
+        BlabColors.avatarInitialsFor(name),
         style: const TextStyle(
           color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeTipCard extends StatelessWidget {
+  const _ModeTipCard({
+    required this.tip,
+    required this.practiceLanguage,
+    required this.primaryKnownLanguage,
+    required this.onDismiss,
+    required this.onEditKnownLanguages,
+  });
+
+  final _ModeTip tip;
+  final String practiceLanguage;
+  final String primaryKnownLanguage;
+  final VoidCallback onDismiss;
+  final VoidCallback onEditKnownLanguages;
+
+  @override
+  Widget build(BuildContext context) {
+    final practice = tip == _ModeTip.practice;
+    final title = practice ? 'Practice mode' : 'Normal mode';
+    final body = practice
+        ? 'Messages appear in $practiceLanguage. Blab helps correct mistakes and translates from $primaryKnownLanguage. Switch to Normal to see the original.'
+        : 'Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.';
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF88C5A),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33231208),
+              offset: Offset(0, 2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF46281C),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                InkResponse(
+                  onTap: onDismiss,
+                  radius: 20,
+                  child: const Icon(
+                    Icons.close,
+                    size: 18,
+                    color: Color(0xFF46281C),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              body,
+              style: const TextStyle(
+                color: Color(0xFF46281C),
+                fontSize: 12,
+                height: 16 / 12,
+              ),
+            ),
+            if (!practice) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: onEditKnownLanguages,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(44, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  foregroundColor: const Color(0xFF46281C),
+                ),
+                child: const Text(
+                  'Edit known languages',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
@@ -1099,10 +1808,15 @@ class _HeaderAvatar extends StatelessWidget {
 // ─────────────────────────── menu ────────────────────────────────────────────
 
 class _ChatMenu extends ConsumerWidget {
-  const _ChatMenu({required this.chatId, required this.onLearningLanguageTap});
+  const _ChatMenu({
+    required this.chatId,
+    required this.onLearningLanguageTap,
+    required this.onTranslationPreferencesTap,
+  });
 
   final String chatId;
   final VoidCallback onLearningLanguageTap;
+  final VoidCallback onTranslationPreferencesTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1111,14 +1825,16 @@ class _ChatMenu extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
+          color: BlabColors.chatSurface,
+          border: Border.all(color: BlabColors.chatDivider),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.13),
-              blurRadius: 24,
-              offset: const Offset(0, 4),
+              color: Color(0x1A231208),
+              blurRadius: 12,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -1129,41 +1845,80 @@ class _ChatMenu extends ConsumerWidget {
             children: [
               InkWell(
                 onTap: onLearningLanguageTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+                child: SizedBox(
+                  height: 52,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          context.l10n.learningLanguage,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: BlabColors.sendButton,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              learningLang.name,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF917869),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const BlabIcon(
+                              name: 'nav-arrow-right - 20',
+                              color: Color(0xFF917869),
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        context.l10n.learningLanguage,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: BlabColors.textPrimary,
+                ),
+              ),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: BlabColors.chatDivider,
+              ),
+              InkWell(
+                onTap: onTranslationPreferencesTap,
+                child: SizedBox(
+                  height: 52,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Text(
+                          'Translation preferences',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: BlabColors.sendButton,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Text(
-                        learningLang.name,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: BlabColors.textMuted,
+                        SizedBox(width: 16),
+                        BlabIcon(
+                          name: 'nav-arrow-right - 20',
+                          color: Color(0xFF917869),
+                          size: 20,
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '›',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: BlabColors.brand,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1177,68 +1932,163 @@ class _ChatMenu extends ConsumerWidget {
 
 // ─────────────────────────── messages list ───────────────────────────────────
 
-class _MessageList extends StatelessWidget {
+class _MessageList extends ConsumerWidget {
   const _MessageList({
     required this.chatId,
+    required this.partnerName,
     required this.messages,
     required this.reactionsByMessage,
     required this.scrollController,
     required this.languageCode,
+    required this.languageTimelineRows,
+    required this.languageTimelineReady,
     required this.translationInterfaceLanguageCode,
-    required this.translationCutoffAt,
+    required this.unreadMessageIds,
+    required this.unreadDividerKey,
+    required this.messageAnchorKey,
     required this.hasOlderMessages,
     required this.isLoadingOlder,
+    required this.deferTranslationResolve,
     required this.popupTopInset,
     required this.onLongPress,
     required this.onReply,
     required this.onFailedTap,
+    required this.onFailedRetry,
     required this.onReact,
+    required this.selectedMessageId,
+    required this.showSelectedOriginal,
+    required this.selectedBubbleKey,
     this.emptyState,
   });
 
   final String chatId;
+  final String partnerName;
   final List<Message> messages;
   final Map<String, List<MessageReactionSummary>> reactionsByMessage;
   final ScrollController scrollController;
   final String languageCode;
+  final List<Map<String, dynamic>> languageTimelineRows;
+  final bool languageTimelineReady;
 
   /// The reader's primary known language (modes-known-languages spec): the
   /// translation pipeline's "interface" slot — cache-row key and second-lane
   /// target — never `profiles.interface_language`.
   final String translationInterfaceLanguageCode;
-  final DateTime? translationCutoffAt;
+  final List<String> unreadMessageIds;
+  final GlobalKey unreadDividerKey;
+  final GlobalKey Function(String messageId) messageAnchorKey;
   final bool hasOlderMessages;
   final bool isLoadingOlder;
+  final bool deferTranslationResolve;
   final double popupTopInset;
   final void Function(Message, Rect, Offset) onLongPress;
   final void Function(Message) onReply;
   final void Function(Message) onFailedTap;
+  final void Function(Message) onFailedRetry;
   final void Function(Message) onReact;
+  final String? selectedMessageId;
+  final bool showSelectedOriginal;
+  final GlobalKey selectedBubbleKey;
   final Widget? emptyState;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (messages.isEmpty) {
       return emptyState ?? const SizedBox.expand();
+    }
+
+    final mode = ref.watch(chatModeProvider(chatId));
+    final knownLanguages = ref.watch(knownLanguagesProvider).value;
+    final languageTimeline = parseChatLanguageTimeline(languageTimelineRows);
+    ChatLanguageEra eraForMessage(Message message) => languageEraForMessage(
+      sentAt: message.sentAt,
+      timeline: languageTimeline,
+      fallbackLanguageCode: languageCode,
+    );
+    String targetForMessage(Message message) {
+      if (knownLanguages == null) return '';
+      return resolveTranslationTarget(
+        mode: mode,
+        learningLanguageCode: eraForMessage(message).languageCode,
+        primaryKnownLanguageCode: knownLanguages.primary,
+      );
+    }
+
+    final translationState = ref.watch(messageTranslationsProvider(chatId));
+    final languageChanges = languageTimelineRows
+        .where((event) => (event['revision'] as num?)?.toInt() != 1)
+        .map(
+          (event) => (
+            when: DateTime.tryParse(event['created_at'] as String? ?? ''),
+            language: event['learning_language'] as String?,
+          ),
+        )
+        .where((event) => event.when != null && event.language != null)
+        .toList();
+    final pendingIncoming = messages.where((message) {
+      if (!languageTimelineReady) return false;
+      final targetLanguage = targetForMessage(message);
+      if (message.isOutgoing ||
+          !shouldRequestBubbleTranslation(
+            targetLanguageCode: targetLanguage,
+            text: message.originalText,
+            sentAt: message.sentAt,
+            translationCutoffAt: null,
+          )) {
+        return false;
+      }
+      final entry =
+          translationState[translationEntryKey(
+            message.id,
+            targetLanguage,
+            translationInterfaceLanguageCode,
+          )];
+      return entry is! AsyncData<MessageTranslation> &&
+          entry is! AsyncError<MessageTranslation>;
+    }).toList();
+    final firstPendingId = pendingIncoming.firstOrNull?.id;
+    final pendingIds = pendingIncoming.map((message) => message.id).toSet();
+    final hasEarlierPending = <String, bool>{};
+    var earlierPending = false;
+    for (final message in messages) {
+      hasEarlierPending[message.id] = earlierPending;
+      if (pendingIds.contains(message.id)) earlierPending = true;
     }
 
     // Pre-compute rendering hints: date dividers + whether each message is
     // the last in its group (for timestamp/tick visibility).
     final items = <_ListItem>[];
+    var languageChangeIndex = 0;
     for (int i = 0; i < messages.length; i++) {
       final m = messages[i];
       final prev = i == 0 ? null : messages[i - 1];
       final next = i == messages.length - 1 ? null : messages[i + 1];
-
-      if (prev == null || !_isSameDay(prev.sentAt, m.sentAt)) {
-        items.add(_DateDividerItem(m.sentAt));
-      }
-
+      final startsNewDate = prev == null || !_isSameDay(prev.sentAt, m.sentAt);
       final isFirstInGroup =
           prev == null ||
           prev.isOutgoing != m.isOutgoing ||
-          !_isSameDay(prev.sentAt, m.sentAt) ||
+          startsNewDate ||
           m.sentAt.difference(prev.sentAt).inMinutes.abs() > 2;
+      final messageTopGap = isFirstInGroup ? 10.0 : 2.0;
+
+      if (startsNewDate) {
+        items.add(_DateDividerItem(m.sentAt));
+      }
+      while (languageChangeIndex < languageChanges.length &&
+          !languageChanges[languageChangeIndex].when!.isAfter(m.sentAt)) {
+        final change = languageChanges[languageChangeIndex++];
+        items.add(
+          _LanguageTimelineItem(
+            languageCode: change.language!,
+            topPadding: startsNewDate ? 0 : 10,
+            bottomPadding: (10 - messageTopGap).clamp(0, 10).toDouble(),
+          ),
+        );
+      }
+      if (unreadMessageIds.isNotEmpty && m.id == unreadMessageIds.first) {
+        items.add(_UnreadDividerItem(unreadMessageIds.length));
+      }
+
       final isLastInGroup =
           next == null ||
           next.isOutgoing != m.isOutgoing ||
@@ -1250,6 +2100,19 @@ class _MessageList extends StatelessWidget {
           message: m,
           isFirstInGroup: isFirstInGroup,
           isLastInGroup: isLastInGroup,
+        ),
+      );
+      if (m.id == firstPendingId) {
+        items.add(_PendingTranslationStatusItem(pendingIncoming.length));
+      }
+    }
+    while (languageChangeIndex < languageChanges.length) {
+      final change = languageChanges[languageChangeIndex++];
+      items.add(
+        _LanguageTimelineItem(
+          languageCode: change.language!,
+          topPadding: 10,
+          bottomPadding: 10,
         ),
       );
     }
@@ -1285,26 +2148,56 @@ class _MessageList extends StatelessWidget {
         if (item is _DateDividerItem) {
           return _DateDivider(when: item.when);
         }
+        if (item is _UnreadDividerItem) {
+          return _UnreadDivider(key: unreadDividerKey, count: item.count);
+        }
+        if (item is _PendingTranslationStatusItem) {
+          return _PendingTranslationStatus(count: item.count);
+        }
+        if (item is _LanguageTimelineItem) {
+          return _LanguageTimelineMarker(
+            languageCode: item.languageCode,
+            topPadding: item.topPadding,
+            bottomPadding: item.bottomPadding,
+          );
+        }
         if (item is _MessageItem) {
-          return _MessageRow(
-            chatId: chatId,
-            message: item.message,
-            reactions: reactionsByMessage[item.message.id] ?? const [],
-            isFirstInGroup: item.isFirstInGroup,
-            isLastInGroup: item.isLastInGroup,
-            languageCode: languageCode,
-            translationInterfaceLanguageCode: translationInterfaceLanguageCode,
-            shouldTranslate: shouldTranslateMessage(
-              sentAt: item.message.sentAt,
-              translationCutoffAt: translationCutoffAt,
+          final era = eraForMessage(item.message);
+          final replyEra = item.message.replyTo == null
+              ? era
+              : eraForMessage(item.message.replyTo!);
+          return KeyedSubtree(
+            key: messageAnchorKey(item.message.id),
+            child: _MessageRow(
+              chatId: chatId,
+              partnerName: partnerName,
+              message: item.message,
+              reactions: reactionsByMessage[item.message.id] ?? const [],
+              isFirstInGroup: item.isFirstInGroup,
+              isLastInGroup: item.isLastInGroup,
+              languageCode: era.languageCode,
+              replyLanguageCode: replyEra.languageCode,
+              translationInterfaceLanguageCode:
+                  translationInterfaceLanguageCode,
+              shouldTranslate: languageTimelineReady,
+              translationCutoffAt: null,
+              popupTopInset: popupTopInset,
+              deferTranslationResolve: deferTranslationResolve,
+              holdIncomingUntilPrevious:
+                  hasEarlierPending[item.message.id] ?? false,
+              isSelected: selectedMessageId == item.message.id,
+              showOriginal:
+                  selectedMessageId == item.message.id && showSelectedOriginal,
+              selectedBubbleKey: selectedMessageId == item.message.id
+                  ? selectedBubbleKey
+                  : null,
+              onLongPress: (rect, position) =>
+                  onLongPress(item.message, rect, position),
+              onReply: () => onReply(item.message),
+              onFailedTap: () => onFailedTap(item.message),
+              onFailedRetry: () => onFailedRetry(item.message),
+              onReact: () => onReact(item.message),
             ),
-            translationCutoffAt: translationCutoffAt,
-            popupTopInset: popupTopInset,
-            onLongPress: (rect, position) =>
-                onLongPress(item.message, rect, position),
-            onReply: () => onReply(item.message),
-            onFailedTap: () => onFailedTap(item.message),
-            onReact: () => onReact(item.message),
           );
         }
         return const SizedBox.shrink();
@@ -1316,6 +2209,14 @@ class _MessageList extends StatelessWidget {
 String _capitaliseName(String name) =>
     name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
 
+String _languageNameForCode(String? code) {
+  if (code == null) return 'your language';
+  for (final language in kBlabLanguages) {
+    if (language.code == code) return language.name;
+  }
+  return 'your language';
+}
+
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -1326,6 +2227,56 @@ sealed class _ListItem {
 class _DateDividerItem extends _ListItem {
   const _DateDividerItem(this.when);
   final DateTime when;
+}
+
+class _UnreadDividerItem extends _ListItem {
+  const _UnreadDividerItem(this.count);
+  final int count;
+}
+
+class _PendingTranslationStatusItem extends _ListItem {
+  const _PendingTranslationStatusItem(this.count);
+  final int count;
+}
+
+class _LanguageTimelineItem extends _ListItem {
+  const _LanguageTimelineItem({
+    required this.languageCode,
+    required this.topPadding,
+    required this.bottomPadding,
+  });
+  final String languageCode;
+  final double topPadding;
+  final double bottomPadding;
+}
+
+class _LanguageTimelineMarker extends StatelessWidget {
+  const _LanguageTimelineMarker({
+    required this.languageCode,
+    required this.topPadding,
+    required this.bottomPadding,
+  });
+
+  final String languageCode;
+  final double topPadding;
+  final double bottomPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+      child: Center(
+        child: Text(
+          'Now learning ${_languageNameForCode(languageCode)}',
+          style: const TextStyle(
+            color: Color(0xFF8C735F),
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MessageItem extends _ListItem {
@@ -1347,21 +2298,14 @@ class _DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = _formatDay(context, when);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.only(top: 18, bottom: 10),
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: BlabColors.textMuted,
-              fontWeight: FontWeight.w500,
-            ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: BlabColors.textMuted,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -1385,32 +2329,98 @@ class _DateDivider extends StatelessWidget {
   }
 }
 
+class _UnreadDivider extends StatelessWidget {
+  const _UnreadDivider({super.key, required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count == 1 ? '1 new message' : '$count new messages';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: Color(0xFFE1DAD2), height: 1)),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.25,
+              color: BlabColors.textMuted,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(child: Divider(color: Color(0xFFE1DAD2), height: 1)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PendingTranslationStatus extends StatelessWidget {
+  const _PendingTranslationStatus({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12, top: 2, bottom: 6),
+        child: Text(
+          count == 1 ? 'Translating…' : 'Translating $count messages…',
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.25,
+            color: BlabColors.textMuted,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────── message row ─────────────────────────────────────
 
 class _MessageRow extends ConsumerWidget {
   const _MessageRow({
     required this.chatId,
+    required this.partnerName,
     required this.message,
     required this.reactions,
     required this.isFirstInGroup,
     required this.isLastInGroup,
     required this.languageCode,
+    required this.replyLanguageCode,
     required this.translationInterfaceLanguageCode,
     required this.shouldTranslate,
     required this.translationCutoffAt,
     required this.popupTopInset,
+    required this.deferTranslationResolve,
+    required this.holdIncomingUntilPrevious,
     required this.onLongPress,
     required this.onReply,
     required this.onFailedTap,
+    required this.onFailedRetry,
     required this.onReact,
+    required this.isSelected,
+    required this.showOriginal,
+    this.selectedBubbleKey,
   });
 
   final String chatId;
+  final String partnerName;
   final Message message;
   final List<MessageReactionSummary> reactions;
   final bool isFirstInGroup;
   final bool isLastInGroup;
   final String languageCode;
+  final String replyLanguageCode;
 
   /// The reader's primary known language — the translation pipeline's
   /// "interface" slot (cache-row key, second-lane target). See
@@ -1419,10 +2429,16 @@ class _MessageRow extends ConsumerWidget {
   final bool shouldTranslate;
   final DateTime? translationCutoffAt;
   final double popupTopInset;
+  final bool deferTranslationResolve;
+  final bool holdIncomingUntilPrevious;
   final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onReply;
   final VoidCallback onFailedTap;
+  final VoidCallback onFailedRetry;
   final VoidCallback onReact;
+  final bool isSelected;
+  final bool showOriginal;
+  final GlobalKey? selectedBubbleKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1448,9 +2464,21 @@ class _MessageRow extends ConsumerWidget {
             learningLanguageCode: languageCode,
             primaryKnownLanguageCode: knownLanguages.primary,
           );
+    final replyTargetLang = knownLanguages == null
+        ? ''
+        : resolveTranslationTarget(
+            mode: mode,
+            learningLanguageCode: replyLanguageCode,
+            primaryKnownLanguageCode: knownLanguages.primary,
+          );
     final knownLanguageCodes = knownLanguages?.codes ?? [languageCode];
 
+    final deliveryAllowsLanguageAid =
+        !isOut ||
+        message.status == MessageStatus.delivered ||
+        message.status == MessageStatus.read;
     final canRequestTranslation =
+        deliveryAllowsLanguageAid &&
         shouldTranslate &&
         shouldRequestTranslation(
           targetLanguageCode: targetLang,
@@ -1461,15 +2489,29 @@ class _MessageRow extends ConsumerWidget {
     final canRequestReplyTranslation =
         replyTo != null &&
         shouldRequestBubbleTranslation(
-          targetLanguageCode: targetLang,
+          targetLanguageCode: replyTargetLang,
           text: replyTo.originalText,
           sentAt: replyTo.sentAt,
-          translationCutoffAt: translationCutoffAt,
+          translationCutoffAt: null,
         );
     final translationNotifier =
         canRequestTranslation || canRequestReplyTranslation
         ? ref.read(messageTranslationsProvider(chatId).notifier)
         : null;
+    final translationEntry =
+        canRequestTranslation &&
+            kSupportedLearningLanguages.contains(targetLang)
+        ? ref.read(messageTranslationsProvider(chatId))[translationEntryKey(
+            message.id,
+            targetLang,
+            translationInterfaceLanguageCode,
+          )]
+        : null;
+    final readableForRead =
+        isOut ||
+        !canRequestTranslation ||
+        translationEntry is AsyncData<MessageTranslation> ||
+        translationEntry is AsyncError<MessageTranslation>;
     final readsNotifier = !isOut
         ? ref.read(messageReadsProvider(chatId).notifier)
         : null;
@@ -1483,23 +2525,31 @@ class _MessageRow extends ConsumerWidget {
     // centering on every practice-mode long-press.
     Widget bubble = _Bubble(
       chatId: chatId,
+      partnerName: partnerName,
       message: message,
       maxWidth: maxBubble,
       isLastInGroup: isLastInGroup,
       languageCode: languageCode,
       targetLanguageCode: targetLang,
+      replyTargetLanguageCode: replyTargetLang,
       translationInterfaceLanguageCode: translationInterfaceLanguageCode,
       mode: mode,
       knownLanguageCodes: knownLanguageCodes,
       shouldTranslate: canRequestTranslation,
       replyToShouldTranslate: canRequestReplyTranslation,
       popupTopInset: popupTopInset,
+      deferTranslationResolve: deferTranslationResolve,
+      holdIncomingUntilPrevious: holdIncomingUntilPrevious,
       reactions: reactions,
       onReact: onReact,
       isFailed: isFailed,
       onLongPress: onLongPress,
       onFailedTap: onFailedTap,
+      onFailedRetry: onFailedRetry,
       onSwipeReply: canReplyToMessage(message) ? onReply : null,
+      selectedBubbleKey: selectedBubbleKey,
+      isSelected: isSelected,
+      showOriginal: showOriginal,
     );
 
     // Cache hydration happens by loaded page, but a live LLM request starts
@@ -1524,14 +2574,14 @@ class _MessageRow extends ConsumerWidget {
               visibleFraction: info.visibleFraction,
               messageId: replyTo.id,
               text: replyTo.originalText,
-              targetLang: targetLang,
+              targetLang: replyTargetLang,
               interfaceLang: translationInterfaceLanguageCode,
             );
           }
           // Threshold lowered to 0.5 so partially-visible bubbles still
           // register — bottom-of-list messages were sometimes cropped by
           // the input bar and never crossed 0.9.
-          if (!isOut && info.visibleFraction > 0.5) {
+          if (!isOut && readableForRead && info.visibleFraction > 0.5) {
             readsNotifier!.reportVisible(message.id);
           }
         },
@@ -1539,13 +2589,23 @@ class _MessageRow extends ConsumerWidget {
       );
     }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(12, topGap, 12, 0),
-      child: Column(
-        crossAxisAlignment: isOut
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
-        children: [bubble],
+    return MessageRowReplyTarget(
+      key: ValueKey('message-row-reply-${message.id}'),
+      onSwipeReply: canReplyToMessage(message) ? onReply : null,
+      child: Padding(
+        // Keep the same 12px breathing room on both physical edges. Outgoing
+        // rows still need the Align below: without it their bubble starts at
+        // the left instead of occupying the right side of the chat.
+        padding: EdgeInsets.fromLTRB(12, topGap, 12, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Align(
+              alignment: isOut ? Alignment.centerRight : Alignment.centerLeft,
+              child: bubble,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1554,26 +2614,35 @@ class _MessageRow extends ConsumerWidget {
 class _Bubble extends ConsumerStatefulWidget {
   const _Bubble({
     required this.chatId,
+    required this.partnerName,
     required this.message,
     required this.reactions,
     required this.maxWidth,
     required this.isLastInGroup,
     required this.languageCode,
     required this.targetLanguageCode,
+    required this.replyTargetLanguageCode,
     required this.translationInterfaceLanguageCode,
     required this.mode,
     required this.knownLanguageCodes,
     required this.shouldTranslate,
     required this.replyToShouldTranslate,
     required this.popupTopInset,
+    required this.deferTranslationResolve,
+    required this.holdIncomingUntilPrevious,
     required this.onReact,
     required this.isFailed,
     required this.onLongPress,
     required this.onFailedTap,
+    required this.onFailedRetry,
+    required this.isSelected,
+    required this.showOriginal,
     this.onSwipeReply,
+    this.selectedBubbleKey,
   });
 
   final String chatId;
+  final String partnerName;
   final Message message;
   final List<MessageReactionSummary> reactions;
   final double maxWidth;
@@ -1585,6 +2654,7 @@ class _Bubble extends ConsumerStatefulWidget {
   /// The mode-resolved translation target (FR-23): the learning language in
   /// practice mode, or the reader's primary known language in normal mode.
   final String targetLanguageCode;
+  final String replyTargetLanguageCode;
 
   /// The reader's primary known language (modes-known-languages spec): the
   /// translation pipeline's "interface" slot — cache-row key and second-lane
@@ -1600,6 +2670,8 @@ class _Bubble extends ConsumerStatefulWidget {
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
   final double popupTopInset;
+  final bool deferTranslationResolve;
+  final bool holdIncomingUntilPrevious;
 
   /// [MessageInteractionTarget]'s gesture-surface inputs — applied inside
   /// this widget's build around the bubble content only (never around the
@@ -1608,27 +2680,43 @@ class _Bubble extends ConsumerStatefulWidget {
   final bool isFailed;
   final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onFailedTap;
+  final VoidCallback onFailedRetry;
   final VoidCallback? onSwipeReply;
   final VoidCallback onReact;
+  final bool isSelected;
+  final bool showOriginal;
+  final GlobalKey? selectedBubbleKey;
 
   @override
   ConsumerState<_Bubble> createState() => _BubbleState();
 }
 
 class _BubbleState extends ConsumerState<_Bubble> {
-  /// Practice mode's second (interface-language) lane, toggled by the
-  /// translate/play-sentence icon beside the bubble (FR-23). Owned here —
-  /// not by [MessageLearningContent], which only reads it — so it can be
-  /// force-collapsed below whenever the mode-switch reset signal fires.
-  bool _expanded = false;
+  bool _incomingOriginalRevealedAfterFailure = false;
+  bool _incomingWasHeld = false;
+  final Map<String, GrammaticalForm> _temporaryFormSelections =
+      <String, GrammaticalForm>{};
+  int _openFormChoiceIndex = 0;
+
+  @override
+  void didUpdateWidget(covariant _Bubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message.id != widget.message.id ||
+        oldWidget.message.originalText != widget.message.originalText ||
+        oldWidget.mode != widget.mode ||
+        oldWidget.targetLanguageCode != widget.targetLanguageCode) {
+      _incomingOriginalRevealedAfterFailure = false;
+      _incomingWasHeld = false;
+      _temporaryFormSelections.clear();
+      _openFormChoiceIndex = 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Task 7's mode-switch bump: force-collapse so a stale expanded second
-    // lane never survives a mode change.
-    ref.listen(chatModeResetSignalProvider(widget.chatId), (previous, next) {
-      if (mounted) setState(() => _expanded = false);
-    });
+    final formPreferences = ref.watch(
+      grammaticalFormPreferencesProvider(widget.chatId),
+    );
 
     final message = widget.message;
     final chatId = widget.chatId;
@@ -1637,6 +2725,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final isLastInGroup = widget.isLastInGroup;
     final languageCode = widget.languageCode;
     final targetLanguageCode = widget.targetLanguageCode;
+    final replyTargetLanguageCode = widget.replyTargetLanguageCode;
     final translationInterfaceLanguageCode =
         widget.translationInterfaceLanguageCode;
     final mode = widget.mode;
@@ -1644,13 +2733,26 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final shouldTranslate = widget.shouldTranslate;
     final replyToShouldTranslate = widget.replyToShouldTranslate;
     final popupTopInset = widget.popupTopInset;
+    final holdIncomingUntilPrevious = widget.holdIncomingUntilPrevious;
     final onReact = widget.onReact;
     final isFailed = widget.isFailed;
     final onLongPress = widget.onLongPress;
     final onFailedTap = widget.onFailedTap;
+    final onFailedRetry = widget.onFailedRetry;
     final onSwipeReply = widget.onSwipeReply;
 
     final isOut = message.isOutgoing;
+    final isPractice = mode == ChatMode.practice;
+    final bubbleColor = isOut
+        ? (isPractice
+              ? BlabColors.bubbleOutgoingPractice
+              : BlabColors.bubbleOutgoingNormal)
+        : BlabColors.bubbleIncomingSurface;
+    final bubbleOutline = isOut
+        ? (isPractice
+              ? BlabColors.bubbleOutgoingPracticeOutline
+              : BlabColors.bubbleOutgoingNormalOutline)
+        : BlabColors.bubbleIncomingOutline;
 
     final liveTranslation =
         shouldTranslate &&
@@ -1661,34 +2763,211 @@ class _BubbleState extends ConsumerState<_Bubble> {
             translationInterfaceLanguageCode,
           )]
         : null;
-    final liveTranslationError =
-        liveTranslation is AsyncError<MessageTranslation>
-        ? liveTranslation.error
-        : null;
+    if (!isOut && liveTranslation is AsyncError<MessageTranslation>) {
+      _incomingOriginalRevealedAfterFailure = true;
+    }
     final replyTo = message.replyTo;
     final replyTranslation =
         replyTo != null &&
             replyToShouldTranslate &&
-            kSupportedLearningLanguages.contains(targetLanguageCode)
+            kSupportedLearningLanguages.contains(replyTargetLanguageCode)
         ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
             replyTo.id,
-            targetLanguageCode,
+            replyTargetLanguageCode,
             translationInterfaceLanguageCode,
           )]
         : null;
-    // Task 10 fix (finding #6): the practice-mode second lane's "play full
-    // sentence" icon speaks whatever the learning-language line actually
-    // shows — the resolved translation/correction result, or the plain
-    // original when there's no learning-aid content yet (still loading, or
-    // `LearningAidMode.none`).
     final resolvedTranslation = liveTranslation is AsyncData<MessageTranslation>
         ? liveTranslation.value
         : null;
-    final speakText =
+    // Survives the entry falling back to loading/error, so normal mode can
+    // tell "the reader can't read this" from "we never found out".
+    final resolvedSourceLang =
+        resolvedTranslation?.sourceLang ??
+        ref
+            .read(messageTranslationsProvider(chatId).notifier)
+            .resolvedSourceLangFor(message.id);
+    final presentation = resolveMessagePresentation(
+      authoredText: message.originalText,
+      translation: liveTranslation,
+      mode: mode,
+      knownLanguageCodes: knownLanguageCodes,
+      resolvedSourceLang: resolvedSourceLang,
+    );
+    final canRetryTranslation =
+        liveTranslation is AsyncError<MessageTranslation>;
+    void retryTranslation() {
+      ref
+          .read(messageTranslationsProvider(chatId).notifier)
+          .retry(
+            messageId: message.id,
+            text: message.originalText,
+            targetLang: targetLanguageCode,
+            interfaceLang: translationInterfaceLanguageCode,
+          );
+    }
+
+    final formChoices = resolvedTranslation?.formChoices ?? const [];
+    final formAlternatives = formChoices.isEmpty ? null : formChoices.first;
+    final formSubjectKey = formAlternatives?.subjectIsViewer == true
+        ? 'viewer'
+        : 'partner';
+    final temporaryForm = formAlternatives == null
+        ? null
+        : _temporaryFormSelections[formSubjectKey];
+    final persistedForm = formAlternatives == null
+        ? null
+        : switch (formPreferences) {
+            AsyncData(:final value) =>
+              formAlternatives.subjectIsViewer
+                  ? value.ownForm
+                  : value.partnerForm,
+            _ => null,
+          };
+    final resolvedForm = temporaryForm ?? persistedForm;
+    Future<void> saveForm(GrammaticalForm form) async {
+      final alternatives = formAlternatives;
+      if (alternatives == null) return;
+      final service = ref.read(grammaticalFormPreferencesServiceProvider);
+      if (alternatives.subjectIsViewer) {
+        await service.setOwnForm(form);
+      } else {
+        await service.setPartnerForm(chatId, form);
+      }
+      if (mounted) {
+        setState(() => _temporaryFormSelections[formSubjectKey] = form);
+      }
+      // Resolve this message locally. Do not invalidate the translation
+      // cache here: the selected text should fade into place without
+      // replaying the translation wave or restarting the provider request.
+      ref.invalidate(grammaticalFormPreferencesProvider(chatId));
+    }
+
+    final showLearningAid =
+        shouldTranslate &&
+        kSupportedLearningLanguages.contains(targetLanguageCode);
+    Widget buildLearningContent({
+      required AsyncValue<MessageTranslation>? translation,
+      required bool showTranslation,
+      bool pending = false,
+    }) => MessageLearningContent(
+      authoredText: message.originalText,
+      translation: translation,
+      showTranslation: showTranslation,
+      learningLanguageCode: languageCode,
+      isOutgoing: isOut,
+      popupTopInset: popupTopInset,
+      mode: mode,
+      knownLanguageCodes: knownLanguageCodes,
+      resolvedSourceLang: resolvedSourceLang,
+      expanded: widget.isSelected && mode == ChatMode.practice,
+      showOriginal: widget.isSelected && widget.showOriginal,
+      pendingColor: pending
+          ? (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary).withValues(
+              alpha: 0.48,
+            )
+          : null,
+      onToggleExpanded: () {},
+      unavailableText: context.l10n.translationUnavailable,
+      retryText: context.l10n.retry,
+      onRetry: canRetryTranslation ? retryTranslation : null,
+      onFormSelected: formAlternatives == null ? null : saveForm,
+      resolvedForm: resolvedForm,
+      onFormMarkerTap: (index) {
+        if (!mounted) return;
+        setState(() => _openFormChoiceIndex = index);
+      },
+      activeFormChoiceIndex: _openFormChoiceIndex,
+    );
+
+    final incomingProcessing =
+        showLearningAid &&
+        (holdIncomingUntilPrevious ||
+            liveTranslation is! AsyncData<MessageTranslation>) &&
+        liveTranslation is! AsyncError<MessageTranslation>;
+    if (shouldHoldIncomingTranslation(
+      isOutgoing: isOut,
+      processing: incomingProcessing,
+      originalWasRevealedAfterFailure: _incomingOriginalRevealedAfterFailure,
+    )) {
+      _incomingWasHeld = true;
+      return Container(
+        key: const ValueKey('incoming-translation-skeleton'),
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: BlabColors.bubbleIncomingSurface,
+          border: Border.all(color: BlabColors.bubbleIncomingOutline),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(18),
+          ),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _TranslationSkeletonLine(width: 76),
+            SizedBox(height: 7),
+            _TranslationSkeletonLine(width: 118),
+          ],
+        ),
+      );
+    }
+
+    final authoredContent = buildLearningContent(
+      translation: null,
+      showTranslation: false,
+      pending: true,
+    );
+    final finalContent = buildLearningContent(
+      translation: liveTranslation,
+      showTranslation: showLearningAid,
+    );
+    final resolvedForLifecycle =
+        liveTranslation is AsyncData<MessageTranslation>;
+    final unchangedForLifecycle =
         resolvedTranslation != null &&
-            resolvedTranslation.mode != LearningAidMode.none
-        ? resolvedTranslation.translation
-        : message.originalText;
+        translationResultIsUnchanged(message.originalText, resolvedTranslation);
+    final reducedMotion =
+        MediaQuery.disableAnimationsOf(context) ||
+        MediaQuery.accessibleNavigationOf(context);
+    final retryingRevealedIncoming =
+        !isOut &&
+        _incomingOriginalRevealedAfterFailure &&
+        showLearningAid &&
+        liveTranslation is! AsyncError<MessageTranslation>;
+    final animateTranslationLifecycle =
+        ((isOut && isPractice) || retryingRevealedIncoming) &&
+        showLearningAid &&
+        liveTranslation is! AsyncError<MessageTranslation>;
+    final messageLearningContent = animateTranslationLifecycle
+        ? TranslatingMessageContent(
+            key: ValueKey(
+              'translation-lifecycle-$targetLanguageCode-'
+              '${message.originalText.hashCode}',
+            ),
+            authoredContent: authoredContent,
+            finalContent: finalContent,
+            resolved: resolvedForLifecycle,
+            delivered:
+                message.status == MessageStatus.delivered ||
+                message.status == MessageStatus.read,
+            unchanged: unchangedForLifecycle,
+            reduceMotion: reducedMotion,
+            outgoing: isOut,
+            showAuthoredImmediately: retryingRevealedIncoming,
+            deferResolve: widget.deferTranslationResolve,
+            keepAuthoredDuringFastHold: isOut,
+            animateArrival: false,
+            waveBaseColor:
+                (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary)
+                    .withValues(alpha: 0.48),
+            waveHighlightColor: Colors.white,
+          )
+        : finalContent;
 
     final BorderRadius radius = isOut
         ? const BorderRadius.only(
@@ -1713,7 +2992,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
     const reactionBadgeOverlap = 21.0;
     const reactionRowGap = 8.0;
 
-    final bubbleStack = Padding(
+    Widget bubbleStack = Padding(
       key: ValueKey('bubble-content-${message.id}'),
       padding: EdgeInsets.only(
         bottom: reactions.isNotEmpty
@@ -1725,110 +3004,97 @@ class _BubbleState extends ConsumerState<_Bubble> {
         alignment: isOut ? Alignment.topRight : Alignment.topLeft,
         children: [
           IntrinsicWidth(
-            child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isOut ? BlabColors.brand : BlabColors.bubbleIncoming,
-                borderRadius: radius,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (replyTo != null) ...[
-                    _QuotedReply(
-                      replyTo: replyTo,
-                      parentIsOutgoing: isOut,
-                      translation: replyTranslation,
-                      mode: mode,
-                      knownLanguageCodes: knownLanguageCodes,
-                    ),
-                    const SizedBox(height: 6),
-                  ],
-                  if (message.attachment != null) ...[
-                    _PhotoAttachmentView(attachment: message.attachment!),
-                    if (message.originalText.trim().isNotEmpty)
-                      const SizedBox(height: 8),
-                  ],
-                  if (message.originalText.trim().isNotEmpty)
-                    MessageLearningContent(
-                      messageId: message.id,
-                      authoredText: message.originalText,
-                      translation: liveTranslation,
-                      showTranslation:
-                          shouldTranslate &&
-                          kSupportedLearningLanguages.contains(
-                            targetLanguageCode,
-                          ),
-                      learningLanguageCode: languageCode,
-                      isOutgoing: isOut,
-                      popupTopInset: popupTopInset,
-                      mode: mode,
-                      knownLanguageCodes: knownLanguageCodes,
-                      expanded: _expanded,
-                      onToggleExpanded: () =>
-                          setState(() => _expanded = !_expanded),
-                      unavailableText:
-                          liveTranslationError is MessageTranslationFailed &&
-                              liveTranslationError.reason ==
-                                  'translation_limit_reached'
-                          ? context.l10n.translationLimitReached
-                          : context.l10n.translationUnavailable,
-                      retryText: context.l10n.retry,
-                      onRetry:
-                          liveTranslationError is MessageTranslationFailed &&
-                              liveTranslationError.reason ==
-                                  'translation_limit_reached'
-                          ? null
-                          : liveTranslation is AsyncError<MessageTranslation>
-                          ? () {
-                              ref
-                                  .read(
-                                    messageTranslationsProvider(
-                                      chatId,
-                                    ).notifier,
-                                  )
-                                  .retry(
-                                    messageId: message.id,
-                                    text: message.originalText,
-                                    targetLang: targetLanguageCode,
-                                    interfaceLang: translationInterfaceLanguageCode,
-                                  );
-                            }
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: bubbleColor,
+                      border: Border.all(color: bubbleOutline),
+                      borderRadius: radius,
+                      boxShadow: isOut && isPractice
+                          ? const [
+                              BoxShadow(
+                                color: Color(0x1A231208),
+                                offset: Offset(0, 2),
+                                blurRadius: 6,
+                                spreadRadius: -2,
+                              ),
+                            ]
                           : null,
                     ),
-                  if (isLastInGroup) ...[
-                    const SizedBox(height: 4),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _Meta(
-                        chatId: chatId,
-                        message: message,
-                        isOutgoing: isOut,
-                      ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (replyTo != null) ...[
+                          _QuotedReply(
+                            replyTo: replyTo,
+                            partnerName: widget.partnerName,
+                            parentIsOutgoing: isOut,
+                            translation: replyTranslation,
+                            mode: mode,
+                            knownLanguageCodes: knownLanguageCodes,
+                          ),
+                          const SizedBox(height: 6),
+                        ],
+                        if (message.attachment != null) ...[
+                          _PhotoAttachmentView(attachment: message.attachment!),
+                          if (message.originalText.trim().isNotEmpty)
+                            const SizedBox(height: 8),
+                        ],
+                        if (message.originalText.trim().isNotEmpty)
+                          messageLearningContent,
+                        if (isLastInGroup || message.isEdited) ...[
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: _Meta(
+                              chatId: chatId,
+                              message: message,
+                              isOutgoing: isOut,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (formAlternatives != null &&
+                    (persistedForm == null || temporaryForm != null)) ...[
+                  const SizedBox(height: 8),
+                  GrammaticalFormChooser(
+                    alternatives: formAlternatives,
+                    onSelected: saveForm,
+                    selectedForm: temporaryForm,
+                    onChange: () {},
+                    showExplanation: persistedForm == null,
+                    firstTimeExplanation:
+                        'Some languages change words to match the person they describe.',
+                    explanationKey: targetLanguageCode,
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
-        ),
           if (reactions.isNotEmpty)
             Positioned(
               bottom: -reactionBadgeOverlap,
-              // Inset further from the bubble's outer edge than it looks
-              // like it needs — the bubble itself sits flush against the
-              // screen's 12px margin, so a small offset here still lands
-              // the badge close to the physical screen edge, where Android's
-              // edge-swipe-back gesture (and curved-edge bezels) can steal
-              // the tap before it reaches the badge.
-              left: isOut ? null : 14,
-              right: isOut ? 14 : null,
+              // Reactions sit on the bubble edge nearest the conversation's
+              // center: left for sent messages, right for received messages.
+              left: isOut ? 14 : null,
+              right: isOut ? null : 14,
               child: MessageReactionBar(
                 reactions: reactions,
                 isOutgoing: isOut,
+                isPractice: isPractice,
                 onTap: onReact,
               ),
             ),
@@ -1836,143 +3102,184 @@ class _BubbleState extends ConsumerState<_Bubble> {
       ),
     );
 
-    // The long-press / swipe-reply gesture surface wraps the bubble content
-    // ONLY, never the practice-mode icon beside it — it measures its own
-    // RenderBox to position the floating reaction row, and that rect must
-    // stay the bubble's true bounds regardless of whether an icon sits next
-    // to it.
+    bubbleStack = MessageArrival(
+      animate:
+          _incomingWasHeld ||
+          DateTime.now().difference(message.sentAt).abs() <
+              const Duration(seconds: 2),
+      reduceMotion: reducedMotion,
+      outgoing: isOut,
+      child: bubbleStack,
+    );
+
     final interactiveBubble = MessageInteractionTarget(
+      key: widget.selectedBubbleKey,
       isFailed: isFailed,
       onLongPress: onLongPress,
       onFailedTap: onFailedTap,
       onSwipeReply: onSwipeReply,
       child: bubbleStack,
     );
-
-    // FR-23: practice mode gets a translate/play-sentence icon beside the
-    // bubble, toward the screen's horizontal center (left of an outgoing
-    // bubble, right of an incoming one). Normal mode has no second lane to
-    // expand, so no icon and no reserved gap for it — the bubble stays
-    // flush to the edge exactly as before this task.
-    if (mode != ChatMode.practice) {
+    final hasError = isFailed || presentation.translationFailed;
+    final showUnsupportedLanguageHint =
+        presentation.unsupportedSource && showLearningAid;
+    final showReducedMotionProcessing =
+        reducedMotion &&
+        isOut &&
+        isPractice &&
+        showLearningAid &&
+        liveTranslation is AsyncLoading<MessageTranslation> &&
+        (message.status == MessageStatus.delivered ||
+            message.status == MessageStatus.read);
+    if (!hasError &&
+        !showReducedMotionProcessing &&
+        !showUnsupportedLanguageHint) {
       return interactiveBubble;
     }
-
-    final icon = _TranslateOrPlayIcon(
-      expanded: _expanded,
-      onExpand: () => setState(() => _expanded = true),
-      onCollapse: () => setState(() => _expanded = false),
-      speakText: speakText,
-      languageCode: languageCode,
-      tts: ref.watch(ttsServiceProvider),
-    );
-
-    return Row(
+    return Column(
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: isOut ? MainAxisAlignment.end : MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: isOut
-          ? [icon, const SizedBox(width: 6), Flexible(child: interactiveBubble)]
-          : [Flexible(child: interactiveBubble), const SizedBox(width: 6), icon],
+      crossAxisAlignment: isOut
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        interactiveBubble,
+        if (showReducedMotionProcessing)
+          DelayedTranslationStatus(
+            active: true,
+            status: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                resolvedSourceLang == targetLanguageCode
+                    ? context.l10n.checking
+                    : context.l10n.translating,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.25,
+                  color: BlabColors.textMuted,
+                ),
+              ),
+            ),
+            idle: const SizedBox.shrink(),
+          ),
+        if (showUnsupportedLanguageHint)
+          _UnsupportedLanguageNotice(
+            key: const ValueKey('unsupported-language-hint'),
+            text: context.l10n.unsupportedLanguageHint(
+              _languageNameForCode(languageCode),
+            ),
+            alignRight: isOut,
+          ),
+        if (isFailed) ...[
+          if (reactions.isEmpty) const SizedBox(height: 6),
+          _MessageStatusNotice(
+            key: const ValueKey('failed-message-retry'),
+            text: context.l10n.failedToSend,
+            onTap: onFailedRetry,
+            alignRight: isOut,
+          ),
+        ],
+        if (presentation.translationFailed) ...[
+          if (!isFailed && reactions.isEmpty) const SizedBox(height: 6),
+          if (isFailed) const SizedBox(height: 4),
+          _MessageStatusNotice(
+            key: const ValueKey('translation-message-retry'),
+            text: isOut && resolvedSourceLang == targetLanguageCode
+                ? context.l10n.couldntCheckRetry
+                : context.l10n.couldntTranslateRetry,
+            onTap: canRetryTranslation ? retryTranslation : null,
+            alignRight: isOut,
+          ),
+        ],
+      ],
     );
   }
 }
 
-/// Collapsed: a single translate icon that expands the second lane.
-/// Expanded (design spec § Bubble layout): two independently-tappable
-/// elements in the same visual slot — a speaker that plays the full
-/// learning-language sentence via TTS, and a chevron that collapses back.
-/// Previously these were compressed into one icon that only ever
-/// re-collapsed regardless of which half was tapped; splitting them wires up
-/// the "play full sentence" behavior the spec always called for (Task 10 gap).
-class _TranslateOrPlayIcon extends StatelessWidget {
-  const _TranslateOrPlayIcon({
-    required this.expanded,
-    required this.onExpand,
-    required this.onCollapse,
-    required this.speakText,
-    required this.languageCode,
-    required this.tts,
+class _MessageStatusNotice extends StatelessWidget {
+  const _MessageStatusNotice({
+    super.key,
+    required this.text,
+    required this.onTap,
+    required this.alignRight,
   });
 
-  final bool expanded;
-  final VoidCallback onExpand;
-  final VoidCallback onCollapse;
-
-  /// The full learning-language sentence to speak — never a single word.
-  final String speakText;
-  final String languageCode;
-  final TtsService tts;
-
-  Future<void> _speak() async {
-    if (speakText.trim().isEmpty) return;
-    await tts.stop();
-    await tts.speak(speakText, languageCode);
-  }
+  final String text;
+  final VoidCallback? onTap;
+  final bool alignRight;
 
   @override
   Widget build(BuildContext context) {
-    if (!expanded) {
-      return SizedBox(
-        width: 32,
-        height: 32,
-        child: Material(
-          color: Colors.transparent,
-          shape: const CircleBorder(),
-          child: InkWell(
-            key: const ValueKey('translate-icon'),
-            customBorder: const CircleBorder(),
-            onTap: onExpand,
-            child: const Icon(
-              Icons.translate_outlined,
-              size: 20,
-              color: BlabColors.textMuted,
+    return Align(
+      widthFactor: 1,
+      alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Text(
+            text,
+            textAlign: alignRight ? TextAlign.right : TextAlign.left,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.25,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFFC62828),
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
+}
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 32,
-          height: 32,
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              key: const ValueKey('play-sentence-icon'),
-              customBorder: const CircleBorder(),
-              onTap: _speak,
-              child: const Icon(
-                Icons.volume_up_outlined,
-                size: 20,
-                color: BlabColors.textMuted,
-              ),
-            ),
+class _UnsupportedLanguageNotice extends StatelessWidget {
+  const _UnsupportedLanguageNotice({
+    super.key,
+    required this.text,
+    required this.alignRight,
+  });
+
+  final String text;
+  final bool alignRight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      widthFactor: 1,
+      alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Text(
+          text,
+          textAlign: alignRight ? TextAlign.right : TextAlign.left,
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.25,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF917869),
           ),
         ),
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              key: const ValueKey('collapse-icon'),
-              customBorder: const CircleBorder(),
-              onTap: onCollapse,
-              child: const Icon(
-                Icons.expand_less,
-                size: 16,
-                color: BlabColors.textMuted,
-              ),
-            ),
-          ),
+      ),
+    );
+  }
+}
+
+class _TranslationSkeletonLine extends StatelessWidget {
+  const _TranslationSkeletonLine({required this.width});
+
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: 12,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFEAE6E0),
+          borderRadius: BorderRadius.circular(6),
         ),
-      ],
+      ),
     );
   }
 }
@@ -1991,22 +3298,18 @@ class _Meta extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeLabel = _formatTime(message.sentAt);
     final textColor = isOutgoing
-        ? Colors.white.withValues(alpha: 0.7)
+        ? BlabColors.bubbleInk.withValues(alpha: 0.62)
         : BlabColors.textMuted;
     final children = <Widget>[
-      Text(timeLabel, style: TextStyle(fontSize: 11, color: textColor)),
+      Text(
+        message.isEdited ? '${context.l10n.edited} · $timeLabel' : timeLabel,
+        style: TextStyle(fontSize: 10, color: textColor),
+      ),
     ];
-    if (message.isEdited) {
-      children.add(const SizedBox(width: 4));
-      children.add(
-        Text(
-          '· ${context.l10n.edited}',
-          style: TextStyle(fontSize: 10, color: textColor),
-        ),
-      );
-    }
     if (message.isOutgoing) {
-      children.add(const SizedBox(width: 4));
+      children.add(const SizedBox(width: 3));
+      children.add(Text('·', style: TextStyle(fontSize: 10, color: textColor)));
+      children.add(const SizedBox(width: 3));
       children.add(
         _StatusIcon(
           chatId: chatId,
@@ -2026,21 +3329,66 @@ class _Meta extends StatelessWidget {
   }
 }
 
-ImageProvider<Object>? _attachmentImageProvider(MessageAttachment attachment) {
-  final bytes = attachment.localBytes;
-  if (bytes != null) return MemoryImage(Uint8List.fromList(bytes));
-  final url = attachment.url;
-  if (url != null && url.isNotEmpty) return NetworkImage(url);
-  return null;
+final Map<String, _CachedAttachmentImage> _attachmentImageProviders =
+    <String, _CachedAttachmentImage>{};
+
+class _CachedAttachmentImage {
+  const _CachedAttachmentImage({required this.kind, required this.provider});
+
+  final String kind;
+  final ImageProvider<Object> provider;
 }
 
-class _PhotoAttachmentView extends StatelessWidget {
+ImageProvider<Object>? _attachmentImageProvider(MessageAttachment attachment) {
+  final cached = _attachmentImageProviders[attachment.id];
+  final bytes = attachment.localBytes;
+  if (bytes != null && bytes.isNotEmpty) {
+    if (cached?.kind == 'full:${bytes.length}') return cached!.provider;
+    final provider = MemoryImage(Uint8List.fromList(bytes));
+    _attachmentImageProviders[attachment.id] = _CachedAttachmentImage(
+      kind: 'full:${bytes.length}',
+      provider: provider,
+    );
+    return provider;
+  }
+
+  final previewBytes = attachment.previewBytes;
+  if (previewBytes != null && previewBytes.isNotEmpty) {
+    if (cached?.kind == 'preview:${previewBytes.length}') {
+      return cached!.provider;
+    }
+    final provider = MemoryImage(Uint8List.fromList(previewBytes));
+    _attachmentImageProviders[attachment.id] = _CachedAttachmentImage(
+      kind: 'preview:${previewBytes.length}',
+      provider: provider,
+    );
+    return provider;
+  }
+
+  final url = attachment.url;
+  if (url != null && url.isNotEmpty) {
+    // Reuse the provider while the signed URL is unchanged. If the URL is
+    // refreshed, create one new provider; gaplessPlayback keeps the old
+    // frame visible until the refreshed image is ready.
+    if (cached?.kind == 'network:$url') return cached!.provider;
+    final provider = NetworkImage(url);
+    _attachmentImageProviders[attachment.id] = _CachedAttachmentImage(
+      kind: 'network:$url',
+      provider: provider,
+    );
+    return provider;
+  }
+
+  return cached?.provider;
+}
+
+class _PhotoAttachmentView extends ConsumerWidget {
   const _PhotoAttachmentView({required this.attachment});
 
   final MessageAttachment attachment;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final provider = _attachmentImageProvider(attachment);
     final image = ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -2048,26 +3396,73 @@ class _PhotoAttachmentView extends StatelessWidget {
         width: 220,
         height: 220,
         child: provider == null
-            ? Container(
-                color: Colors.black.withValues(alpha: 0.08),
-                child: const Icon(
-                  Icons.image_not_supported_outlined,
-                  color: BlabColors.textMuted,
-                ),
-              )
-            : Image(image: provider, fit: BoxFit.cover),
+            ? const _OfflinePhotoPlaceholder()
+            : Image(
+                image: provider,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => const _OfflinePhotoPlaceholder(),
+              ),
       ),
     );
     return GestureDetector(
       onTap: provider == null
           ? null
-          : () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => _PhotoPreviewScreen(imageProvider: provider),
-              ),
-            ),
+          : () {
+              // Keep the fast preview-first interaction, then persist the
+              // full file once it has been opened. This also works when the
+              // signed URL is unavailable: the already-cached preview still
+              // opens without a framework error surface.
+              unawaited(_cacheOpenedFullAttachment(ref, attachment));
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => _PhotoPreviewScreen(imageProvider: provider),
+                ),
+              );
+            },
       child: image,
     );
+  }
+}
+
+/// Keeps a missing preview recognizable without exposing framework error UI.
+/// The muted media glyph is decorative; the surrounding neutral surface keeps
+/// the same geometry as a loaded photo (US-047 / FR-41).
+class _OfflinePhotoPlaceholder extends StatelessWidget {
+  const _OfflinePhotoPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Color(0xFFEAE6E0),
+      child: Center(
+        child: BlabIcon(
+          name: 'media-image - 20',
+          size: 24,
+          color: Color(0x668C735F),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _cacheOpenedFullAttachment(
+  WidgetRef ref,
+  MessageAttachment attachment,
+) async {
+  if (attachment.localBytes != null ||
+      attachment.url == null ||
+      attachment.url!.isEmpty) {
+    return;
+  }
+  try {
+    final response = await http.get(Uri.parse(attachment.url!));
+    if (response.statusCode < 200 || response.statusCode >= 300) return;
+    await ref
+        .read(localChatHistoryCacheProvider)
+        ?.saveAttachmentBytes(attachment.id, response.bodyBytes);
+  } catch (_) {
+    // Best effort only. The preview remains available for offline display.
   }
 }
 
@@ -2128,44 +3523,37 @@ class _StatusIcon extends ConsumerWidget {
 
     // Semantics labels paired with the icon — read receipts and online
     // indicators must not be color-only. PRD US-033.
-    final tint = Colors.white.withValues(alpha: 0.5);
+    final tint = BlabColors.bubbleInk.withValues(alpha: 0.5);
     switch (status) {
       case MessageStatus.pending:
         return Semantics(
           label: context.l10n.sending,
           child: Icon(
             Icons.access_time,
-            size: 14,
+            size: 16,
             color: isOutgoing ? tint : BlabColors.textMuted,
           ),
         );
       case MessageStatus.delivered:
         return Semantics(
           label: context.l10n.delivered,
-          child: Icon(
-            Icons.done_all,
-            size: 14,
+          child: BlabIcon(
+            name: 'check - 16',
+            size: 16,
             color: isOutgoing ? tint : Colors.grey.shade500,
           ),
         );
       case MessageStatus.read:
         return Semantics(
           label: context.l10n.read,
-          child: Icon(
-            Icons.done_all,
-            size: 14,
-            color: isOutgoing ? Colors.white : BlabColors.brand,
+          child: BlabIcon(
+            name: 'double-check - 16',
+            size: 16,
+            color: isOutgoing ? tint : Colors.grey.shade500,
           ),
         );
       case MessageStatus.failed:
-        return Semantics(
-          label: context.l10n.failedToSend,
-          child: const Icon(
-            Icons.error_outline,
-            size: 14,
-            color: Color(0xFFEF4444),
-          ),
-        );
+        return const SizedBox.shrink();
     }
   }
 }
@@ -2175,24 +3563,32 @@ class _StatusIcon extends ConsumerWidget {
 class _InputBar extends StatelessWidget {
   const _InputBar({
     required this.controller,
+    required this.focusNode,
     required this.hasText,
     required this.hintText,
     required this.textLength,
     required this.maxLength,
     required this.counterShowAt,
+    required this.isPractice,
+    required this.showTopBorder,
     required this.onAttach,
     required this.onSend,
+    this.allowAttachment = true,
     this.autofocus = false,
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final bool hasText;
   final String hintText;
   final int textLength;
   final int maxLength;
   final int counterShowAt;
+  final bool isPractice;
+  final bool showTopBorder;
   final VoidCallback onAttach;
   final VoidCallback onSend;
+  final bool allowAttachment;
   final bool autofocus;
 
   @override
@@ -2204,7 +3600,12 @@ class _InputBar extends StatelessWidget {
     final atLimit = textLength >= maxLength;
 
     return Container(
-      color: BlabColors.cream,
+      decoration: BoxDecoration(
+        color: BlabColors.chatSurface,
+        border: showTopBorder
+            ? const Border(top: BorderSide(color: BlabColors.chatDivider))
+            : null,
+      ),
       child: SafeArea(
         top: false,
         child: Padding(
@@ -2220,39 +3621,22 @@ class _InputBar extends StatelessWidget {
                       label: context.l10n.message,
                       child: ChatComposerInput(
                         controller: controller,
+                        focusNode: focusNode,
                         hintText: hintText,
                         maxLength: maxLength,
                         autofocus: autofocus,
                         attachTooltip: context.l10n.attach,
                         onAttach: onAttach,
+                        showAttachment: allowAttachment,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 150),
-                    opacity: canSend ? 1.0 : 0.4,
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: Material(
-                        color: BlabColors.brand,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: canSend ? onSend : null,
-                          child: Tooltip(
-                            message: context.l10n.send,
-                            child: Icon(
-                              Icons.arrow_upward,
-                              color: Colors.white,
-                              size: 22,
-                              semanticLabel: context.l10n.send,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  ChatSendButton(
+                    canSend: canSend,
+                    isPractice: isPractice,
+                    tooltip: context.l10n.send,
+                    onSend: onSend,
                   ),
                 ],
               ),
@@ -2286,6 +3670,7 @@ class _InputBar extends StatelessWidget {
 class _QuotedReply extends StatelessWidget {
   const _QuotedReply({
     required this.replyTo,
+    required this.partnerName,
     required this.parentIsOutgoing,
     required this.translation,
     required this.mode,
@@ -2293,6 +3678,7 @@ class _QuotedReply extends StatelessWidget {
   });
 
   final Message replyTo;
+  final String partnerName;
   final bool parentIsOutgoing;
   final AsyncValue<MessageTranslation>? translation;
 
@@ -2305,16 +3691,18 @@ class _QuotedReply extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tintBg = parentIsOutgoing
-        ? Colors.white.withValues(alpha: 0.20)
-        : BlabColors.brand.withValues(alpha: 0.08);
-    final barColor = parentIsOutgoing ? Colors.white : BlabColors.brand;
-    final labelColor = parentIsOutgoing ? Colors.white : BlabColors.brand;
+    final tintBg = replyTo.isOutgoing
+        ? const Color(0xFFFAB894)
+        : const Color(0xFFF5F0E8);
+    final barColor = replyTo.isOutgoing
+        ? BlabColors.brand
+        : BlabColors.avatarColorFor(partnerName);
+    final labelColor = barColor;
     final previewColor = parentIsOutgoing
-        ? Colors.white.withValues(alpha: 0.85)
+        ? BlabColors.bubbleInk.withValues(alpha: 0.78)
         : BlabColors.textMuted;
 
-    final author = replyTo.isOutgoing ? context.l10n.you : context.l10n.partner;
+    final author = replyTo.isOutgoing ? context.l10n.you : partnerName;
     final rawPreviewText = switch (translation) {
       AsyncData<MessageTranslation>(value: final value) =>
         resolveMessageDisplayText(
@@ -2325,7 +3713,8 @@ class _QuotedReply extends StatelessWidget {
         ),
       _ => replyTo.originalText,
     };
-    final previewText = rawPreviewText.trim().isEmpty && replyTo.attachment != null
+    final previewText =
+        rawPreviewText.trim().isEmpty && replyTo.attachment != null
         ? context.l10n.photoMessagePreview
         : rawPreviewText;
     final attachment = replyTo.attachment;
@@ -2392,7 +3781,7 @@ class _ReplyThumbnail extends StatelessWidget {
         height: 36,
         child: provider == null
             ? Container(color: Colors.black.withValues(alpha: 0.08))
-            : Image(image: provider, fit: BoxFit.cover),
+            : Image(image: provider, fit: BoxFit.cover, gaplessPlayback: true),
       ),
     );
   }
@@ -2413,23 +3802,34 @@ class _ReplyBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final whose = message.isOutgoing ? context.l10n.yourself : partnerName;
+    final whose = message.isOutgoing ? context.l10n.you : partnerName;
+    final accent = message.isOutgoing
+        ? BlabColors.brand
+        : BlabColors.avatarColorFor(partnerName);
     final attachment = message.attachment;
-    final previewText = message.originalText.trim().isEmpty && attachment != null
+    final previewText =
+        message.originalText.trim().isEmpty && attachment != null
         ? context.l10n.photoMessagePreview
         : message.originalText;
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      decoration: const BoxDecoration(
+        color: BlabColors.chatSurface,
+        border: Border(top: BorderSide(color: BlabColors.chatDivider)),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(14, 8, 12, 0),
       child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(width: 4, color: BlabColors.brand),
-            const SizedBox(width: 10),
+            Container(
+              width: 3,
+              height: 38,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 9),
             if (attachment != null) ...[
               _ReplyThumbnail(attachment: attachment),
               const SizedBox(width: 10),
@@ -2440,11 +3840,11 @@ class _ReplyBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    context.l10n.replyingTo(whose),
-                    style: const TextStyle(
+                    whose,
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: BlabColors.brand,
+                      color: accent,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -2461,12 +3861,21 @@ class _ReplyBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            InkWell(
-              onTap: onClose,
-              customBorder: const CircleBorder(),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.close, size: 20, color: BlabColors.textMuted),
+            SizedBox(
+              width: 44,
+              child: Center(
+                child: InkWell(
+                  onTap: onClose,
+                  customBorder: const CircleBorder(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: BlabColors.textMuted,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -2487,19 +3896,13 @@ class _EditBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Colors.orange.shade600;
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
-      padding: const EdgeInsets.all(12),
+      color: BlabColors.chatSurface,
+      padding: const EdgeInsets.fromLTRB(14, 8, 12, 0),
       child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(width: 4, color: accent),
-            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -2507,22 +3910,31 @@ class _EditBar extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.editingMessage,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: accent,
+                      color: BlabColors.brand,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: 8),
-            InkWell(
-              onTap: onClose,
-              customBorder: const CircleBorder(),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.close, size: 20, color: BlabColors.textMuted),
+            SizedBox(
+              width: 44,
+              child: Center(
+                child: InkWell(
+                  onTap: onClose,
+                  customBorder: const CircleBorder(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.close,
+                      size: 20,
+                      color: BlabColors.textMuted,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],

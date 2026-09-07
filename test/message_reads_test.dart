@@ -76,36 +76,31 @@ void main() {
     expect(callsB.first, ['y']);
   });
 
-  test(
-    'read receipts OFF still marks visible messages as locally read',
-    () async {
-      final calls = <({List<String> ids, bool receiptVisible})>[];
-      final container = ProviderContainer(
-        overrides: [
-          readReceiptsTransportStateProvider.overrideWithValue(
-            const PrivacySettingState.ready(false),
-          ),
-          markReadFnProvider('c1').overrideWithValue((
-            ids, {
-            required receiptVisible,
-          }) async {
-            calls.add((ids: List.of(ids), receiptVisible: receiptVisible));
-          }),
-        ],
-      );
-      addTearDown(container.dispose);
+  test('read receipts OFF emits no read event', () async {
+    final calls = <({List<String> ids, bool receiptVisible})>[];
+    final container = ProviderContainer(
+      overrides: [
+        readReceiptsTransportStateProvider.overrideWithValue(
+          const PrivacySettingState.ready(false),
+        ),
+        markReadFnProvider('c1').overrideWithValue((
+          ids, {
+          required receiptVisible,
+        }) async {
+          calls.add((ids: List.of(ids), receiptVisible: receiptVisible));
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
 
-      container.read(messageReadsProvider('c1').notifier).reportVisible('m1');
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+    container.read(messageReadsProvider('c1').notifier).reportVisible('m1');
+    await Future<void>.delayed(const Duration(milliseconds: 400));
 
-      expect(container.read(messageReadsProvider('c1')), isEmpty);
-      expect(calls, hasLength(1));
-      expect(calls.single.ids, ['m1']);
-      expect(calls.single.receiptVisible, isFalse);
-    },
-  );
+    expect(container.read(messageReadsProvider('c1')), isEmpty);
+    expect(calls, isEmpty);
+  });
 
-  test('turning receipts OFF sends a queued local read as hidden', () async {
+  test('turning receipts OFF drops a queued read without an event', () async {
     final calls = <({List<String> ids, bool receiptVisible})>[];
     final container = ProviderContainer(
       overrides: [
@@ -127,9 +122,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 400));
 
     expect(container.read(messageReadsProvider('c1')), isEmpty);
-    expect(calls, hasLength(1));
-    expect(calls.single.ids, ['m1']);
-    expect(calls.single.receiptVisible, isFalse);
+    expect(calls, isEmpty);
   });
 
   test('visible messages wait for an enabled preference to load', () async {
@@ -168,7 +161,7 @@ void main() {
   });
 
   test(
-    'visible messages wait for preference load, then mark local reads hidden when OFF',
+    'visible messages wait for preference load, then drop reads when OFF',
     () async {
       SharedPreferences.setMockInitialValues({kPrivacyReadReceiptsKey: false});
       final calls = <({List<String> ids, bool receiptVisible})>[];
@@ -195,9 +188,7 @@ void main() {
 
       expect(container.read(readReceiptsEnabledProvider), isFalse);
       expect(container.read(messageReadsProvider('c1')), isEmpty);
-      expect(calls, hasLength(1));
-      expect(calls.single.ids, ['m1']);
-      expect(calls.single.receiptVisible, isFalse);
+      expect(calls, isEmpty);
     },
   );
 

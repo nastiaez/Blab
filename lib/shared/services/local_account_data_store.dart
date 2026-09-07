@@ -13,7 +13,13 @@ class LocalAccountDataStore {
           key == kPrivacyTypingIndicatorsKey ||
           key == kPrivacyReadReceiptsKey ||
           key.startsWith(kAccountInterfaceLanguageKeyPrefix) ||
-          key.startsWith(kPendingSendsKeyPrefix),
+          key.startsWith(kPendingSendsKeyPrefix) ||
+          key.startsWith(kCachedChatsKeyPrefix) ||
+          key.startsWith(kCachedMessagesKeyPrefix) ||
+          key.startsWith(kCachedAttachmentKeyPrefix) ||
+          key.startsWith(kCachedAttachmentPreviewKeyPrefix) ||
+          key.startsWith(kCachedAttachmentIndexKeyPrefix) ||
+          key.startsWith(kModeTipSeenKeyPrefix),
     );
     await Future.wait(keys.map(preferences.remove));
   }

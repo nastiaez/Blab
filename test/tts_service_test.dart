@@ -1,7 +1,10 @@
 import 'package:blab/shared/services/tts_service.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('TtsService.localeFor', () {
     test('maps each Blab language code to its BCP-47 locale', () {
       expect(TtsService.localeFor('ta'), 'ta-IN');
@@ -26,4 +29,25 @@ void main() {
       expect(TtsService.kLocaleByCode.length, 11);
     });
   });
+
+  test(
+    'keeps a recognised language playable when Android misreports its voice as not installed',
+    () async {
+      const channel = MethodChannel('flutter_tts');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        return switch (call.method) {
+          'isLanguageAvailable' => true,
+          'areLanguagesInstalled' => <String, bool>{'de-DE': false},
+          _ => null,
+        };
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+      final service = TtsService();
+
+      expect(await service.isLanguageAvailable('de'), isTrue);
+    },
+  );
 }

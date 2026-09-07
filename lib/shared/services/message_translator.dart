@@ -6,10 +6,35 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/translation_support.dart';
 import '../models/message_token.dart';
+import '../models/grammatical_form.dart';
 
 enum LearningAidMode { translation, correction, none }
 
 enum CorrectionConfidence { low, medium, high }
+
+/// A natural, linked grammatical-form choice returned only when the target
+/// sentence cannot be completed safely without one. The surrounding fragments
+/// keep word order intact for multi-word agreement. US-042 / FR-34.
+class GrammaticalFormAlternatives {
+  const GrammaticalFormAlternatives({
+    required this.before,
+    required this.feminine,
+    required this.masculine,
+    required this.after,
+    required this.subjectName,
+    required this.subjectIsViewer,
+  });
+
+  final String before;
+  final String feminine;
+  final String masculine;
+  final String after;
+  final String subjectName;
+  final bool subjectIsViewer;
+
+  String resolved(GrammaticalForm form) =>
+      '$before${form == GrammaticalForm.feminine ? feminine : masculine}$after';
+}
 
 class MessageTranslation {
   const MessageTranslation({
@@ -21,6 +46,8 @@ class MessageTranslation {
     this.mode = LearningAidMode.translation,
     this.explanation,
     this.confidence,
+    this.formAlternatives,
+    this.formAlternativesList,
   });
   final String translation;
   final String interfaceText;
@@ -30,6 +57,18 @@ class MessageTranslation {
   final LearningAidMode mode;
   final String? explanation;
   final CorrectionConfidence? confidence;
+  final GrammaticalFormAlternatives? formAlternatives;
+
+  /// All unresolved subjects returned by the translation contract. The
+  /// singular field remains for compatibility with older cached rows and is
+  /// always the first entry when this list is populated.
+  final List<GrammaticalFormAlternatives>? formAlternativesList;
+
+  List<GrammaticalFormAlternatives> get formChoices =>
+      formAlternativesList ??
+      (formAlternatives == null
+          ? const <GrammaticalFormAlternatives>[]
+          : <GrammaticalFormAlternatives>[formAlternatives!]);
 }
 
 class MessageTranslationFailed implements Exception {
@@ -49,19 +88,38 @@ class MessageTranslator {
   MessageTranslator({
     MessageTranslateInvoke? invoke,
     Duration timeout = const Duration(seconds: 60),
-  }) : _invoke = invoke ?? _defaultInvoke,
+  }) : _invoke = invoke,
        _timeout = timeout;
 
-  final MessageTranslateInvoke _invoke;
+  final MessageTranslateInvoke? _invoke;
   final Duration _timeout;
 
   Future<MessageTranslation> translate({required String messageId}) async {
+    return _translate(messageId: messageId, forceRefresh: false);
+  }
+
+  Future<MessageTranslation> translateFresh({required String messageId}) async {
+    return _translate(messageId: messageId, forceRefresh: true);
+  }
+
+  Future<MessageTranslation> _translate({
+    required String messageId,
+    required bool forceRefresh,
+  }) async {
     if (messageId.trim().isEmpty) {
       throw MessageTranslationFailed('invalid_message_id');
     }
     Map<String, dynamic> raw;
     try {
-      raw = await _invoke(messageId: messageId.trim()).timeout(_timeout);
+      final invoke = _invoke;
+      raw =
+          await (invoke == null
+                  ? _defaultInvoke(
+                      messageId: messageId.trim(),
+                      forceRefresh: forceRefresh,
+                    )
+                  : invoke(messageId: messageId.trim()))
+              .timeout(_timeout);
     } on TimeoutException {
       throw MessageTranslationFailed('timeout');
     } on MessageTranslationFailed {
@@ -77,6 +135,12 @@ class MessageTranslator {
     final rawExplanation = raw['explanation'];
     final rawConfidence = raw['confidence'];
     final rawTokens = raw['tokens'];
+    final alternativesList = parseGrammaticalFormAlternativesList(
+      raw['formAlternatives'],
+    );
+    final alternatives = alternativesList.isEmpty
+        ? null
+        : alternativesList.first;
     if (translation is! String || translation.trim().isEmpty) {
       throw MessageTranslationFailed('missing_translation');
     }
@@ -141,16 +205,59 @@ class MessageTranslator {
           ? (rawExplanation as String).trim()
           : null,
       confidence: mode == LearningAidMode.correction ? confidence : null,
+      formAlternatives: alternatives,
+      formAlternativesList: alternativesList,
     );
   }
 }
 
-Future<Map<String, dynamic>> _defaultInvoke({required String messageId}) async {
+GrammaticalFormAlternatives? parseGrammaticalFormAlternatives(Object? raw) {
+  if (raw is! Map) return null;
+  final before = raw['before'];
+  final feminine = raw['feminine'];
+  final masculine = raw['masculine'];
+  final after = raw['after'];
+  final subjectName = raw['subjectName'];
+  final subjectIsViewer = raw['subjectIsViewer'];
+  if (before is! String ||
+      feminine is! String ||
+      masculine is! String ||
+      after is! String ||
+      subjectName is! String ||
+      subjectIsViewer is! bool ||
+      feminine.trim().isEmpty ||
+      masculine.trim().isEmpty) {
+    return null;
+  }
+  return GrammaticalFormAlternatives(
+    before: before,
+    feminine: feminine,
+    masculine: masculine,
+    after: after,
+    subjectName: subjectName,
+    subjectIsViewer: subjectIsViewer,
+  );
+}
+
+List<GrammaticalFormAlternatives> parseGrammaticalFormAlternativesList(
+  Object? raw,
+) {
+  final values = raw is List ? raw : <Object?>[raw];
+  return values
+      .map(parseGrammaticalFormAlternatives)
+      .whereType<GrammaticalFormAlternatives>()
+      .toList(growable: false);
+}
+
+Future<Map<String, dynamic>> _defaultInvoke({
+  required String messageId,
+  bool forceRefresh = false,
+}) async {
   FunctionResponse response;
   try {
     response = await Supabase.instance.client.functions.invoke(
       'translate-message',
-      body: {'messageId': messageId},
+      body: {'messageId': messageId, if (forceRefresh) 'forceRefresh': true},
     );
   } on FunctionException catch (error) {
     final details = error.details;

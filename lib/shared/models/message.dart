@@ -17,6 +17,11 @@ class MessageAttachment {
     required this.storagePath,
     required this.mimeType,
     required this.byteSize,
+    this.previewStoragePath,
+    this.previewMimeType,
+    this.previewByteSize,
+    this.previewUrl,
+    this.previewBytes,
     this.url,
     this.localBytes,
   });
@@ -28,6 +33,11 @@ class MessageAttachment {
   final String storagePath;
   final String mimeType;
   final int byteSize;
+  final String? previewStoragePath;
+  final String? previewMimeType;
+  final int? previewByteSize;
+  final String? previewUrl;
+  final List<int>? previewBytes;
   final String? url;
   final List<int>? localBytes;
 
@@ -39,6 +49,11 @@ class MessageAttachment {
     String? storagePath,
     String? mimeType,
     int? byteSize,
+    String? previewStoragePath,
+    String? previewMimeType,
+    int? previewByteSize,
+    String? previewUrl,
+    List<int>? previewBytes,
     String? url,
     List<int>? localBytes,
   }) {
@@ -50,6 +65,11 @@ class MessageAttachment {
       storagePath: storagePath ?? this.storagePath,
       mimeType: mimeType ?? this.mimeType,
       byteSize: byteSize ?? this.byteSize,
+      previewStoragePath: previewStoragePath ?? this.previewStoragePath,
+      previewMimeType: previewMimeType ?? this.previewMimeType,
+      previewByteSize: previewByteSize ?? this.previewByteSize,
+      previewUrl: previewUrl ?? this.previewUrl,
+      previewBytes: previewBytes ?? this.previewBytes,
       url: url ?? this.url,
       localBytes: localBytes ?? this.localBytes,
     );

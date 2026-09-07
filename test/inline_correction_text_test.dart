@@ -72,6 +72,25 @@ void main() {
     expect(find.text(explanationText), findsNothing);
   });
 
+  testWidgets('corrected word uses semibold emphasis', (tester) async {
+    await tester.pumpWidget(
+      harness(originalText: 'I goed', correctedText: 'I went'),
+    );
+
+    final inline = tester.widget<Text>(
+      find.byKey(const ValueKey('inline-correction')),
+    );
+    final rootSpan = inline.textSpan! as TextSpan;
+    final correctedSpan = rootSpan.children!
+        .whereType<WidgetSpan>()
+        .map((span) => span.child)
+        .whereType<Padding>()
+        .map((padding) => padding.child)
+        .whereType<Text>()
+        .firstWhere((text) => text.textSpan?.toPlainText() == 'went');
+    expect(correctedSpan.textSpan?.style?.fontWeight, FontWeight.w600);
+  });
+
   testWidgets('tapping struck-through text opens the explanation popup', (
     tester,
   ) async {
@@ -109,47 +128,44 @@ void main() {
     expect(find.text(explanationText), findsNothing);
   });
 
-  testWidgets(
-    'every word in a merged corrected run gets its own tap target '
-    '(regression)',
-    (tester) async {
-      // Regression for the bug the plan's own pseudocode had: a single
-      // mistake in the middle of an otherwise-correct sentence leaves
-      // correctionSegments() merging everything after it — "went to the
-      // shop yesterday" — into ONE non-struck CorrectionSegment. Tapping
-      // "shop" must still open a popup for just "shop", not hand the
-      // whole five-word phrase to showWordPopup as a single "word".
-      await tester.pumpWidget(
-        harness(
-          originalText: 'I goed to shop yesterday',
-          correctedText: 'I went to the shop yesterday',
-        ),
+  testWidgets('every word in a merged corrected run gets its own tap target '
+      '(regression)', (tester) async {
+    // Regression for the bug the plan's own pseudocode had: a single
+    // mistake in the middle of an otherwise-correct sentence leaves
+    // correctionSegments() merging everything after it — "went to the
+    // shop yesterday" — into ONE non-struck CorrectionSegment. Tapping
+    // "shop" must still open a popup for just "shop", not hand the
+    // whole five-word phrase to showWordPopup as a single "word".
+    await tester.pumpWidget(
+      harness(
+        originalText: 'I goed to shop yesterday',
+        correctedText: 'I went to the shop yesterday',
+      ),
+    );
+
+    // Every word in the merged run is independently present as its own
+    // tappable span, not fused into a single multi-word text node.
+    for (final word in ['went', 'to', 'the', 'shop', 'yesterday']) {
+      expect(
+        find.text(word),
+        findsOneWidget,
+        reason: '"$word" should be its own tap target',
       );
+    }
+    // The merged phrase must never appear as a single text node.
+    expect(find.text('went to the shop yesterday'), findsNothing);
 
-      // Every word in the merged run is independently present as its own
-      // tappable span, not fused into a single multi-word text node.
-      for (final word in ['went', 'to', 'the', 'shop', 'yesterday']) {
-        expect(
-          find.text(word),
-          findsOneWidget,
-          reason: '"$word" should be its own tap target',
-        );
-      }
-      // The merged phrase must never appear as a single text node.
-      expect(find.text('went to the shop yesterday'), findsNothing);
+    await tester.tap(find.text('shop'));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('shop'));
-      await tester.pumpAndSettle();
-
-      // Popup echoes just "shop" — inline span + popup headline.
-      expect(find.text('shop'), findsNWidgets(2));
-      // Neighboring words are untouched — still exactly one inline span
-      // each, no popup echoing the whole phrase.
-      expect(find.text('went'), findsOneWidget);
-      expect(find.text('yesterday'), findsOneWidget);
-      expect(find.text('went to the shop yesterday'), findsNothing);
-    },
-  );
+    // Popup echoes just "shop" — inline span + popup headline.
+    expect(find.text('shop'), findsNWidgets(2));
+    // Neighboring words are untouched — still exactly one inline span
+    // each, no popup echoing the whole phrase.
+    expect(find.text('went'), findsOneWidget);
+    expect(find.text('yesterday'), findsOneWidget);
+    expect(find.text('went to the shop yesterday'), findsNothing);
+  });
 
   testWidgets('every non-whitespace segment gets its own tap target', (
     tester,

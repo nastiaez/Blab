@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blab — grammatical form choice</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px 20px;
+      background: #f0f0f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111;
+    }
+    .phone-wrap { width: 375px; }
+    .label {
+      margin: 0 0 12px;
+      color: #888;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .phone {
+      height: 780px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 44px;
+      background: #fff;
+      box-shadow: 0 24px 80px rgba(0,0,0,.18);
+    }
+    .status {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .status-icons { color: #111; font-size: 13px; letter-spacing: 2px; }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px 12px;
+      border-bottom: 1px solid #eee;
+    }
+    .back { color: #007aff; font-size: 29px; line-height: .7; padding-right: 2px; }
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .name { font-size: 16px; font-weight: 650; }
+    .mode { margin-top: 2px; color: #888; font-size: 12px; }
+    .header-spacer { flex: 1; }
+    .dots { color: #888; font-size: 21px; letter-spacing: 2px; }
+    .messages {
+      flex: 1;
+      padding: 16px 14px;
+      background: #f7f7fb;
+    }
+    .date { margin: 4px 0 20px; color: #aaa; font-size: 11px; font-weight: 500; text-align: center; }
+    .row { display: flex; flex-direction: column; align-items: flex-end; }
+    .bubble {
+      max-width: 78%;
+      padding: 10px 13px;
+      border-radius: 18px 18px 4px 18px;
+      background: #5B4FE8;
+      color: white;
+      font-size: 16px;
+      line-height: 1.45;
+    }
+    .choice {
+      border: 0;
+      border-bottom: 1.5px solid rgba(255,255,255,.72);
+      padding: 0 1px 1px;
+      background: transparent;
+      color: white;
+      font: inherit;
+      cursor: pointer;
+    }
+    .choice:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+    .slash { color: rgba(255,255,255,.62); padding: 0 2px; }
+    .time { margin-top: 3px; padding-right: 2px; color: #aaa; font-size: 10px; }
+    .confirmation {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      margin: 6px 2px 0;
+      color: #7d7d86;
+      font-size: 12px;
+    }
+    .confirmation.visible { display: flex; }
+    .change {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: #5B4FE8;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .hint {
+      margin: 18px auto 0;
+      max-width: 240px;
+      color: #8a8992;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+    }
+    .input-area { padding: 10px 12px 24px; border-top: 1px solid #eee; background: #fff; }
+    .input { height: 38px; padding: 9px 13px; border-radius: 19px; background: #f2f2f7; color: #a2a2a8; font-size: 14px; }
+    .sheet {
+      position: absolute;
+      z-index: 2;
+      display: none;
+      width: 343px;
+      padding: 15px 16px 16px;
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 10px 35px rgba(0,0,0,.18);
+    }
+    .sheet.visible { display: block; }
+    .sheet-word { font-size: 21px; font-weight: 650; }
+    .sheet-roman { margin-top: 3px; color: #888; font-size: 14px; }
+    .sheet-meaning { margin-top: 7px; font-size: 14px; font-weight: 500; }
+    .sheet-note { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee; color: #777; font-size: 12px; }
+    .sheet-close { float: right; border: 0; background: none; color: #aaa; font-size: 21px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="phone-wrap">
+    <p class="label">Practice mode · Ukrainian</p>
+    <main class="phone" id="phone">
+      <div class="status"><span>9:41</span><span class="status-icons">●◒▰</span></div>
+      <header class="header">
+        <span class="back">‹</span>
+        <span class="avatar">M</span>
+        <div><div class="name">Maya</div><div class="mode">Practice Ukrainian</div></div>
+        <span class="header-spacer"></span><span class="dots">···</span>
+      </header>
+      <section class="messages" id="messages">
+        <div class="date">Today</div>
+        <div class="row">
+          <div class="bubble" id="message">
+            <span>Ти </span><span id="unresolved"><button class="choice" onclick="selectForm('feminine')">зробила</button><span class="slash">/</span><button class="choice" onclick="selectForm('masculine')">зробив</button></span><span> це?</span>
+          </div>
+          <div class="time">Now&nbsp;&nbsp;✓✓</div>
+          <div class="confirmation" id="confirmation">
+            <span id="confirmationCopy"></span><button class="change" onclick="resetForm()">Change</button>
+          </div>
+        </div>
+        <p class="hint" id="hint">Tap the form that fits Maya.</p>
+      </section>
+      <div class="input-area"><div class="input">Message Maya</div></div>
+    </main>
+    <div class="sheet" id="wordSheet" role="dialog" aria-modal="true">
+      <button class="sheet-close" onclick="hideWord()">×</button>
+      <div class="sheet-word" id="sheetWord"></div>
+      <div class="sheet-roman" id="sheetRoman"></div>
+      <div class="sheet-meaning" id="sheetMeaning"></div>
+      <div class="sheet-note">Maya’s form is set to <span id="sheetForm"></span>.</div>
+    </div>
+  </div>
+  <script>
+    let selected = null;
+    const forms = {
+      feminine: { word: 'зробила', roman: 'zrobyla', label: 'feminine' },
+      masculine: { word: 'зробив', roman: 'zrobyv', label: 'masculine' },
+    };
+
+    function selectForm(form) {
+      selected = form;
+      const item = forms[form];
+      document.getElementById('unresolved').innerHTML = '<button class="choice" onclick="showWord()">' + item.word + '</button>';
+      document.getElementById('confirmationCopy').textContent = 'Using ' + item.label + ' for Maya ·';
+      document.getElementById('confirmation').classList.add('visible');
+      document.getElementById('hint').textContent = 'Now the selected word opens its normal word card.';
+    }
+
+    function resetForm() {
+      selected = null;
+      document.getElementById('unresolved').innerHTML = '<button class="choice" onclick="selectForm(\'feminine\')">зробила</button><span class="slash">/</span><button class="choice" onclick="selectForm(\'masculine\')">зробив</button>';
+      document.getElementById('confirmation').classList.remove('visible');
+      document.getElementById('hint').textContent = 'Tap the form that fits Maya.';
+      hideWord();
+    }
+
+    function showWord() {
+      const item = forms[selected];
+      document.getElementById('sheetWord').textContent = item.word;
+      document.getElementById('sheetRoman').textContent = item.roman;
+      document.getElementById('sheetMeaning').textContent = 'you did';
+      document.getElementById('sheetForm').textContent = item.label;
+      const phone = document.getElementById('phone').getBoundingClientRect();
+      const sheet = document.getElementById('wordSheet');
+      sheet.style.top = (phone.top + 240) + 'px';
+      sheet.style.left = (phone.left + 16) + 'px';
+      sheet.classList.add('visible');
+    }
+
+    function hideWord() { document.getElementById('wordSheet').classList.remove('visible'); }
+  </script>
+</body>
+</html>

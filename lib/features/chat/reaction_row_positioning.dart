@@ -3,28 +3,36 @@ import 'package:flutter/material.dart';
 /// Computes the top Y coordinate (in the same coordinate space as
 /// [bubbleRect] and [pressPosition]) for the floating reaction row.
 ///
-/// Default: the row sits flush against the top of the bubble (no gap).
-/// When the bubble is short and there's room above it, that's exactly what
-/// happens. When the bubble is tall (more than [tallBubbleThreshold]
-/// logical pixels — roughly 3 lines of text or a photo) or there simply
-/// isn't room above it, the row instead anchors near where the user
-/// actually pressed rather than the bubble's true (possibly off-screen)
-/// top, staying visually attached to the touch point. [minTop] is a hard
-/// floor — the row's top never goes above it (e.g. above the status bar),
-/// though it's allowed to overlap page content like the chat header.
+/// The row prefers the space above the selected bubble. If that space is
+/// unavailable, it moves below it. Only when the selected message leaves no
+/// full row-sized space on either side does the row overlap that message near
+/// the long-press position. This intentionally lets the row float over other
+/// message bubbles; [minTop] and [maxBottom] keep it clear of the
+/// system/header edge and the message-action row.
 double computeReactionRowTop({
   required Rect bubbleRect,
   required Offset pressPosition,
   required double rowHeight,
   required double minTop,
-  double tallBubbleThreshold = 120,
-  double pressGap = 8,
+  required double maxBottom,
+  double gap = 8,
+  bool preferAbove = true,
 }) {
-  final isTall = bubbleRect.height > tallBubbleThreshold;
-  final flushTop = bubbleRect.top - rowHeight;
-  if (!isTall && flushTop >= minTop) {
-    return flushTop;
+  final aboveTop = bubbleRect.top - rowHeight - gap;
+  final belowTop = bubbleRect.bottom + gap;
+  final aboveFits = aboveTop >= minTop;
+  final belowFits = belowTop + rowHeight <= maxBottom;
+
+  if (preferAbove && aboveFits) {
+    return aboveTop;
   }
-  final pressAnchoredTop = pressPosition.dy - rowHeight - pressGap;
-  return pressAnchoredTop < minTop ? minTop : pressAnchoredTop;
+  if (!preferAbove && belowFits) {
+    return belowTop;
+  }
+  if (belowFits) return belowTop;
+  if (aboveFits) return aboveTop;
+
+  final maxTop = maxBottom - rowHeight;
+  if (maxTop <= minTop) return minTop;
+  return (pressPosition.dy - rowHeight - gap).clamp(minTop, maxTop).toDouble();
 }

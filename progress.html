@@ -1,0 +1,2182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Blab — Play Store progress</title>
+  <style>
+    :root {
+      --brand: #d4694a;
+      --brand-press: #bb573b;
+      --brand-soft: #f3dad0;
+      --cream: #efebe2;
+      --surface: #fffdfa;
+      --ink: #1f3340;
+      --muted: #756f6b;
+      --line: #ddd4c7;
+      --green: #35765d;
+      --green-soft: #e2efe7;
+      --amber: #9a6619;
+      --amber-soft: #f7ead0;
+      --red: #a5423d;
+      --red-soft: #f6dfdc;
+      --blue: #3f6d86;
+      --blue-soft: #e1edf2;
+      --shadow: 0 18px 54px rgba(63, 45, 34, 0.08);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(212, 105, 74, 0.12), transparent 30rem),
+        var(--cream);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button, input { font: inherit; }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 80px;
+    }
+
+    .hero { order: 0; }
+    .owner-plan { order: 1; }
+    .progress-panel { order: 2; }
+    .flow-panel { order: 3; }
+    .launch-audit { order: 4; }
+    .later { order: 5; }
+    .footnote { order: 6; }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--brand-press);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: 16px;
+      font-size: clamp(36px, 6vw, 68px);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: clamp(26px, 3vw, 38px);
+      letter-spacing: -0.035em;
+    }
+
+    .lede {
+      max-width: 720px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .summary-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      margin-top: 18px;
+      padding: 10px 15px;
+      border: 1px solid rgba(187, 87, 59, 0.24);
+      border-radius: 999px;
+      background: rgba(255, 253, 250, 0.72);
+      color: var(--brand-press);
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .summary-link:hover { background: var(--surface); }
+
+    .summary-link:focus-visible {
+      outline: 3px solid rgba(212, 105, 74, 0.28);
+      outline-offset: 3px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 30px;
+    }
+
+    .audit-card,
+    .panel {
+      border: 1px solid rgba(99, 76, 60, 0.13);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 253, 250, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .audit-card { padding: 24px; }
+
+    .audit-card strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 34px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .audit-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .progress-panel {
+      padding: 26px;
+      margin-bottom: 30px;
+    }
+
+    .progress-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .progress-heading h2 { margin: 0; }
+
+    .progress-number {
+      color: var(--brand-press);
+      font-size: 28px;
+      font-weight: 850;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .progress-track {
+      height: 18px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #ded7cc;
+      box-shadow: inset 0 1px 2px rgba(32, 24, 20, 0.08);
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--brand-press), var(--brand));
+      transition: width 220ms ease;
+    }
+
+    .progress-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .progress-meta strong { color: var(--ink); }
+
+    .progress-note {
+      margin: 16px 0 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .flow-panel {
+      padding: 26px;
+      margin-bottom: 48px;
+      overflow: hidden;
+    }
+
+    .flow-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 24px;
+    }
+
+    .flow-head p {
+      max-width: 520px;
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .flow-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .legend-item,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .legend-item {
+      padding: 7px 10px;
+      background: #f7f3ed;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .journey {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 30px 20px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: flow;
+    }
+
+    .journey-step {
+      position: relative;
+      min-height: 142px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      counter-increment: flow;
+    }
+
+    .journey-step::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -25px;
+      z-index: 2;
+      width: 28px;
+      color: #a69d94;
+      font-size: 22px;
+      text-align: center;
+      transform: translateY(-50%);
+    }
+
+    .journey-step:nth-child(5)::after,
+    .journey-step:last-child::after { display: none; }
+
+    .journey-step:nth-child(5)::before {
+      content: "↓";
+      position: absolute;
+      right: 50%;
+      bottom: -29px;
+      color: #a69d94;
+      font-size: 22px;
+      transform: translateX(50%);
+    }
+
+    .journey-step:nth-child(n+6) { direction: rtl; }
+    .journey-step:nth-child(n+6) > * { direction: ltr; }
+    .journey-step:nth-child(6) { grid-column: 5; grid-row: 2; }
+    .journey-step:nth-child(7) { grid-column: 4; grid-row: 2; }
+    .journey-step:nth-child(8) { grid-column: 3; grid-row: 2; }
+    .journey-step:nth-child(9) { grid-column: 2; grid-row: 2; }
+    .journey-step:nth-child(10) { grid-column: 1; grid-row: 2; }
+    .journey-step:nth-child(n+6)::after {
+      content: "←";
+      right: auto;
+      left: -25px;
+    }
+
+    .journey-step:nth-child(10)::after { display: none; }
+
+    .step-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .step-number::before { content: counter(flow); }
+
+    .step-status {
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .status-working { background: var(--green-soft); color: var(--green); }
+    .status-check { background: var(--amber-soft); color: var(--amber); }
+    .status-build { background: var(--blue-soft); color: var(--blue); }
+    .status-blocked { background: var(--red-soft); color: var(--red); }
+
+    .journey-step h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .journey-step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .section-head p {
+      max-width: 640px;
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .count-badge {
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-press);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .task-groups {
+      display: grid;
+      gap: 20px;
+      margin-bottom: 56px;
+    }
+
+    .task-group {
+      overflow: hidden;
+      border: 1px solid rgba(99, 76, 60, 0.14);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 253, 250, 0.74);
+    }
+
+    .task-group-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .task-group-head h3 { margin: 0; font-size: 18px; }
+
+    .task-group-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .task-list { margin: 0; padding: 0; list-style: none; }
+
+    .task-item {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: start;
+      padding: 17px 20px;
+      border-bottom: 1px solid var(--line);
+      transition: background 140ms ease, opacity 140ms ease;
+    }
+
+    .task-item:last-child { border-bottom: 0; }
+    .task-item:hover { background: rgba(255, 255, 255, 0.6); }
+    .task-item.is-done { background: rgba(226, 239, 231, 0.46); }
+    .task-item.is-done .task-title { text-decoration: line-through; text-decoration-thickness: 1px; }
+    .task-item.is-done .task-copy { opacity: 0.66; }
+
+    .task-check {
+      width: 24px;
+      height: 24px;
+      margin: 1px 0 0;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .task-title {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+    }
+
+    .task-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tag { padding: 6px 9px; }
+    .tag-bug { color: var(--red); background: var(--red-soft); }
+    .tag-flow { color: var(--blue); background: var(--blue-soft); }
+    .tag-ux { color: var(--amber); background: var(--amber-soft); }
+    .tag-release { color: var(--brand-press); background: var(--brand-soft); }
+    .tag-check { color: var(--green); background: var(--green-soft); }
+    .tag-security { color: #67498c; background: #eee5f6; }
+
+    .later .task-group { background: rgba(247, 243, 237, 0.72); }
+    .later .count-badge { background: #ded8d0; color: #5e5955; }
+
+    .owner-plan {
+      margin-bottom: 64px;
+      scroll-margin-top: 24px;
+    }
+
+    .owner-plan .task-check {
+      width: 28px;
+      height: 28px;
+    }
+
+    .owner-plan .task-item {
+      grid-template-columns: 40px minmax(0, 1fr) auto;
+      padding-top: 19px;
+      padding-bottom: 19px;
+    }
+
+    .owner-progress {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px 20px;
+      align-items: end;
+      margin-bottom: 20px;
+      padding: 20px 22px;
+    }
+
+    .owner-progress-copy strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 16px;
+    }
+
+    .owner-progress-copy span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .owner-progress-number {
+      color: var(--brand-press);
+      font-size: 24px;
+      font-weight: 850;
+    }
+
+    .owner-progress .progress-track { grid-column: 1 / -1; }
+
+    .plan-route {
+      margin-bottom: 28px;
+      padding: 22px;
+    }
+
+    .plan-route-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .plan-route-head strong {
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .plan-route-head span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .plan-route-steps {
+      display: grid;
+      grid-template-columns: 2fr 1.25fr 1.6fr;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: personal-flow;
+    }
+
+    .plan-route-step {
+      position: relative;
+      min-height: 112px;
+      padding: 16px 16px 16px 50px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      counter-increment: personal-flow;
+    }
+
+    .plan-route-step::before {
+      content: counter(personal-flow);
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .plan-route-step::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -14px;
+      z-index: 2;
+      color: #a69d94;
+      transform: translateY(-50%);
+    }
+
+    .plan-route-step:last-child::after { display: none; }
+
+    .plan-route-step strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .plan-route-step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .owner-subsection { margin-top: 34px; }
+
+    .task-group-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .task-group-meta {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .spec-check-label {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      min-height: 44px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .spec-check {
+      width: 24px;
+      height: 24px;
+      margin: 0;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .spec-step {
+      display: grid;
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .owner-later .task-group {
+      background: rgba(247, 243, 237, 0.72);
+    }
+
+    .owner-later .count-badge {
+      background: #ded8d0;
+      color: #5e5955;
+    }
+
+    .scope-note {
+      margin: -8px 0 20px;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      background: var(--amber-soft);
+      color: #75501a;
+      font-size: 13px;
+    }
+
+    .footnote {
+      padding: 18px 20px;
+      border-left: 4px solid var(--brand);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: rgba(255, 253, 250, 0.7);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footnote strong { color: var(--ink); }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .audit-card { max-width: 430px; }
+      .journey { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .journey-step:nth-child(n) { grid-column: auto; grid-row: auto; }
+      .journey-step:nth-child(n)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -29px;
+        left: auto;
+        transform: translateX(50%);
+      }
+      .journey-step:nth-child(odd)::after {
+        content: "→";
+        top: 50%;
+        right: -25px;
+        bottom: auto;
+        transform: translateY(-50%);
+      }
+      .journey-step:nth-child(even)::after { content: "↓"; }
+      .journey-step:nth-child(5)::before { display: none; }
+      .journey-step:last-child::after { display: none; }
+      .flow-head { display: block; }
+      .flow-legend { justify-content: flex-start; margin-top: 16px; }
+    }
+
+    @media (max-width: 620px) {
+      .page { width: min(100% - 20px, 1180px); padding-top: 22px; }
+      .progress-panel, .flow-panel { padding: 20px; }
+      .progress-heading, .section-head { display: block; }
+      .progress-number { margin-top: 8px; }
+      .section-head .count-badge { display: inline-flex; margin-top: 12px; }
+      .journey { grid-template-columns: 1fr; gap: 30px; }
+      .journey-step:nth-child(n)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -29px;
+        left: auto;
+        transform: translateX(50%);
+      }
+      .journey-step:last-child::after { display: none; }
+      .task-item { grid-template-columns: 32px minmax(0, 1fr); }
+      .tag { grid-column: 2; justify-self: start; }
+      .plan-route-head { display: block; }
+      .plan-route-head span { display: block; margin-top: 5px; }
+      .plan-route-steps { grid-template-columns: 1fr; }
+      .plan-route-step::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -17px;
+        transform: translateX(50%);
+      }
+      .task-group-head { align-items: flex-start; }
+      .task-group-meta { display: grid; justify-items: end; gap: 4px; }
+      .owner-plan .task-item { grid-template-columns: 38px minmax(0, 1fr); }
+      .owner-progress { grid-template-columns: 1fr auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition: none !important; }
+    }
+
+    @media print {
+      body { background: white; }
+      .page { width: 100%; padding: 0; }
+      .audit-card, .panel { box-shadow: none; backdrop-filter: none; }
+      .task-item { break-inside: avoid; }
+    }
+
+    /* Unified roadmap view */
+    .audit-card,
+    .summary-link,
+    .progress-panel,
+    .flow-panel,
+    .owner-plan,
+    .launch-audit,
+    .later,
+    .footnote {
+      display: none;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 10% -8%, rgba(212, 105, 74, 0.1), transparent 28rem),
+        #f3efe7;
+    }
+
+    .page {
+      display: block;
+      width: min(860px, calc(100% - 32px));
+      padding: 52px 0 72px;
+    }
+
+    .hero {
+      display: block;
+      max-width: 700px;
+      margin: 0 0 28px;
+    }
+
+    .hero h1 {
+      max-width: none;
+      margin-bottom: 12px;
+      font-size: clamp(38px, 7vw, 58px);
+      line-height: 1.02;
+    }
+
+    .hero .lede {
+      max-width: 640px;
+      font-size: 17px;
+    }
+
+    .roadmap { display: grid; gap: 18px; }
+
+    .roadmap-progress {
+      padding: 22px 24px;
+      border: 1px solid rgba(99, 76, 60, 0.12);
+      border-radius: 20px;
+      background: rgba(255, 253, 250, 0.9);
+      box-shadow: 0 14px 36px rgba(63, 45, 34, 0.06);
+    }
+
+    .roadmap-progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .roadmap-progress-head strong {
+      font-size: 17px;
+      letter-spacing: -0.015em;
+    }
+
+    .roadmap-progress-head span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .roadmap-progress .progress-track { height: 12px; }
+
+    .roadmap-progress-note {
+      margin: 11px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .roadmap-stage {
+      overflow: hidden;
+      border: 1px solid rgba(99, 76, 60, 0.13);
+      border-radius: 22px;
+      background: rgba(255, 253, 250, 0.76);
+    }
+
+    .roadmap-stage.current {
+      border-color: rgba(212, 105, 74, 0.3);
+      background: rgba(255, 253, 250, 0.94);
+      box-shadow: 0 16px 38px rgba(63, 45, 34, 0.06);
+    }
+
+    .stage-summary,
+    .stage-static-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      min-height: 82px;
+      padding: 19px 22px;
+    }
+
+    .stage-summary {
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .stage-summary::-webkit-details-marker,
+    .spec-summary::-webkit-details-marker { display: none; }
+
+    .stage-heading {
+      display: flex;
+      gap: 13px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .stage-marker {
+      display: grid;
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 12px;
+      background: #e7e1d8;
+      color: #716960;
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .current .stage-marker {
+      background: var(--brand-soft);
+      color: var(--brand-press);
+    }
+
+    .stage-copy { min-width: 0; }
+
+    .stage-kicker {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--brand-press);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .roadmap-stage:not(.current) .stage-kicker { color: var(--muted); }
+
+    .stage-title {
+      display: block;
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: -0.025em;
+    }
+
+    .stage-meta {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .stage-chevron,
+    .spec-chevron {
+      display: inline-block;
+      color: #8a8179;
+      transition: transform 180ms ease;
+    }
+
+    .roadmap-stage[open] > .stage-summary .stage-chevron,
+    .spec-card[open] > .spec-summary .spec-chevron { transform: rotate(180deg); }
+
+    .stage-body {
+      padding: 0 22px 22px;
+      border-top: 1px solid rgba(221, 212, 199, 0.72);
+    }
+
+    .area-block { padding-top: 20px; }
+
+    .area-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .area-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .area-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .spec-stack { display: grid; gap: 9px; }
+
+    .spec-card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--surface);
+    }
+
+    .spec-card.is-done { border-color: rgba(53, 118, 93, 0.34); }
+
+    .spec-summary {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) auto auto;
+      gap: 11px;
+      align-items: center;
+      min-height: 64px;
+      padding: 13px 15px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .spec-checkbox,
+    .roadmap-task-check {
+      margin: 0;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .spec-checkbox { width: 22px; height: 22px; }
+
+    .spec-name {
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 820;
+      letter-spacing: -0.012em;
+    }
+
+    .spec-card.is-done .spec-name {
+      color: var(--green);
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+    }
+
+    .spec-count {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .roadmap-task-list {
+      display: grid;
+      margin: 0;
+      padding: 0 15px 8px 56px;
+      list-style: none;
+    }
+
+    .roadmap-task {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      padding: 12px 0;
+      border-top: 1px solid rgba(221, 212, 199, 0.68);
+    }
+
+    .roadmap-task-check { width: 19px; height: 19px; margin-top: 1px; }
+
+    .roadmap-task-copy { min-width: 0; }
+
+    .roadmap-task-title {
+      display: block;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 720;
+      cursor: pointer;
+    }
+
+    .roadmap-task-detail {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .roadmap-task.is-done .roadmap-task-title {
+      color: #8c8781;
+      text-decoration: line-through;
+    }
+
+    .roadmap-task .tag {
+      align-self: start;
+      padding: 4px 7px;
+      font-size: 9px;
+    }
+
+    .roadmap-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+      padding: 12px 4px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .roadmap-footer p { max-width: 600px; margin: 0; }
+
+    .roadmap-footer a {
+      color: var(--brand-press);
+      font-weight: 750;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .roadmap-footer a:hover { text-decoration: underline; }
+
+    .stage-summary:focus-visible,
+    .spec-summary:focus-visible {
+      outline: 3px solid rgba(212, 105, 74, 0.24);
+      outline-offset: -3px;
+    }
+
+    @media (max-width: 620px) {
+      .page { width: min(100% - 20px, 860px); padding-top: 28px; }
+      .hero { margin-bottom: 22px; }
+      .roadmap-progress { padding: 19px; }
+      .stage-summary, .stage-static-head { min-height: 74px; padding: 16px; }
+      .stage-body { padding: 0 12px 16px; }
+      .stage-title { font-size: 18px; }
+      .stage-meta > span:first-child { display: none; }
+      .spec-summary { grid-template-columns: 28px minmax(0, 1fr) auto auto; padding: 12px; }
+      .roadmap-task-list { padding: 0 12px 6px 40px; }
+      .roadmap-task { grid-template-columns: 22px minmax(0, 1fr); }
+      .roadmap-task .tag { grid-column: 2; justify-self: start; }
+      .roadmap-footer { display: block; }
+      .roadmap-footer a { display: inline-block; margin-top: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Blab · Play Store launch tracker</p>
+        <h1>Roadmap to launch</h1>
+        <p class="lede">One calm workboard for what we are building now, what comes next, and what can wait until after launch.</p>
+      </div>
+    </header>
+
+    <section class="roadmap" aria-label="Blab launch roadmap">
+      <div class="roadmap-progress" aria-labelledby="roadmap-progress-title">
+        <div class="roadmap-progress-head">
+          <strong id="roadmap-progress-title">Launch progress</strong>
+          <span id="roadmap-progress-label">0 of 0 tasks complete · 0 remaining</span>
+        </div>
+        <div class="progress-track" id="roadmap-progress-track" role="progressbar" aria-labelledby="roadmap-progress-title" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-fill" id="roadmap-progress-fill"></div>
+        </div>
+        <p class="roadmap-progress-note"><span id="roadmap-spec-progress-label">0 of 0 launch specs complete</span> · A spec counts as complete only when every task inside it is checked.</p>
+      </div>
+
+      <section class="roadmap-stage current" aria-labelledby="current-focus-title">
+        <div class="stage-static-head">
+          <div class="stage-heading">
+            <span class="stage-marker" aria-hidden="true">1</span>
+            <div class="stage-copy">
+              <span class="stage-kicker">Current focus</span>
+              <strong class="stage-title" id="current-focus-title">Chat</strong>
+            </div>
+          </div>
+          <div class="stage-meta"><span>Work one spec at a time</span><span id="current-focus-count">4 specs</span></div>
+        </div>
+        <div class="stage-body" id="current-focus"></div>
+      </section>
+
+      <details class="roadmap-stage">
+        <summary class="stage-summary">
+          <div class="stage-heading">
+            <span class="stage-marker" aria-hidden="true">2</span>
+            <div class="stage-copy">
+              <span class="stage-kicker">Next up</span>
+              <strong class="stage-title">Launch work</strong>
+            </div>
+          </div>
+          <div class="stage-meta"><span id="next-up-count">0 specs</span><span class="stage-chevron" aria-hidden="true">⌄</span></div>
+        </summary>
+        <div class="stage-body" id="next-up"></div>
+      </details>
+
+      <details class="roadmap-stage">
+        <summary class="stage-summary">
+          <div class="stage-heading">
+            <span class="stage-marker" aria-hidden="true">3</span>
+            <div class="stage-copy">
+              <span class="stage-kicker">After launch</span>
+              <strong class="stage-title">Saved ideas and upgrades</strong>
+            </div>
+          </div>
+          <div class="stage-meta"><span id="after-launch-count">0 specs</span><span class="stage-chevron" aria-hidden="true">⌄</span></div>
+        </summary>
+        <div class="stage-body" id="after-launch"></div>
+      </details>
+
+      <footer class="roadmap-footer">
+        <p><strong>Completion rule:</strong> Codex checks a task in the shared file only after you confirm that your manual test passed. Browser checks stay saved on this device.</p>
+        <a href="APP_SUMMARY.md" target="_top">App &amp; feature summary →</a>
+      </footer>
+    </section>
+
+    <section class="panel progress-panel" aria-labelledby="progress-title">
+      <div class="progress-heading">
+        <div>
+          <p class="eyebrow">Launch readiness</p>
+          <h2 id="progress-title">Play Store progress</h2>
+        </div>
+        <div class="progress-number" id="progress-number">0%</div>
+      </div>
+      <div class="progress-track" role="progressbar" aria-labelledby="progress-title" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-meta">
+        <span><strong id="verified-count">19</strong> verified foundations</span>
+        <span><strong id="high-done-count">0</strong> high-priority tasks checked</span>
+        <span><strong id="high-open-count">0</strong> high-priority tasks open</span>
+      </div>
+      <p class="progress-note">Later tasks do not affect this bar. A task becomes officially complete only after manual testing and owner confirmation.</p>
+    </section>
+
+    <section class="panel flow-panel" aria-labelledby="flow-title">
+      <div class="flow-head">
+        <div>
+          <p class="eyebrow">End-to-end journey</p>
+          <h2 id="flow-title">How Blab reaches launch</h2>
+          <p>The product journey is mostly working. The final gap sits between a polished learning chat, a Play-signed invite journey, and a complete release pass.</p>
+        </div>
+        <div class="flow-legend" aria-label="Flow status legend">
+          <span class="legend-item" style="color: var(--green)"><span class="legend-dot"></span>Working</span>
+          <span class="legend-item" style="color: var(--amber)"><span class="legend-dot"></span>Needs manual check</span>
+          <span class="legend-item" style="color: var(--blue)"><span class="legend-dot"></span>Needs finishing</span>
+          <span class="legend-item" style="color: var(--red)"><span class="legend-dot"></span>Blocked</span>
+        </div>
+      </div>
+
+      <ol class="journey" aria-label="Blab launch flow">
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-working">Working</span></div>
+          <h3>Account access</h3>
+          <p>Email, Google, reset, account editing, logout, and deletion.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-working">Working</span></div>
+          <h3>Create an invite</h3>
+          <p>Pick a learning language, create the link, share or copy it.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-check">Check</span></div>
+          <h3>Recipient joins</h3>
+          <p>Open the link, carry context through sign-up, claim one shared chat.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-working">Working</span></div>
+          <h3>Live conversation</h3>
+          <p>Realtime messages, replies, edits, reactions, media, read and typing states.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-build">Finish</span></div>
+          <h3>Learn in chat</h3>
+          <p>Normal and Practice modes, word lookup, translation, corrections, forms.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-check">Check</span></div>
+          <h3>Safety &amp; recovery</h3>
+          <p>Report, block, offline queue, notifications, privacy controls, crash reports.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-blocked">Blocked</span></div>
+          <h3>Play-signed release</h3>
+          <p>Play App Signing, verified links, OAuth certificate, production bundle.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-build">Prepare</span></div>
+          <h3>Store package</h3>
+          <p>Legal copy, Data Safety, screenshots, feature graphic, reviewer access.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-build">Pending</span></div>
+          <h3>Closed test</h3>
+          <p>Internal release, eligible tester requirement, crash and feedback pass.</p>
+        </li>
+        <li class="journey-step">
+          <div class="step-top"><span class="step-number"></span><span class="step-status status-build">Pending</span></div>
+          <h3>Production</h3>
+          <p>Repeat the full audit on the Play build, then make the final go/no-go call.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="owner-plan" id="my-build-plan" aria-labelledby="owner-plan-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Your step-by-step sequence</p>
+          <h2 id="owner-plan-title">My build plan</h2>
+          <p>Stay in one area at a time: finish the four Chat specs, tighten onboarding and invite copy, then return to the remaining launch gates.</p>
+        </div>
+        <span class="count-badge" id="owner-progress-count">0 of 0 done</span>
+      </div>
+
+      <div class="panel owner-progress" aria-labelledby="owner-progress-title">
+        <div class="owner-progress-copy">
+          <strong id="owner-progress-title">Your launch build progress</strong>
+          <span>Every task below has a checkbox. You can also check an entire spec from its header.</span>
+        </div>
+        <span class="owner-progress-number" id="owner-progress-number">0%</span>
+        <div class="progress-track" id="owner-progress-track" role="progressbar" aria-labelledby="owner-progress-title" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-fill" id="owner-progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="panel plan-route" aria-label="Recommended work order">
+        <div class="plan-route-head">
+          <strong>Work in this order</strong>
+          <span>Each numbered group below is one Codex spec—not one spec per checkbox.</span>
+        </div>
+        <ol class="plan-route-steps">
+          <li class="plan-route-step">
+            <strong>Chat · four specs</strong>
+            <p>Practice UI → visual refresh and simple long press → grammatical forms → translation animation.</p>
+          </li>
+          <li class="plan-route-step">
+            <strong>Onboarding + invite copy</strong>
+            <p>One small launch-focused copy pass, without redesigning the full journey.</p>
+          </li>
+          <li class="plan-route-step">
+            <strong>Remaining launch work</strong>
+            <p>Resume the high-priority release, safety, signing, store, and device-check list below.</p>
+          </li>
+        </ol>
+      </div>
+
+      <div class="owner-subsection" aria-labelledby="owner-launch-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Build now</p>
+            <h2 id="owner-launch-title">For this launch</h2>
+          </div>
+          <span class="count-badge" id="owner-launch-count">0 tasks</span>
+        </div>
+        <p class="scope-note"><strong>Spec alignment:</strong> the visual-refresh spec changes today’s translation-icon and long-press behavior. When that spec starts, update the canonical product rules deliberately while preserving View original in message actions.</p>
+        <div class="task-groups" id="owner-launch-groups"></div>
+      </div>
+
+      <div class="owner-subsection owner-later" aria-labelledby="owner-later-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Keep, but do not block release</p>
+            <h2 id="owner-later-title">Not for this launch</h2>
+          </div>
+          <span class="count-badge" id="owner-later-count">0 ideas</span>
+        </div>
+        <div class="task-groups" id="owner-later-groups"></div>
+      </div>
+    </section>
+
+    <section class="launch-audit" aria-labelledby="high-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">One launch gate</p>
+          <h2 id="high-title">High priority before Play Store</h2>
+          <p>Everything here must be implemented, verified, or explicitly removed from the launch promise before release.</p>
+        </div>
+        <span class="count-badge" id="high-count">0 tasks</span>
+      </div>
+      <div class="task-groups" id="high-priority-groups"></div>
+    </section>
+
+    <section class="later" aria-labelledby="later-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">After launch</p>
+          <h2 id="later-title">Later</h2>
+          <p>Valuable product and platform work that should not hold the Android Play Store release.</p>
+        </div>
+        <span class="count-badge" id="later-count">0 tasks</span>
+      </div>
+      <div class="task-groups" id="later-groups"></div>
+    </section>
+
+    <p class="footnote"><strong>Completion rule:</strong> checking a box in the browser is a personal planning aid. The checked state in this file is updated only after the owner confirms the manual test passed.</p>
+  </main>
+
+  <script>
+    const VERIFIED_FOUNDATIONS = 19;
+    const STORAGE_KEY = 'blab-progress-checks-v1';
+
+    // `done: true` is the durable source-of-truth state. Codex changes it only
+    // after the owner confirms the matching manual test passed.
+    const ownerLaunchGroups = [
+      {
+        step: '1',
+        title: 'Chat screen — Practice Mode UI',
+        note: 'One Codex spec',
+        tasks: [
+          { id: 'owner-practice-position', type: 'ux', label: 'Move the Normal / Practice switch to the right side of the profile area.', done: true },
+          { id: 'owner-practice-figma', type: 'ux', label: 'Update the switch to match the Figma design.', done: true },
+          { id: 'owner-practice-icons', type: 'ux', label: 'Add the new mode icons.', done: true },
+          { id: 'owner-practice-active', type: 'ux', label: 'When Practice is active: show its icon + “Practice”; Normal becomes icon-only.', done: true },
+          { id: 'owner-normal-active', type: 'ux', label: 'When Normal is active: show its label/icon treatment; Practice becomes icon-only.', done: true },
+          { id: 'owner-mode-colors', type: 'ux', label: 'Give Normal and Practice modes their intended different message-bubble colors.', done: true }
+        ]
+      },
+      {
+        step: '2',
+        title: 'Chat screen — Visual refresh + simple long press',
+        note: 'One Codex spec · Preserve View original',
+        tasks: [
+          { id: 'owner-chat-icons', type: 'ux', label: 'Replace the old chat icons with the new icons you’ve chosen.', done: true },
+          { id: 'owner-chat-colors', type: 'ux', label: 'Update the chat background and profile/container colors to match the newer visual direction.', done: true },
+          { id: 'owner-remove-translation-icon', type: 'ux', label: 'Remove the separate translation icon beside every message.', done: true },
+          { id: 'owner-word-tap', type: 'flow', label: 'Keep normal tap on a word for word-level learning.', done: true },
+          { id: 'owner-longpress-translation', type: 'flow', label: 'On long press of a message, reveal its primary Known Language translation.', done: true },
+          { id: 'owner-original-action', type: 'flow', label: 'Keep this simple for launch — do not build the fancy long-press animation yet.', done: true },
+          { id: 'owner-receipt-check-asset', type: 'ux', label: 'The check asset exists, but it isn’t placed on any approved screen; receipts currently use double-check.', done: true }
+        ]
+      },
+      {
+        step: '3',
+        title: 'Grammatical-form preferences',
+        note: 'One Codex spec',
+        tasks: [
+          { id: 'owner-form-polish', type: 'ux', label: 'Polish the UI for the feminine/masculine choice.', done: true },
+          { id: 'owner-form-memory', type: 'check', label: 'Test that the selected preference is actually remembered correctly.' },
+          { id: 'owner-form-preferences-ui', type: 'ux', label: 'Check the new Translation Preferences UI and make sure it feels understandable.' },
+          { id: 'owner-form-cases', type: 'flow', label: 'Finish/test the persistence and contradiction cases already identified in the existing launch work.' }
+        ]
+      },
+      {
+        step: '4',
+        title: 'Message translation animation',
+        note: 'One Codex spec · Already designed',
+        tasks: [
+          { id: 'owner-animation-implement', type: 'ux', label: 'Implement the message-bubble translation lifecycle from the existing animation spec.', done: true },
+          { id: 'owner-animation-speeds', type: 'check', label: 'Test the different translation speeds/states.', done: true },
+          { id: 'owner-animation-failure', type: 'check', label: 'Test failure/retry behavior.', done: true },
+          { id: 'owner-animation-device', type: 'check', label: 'Test it on a real device before considering it finished.', done: true }
+        ]
+      },
+      {
+        step: '5',
+        title: 'Onboarding + invite copy',
+        note: 'Keep this small for launch',
+        tasks: [
+          { id: 'owner-onboarding-what', type: 'ux', label: 'Add a simple explanation of what Blab is so a new person doesn’t arrive at an empty chat wondering what they’re supposed to do.' },
+          { id: 'owner-onboarding-how', type: 'ux', label: 'Explain briefly how Blab works.' },
+          { id: 'owner-invite-copy', type: 'ux', label: 'Improve the invite-flow wording.' },
+          { id: 'owner-learning-vs-interface', type: 'ux', label: 'Make it clear that choosing German/Ukrainian/etc. as a learning language does not mean the whole app interface suddenly changes to that language.' },
+          { id: 'owner-copy-only', type: 'ux', label: 'Focus on copy for now rather than redesigning the entire flow.' }
+        ]
+      }
+    ];
+
+    const ownerLaterGroups = [
+      {
+        title: 'Saved ideas',
+        note: 'Revisit after launch',
+        tasks: [
+          { id: 'later-invite-urgency', type: 'flow', label: 'Review invite management after launch', detail: 'If real misuse warrants it, explore cancellation or invite history. Launch links have no time expiry and remain valid until claimed.' },
+          { id: 'owner-later-longpress-motion', type: 'ux', label: 'Fancy long-press interaction where the background dims and the selected bubble moves to a fixed position near the top.' },
+          { id: 'owner-later-action-layout', type: 'ux', label: 'More elaborate message-action layout underneath that bubble.' },
+          { id: 'owner-later-deep-dive', type: 'ux', label: 'Deep Dive screen with word explanations, examples, sentence structure, corrections, grammar, and alternative phrasing.' },
+          { id: 'owner-later-onboarding-redesign', type: 'ux', label: 'Bigger redesign of onboarding/invite flow.' },
+          { id: 'owner-later-profile-pride', type: 'ux', label: 'Richer profile design showing known and learning languages in a way people can feel proud of.' },
+          { id: 'owner-later-visual-polish', type: 'ux', label: 'Broader visual polish across the rest of the app.' },
+          { id: 'owner-later-logo', type: 'ux', label: 'Final logo polish.' }
+        ]
+      }
+    ];
+
+    const highPriorityGroups = [
+      {
+        title: 'Core learning experience',
+        note: 'The part that makes Blab different',
+        tasks: [
+          { id: 'core-lifecycle-timing', type: 'ux', label: 'Finish the Practice-mode message lifecycle', detail: 'Cover fast, medium, and slow translation timing; use the approved glyph-only wave and one clean transformation.', done: true },
+          { id: 'core-lifecycle-states', type: 'flow', label: 'Complete every message lifecycle branch', detail: 'Incoming, cache hit, edit, delete, photo caption, mode switch, off-screen completion, concurrent sends, and reduced motion.', done: true },
+          { id: 'core-language-failure', type: 'bug', label: 'Finish the quiet retry and final Retry state', detail: 'Retry language help once for up to ten seconds, then preserve the readable original; never confuse it with send failure.', done: true },
+          { id: 'core-language-history', type: 'bug', label: 'Preserve completed learning-language history', detail: 'Each participant keeps earlier messages in the language that was active when they were completed; only later messages use the newly selected language.' },
+          { id: 'core-form-cache', type: 'flow', label: 'Finish persisted grammatical-form choices', detail: 'Hydrate saved choices from the shared cache and apply self, partner, and chat-tone ownership correctly.', done: true },
+          { id: 'core-form-contradiction', type: 'flow', label: 'Finish authored-form contradiction handling', detail: 'Learn the first clear form silently, treat the saved form as authoritative, and apply the normal visible correction until it is changed in Translation Preferences.', done: true },
+          { id: 'core-form-copy', type: 'ux', label: 'Refine Translation preferences', detail: 'Clarify grammatical-form language, simplify hierarchy, fix value styling, spacing, and the Tone row.', done: true },
+          { id: 'core-language-matrix', type: 'check', label: 'Run the 11-language learning QA matrix', detail: 'Include French and Hindi linked agreement, Tamil third-person cases, English and Turkish no-chooser cases, and photo captions.' },
+          { id: 'core-mode-device', type: 'check', label: 'Manually pass Normal, Practice, and Known Languages', detail: 'Verify default mode, switching, collapsed state, word taps, sentence audio, known-language bypass, and outgoing alignment.', done: true },
+          { id: 'core-wrap-bug', type: 'bug', label: 'Fix translated outgoing bubble wrapping', detail: 'Translated text must wrap naturally and keep the same right-edge breathing room as incoming messages.', done: true },
+          { id: 'core-first-use', type: 'ux', label: 'Add minimal first-chat guidance', detail: 'Explain that people can write in any language, what Practice mode does, and that words are tappable.' },
+          { id: 'core-original', type: 'bug', label: 'Restore View original in message actions', detail: 'The exact authored text must remain accessible without crowding the message action row.', done: true },
+          { id: 'core-delete-contract', type: 'flow', label: 'Finalize deleted-message and Undo behavior', detail: 'Decide what remains for each participant, the deleted-message copy, and where the three-second Undo appears.', done: true }
+        ]
+      },
+      {
+        title: 'Visible journeys and device checks',
+        note: 'Working in code is not enough',
+        tasks: [
+          { id: 'journey-apple-android', type: 'bug', label: 'Remove the dead Apple sign-in action from Android v1', detail: 'Do not ship a production button that ends in “coming soon”; restore it with the iOS release.' },
+          { id: 'journey-warm-link', type: 'bug', label: 'Close warm invite-link routing', detail: 'A received invite must navigate to the invite while Blab is already open, not only from a cold start.' },
+          { id: 'journey-invite-two-device', type: 'check', label: 'Pass the full invite journey on two devices', detail: 'Create, share, open, sign up or sign in, claim once, and confirm both people land in the same chat.' },
+          { id: 'journey-share-intents', type: 'check', label: 'Pass every invite-share target on a physical phone', detail: 'WhatsApp, Telegram, Email, More, Copy, fallback behavior, and success feedback.' },
+          { id: 'journey-media', type: 'check', label: 'Pass the complete photo journey on a physical phone', detail: 'Gallery permission states, multi-select, camera, preview, caption, send, receive, and sharing an image into Blab.' },
+          { id: 'journey-realtime', type: 'check', label: 'Pass live messaging on two simultaneous devices', detail: 'Send, receive, reply, edit, delete, reactions, read receipts, typing, reconnect, and chat-list updates.' },
+          { id: 'journey-account', type: 'check', label: 'Pass the complete account journey', detail: 'Email sign-up, Google sign-in, reset password, change password, change email, edit name, logout, and delete account.' },
+          { id: 'journey-offline', type: 'check', label: 'Pass offline queue and send-failure recovery', detail: 'Airplane-mode queue, automatic resend, forced server failure, Retry, and force-stop persistence.' },
+          { id: 'journey-push', type: 'check', label: 'Complete the physical notification matrix', detail: 'Permission timing, denial reminder, previews on/off, terminated/background taps, account switch, invite-joined push, and no duplicates.' },
+          { id: 'journey-safety', type: 'check', label: 'Pass report and block on two accounts', detail: 'Report message/person, block, prevent new contact, remove the chat, unblock, and restore the chat.' },
+          { id: 'journey-sentry', type: 'check', label: 'Verify crash reporting in the release candidate', detail: 'Confirm the event arrives promptly in the correct environment with no message text or sensitive content.' },
+          { id: 'journey-accessibility', type: 'check', label: 'Run the Android accessibility pass', detail: 'TalkBack journey, 200% text, 44-point tap targets, contrast, focus order, labels, and reduced motion.' }
+        ]
+      },
+      {
+        title: 'Security and production hygiene',
+        note: 'No accidental exposure or environment drift',
+        tasks: [
+          { id: 'security-env-file', type: 'security', label: 'Protect the unignored local credential file', detail: 'Ignore or relocate it, verify it was never committed, and rotate the key if it has been shared anywhere.' },
+          { id: 'security-secret-scan', type: 'security', label: 'Run the final repository and release secret scan', detail: 'Check current files, history, and the release bundle for service credentials, signing secrets, message text, and private configuration.' },
+          { id: 'security-production-parity', type: 'security', label: 'Re-verify production service parity', detail: 'Confirm migrations, translation worker, notification worker, quotas, retention controls, moderation intake, and environment labels match the release.' },
+          { id: 'security-privacy-boundaries', type: 'security', label: 'Verify every plaintext and processor disclosure', detail: 'Storage, AI translation, notification previews, diagnostics, deletion, and moderation promises must match actual behavior.' }
+        ]
+      },
+      {
+        title: 'Play signing and verified links',
+        note: 'Current external blocker',
+        tasks: [
+          { id: 'play-create-app', type: 'release', label: 'Create the Play Console app and enable Play App Signing', detail: 'Use the final package identity and the dedicated upload key already prepared outside the project.' },
+          { id: 'play-certificates', type: 'release', label: 'Record the Play app-signing certificate', detail: 'Add its public SHA-256 alongside the controlled upload certificate and remove obsolete debug trust.' },
+          { id: 'play-google-oauth', type: 'release', label: 'Register the Play signing certificate for Google sign-in', detail: 'The Play-delivered build must use Google OAuth successfully, not only local or upload-signed builds.' },
+          { id: 'play-deploy-links', type: 'release', label: 'Publish final Android App Link association', detail: 'Serve correct production certificates over HTTPS with JSON content type and no redirect.' },
+          { id: 'play-install-link-test', type: 'check', label: 'Verify an invite on the Play-installed build', detail: 'Android must report the domain verified and open a valid invite directly without an app chooser.' },
+          { id: 'play-web-fallback', type: 'check', label: 'Verify the no-app web fallback', detail: 'A device without Blab must see a working invite landing with a valid Play Store destination.' }
+        ]
+      },
+      {
+        title: 'Store, legal, and final release',
+        note: 'Submission package and go/no-go',
+        tasks: [
+          { id: 'release-reconcile-docs', type: 'release', label: 'Reconcile every launch promise', detail: 'Align the product spec, technical plan, progress records, privacy policy, Terms, Data Safety, and store listing with the actual v1.' },
+          { id: 'release-operator', type: 'release', label: 'Finalize operator details and redeploy legal pages', detail: 'Remove remaining placeholders and confirm Privacy, Terms, and external account deletion are publicly reachable.' },
+          { id: 'release-moderation-drill', type: 'check', label: 'Run the moderation and deletion operations drill', detail: 'Prove report intake, response ownership, enforcement, evidence retention, escalation, and deletion handling work in practice.' },
+          { id: 'release-assets', type: 'release', label: 'Create final Play Store visuals', detail: '1024×500 feature graphic, final phone screenshots from the release candidate, app icon, and splash verification.' },
+          { id: 'release-listing', type: 'release', label: 'Finalize the Play listing and forms', detail: 'Descriptions, category, content rating, Data Safety, privacy URL, notification disclosure, and release notes.' },
+          { id: 'release-reviewer', type: 'release', label: 'Prepare reviewer access', detail: 'Create the demo account, document the invite/chat walkthrough, and verify every credential before submission.' },
+          { id: 'release-version', type: 'release', label: 'Lock the release identity', detail: 'Confirm version name, build number, app label, package identity, environment, signing, and the exact release notes.' },
+          { id: 'release-internal', type: 'release', label: 'Upload and pass the Play internal release', detail: 'Install the Play-delivered artifact and repeat the critical auth, invite, chat, safety, and settings smoke journey.' },
+          { id: 'release-closed-test', type: 'release', label: 'Complete the required closed test if the account is eligible', detail: 'Maintain the required opted-in tester cohort and duration, with no critical crashes or unresolved launch feedback.' },
+          { id: 'release-stability', type: 'check', label: 'Complete the stability window', detail: 'Reach the agreed crash-free threshold across 48 hours of internal or closed-test use and review all incoming feedback.' },
+          { id: 'release-final-audit', type: 'release', label: 'Repeat the complete audit on the Play-signed build', detail: 'Verify production services, startup, performance, ANRs, OAuth, App Links, notifications, privacy, accessibility, and every high-priority task.' },
+          { id: 'release-owner-pass', type: 'check', label: 'Record owner confirmation for every launch gate', detail: 'Only then mark the tracker complete and make the final go/no-go decision.' }
+        ]
+      }
+    ];
+
+    const laterGroups = [
+      {
+        title: 'Platform and privacy upgrades',
+        note: 'Post-Android v1',
+        tasks: [
+          { id: 'later-ios', type: 'flow', label: 'Build and test the iOS app', detail: 'Reach parity across all launch journeys on a real iPhone.' },
+          { id: 'later-apple-sso', type: 'flow', label: 'Add Apple sign-in', detail: 'Restore the Apple action when the iOS release and Apple Developer setup are ready.' },
+          { id: 'later-universal-links', type: 'flow', label: 'Add iOS Universal Links', detail: 'Invite links should open the iOS app and preserve the join journey.' },
+          { id: 'later-e2ee', type: 'security', label: 'Add end-to-end encryption', detail: 'Implement a reviewed protocol, per-device keys, ciphertext-only storage, and a clear key-loss policy.' },
+          { id: 'later-key-recovery', type: 'security', label: 'Design optional encrypted key recovery', detail: 'Evaluate a passphrase-wrapped backup without weakening the privacy promise.' },
+          { id: 'later-custom-domain', type: 'release', label: 'Move invites to a permanent Blab domain', detail: 'Replace the temporary host and add richer state-aware invite landing pages.' }
+        ]
+      },
+      {
+        title: 'Product expansion',
+        note: 'Deliberate design work, not launch gates',
+        tasks: [
+          { id: 'later-profile-hub', type: 'ux', label: 'Redesign Profile as a social hub', detail: 'Language chips, add-language action, invite entry, settings gear, and a clearer hierarchy.' },
+          { id: 'later-profile-rich', type: 'ux', label: 'Expand profile editing', detail: 'First/last name, optional bio, profile photo/avatar, and keyboard-aware Save treatment.' },
+          { id: 'later-learning-deep-dives', type: 'ux', label: 'Design deeper learning explanations', detail: 'Sentence structure, grammar, alternative phrasing, and advanced nuance beyond the word popup.' },
+          { id: 'later-chat-settings', type: 'ux', label: 'Expand chat settings', detail: 'Search, media, wallpaper/color, per-chat notifications, and safer placement for block/report.' },
+          { id: 'later-terms-ambiguity', type: 'ux', label: 'Handle ambiguous names and terms', detail: 'Surface possible matches transparently without presenting guesses as facts.' },
+          { id: 'later-language-research', type: 'flow', label: 'Resolve language-model product questions', detail: 'Learning English, English-only conversations, regional variants, and language-name display rules.' },
+          { id: 'later-calls', type: 'flow', label: 'Research audio and video calls', detail: 'Validate user need and scope before adding another communication mode.' },
+          { id: 'later-notification-depth', type: 'flow', label: 'Expand notification controls', detail: 'Per-chat mute, custom sounds, badges, richer actions, and iOS delivery.' }
+        ]
+      },
+      {
+        title: 'Long-term quality',
+        note: 'Ongoing after release',
+        tasks: [
+          { id: 'later-dependencies', type: 'check', label: 'Run a staged dependency compatibility upgrade', detail: 'Review outdated major versions one family at a time with regression and release checks.' },
+          { id: 'later-analytics-decision', type: 'security', label: 'Resolve the analytics decision', detail: 'Keep none, use privacy-safe product analytics, or rely on operational logs only.' },
+          { id: 'later-performance', type: 'check', label: 'Build ongoing performance baselines', detail: 'Cold start, long chats, media-heavy threads, translation latency, battery, and memory.' },
+          { id: 'later-usability', type: 'ux', label: 'Run post-launch usability sessions', detail: 'Validate first use, word discovery, modes, grammatical choices, invite comprehension, and trust.' }
+        ]
+      }
+    ];
+
+    const tagLabels = {
+      bug: 'Bug',
+      flow: 'Flow',
+      ux: 'UX',
+      release: 'Release',
+      check: 'Manual check',
+      security: 'Security'
+    };
+
+    let localChecks = {};
+    try {
+      localChecks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    } catch (_) {
+      localChecks = {};
+    }
+
+    function allTasks(groups) {
+      return groups.flatMap(group => group.tasks);
+    }
+
+    function isChecked(task) {
+      return task.done === true || localChecks[task.id] === true;
+    }
+
+    function renderGroups(groups, targetId) {
+      const target = document.getElementById(targetId);
+      target.replaceChildren(...groups.map(group => {
+        const section = document.createElement('section');
+        section.className = 'task-group';
+
+        const head = document.createElement('div');
+        head.className = 'task-group-head';
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'task-group-title';
+        if (group.step) {
+          const step = document.createElement('span');
+          step.className = 'spec-step';
+          step.textContent = group.step;
+          step.setAttribute('aria-hidden', 'true');
+          titleWrap.append(step);
+        }
+        const title = document.createElement('h3');
+        title.textContent = group.title;
+        titleWrap.append(title);
+        const meta = document.createElement('div');
+        meta.className = 'task-group-meta';
+        const note = document.createElement('span');
+        note.textContent = group.note;
+        meta.append(note);
+
+        let groupCheckbox = null;
+        if (group.step) {
+          const specLabel = document.createElement('label');
+          specLabel.className = 'spec-check-label';
+          groupCheckbox = document.createElement('input');
+          groupCheckbox.className = 'spec-check';
+          groupCheckbox.type = 'checkbox';
+          groupCheckbox.setAttribute('aria-label', `Mark ${group.title} complete`);
+          const checkedCount = group.tasks.filter(isChecked).length;
+          groupCheckbox.checked = checkedCount === group.tasks.length;
+          groupCheckbox.indeterminate = checkedCount > 0 && checkedCount < group.tasks.length;
+          specLabel.append(groupCheckbox, document.createTextNode('Spec complete'));
+          meta.append(specLabel);
+        }
+        head.append(titleWrap, meta);
+
+        const list = document.createElement('ul');
+        list.className = 'task-list';
+        list.append(...group.tasks.map(task => {
+          const item = document.createElement('li');
+          item.className = 'task-item';
+          item.dataset.taskId = task.id;
+
+          const checkbox = document.createElement('input');
+          checkbox.className = 'task-check';
+          checkbox.type = 'checkbox';
+          checkbox.id = `task-${task.id}`;
+          checkbox.checked = isChecked(task);
+          checkbox.setAttribute('aria-label', `Mark ${task.label} complete`);
+
+          const copy = document.createElement('div');
+          copy.className = 'task-copy';
+          const label = document.createElement('label');
+          label.className = 'task-title';
+          label.htmlFor = checkbox.id;
+          label.textContent = task.label;
+          copy.append(label);
+          if (task.detail) {
+            const detail = document.createElement('p');
+            detail.className = 'task-copy';
+            detail.textContent = task.detail;
+            copy.append(detail);
+          }
+
+          const tag = document.createElement('span');
+          tag.className = `tag tag-${task.type}`;
+          tag.textContent = tagLabels[task.type];
+
+          checkbox.addEventListener('change', () => {
+            localChecks[task.id] = checkbox.checked;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localChecks));
+            item.classList.toggle('is-done', checkbox.checked);
+            if (groupCheckbox) {
+              const checkedCount = group.tasks.filter(isChecked).length;
+              groupCheckbox.checked = checkedCount === group.tasks.length;
+              groupCheckbox.indeterminate = checkedCount > 0 && checkedCount < group.tasks.length;
+            }
+            updateProgress();
+            updateOwnerPlan();
+          });
+
+          item.classList.toggle('is-done', checkbox.checked);
+          item.append(checkbox, copy, tag);
+          return item;
+        }));
+
+        if (groupCheckbox) {
+          groupCheckbox.addEventListener('change', () => {
+            group.tasks.forEach(task => {
+              localChecks[task.id] = groupCheckbox.checked;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localChecks));
+            renderGroups(ownerLaunchGroups, 'owner-launch-groups');
+            updateOwnerPlan();
+          });
+        }
+
+        section.append(head, list);
+        return section;
+      }));
+    }
+
+    function updateProgress() {
+      const highTasks = allTasks(highPriorityGroups);
+      const checkedHigh = highTasks.filter(isChecked).length;
+      const completed = VERIFIED_FOUNDATIONS + checkedHigh;
+      const total = VERIFIED_FOUNDATIONS + highTasks.length;
+      const percent = Math.round((completed / total) * 100);
+
+      document.getElementById('progress-number').textContent = `${percent}%`;
+      document.getElementById('progress-fill').style.width = `${percent}%`;
+      document.querySelector('.progress-track').setAttribute('aria-valuenow', String(percent));
+      document.getElementById('verified-count').textContent = String(VERIFIED_FOUNDATIONS);
+      document.getElementById('high-done-count').textContent = String(checkedHigh);
+      document.getElementById('high-open-count').textContent = String(highTasks.length - checkedHigh);
+    }
+
+    function updateOwnerPlan() {
+      const launchTasks = allTasks(ownerLaunchGroups);
+      const laterTasks = allTasks(ownerLaterGroups);
+      const checkedLaunch = launchTasks.filter(isChecked).length;
+      const percent = Math.round((checkedLaunch / launchTasks.length) * 100);
+
+      document.getElementById('owner-progress-count').textContent = `${checkedLaunch} of ${launchTasks.length} done`;
+      document.getElementById('owner-launch-count').textContent = `${checkedLaunch} of ${launchTasks.length} tasks`;
+      document.getElementById('owner-later-count').textContent = `${laterTasks.length} ideas`;
+      document.getElementById('owner-progress-number').textContent = `${percent}%`;
+      document.getElementById('owner-progress-fill').style.width = `${percent}%`;
+      document.getElementById('owner-progress-track').setAttribute('aria-valuenow', String(percent));
+    }
+
+    const currentFocusAdditions = [
+      {
+        id: 'spec-incoming-translation',
+        title: 'Incoming translation and unread position',
+        tasks: [
+          { id: 'incoming-spec', type: 'flow', label: 'Confirm the incoming-translation and unread-position rules.' },
+          { id: 'incoming-build', type: 'flow', label: 'Finish background preparation, oldest-first results, skeletons, grouped translating state, and the stable new-message divider.' },
+          { id: 'incoming-verify', type: 'check', label: 'Run the unread and mode-switch device matrix.' },
+          { id: 'incoming-commit', type: 'flow', label: 'Commit the completed incoming-translation work.' },
+          { id: 'incoming-push', type: 'release', label: 'Push the incoming-translation work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-private-language-history',
+        title: 'Private language history',
+        tasks: [
+          { id: 'history-spec', type: 'flow', label: 'Confirm ownership of private “Now learning” markers and historical reply language.' },
+          { id: 'history-build', type: 'flow', label: 'Finish the original-language era, quoted-message, and marker-timeline behavior.' },
+          { id: 'history-verify', type: 'check', label: 'Run the owner language-switch matrix.' },
+          { id: 'history-commit', type: 'flow', label: 'Commit the private language-history work.' },
+          { id: 'history-push', type: 'release', label: 'Push the private language-history work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-translation-reliability',
+        title: 'Translation reliability',
+        tasks: [
+          { id: 'reliability-spec', type: 'flow', label: 'Confirm the remaining retry, privacy, account-switch, and cache-invalidating cases.' },
+          { id: 'reliability-build', type: 'flow', label: 'Bring in the separate-branch work: one-word translations, request time limits, and retry after short-word language misdetection.' },
+          { id: 'reliability-verify', type: 'check', label: 'Test unsupported language guidance, Chinese detection, expressive spelling, abbreviations, names, and independent saved versions.' },
+          { id: 'reliability-commit', type: 'flow', label: 'Commit the translation-reliability work.' },
+          { id: 'reliability-push', type: 'release', label: 'Push the translation-reliability work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-offline-history-photos',
+        title: 'Offline history and photos',
+        tasks: [
+          { id: 'offline-spec', type: 'flow', label: 'Confirm the offline recovery contract for account-specific history and photos.' },
+          { id: 'offline-build', type: 'flow', label: 'Finish verified-device history recovery and cached photo preview/full-image recovery.' },
+          { id: 'offline-verify', type: 'check', label: 'Run the legacy-photo and service-recovery matrix.' },
+          { id: 'offline-commit', type: 'flow', label: 'Commit the offline-history and photo work.' },
+          { id: 'offline-push', type: 'release', label: 'Push the offline-history and photo work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-chat-chats-profile-refresh',
+        title: 'Chat, Chats and Profile refresh',
+        tasks: [
+          { id: 'surfaces-spec', type: 'flow', label: 'Confirm the refresh scope across Chat, Chats, Profile, Known Languages, and Translation Preferences.' },
+          { id: 'surfaces-build', type: 'ux', label: 'Finish the locally built surfaces, hierarchy, avatars, composer, reactions, navigation, and Profile organization.' },
+          { id: 'surfaces-verify', type: 'check', label: 'Review the refreshed surfaces on device and record the remaining visual fixes.' },
+          { id: 'surfaces-commit', type: 'flow', label: 'Commit the refreshed surfaces.' },
+          { id: 'surfaces-push', type: 'release', label: 'Push the refreshed surfaces to GitHub.' }
+        ]
+      }
+    ];
+
+    const nextUpAdditions = [
+      {
+        id: 'spec-hindi-tamil-script',
+        area: 'Language choices',
+        title: 'Hindi and Tamil: Native script or English letters',
+        tasks: [
+          { id: 'script-choice-spec', type: 'flow', label: 'Specify one choice for Hindi and Tamil: Native script or English-letter transliteration — never both in one sentence.' },
+          { id: 'script-choice-build', type: 'flow', label: 'Build the choice into the relevant sentence display and settings flow.' },
+          { id: 'script-choice-verify', type: 'check', label: 'Test the chosen display across Hindi and Tamil conversations.' },
+          { id: 'script-choice-commit', type: 'flow', label: 'Commit the script-choice work.' },
+          { id: 'script-choice-push', type: 'release', label: 'Push the script-choice work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-language-localization',
+        area: 'Language choices',
+        title: 'Language and localization QA',
+        tasks: [
+          { id: 'localization-spec', type: 'flow', label: 'Confirm the four interface-language copy sets and whether word descriptions follow Interface Language or Known Languages.' },
+          { id: 'localization-build', type: 'flow', label: 'Finish missing translations and make translation targets follow Known Languages, not Interface Language.' },
+          { id: 'localization-verify', type: 'check', label: 'Test all learning languages: sentence translation, word descriptions, word and sentence audio, translations in every interface language, and Known Languages switching.' },
+          { id: 'localization-commit', type: 'flow', label: 'Commit the language and localization work.' },
+          { id: 'localization-push', type: 'release', label: 'Push the language and localization work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-feedback-offline-ui',
+        area: 'Feedback states',
+        title: 'Action feedback and no-network UI',
+        tasks: [
+          { id: 'feedback-spec', type: 'ux', label: 'Define one calm feedback pattern for interface-language changes and other completed actions.' },
+          { id: 'feedback-build', type: 'ux', label: 'Replace the current ugly action containers and redesign the no-network app-inoperable state.' },
+          { id: 'feedback-verify', type: 'check', label: 'Review each action, offline, and recovery state on device.' },
+          { id: 'feedback-commit', type: 'flow', label: 'Commit the feedback-state work.' },
+          { id: 'feedback-push', type: 'release', label: 'Push the feedback-state work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-visual-consistency-sweep',
+        area: 'Visual consistency',
+        title: 'Quick visual consistency sweep',
+        tasks: [
+          { id: 'sweep-spec', type: 'ux', label: 'Use the redesigned Chat and Profile screens as the reference instead of redesigning every screen from scratch.' },
+          { id: 'sweep-build', type: 'ux', label: 'Apply the shared surface, spacing, type hierarchy, controls, and feedback-state patterns to the remaining screens.' },
+          { id: 'sweep-verify', type: 'check', label: 'Run one screen-by-screen visual review for hierarchy and state consistency.' },
+          { id: 'sweep-commit', type: 'flow', label: 'Commit the visual consistency sweep.' },
+          { id: 'sweep-push', type: 'release', label: 'Push the visual consistency sweep to GitHub.' }
+        ]
+      }
+    ];
+
+    const taskIndex = new Map(
+      [
+        ...[ownerLaunchGroups, ownerLaterGroups, highPriorityGroups, laterGroups].flatMap(allTasks),
+        ...currentFocusAdditions.flatMap(spec => spec.tasks),
+        ...nextUpAdditions.flatMap(spec => spec.tasks)
+      ].map(task => [task.id, task])
+    );
+
+    function tasksById(...ids) {
+      return ids.map(id => taskIndex.get(id)).filter(Boolean);
+    }
+
+    const currentFocusSpecs = [
+      {
+        id: 'spec-invite-flow',
+        title: 'Invite flow',
+        tasks: [
+          ...ownerLaunchGroups[4].tasks.filter(task => !['owner-onboarding-what', 'owner-onboarding-how'].includes(task.id)),
+          ...tasksById('core-first-use'),
+          { id: 'invite-flow-spec', type: 'flow', label: 'Review the approved launch invite-flow spec: no expiry, no contact discovery, and practice-language choice inside the new chat.' },
+          { id: 'invite-flow-build', type: 'flow', label: 'Finish the active invite-flow work and its failure/retry states.' },
+          { id: 'invite-flow-verify', type: 'check', label: 'Pass the invite flow on two devices and every share target.' },
+          { id: 'invite-flow-commit', type: 'flow', label: 'Commit the invite-flow work.' },
+          { id: 'invite-flow-push', type: 'release', label: 'Push the invite-flow work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-practice-mode',
+        title: 'Practice Mode UI',
+        tasks: [
+          ...ownerLaunchGroups[0].tasks,
+          ...tasksById('core-mode-device'),
+          { id: 'practice-owner-matrix', type: 'check', label: 'Confirm the final mode, primary-language, and translation-target owner matrix.' },
+          { id: 'practice-commit', type: 'flow', label: 'Commit the Normal, Practice, and Known Languages work.' },
+          { id: 'practice-push', type: 'release', label: 'Push the Normal, Practice, and Known Languages work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-chat-refresh',
+        title: 'Chat UI refresh + simple long press',
+        tasks: [
+          ...ownerLaunchGroups[1].tasks,
+          ...tasksById('core-wrap-bug', 'core-original', 'core-delete-contract'),
+          { id: 'chat-emoji-row-animation', type: 'ux', label: 'Add animation for the emoji row/container.' },
+          { id: 'chat-interactions-matrix', type: 'check', label: 'Run the full chat-interactions device matrix, including reactions, reply, edit, Listen, Original, Delete, photos, captions, and audio dismissal.' },
+          { id: 'chat-interactions-commit', type: 'flow', label: 'Commit the Chat interactions work.' },
+          { id: 'chat-interactions-push', type: 'release', label: 'Push the Chat interactions work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-grammatical-forms',
+        title: 'Grammatical-form preferences',
+        tasks: [
+          ...ownerLaunchGroups[2].tasks,
+          ...tasksById('core-form-cache', 'core-form-contradiction', 'core-form-copy', 'core-language-matrix'),
+          { id: 'form-choice-attachment', type: 'ux', label: 'Make the grammatical-gender choice clearly belong to the message that triggered it, not the message below.' },
+          { id: 'form-localization', type: 'flow', label: 'Finish grammatical-form localization across all 11 learning languages.' },
+          { id: 'form-commit', type: 'flow', label: 'Commit the grammatical-form work.' },
+          { id: 'form-push', type: 'release', label: 'Push the grammatical-form work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-translation-animation',
+        title: 'Message translation animation',
+        tasks: [
+          ...ownerLaunchGroups[3].tasks,
+          ...tasksById('core-lifecycle-timing', 'core-lifecycle-states', 'core-language-failure'),
+          { id: 'lifecycle-review', type: 'check', label: 'Review the completed lifecycle on device, including reduced motion and simultaneous messages.' },
+          { id: 'lifecycle-commit', type: 'flow', label: 'Commit the message-lifecycle work.' },
+          { id: 'lifecycle-push', type: 'release', label: 'Push the message-lifecycle work to GitHub.' }
+        ]
+      },
+      ...currentFocusAdditions
+    ];
+
+    const nextUpSpecs = [
+      ...nextUpAdditions,
+      {
+        id: 'spec-onboarding-copy',
+        area: 'Onboarding & invite',
+        title: 'Onboarding',
+        tasks: [
+          { id: 'onboarding-spec', type: 'flow', label: 'Keep onboarding as its own, lower-urgency flow.' },
+          ...ownerLaunchGroups[4].tasks.filter(task => !['owner-invite-copy', 'owner-copy-only'].includes(task.id)),
+          { id: 'onboarding-build', type: 'ux', label: 'Finish the small launch-focused onboarding copy pass.' },
+          { id: 'onboarding-verify', type: 'check', label: 'Test first use with a new person.' },
+          { id: 'onboarding-commit', type: 'flow', label: 'Commit the onboarding work.' },
+          { id: 'onboarding-push', type: 'release', label: 'Push the onboarding work to GitHub.' }
+        ]
+      },
+      {
+        id: 'spec-invite-continuity',
+        area: 'Onboarding & invite',
+        title: 'Invite and account continuity',
+        tasks: tasksById(
+          'journey-apple-android',
+          'journey-warm-link',
+          'journey-invite-two-device',
+          'journey-share-intents'
+        )
+      },
+      {
+        id: 'spec-device-reliability',
+        area: 'Quality & device checks',
+        title: 'Messaging, media, account, and recovery',
+        tasks: tasksById(
+          'journey-media',
+          'journey-realtime',
+          'journey-account',
+          'journey-offline',
+          'journey-push'
+        )
+      },
+      {
+        id: 'spec-safety-accessibility',
+        area: 'Quality & device checks',
+        title: 'Safety, accessibility, and crash reporting',
+        tasks: tasksById('journey-safety', 'journey-sentry', 'journey-accessibility')
+      },
+      {
+        id: 'spec-security-production',
+        area: 'Production & Play Store',
+        title: 'Security and production hygiene',
+        tasks: highPriorityGroups[2].tasks
+      },
+      {
+        id: 'spec-play-signing',
+        area: 'Production & Play Store',
+        title: 'Play signing and verified links',
+        tasks: highPriorityGroups[3].tasks
+      },
+      {
+        id: 'spec-store-release',
+        area: 'Production & Play Store',
+        title: 'Store, legal, testing, and final release',
+        tasks: highPriorityGroups[4].tasks
+      }
+    ];
+
+    [...currentFocusSpecs, ...nextUpSpecs].flatMap(spec => spec.tasks).forEach(task => {
+      taskIndex.set(task.id, task);
+    });
+
+    const afterLaunchSpecs = [
+      {
+        id: 'spec-saved-ideas',
+        area: 'Saved ideas',
+        title: 'Chat, onboarding, profile, and logo ideas',
+        tasks: ownerLaterGroups[0].tasks
+      },
+      {
+        id: 'spec-platform-upgrades',
+        area: 'Platform',
+        title: laterGroups[0].title,
+        tasks: laterGroups[0].tasks
+      },
+      {
+        id: 'spec-product-expansion',
+        area: 'Product',
+        title: laterGroups[1].title,
+        tasks: laterGroups[1].tasks
+      },
+      {
+        id: 'spec-long-term-quality',
+        area: 'Quality',
+        title: laterGroups[2].title,
+        tasks: laterGroups[2].tasks
+      }
+    ];
+
+    const launchSpecs = [...currentFocusSpecs, ...nextUpSpecs];
+
+    function saveChecks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(localChecks));
+    }
+
+    function specCheckedCount(spec) {
+      return spec.tasks.filter(isChecked).length;
+    }
+
+    function updateRoadmapProgress() {
+      const completeSpecs = launchSpecs.filter(spec => specCheckedCount(spec) === spec.tasks.length).length;
+      const launchTasks = launchSpecs.flatMap(spec => spec.tasks);
+      const completeTasks = launchTasks.filter(isChecked).length;
+      const remainingTasks = launchTasks.length - completeTasks;
+      const percent = Math.round((completeTasks / launchTasks.length) * 100);
+      document.getElementById('roadmap-progress-label').textContent = `${completeTasks} of ${launchTasks.length} tasks complete · ${remainingTasks} remaining`;
+      document.getElementById('roadmap-spec-progress-label').textContent = `${completeSpecs} of ${launchSpecs.length} launch specs complete`;
+      document.getElementById('roadmap-progress-fill').style.width = `${percent}%`;
+      document.getElementById('roadmap-progress-track').setAttribute('aria-valuenow', String(percent));
+    }
+
+    function updateRoadmapSpec(spec, card) {
+      const checked = specCheckedCount(spec);
+      const complete = checked === spec.tasks.length;
+      const specCheckbox = card.querySelector('.spec-checkbox');
+      specCheckbox.checked = complete;
+      specCheckbox.indeterminate = checked > 0 && !complete;
+      card.classList.toggle('is-done', complete);
+      card.querySelector('.spec-count').textContent = `${checked}/${spec.tasks.length}`;
+      updateRoadmapProgress();
+    }
+
+    function createRoadmapTask(task, spec, card) {
+      const item = document.createElement('li');
+      item.className = 'roadmap-task';
+      item.dataset.taskId = task.id;
+
+      const checkbox = document.createElement('input');
+      checkbox.className = 'roadmap-task-check';
+      checkbox.type = 'checkbox';
+      checkbox.id = `roadmap-task-${task.id}`;
+      checkbox.checked = isChecked(task);
+      checkbox.setAttribute('aria-label', `Mark ${task.label} complete`);
+
+      const copy = document.createElement('div');
+      copy.className = 'roadmap-task-copy';
+      const label = document.createElement('label');
+      label.className = 'roadmap-task-title';
+      label.htmlFor = checkbox.id;
+      label.textContent = task.label;
+      copy.append(label);
+
+      if (task.detail) {
+        const detail = document.createElement('p');
+        detail.className = 'roadmap-task-detail';
+        detail.textContent = task.detail;
+        copy.append(detail);
+      }
+
+      const tag = document.createElement('span');
+      tag.className = `tag tag-${task.type}`;
+      tag.textContent = tagLabels[task.type];
+
+      checkbox.addEventListener('change', () => {
+        localChecks[task.id] = checkbox.checked;
+        saveChecks();
+        item.classList.toggle('is-done', checkbox.checked);
+        updateRoadmapSpec(spec, card);
+      });
+
+      item.classList.toggle('is-done', checkbox.checked);
+      item.append(checkbox, copy, tag);
+      return item;
+    }
+
+    function createSpecCard(spec) {
+      const card = document.createElement('details');
+      card.className = 'spec-card';
+      card.dataset.roadmapSpec = spec.id;
+
+      const summary = document.createElement('summary');
+      summary.className = 'spec-summary';
+
+      const specCheckbox = document.createElement('input');
+      specCheckbox.className = 'spec-checkbox';
+      specCheckbox.type = 'checkbox';
+      specCheckbox.setAttribute('aria-label', `Mark ${spec.title} complete`);
+      specCheckbox.addEventListener('click', event => event.stopPropagation());
+
+      const name = document.createElement('span');
+      name.className = 'spec-name';
+      name.textContent = spec.title;
+
+      const count = document.createElement('span');
+      count.className = 'spec-count';
+
+      const chevron = document.createElement('span');
+      chevron.className = 'spec-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.textContent = '⌄';
+
+      summary.append(specCheckbox, name, count, chevron);
+
+      const list = document.createElement('ul');
+      list.className = 'roadmap-task-list';
+      list.append(...spec.tasks.map(task => createRoadmapTask(task, spec, card)));
+
+      specCheckbox.addEventListener('change', () => {
+        spec.tasks.forEach(task => {
+          localChecks[task.id] = specCheckbox.checked;
+        });
+        saveChecks();
+        list.querySelectorAll('.roadmap-task').forEach(item => {
+          const task = taskIndex.get(item.dataset.taskId);
+          const checked = isChecked(task);
+          item.classList.toggle('is-done', checked);
+          item.querySelector('.roadmap-task-check').checked = checked;
+        });
+        updateRoadmapSpec(spec, card);
+      });
+
+      card.append(summary, list);
+      updateRoadmapSpec(spec, card);
+      return card;
+    }
+
+    function createSpecStack(specs) {
+      const stack = document.createElement('div');
+      stack.className = 'spec-stack';
+      stack.append(...specs.map(createSpecCard));
+      return stack;
+    }
+
+    function renderRoadmapAreas(specs, targetId, showAreaHeadings) {
+      const target = document.getElementById(targetId);
+      if (!showAreaHeadings) {
+        const area = document.createElement('section');
+        area.className = 'area-block';
+        area.append(createSpecStack(specs));
+        target.replaceChildren(area);
+        return;
+      }
+
+      const areas = [];
+      specs.forEach(spec => {
+        let area = areas.find(item => item.name === spec.area);
+        if (!area) {
+          area = { name: spec.area, specs: [] };
+          areas.push(area);
+        }
+        area.specs.push(spec);
+      });
+
+      target.replaceChildren(...areas.map(area => {
+        const section = document.createElement('section');
+        section.className = 'area-block';
+        const head = document.createElement('div');
+        head.className = 'area-head';
+        const title = document.createElement('h2');
+        title.textContent = area.name;
+        const count = document.createElement('span');
+        count.textContent = `${area.specs.length} ${area.specs.length === 1 ? 'spec' : 'specs'}`;
+        head.append(title, count);
+        section.append(head, createSpecStack(area.specs));
+        return section;
+      }));
+    }
+
+    function renderRoadmap() {
+      renderRoadmapAreas(currentFocusSpecs, 'current-focus', false);
+      renderRoadmapAreas(nextUpSpecs, 'next-up', true);
+      renderRoadmapAreas(afterLaunchSpecs, 'after-launch', true);
+      document.getElementById('current-focus-count').textContent = `${currentFocusSpecs.length} specs`;
+      document.getElementById('next-up-count').textContent = `${nextUpSpecs.length} specs`;
+      document.getElementById('after-launch-count').textContent = `${afterLaunchSpecs.length} specs`;
+      updateRoadmapProgress();
+    }
+
+    const highCount = allTasks(highPriorityGroups).length;
+    const laterCount = allTasks(laterGroups).length;
+    document.getElementById('high-count').textContent = `${highCount} tasks`;
+    document.getElementById('later-count').textContent = `${laterCount} tasks`;
+    renderGroups(ownerLaunchGroups, 'owner-launch-groups');
+    renderGroups(ownerLaterGroups, 'owner-later-groups');
+    renderGroups(highPriorityGroups, 'high-priority-groups');
+    renderGroups(laterGroups, 'later-groups');
+    updateOwnerPlan();
+    updateProgress();
+    renderRoadmap();
+  </script>
+</body>
+</html>

@@ -12,6 +12,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
+  String unsupportedLanguageHint(String learningLanguage) {
+    return 'Blab spricht diese Sprache noch nicht — versuch es auf $learningLanguage.';
+  }
+
+  @override
   String get back => 'Zurück';
 
   @override
@@ -25,6 +30,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get viewOriginal => 'Original anzeigen';
+
+  @override
+  String get original => 'Original';
+
+  @override
+  String get listen => 'Anhören';
 
   @override
   String get save => 'Speichern';
@@ -428,10 +439,28 @@ class AppLocalizationsDe extends AppLocalizations {
   String get practiceMode => 'Übung';
 
   @override
+  String practiceComposerHint(String learningLanguage, String knownLanguage) {
+    return 'Schreib auf $learningLanguage oder $knownLanguage';
+  }
+
+  @override
   String get translationLimitReached => 'Übersetzungslimit erreicht';
 
   @override
   String get translationUnavailable => 'Übersetzung nicht verfügbar';
+
+  @override
+  String get translating => 'Wird übersetzt…';
+
+  @override
+  String get checking => 'Wird geprüft…';
+
+  @override
+  String get couldntTranslateRetry =>
+      'Übersetzung fehlgeschlagen · Erneut versuchen';
+
+  @override
+  String get couldntCheckRetry => 'Prüfung fehlgeschlagen · Erneut versuchen';
 
   @override
   String get correction => 'Korrektur';
@@ -452,7 +481,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get read => 'Gelesen';
 
   @override
-  String get failedToSend => 'Senden fehlgeschlagen. Zum Wiederholen tippen.';
+  String get failedToSend => 'Nicht gesendet · Zum Wiederholen tippen';
 
   @override
   String get attach => 'Anhängen';
@@ -479,6 +508,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get messageDeleted => 'Nachricht gelöscht';
+
+  @override
+  String get deleteMessageQuestion => 'Nachricht löschen?';
+
+  @override
+  String deleteMessageBody(String name) {
+    return 'Möchtest du diese Nachricht wirklich löschen? Sie wird auch für $name gelöscht.';
+  }
 
   @override
   String get thanksReport => 'Danke — wir prüfen das.';

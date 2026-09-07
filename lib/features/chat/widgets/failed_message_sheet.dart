@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
+import '../../../shared/widgets/blab_icon.dart';
 
 /// What the user picked from the failed-message sheet. PRD US-030.
 enum FailedMessageAction { retry, delete }
@@ -52,7 +53,7 @@ Future<void> showFailedMessageSheet(
                 ),
               ),
               _ActionRow(
-                icon: Icons.refresh,
+                iconName: 'refresh - 16',
                 label: context.l10n.retry,
                 onTap: () {
                   Navigator.of(sheetCtx).pop();
@@ -60,7 +61,7 @@ Future<void> showFailedMessageSheet(
                 },
               ),
               _ActionRow(
-                icon: Icons.delete_outline,
+                iconName: 'trash - 20',
                 label: context.l10n.delete,
                 destructive: true,
                 onTap: () {
@@ -78,13 +79,13 @@ Future<void> showFailedMessageSheet(
 
 class _ActionRow extends StatelessWidget {
   const _ActionRow({
-    required this.icon,
+    required this.iconName,
     required this.label,
     required this.onTap,
     this.destructive = false,
   });
 
-  final IconData icon;
+  final String iconName;
   final String label;
   final VoidCallback onTap;
   final bool destructive;
@@ -100,7 +101,7 @@ class _ActionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 24, color: color),
+            BlabIcon(name: iconName, size: 20, color: color),
             const SizedBox(width: 16),
             Text(
               label,

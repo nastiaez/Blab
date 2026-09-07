@@ -4,6 +4,85 @@ import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
 
+/// First-open setup for a new connection. It cannot be dismissed because the
+/// chat has no practice language until the participant makes this private
+/// choice. The transparent barrier deliberately leaves the empty chat visible.
+Future<BlabLanguage> showRequiredPracticeLanguageSheet(
+  BuildContext context,
+) async {
+  final picked = await showModalBottomSheet<BlabLanguage>(
+    context: context,
+    backgroundColor: Colors.white,
+    barrierColor: Colors.transparent,
+    isDismissible: false,
+    enableDrag: false,
+    clipBehavior: Clip.antiAlias,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (ctx) => PopScope(
+      canPop: false,
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * .68,
+          ),
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 24, 20, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Choose a language to practice',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: BlabColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'You can change it anytime.',
+                    style: TextStyle(fontSize: 14, color: BlabColors.textMuted),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: kBlabLanguages.length,
+                  itemBuilder: (context, index) {
+                    final language = kBlabLanguages[index];
+                    return ListTile(
+                      title: Text(
+                        language.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: BlabColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).pop(language),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  return picked!;
+}
+
 /// Bottom sheet for changing the *learning* language of a chat. PRD US-022.
 ///
 /// Selected language is pinned at the top of the list so it's always one

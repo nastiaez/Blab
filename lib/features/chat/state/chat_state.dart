@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -7,9 +8,11 @@ import '../../../shared/data/languages.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/models/message.dart';
 import '../../../shared/services/chat_service.dart';
+import '../../../shared/services/local_chat_history_cache.dart';
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/connectivity_state.dart';
+import 'unread_chat_state.dart';
 import 'pending_sends_state.dart';
 
 /// Dev/QA one-shot: when armed, the next outgoing send is simulated to fail
@@ -143,13 +146,25 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   Stream<List<Message>> build() async* {
     ref.watch(currentUserIdProvider);
     final svc = ref.watch(chatServiceProvider);
+    final localCache = ref.watch(localChatHistoryCacheProvider);
     _messagesById.clear();
     _oldestCursor = null;
     _hasMore = false;
     _setPagination(loading: false);
 
+    final cached = await localCache?.loadMessages(chatId) ?? const [];
+    if (cached.isNotEmpty) {
+      for (final message in cached) {
+        _messagesById[message.id] = message;
+      }
+      final snapshot = _snapshot();
+      _reconcilePending(snapshot);
+      yield snapshot;
+    }
+
     try {
       final page = await svc.fetchMessagePage(chatId, limit: pageSize);
+      _messagesById.clear();
       for (final message in page.messages) {
         _messagesById[message.id] = message;
       }
@@ -158,11 +173,15 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       _setPagination();
       final snapshot = _snapshot();
       _reconcilePending(snapshot);
+      unawaited(localCache?.saveMessages(chatId, snapshot));
       yield snapshot;
-    } catch (_) {
-      // Offline / fetch failure: don't yield anything. Riverpod keeps the
-      // previous AsyncData accessible via `.value`, so the chat screen
-      // continues to show the last-known messages instead of an empty list.
+    } catch (error, stackTrace) {
+      // A recovered snapshot stays readable while realtime reconnects. With
+      // no snapshot, surface the initial failure so the chat can offer Retry
+      // instead of remaining on skeletons forever (US-032).
+      if (cached.isEmpty) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
     }
     try {
       await for (final change in svc.watchMessageChanges(chatId)) {
@@ -199,6 +218,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         }
         final snapshot = _snapshot();
         _reconcilePending(snapshot);
+        unawaited(localCache?.saveMessages(chatId, snapshot));
         yield snapshot;
       }
     } catch (_) {
@@ -223,6 +243,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       _hasMore = page.hasMore;
       final snapshot = _snapshot();
       _reconcilePending(snapshot);
+      unawaited(
+        ref.read(localChatHistoryCacheProvider)?.saveMessages(chatId, snapshot),
+      );
       state = AsyncData(snapshot);
     } catch (_) {
       // Keep the current page and allow another edge hit to retry.
@@ -713,6 +736,7 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
           .setLearningLanguage(chatId: chatId, langCode: lang.code);
       await ref.read(chatListProvider.notifier).refresh();
       state = lang;
+      ref.invalidate(chatLanguageTimelineProvider(chatId));
     } catch (e) {
       state = previous;
       rethrow;

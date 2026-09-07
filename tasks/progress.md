@@ -92,6 +92,7 @@
 
 ### Step 1.6 — Tappable words + word popup  `[x]`
 - **Scope:** US-018, US-029, FR-12, FR-24.
+- **Follow-up (2026-08-23):** replaced the word-popup speaker artwork with the approved `sound-base`, `sound-wave-1`, and `sound-wave-2` layers while preserving the existing wave animation and tap behavior. Confirmed on the Samsung S25 during the 2026-08-24 popup restyle pass.
 - **Done when:**
   - Every content word in target-language messages is independently tappable
   - Popup shows word, romanization, English, 🔊 button
@@ -164,7 +165,7 @@
 - **Scope:** US-015, US-016, US-026. Plaintext bodies for now — encryption moves to Step 2.6 (hard gate before any external tester).
 - **Done when:**
   - [x] Two real accounts can send and receive messages live via Supabase Realtime
-  - [x] Read receipts flip gray → purple based on partner scroll-into-view (Signal-strict, FR-30 / US-016)
+  - [x] Read-receipt transport updates based on partner scroll-into-view and respects the symmetric privacy toggle; Step 2.13 owns the launch single-gray → double-gray presentation
   - [x] Chats survive app restart, hydrated from Postgres on cold launch
   - [x] Offline → bubbles stay on screen, last-known data preserved; pending sends queue + retry on reconnect
   - [ ] Ciphertext-only rows — **deferred to Step 2.6** (encryption is its own milestone)
@@ -181,11 +182,22 @@
   - Android App Link routes the URL into the installed app
   - Expired and used states served from the same endpoint
 
+### Step 2.3b — Invite-flow redesign `[ ]` ← in progress
+- **Design:** `docs/superpowers/specs/2026-09-07-invite-flow-redesign-design.md`.
+- **Scope:** US-006…US-009, US-024…US-028, US-031, US-037, US-048, US-049, FR-4…FR-6, FR-22, FR-26, FR-42, FR-43. Replace the old language-first, 48-hour invite path with the approved minimal messenger-style flow.
+- **Done when:**
+  - Invite a friend is the only invite entry screen: no contacts permission, discovery list, or pre-invite language selection
+  - New and existing unclaimed links have no time expiry and remain valid until one successful claim; claimed, invalid, self-link, repeat-link, and same-pair paths follow the approved states
+  - Native sharing, page return, fresh-link preparation, online error retry, and offline disabled state match the spec
+  - The static `loveblab.com` landing, verified app-link handoff, standard email-auth continuation, and post-auth claim work as one journey
+  - Both users enter the same new chat state, select their own practice language in the mandatory undimmed sheet, and see the approved once-only mode tips
+  - The two-device and share-target device matrix passes, including no duplicate chat and no language reset for an existing pair
+
 ### Step 2.4 — Send-failure + offline queue  `[ ]` ← in progress
 - **Scope:** US-030, US-031.
 - **Done when:**
   - Force-airplane-mode → send → bubble shows clock → exit airplane → bubble flips to delivered
-  - Force a server 5xx → bubble shows ⚠ + retry sheet works
+  - Force a server 5xx → bubble shows `Not sent · Tap to try again` with no standalone icon; tapping the row retries
   - Failed messages survive app restart
 - **Progress (2026-06-09):**
   - [x] Offline-aware send path: `addOutgoing` lays the optimistic bubble, then *queues it on the clock when offline* instead of failing. A network drop mid-send keeps the bubble queued; a genuine server rejection while online flips it to ⚠ failed (retry sheet). New `isOnlineProvider` gives the send path a synchronous online read.
@@ -194,6 +206,19 @@
   - [x] Wired the previously-dead dev-menu "failed-send" switch into the send path so the ⚠ + retry flow can be forced on a real device without a genuine outage.
   - [x] `flutter analyze` clean; `flutter test` 39/39 green incl. new `test/send_failure_test.dart` (online send → delivered, offline → stays queued, server-error → failed, forced dev-failure → failed, no-op flush while offline, and offline-enqueue → restart → reconnect-flush → delivered).
   - [ ] **Device verification owed** (Nastia's machine): airplane-mode send shows the clock then auto-delivers on reconnect; a forced 5xx shows ⚠ + retry; a force-stop with a queued send goes out on reopen.
+
+### Step 2.4a — Offline chat photos `[ ]` ← in progress
+- **Found 2026-08-28 (Samsung S25 offline review).** Originals are present in private Supabase Storage, but the chat retains only a temporary signed link and an in-memory image. Going offline after eviction/restart therefore shows the framework's red broken-image state even though the stored file still exists.
+- **Scope:** US-047, FR-41. Persist a chat-sized preview on the device for every synced photo; retain the full-size file after it has been opened; use the stored preview at available quality while offline; use a same-size neutral `#EAE6E0` photo placeholder only when no preview has ever downloaded. No visible error copy, red cross, or dim overlay.
+- **Done when:**
+  - A synced photo remains visible in chat after airplane mode and app restart.
+  - A previously opened photo can open full-screen offline; a preview-only photo opens at its cached quality.
+  - A never-downloaded photo shows the approved neutral placeholder and loads automatically after reconnection.
+  - Cache cleanup never deletes the Supabase original and never affects the other participant.
+- **Progress (2026-08-28):**
+  - [x] Connected Samsung Galaxy S25 verified: the existing chat photo remained visible after network loss, force-stop, and restart; the offline chat kept its approved geometry with no red framework error.
+  - [x] The same cached photo opened full-screen while offline.
+  - [ ] Never-downloaded placeholder and reconnect replacement still need an explicit device pass.
 
 ### Step 2.5 — Push notifications  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
 - **Scope:** US-038, FR-29.
@@ -236,6 +261,22 @@
   - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
   - [x] L-13 security controls (2026-07-17, provider policy revised 2026-07-21): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, ZDR/data-collection-denied routing across eligible endpoints, and retirement of the unused public portfolio translator.
   - [x] L-15 writing correction extension (2026-07-18): provider modes `translation|correction|none`, author-only inline correction marks, recipient-clean corrected output, localized author explanations, shared authorized cache/RLS, and dual learning/interface output lanes.
+
+### Step 2.8 — Grammatical-form preferences `[ ]` ← in progress
+- **Scope:** US-042, FR-34, FR-35. Unknown required feminine/masculine forms use persistent inline markers with a non-blocking default-open chooser. Self preferences are account-wide; partner fallbacks and conversation tone are private to each chat; saved forms remain authoritative until changed in Translation preferences.
+- **Done when:**
+  - Unknown required forms show an ellipsis marker for one subject or numbered markers for multiple subjects; choosing resolves linked agreement and a temporary confirmation offers Change
+  - Form and tone preferences persist with the correct account/chat ownership; profile and chat settings expose them
+  - Text and photo-caption translation payloads respect the resolved form and tone; the first authored form is learned silently and later opposite forms receive the normal visible correction
+  - Unresolved markers persist in history; the newest opens on chat reopen, and later choices quietly resolve matching earlier markers
+  - Manual language QA covers the supported-language matrix, including French/Hindi linked agreement and Tamil third-person-only cases
+- **Progress (2026-08-24):**
+  - [x] Local preference foundation: account-wide self form, per-chat private partner fallback, and per-chat conversation tone with constrained database values
+  - [x] Profile and chat entry points now open Translation preferences; inline generated alternatives render as a non-modal chooser and a selected form resolves in place with Change
+  - [x] Generated-translation contract now carries natural linked feminine/masculine alternatives plus participant and tone context for every supported target language where the sentence needs it
+  - [x] Unresolved-form safeguard: a focused agreement audit now prevents the general translator from silently caching one grammatical form. Verified on Samsung S931B with `Did you go to the supermarket yesterday?` → Ukrainian feminine/masculine chooser while both preferences remained `Not set`
+  - [x] Updated inline choice treatment (2026-08-26): unresolved output now uses compact ellipsis/number markers, chooser pills follow the approved surface and typography tokens, first-time guidance is shown once per learning language, and chat choices keep a temporary `Change` confirmation without rewriting authored history.
+  - [ ] Persisted-cache hydration, authored-form contradiction handling, localized interface copy, and language-matrix device QA remain
 
 ---
 
@@ -371,6 +412,7 @@
   - `flutter analyze` clean, `flutter test` green, verified on device with two accounts
 
 ### Step 2.10 — Chat modes (Normal/Practice) + Known Languages `[ ]` ← in progress
+- **Visual refresh design:** `docs/superpowers/specs/2026-08-23-chat-practice-mode-ui-refresh-design.md`.
 - **Scope:** replaces the old "show translations and corrections" toggle with an explicit per-chat Normal/Practice mode switch, plus a new Known Languages profile setting so a reader's own fluent languages never get run through translation. Normal mode shows each message untranslated in its original language (or translated once, silently, if the reader doesn't know it) with no inline aid; Practice mode adds the translate/play-sentence icon beside the bubble, expand/collapse, and inline word corrections. Built across a 12-task plan (`.superpowers/sdd/2026-08-11-modes-known-languages/`): schema (mode + known_languages columns, translation retargeting), `KnownLanguagesScreen` + Profile row, `Chat.mode` + `ChatService.setChatMode`, `ChatModeNotifier` replacing `ShowTranslationsNotifier`, top-of-chat mode toggle with a reset signal that collapses expanded bubbles on switch, display-rule rewrite so the translation target is derived from mode + known languages, `MessageLearningContent` single-lane-default rewrite, bubble layout with the icon beside (not inside) the bubble, and split tap targets for corrected vs. struck-through words.
 - **Done when:**
   - Creating a fresh chat opens in Practice mode by default; toggling to Normal and back collapses any expanded bubble and closes open popups.
@@ -382,32 +424,105 @@
 - **Progress (2026-08-11):** Tasks 1–12 implemented, each task-reviewed (3 real bugs caught and fixed pre-merge: a `chat_list` view losing its SELECT grant, the long-press reaction-row rect including the new icon, and correction tap targets merging multi-word runs). A final whole-branch review then caught a fourth, more serious issue — the client was still sending `profiles.interface_language` where the server now expects the reader's primary known language, breaking translation for anyone whose primary known language differs from their interface language (the feature's own motivating case) — fixed in the same pass, along with 4 smaller cross-task gaps (`_QuotedReply` not respecting mode, normal-mode loading/error chrome, popups not closing on mode switch, the play-sentence icon not actually playing audio). Merged to `main` (`8b18bdf`); `flutter analyze` clean, `flutter test` 298/298 green on the merged result.
 - **Follow-up (2026-08-11):** the silent-failure regression noted above is fixed (`bbdf3d2`) — normal mode now only suppresses the loading shimmer, not the error/retry chrome, so a genuine translation failure for an unknown-language message still shows "Translation unavailable" + Retry. `flutter analyze` clean, `flutter test` 298/298 green.
 - **Follow-up (2026-08-12):** the three device-pass findings in `docs/superpowers/specs/2026-08-11-mode-display-fixes-design.md` are fixed. (1) Both modes now render a single plain lane while a translation resolves — the delayed shimmer widget is gone. (2) Practice mode's per-word tap padding is removed so the same message is exactly the same height in both modes (asserted by a widget test); word tap targets are unchanged, since each word's box already spans the full line. (3) Normal mode stops translating what the reader can already read: `request_message_translation` returns "no aid needed" without calling the provider when a prior resolution recorded a source language the caller already knows (migration `20260812000001`), and error/retry chrome now only appears when the app positively knows the reader can't read the message. `flutter analyze` clean, `flutter test` 303/303 green, `supabase test db` green for `translation_security` (28 assertions incl. 4 new for the bypass).
+  - [ ] Make outgoing bubbles right-aligned while retaining the same 12px edge margin as incoming bubbles; verify it on device.
+  - **Progress (2026-08-18):** outgoing rows now right-align; the 12px right-edge margin remains so both sides keep matching breathing room. Focused bubble-layout regression check remains required after this adjustment.
   > **Blocked:** manual on-device pass for the "Done when" bullets above still owed — no emulator/device access during implementation. · 2026-08-11
 - **Deploy (2026-08-12):** production (`bhzcexhebjszwyqvcsxs`) was **7 migrations behind** — private read-state visibility, contextual translation, message reactions, media attachments, the reactions check fix, the whole modes/known-languages migration, and the new bypass. Pushing was blocked by a production-only migration (`20260723000001`) that had been applied by hand and never existed in the repo: a `waitlist_signups` email-capture table for the web landing page. Reconstructed it from the production schema into `supabase/migrations/20260723000001_waitlist_signups.sql` (idempotent, no-op against production) rather than repairing history, so both sides now agree. All 7 migrations applied and `translate-message` redeployed; `supabase migration list --linked` shows nothing pending and nothing remote-only. Note: `20260729000001` clears `message_translations`, so production's translation cache was emptied and rebuilds on demand.
 
-### Step 2.11 — The translating state (the wave) `[ ]`
+### Step 2.11 — Message lifecycle and translating state `[x]`
 - **Design:** `docs/superpowers/specs/2026-08-12-translating-state-animation-design.md`. Interactive reference: `docs/superpowers/prototypes/translating-state.html` (open in a browser).
-- **Scope:** fills the two-to-six-second gap between sending a message in practice mode and its translation resolving. Waiting state is a band of light travelling across the words you typed, held back 350ms so fast replies never flicker. The transition is three strictly sequential phases — your words clear out left to right (0–160ms), the bubble travels to the translation's exact measured size with the box empty (160–360ms), the translated words land left to right (360ms onward). Supersedes fix 1 of `2026-08-11-mode-display-fixes-design.md`, whose motionless line read as a broken send on the device pass. Also changes incoming messages: they are held until their translation is ready and land with no animation at all, falling back to the original language if translation fails, so delivery is never blocked.
+- **Scope:** defines the full message lifecycle across sent, translated, corrected, unchanged, ambiguous, failed, incoming, edited, deleted, mixed-content, photo-caption, cached, mode-switch, and reduced-motion states. The approved design uses a 350ms glyph-only wave, a subtle arrival motion, measured clear → reshape → land transition, final inline retry row, and no duplicated text. See the design for all mode, cache, form-choice, and error details.
 - **Done when:**
-  - Sending in practice mode shows the band after 350ms; a translation that resolves faster than the hold shows no animation at all.
+  - Sending in practice mode follows the approved under-180ms / 180–350ms / over-350ms branches; a slow message waves across glyphs only.
   - The two languages are never on screen at the same time, and no text is visible while the bubble is changing size.
   - The bubble reaches its final size in one move (width and height together) and does not resize again once the translated text has landed — verified with a translation that is longer than the original and one that is shorter.
-  - A failed translation leaves the original text in place with no error chrome; a later successful retry swaps it in.
+  - A language-help failure retries quietly once for no more than 10 seconds, then preserves the original with the approved Retry row; delivery failure remains separate.
   - With reduced motion enabled, the line changes in one step with no band and no wave.
-  - A message from the other person appears already translated, with no waiting state and no animation.
+  - Incoming, photo-caption, mixed-content, edit/delete, cache, mode-switch, grammatical-form, and reduced-motion rules pass the design's manual device matrix.
   - `flutter analyze` clean, `flutter test` green, manual device pass on the above confirmed by the owner.
+- **Progress (2026-08-25):**
+  - [x] Implemented the outgoing Practice 180/350 ms branches, glyph-only wave, measured empty clear → reshape → land transition, and unchanged-result bypass.
+  - [x] Translation starts only after delivery; one quiet retry is bounded by a shared 10-second deadline, while delivery failures remain separate.
+  - [x] Incoming text and captioned photos stay hidden until language help resolves; final failure reveals the original with Retry, and retry waves over that now-visible original.
+  - [x] Protected-only content skips processing; mixed content keeps protected tokens in the provider contract.
+  - [x] Cache hits/off-screen completions skip replay, mode/edit/delete changes cancel stale motion, finger scrolling defers visible resolve, and reduced motion uses static status/direct swap.
+  - [x] Localized translating/checking/failure states added for English, German, Spanish, and Ukrainian; automated Flutter checks pass.
+  - [x] Owner device matrix passed on the Samsung Galaxy S25: longer/shorter results, mixed emoji, correction, incoming Normal, retry, caption, mode switch mid-wave, cache reopen, reduced motion, edit/delete, off-screen completion, concurrent sends, and grammatical-form transitions are confirmed.
 
-### Step 3.7 — Web fallback domain + Android App Links + state-aware landing `[ ]` — **PARTIAL (v1 closed-test); rest DEFERRED to v1.1**
-- **Status:** static landing + verified Android App Link shipped 2026-06-07 on `blab-gray.vercel.app` (vercel project `getblab`, debug signing fingerprint). Remaining items below land before public launch.
-- **v1.1 scope:** smart, state-aware web landing for cases when the recipient doesn't have the app installed yet: fetch invite metadata via Supabase REST anon (or the new `get_invite` RPC) directly from the browser, then render contextual copy — e.g. "Nastia invited you to learn Italian. Get the app to accept." for valid invites, "This invite has expired. Ask Nastia for a new one." for expired, "This invite was already claimed." for used. Today's `web/i.html` is generic and shows the same "you're invited" copy for every state. Also includes: real domain (getblab.app / similar) replacing the `*.vercel.app` URL, release-keystore + Play App Signing fingerprints added to `.well-known/assetlinks.json`, monetisation / portfolio landing on the root domain.
-- **Scope:** upgrade invite URLs from the closed-test `blab://invite/<token>` deep-link scheme (Step 2.3) to verified Android App Links served from a real HTTPS domain. Required before opening the app to organic shares — `blab://` schemes are dead links on devices without the app installed, and some messaging clients strip them entirely.
+### Step 2.11a — Incoming translation readiness + stable unread position `[ ]` ← in progress
+- **Found 2026-08-28 (Alice/Bob local-device review).** A closed-chat burst is translated only after the recipient opens the chat. Three background requests finish independently, so held incoming rows appear in an unpredictable order with no header status. Their collapsed geometry can also be counted as visible and marked read before the translated message is actually shown; later row expansion and mode reflow move the reader's place.
+- > **Blocked:** The linked hosted Blab Supabase project is currently `INACTIVE`; the migration push times out while creating its login role. Local schema and Samsung S25 verification continue, but hosted rollout awaits project recovery. · 2026-08-28
+- **Scope:** US-044, US-045, FR-38, FR-39. Pretranslate both Normal and Practice views for the recipient before chat open; hydrate persisted results on entry; represent genuine remaining misses as normal incoming bubbles with two `#EAE6E0` skeleton lines and one group label (`Translating…` / `Translating N messages…`); resolve each ready message oldest-first without waiting for the rest. Count an incoming message as read only after real content crosses the 50% visibility threshold, while reaching the bottom marks every resolved incoming message through the latest as read. Open at the oldest unread message behind a centered `N new messages` divider and preserve the reader's place across mode switching.
 - **Done when:**
-  - Domain registered (working name: `getblab.app` or similar) and DNS pointed at a free host (Cloudflare Pages / Vercel).
+  - Send at least 20 messages while the recipient is outside the chat; opening shows cached final results without random late arrivals under normal conditions.
+  - A genuine remaining miss keeps a stable skeleton slot and one group count on the chat background; each ready result resolves oldest-first without blocking later successes.
+  - Hidden/pending incoming content never creates a read record; the record appears only after the final message is visibly read.
+  - Initial entry anchors at the oldest unread message; switching mode retains the same visible message and relative position.
+  - Successful translations survive chat close, app restart, and later history paging for the same language pair.
+- **Progress (2026-08-28):**
+  - [x] Fresh debug build launched on the connected Samsung Galaxy S25, logged into Alice's local account, and opened the persisted Bob chat in Practice mode with the existing history and photo visible.
+  - [x] Focused readiness, cache, pagination, read-state, and lifecycle checks pass (46 tests); `flutter analyze` is clean and the debug APK builds successfully.
+  - [ ] The 20-message unopened-chat burst, pending skeleton timing, unread-anchor movement, and mode-switch geometry still need the owner matrix.
+  - [x] Account-scoped cached chats and messages now render before a stalled server request completes, so a temporary data interruption no longer traps the Chats or chat-history screen on skeletons.
+  - [x] A server delivery worker now prepares viewer-specific results oldest-first before chat open, with bounded concurrency, independent retries, permanent/stale settlement, and periodic recovery. On the connected Galaxy S25, 20 messages sent while Alice stayed on Chats opened as 20 final German bubbles in order with no skeletons or late random arrivals.
+  - [x] Reliability repair (2026-08-31): page hydration no longer launches provider work for every uncached message while the delivery queue is already preparing it. It now rechecks persisted results, leaving live recovery only to a bubble a person is actively viewing. A cache result that lands just after the ten-second visual boundary now replaces Retry automatically. Focused translation and chat-history checks pass. In the local browser on 2026-09-01, Bob's fresh `The window is open.` message settled as `La finestra è aperta.` without Retry; the immediate repeat, `The room is quiet.`, settled as `La stanza è silenziosa.` without Retry. Owner confirmation remains open.
+
+### Step 2.11b — Private learning-language timeline `[ ]` ← in progress
+- **Scope:** US-046, FR-40. Replace the single history cutoff with a private per-participant language timeline. Completed messages retain the learning-language result that was active for that viewer; a language change inserts the centered private marker `Now learning [language]` in the same quiet treatment as a date label, visible in both modes and never sent to the partner. Work already attached to an older message finishes in that older language above the new marker; messages delivered after the marker use the new language.
+- **Done when:**
+  - Changing German → Spanish preserves completed German history and uses Spanish for every message below `Now learning Spanish`.
+  - Pending German work for a message above the marker can finish only as German; messages below `Now learning Spanish` can finish only as Spanish, and a mismatched late result is discarded.
+  - Alice's timeline and result variants persist in Supabase, remain private from Bob, and survive restart/history paging.
+  - Switching modes keeps the same marker geometry and does not move the reader's place.
+- **Progress (2026-08-28):**
+  - [x] Local schema smoke check confirms per-participant timeline, revision, private package RLS, and stale-job cancellation functions exist; the app reads the timeline through a viewer-scoped query.
+  - [x] Fixed and device-verified the 2026-08-29 history regression: every bubble now selects its saved viewer-language revision, prepared historical results win over late live retries, replies use the quoted bubble's era, and a successful language change refreshes the private marker timeline immediately. On the connected Samsung Galaxy S25, the Ukrainian era remained Ukrainian after English and German switches, while `Now learning English` and `Now learning German` appeared at their saved boundaries.
+  - [x] The last verified private timeline now persists in an account-scoped device cache and paints immediately during a stalled data request. With the local data service deliberately unavailable, the Samsung S25 reopened Alice's Bob chat from cache and retained both `Now learning English` and `Now learning German`; Bob cannot read Alice's cached timeline.
+  - [ ] German → Spanish history retention and private marker behavior still need the owner matrix on the connected device.
+  - [ ] **Regression repaired locally (2026-08-31):** new memberships now receive their private revision-1 language boundary, and an existing membership missing that boundary is recovered before its first switch. The browser reproduction's Alice and Bob histories now resolve to their original languages; database and app-level regressions pass. The remaining owner browser/device pass is tracked as L-25.
+  - [x] Codex-browser verification from Bob's fresh session: messages above `Now learning Dutch` remained in German in both directions, while Bob's new message below the marker resolved in Dutch. Owner confirmation is still required before this step can close.
+  - [x] Empty-history first-switch check: a freshly created Alice/Bob chat recorded Bob's initial German boundary and then Spanish boundary before any message existed; the empty state immediately changed to Spanish. The first post-switch message resolved as Spanish after retry, confirming the new era also works end-to-end.
+  - [x] Follow-on Bob browser check: after Spanish → French, the existing `Hasta pronto.` bubble stayed Spanish above `Now learning French`; three later messages resolved in French below it. Two required the visible Retry action before resolving, while the third completed on its first attempt; the history boundary is correct, but first-attempt translation reliability remains an open separate issue.
+  - [x] Third-era Bob browser check: after French → Dutch, the existing Spanish and French bubbles stayed in their own eras above `Now learning Dutch`; two later messages resolved directly in Dutch below it.
+
+### Step 2.12 — Grammatical-form choices + translation preferences `[ ]`
+- **Design:** `docs/superpowers/specs/2026-08-14-grammatical-form-preferences-design.md`.
+- **Scope:** US-042, FR-34, FR-35. Add persistent in-sentence markers and a non-blocking default-open chooser when a generated translation requires an unknown feminine or masculine form; learn a first explicit authored form silently; automatically correct later opposite authored forms to the authoritative saved value; add account-wide self form, private one-to-one partner fallback, and independent per-chat conversation tone to Translation preferences. Apply the target-language matrix across all 11 supported learning languages and to photo captions.
+- **Done when:**
+  - One unknown subject renders as an ellipsis marker; multiple unknown subjects render numbered markers, with one default-open chooser and linked agreement resolved per subject.
+  - Choosing resolves the message and future translations; the muted `[Person]: [form] · Change` confirmation disappears after the next message.
+  - Unresolved markers persist in history; the newest opens on chat reopen, and a later choice quietly resolves earlier markers for the same viewer or partner.
+  - A first authored form is learned silently; later opposite authored forms receive the normal visible correction until the preference changes in settings.
+  - Self form works account-wide; partner fallback stays private to the one-to-one relationship; tone stays per chat.
+  - Translation preferences expose all three controls with correct scope and allow clearing a form to `Not set`.
+  - Content QA passes for all 11 languages, including linked French/Hindi agreement, Tamil third-person forms, and no unnecessary chooser in English/Turkish.
+  - Accessibility, automated checks, and a manual device pass satisfy the full US-042 checklist.
+
+### Step 2.13 — Chat UI refresh + simple long press `[ ]` ← in progress
+- **Design:** `docs/superpowers/specs/2026-08-24-chat-ui-refresh-simple-long-press-design.md`.
+- **Scope:** US-015…US-021, US-030, US-033, US-041; FR-13…FR-17, FR-25, FR-28, FR-31, FR-32, FR-37. Replace the per-message translation control with mode-aware long press, finish visible-text Copy/Reply, Edit, deletion, receipt, failure, icon, localization, and photo/caption behavior for launch.
+- **Done when:**
+  - Word tap, empty-padding tap, message long press, tap-outside, scroll dismissal, and swipe-to-reply follow the approved gesture priority without flashing or leaving stale selection UI; the reaction row sits below by default, moves above when needed, and overlaps only a viewport-filling message.
+  - Practice reveals the primary-known-language line and offers Listen; Normal conditionally offers Original with open/closed-eye states.
+  - Outgoing/incoming text, caption, and photo-only action matrices match the spec; five-action English, German, Spanish, and Ukrainian rows do not clip at default text size, and enlarged text wraps through 200%.
+  - Copy and Reply always use the primary displayed text; Reply and photo Reply use the approved composer and quote treatments.
+  - Edit opens the keyboard, preserves its draft through navigation, updates the same bubble, refreshes language help only when required, and shows permanent `edited · time · receipt` metadata.
+  - Delivery failure, translation failure, reactions, and Reply coexist with the approved text-only rows and spacing; no warning/Retry icon remains.
+  - Clock → single gray check → double gray check passes on two accounts; Read receipts OFF emits no read event and never reveals read state.
+  - Delete confirmation removes the outgoing message for both people with no tombstone or Undo.
+  - Manual Android device pass covers Normal/Practice, both directions, four interface languages, photo/caption states, failures, editing across navigation, and read-receipt ON/OFF.
+- **Out of scope:** post-launch vertical action list, fancy selected-message animation/scrim, edit history, audio messages, and a separate device-received receipt state.
+
+### Step 3.7 — Static invite landing + Android App Links `[ ]` — **PARTIAL (closed-test); remaining work required before public launch**
+- **Status:** a temporary static landing + verified Android App Link shipped 2026-06-07 on `blab-gray.vercel.app` with a debug signing fingerprint. It must be replaced by the approved `loveblab.com` launch presentation and release signing setup.
+- **Scope:** ship the single static landing from `2026-09-07-invite-flow-redesign-design.md` on the permanent invite domain and verify Android App Links. The page must never validate, personalise, claim, or show expiry/claimed states; Blab remains the token authority.
+- **Done when:**
+  - `loveblab.com` serves `i/{token}` from the approved static template and its black logo links to `https://www.loveblab.com/`.
   - `.well-known/assetlinks.json` hosted at the root, listing the Play Store package id + signing fingerprint, verified via Google's App Link verification API.
-  - One-page landing template renders `https://getblab.app/invite/<token>`: if the app is installed the intent filter opens the Blab invite landing screen directly; if not, the page shows "X invited you to learn Y" with a "Get the app" CTA pointing to the Play Store listing.
-  - Expired / claimed invites render the same web page in their existing copy states so non-installed recipients see a clear message.
+  - Installed Android app opens a valid invite in Blab; a no-app recipient sees the static `You’re invited to Blab` page with equal App Store and Google Play buttons.
+  - The no-app path preserves the invite through Android installation so normal sign-up can claim it afterward.
   - Old `blab://` scheme remains supported for backwards-compatibility with closed-test invite links already in flight.
-- **Out of scope (v1):** custom marketing / monetisation landing, email capture, separate domain for business vs. invite paths — those are a Phase 4 product decision.
+- **Out of scope (v1):** dynamic recipient web pages, browser-side validation, web invite-state errors, email capture, and iOS Universal Links.
 
 ---
 
@@ -426,7 +541,66 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-08-31 — Repaired the newly created chat language-history regression by recording the initial private language boundary on membership creation and recovering a missing boundary before the first switch. Added L-25 for the required owner Alice/Bob browser or device pass; automated database and app checks pass.
+
+- 2026-08-28 — Tightened prepared-package and delivery-job uniqueness to include both language lanes, preventing a primary-known-language change from replacing another viewer variant.
+
+- 2026-08-28 — Final local verification pass: focused readiness/cache/lifecycle checks pass (46 tests), analyzer is clean, local migrations through `20260828000006` are applied, and the current debug build is open on the connected Samsung Galaxy S25. Hosted migration remains blocked by the linked project's inactive state.
+
+- 2026-08-28 — Reconnected the Samsung Galaxy S25, installed the current local build, reopened Bob's chat, exercised Normal ↔ Practice, and rechecked the cached photo after force-stop plus offline restart; the photo stayed visible and opened full-screen without a crash.
+
+- 2026-08-28 — Added prepared-package hydration on chat entry, a bounded oversized-file eviction guard, full-photo cache warming on open, and a session-stable unread-divider anchor. Device verification remains required before Steps 2.4a, 2.11a, and 2.11b can be marked complete.
+
+- 2026-08-28 — Started implementation of the approved chat-history readiness design: account-scoped history/media recovery, bounded attachment LRU, delivery preparation queue, private language timeline markers, pending skeleton/read gating, and stable mode anchors. Device verification on the connected Samsung Galaxy S25 remains required before these steps can be marked complete.
+
+- 2026-08-28 — Refined Step 2.11a with the approved skeleton-group treatment, oldest-first independent resolution, `N new messages` divider, final-content read threshold, and stable mode-switch position. Added Step 2.11b for the private `Now learning [language]` timeline and race-safe pending-message retargeting. Added Step 2.4a after confirming stored Supabase photos lacked a persistent device preview/full-image cache and fell into the red broken-image state offline.
+
+- 2026-08-28 — Added Step 2.11a after the Alice/Bob device review identified open-triggered translation bursts, out-of-order incoming reveals, premature read registration for held rows, and mode-switch position drift. Server-persisted translation readiness and stable unread/message anchoring are now tracked as one follow-up.
+
+- 2026-08-26 — Updated grammatical-form preference UI to the revised spec: compact non-slash markers, non-blocking styled chooser, first-time explanation, temporary confirmation/Change state, and safe preference-sheet dismissal.
+
+- 2026-08-25 — Step 2.11 message lifecycle and translating-state animation passed the owner’s full Samsung Galaxy S25 device matrix and was marked complete. Background pretranslation for unopened messages remains a separate performance follow-up.
+- 2026-08-25 — Reopened Step 2.11 after comparing the website’s full animation section: the four owner tasks and main Practice timing pass, but edit/delete, off-screen, concurrent-send, and grammatical-form branches still need explicit device verification.
+- 2026-08-26 — Closed Step 2.11 after the owner verified the remaining edit/delete, off-screen, concurrent-send, grammatical-form, quiet-retry, final-retry, and delivery-failure branches on the Samsung Galaxy S25.
+
+- 2026-08-24 — Refined Step 2.13 after phone review: the long-press reaction row now prefers free space below the message, moves above when the lower space is insufficient, and overlaps only when a viewport-filling message leaves neither side usable.
+
+- 2026-08-24 — Implemented Step 2.13's automated scope: mode-aware long press, complete action eligibility, visible-text Reply/Copy, exact-text Edit, confirmed Delete, revised receipts/failures, photo/caption handling, and read-receipt privacy. Step remains in progress pending the required real-device matrix.
+
+- 2026-08-24 — Started Step 2.13 implementation from the approved simple long-press spec. The automated pass will land now; the required real-device completion check remains pending until the owner reconnects the phone.
+
+- 2026-08-24 — Corrected the grammatical chooser payload after device review: shared sentence text now stays in the bubble and only the shortest changing fragment appears in each option. The supermarket regression now renders `Ти [ходила / ходив]…` with compact `ходила` / `ходив` choices instead of two overflowing full-sentence buttons.
+
+- 2026-08-24 — Fixed the grammatical-form regression where `Not set` still cached a masculine-only Ukrainian translation. Added a focused agreement audit, rejected confirmed ambiguities without both alternatives, regenerated the affected local test result, and verified the chooser on Samsung S931B; Step 2.8 remains open for persistence, contradiction, localization, and the full language matrix.
+
+- 2026-08-24 — Added Step 2.13 and the approved `Chat UI refresh + simple long press` spec. Reconciled the canonical chat rules for long press, visible-text Copy/Reply, Practice Listen, Normal Original, Edit, deletion without Undo, text-only failure rows, single/double gray receipts, photo actions, and four-locale action-label fit; no implementation task was marked complete.
+
+- 2026-08-23 — Extended the chat visual-refresh spec with the newly approved eye and white-flag assets, reused long-arrow-up-left for swipe to reply, and defined failed sending as red error text plus the refresh Retry asset with no standalone error icon. Close and Pending remain unchanged; Translate, sentence audio, collapse, and single-check move to the next spec.
+
+- 2026-08-23 — Added the supplied Copy and plus-circle assets to the chat visual-refresh spec for the existing message action and reaction-row +. Clarified that View original is currently absent, previously used an eye/visibility symbol, and still needs an approved asset when restored.
+
+- 2026-08-23 — Extended the approved chat visual-refresh spec to replace the existing long-press Reply, Edit, and Delete artwork with the supplied icons without changing the interaction; recorded Copy, Report, View original, and the reaction-row add icon as the remaining artwork decisions.
+
+- 2026-08-23 — Locked the Normal/Practice chat visual-refresh spec from the approved Figma frames and owner decisions: switch position and active states, exact surfaces/bubbles/shadows, visible icon replacements, and the three-layer word-popup speaker. Kept the single-check receipt treatment and redesigned long press explicitly deferred.
+
+- 2026-08-23 — Replaced the word-popup speaker artwork with the approved three-layer sound icon; kept the existing animated wave sequence and left completion open for the device pass.
+
+- 2026-08-22 — Replaced the rewritten owner-plan checkbox labels with the owner's original wording so the checklist matches the language she uses to think about the work. Kept View original as supporting spec context rather than adding a different checkbox. No task was marked complete.
+- 2026-08-22 — Promoted the owner's build plan to the top of the tracker and added its own launch-only progress bar, visible checkbox for every task, and a whole-spec checkbox for each of the five specs. The main launch audit remains underneath and is not double-counted. No task was marked complete.
+- 2026-08-22 — Added and published the owner's separate five-spec build sequence in the private tracker: four Chat specs, one focused onboarding/invite copy pass, then the existing launch gates. Preserved the fancy long-press, Deep Dive, richer profile, broad polish, and logo ideas as non-launch work. No task was marked complete.
+- 2026-08-22 — Added the plain-language app and feature summary, including the approved message-bubble lifecycle and the current Ukrainian past-tense grammatical-form work; linked it from the Play Store tracker and published both privately at `https://blab-play-store-progress.nastia-ez.chatgpt.site`. No completion state changed because owner device confirmation is still required.
+
+- 2026-08-22 — Audited the current Android app and added the owner-facing `progress.html` launch dashboard. It tracks one high-priority Play Store gate plus a separate Later backlog; completion remains locked to explicit owner confirmation after manual testing.
+
+- 2026-08-18 — Added an interactive browser preview for the direct in-sentence grammatical-form choice so the owner can review its unresolved, selected, and word-card states before visual implementation.
+
+- 2026-08-18 — Began the owner-approved current build sequence. Added the outgoing-bubble right-edge-gap fix and its regression check to Step 2.10; gender-choice refinement, device-feedback fixes, and message-lifecycle implementation follow separately.
+
+- 2026-08-18 — Expanded Step 2.11 from a wave-only treatment to the approved complete message lifecycle. The revised design covers timing branches, silent/visible correction rules, protected mixed content, incoming and photo-caption delivery, failure/retry, cache/mode switching, edit/delete, grammatical alternatives, and reduced motion. Added US-043 / FR-36 and aligned US-015 / FR-13 so the PRD no longer preserves the superseded two-lane or silent-failure model.
+
 Append one line per non-trivial edit to this file (step added, scope changed, blocker logged, step split). Format: `YYYY-MM-DD — what changed and why`.
+
+- 2026-08-14 — Added Step 2.12 for the approved grammatical-form ambiguity flow, cross-language rules, scoped memory, and Translation preferences so US-042 / FR-34 / FR-35 have an implementation and device-validation milestone.
 
 - 2026-08-12 — Backend deploy: production was 7 migrations behind and blocked by a hand-applied, repo-less `waitlist_signups` migration (2026-07-23). Reconstructed that migration into the repo from the production schema, then pushed all 7 pending migrations and redeployed `translate-message`. Local and remote migration history are aligned again. Production's translation cache was cleared as part of `20260729000001` and rebuilds on demand.
 - 2026-08-12 — Step 2.10: built the mode-display-fixes spec (`docs/superpowers/specs/2026-08-11-mode-display-fixes-design.md`). Single plain lane while loading in both modes (`_PendingTranslation` and its 350ms shimmer timer deleted); per-word tap padding removed from `MessageText` for height parity, with a widget test asserting identical rendered height across modes; normal mode's known-source bypass added server-side (`request_message_translation` returns a new `no_aid_needed` status before any quota or provider work when a cached `source_lang` for the message is in the caller's `known_languages`; `translate-message` passes it straight through) and client-side error chrome narrowed to messages whose resolved source language is outside the reader's known list — `MessageTranslationsNotifier` now remembers each message's resolved source language so a later failure can tell "can't read this" from "never found out". Spec § 2's "hit-test expansion" was not implemented as written: a hit-test-expanding render object is a no-op inside the bubble (the Column ancestor rejects out-of-bounds taps before the text sees them), and the padding never contributed to tap targets anyway — each word's box already spans the full line height, verified by a test. Second blocker logged: fix (3) needs the migration + edge function deployed remotely before it shows on device.
@@ -526,3 +700,135 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-06-09 — Step 2.3 closed. Real server-issued invite tokens + HTTPS App Link routing. Schema: `public.invites` (token PK, inviter_user_id, inviter_learning_language, 48h `expires_at` default, used_at, used_by_user_id, resulting_chat_id) plus three SECURITY DEFINER RPCs (`create_invite`, `get_invite`, `claim_invite`) — claim is atomic and races on `select … for update`. Token = first 12 hex chars of a UUID (48 bits of entropy, plenty for v1 volumes). Static landing + verified Android App Link shipped on `blab-gray.vercel.app` (vercel project `getblab`, sha-256 from the debug keystore) — pulled forward from the deferred Step 3.7 because custom-scheme `blab://` links aren't auto-detected as tappable by WhatsApp / iMessage / Telegram. Six recipient-state combinations of (inviter vs. receiver) × (valid / claimed / expired) each get their own dedicated screen: receiver lands on the existing landing widget (top bar reflowed to centered logo + globe + EN, progress bar dropped, "Nastia invited you to chat." + "Pick a language to practice."); receiver pick-language step now opens with a live outgoing-bubble preview that updates per-tap (hardcoded greeting per supported lang, no LLM round-trip) and lists all 11 languages in one stable card with a brand-tick that follows selection instead of the old CURRENT / OTHER split. Inviter self-tap routes to a new InviteOwnerScreen with three bodies: valid → "Invite a friend" + URL pill (tap-to-copy with check feedback) + "Valid until …" + full-width Share primary; claimed → success icon + "<name> joined." + "Open chat" jumping to the resulting chat (RPC now returns `resulting_chat_id` + `claimed_by_name`); expired → "Your invite expired." + "Send new invite" → `/chats/new`. Receiver dead-ends (cases 5 + 6) cleaned: dropped the placeholder "Get the app" link, tightened copy to "This invite was already claimed. Ask for a fresh link." / "This invite expired. Ask Nastia for a fresh link." Migrations: `20260607000003_invites.sql` (schema + RPCs), `20260607000004_invites_fix_ambiguity.sql` (alias resolves Postgres "column reference token is ambiguous"), `20260607000005_get_invite_more_fields.sql` (DROP + recreate to add `resulting_chat_id` and `claimed_by_name`). New constants and files: `kInviteHost` in `lib/shared/data/invite_host.dart`, `web/{index.html, i.html, vercel.json, .well-known/assetlinks.json}`, `lib/features/invite/invite_resolver_screen.dart`, `lib/features/invite/invite_owner_screen.dart`. Share sheet `Copy link` row dropped — the URL pill on the owner screen is the single copy affordance. Apps row (WhatsApp / iMessage / Telegram / Email) still fakes success — captured in new Step 2.8 below for real `Intent.ACTION_SEND` wiring before public launch.
 
 - 2026-08-12 — Added **Step 2.11 — The translating state (the wave)** after a design pass on the practice-mode sending gap. Design spec: `docs/superpowers/specs/2026-08-12-translating-state-animation-design.md`, with an interactive reference prototype at `docs/superpowers/prototypes/translating-state.html`. It supersedes fix 1 of the display-fixes spec: that fix removed the two-lane shimmer and left a motionless line, which the device pass showed reads as a broken send. Replaced with a band of light travelling across the words while Blab works (held 350ms so fast replies never flicker), then three strictly sequential phases — words clear left to right, the bubble travels to the translation's measured size while empty, translated words land left to right. Four geometry rules came out of prototyping, each one a bug first: measure the target line by rendering it hidden inside a real copy of the bubble rather than computing the available width (the arithmetic kept missing the bubble's 28px of horizontal padding, producing a line too narrow and therefore too tall); animate width and height as one move; round frozen text widths up, never down (147.09px frozen at 147px wraps its last word and doubles the bubble height); and never let text be on screen while the box is resizing, since a bubble growing taller drags its contents regardless of anchor. Also settled incoming-message behaviour: held until translated, no animation at all, falling back to the original language if translation fails so delivery is never blocked. Still open and deliberately out of scope: what Blab does with messages that have nothing to translate (laughter, emoji, bare times, names, keyboard mashes).
+
+- 2026-08-22 — Simplified the Play Store tracker into one roadmap: one spec-level progress bar, Chat as the expanded Current focus, collapsed Next up launch work, and collapsed After launch ideas. Preserved every launch task and its saved checkbox identity; no task was marked complete.
+
+- 2026-08-23 — Added the unresolved check-asset/read-receipt treatment to the tracker under Chat UI refresh. No receipt behavior was changed and no task was marked complete.
+
+- 2026-08-23 — Implemented the approved Chat / Normal + Practice visual refresh: inline header switch, exact chat surfaces and bubble treatments, supplied chat icon assets, direct failed-send Retry row, and localized Practice composer hint. Debug build and automated suite pass; real-device visual verification remains blocked while the phone is disconnected.
+
+- 2026-08-23 — Completed the Samsung S25 visual pass for the Chat refresh: confirmed Normal and Practice switch states, mode-specific bubble treatments, Practice translate/play expansion and reset on mode switch, and the localized composer hint. Step 2.10 remains in progress pending owner confirmation.
+
+- 2026-08-23 — Chat refresh owner feedback 1: kept the Practice composer at the same one-row height as Normal, fitted the localized reply hint beside the media action, and changed the media icon to `#231208`. Verified on the Samsung S25; Step 2.10 remains in progress for the remaining owner feedback.
+
+- 2026-08-23 — Chat refresh owner feedback 2: restored the Practice hint to the same 15 px type as Normal and changed the guidance to `Type in [learning language] or [primary known language]`, with one-line end truncation and no authored ellipsis. The primary known language falls back to the interface language (English by default) until the user changes it; Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-23 — Chat refresh owner feedback 3: prevented the 44 px send-button bounds from stretching its arrow artwork beyond 20 px, and added the approved subtle shadow to the round button in Practice only. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-23 — Chat refresh owner feedback 4: kept the Practice-only send-button shadow at its full subtle strength while the empty button itself dims, so the elevation remains visible in the default empty state. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-23 — Chat refresh owner feedback 5: increased the Practice-only send-button shadow from the visually disappearing 10% negative-spread treatment to a clearer 18% shadow with 3 px offset and 8 px blur; Normal remains flat. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-23 — Chat refresh owner feedback 6: kept the send arrow solid white in both empty and active states, moving the 40% disabled treatment to the circle fill only; the icon stays crisp while the background still communicates availability. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 7: removed the Practice-only 156 px minimum message width so short bubbles now hug their content like Normal, while longer messages retain the existing maximum width and wrap. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 8: moved reaction badges to the bubble edge nearest the conversation center — right for received messages and left for sent messages — in both modes. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 9: unified reaction badges to `#FFFCF8` fill with a `#DCD2C8` outline and limited their subtle shadow to Practice mode; Normal reaction badges remain flat. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 10: made the entire Normal/Practice switch a single toggle target, so tapping either icon, the active label, or any capsule area always flips to the other mode while preserving the existing reset behavior. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 11: added directional empty-background swipes — left moves Practice to Normal, right returns Normal to Practice, with no wraparound or page-drag animation; bubble swipes remain reserved for Reply. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 12: removed the filled pill treatment from date labels, so Today, Yesterday, and weekday labels now sit directly on the chat canvas. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 13: replaced the background mode-swipe behavior from feedback 11. Mode switching is tap-only again; swipe-to-reply now spans the full horizontal row aligned with each message, including the empty canvas beside its bubble, while open canvas outside message rows does nothing. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 14: matched the long-press action bar to the collapsed composer height, removing the 2 px message-viewport shift when selection opens. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 15: restored complete word descriptions by rejecting learning lines that omit per-word metadata and invalidating incomplete cached entries. Word popups again show the learning-language word, Latin-script transliteration, and primary-known-language translation. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 15: removed the standalone language-aid error icon and replaced its Retry artwork with the approved refresh asset. Failed sending continues to use `#C62828` text plus the same refresh asset; single-check remains deferred. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 16: corrected the header hierarchy with 10 px back/avatar/name/switch spacing, the new six-color avatar palette, a 36 px shadowed header avatar, and a 15 px heavy `#46281C` centered name. Preserved the no-presence privacy decision; only the existing `typing…` state may add a second line. The device pass reduced the initially tested 16 px identity-to-switch gap to 10 px so ordinary two-word names stay readable at 360 px. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 17: made swipe-to-reply deliberate rather than scroll-sensitive. Reply now needs 64 px of accepted horizontal travel and horizontal movement at least 1.5× the vertical movement; short drags and diagonal up/down gestures reset without replying, across both bubbles and their surrounding message-row background. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 18: fixed the translation failures introduced by the complete-word-metadata gate. Provider word tokens now recover harmless spacing/punctuation drift while retaining every gloss and transliteration, successful responses must include token data, and cache completion validates the primary known language rather than the separate app language. Verified on the Samsung S25 with both `Hi` → `Привіт` and a longer English sentence → Ukrainian; the word popup shows `Привіт`, `Pryvit`, and `Hello`. Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Chat refresh owner feedback 19: restyled the word description with a left-aligned 22 px heavy learning word, 13 px muted transliteration, 1 px divider, 14 px semibold primary-known-language translation, and a top-right ink audio action. The white card and arrow now share one `#E7D7D0` outline with an open join and no internal divider. Verified on the Samsung S25 with `Привіт` / `Pryvit` / `Hello`; Step 2.10 remains in progress for further owner feedback.
+
+- 2026-08-24 — Implemented Step 2.11’s approved message lifecycle: delivered-only processing, 180/350 ms speed branches, glyph wave, measured clear → reshape → land, atomic incoming/caption hold, one quiet retry within 10 seconds, protected-content bypass, localized failure/status copy, cache/mode/edit/delete safeguards, scroll deferral, and reduced motion. Automated checks pass; Step 2.11 remains in progress for the owner’s connected-phone matrix.
+
+- 2026-08-25 — Form preference changes now invalidate open-chat translation state and force a fresh server evaluation for the active target/interface pair; this prevents stale gendered cache rows from surviving a form change or `Not set`, while preserving other readers’ language caches. Added the local refresh RPC, fixed the quiet retry path, and verified the focused translation state suite plus static analysis. Step 2.11 remains in progress for the owner’s connected-phone matrix.
+
+- 2026-08-25 — Chat translation prefetch now starts background resolution for every eligible delivered message after cache hydration, with three concurrent live requests. Existing cache hits hydrate immediately; same-language `none` results remain cached and subsequent visibility callbacks are idempotent, so scrolling no longer restarts resolved or failed states. Step 2.11 remains in progress for the owner’s connected-phone matrix.
+
+- 2026-08-25 — Fixed two caption lifecycle defects: same-language correction candidates are rejected and retried when they drop earlier caption content, and same-language `none` results now settle into normal authored styling instead of remaining muted. Photo captions no longer begin translation while an outgoing image is still pending upload, so delivery reliably starts the approved wave. Step 2.11 remains in progress for the owner’s connected-phone matrix.
+
+- 2026-08-25 — Removed the chat-header `Translating…` status for both outgoing and incoming processing. Translation now resolves silently inside the message lifecycle; the header’s optional second line is reserved for the partner’s real `typing…` presence only. Step 2.11 remains in progress for the remaining owner device matrix.
+
+- 2026-08-25 — Preserved full-color emoji during the translating wave by separating the unchanged base content from a semi-transparent moving highlight layer. Text keeps the approved muted-to-light motion, while emoji no longer receive the disabled-looking gray recolor. Step 2.11 remains in progress for the remaining owner device matrix.
+
+- 2026-08-25 — Fixed recurring translation failures caused by treating optional word-popup metadata as a hard provider requirement. Full-message translations now settle even when token glosses or transliterations are unavailable; only a cross-language response that copies the authored text is retried. Verified the Ukrainian phrase and long English message resolve through the local provider; Step 2.11 remains in progress for the remaining owner device matrix.
+
+- 2026-08-25 — Softened the delete-message confirmation by changing Cancel from brand orange to the shared muted gray action color. The dialog surface remains Material 3 `surfaceContainerHigh`, currently `#FFF7E4E0` in the app theme; Step 2.13 remains in progress for the remaining owner device matrix.
+
+- 2026-08-25 — Updated the delete-message confirmation to a white `#FFFFFF` surface with a 1 px `#E7D7D0` outline, preserving the rounded dialog shape; Step 2.13 remains in progress for the remaining owner device matrix.
+
+- 2026-08-25 — Corrected long-press reaction placement after selection expands a bubble with its learning-language line or changes the list height for the action row. The floating emoji row now re-reads the selected bubble’s live geometry after layout, so it stays above or below the full highlighted message and only overlaps when the viewport leaves no clear space; Step 2.13 remains in progress for the remaining owner device matrix.
+
+- 2026-08-25 — Changed the long-press reaction row to prefer the space above the selected bubble, keeping it away from the next message’s learning-language line. It falls below only when the upper space is unavailable, and overlaps only for a viewport-filling message; Step 2.13 remains in progress for the remaining owner device matrix.
+- 2026-08-25 — Refined long-press reaction placement: the emoji row now floats over surrounding message bubbles instead of pushing the list down, while keeping the selected bubble unobstructed whenever a full row fits above or below it. Only a screen-filling selected message may be overlapped; Step 2.13 remains in progress for the remaining owner device matrix.
+- 2026-08-25 — Audio playback now stops whenever the open interaction or word popup is dismissed, including taps outside a long-message Listen action. Playback requests are generation-guarded so a pending long utterance cannot restart after dismissal; Step 2.13 remains in progress for the remaining owner device matrix.
+- 2026-08-26 — Unified delivery and translation error notices: both now use plain 12 px medium `#C62828` text, size to their content, and align directly to the message bubble edge without a forced-width row, icon, pill, or background; Step 2.13 remains in progress for the remaining owner device matrix.
+
+- 2026-08-26 — Approved the grammatical-form redesign: persistent ellipsis/numbered markers, one default-open multi-person chooser, history resolution, revised beginner copy and styling, and authoritative saved forms with automatic visible correction instead of a contradiction chooser. Updated US-042, FR-34, FR-35, and Steps 2.8/2.12; device validation remains pending.
+
+- 2026-08-26 — Updated Chats/Profile navigation artwork to the supplied 20 px assets, set the Profile name to regular `#46281C`, matched the Practice avatar shadow, and set the floating New chat button fill to `#F88C5A` while preserving its geometry and behavior.
+
+- 2026-08-26 — Removed language flags from the Chats name row so contact names display without a leading flag.
+
+- 2026-08-26 — Redesigned the floating New chat action as a 44 px circular `#F88C5A` button with the centered 20 px white plus asset.
+
+- 2026-08-26 — Updated photo-free avatars in the chat header, Chats list, and Profile to show two compact white heavy initials at 12 px.
+
+- 2026-08-26 — Tuned the two-letter fallback sizes proportionally: 12 px in the 36 px chat header, 16 px in the 48 px Chats avatar, and 28 px in the 96 px Profile avatar; all remain white and heavy.
+
+- 2026-08-26 — Matched the floating New chat button shadow to `#231208` at 17% opacity, x 0, y 2, blur 6, replacing the default elevation shadow.
+
+- 2026-08-26 — Softened the floating New chat shadow to 13% opacity while keeping x 0, y 2, and blur 6 unchanged.
+
+- 2026-08-26 — Replaced the Chats wordmark with the supplied `blab-logo 2` artwork, preserving its header placement and scale.
+
+- 2026-08-26 — Added the requested `#231208` 17% shadow (y 2 px, blur 6) beneath Chats-list profile avatars.
+
+- 2026-08-26 — Updated the Profile surface to `#FAF7F2` and removed the visible Profile heading while preserving the existing layout spacing.
+
+- 2026-08-26 — Added the Profile Known languages group with live selection count, primary-language star ordering, wrapping language pills, and a 44 px add-language tap target that opens the existing picker.
+
+- 2026-08-26 — Regrouped Profile settings into Account, Settings, Log out, and Delete account sections with 24 px group spacing; preserved each existing action, with password visibility still tied to the account identity and Notifications now always listed.
+- 2026-08-26 — Restyled Profile settings containers to `#FFFCF8` with `#E1DAD2` outlines and changed standard row labels to regular 15 px `#46281C`; retained the selected interface-language treatment and red Delete account styling.
+- 2026-08-26 — Reordered the primary known-language pill so its language name appears before the star.
+- 2026-08-26 — Replaced Profile row icons and navigation chevrons with the supplied SVG assets, using the 20 px variants for rows and the supplied 16 px star for the primary-language pill.
+- 2026-08-26 — Matched the Chats and Profile surfaces and bottom navigation to `#FAF7F2`, and aligned the individual chat loading canvas to the same background.
+- 2026-08-26 — Moved the reply composer divider to the top edge of the quote preview, leaving the quote and text field visually continuous beneath it.
+- 2026-08-28 — Fixed word descriptions across all 11 learning languages: cached meanings now survive provider punctuation/spacing, apostrophes and hyphens remain one tappable word, Latin-script languages always receive a transliteration row, and German pronunciation plays despite Samsung's incorrect voice-availability result. On the connected Samsung S25, German audio played, tapping another word replaced the open popup in one tap, tapping elsewhere dismissed it, and long press opened message actions without opening a word description.
+- 2026-08-28 — Simplified Translation preferences by removing section subtitles and using the direct rows `Your gender form`, `[Name]’s gender form`, and `Conversation tone`; Step 2.8 remains in progress for its remaining persistence and language QA.
+- 2026-08-28 — Applied the approved Translation preferences visual tokens: `#FAF7F2` canvas, `#FFFCF8` header/cards, `#E1DAD2` card outlines, and the regular warm-ink title, label, and value hierarchy; Step 2.8 remains in progress pending device review and remaining QA.
+- 2026-08-28 — Combined all three chat Translation preferences rows into one outlined container, reduced the page title to regular 18 px, and replaced the back/row chevrons with the supplied 20 px icons in the approved colors; Step 2.8 remains in progress pending device review and remaining QA.
+- 2026-08-28 — Tightened the Translation preferences header so its title begins at the same horizontal position as the chat-header avatar, with the same compact back-control spacing; Step 2.8 remains in progress pending device review and remaining QA.
+- 2026-08-28 — Restyled the floating chat settings menu as a warm elevated counterpart to Translation preferences, with the approved surface, outline, radius, typography, right-aligned supplied arrows, compact rows, divider, and subtle shadow; Step 2.8 remains in progress pending device review and remaining QA.
+- 2026-08-28 — Reordered dated learning-language boundaries to date label → `Now learning [language]` → messages and tightened the marker’s lower spacing so it introduces the messages that follow; Step 2.11b remains in progress pending the owner language-history matrix.
+- 2026-08-29 — Set the dated learning-language boundary rhythm to 18 px from previous bubble → date, 10 px from date → `Now learning [language]`, and 10 px from marker → next bubble; Step 2.11b remains in progress pending the owner language-history matrix.
+- 2026-08-29 — Diagnosed the failed private-language-history device pass: language revisions and prepared variants save correctly, but the chat still gates history with the obsolete single cutoff and does not refresh its cached marker timeline after a language change. Step 2.11b remains in progress pending the client-era repair and a repeated device matrix.
+- 2026-08-29 — Replaced the chat's obsolete single-cutoff rendering with per-message private language-era selection and refreshed the marker timeline after each saved switch. The connected Galaxy S25 now preserves Ukrainian history across later English/German eras and shows both new markers; Step 2.11b remains in progress for the remaining owner matrix.
+- 2026-08-29 — Added the approved 10 px top and bottom breathing space when `Now learning [language]` sits between message bubbles; the date-led 18/10/10 rhythm remains unchanged.
+- 2026-08-29 — Added unsupported-source handling: messages detected outside Blab’s supported language set keep their authored text and show a neutral localized `Blab doesn’t speak this one yet — try [learning language].` hint in 12 px `#917869`, with no Retry, Listen, Original, or word-description actions. Added CJK text eligibility so Chinese messages reach source detection. Focused tests and static analysis pass.
+- 2026-08-29 — Refined source detection so expressive repeated letters, playful capitalization, chat abbreviations, and confidently identified names do not fall into the unsupported-language hint. Names retain their identity and are transliterated when the target script differs; `OMG`/similar expressions follow natural target-language meaning. The edge-function prompt and contract coverage now encode these rules.
+- 2026-08-29 — Stabilized chat photo rendering while scrolling: attachment images now reuse their loaded instance and retain the current frame during chat refreshes, preventing scroll flicker in the photo bubble and reply thumbnail.
+- 2026-08-29 — Made account-specific chat snapshots and language timelines open from their last verified device copy before a stalled server response; the connected Galaxy S25 retained both English and German learning markers while the local service was unavailable.
+- 2026-08-31 — Reproduced the private-language-history regression from both Alice and Bob in the Codex browser and traced it to missing revision-1 timeline rows for chats created after the timeline migration; recorded the reusable bug-test flow in `docs/blab-bug-squash-draft.md`. No fix started.
+- 2026-08-31 — Translation-retry reliability: stopped page-wide cache misses from competing with the delivery preparation queue; focused regression and related chat checks pass. Browser confirmation remains open because the in-app send control did not accept the automated tap.
+- 2026-09-07 — Removed the 48-hour invite expiry from the product and technical rules. Added Step 2.3b so new and existing unclaimed links stay valid until one friend claims them, with no time-based expiry.
+
+- 2026-09-07 — Approved the minimal invite-flow redesign and wrote `2026-09-07-invite-flow-redesign-design.md`. Step 2.3b now covers the full replacement: static web fallback, no contacts or pre-invite language choice, normal email-auth continuation, claim/edge states, the undimmed in-chat language sheet, first-time mode tips, and the approved invite-opening loading state. Invite creation is disabled offline; a valid claim already in progress resumes on reconnection.
+
+- 2026-09-07 — Reorganized the owner-facing launch tracker into Current focus → Next up → After launch. Current focus now starts with Invite flow and records the locally built chat, language, offline, and surface-refresh work as spec, finish, owner-check, commit, and GitHub-push steps. The completed Practice, Chat, and message-lifecycle checks remain durable; the four remaining grammatical-form checks stay open. Added the post-launch invite-urgency exploration, while keeping any expiry conditional on a successfully created link.
+
+- 2026-09-07 — Changed the launch-roadmap progress bar to count completed and remaining tasks, rather than only fully completed specs. It still shows the separate count of launch specs whose every task is complete.
+
+- 2026-09-07 — Moved the “what Blab is” and “how Blab works” explanations from Invite flow into the separate Onboarding tracker flow.
+
+- 2026-09-07 — Step 2.3b implementation plan added at `docs/superpowers/plans/2026-09-07-invite-flow-redesign.md`; the step remains in progress and all owner tracker items remain unchecked pending implementation and physical verification.

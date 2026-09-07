@@ -243,8 +243,7 @@ void main() {
               .select('message_id,receipt_visible')
               .eq('message_id', hiddenReadSource.id),
         );
-        expect(bobHiddenReads, hasLength(1));
-        expect(bobHiddenReads.single['receipt_visible'], isFalse);
+        expect(bobHiddenReads, isEmpty);
         final aliceHiddenReads = List<Map<String, dynamic>>.from(
           await alice
               .from('message_reads')

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/privacy_settings.dart';
+import 'unread_chat_state.dart';
 
 typedef MarkReadFn =
     Future<void> Function(List<String> ids, {required bool receiptVisible});
@@ -52,7 +53,10 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   @override
   Set<String> build() {
     final privacy = ref.watch(readReceiptsTransportStateProvider);
-    if (privacy.isLoaded && _pending.isNotEmpty) {
+    if (privacy.isLoaded && !privacy.enabled) {
+      _flush?.cancel();
+      _pending.clear();
+    } else if (privacy.isLoaded && _pending.isNotEmpty) {
       _scheduleFlush();
     }
     ref.onDispose(() => _flush?.cancel());
@@ -61,6 +65,7 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
 
   void reportVisible(String id) {
     final privacy = ref.read(readReceiptsTransportStateProvider);
+    if (privacy.isLoaded && !privacy.enabled) return;
     if (!_pending.add(id)) return;
     state = Set<String>.unmodifiable(_pending);
     if (!privacy.isLoaded) return;
@@ -75,13 +80,19 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   Future<void> _flushNow() async {
     final privacy = ref.read(readReceiptsTransportStateProvider);
     if (!privacy.isLoaded) return;
+    if (!privacy.enabled) {
+      _pending.clear();
+      state = <String>{};
+      return;
+    }
     final ids = _pending.toList();
     if (ids.isEmpty) return;
     _pending.clear();
     state = <String>{};
     final fn = ref.read(markReadFnProvider(chatId));
     try {
-      await fn(ids, receiptVisible: privacy.enabled);
+      await fn(ids, receiptVisible: true);
+      ref.invalidate(chatUnreadMessageIdsProvider(chatId));
       // Nudge the chat list so the unread badge updates immediately
       // rather than waiting for the next tile rebuild. Best-effort —
       // a missing chat-list provider (e.g. headless tests without

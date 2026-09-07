@@ -124,7 +124,8 @@ select ok(
     'correction',
     'The verb must agree with du.',
     'medium',
-    '[{"text":"Machst du","gloss":"do you","isContent":true},{"text":" ...?","isContent":false}]'::jsonb
+    '[{"text":"Machst du","gloss":"do you","isContent":true},{"text":" ...?","isContent":false}]'::jsonb,
+    null
   ),
   'a recipient request can complete a shared correction'
 );
@@ -241,7 +242,8 @@ select ok(
     'none',
     null,
     null,
-    '[]'::jsonb
+    '[]'::jsonb,
+    null
   ),
   'correct writing stores a shared none result'
 );

@@ -18,6 +18,19 @@ class BlabColors {
   ); // headers, sheets, incoming bubble
   static const Color fieldBackground = Color(0xFFFFFFFF);
 
+  // Chat refresh surfaces and message treatments.
+  static const Color chatCanvas = Color(0xFFFAF7F2);
+  static const Color chatSurface = Color(0xFFFFFCF8);
+  static const Color chatDivider = Color(0xFFE1DAD2);
+  static const Color bubbleIncomingSurface = Color(0xFFFFFCF8);
+  static const Color bubbleIncomingOutline = Color(0xFFEBE1DA);
+  static const Color bubbleOutgoingNormal = Color(0xFFD7C8BE);
+  static const Color bubbleOutgoingNormalOutline = Color(0xFFC8B9AF);
+  static const Color bubbleOutgoingPractice = Color(0xFFF88C5A);
+  static const Color bubbleOutgoingPracticeOutline = Color(0xFFF07D4B);
+  static const Color bubbleInk = Color(0xFF231208);
+  static const Color sendButton = Color(0xFF46281C);
+
   // Ink
   static const Color textPrimary = Color(0xFF1F3340); // ink
   static const Color textMuted = Color(
@@ -44,14 +57,14 @@ class BlabColors {
   // Selected row tint (used by language picker, etc.)
   static const Color selectedTint = Color(0xFFFAF1EC);
 
-  // Avatar palette — deterministic non-brand swatches so partners don't
-  // compete with the orange accent. Excludes brand orange on purpose.
+  // Avatar palette — deterministic warm, earthy swatches.
   static const List<Color> avatarPalette = [
-    Color(0xFF5E8B8C), // teal
-    Color(0xFFC99846), // mustard
-    Color(0xFF1F3340), // ink
-    Color(0xFF9A6A8C), // plum
-    Color(0xFF5F7A52), // sage
+    Color(0xFF46281C),
+    Color(0xFF917869),
+    Color(0xFFBC6C4E),
+    Color(0xFF788C73),
+    Color(0xFFAF787D),
+    Color(0xFF5F3C4B),
   ];
 
   /// Stable color per name/initial.
@@ -62,6 +75,13 @@ class BlabColors {
       sum += code;
     }
     return avatarPalette[sum % avatarPalette.length];
+  }
+
+  /// Two-letter fallback shown when a profile has no photo.
+  static String avatarInitialsFor(String name) {
+    final compact = name.trim().replaceAll(RegExp(r'\s+'), '');
+    if (compact.isEmpty || compact == '?') return '?';
+    return compact.characters.take(2).join().toUpperCase();
   }
 }
 

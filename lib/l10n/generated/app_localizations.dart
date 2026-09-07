@@ -108,6 +108,12 @@ abstract class AppLocalizations {
   /// **'Blab'**
   String get appName;
 
+  /// No description provided for @unsupportedLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blab doesn’t speak this one yet — try {learningLanguage}.'**
+  String unsupportedLanguageHint(String learningLanguage);
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:
@@ -137,6 +143,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View original'**
   String get viewOriginal;
+
+  /// No description provided for @original.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get original;
+
+  /// No description provided for @listen.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen'**
+  String get listen;
 
   /// No description provided for @save.
   ///
@@ -876,6 +894,12 @@ abstract class AppLocalizations {
   /// **'Practice'**
   String get practiceMode;
 
+  /// No description provided for @practiceComposerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type in {learningLanguage} or {knownLanguage}'**
+  String practiceComposerHint(String learningLanguage, String knownLanguage);
+
   /// No description provided for @translationLimitReached.
   ///
   /// In en, this message translates to:
@@ -887,6 +911,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Translation unavailable'**
   String get translationUnavailable;
+
+  /// No description provided for @translating.
+  ///
+  /// In en, this message translates to:
+  /// **'Translating…'**
+  String get translating;
+
+  /// No description provided for @checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get checking;
+
+  /// No description provided for @couldntTranslateRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t translate · Retry'**
+  String get couldntTranslateRetry;
+
+  /// No description provided for @couldntCheckRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t check · Retry'**
+  String get couldntCheckRetry;
 
   /// No description provided for @correction.
   ///
@@ -927,7 +975,7 @@ abstract class AppLocalizations {
   /// No description provided for @failedToSend.
   ///
   /// In en, this message translates to:
-  /// **'Failed to send. Tap to retry.'**
+  /// **'Not sent · Tap to try again'**
   String get failedToSend;
 
   /// No description provided for @attach.
@@ -957,7 +1005,7 @@ abstract class AppLocalizations {
   /// No description provided for @editingMessage.
   ///
   /// In en, this message translates to:
-  /// **'Editing message'**
+  /// **'Edit message'**
   String get editingMessage;
 
   /// No description provided for @messageFailed.
@@ -977,6 +1025,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message deleted'**
   String get messageDeleted;
+
+  /// No description provided for @deleteMessageQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message?'**
+  String get deleteMessageQuestion;
+
+  /// No description provided for @deleteMessageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this message? It will also be deleted for {name}.'**
+  String deleteMessageBody(String name);
 
   /// No description provided for @thanksReport.
   ///

@@ -1,7 +1,4 @@
-/// PRD FR-23. Always-visible Normal/Practice segmented control at the top of
-/// the chat. Replaces the old "Show translations and corrections" row in the
-/// chat's ··· menu (Task 6) with a control the user sees without opening a
-/// menu.
+/// Always-visible Normal/Practice control for the chat header.
 library;
 
 import 'package:flutter/material.dart';
@@ -10,77 +7,174 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
+import '../../../shared/widgets/blab_icon.dart';
 import '../state/chat_state.dart';
 import 'word_popup.dart';
 
 class ModeToggle extends ConsumerWidget {
-  const ModeToggle({super.key, required this.chatId});
+  const ModeToggle({
+    super.key,
+    required this.chatId,
+    this.onBeforeToggle,
+    this.onModeChanged,
+  });
 
   final String chatId;
+  final VoidCallback? onBeforeToggle;
+  final ValueChanged<ChatMode>? onModeChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(chatModeProvider(chatId));
-    return Container(
-      key: const ValueKey('mode-toggle'),
-      decoration: BoxDecoration(
-        color: BlabColors.selectedTint,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _Segment(
-            label: context.l10n.normalMode,
-            selected: mode == ChatMode.normal,
-            onTap: () => _switchTo(context, ref, ChatMode.normal),
+    final practice = mode == ChatMode.practice;
+    final width = practice ? 135.0 : 129.0;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _toggle(context, ref),
+      child: SizedBox(
+        width: width,
+        height: 44,
+        child: Center(
+          child: Container(
+            key: const ValueKey('mode-toggle'),
+            width: width,
+            height: 34,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              border: Border.all(color: BlabColors.chatDivider),
+              borderRadius: BorderRadius.circular(17),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _Segment(
+                  label: context.l10n.normalMode,
+                  iconName: 'chat-bubble-empty - 16',
+                  selected: !practice,
+                  width: !practice ? 83 : 36,
+                  onTap: () => _toggle(context, ref),
+                ),
+                const SizedBox(width: 2),
+                _Segment(
+                  label: context.l10n.practiceMode,
+                  iconName: 'flash - 16',
+                  selected: practice,
+                  width: practice ? 89 : 36,
+                  onTap: () => _toggle(context, ref),
+                ),
+              ],
+            ),
           ),
-          _Segment(
-            label: context.l10n.practiceMode,
-            selected: mode == ChatMode.practice,
-            onTap: () => _switchTo(context, ref, ChatMode.practice),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Future<void> _switchTo(BuildContext context, WidgetRef ref, ChatMode next) async {
+  Future<void> _toggle(BuildContext context, WidgetRef ref) async {
+    onBeforeToggle?.call();
     final current = ref.read(chatModeProvider(chatId));
-    if (current == next) return;
+    final next = current == ChatMode.practice
+        ? ChatMode.normal
+        : ChatMode.practice;
     ref.read(chatModeResetSignalProvider(chatId).notifier).bump();
-    // Design spec § Bubble layout: switching modes closes any open word
-    // popup alongside the bubble-collapse the reset signal above drives.
     dismissWordPopup();
     await ref.read(chatModeProvider(chatId).notifier).set(next);
+    onModeChanged?.call(next);
   }
 }
 
 class _Segment extends StatelessWidget {
-  const _Segment({required this.label, required this.selected, required this.onTap});
+  const _Segment({
+    required this.label,
+    required this.iconName,
+    required this.selected,
+    required this.width,
+    required this.onTap,
+  });
 
   final String label;
+  final String iconName;
   final bool selected;
+  final double width;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      label: label,
+      button: true,
+      selected: selected,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? BlabColors.brand : Colors.transparent,
-          borderRadius: BorderRadius.circular(17),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : BlabColors.textMuted,
+      child: SizedBox(
+        key: ValueKey('mode-toggle-segment-$iconName'),
+        width: width,
+        height: 44,
+        child: Center(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                width: width,
+                height: 28,
+                padding: selected
+                    ? const EdgeInsets.symmetric(horizontal: 8)
+                    : EdgeInsets.zero,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? (iconName == 'flash - 16'
+                            ? BlabColors.bubbleOutgoingPractice
+                            : const Color(0xFFCDC0B6))
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: selected && iconName == 'flash - 16'
+                      ? [
+                          const BoxShadow(
+                            color: Color(0x1A231208),
+                            offset: Offset(0, 2),
+                            blurRadius: 6,
+                            spreadRadius: -2,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ExcludeSemantics(
+                      child: BlabIcon(
+                        name: iconName,
+                        color: selected
+                            ? BlabColors.bubbleInk
+                            : const Color(0xFF8C735F),
+                        size: 16,
+                      ),
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: ExcludeSemantics(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              height: 1,
+                              fontWeight: FontWeight.w600,
+                              color: BlabColors.bubbleInk,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

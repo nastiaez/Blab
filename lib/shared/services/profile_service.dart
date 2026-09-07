@@ -6,6 +6,7 @@ class UserProfile {
     this.interfaceLanguage = 'en',
     this.knownLanguages = const [],
     this.primaryKnownLanguage,
+    this.grammaticalForm,
   });
 
   factory UserProfile.fromRow(Map<String, dynamic> row) {
@@ -18,6 +19,7 @@ class UserProfile {
               .toList() ??
           const [],
       primaryKnownLanguage: row['primary_known_language'] as String?,
+      grammaticalForm: row['grammatical_form'] as String?,
     );
   }
 
@@ -25,6 +27,7 @@ class UserProfile {
   final String interfaceLanguage;
   final List<String> knownLanguages;
   final String? primaryKnownLanguage;
+  final String? grammaticalForm;
 }
 
 class ProfileService {
@@ -43,7 +46,7 @@ class ProfileService {
         .from('profiles')
         .select(
           'display_name,interface_language,known_languages,'
-          'primary_known_language',
+          'primary_known_language,grammatical_form',
         )
         .eq('id', _uid)
         .single();

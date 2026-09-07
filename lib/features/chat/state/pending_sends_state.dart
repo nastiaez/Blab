@@ -187,6 +187,10 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
             'storagePath': m.attachment!.storagePath,
             'mimeType': m.attachment!.mimeType,
             'byteSize': m.attachment!.byteSize,
+            'previewStoragePath': m.attachment!.previewStoragePath,
+            'previewMimeType': m.attachment!.previewMimeType,
+            'previewByteSize': m.attachment!.previewByteSize,
+            'previewUrl': m.attachment!.previewUrl,
             'url': m.attachment!.url,
           },
     'replyToId': m.replyTo?.id,
@@ -226,6 +230,10 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
         storagePath: map['storagePath'] as String,
         mimeType: map['mimeType'] as String,
         byteSize: map['byteSize'] as int,
+        previewStoragePath: map['previewStoragePath'] as String?,
+        previewMimeType: map['previewMimeType'] as String?,
+        previewByteSize: (map['previewByteSize'] as num?)?.toInt(),
+        previewUrl: map['previewUrl'] as String?,
         url: map['url'] as String?,
       );
     }

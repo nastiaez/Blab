@@ -12,12 +12,25 @@ import 'package:flutter_test/flutter_test.dart';
 ProviderContainer _container({
   required TranslateMessageFn translateFn,
   ChatService? chatService,
+  Duration? lifecycleDeadline,
+  Duration? loadingTimeout,
+  Duration? lateCacheRecoveryDelay,
 }) {
   return ProviderContainer(
     overrides: [
       translateMessageFnProvider.overrideWithValue(translateFn),
       if (chatService != null)
         chatServiceProvider.overrideWithValue(chatService),
+      if (lifecycleDeadline != null)
+        translationLifecycleDeadlineProvider.overrideWithValue(
+          lifecycleDeadline,
+        ),
+      if (loadingTimeout != null)
+        translationLoadingTimeoutProvider.overrideWithValue(loadingTimeout),
+      if (lateCacheRecoveryDelay != null)
+        translationLateCacheRecoveryDelayProvider.overrideWithValue(
+          lateCacheRecoveryDelay,
+        ),
     ],
   );
 }
@@ -204,6 +217,148 @@ MessageTranslation _translation(String text) => MessageTranslation(
 );
 
 void main() {
+  test('one quiet retry resolves without exposing the first failure', () async {
+    var calls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      translateFn: (id) async {
+        calls++;
+        if (calls == 1) throw MessageTranslationFailed('temporary');
+        return _translation('Hallo');
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+
+    expect(calls, 2);
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncData<MessageTranslation>>(),
+    );
+  });
+
+  test('two failed attempts expose one final retryable error', () async {
+    var calls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      translateFn: (id) async {
+        calls++;
+        throw MessageTranslationFailed('temporary');
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+
+    expect(calls, 2);
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncError<MessageTranslation>>(),
+    );
+  });
+
+  test('shared deadline prevents a late second attempt', () async {
+    var calls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      lifecycleDeadline: const Duration(milliseconds: 20),
+      translateFn: (id) async {
+        calls++;
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+        throw MessageTranslationFailed('temporary');
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+
+    expect(calls, 1);
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncError<MessageTranslation>>(),
+    );
+  });
+
+  test(
+    'a result committed just after timeout resolves without manual retry',
+    () async {
+      final cached = <String, MessageTranslation>{};
+      final container = _container(
+        chatService: _ControlledCacheChatService(cachedByMessageId: cached),
+        lifecycleDeadline: const Duration(milliseconds: 10),
+        loadingTimeout: const Duration(milliseconds: 10),
+        lateCacheRecoveryDelay: const Duration(milliseconds: 10),
+        translateFn: (id) => Completer<MessageTranslation>().future,
+      );
+      addTearDown(container.dispose);
+
+      unawaited(
+        container
+            .read(messageTranslationsProvider('chat-1').notifier)
+            .ensure(
+              messageId: 'm1',
+              text: 'hello',
+              targetLang: 'de',
+              interfaceLang: 'en',
+            ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 15));
+      cached['m1'] = _translation('Hallo');
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncData<MessageTranslation>>(),
+      );
+    },
+  );
+
+  test('protected-only text creates no state and no request', () async {
+    var calls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      translateFn: (id) async {
+        calls++;
+        return _translation('unused');
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'https://blab.test 😊',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+
+    expect(calls, 0);
+    expect(container.read(messageTranslationsProvider('chat-1')), isEmpty);
+  });
+
   test('off-screen messages never start a live translation request', () async {
     var calls = 0;
     final container = _container(
@@ -256,6 +411,33 @@ void main() {
     expect(chatService.requestedIds, ['m51', 'm52']);
     expect(liveCalls, 0);
   });
+
+  test(
+    'database prefetch leaves uncached rows to the delivery worker',
+    () async {
+      var liveCalls = 0;
+      final container = _container(
+        chatService: _ControlledCacheChatService(),
+        translateFn: (id) async {
+          liveCalls++;
+          return _translation(id);
+        },
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .prefetchFromDb(
+            ['m1'],
+            'de',
+            'en',
+            sourceTexts: const {'m1': 'hello'},
+          );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(liveCalls, 0);
+    },
+  );
 
   test(
     'database prefetch retries rows committed after message insert',
@@ -434,6 +616,52 @@ void main() {
     await Future.wait([first, second]);
     expect(maxInFlight, 1);
   });
+
+  test(
+    'queued translations do not time out before their live call starts',
+    () async {
+      final pending = <String, Completer<MessageTranslation>>{};
+      final container = _container(
+        chatService: _ControlledCacheChatService(),
+        lifecycleDeadline: const Duration(seconds: 1),
+        translateFn: (id) {
+          final completer = Completer<MessageTranslation>();
+          pending[id] = completer;
+          return completer.future;
+        },
+      );
+      container.read(messageTranslationsProvider('chat-1').notifier);
+      addTearDown(container.dispose);
+
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      final first = notifier.ensureVisible(
+        visibleFraction: 1,
+        messageId: 'm1',
+        text: 'one',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      final second = notifier.ensureVisible(
+        visibleFraction: 1,
+        messageId: 'm2',
+        text: 'two',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m2|de|en'],
+        isA<AsyncLoading<MessageTranslation>>(),
+      );
+      pending['m1']!.complete(_translation('Eins'));
+      await Future<void>.delayed(Duration.zero);
+      pending['m2']!.complete(_translation('Zwei'));
+      await Future.wait([first, second]);
+    },
+  );
 
   test('priority visible request bypasses older queued cache misses', () async {
     final pending = <String, Completer<MessageTranslation>>{};
@@ -771,7 +999,7 @@ void main() {
     var failedMessageCalls = 0;
     final container = _container(
       translateFn: (id) async {
-        if (id == 'm1' && failedMessageCalls++ == 0) {
+        if (id == 'm1' && failedMessageCalls++ < 2) {
           throw MessageTranslationFailed('invoke_failed');
         }
         return _translation(id == 'm1' ? 'Hallo' : 'Unchanged');

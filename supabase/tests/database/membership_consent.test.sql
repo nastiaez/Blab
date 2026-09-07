@@ -50,14 +50,14 @@ select ok(
 );
 
 select ok(
-  to_regprocedure('public.claim_invite(text,text)') is not null,
-  'consent-based claim_invite RPC remains available'
+  to_regprocedure('public.claim_invite(text)') is not null,
+  'connection-only claim_invite RPC remains available'
 );
 
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.claim_invite(text,text)',
+    'public.claim_invite(text)',
     'EXECUTE'
   ),
   'authenticated users can execute claim_invite'

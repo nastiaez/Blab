@@ -29,6 +29,11 @@ class DevMenu extends ConsumerWidget {
       us: 'US-037',
     ),
     (label: 'Profile', path: '/profile', us: 'US-010…US-012, US-034, US-035'),
+    (
+      label: 'UI workbench',
+      path: '/dev/workbench',
+      us: 'Review-only design audit',
+    ),
   ];
 
   @override

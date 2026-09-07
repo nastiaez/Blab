@@ -51,3 +51,10 @@ app.*.map.json
 # Local Supabase Edge Function secrets
 /supabase/.env.*
 /supabase/.branches/
+
+# Local secrets, caches, device evidence, and separate workspaces
+/.env
+/.pnpm-store/
+/.codex/*.png
+/assets/UX research transcripts/
+/progress-site/

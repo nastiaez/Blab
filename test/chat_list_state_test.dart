@@ -1,7 +1,11 @@
 import 'dart:async';
 
+import 'package:blab/shared/data/languages.dart';
+import 'package:blab/shared/services/local_chat_history_cache.dart';
+import 'package:blab/shared/state/auth_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -35,7 +39,59 @@ class _FakeChatService implements ChatService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _StalledChatListService extends _FakeChatService {
+  _StalledChatListService() : super(const []);
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchChatList() =>
+      Completer<List<Map<String, dynamic>>>().future;
+}
+
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test(
+    'cached chats render before a stalled server request completes',
+    () async {
+      final cache = LocalChatHistoryCache('alice');
+      final english = kBlabLanguages.firstWhere(
+        (language) => language.code == 'en',
+      );
+      final german = kBlabLanguages.firstWhere(
+        (language) => language.code == 'de',
+      );
+      await cache.saveChats([
+        Chat(
+          id: 'chat-1',
+          partnerName: 'Bob',
+          partnerInitial: 'B',
+          learningLanguage: german,
+          mode: ChatMode.practice,
+          partnerNativeLanguage: german,
+          partnerLearningLanguage: english,
+          lastMessage: 'Cached hello',
+          lastMessageTranslation: '',
+          timestamp: DateTime.utc(2026, 8, 29, 12),
+          unreadCount: 0,
+        ),
+      ]);
+      final container = ProviderContainer(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('alice'),
+          chatServiceProvider.overrideWithValue(_StalledChatListService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final chats = await container
+          .read(chatListProvider.future)
+          .timeout(const Duration(milliseconds: 500));
+
+      expect(chats.single.partnerName, 'Bob');
+      expect(chats.single.lastMessage, 'Cached hello');
+    },
+  );
+
   test('maps chat_list rows to Chat tiles', () async {
     final fake = _FakeChatService([
       {

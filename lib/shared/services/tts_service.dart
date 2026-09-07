@@ -10,6 +10,7 @@ class TtsService {
   TtsService({FlutterTts? tts}) : _tts = tts ?? FlutterTts();
 
   final FlutterTts _tts;
+  int _playbackGeneration = 0;
 
   /// Cached `isLanguageAvailable` lookups, keyed by Blab language `code`.
   final Map<String, bool> _availabilityCache = <String, bool>{};
@@ -37,13 +38,10 @@ class TtsService {
 
   /// Whether the platform has a voice installed for [languageCode]. Cached.
   ///
-  /// BUG-010: `FlutterTts.isLanguageAvailable` returns `true` whenever the
-  /// platform *recognises* the locale, even when no voice is installed
-  /// (e.g. Samsung TTS recognises `ta-IN` but ships no Tamil voice by
-  /// default). We additionally call `areLanguagesInstalled` and require both
-  /// to be true. When `areLanguagesInstalled` isn't implemented on the
-  /// running platform we fall back to the legacy check rather than locking
-  /// the user out entirely.
+  /// Android's installed-voice probe is unreliable across engines. On the
+  /// Samsung S25 it reports German as missing even though `setLanguage` and
+  /// `speak` successfully produce German audio. Use the platform's language
+  /// support result and let the selected system TTS engine resolve its voice.
   Future<bool> isLanguageAvailable(String languageCode) async {
     final cached = _availabilityCache[languageCode];
     if (cached != null) return cached;
@@ -67,26 +65,8 @@ class TtsService {
       return false;
     }
 
-    bool installed = true;
-    try {
-      final raw = await _tts.areLanguagesInstalled(<String>[locale]);
-      if (raw is bool) {
-        installed = raw;
-      } else if (raw is Map) {
-        final entry = raw[locale];
-        installed = entry == true || entry == 'true';
-      } else {
-        // Unknown response shape — don't punish the user, keep enabled.
-        installed = true;
-      }
-    } catch (_) {
-      // Platform missing `areLanguagesInstalled` — trust the recognised flag.
-      installed = true;
-    }
-
-    final available = recognised && installed;
-    _availabilityCache[languageCode] = available;
-    return available;
+    _availabilityCache[languageCode] = recognised;
+    return recognised;
   }
 
   /// Speaks [text] in [languageCode]. Stops any in-flight utterance first so
@@ -94,9 +74,12 @@ class TtsService {
   Future<void> speak(String text, String languageCode) async {
     final locale = localeFor(languageCode);
     if (locale == null) return;
+    final generation = ++_playbackGeneration;
     try {
       await _tts.stop();
+      if (generation != _playbackGeneration) return;
       await _tts.setLanguage(locale);
+      if (generation != _playbackGeneration) return;
       await _tts.speak(text);
     } catch (_) {
       // Swallow — TTS errors are non-fatal for the popup.
@@ -105,6 +88,7 @@ class TtsService {
 
   /// Stops any in-flight speech.
   Future<void> stop() async {
+    _playbackGeneration++;
     try {
       await _tts.stop();
     } catch (_) {}

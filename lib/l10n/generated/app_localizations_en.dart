@@ -12,6 +12,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
+  String unsupportedLanguageHint(String learningLanguage) {
+    return 'Blab doesn’t speak this one yet — try $learningLanguage.';
+  }
+
+  @override
   String get back => 'Back';
 
   @override
@@ -25,6 +30,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewOriginal => 'View original';
+
+  @override
+  String get original => 'Original';
+
+  @override
+  String get listen => 'Listen';
 
   @override
   String get save => 'Save';
@@ -423,10 +434,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get practiceMode => 'Practice';
 
   @override
+  String practiceComposerHint(String learningLanguage, String knownLanguage) {
+    return 'Type in $learningLanguage or $knownLanguage';
+  }
+
+  @override
   String get translationLimitReached => 'Translation limit reached';
 
   @override
   String get translationUnavailable => 'Translation unavailable';
+
+  @override
+  String get translating => 'Translating…';
+
+  @override
+  String get checking => 'Checking…';
+
+  @override
+  String get couldntTranslateRetry => 'Couldn’t translate · Retry';
+
+  @override
+  String get couldntCheckRetry => 'Couldn’t check · Retry';
 
   @override
   String get correction => 'Correction';
@@ -447,7 +475,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get read => 'Read';
 
   @override
-  String get failedToSend => 'Failed to send. Tap to retry.';
+  String get failedToSend => 'Not sent · Tap to try again';
 
   @override
   String get attach => 'Attach';
@@ -464,7 +492,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get editingMessage => 'Editing message';
+  String get editingMessage => 'Edit message';
 
   @override
   String get messageFailed => 'Message failed to send';
@@ -474,6 +502,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageDeleted => 'Message deleted';
+
+  @override
+  String get deleteMessageQuestion => 'Delete message?';
+
+  @override
+  String deleteMessageBody(String name) {
+    return 'Are you sure you want to delete this message? It will also be deleted for $name.';
+  }
 
   @override
   String get thanksReport => 'Thanks — we\'ll review this.';

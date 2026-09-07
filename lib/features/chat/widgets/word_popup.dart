@@ -10,6 +10,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme.dart';
 import '../../../shared/models/message_token.dart';
@@ -25,10 +26,15 @@ const Duration _kPlayingDuration = Duration(milliseconds: 1600);
 /// one. Mutable singleton tracked at library scope — only ever one popup at
 /// a time per PRD.
 OverlayEntry? _currentEntry;
+TtsService? _currentTts;
 
 void _dismissCurrent() {
-  _currentEntry?.remove();
+  final entry = _currentEntry;
+  final tts = _currentTts;
   _currentEntry = null;
+  _currentTts = null;
+  entry?.remove();
+  if (tts != null) unawaited(tts.stop());
 }
 
 /// Dismisses any currently-open word/explanation popup, if one is showing.
@@ -51,6 +57,10 @@ const double _kEdgePadding = 12;
 /// Tail size.
 const double _kTailWidth = 16;
 const double _kTailHeight = 10;
+const double _kPopupStrokeWidth = 1;
+const Color _kPopupInk = Color(0xFF1A0A1E);
+const Color _kPopupMuted = Color(0xFF808080);
+const Color _kPopupStroke = Color(0xFFE7D7D0);
 
 /// Open a word popup pointing at the supplied word rectangle.
 ///
@@ -83,15 +93,13 @@ void showWordPopup(
       tts: tts,
       topInset: topInset,
       onDismiss: () {
-        if (_currentEntry == entry) {
-          _currentEntry = null;
-        }
-        entry.remove();
+        if (_currentEntry == entry) _dismissCurrent();
       },
     ),
   );
 
   _currentEntry = entry;
+  _currentTts = tts;
   overlayState.insert(entry);
 }
 
@@ -122,10 +130,7 @@ void showExplanationPopup(
       wordSize: anchorSize,
       topInset: topInset,
       onDismiss: () {
-        if (_currentEntry == entry) {
-          _currentEntry = null;
-        }
-        entry.remove();
+        if (_currentEntry == entry) _dismissCurrent();
       },
     ),
   );
@@ -175,7 +180,6 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
 
   Future<void> _onSpeak() async {
     if (_ttsAvailable != true) return;
-    await widget.tts.stop();
     await widget.tts.speak(widget.token.text, widget.languageCode);
   }
 
@@ -186,14 +190,6 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
 
     return Stack(
       children: [
-        // Invisible dismiss barrier.
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.onDismiss,
-            child: const SizedBox.expand(),
-          ),
-        ),
         _PositionedPopup(
           card: _PopupCard(
             token: widget.token,
@@ -204,6 +200,7 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
           wordSize: widget.wordSize,
           screen: screen,
           topInset: widget.topInset,
+          onTapOutside: widget.onDismiss,
         ),
       ],
     );
@@ -235,20 +232,13 @@ class _ExplanationPopupOverlay extends StatelessWidget {
 
     return Stack(
       children: [
-        // Invisible dismiss barrier.
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onDismiss,
-            child: const SizedBox.expand(),
-          ),
-        ),
         _PositionedPopup(
           card: _ExplanationCard(explanation: explanation),
           wordTopLeft: wordTopLeft,
           wordSize: wordSize,
           screen: screen,
           topInset: topInset,
+          onTapOutside: onDismiss,
         ),
       ],
     );
@@ -267,6 +257,7 @@ class _PositionedPopup extends StatefulWidget {
     required this.wordSize,
     required this.screen,
     required this.topInset,
+    required this.onTapOutside,
   });
 
   /// Popup content (word card or explanation card). Wrapped internally in a
@@ -276,6 +267,7 @@ class _PositionedPopup extends StatefulWidget {
   final Size wordSize;
   final Size screen;
   final double topInset;
+  final VoidCallback onTapOutside;
 
   @override
   State<_PositionedPopup> createState() => _PositionedPopupState();
@@ -371,24 +363,37 @@ class _PositionedPopupState extends State<_PositionedPopup> {
     return Positioned(
       left: left,
       top: top,
-      child: SizedBox(
-        width: size.width,
-        height: size.height + _kTailHeight,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            if (!flipBelow) Positioned(left: 0, top: 0, child: card),
-            if (flipBelow) Positioned(left: 0, top: _kTailHeight, child: card),
-            // Tail.
-            Positioned(
-              left: tailCenterInCard - _kTailWidth / 2,
-              top: flipBelow ? 0 : size.height,
-              child: CustomPaint(
-                size: const Size(_kTailWidth, _kTailHeight),
-                painter: _TailPainter(pointDown: !flipBelow),
+      child: TapRegion(
+        onTapOutside: (_) => widget.onTapOutside(),
+        child: SizedBox(
+          width: size.width,
+          height: size.height + _kTailHeight - _kPopupStrokeWidth,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              if (!flipBelow) Positioned(left: 0, top: 0, child: card),
+              if (flipBelow)
+                Positioned(
+                  left: 0,
+                  top: _kTailHeight - _kPopupStrokeWidth,
+                  child: card,
+                ),
+              // Tail.
+              Positioned(
+                left: tailCenterInCard - _kTailWidth / 2,
+                top: flipBelow ? 0 : size.height - _kPopupStrokeWidth,
+                child: CustomPaint(
+                  key: const ValueKey('word-popup-tail'),
+                  size: const Size(_kTailWidth, _kTailHeight),
+                  painter: _TailPainter(
+                    pointDown: !flipBelow,
+                    fillColor: Colors.white,
+                    strokeColor: _kPopupStroke,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -441,9 +446,7 @@ class _PopupCardState extends State<_PopupCard> {
     final disabled = widget.ttsAvailable == false;
     final inactive = unknown || disabled;
 
-    final iconColor = inactive
-        ? BlabColors.textMuted.withValues(alpha: 0.4)
-        : BlabColors.brand;
+    final iconColor = inactive ? _kPopupInk.withValues(alpha: 0.4) : _kPopupInk;
 
     final Widget speakerButton = SizedBox(
       width: 32,
@@ -473,8 +476,8 @@ class _PopupCardState extends State<_PopupCard> {
           token.text,
           style: const TextStyle(
             fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
+            fontWeight: FontWeight.w800,
+            color: _kPopupInk,
             height: 1.15,
           ),
         ),
@@ -485,20 +488,8 @@ class _PopupCardState extends State<_PopupCard> {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: BlabColors.textMuted,
+              color: _kPopupMuted,
               height: 1.2,
-            ),
-          ),
-        ],
-        if (hasGloss) ...[
-          const SizedBox(height: 6),
-          Text(
-            token.gloss!,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: BlabColors.brand,
-              height: 1.25,
             ),
           ),
         ],
@@ -510,9 +501,11 @@ class _PopupCardState extends State<_PopupCard> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _kMaxPopupWidth),
         child: Container(
+          key: const ValueKey('word-popup-card'),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _kPopupStroke, width: _kPopupStrokeWidth),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -522,14 +515,40 @@ class _PopupCardState extends State<_PopupCard> {
             ],
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              speakerButton,
-              const SizedBox(width: 10),
-              Flexible(child: wordBlock),
-            ],
+          child: IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(child: wordBlock),
+                    const SizedBox(width: 12),
+                    speakerButton,
+                  ],
+                ),
+                if (hasGloss) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    key: const ValueKey('word-popup-divider'),
+                    height: 1,
+                    color: _kPopupStroke,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    token.gloss!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _kPopupInk,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -579,46 +598,73 @@ class _ExplanationCard extends StatelessWidget {
 }
 
 class _TailPainter extends CustomPainter {
-  const _TailPainter({required this.pointDown});
+  const _TailPainter({
+    required this.pointDown,
+    required this.fillColor,
+    required this.strokeColor,
+  });
 
   /// `true` = tail points downward (card sits above word).
   /// `false` = tail points upward (card sits below word).
   final bool pointDown;
+  final Color fillColor;
+  final Color strokeColor;
+
+  /// The card and tail share an outline, so the joined base stays open.
+  bool get drawsBaseEdge => false;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
+    final fillPaint = Paint()
+      ..color = fillColor
       ..style = PaintingStyle.fill;
-    final path = Path();
+    final fillPath = Path();
     if (pointDown) {
-      path.moveTo(0, 0);
-      path.lineTo(size.width, 0);
-      path.lineTo(size.width / 2, size.height);
-      path.close();
+      fillPath.moveTo(0, 0);
+      fillPath.lineTo(size.width, 0);
+      fillPath.lineTo(size.width / 2, size.height);
     } else {
-      path.moveTo(0, size.height);
-      path.lineTo(size.width, size.height);
-      path.lineTo(size.width / 2, 0);
-      path.close();
+      fillPath.moveTo(0, size.height);
+      fillPath.lineTo(size.width, size.height);
+      fillPath.lineTo(size.width / 2, 0);
     }
+    fillPath.close();
+
     // Soft shadow to match card.
-    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.15), 4, false);
-    canvas.drawPath(path, paint);
+    canvas.drawShadow(fillPath, Colors.black.withValues(alpha: 0.15), 4, false);
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Draw only the two sloping sides. The missing base edge lets the white
+    // tail merge into the white card without an internal divider.
+    final sidePath = Path();
+    if (pointDown) {
+      sidePath.moveTo(0, 0);
+      sidePath.lineTo(size.width / 2, size.height);
+      sidePath.lineTo(size.width, 0);
+    } else {
+      sidePath.moveTo(0, size.height);
+      sidePath.lineTo(size.width / 2, 0);
+      sidePath.lineTo(size.width, size.height);
+    }
+    canvas.drawPath(
+      sidePath,
+      Paint()
+        ..color = strokeColor
+        ..strokeWidth = _kPopupStrokeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeJoin = StrokeJoin.round,
+    );
   }
 
   @override
   bool shouldRepaint(covariant _TailPainter oldDelegate) =>
-      oldDelegate.pointDown != pointDown;
+      oldDelegate.pointDown != pointDown ||
+      oldDelegate.fillColor != fillColor ||
+      oldDelegate.strokeColor != strokeColor;
 }
 
 /// Speaker icon with per-wave opacity animation while [playing] is true.
-///
-/// Drawn via [CustomPaint] (Skia) rather than `flutter_svg` — isolating
-/// the thin wave-1 curve as its own SVG and animating its opacity made
-/// `flutter_svg` flicker at sub-pixel widths. Painting the speaker +
-/// both waves on a single canvas with explicit per-wave opacities
-/// removes the pipeline entirely.
+/// The three artwork layers come from the approved word-popup assets.
 ///
 /// Idle: both waves at full opacity (looks like the normal sound icon).
 /// Playing: cycle on a 900 ms loop — both waves fade to 0, inner fades
@@ -697,6 +743,7 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
 
   @override
   Widget build(BuildContext context) {
+    final colorFilter = ColorFilter.mode(widget.color, BlendMode.srcIn);
     return SizedBox(
       width: widget.size,
       height: widget.size,
@@ -704,141 +751,34 @@ class _AnimatedSpeakerIconState extends State<_AnimatedSpeakerIcon>
         animation: _ctrl,
         builder: (context, _) {
           final t = _ctrl.value;
-          return CustomPaint(
-            size: Size(widget.size, widget.size),
-            painter: _SpeakerPainter(
-              color: widget.color,
-              wave1Alpha: _wave1Alpha(t),
-              wave2Alpha: _wave2Alpha(t),
-            ),
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              SvgPicture.asset(
+                'assets/icons/sound-base.svg',
+                key: const ValueKey('word-popup-sound-base'),
+                colorFilter: colorFilter,
+              ),
+              Opacity(
+                opacity: _wave1Alpha(t),
+                child: SvgPicture.asset(
+                  'assets/icons/sound-wave-1.svg',
+                  key: const ValueKey('word-popup-sound-wave-1'),
+                  colorFilter: colorFilter,
+                ),
+              ),
+              Opacity(
+                opacity: _wave2Alpha(t),
+                child: SvgPicture.asset(
+                  'assets/icons/sound-wave-2.svg',
+                  key: const ValueKey('word-popup-sound-wave-2'),
+                  colorFilter: colorFilter,
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
-}
-
-/// Paints the speaker icon shape from `sound.svg` (viewBox 0..24) with
-/// independent opacities for the two waves.
-class _SpeakerPainter extends CustomPainter {
-  _SpeakerPainter({
-    required this.color,
-    required this.wave1Alpha,
-    required this.wave2Alpha,
-  });
-
-  final Color color;
-  final double wave1Alpha;
-  final double wave2Alpha;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // viewBox is 24x24. Scale every coordinate to widget size.
-    final s = size.width / 24.0;
-
-    Paint strokePaint(double alpha) => Paint()
-      ..color = color.withValues(alpha: alpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0 * s
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    // Speaker body — coordinates lifted verbatim from sound.svg path.
-    final body = Path()
-      ..moveTo(2 * s, 14.959 * s)
-      ..lineTo(2 * s, 9.04 * s)
-      ..cubicTo(2 * s, 8.466 * s, 2.448 * s, 8 * s, 3 * s, 8 * s)
-      ..lineTo(6.586 * s, 8 * s)
-      ..cubicTo(
-        6.71833 * s,
-        7.99954 * s,
-        6.8492 * s,
-        7.97228 * s,
-        6.97071 * s,
-        7.91986 * s,
-      )
-      ..cubicTo(
-        7.09222 * s,
-        7.86744 * s,
-        7.20185 * s,
-        7.79095 * s,
-        7.293 * s,
-        7.69501 * s,
-      )
-      ..lineTo(10.293 * s, 4.30701 * s)
-      ..cubicTo(
-        10.923 * s,
-        3.65101 * s,
-        12 * s,
-        4.11601 * s,
-        12 * s,
-        5.04301 * s,
-      )
-      ..lineTo(12 * s, 18.957 * s)
-      ..cubicTo(
-        12 * s,
-        19.891 * s,
-        10.91 * s,
-        20.352 * s,
-        10.284 * s,
-        19.683 * s,
-      )
-      ..lineTo(7.294 * s, 16.314 * s)
-      ..cubicTo(
-        7.20259 * s,
-        16.2153 * s,
-        7.09185 * s,
-        16.1365 * s,
-        6.96867 * s,
-        16.0825 * s,
-      )
-      ..cubicTo(
-        6.84549 * s,
-        16.0285 * s,
-        6.71251 * s,
-        16.0004 * s,
-        6.578 * s,
-        16 * s,
-      )
-      ..lineTo(3 * s, 16 * s)
-      ..cubicTo(2.448 * s, 16 * s, 2 * s, 15.534 * s, 2 * s, 14.959 * s)
-      ..close();
-    canvas.drawPath(body, strokePaint(1.0));
-
-    // Inner wave.
-    if (wave1Alpha > 0) {
-      final wave1 = Path()
-        ..moveTo(16 * s, 8.5 * s)
-        ..cubicTo(
-          17.333 * s,
-          10.278 * s,
-          17.333 * s,
-          13.722 * s,
-          16 * s,
-          15.5 * s,
-        );
-      canvas.drawPath(wave1, strokePaint(wave1Alpha));
-    }
-
-    // Outer wave.
-    if (wave2Alpha > 0) {
-      final wave2 = Path()
-        ..moveTo(19 * s, 5 * s)
-        ..cubicTo(
-          22.988 * s,
-          8.808 * s,
-          23.012 * s,
-          15.217 * s,
-          19 * s,
-          19 * s,
-        );
-      canvas.drawPath(wave2, strokePaint(wave2Alpha));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SpeakerPainter old) =>
-      old.color != color ||
-      old.wave1Alpha != wave1Alpha ||
-      old.wave2Alpha != wave2Alpha;
 }

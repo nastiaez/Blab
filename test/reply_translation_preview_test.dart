@@ -288,7 +288,8 @@ void main() {
     await tester.drag(find.text('ஆம்'), const Offset(120, 0));
     await tester.pumpAndSettle();
 
-    expect(find.text('Replying to Bob'), findsOneWidget);
+    expect(find.text('Replying to Bob'), findsNothing);
+    expect(find.text('Bob'), findsWidgets);
     expect(find.text('Yes'), findsWidgets);
   });
 }

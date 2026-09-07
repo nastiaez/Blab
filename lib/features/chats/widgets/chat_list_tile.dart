@@ -20,14 +20,17 @@ class ChatListTile extends ConsumerWidget {
         hasActualMessage &&
         !chat.isNewInvite &&
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
-    final hasUnread = hasActualMessage && chat.unreadCount > 0;
+    // A newly accepted connection carries the same visual weight as an
+    // unread incoming message until this participant chooses a language.
+    final hasUnread = (hasActualMessage && chat.unreadCount > 0) ||
+        (!hasActualMessage && chat.needsPracticeLanguageSelection);
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            _Avatar(name: chat.partnerName, initial: chat.partnerInitial),
+            _Avatar(name: chat.partnerName),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -36,34 +39,21 @@ class ChatListTile extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                chat.partnerName.isNotEmpty
-                                    ? chat.partnerName[0].toUpperCase() +
-                                          chat.partnerName.substring(1)
-                                    : chat.partnerName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: BlabColors.textPrimary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              chat.learningLanguage.flag,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ],
+                        child: Text(
+                          chat.partnerName.isNotEmpty
+                              ? chat.partnerName[0].toUpperCase() +
+                                    chat.partnerName.substring(1)
+                              : chat.partnerName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: BlabColors.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      if (chat.isNewInvite && !hasActualMessage)
-                        const _NewPill()
-                      else if (hasActualMessage)
+                      if (hasActualMessage)
                         Text(
                           relativeTime(chat.timestamp) == 'Now'
                               ? context.l10n.now
@@ -82,7 +72,7 @@ class ChatListTile extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           !hasActualMessage
-                              ? context.l10n.newConnectionSayHi
+                              ? 'Ready to chat · Say hi'
                               : partnerTyping
                               ? context.l10n.typing
                               : chat.lastMessage,
@@ -101,7 +91,7 @@ class ChatListTile extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (hasUnread) ...[
+                      if (hasActualMessage && hasUnread) ...[
                         const SizedBox(width: 8),
                         _UnreadBadge(count: chat.unreadCount),
                       ],
@@ -118,9 +108,8 @@ class ChatListTile extends ConsumerWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name, required this.initial});
+  const _Avatar({required this.name});
   final String name;
-  final String initial;
 
   @override
   Widget build(BuildContext context) {
@@ -130,37 +119,21 @@ class _Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: BlabColors.avatarColorFor(name),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2B231208),
+            offset: Offset(0, 2),
+            blurRadius: 6,
+          ),
+        ],
       ),
       alignment: Alignment.center,
       child: Text(
-        initial,
+        BlabColors.avatarInitialsFor(name),
         style: const TextStyle(
           color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
-        ),
-      ),
-    );
-  }
-}
-
-class _NewPill extends StatelessWidget {
-  const _NewPill();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: BlabColors.brand,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        context.l10n.newLabel,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
+          fontSize: 16,
         ),
       ),
     );

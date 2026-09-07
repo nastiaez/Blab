@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:image/image.dart' as img;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
 
 import '../data/chat_mappers.dart';
 import '../models/chat.dart';
 import '../models/message.dart';
 import '../models/message_reaction.dart';
+import 'local_chat_history_cache.dart';
 
 typedef CachedMessageTranslation = ({
   String text,
@@ -40,6 +43,57 @@ String _extensionForMime(String mimeType) => switch (mimeType) {
   _ => 'jpg',
 };
 
+({Uint8List bytes, String mimeType, String extension}) _chatPreview(
+  PickedChatImage image,
+) {
+  // Keep animated GIFs intact. Static photos get a bounded long edge so the
+  // preview is cheap to sync and warm on a phone; the original is uploaded
+  // separately and remains the durable full-resolution asset.
+  if (image.mimeType == 'image/gif') {
+    return (
+      bytes: image.bytes,
+      mimeType: image.mimeType,
+      extension: _extensionForMime(image.mimeType),
+    );
+  }
+  try {
+    final decoded = img.decodeImage(image.bytes);
+    if (decoded == null) throw const FormatException('invalid_image');
+    final longestEdge = decoded.width > decoded.height
+        ? decoded.width
+        : decoded.height;
+    final resized = longestEdge > 768
+        ? img.copyResize(
+            decoded,
+            width: decoded.width >= decoded.height
+                ? 768
+                : (decoded.width * 768 / decoded.height).round(),
+            height: decoded.height >= decoded.width
+                ? 768
+                : (decoded.height * 768 / decoded.width).round(),
+          )
+        : decoded;
+    if (image.mimeType == 'image/png') {
+      return (
+        bytes: Uint8List.fromList(img.encodePng(resized)),
+        mimeType: 'image/png',
+        extension: 'png',
+      );
+    }
+    return (
+      bytes: Uint8List.fromList(img.encodeJpg(resized, quality: 82)),
+      mimeType: 'image/jpeg',
+      extension: 'jpg',
+    );
+  } catch (_) {
+    return (
+      bytes: image.bytes,
+      mimeType: image.mimeType,
+      extension: _extensionForMime(image.mimeType),
+    );
+  }
+}
+
 class MessageTranslationChange {
   const MessageTranslationChange({
     required this.messageId,
@@ -64,6 +118,7 @@ class InviteMetadata {
     required this.expiresAt,
     required this.status,
     this.resultingChatId,
+    this.usedByUserId,
     this.claimedByName,
   });
 
@@ -80,9 +135,27 @@ class InviteMetadata {
   /// `status == 'used'`).
   final String? resultingChatId;
 
+  final String? usedByUserId;
+
   /// Display name of the user who accepted the invite (only populated
   /// when `status == 'used'`).
   final String? claimedByName;
+}
+
+class InviteClaimResult {
+  const InviteClaimResult({
+    required this.chatId,
+    required this.isNewConnection,
+  });
+
+  final String chatId;
+  final bool isNewConnection;
+}
+
+class InviteToken {
+  const InviteToken(this.token);
+
+  final String token;
 }
 
 class MessageCursor {
@@ -235,22 +308,82 @@ class ChatService {
         .where((row) => row['storage_bucket'] == 'message-media')
         .map((row) => row['storage_path'] as String)
         .toList();
-    final signedUrls = paths.isEmpty
+    final previewPaths = attachments
+        .where((row) => row['storage_bucket'] == 'message-media')
+        .map((row) => row['preview_storage_path'] as String?)
+        .whereType<String>()
+        .toList();
+    final signedPaths = {...paths, ...previewPaths}.toList();
+    final signedUrls = signedPaths.isEmpty
         ? const <SignedUrl>[]
         : await _client.storage
               .from('message-media')
-              .createSignedUrls(paths, 60 * 60);
+              .createSignedUrls(signedPaths, 60 * 60);
     final urlsByPath = {
       for (final signed in signedUrls) signed.path: signed.signedUrl,
     };
+    final localCache = LocalChatHistoryCache(_uid);
     final byMessage = <String, List<Map<String, dynamic>>>{};
     for (final row in attachments) {
       final path = row['storage_path'] as String;
       row['url'] = urlsByPath[path];
+      final previewPath = row['preview_storage_path'] as String?;
+      row['preview_url'] = previewPath == null
+          ? row['url']
+          : urlsByPath[previewPath];
+      final attachmentId = row['id'] as String;
+      final cachedBytes = await localCache.loadAttachmentBytes(attachmentId);
+      if (cachedBytes != null && cachedBytes.isNotEmpty) {
+        row['localBytes'] = cachedBytes;
+      }
+      final cachedPreviewBytes = await localCache.loadAttachmentPreviewBytes(
+        attachmentId,
+      );
+      if (cachedPreviewBytes != null && cachedPreviewBytes.isNotEmpty) {
+        row['previewBytes'] = cachedPreviewBytes;
+      }
+      final previewUrl = row['preview_url'] as String?;
+      if (previewUrl != null && previewUrl.isNotEmpty) {
+        unawaited(
+          _downloadAndCacheAttachment(
+            localCache: localCache,
+            attachmentId: attachmentId,
+            url: previewUrl,
+            preview: true,
+          ),
+        );
+      }
       final messageId = row['message_id'] as String;
       byMessage.putIfAbsent(messageId, () => []).add(row);
     }
     return byMessage;
+  }
+
+  Future<void> _downloadAndCacheAttachment({
+    required LocalChatHistoryCache localCache,
+    required String attachmentId,
+    required String url,
+    bool preview = false,
+  }) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (preview) {
+          await localCache.saveAttachmentPreviewBytes(
+            attachmentId,
+            response.bodyBytes,
+          );
+        } else {
+          await localCache.saveAttachmentBytes(
+            attachmentId,
+            response.bodyBytes,
+          );
+        }
+      }
+    } catch (_) {
+      // Network cache warming is best effort; the signed URL remains usable
+      // for this render and the next reconnect can try again.
+    }
   }
 
   /// Emits individual message changes rather than an ever-growing table
@@ -384,6 +517,9 @@ class ChatService {
     final localId = clientMessageId ?? _newStorageSafeId();
     final extension = _extensionForMime(image.mimeType);
     final storagePath = '$chatId/$_uid/$localId.$extension';
+    final preview = _chatPreview(image);
+    final previewStoragePath =
+        '$chatId/$_uid/$localId.preview.${preview.extension}';
     await _client.storage
         .from('message-media')
         .uploadBinary(
@@ -391,6 +527,19 @@ class ChatService {
           image.bytes,
           fileOptions: FileOptions(
             contentType: image.mimeType,
+            cacheControl: '3600',
+            upsert: true,
+          ),
+        );
+    // The preview is deliberately a separate object so the device can warm a
+    // chat-sized copy without ever replacing or deleting the durable original.
+    await _client.storage
+        .from('message-media')
+        .uploadBinary(
+          previewStoragePath,
+          preview.bytes,
+          fileOptions: FileOptions(
+            contentType: preview.mimeType,
             cacheControl: '3600',
             upsert: true,
           ),
@@ -435,6 +584,9 @@ class ChatService {
       'storage_path': storagePath,
       'mime_type': image.mimeType,
       'byte_size': image.bytes.length,
+      'preview_storage_path': previewStoragePath,
+      'preview_mime_type': preview.mimeType,
+      'preview_byte_size': preview.bytes.length,
     };
     Map<String, dynamic>? attachmentRow;
     try {
@@ -451,9 +603,12 @@ class ChatService {
           .eq('message_id', row['id'] as String)
           .maybeSingle();
     }
-    final url = await _client.storage
+    final signedUrls = await _client.storage
         .from('message-media')
-        .createSignedUrl(storagePath, 60 * 60);
+        .createSignedUrls([storagePath, previewStoragePath], 60 * 60);
+    final urlsByPath = {
+      for (final signed in signedUrls) signed.path: signed.signedUrl,
+    };
     final attachment = MessageAttachment(
       id: attachmentRow?['id'] as String? ?? row['id'] as String,
       messageId: row['id'] as String,
@@ -462,7 +617,18 @@ class ChatService {
       storagePath: storagePath,
       mimeType: image.mimeType,
       byteSize: image.bytes.length,
-      url: url,
+      previewStoragePath:
+          attachmentRow?['preview_storage_path'] as String? ??
+          previewStoragePath,
+      previewMimeType:
+          attachmentRow?['preview_mime_type'] as String? ?? preview.mimeType,
+      previewByteSize:
+          (attachmentRow?['preview_byte_size'] as num?)?.toInt() ??
+          preview.bytes.length,
+      url: urlsByPath[storagePath],
+      previewUrl: urlsByPath[previewStoragePath],
+      localBytes: image.bytes,
+      previewBytes: preview.bytes,
     );
     return (
       id: row['id'] as String,
@@ -476,6 +642,7 @@ class ChatService {
     required List<String> messageIds,
     bool receiptVisible = true,
   }) async {
+    if (!receiptVisible) return;
     if (messageIds.isEmpty) return;
     final rows = messageIds
         .map(
@@ -491,6 +658,32 @@ class ChatService {
     // default upsert (DO UPDATE) hit the missing UPDATE policy on
     // message_reads and got rejected by RLS.
     await _client.from('message_reads').upsert(rows, ignoreDuplicates: true);
+  }
+
+  Future<List<String>> fetchUnreadMessageIds(String chatId) async {
+    final messageRows = await _client
+        .from('messages')
+        .select('id,sender_id,created_at')
+        .eq('chat_id', chatId)
+        .filter('deleted_at', 'is', null)
+        .neq('sender_id', _uid)
+        .order('created_at', ascending: true);
+    final ids = (messageRows as List)
+        .map((row) => (row as Map)['id'])
+        .whereType<String>()
+        .toList();
+    if (ids.isEmpty) return const [];
+    final readRows = await _client
+        .from('message_reads')
+        .select('message_id')
+        .eq('chat_id', chatId)
+        .eq('user_id', _uid)
+        .inFilter('message_id', ids);
+    final read = (readRows as List)
+        .map((row) => (row as Map)['message_id'])
+        .whereType<String>()
+        .toSet();
+    return ids.where((id) => !read.contains(id)).toList();
   }
 
   Future<void> editMessage({
@@ -691,11 +884,65 @@ class ChatService {
     required String chatId,
     required String langCode,
   }) async {
-    await _client
-        .from('chat_members')
-        .update({'learning_language': langCode})
+    await _client.rpc(
+      'set_learning_language',
+      params: {'p_chat_id': chatId, 'p_learning_language': langCode},
+    );
+  }
+
+  /// Viewer-private language eras used to render completed history without
+  /// leaking a participant's learning choices to the other member.
+  Future<List<Map<String, dynamic>>> fetchLanguageTimeline(
+    String chatId,
+  ) async {
+    final rows = await _client
+        .from('chat_language_timeline')
+        .select('chat_id,user_id,revision,learning_language,created_at')
         .eq('chat_id', chatId)
-        .eq('user_id', _uid);
+        .eq('user_id', _uid)
+        .order('revision', ascending: true);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPreparedPackages({
+    required String chatId,
+    required List<String> messageIds,
+  }) async {
+    if (messageIds.isEmpty) return const [];
+    final rows = await _client
+        .from('message_prepared_packages')
+        .select()
+        .eq('chat_id', chatId)
+        .eq('viewer_id', _uid)
+        .inFilter('message_id', messageIds)
+        .eq('status', 'ready')
+        .order('message_id')
+        .order('language_revision', ascending: false);
+    return (rows as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  /// Returns a bounded recent window for delivery-time preparation. The
+  /// caller sends only ids to the authenticated translation function; message
+  /// bodies never leave the server-side authorization boundary.
+  Future<List<String>> fetchPreparationMessageIds(
+    String chatId, {
+    int limit = 50,
+  }) async {
+    final rows = await _client
+        .from('messages')
+        .select('id')
+        .eq('chat_id', chatId)
+        .filter('deleted_at', 'is', null)
+        .order('created_at', ascending: false)
+        .limit(limit.clamp(1, 50));
+    return (rows as List)
+        .map((row) => (row as Map)['id'])
+        .whereType<String>()
+        .toList();
   }
 
   Future<void> setChatMode({
@@ -721,7 +968,7 @@ class ChatService {
         .from('message_translations')
         .select(
           'translation_text, interface_text, interface_lang, source_lang, aid_mode, '
-          'explanation, confidence, tokens',
+          'explanation, confidence, tokens, form_alternatives',
         )
         .eq('message_id', messageId)
         .eq('target_lang', targetLang)
@@ -734,6 +981,13 @@ class ChatService {
       for (final t in rawTokens) {
         if (t is Map) tokens.add(Map<String, dynamic>.from(t));
       }
+    }
+    if (row['form_alternatives'] is Map) {
+      tokens.add({
+        'formAlternatives': Map<String, dynamic>.from(
+          row['form_alternatives'] as Map,
+        ),
+      });
     }
     return (
       text: row['translation_text'] as String,
@@ -772,6 +1026,13 @@ class ChatService {
       for (final t in rawTokens) {
         if (t is Map) tokens.add(Map<String, dynamic>.from(t));
       }
+    }
+    if (row['form_alternatives'] is Map) {
+      tokens.add({
+        'formAlternatives': Map<String, dynamic>.from(
+          row['form_alternatives'] as Map,
+        ),
+      });
     }
     return MessageTranslationChange(
       messageId: messageId,
@@ -845,7 +1106,7 @@ class ChatService {
         .from('message_translations')
         .select(
           'message_id, translation_text, interface_text, interface_lang, source_lang, '
-          'aid_mode, explanation, confidence, tokens',
+          'aid_mode, explanation, confidence, tokens, form_alternatives',
         )
         .eq('target_lang', targetLang)
         .eq('interface_lang', interfaceLang)
@@ -860,6 +1121,13 @@ class ChatService {
         for (final t in rawTokens) {
           if (t is Map) tokens.add(Map<String, dynamic>.from(t));
         }
+      }
+      if (row['form_alternatives'] is Map) {
+        tokens.add({
+          'formAlternatives': Map<String, dynamic>.from(
+            row['form_alternatives'] as Map,
+          ),
+        });
       }
       result[id] = (
         text: text,
@@ -938,22 +1206,12 @@ class ChatService {
         .map((rows) => rows.map((r) => r['blocked_id'] as String).toSet());
   }
 
-  /// Server-side invite creation. The current user becomes the inviter
-  /// and declares the language THEY want to learn from the partner the
-  /// invite eventually claims. Returns the token + absolute expiry so
-  /// the share sheet can build the `blab://invite/<token>` URL.
-  Future<({String token, DateTime expiresAt})> createInvite({
-    required String myLearningLanguage,
-  }) async {
-    final res = await _client.rpc(
-      'create_invite',
-      params: {'my_learning_language': myLearningLanguage},
-    );
+  /// Server-side invite creation. An invite only creates a connection;
+  /// each participant chooses a practice language after the chat exists.
+  Future<InviteToken> createInvite({String? myLearningLanguage}) async {
+    final res = await _client.rpc('create_invite');
     final row = (res as List).first as Map<String, dynamic>;
-    return (
-      token: row['token'] as String,
-      expiresAt: DateTime.parse(row['expires_at'] as String).toLocal(),
-    );
+    return InviteToken(row['token'] as String);
   }
 
   /// Look up an invite for the landing screen. Returns null when the
@@ -971,36 +1229,35 @@ class ChatService {
       token: row['token'] as String,
       inviterUserId: row['inviter_user_id'] as String,
       inviterName: (row['inviter_name'] as String?) ?? '',
-      inviterLearningLanguage:
-          (row['inviter_learning_language'] as String?) ?? 'en',
-      expiresAt: DateTime.parse(row['expires_at'] as String).toLocal(),
+      inviterLearningLanguage: 'en',
+      expiresAt: DateTime.fromMillisecondsSinceEpoch(0),
       status: row['status'] as String,
       resultingChatId: row['resulting_chat_id'] as String?,
+      usedByUserId: row['used_by_user_id'] as String?,
       claimedByName: (row['claimed_by_name'] as String?)?.trim().isEmpty == true
           ? null
           : (row['claimed_by_name'] as String?),
     );
   }
 
-  /// "Accept & join" path. Atomically marks the invite used, creates or
-  /// reuses the pair's canonical chat, applies both selected learning
-  /// languages, and returns that chat's id. Throws a [PostgrestException]
-  /// with one of the documented
-  /// `message` codes on failure: `invite_not_found`, `invite_expired`,
-  /// `invite_already_claimed`, `invite_self_claim`, `not_signed_in`,
-  /// `invalid_language`.
-  Future<String> claimInvite({
-    required String token,
-    required String myLearningLanguage,
-  }) async {
+  /// Atomically marks an invite used and creates or reuses the canonical
+  /// direct chat without changing an existing pair's selected languages.
+  Future<InviteClaimResult> claimInviteDetails({required String token}) async {
     final res = await _client.rpc(
       'claim_invite',
-      params: {
-        'invite_token': token,
-        'my_learning_language': myLearningLanguage,
-      },
+      params: {'invite_token': token},
     );
     final row = (res as List).first as Map<String, dynamic>;
-    return row['chat_id'] as String;
+    return InviteClaimResult(
+      chatId: row['chat_id'] as String,
+      isNewConnection: row['is_new_connection'] as bool,
+    );
   }
+
+  /// Legacy callers use only the resulting chat id. The optional language is
+  /// ignored: all new invite connections choose it inside the chat.
+  Future<String> claimInvite({
+    required String token,
+    String? myLearningLanguage,
+  }) async => (await claimInviteDetails(token: token)).chatId;
 }

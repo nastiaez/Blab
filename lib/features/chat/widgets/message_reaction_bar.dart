@@ -8,11 +8,13 @@ class MessageReactionBar extends StatelessWidget {
     super.key,
     required this.reactions,
     required this.isOutgoing,
+    this.isPractice = false,
     required this.onTap,
   });
 
   final List<MessageReactionSummary> reactions;
   final bool isOutgoing;
+  final bool isPractice;
   final VoidCallback onTap;
 
   @override
@@ -30,7 +32,11 @@ class MessageReactionBar extends StatelessWidget {
       runSpacing: 4,
       children: [
         for (final reaction in reactions)
-          _ReactionChip(reaction: reaction, isOutgoing: isOutgoing, onTap: onTap),
+          _ReactionChip(
+            reaction: reaction,
+            isPractice: isPractice,
+            onTap: onTap,
+          ),
       ],
     );
   }
@@ -45,25 +51,16 @@ const double _kHitDiameter = 44;
 class _ReactionChip extends StatelessWidget {
   const _ReactionChip({
     required this.reaction,
-    required this.isOutgoing,
+    required this.isPractice,
     required this.onTap,
   });
 
   final MessageReactionSummary reaction;
-  final bool isOutgoing;
+  final bool isPractice;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // Fill + border mirror the bubble it's attached to — a soft terracotta
-    // tint for a message you sent, a soft blue-gray tint for one you
-    // received. No separate "mine" treatment: which bubble a reaction sits
-    // on already carries meaning, and a brand-colored ring would just show
-    // as "always on" for whoever is testing solo.
-    final fill = isOutgoing ? const Color(0xFFF7ECE7) : const Color(0xFFEAEFF2);
-    final border = isOutgoing
-        ? const Color(0xFFEFAF9D)
-        : const Color(0xFFB4CFDA);
     return InkWell(
       key: reaction.reactedByMe
           ? ValueKey('my-reaction-${reaction.emoji}')
@@ -82,16 +79,22 @@ class _ReactionChip extends StatelessWidget {
               height: _kChipDiameter,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: fill,
+                color: const Color(0xFFFFFCF8),
                 shape: BoxShape.circle,
-                border: Border.all(color: border, width: 0.75),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+                border: Border.all(
+                  color: const Color(0xFFDCD2C8),
+                  width: 0.75,
+                ),
+                boxShadow: isPractice
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x1A231208),
+                          offset: Offset(0, 2),
+                          blurRadius: 6,
+                          spreadRadius: -2,
+                        ),
+                      ]
+                    : null,
               ),
               child: Text(
                 reaction.emoji,

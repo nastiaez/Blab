@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/languages.dart';
 import '../models/chat.dart';
 import '../services/chat_service.dart';
+import '../services/local_chat_history_cache.dart';
+import '../services/message_translator.dart';
 import 'auth_state.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) {
@@ -40,6 +42,8 @@ Chat _rowToChat(Map<String, dynamic> r) {
         ? DateTime.parse(r['last_at'] as String).toLocal()
         : DateTime.now(),
     unreadCount: (r['unread_count'] as int?) ?? 0,
+    needsPracticeLanguageSelection:
+        r['needs_practice_language_selection'] as bool? ?? false,
   );
 }
 
@@ -56,6 +60,7 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     // scoped to the new user.
     ref.watch(authSessionProvider);
     final svc = ref.watch(chatServiceProvider);
+    final localCache = ref.watch(localChatHistoryCacheProvider);
 
     _membershipsSub?.cancel();
     _messagesSub?.cancel();
@@ -83,9 +88,24 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
       _translationsSub?.cancel();
     });
 
+    final cached = await localCache?.loadChats() ?? const <Chat>[];
+    if (cached.isNotEmpty) {
+      // Paint the account-scoped snapshot first. A reachable server refreshes
+      // it immediately after build; an unreachable one must not hold the
+      // whole chat list behind the transport timeout (US-031 / FR-41).
+      Future<void>.microtask(() async {
+        if (!ref.mounted) return;
+        await _refresh();
+      });
+      return cached;
+    }
+
     try {
       final rows = await svc.fetchChatList();
-      return rows.map(_rowToChat).toList();
+      final chats = rows.map(_rowToChat).toList();
+      unawaited(localCache?.saveChats(chats));
+      unawaited(_prepareRecentMessages(chats));
+      return chats;
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint(
@@ -115,9 +135,13 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
 
   Future<void> _refresh() async {
     final svc = ref.read(chatServiceProvider);
+    final localCache = ref.read(localChatHistoryCacheProvider);
     try {
       final rows = await svc.fetchChatList();
-      state = AsyncValue.data(rows.map(_rowToChat).toList());
+      final chats = rows.map(_rowToChat).toList();
+      state = AsyncValue.data(chats);
+      unawaited(localCache?.saveChats(chats));
+      unawaited(_prepareRecentMessages(chats));
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Chat list refresh failed: type=${e.runtimeType}, error=$e');
@@ -126,8 +150,53 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
       // If we already have data, keep showing it on transient errors
       // (e.g. offline). Only surface the error when we have nothing yet.
       if (state.hasValue) return;
-      state = AsyncValue.error(e, st);
+      final cached = await localCache?.loadChats() ?? const <Chat>[];
+      if (cached.isNotEmpty) {
+        state = AsyncValue.data(cached);
+      } else {
+        state = AsyncValue.error(e, st);
+      }
     }
+  }
+
+  Future<void> _prepareRecentMessages(List<Chat> chats) async {
+    final translator = ref.read(messageTranslatorProvider);
+    final service = ref.read(chatServiceProvider);
+    // Three in-flight provider calls match the chat-open background budget
+    // while keeping delivery preparation bounded on a small device.
+    const concurrency = 3;
+    final queue = <Future<void> Function()>[];
+    for (final chat in chats) {
+      try {
+        final ids = await service.fetchPreparationMessageIds(chat.id);
+        for (final id in ids) {
+          queue.add(() async {
+            try {
+              await translator.translate(messageId: id);
+            } catch (_) {
+              // A later chat open retries the durable job; preparation must
+              // never make the chat list itself fail.
+            }
+          });
+        }
+      } catch (_) {
+        // Offline list cache remains usable; reconnect will retry.
+      }
+    }
+    var cursor = 0;
+    Future<void> worker() async {
+      while (cursor < queue.length) {
+        final task = queue[cursor++];
+        await task();
+      }
+    }
+
+    await Future.wait(
+      List<Future<void>>.generate(
+        queue.length < concurrency ? queue.length : concurrency,
+        (_) => worker(),
+      ),
+    );
   }
 }
 

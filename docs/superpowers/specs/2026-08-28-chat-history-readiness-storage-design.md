@@ -145,7 +145,9 @@ Marker styling matches a date label:
 - centered directly on the chat canvas;
 - regular 12 px `#8C735F`;
 - no lines, pill, outline, or icon;
-- same vertical spacing as the existing date label;
+- when a date label and language marker begin the same section, the date appears first, followed by the language marker, then the messages in that language;
+- use exact visible gaps of 18 px from the previous bubble to the date label, 10 px from the date label to the language marker, and 10 px from the marker to the next bubble;
+- when the marker sits between message bubbles rather than following a date label, keep 10 px of visible space above and below it;
 - visible in both Normal and Practice;
 - absent from the partner's chat and data stream.
 
@@ -217,7 +219,7 @@ Accessibility may announce `Photo unavailable offline` for the neutral placehold
 
 ### Language history
 
-- [ ] Given completed German history, when Alice changes to Spanish, then completed German messages remain German above `Now learning Spanish` and later Practice messages use Spanish.
+- [ ] Given completed German history, when Alice changes to Spanish, then completed German messages remain German above `Now learning Spanish` and later Practice messages use Spanish; at a date boundary the order is date → marker → messages.
 - [ ] A pending unseen German message is reassigned to Spanish below the marker.
 - [ ] A late German completion cannot overwrite the active Spanish result.
 - [ ] Alice's marker and revision never appear for Bob.
