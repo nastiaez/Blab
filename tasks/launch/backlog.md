@@ -16,7 +16,7 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 
 ## Active invite verification — 2026-09-09
 
-Current priority: failure/retry checks → source commit/push → owner two-Android-device/share-target checks → final store-install handoff. The latest check pass covers 78 cases, including the repaired setup-refresh race and added share/preparation retry coverage. Android compiles/installs; the local backend is currently unavailable, so fresh database and live two-device checks are not claimed.
+Current priority: prepare a reachable owner test version/environment → owner two-Android-device/share-target checks → final store-install handoff. Failure/retry review is complete for the current local repairs; source commit/push is verified at `9e66db4` on `fix/invite-flow-verification`. The latest check pass covers 78 cases, including the repaired setup-refresh race and added share/preparation retry coverage. Android compiles/installs; the local backend is currently unavailable, so fresh database and live two-device checks are not claimed.
 
 Step 2.3b has a local verification record at
 `docs/qa/2026-09-08-invite-flow/README.md` with actual screenshot proof. Owner checks remain pending for
