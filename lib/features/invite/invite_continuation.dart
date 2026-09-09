@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -54,8 +56,12 @@ Future<String?> loadPendingInvite() async {
   return token?.isEmpty ?? true ? null : token;
 }
 
-Future<void> clearPendingInvite() async {
+Future<void> clearPendingInvite({String? matchingToken}) async {
   final preferences = await SharedPreferences.getInstance();
+  if (matchingToken != null &&
+      preferences.getString(kPendingInviteTokenKey) != matchingToken.trim()) {
+    return;
+  }
   await preferences.remove(kPendingInviteTokenKey);
 }
 
@@ -108,7 +114,24 @@ final inviteClaimActionProvider = Provider<InviteClaimAction>((ref) {
     final result = await service.claimInviteDetails(
       token: continuation.token!.trim(),
     );
-    await ref.read(chatListProvider.notifier).refresh();
+    unawaited(
+      ref.read(chatListProvider.notifier).refresh().catchError((Object _) {}),
+    );
     return result.chatId;
   };
 });
+
+Future<void> resumePendingInvite({required InviteClaimAction claim}) async {
+  final token = await loadPendingInvite();
+  if (token == null) return;
+  try {
+    await claim(
+      InviteContinuation(token: token),
+    ).timeout(const Duration(seconds: 12));
+    await clearPendingInvite(matchingToken: token);
+  } catch (error) {
+    if (isTerminalInviteClaimFailure(inviteClaimFailureFor(error))) {
+      await clearPendingInvite(matchingToken: token);
+    }
+  }
+}

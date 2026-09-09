@@ -1,0 +1,30 @@
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart
+00:00 +0: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: loading waits one second then smoothly fades its dots
+00:00 +1: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: loading waits one second then smoothly fades its dots
+00:00 +2: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: loading waits one second then smoothly fades its dots
+00:00 +3: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: loading waits one second then smoothly fades its dots
+00:00 +4: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: loading waits one second then smoothly fades its dots
+00:00 +5: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: unknown lookup settles into invalid state
+00:00 +6: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: used anonymous link cannot replace latest valid pending invite
+00:00 +7: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: signed-in transient claim persists and retries without stuck loading
+00:00 +8: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnection automatically completes pending signed-in claim
+00:00 +9: /Users/aswin/clawd/projects/blab/Blab/test/invite_continuation_test.dart: a completed older claim does not erase a newer pending invite
+00:00 +10: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +11: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +12: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +13: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +14: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +15: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +16: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: reconnect during an in-flight claim retries after its failure
+00:00 +17: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: validated direct invite retires unavailable install referrer
+00:00 +18: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: unknown direct link preserves prior installation candidate
+00:00 +19: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: new token replaces in-flight lookup without stale routing
+00:00 +20: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: used link reopens resulting chat for alice
+00:00 +21: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: used link reopens resulting chat for bob
+00:00 +22: /Users/aswin/clawd/projects/blab/Blab/test/invite_resolver_recovery_test.dart: self unused link opens sharing without claim
+00:00 +23: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:01 +24: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: false)
+00:01 +25: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: latest saved valid invite wins over stale auth route
+00:01 +26: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: restart without invite query restores saved invite after login
+00:01 +27: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: ordinary auth without invite still opens chats
+00:01 +28: All tests passed!

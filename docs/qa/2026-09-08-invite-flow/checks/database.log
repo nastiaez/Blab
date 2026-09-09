@@ -1,0 +1,7 @@
+Connecting to local database...
+psql:/Users/aswin/clawd/projects/blab/Blab/supabase/tests/database/invite_first_language.test.sql:2: NOTICE:  extension "pgtap" already exists, skipping
+psql:/Users/aswin/clawd/projects/blab/Blab/supabase/tests/database/invite_first_language.test.sql:12: WARNING:  Blab push webhook is not configured
+/Users/aswin/clawd/projects/blab/Blab/supabase/tests/database/invite_first_language.test.sql .. ok
+All tests successful.
+Files=1, Tests=15,  0 wallclock secs ( 0.02 usr +  0.01 sys =  0.03 CPU)
+Result: PASS

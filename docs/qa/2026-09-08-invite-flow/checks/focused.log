@@ -1,0 +1,65 @@
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart
+00:00 +0: /Users/aswin/clawd/projects/blab/Blab/test/invite_landing_test.dart: all web invites use the same non-claiming landing
+00:00 +1: /Users/aswin/clawd/projects/blab/Blab/test/invite_landing_test.dart: nested invite URL loads the approved logo from the site root
+00:00 +2: /Users/aswin/clawd/projects/blab/Blab/test/invite_install_referrer_test.dart: unvalidated installation invite survives restart until resolved
+00:00 +3: /Users/aswin/clawd/projects/blab/Blab/test/invite_install_referrer_test.dart: newer direct invite permanently retires installation handoff
+00:00 +4: /Users/aswin/clawd/projects/blab/Blab/test/invite_install_referrer_test.dart: retired direct handoff cannot be resurrected by in-flight referrer
+00:00 +5: /Users/aswin/clawd/projects/blab/Blab/test/invite_install_referrer_test.dart: extracts only the invite handoff, not arbitrary store tracking
+00:00 +6: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +7: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +8: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +9: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +10: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +11: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +12: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +13: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +14: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +15: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +16: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +17: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +18: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +19: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +20: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +21: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +22: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +23: /Users/aswin/clawd/projects/blab/Blab/test/invite_auth_flow_test.dart: email auth resumes invite through resolver (signup: true)
+00:00 +24: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:00 +25: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:00 +26: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:01 +27: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:01 +28: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:01 +29: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:01 +30: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: system Back exits required setup without trapping the chat
+00:01 +31: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: system Back exits required setup without trapping the chat
+00:01 +32: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: system Back exits required setup without trapping the chat
+00:01 +33: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: visible chat Back target exits required setup
+00:01 +34: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: failed selection stays open and can retry successfully
+00:01 +35: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:01 +36: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:01 +37: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:01 +38: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:01 +39: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:01 +40: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:01 +41: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: incoming message changes refresh the chat-list preview
+00:01 +42: /Users/aswin/clawd/projects/blab/Blab/test/first_message_empty_state_test.dart: new chat invites a first message without choosing either person’s language
+00:01 +43: /Users/aswin/clawd/projects/blab/Blab/test/first_message_empty_state_test.dart: new chat invites a first message without choosing either person’s language
+00:02 +44: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_typing_test.dart: typing replaces the chat preview without an Online label
+00:02 +45: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_typing_test.dart: typing replaces the chat preview without an Online label
+00:02 +46: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_typing_test.dart: typing replaces the chat preview without an Online label
+00:02 +47: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_typing_test.dart: last message returns when partner is not typing
+00:02 +48: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_typing_test.dart: empty chat renders connection state without stale preview or unread badge
+00:02 +49: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_typing_test.dart: chat preview preserves authored text without AI requests
+00:02 +50: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: outside tap dismisses mode tip and focuses composer in one tap
+00:03 +51: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: first message stays authored behind required language setup
+00:03 +52: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: confirmed first selection survives a stale list refresh
+00:03 +53: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: normal mode targets the primary known language, not the interface language, for cache lookups
+00:03 +54: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: chat header separates navigation, identity, and mode groups
+00:03 +55: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: chat header avatar and name use the approved treatment
+00:03 +56: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: chat menu uses the approved warm preference treatment
+00:03 +57: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: date divider precedes and introduces a learning-language era
+00:03 +58: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: practice history keeps the completed language from its saved era
+00:03 +59: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: outgoing practice history updates after recovering a stale timeline
+00:03 +60: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: language marker keeps padding between message bubbles
+00:03 +61: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: saving a learning language refreshes its private timeline
+00:03 +62: /Users/aswin/clawd/projects/blab/Blab/test/chat_screen_primary_known_language_test.dart: avatar colors use only the refreshed palette
+00:03 +63: All tests passed!

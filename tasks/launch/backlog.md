@@ -14,7 +14,27 @@ launch rule that an unclaimed link remains valid until successfully claimed.
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
+## Active invite verification — 2026-09-09
+
+Current priority: failure/retry checks → source commit/push → owner two-Android-device/share-target checks → final store-install handoff. The latest check pass covers 78 cases, including the repaired setup-refresh race and added share/preparation retry coverage. Android compiles/installs; the local backend is currently unavailable, so fresh database and live two-device checks are not claimed.
+
+Step 2.3b has a local verification record at
+`docs/qa/2026-09-08-invite-flow/README.md` with actual screenshot proof. Owner checks remain pending for
+English/first-language selection, Back and save-error recovery, offline invite
+continuation, native Copy token rotation, new/returning recipients, and existing-pair reuse.
+The static landing and Play install-referrer handoff are included in implementation;
+real store installation and public Loveblab domain verification are deferred until
+the owner’s final domain/release pass. Local Alice/Bob two-way messages and
+independent English/German choices, installed recipient, normal signup, native
+Copy, and same-pair re-invite have been exercised; these do not substitute for owner confirmation.
+
+Owner refinement on 2026-09-08: `Only one friend can use this link` now sits below the invite card without a bullet; Android screenshot 23 records the latest copy. Invite owner checks remain pending.
+
+The required first-language sheet now follows the owner’s warm-white, divided-list styling with a slim scrollbar and subtle 8% warm veil. The later spacing refinement increases rows to 56 px and sheet content to 520 px, and hides the empty-state card until language setup completes. The original no-dimming treatment is superseded; owner review includes scrolling, language selection, and Back/recovery. No owner checkbox is marked complete by these visual changes.
+
 ## Launch blockers
+
+**Invite website publication verified (2026-09-09):** Owner commit `01e2651` published successfully through the existing Vercel connection. Both public invite routes return HTTP 200; mobile browser checks confirm logo navigation, invite referrer, and unchanged homepage. Website-access blocker is resolved. Remaining release gates: actual App Store listing, verified Google Play install path, Play signing association, and owner manual handoff tests; these are not marked complete.
 
 | Order | Work ID | Audit ID | Scope | Depends on | Status | Work record |
 | ---: | --- | --- | --- | --- | --- | --- |

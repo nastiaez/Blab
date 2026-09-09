@@ -419,8 +419,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get offline => 'Offline';
 
   @override
-  String get noConnection =>
-      'Keine Verbindung — Nachrichten werden gesendet, sobald du wieder online bist';
+  String get noConnection => 'Keine Verbindung';
 
   @override
   String get learningLanguage => 'Lernsprache';

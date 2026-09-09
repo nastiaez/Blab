@@ -863,7 +863,12 @@ class ChatService {
             .onPostgresChanges(
               event: PostgresChangeEvent.all,
               schema: 'public',
-              table: 'message_translations',
+              table: 'message_prepared_packages',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'viewer_id',
+                value: _uid,
+              ),
               callback: (_) {
                 if (!controller.isClosed) controller.add(null);
               },

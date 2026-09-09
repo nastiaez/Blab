@@ -35,8 +35,12 @@ Chat _rowToChat(Map<String, dynamic> r) {
     translationCutoffAt: r['translation_cutoff_at'] == null
         ? null
         : DateTime.parse(r['translation_cutoff_at'] as String).toLocal(),
-    lastMessage: (r['last_body'] as String?) ?? '',
-    lastMessageTranslation: '',
+    lastMessage: r['needs_practice_language_selection'] == true
+        ? (r['last_body'] as String?) ?? ''
+        : (r['last_practice_body'] as String?) ??
+              (r['last_body'] as String?) ??
+              '',
+    lastMessageTranslation: (r['last_practice_body'] as String?) ?? '',
     lastMessageId: r['last_message_id'] as String?,
     timestamp: r['last_at'] != null
         ? DateTime.parse(r['last_at'] as String).toLocal()
@@ -53,6 +57,7 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
   StreamSubscription<void>? _translationsSub;
   Timer? _refreshDebounce;
   Future<void>? _refreshInFlight;
+  int _selectionRevision = 0;
 
   @override
   Future<List<Chat>> build() async {
@@ -102,7 +107,8 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
 
     try {
       final rows = await svc.fetchChatList();
-      final chats = rows.map(_rowToChat).toList();
+      final chats = rows.map(_rowToChat).toList()
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       unawaited(localCache?.saveChats(chats));
       unawaited(_prepareRecentMessages(chats));
       return chats;
@@ -128,6 +134,38 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     return _refreshInFlight!;
   }
 
+  /// US-027: an acknowledged choice survives an offline/stale list refresh.
+  void confirmPracticeLanguageSelection(String chatId, BlabLanguage language) {
+    _selectionRevision++;
+    final chats = state.value;
+    if (chats == null) return;
+    final updated = chats.map((chat) {
+      if (chat.id != chatId || !chat.needsPracticeLanguageSelection) {
+        return chat;
+      }
+      return Chat(
+        id: chat.id,
+        partnerId: chat.partnerId,
+        partnerName: chat.partnerName,
+        partnerInitial: chat.partnerInitial,
+        learningLanguage: language,
+        mode: chat.mode,
+        partnerNativeLanguage: chat.partnerNativeLanguage,
+        partnerLearningLanguage: chat.partnerLearningLanguage,
+        lastMessage: chat.lastMessage,
+        lastMessageTranslation: chat.lastMessageTranslation,
+        lastMessageId: chat.lastMessageId,
+        timestamp: chat.timestamp,
+        unreadCount: chat.unreadCount,
+        isNewInvite: chat.isNewInvite,
+        startedAt: chat.startedAt,
+        translationCutoffAt: chat.translationCutoffAt,
+      );
+    }).toList();
+    state = AsyncValue.data(updated);
+    unawaited(ref.read(localChatHistoryCacheProvider)?.saveChats(updated));
+  }
+
   void _scheduleRefresh() {
     _refreshDebounce?.cancel();
     _refreshDebounce = Timer(const Duration(milliseconds: 75), refresh);
@@ -137,11 +175,19 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     final svc = ref.read(chatServiceProvider);
     final localCache = ref.read(localChatHistoryCacheProvider);
     try {
-      final rows = await svc.fetchChatList();
-      final chats = rows.map(_rowToChat).toList();
-      state = AsyncValue.data(chats);
-      unawaited(localCache?.saveChats(chats));
-      unawaited(_prepareRecentMessages(chats));
+      while (ref.mounted) {
+        final selectionRevision = _selectionRevision;
+        final rows = await svc.fetchChatList();
+        if (!ref.mounted) return;
+        // US-027: never replace an acknowledged choice with a pre-save snapshot.
+        if (selectionRevision != _selectionRevision) continue;
+        final chats = rows.map(_rowToChat).toList()
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        state = AsyncValue.data(chats);
+        unawaited(localCache?.saveChats(chats));
+        unawaited(_prepareRecentMessages(chats));
+        return;
+      }
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('Chat list refresh failed: type=${e.runtimeType}, error=$e');
@@ -167,6 +213,7 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     const concurrency = 3;
     final queue = <Future<void> Function()>[];
     for (final chat in chats) {
+      if (chat.needsPracticeLanguageSelection) continue;
       try {
         final ids = await service.fetchPreparationMessageIds(chat.id);
         for (final id in ids) {

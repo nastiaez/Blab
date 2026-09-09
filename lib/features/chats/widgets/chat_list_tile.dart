@@ -22,8 +22,8 @@ class ChatListTile extends ConsumerWidget {
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
     // A newly accepted connection carries the same visual weight as an
     // unread incoming message until this participant chooses a language.
-    final hasUnread = (hasActualMessage && chat.unreadCount > 0) ||
-        (!hasActualMessage && chat.needsPracticeLanguageSelection);
+    final hasUnread =
+        chat.unreadCount > 0 || chat.needsPracticeLanguageSelection;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -91,7 +91,7 @@ class ChatListTile extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (hasActualMessage && hasUnread) ...[
+                      if (hasActualMessage && chat.unreadCount > 0) ...[
                         const SizedBox(width: 8),
                         _UnreadBadge(count: chat.unreadCount),
                       ],

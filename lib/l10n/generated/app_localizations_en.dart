@@ -414,8 +414,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offline => 'Offline';
 
   @override
-  String get noConnection =>
-      'No connection — messages will send when you\'re back online';
+  String get noConnection => 'No connection';
 
   @override
   String get learningLanguage => 'Learning language';

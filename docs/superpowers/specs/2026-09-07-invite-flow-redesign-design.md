@@ -57,7 +57,7 @@ Blab should feel like a simple messenger: create a link, send it, and start the 
 │ Let’s chat on Blab            │
 │ loveblab.com/i/7K4M2P         │
 └──────────────────────────────┘
-  One friend can use this link
+  Only one friend can use this link
 
 [          Send invite          ]
 ```
@@ -65,7 +65,7 @@ Blab should feel like a simple messenger: create a link, send it, and start the 
 - Canvas: `#FAF7F2`.
 - The card uses the approved warm surface, outline, and rounded-card treatment already used in Blab.
 - Card title: **Let’s chat on Blab**. The URL is readable but not separately tappable.
-- Helper: **One friend can use this link**.
+- Helper below the card, without a bullet: **Only one friend can use this link** (owner refinement, 2026-09-08).
 - Primary button label: **Send invite**. It has no icon, uses `#F88C5A`, and uses `#46281C` text.
 - Tapping the button opens the device share sheet. Its normal dimmed background belongs to the operating system.
 - The shared text is exactly:
@@ -201,7 +201,7 @@ The inviter and invitee use the same chat entry experience.
 
 ### Background state
 
-- With no messages, show a simple centered text container:
+- With no messages, show a simple centered text container after the required language choice. Keep it hidden during initial language selection so no part can peek above the sheet:
 
   **No messages here yet…**  
   Send any message to start.
@@ -219,12 +219,22 @@ You can change it anytime.
 ```
 
 - It uses the existing language list and selection behaviour.
-- It appears over the real chat background with **no blur and no dimmed scrim**.
+- It appears over the real chat background with **no blur and a subtle `#46281C` 8% veil** (owner refinement, 2026-09-08).
 - It cannot be dismissed by tapping outside or swiping down. The composer, messages, and mode switch are inactive until a language is selected.
 - Back leaves the chat for Chats; reopening the new chat shows the sheet again.
 - Profile and Settings remain reachable outside this chat.
 - The choice affects only that participant’s view. It does not choose a language for the other person.
 - No Practice or Normal mode is available in this chat until the choice is complete.
+
+#### Required-sheet visual refinement — 2026-09-08
+
+- Full-width, bottom-anchored 520 px content height plus bottom safe area; clamp to the available viewport on smaller screens. Increased from 442 px in the owner’s spacing refinement to cover more of the chat. The supplied absolute y=304 does not govern bottom anchoring on an 844 px screen.
+- Surface `#FFFCF8`, 24 px top corners, clipped content, 1 px `#E1DAD2` outline. Shadow: `#917869` at 12%, x0/y−4/blur24/spread−2. No drag handle.
+- Header: 20 px padding, 6 px gap, 22 px bold `#46281C` title and 14 px regular `#917869` subtitle. Use platform fonts per tech-spec Decision #6.
+- List padding: top0/left16/right24/bottom16. Rows have 16 px horizontal and 18 px vertical padding, 56 px minimum tap height, regular 15 px `#46281C` text, unchanged surface, and 1 px full-row `#E1DAD2` dividers. Text scaling may increase row height.
+- A fresh required choice starts unselected. A tapped language is bold with the owner’s existing `check - 20.svg` artwork, tinted `#D4694A`, and a separate saving indicator; no selected-row background tint. Reuse the supplied artwork instead of a newly drawn stroke. Successful persistence closes the sheet; failure retains the existing retry path.
+- Persistent scrollbar: 3 px width, 2 px radius, 9 px right inset, `#C2B8AB` 30% track, `#8C7A6B` 70% thumb. The thumb reflects actual content/viewport proportions rather than hardcoded dimensions.
+- Scope is the initial mandatory sheet only, not the later Change language sheet. Preserve Back to Chats and outside-tap/drag blocking.
 
 ## 7. First-time mode tips
 
@@ -285,7 +295,7 @@ Opening invite
 - [ ] A signed-in recipient lands directly in the chat; an existing pair reuses its chat without a language reset.
 - [ ] Claim timing, self-link, repeat-link, concurrent-claim, invalid-link, and claimed-link behaviours match section 4.
 - [ ] A new pair sees Ready to chat · Say hi as an unread row until each person selects a practice language.
-- [ ] Both sides see the same mandatory, undimmed language sheet over the approved empty state or authored first message.
+- [ ] Both sides see the same mandatory language sheet with the owner-approved subtle warm veil over the empty state or authored first message.
 - [ ] Practice and Normal tips appear once with the approved copy, style, and non-blocking dismissal.
 - [ ] Invite loading uses the approved two-row three-dot state.
 

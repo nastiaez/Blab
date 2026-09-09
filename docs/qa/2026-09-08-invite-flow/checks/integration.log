@@ -1,0 +1,9 @@
+Stopped services: [supabase_imgproxy_Language_App supabase_pooler_Language_App]
+A new version of Supabase CLI is available: v2.117.0 (currently installed v2.109.1)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/local_readiness/realtime_ready_test.dart
+00:00 +0: local Realtime delivers a disposable Postgres change before integration
+00:00 +1: All tests passed!
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/integration/local_invite_flow_test.dart
+00:00 +0: local Supabase keeps unclaimed invites valid and never resets a pair
+00:00 +1: All tests passed!

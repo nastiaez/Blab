@@ -733,10 +733,14 @@ class LearningLanguageNotifier extends Notifier<BlabLanguage> {
     try {
       await ref
           .read(chatServiceProvider)
-          .setLearningLanguage(chatId: chatId, langCode: lang.code);
-      await ref.read(chatListProvider.notifier).refresh();
+          .setLearningLanguage(chatId: chatId, langCode: lang.code)
+          .timeout(const Duration(seconds: 12));
+      ref
+          .read(chatListProvider.notifier)
+          .confirmPracticeLanguageSelection(chatId, lang);
       state = lang;
       ref.invalidate(chatLanguageTimelineProvider(chatId));
+      unawaited(ref.read(chatListProvider.notifier).refresh());
     } catch (e) {
       state = previous;
       rethrow;

@@ -25,6 +25,7 @@ import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
+import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
@@ -52,6 +53,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 class _PrimaryKnownLanguageChatService implements ChatService {
   _PrimaryKnownLanguageChatService({
     this.partnerName = 'Bob',
+    this.needsPracticeLanguageSelection = false,
     this.learningLanguageCode = 'de',
     this.messageIsOutgoing = false,
     this.chatMode = 'normal',
@@ -82,10 +84,11 @@ class _PrimaryKnownLanguageChatService implements ChatService {
                status: MessageStatus.delivered,
              );
 
+  final bool needsPracticeLanguageSelection;
   final String partnerName;
   final String learningLanguageCode;
   final bool messageIsOutgoing;
-  final String chatMode;
+  String chatMode;
   final DateTime? translationCutoffAt;
   final List<Map<String, dynamic>> preparedPackages;
   final List<Map<String, dynamic>> languageTimeline;
@@ -98,6 +101,7 @@ class _PrimaryKnownLanguageChatService implements ChatService {
   @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => [
     {
+      'needs_practice_language_selection': needsPracticeLanguageSelection,
       'chat_id': 'chat-1',
       'partner_id': 'bob',
       'partner_name': partnerName,
@@ -207,6 +211,14 @@ class _PrimaryKnownLanguageChatService implements ChatService {
   ) async {
     languageTimelineFetchCount++;
     return languageTimeline;
+  }
+
+  @override
+  Future<void> setChatMode({
+    required String chatId,
+    required ChatMode mode,
+  }) async {
+    chatMode = mode.name;
   }
 
   @override
@@ -337,6 +349,86 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  });
+
+  testWidgets(
+    'outside tap dismisses mode tip and focuses composer in one tap',
+    (tester) async {
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(chatMode: 'practice'),
+      );
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('mode-toggle')));
+      await _settle(tester);
+      expect(find.text('Normal mode'), findsOneWidget);
+      final tipCard = find.byWidgetPredicate(
+        (widget) => widget is Container && widget.constraints?.maxWidth == 280,
+      );
+      final cardBounds = tester.getRect(tipCard);
+      expect(
+        tester.getRect(find.text('Normal mode')).left - cardBounds.left,
+        12,
+      );
+      final pointer = find.byKey(const ValueKey('mode-tip-pointer'));
+      expect(pointer, findsOneWidget);
+      expect(
+        tester.getCenter(pointer).dx,
+        closeTo(
+          tester.getCenter(find.byKey(const ValueKey('mode-toggle'))).dx,
+          1,
+        ),
+      );
+      expect(tester.getRect(pointer).top, lessThan(cardBounds.top));
+      final composer = find.byType(TextField);
+      final field = tester.widget<TextField>(composer);
+      expect(field.focusNode!.hasFocus, isFalse);
+      await tester.tapAt(tester.getCenter(composer));
+      await tester.pump();
+      expect(find.text('Normal mode'), findsNothing);
+      expect(field.focusNode!.hasFocus, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
+    },
+  );
+
+  testWidgets('first message stays authored behind required language setup', (
+    tester,
+  ) async {
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(needsPracticeLanguageSelection: true),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    expect(find.text('Choose a language to practice'), findsOneWidget);
+    expect(find.text('Hallo'), findsOneWidget);
+    expect(find.text('Привіт'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  test('confirmed first selection survives a stale list refresh', () async {
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(needsPracticeLanguageSelection: true),
+    );
+    addTearDown(container.dispose);
+    await container.read(chatListProvider.future);
+    await container
+        .read(learningLanguageProvider('chat-1').notifier)
+        .set(kBlabLanguages.firstWhere((language) => language.code == 'en'));
+    expect(
+      container
+          .read(chatListProvider)
+          .value!
+          .single
+          .needsPracticeLanguageSelection,
+      isFalse,
+    );
+    expect(
+      container.read(chatListProvider).value!.single.learningLanguage.code,
+      'en',
+    );
   });
 
   testWidgets(
@@ -766,8 +858,7 @@ void main() {
       expect(
         find.byWidgetPredicate(
           (widget) =>
-              widget is MessageText &&
-              widget.text == 'Goedemorgen, Alice!',
+              widget is MessageText && widget.text == 'Goedemorgen, Alice!',
         ),
         findsNothing,
       );

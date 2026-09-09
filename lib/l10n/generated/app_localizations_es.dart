@@ -416,8 +416,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get offline => 'Sin conexión';
 
   @override
-  String get noConnection =>
-      'Sin conexión — los mensajes se enviarán cuando vuelvas a conectarte';
+  String get noConnection => 'Sin conexión';
 
   @override
   String get learningLanguage => 'Idioma de aprendizaje';

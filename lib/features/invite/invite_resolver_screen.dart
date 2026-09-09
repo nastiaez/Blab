@@ -5,9 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../shared/services/chat_service.dart';
 import '../../shared/state/chat_list_state.dart';
+import '../../shared/state/auth_state.dart';
+import '../../shared/state/connectivity_state.dart';
+import '../../shared/widgets/offline_banner.dart';
 import 'invite_continuation.dart';
+import 'invite_install_referrer.dart';
 
 /// Resolves an app link. A browser or store page never claims an invite;
 /// claiming starts here only after a signed-in recipient reaches the app.
@@ -21,101 +24,202 @@ class InviteResolverScreen extends ConsumerStatefulWidget {
       _InviteResolverScreenState();
 }
 
-class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen> {
-  InviteMetadata? _metadata;
+class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
+    with WidgetsBindingObserver {
   Object? _error;
   bool _showLoading = false;
-  bool _redirected = false;
+  bool _busy = false;
+  bool _retryAfterCurrent = false;
+  bool _finished = false;
+  int _generation = 0;
+  Timer? _loadingTimer;
 
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 1), () {
-      if (mounted && _metadata == null && _error == null) {
-        setState(() => _showLoading = true);
-      }
+    WidgetsBinding.instance.addObserver(this);
+    _start();
+  }
+
+  @override
+  void didUpdateWidget(InviteResolverScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.token != widget.token) _start();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_finished) _retryWhenReady();
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _loadingTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _start() {
+    _generation++;
+    _busy = false;
+    _retryAfterCurrent = false;
+    _finished = false;
+    _error = null;
+    _showLoading = false;
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer(const Duration(seconds: 1), () {
+      if (mounted && !_finished) setState(() => _showLoading = true);
     });
     _resolve();
   }
 
-  Future<void> _resolve() async {
-    try {
-      final metadata = await ref
-          .read(chatServiceProvider)
-          .getInvite(widget.token);
-      if (!mounted) return;
-      setState(() => _metadata = metadata);
-      await _continueWith(metadata);
-    } catch (error) {
-      if (mounted) setState(() => _error = error);
+  void _retryWhenReady() {
+    if (_busy) {
+      _retryAfterCurrent = true;
+    } else {
+      _resolve();
     }
   }
 
-  Future<void> _continueWith(InviteMetadata? metadata) async {
-    if (_redirected || metadata == null) return;
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) {
-      _redirected = true;
-      await savePendingInvite(widget.token);
-      if (mounted) {
-        context.go(
-          '/auth?mode=signup&invite=${Uri.encodeComponent(widget.token)}',
-        );
-      }
-      return;
-    }
-    if (userId == metadata.inviterUserId) {
-      _redirected = true;
-      if (metadata.status == 'used' && metadata.resultingChatId != null) {
-        if (mounted) context.go('/chat/${metadata.resultingChatId}');
-      } else if (mounted) {
-        context.go('/chats/new?token=${Uri.encodeComponent(widget.token)}');
-      }
-      return;
-    }
-    if (metadata.status == 'used') {
-      _redirected = true;
-      if (metadata.usedByUserId == userId && metadata.resultingChatId != null) {
-        if (mounted) context.go('/chat/${metadata.resultingChatId}');
-      } else if (mounted) {
-        setState(() => _error = _InviteUsed());
-      }
-      return;
-    }
+  Future<void> _resolve() async {
+    if (_busy || _finished) return;
+    if (ref.read(onlineProvider).value == false) return;
+    final generation = _generation;
+    final token = widget.token;
+    bool isCurrent() => generation == _generation;
+    _busy = true;
+    setState(() => _error = null);
     try {
-      final result = await ref
+      final metadata = await ref
           .read(chatServiceProvider)
-          .claimInviteDetails(token: widget.token);
-      await ref.read(chatListProvider.notifier).refresh();
-      if (!mounted) return;
-      _redirected = true;
-      context.go('/chat/${result.chatId}');
+          .getInvite(token)
+          .timeout(const Duration(seconds: 12));
+      if (!mounted || !isCurrent()) return;
+      if (metadata == null) {
+        await clearPendingInvite(matchingToken: token);
+        await clearInstallInviteCandidate(token);
+        if (mounted && isCurrent()) {
+          setState(() {
+            _error = _InviteNotFound();
+            _finished = true;
+          });
+        }
+        return;
+      }
+      final userId = ref.read(currentUserIdProvider);
+      if (userId != null &&
+          (userId == metadata.inviterUserId ||
+              (metadata.status == 'used' && metadata.usedByUserId == userId))) {
+        await clearPendingInvite(matchingToken: token);
+        if (metadata.status == 'valid') {
+          await retireInstallInvite();
+        } else {
+          await clearInstallInviteCandidate(token);
+        }
+        if (!mounted || !isCurrent()) return;
+        _finished = true;
+        if (metadata.status == 'used' && metadata.resultingChatId != null) {
+          context.go('/chat/${metadata.resultingChatId}');
+        } else {
+          context.go('/chats/new?token=${Uri.encodeComponent(token)}');
+        }
+        return;
+      }
+      if (metadata.status == 'used') {
+        await clearPendingInvite(matchingToken: token);
+        await clearInstallInviteCandidate(token);
+        if (mounted && isCurrent()) {
+          setState(() {
+            _error = _InviteUsed();
+            _finished = true;
+          });
+        }
+        return;
+      }
+      if (metadata.status != 'valid') {
+        await clearPendingInvite(matchingToken: token);
+        await clearInstallInviteCandidate(token);
+        if (mounted && isCurrent()) {
+          setState(() {
+            _error = _InviteNotFound();
+            _finished = true;
+          });
+        }
+        return;
+      }
+      await savePendingInvite(token);
+      await retireInstallInvite();
+      if (!mounted || !isCurrent()) return;
+      if (userId == null) {
+        _finished = true;
+        context.go(InviteContinuation(token: token).authLocation());
+        return;
+      }
+      if (ref.read(onlineProvider).value == false) return;
+      final chatId = await ref
+          .read(inviteClaimActionProvider)(InviteContinuation(token: token))
+          .timeout(const Duration(seconds: 12));
+      await clearPendingInvite(matchingToken: token);
+      await clearInstallInviteCandidate(token);
+      if (!mounted ||
+          !isCurrent() ||
+          ref.read(currentUserIdProvider) != userId) {
+        return;
+      }
+      _finished = true;
+      context.go('/chat/$chatId');
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (!mounted || !isCurrent()) return;
+      if (_isUsedError(error) || _isNotFoundError(error)) {
+        await clearPendingInvite(matchingToken: token);
+        await clearInstallInviteCandidate(token);
+        if (!mounted || !isCurrent()) return;
+        _finished = true;
+      }
+      setState(() => _error = error);
+    } finally {
+      if (mounted && isCurrent()) {
+        _busy = false;
+        final retry = _retryAfterCurrent;
+        _retryAfterCurrent = false;
+        if (retry && !_finished && ref.read(onlineProvider).value == true) {
+          unawaited(_resolve());
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_metadata == null && _error == null && !_showLoading) {
-      return const Scaffold(backgroundColor: Color(0xFFFAF7F2));
-    }
-    if (_metadata == null && _error == null) {
-      return const _OpeningInvite();
-    }
+    ref.listen(onlineProvider, (previous, next) {
+      if (next.value == true && previous?.value != true && _error != null) {
+        _retryWhenReady();
+      } else if (next.value == true && previous?.value == false) {
+        _retryWhenReady();
+      }
+    });
+    final offline = ref.watch(onlineProvider).value == false;
     if (_error is _InviteUsed || _isUsedError(_error)) {
       return const _InviteState(
         title: 'This invite has already been claimed',
         body: 'Ask your friend for a new link.',
       );
     }
-    if (_metadata == null || _isNotFoundError(_error)) {
+    if (_error is _InviteNotFound || _isNotFoundError(_error)) {
       return const _InviteState(
         title: 'We couldn’t find that invite.',
         body: 'Check the link is correct, or ask for a new one.',
       );
     }
-    return const _OpeningInvite();
+    if (_error != null && !offline) {
+      return _InviteState(
+        title: 'Couldn’t open the invite.',
+        body: 'Try again to continue.',
+        onRetry: _resolve,
+      );
+    }
+    return _OpeningInvite(showLoading: _showLoading);
   }
 }
 
@@ -127,26 +231,40 @@ bool _isNotFoundError(Object? error) =>
 
 class _InviteUsed {}
 
+class _InviteNotFound {}
+
 class _OpeningInvite extends StatelessWidget {
-  const _OpeningInvite();
+  const _OpeningInvite({this.showLoading = true});
+  final bool showLoading;
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    backgroundColor: Color(0xFFFAF7F2),
-    body: Center(
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFFFAF7F2),
+    body: SafeArea(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Opening invite',
-            style: TextStyle(
-              color: Color(0xFF46281C),
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
+          const OfflineBanner(),
+          Expanded(
+            child: Center(
+              child: !showLoading
+                  ? const SizedBox.shrink()
+                  : const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Opening invite',
+                          style: TextStyle(
+                            color: Color(0xFF46281C),
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        _InviteDots(),
+                      ],
+                    ),
             ),
           ),
-          SizedBox(height: 16),
-          _InviteDots(),
         ],
       ),
     ),
@@ -180,16 +298,20 @@ class _InviteDotsState extends State<_InviteDots>
     return AnimatedBuilder(
       animation: _controller,
       builder: (_, _) {
-        final phase = (_controller.value * 3).floor() % 3;
+        final position = _controller.value * 3;
+        final phase = position.floor() % 3;
+        final progress = Curves.easeInOut.transform(position % 1);
+        const frames = [
+          [1.0, .6, .3],
+          [.3, 1.0, .6],
+          [.6, .3, 1.0],
+        ];
         return _Dots(
-          opacities: List<double>.generate(
-            3,
-            (index) => index == phase
-                ? 1
-                : index == (phase + 1) % 3
-                ? .6
-                : .3,
-          ),
+          opacities: List<double>.generate(3, (index) {
+            final from = frames[phase][index];
+            final to = frames[(phase + 1) % 3][index];
+            return from + (to - from) * progress;
+          }),
         );
       },
     );
@@ -226,7 +348,8 @@ class _Dots extends StatelessWidget {
 }
 
 class _InviteState extends StatelessWidget {
-  const _InviteState({required this.title, required this.body});
+  const _InviteState({required this.title, required this.body, this.onRetry});
+  final VoidCallback? onRetry;
   final String title;
   final String body;
 
@@ -259,6 +382,10 @@ class _InviteState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
+            if (onRetry != null) ...[
+              FilledButton(onPressed: onRetry, child: const Text('Try again')),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               height: 52,

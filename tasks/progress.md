@@ -183,6 +183,14 @@
   - Expired and used states served from the same endpoint
 
 ### Step 2.3b — Invite-flow redesign `[ ]` ← in progress
+- **Failure/retry checkpoint (2026-09-09):** Reviewed current repairs; reproduced and fixed an older chat-list response reopening setup after a successful language choice. Added sharing-failure recovery, dismissed-share preservation, and next-link preparation retry coverage. All 78 focused checks and targeted analysis pass; Android debug output compiles and installs on `emulator-5554`. Cached Chats remains usable with No connection while the local backend is unavailable. Prior 7–8 September database/integration evidence is retained, but no fresh database or full two-device pass is claimed. Source checkpoint/push follows; owner checks remain open.
+- **Completion pass started (2026-09-09):** Owner requested priority execution: verify remaining failure/retry and no-expiry behavior, prepare Android review, commit/push the current invite work, then run owner two-device/share-target checks and final store handoff. Plan: `docs/superpowers/plans/2026-09-09-invite-completion.md`. Existing domain publication is complete; signed-app/store and owner device gates remain open.
+- **Sheet spacing and background refinement (2026-09-08):** Increased language tap targets to 56 px and sheet content height to 520 px; suppressed the empty-state card until mandatory language selection completes. Rebuilt and verified the installed Android screen (screenshot 28), including 56 px native row bounds, absent empty-state copy, and scrolling to Ukrainian. All eight focused empty-state/required-sheet checks pass; owner launch gates remain open.
+- **Checkmark asset correction (2026-09-08):** Reusing the owner’s existing `assets/icons/check - 20.svg` in the required language sheet; removed the redundant newly drawn asset. Rebuilt and installed on Android, verified four focused recovery checks, and captured the selected/saving state in screenshot 27. English persisted after the capture; owner launch gates remain open.
+- **Required-sheet visual refinement (2026-09-08):** Applied the owner’s warm surface, outline/shadow, 24 px top corners, typography, compact divided rows, slim scrollbar, and 8% warm veil. Verified the installed Android screen at normal and 1.3× text size, scrolling to Ukrainian, and Back/reopen; focused recovery checks pass. Screenshots 24/25 in `docs/qa/2026-09-08-invite-flow/screenshots/`. This supersedes the earlier undimmed-sheet treatment; initial choice remains unselected. Owner launch gates stay open.
+- **Owner copy refinement (2026-09-08):** Updated the helper to `Only one friend can use this link`; rebuilt, installed, and visually verified on Android in screenshot `docs/qa/2026-09-08-invite-flow/screenshots/23-invite-only-one-friend.png`. Placement and sharing behavior are unchanged; owner launch gates remain open.
+- **Owner refinement (2026-09-08):** Moved `One friend can use this link` below the invite card without a bullet, preserving its typography and aligning it with the card text. Built, installed, and visually checked on the Android emulator; screenshot: `docs/qa/2026-09-08-invite-flow/screenshots/22-invite-helper-below-card.png`. Owner launch gates remain open.
+- **Verification (2026-09-08):** Local Alice/Bob invite creation, native Copy, signup continuation, required English/German setup, two-way translated messages, existing-pair reuse, installed Android recipient, and Back/offline states exercised. Screenshot gallery and acceptance evidence: `docs/qa/2026-09-08-invite-flow/index.html` and `README.md`. Final recovery-race checks are included in this pass. Production Loveblab domain/store linking is explicitly deferred by the owner; this step and owner tracker checks remain unchecked until the remaining domain/device rubric and owner manual confirmation pass.
 - **Design:** `docs/superpowers/specs/2026-09-07-invite-flow-redesign-design.md`.
 - **Scope:** US-006…US-009, US-024…US-028, US-031, US-037, US-048, US-049, FR-4…FR-6, FR-22, FR-26, FR-42, FR-43. Replace the old language-first, 48-hour invite path with the approved minimal messenger-style flow.
 - **Done when:**
@@ -190,7 +198,7 @@
   - New and existing unclaimed links have no time expiry and remain valid until one successful claim; claimed, invalid, self-link, repeat-link, and same-pair paths follow the approved states
   - Native sharing, page return, fresh-link preparation, online error retry, and offline disabled state match the spec
   - The static `loveblab.com` landing, verified app-link handoff, standard email-auth continuation, and post-auth claim work as one journey
-  - Both users enter the same new chat state, select their own practice language in the mandatory undimmed sheet, and see the approved once-only mode tips
+  - Both users enter the same new chat state, select their own practice language in the mandatory sheet with its subtle warm veil, and see the approved once-only mode tips
   - The two-device and share-target device matrix passes, including no duplicate chat and no language reset for an existing pair
 
 ### Step 2.4 — Send-failure + offline queue  `[ ]` ← in progress
@@ -513,7 +521,12 @@
   - Manual Android device pass covers Normal/Practice, both directions, four interface languages, photo/caption states, failures, editing across navigation, and read-receipt ON/OFF.
 - **Out of scope:** post-launch vertical action list, fancy selected-message animation/scrim, edit history, audio messages, and a separate device-received receipt state.
 
-### Step 3.7 — Static invite landing + Android App Links `[ ]` — **PARTIAL (closed-test); remaining work required before public launch**
+### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
+- **Live verified (2026-09-09):** Owner commit `01e2651` triggered successful Vercel production publication. Both `https://loveblab.com/i/preview` and `https://blab-landing.vercel.app/i/preview` return the approved invite template (HTTP 200). Live mobile browser verification confirms the logo asset, homepage navigation, preserved Android install referrer, and no horizontal overflow at 390×844. Screenshot: `docs/qa/2026-09-08-invite-flow/screenshots/29-live-invite-page.png`. Homepage SHA-256 remains unchanged. Publication access blocker is resolved; store listings, Play signing association, and installed-app handoff remain release gates. Owner only confirmed saving the GitHub update, not the release/manual-test rubric.
+- **Publication preparation (2026-09-08):** Located the recovered `blab-landing` site from Telegram’s landing-page topic and confirmed its homepage is byte-identical to both live domains. Preparing the approved invite page in that separate site without changing its homepage. The current GitHub identity cannot access `nastiaez/blab-landing`, and Nastia’s existing Vercel project is not available in the connected account; publication remains pending access.
+- **Prepared (2026-09-08):** Added the approved invite template, black logo, and `/i/:token` rewrite to the recovered landing site; all three recovery tests and direct route/logo/referrer checks pass. Homepage, signup forms, and existing image assets are unchanged. No live deployment or GitHub push performed.
+- **Access verified (2026-09-09):** `aswinckr` now has WRITE access to `nastiaez/blab-landing`; the recovered homepage commits are present on `main` and the local remote is configured. No Vercel deployment statuses or check runs are visible on the latest commit. The personal Vercel profile has no local credentials, so project membership and Git connection cannot yet be verified.
+- **Publication attempted (2026-09-09):** Pushed the approved invite page, logo, and rewrite to `nastiaez/blab-landing` main at `7d89f47`. Recovery checks (3/3), route/logo/referrer validation, and unchanged-homepage checks passed. Vercel automatically created Production deployment `6351401730`, proving the Git connection works, but returned `failure: Deployment was blocked`. The detailed deployment page requires Vercel sign-in; no more specific reason is exposed by GitHub. Both public `/i/preview` routes still return 404; the homepage remains byte-identical.
 - **Status:** a temporary static landing + verified Android App Link shipped 2026-06-07 on `blab-gray.vercel.app` with a debug signing fingerprint. It must be replaced by the approved `loveblab.com` launch presentation and release signing setup.
 - **Scope:** ship the single static landing from `2026-09-07-invite-flow-redesign-design.md` on the permanent invite domain and verify Android App Links. The page must never validate, personalise, claim, or show expiry/claimed states; Blab remains the token authority.
 - **Done when:**
@@ -832,3 +845,31 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-07 — Moved the “what Blab is” and “how Blab works” explanations from Invite flow into the separate Onboarding tracker flow.
 
 - 2026-09-07 — Step 2.3b implementation plan added at `docs/superpowers/plans/2026-09-07-invite-flow-redesign.md`; the step remains in progress and all owner tracker items remain unchecked pending implementation and physical verification.
+
+- 2026-09-07 — Local invite audit reproduced incomplete English setup, lost offline continuation, native Copy failing to rotate links, and a broken logo on nested web invite URLs. Repairing Step 2.3b and recording the separate post-domain Play-install verification in both launch trackers; no owner check marked complete.
+
+- 2026-09-08 — Recorded local invite proof for native Copy, signup/installed recipients, required first-language selection, two-way Alice/Bob messages, existing-pair reuse and offline/Back recovery. Kept Step 2.3b and owner tracker gates open for public-domain/store verification and owner confirmation; evidence lives in `docs/qa/2026-09-08-invite-flow/`.
+
+- 2026-09-08 — Applied the owner’s invite-card refinement: moved the one-friend helper below the card and removed its bullet. Updated US-008 and the invite design, verified the installed Android screen, and captured screenshot 22. Step 2.3b and owner launch checks remain open.
+
+- 2026-09-08 — Refined the invite helper to the owner’s `Only one friend can use this link`; synchronized US-008 and the design and captured the updated installed Android screen (23). No launch checkbox changed.
+
+- 2026-09-08 — Applied the owner’s required-language-sheet UI parameters, replacing the undimmed treatment with an 8% warm veil and adding the warm surface, compact divided rows, selected check, and slim scrollbar. Recorded responsive/system-font choices in tech-spec Decision #31 and verified Android captures 24/25 plus scroll/Back/retry safeguards. Invite owner checks remain open.
+
+- 2026-09-08 — Replaced the newly drawn language-selection check with the owner’s existing 20 px check asset and removed the unused duplicate. Verified the installed Android selected/saving state in screenshot 27 and successful English persistence afterward; no GitHub push or owner completion checkbox changed.
+
+- 2026-09-08 — Enlarged required-language tap targets from 48 to 56 px and sheet content from 442 to 520 px. Hid the empty-state card until setup completes, with a regression proving it returns afterward. Android screenshot 28 and eight focused checks verify the refinement; owner launch checks remain open.
+
+- 2026-09-08 — Recovered the landing-topic handoff, verified the local homepage matches both live domains, and prepared the approved invite page in the separate landing site without altering the homepage. Step 3.7 is in progress but publication awaits Nastia’s GitHub/Vercel access; store listings and Play signing remain explicit release gates.
+
+- 2026-09-09 — Verified landing-site GitHub WRITE access and recovered homepage commits; narrowed Step 3.7 access blocker to personal Vercel sign-in/project verification. Owner checks remain open.
+
+- 2026-09-09 — Published invite source to the separate landing repository (`7d89f47`); confirmed automatic Vercel connection, but production deployment was blocked by Vercel. Public invite routes remain 404 and no owner/release check is complete.
+
+- 2026-09-09 — Owner screenshot identified the Vercel block: Hobby private-repository author access. Guided owner-authored GitHub documentation update as the next publication attempt; no deployment success or owner check claimed.
+
+- 2026-09-09 — Verified successful owner-triggered Vercel publication and live invite routes on both domains; captured mobile screenshot 29, verified logo navigation and install referrer, and confirmed homepage unchanged. Step 3.7 and owner release tests remain incomplete pending store/signing/install handoff.
+
+- 2026-09-09 — Started the owner-requested ordered invite completion pass, prioritizing failure/retry verification and source preservation before two-device sharing and final store-install handoff. No owner check marked complete.
+
+- 2026-09-09 — Fixed the confirmed setup-refresh race and verified 78 focused checks plus Android packaging; synchronized FR-22 with the already approved warm veil/hidden empty state. Local backend is unavailable, so fresh database/device integration remains pending.

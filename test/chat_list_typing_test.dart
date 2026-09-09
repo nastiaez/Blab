@@ -75,7 +75,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('New connection · say hi'), findsOneWidget);
+      expect(find.text('Ready to chat · Say hi'), findsOneWidget);
       expect(find.text('Last message'), findsNothing);
       expect(find.text('3'), findsNothing);
     },
