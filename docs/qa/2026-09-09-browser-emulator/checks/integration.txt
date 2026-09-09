@@ -1,0 +1,3 @@
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/integration/local_invite_flow_test.dart
+00:00 +0: local Supabase keeps unclaimed invites valid and never resets a pair
+00:00 +1: All tests passed!

@@ -1,0 +1,4 @@
+alice@blab.test|e2f94611-8cf5-47f0-aabd-285716ff7ee4|en|t
+bob@blab.test|e2f94611-8cf5-47f0-aabd-285716ff7ee4|de|t
+alice@blab.test|e7578da6-cf7f-4080-ad6a-c69d1c487584|en|t
+bob-invite-20260909@blab.test|e7578da6-cf7f-4080-ad6a-c69d1c487584|de|t
