@@ -16,14 +16,14 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 
 ## Active invite verification — 2026-09-10
 
-Latest sharing checkpoint: Messages draft contains the exact invite, Back prepares a fresh link, native dismissal preserves it, and Copy rotates it. No SMS sent. Gmail needs account setup; WhatsApp/Telegram are absent. Owner asked to connect a signed-in Android phone. Evidence: `docs/qa/2026-09-10-share-targets/`. Delivery and full share-app acceptance remain open.
+**Owner-approved sharing/copy — done (2026-09-10):** Owner reviewed exact clipboard contents and explicitly asked to mark social sharing and copying done. This accepts the narrowed check: Telegram dispatch, Messages draft/return, native Copy and dismissal. WhatsApp and authenticated Telegram/email recipient delivery were not tested. The owner cancelled all additional Telegram login and purchase work; the pending browser login was closed. Evidence: `docs/qa/2026-09-10-share-targets/`.
 
-Current priority: remaining share-target/device acceptance → final store-install handoff. Owner-requested Alice browser/Bob emulator pass is complete; local backend recovered and fresh database/integration checks passed. Evidence: `docs/qa/2026-09-09-browser-emulator/`. This does not claim every share target, public App Links, or Play installation. Failure/retry review is complete for the current local repairs; source commit/push is verified at `9e66db4` on `fix/invite-flow-verification`. The latest check pass covers 78 cases, including the repaired setup-refresh race and added share/preparation retry coverage. Android compiles/installs; the local backend was recovered for the subsequent browser/emulator pass, and fresh database/integration evidence now exists. Full physical-device/share-target acceptance remains open.
+Current priority: final owner review of no-expiry/failure-retry behavior already exercised in browser/emulator, then verified installed-app and private Play install handoff. Alice browser/Bob emulator evidence is in `docs/qa/2026-09-09-browser-emulator/`; local integration and 15 database checks passed. Current repairs have 78 focused checks. Source commit/push is complete on `fix/invite-flow-verification`; share acceptance does not mark all remaining invite or store gates complete.
 
 Step 2.3b has a local verification record at
 `docs/qa/2026-09-08-invite-flow/README.md` with actual screenshot proof. Owner checks remain pending for
 English/first-language selection, Back and save-error recovery, offline invite
-continuation, native Copy token rotation, new/returning recipients, and existing-pair reuse.
+continuation, new/returning recipients, and existing-pair reuse. Native sharing/Copy now has explicit owner approval.
 The static landing and Play install-referrer handoff are included in implementation;
 real store installation and public Loveblab domain verification are deferred until
 the owner’s final domain/release pass. Local Alice/Bob two-way messages and
