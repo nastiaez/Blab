@@ -34,3 +34,7 @@ The installed local QA APK is debug-signed and deliberately is not authorized by
 5. Keep private Play install/referrer as a separate release gate.
 
 No app source changes, release packaging, production migrations, signing changes or installed-device verification performed during this source-preparation pass. Owner-approved sharing/Copy stays complete; installed-link task remains open.
+
+## Google association check
+
+Google Digital Asset Links `assetlinks:check` returned `linked: true` for loveblab.com, package blab.nastia.ez, the handle-all-URLs relation, and the approved controlled release SHA-256. This confirms Google can fetch and recognize the live website statement; it is not installed-device proof. The original signing files remain absent and a bounded 1Password account lookup timed out without returning account data. Awaiting access to the owner backup; no signing key generated or debug trust published.

@@ -38,6 +38,8 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 
 ## Launch blockers
 
+**Google confirms the website association (2026-09-10):** Public verification returns `linked: true` for the approved release identity. Matching-app testing is still waiting for the original signing backup; the bounded 1Password account lookup returned no data before timing out.
+
 **Association publication resolved (2026-09-10):** Owner commit `fefed30` published successfully; the live permanent-domain association is HTTP 200 JSON with the approved controlled release certificate. Previous Vercel publication failure below is historical. Remaining installed-link prerequisite is a matching signed app/restored original signing files; Play identity and actual install/referrer tests are still open.
 
 **Installed-link fix source ready, publication blocked (2026-09-10):** `nastiaez/blab-landing` main `db051ec` adds the missing association using the already approved controlled release certificate, not the emulator debug certificate. Four site checks pass, homepage unchanged. Vercel rejected the deployment because Git author `aswinckr` lacks project access. Need owner-triggered publication plus a matching signed app; original key files are missing locally and the Play app-signing certificate is still unverified. Full evidence: `docs/qa/2026-09-10-app-link-fix.md`.
