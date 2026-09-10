@@ -1,0 +1,10 @@
+  blab.nastia.ez:
+    ID: 2c6106cc-2566-4394-a30a-35dba6bd79be
+    Signatures: [9B:05:6B:F8:B2:4E:2E:C3:21:FB:93:AC:B1:37:4B:F8:38:3B:47:77:41:1A:74:AF:30:AA:F4:CC:13:DE:64:3A]
+    Domain verification state:
+      loveblab.com: 1024
+    User 0:
+      Verification link handling allowed: true
+      Selection state:
+        Disabled:
+          loveblab.com

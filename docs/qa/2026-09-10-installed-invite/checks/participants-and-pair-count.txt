@@ -1,0 +1,14 @@
+               chat_id                | display_name  | learning_language | configured 
+--------------------------------------+---------------+-------------------+------------
+ 35c8e7cc-12c6-402d-a8df-6283e2e67674 | Alice Local   | en                | t
+ e7578da6-cf7f-4080-ad6a-c69d1c487584 | Alice Local   | en                | t
+ e7578da6-cf7f-4080-ad6a-c69d1c487584 | Bob Invite QA | de                | t
+ 35c8e7cc-12c6-402d-a8df-6283e2e67674 | Bob Link QA   | de                | t
+(4 rows)
+
+ display_name  | shared_chats_with_alice 
+---------------+-------------------------
+ Bob Invite QA |                       1
+ Bob Link QA   |                       1
+(2 rows)
+
