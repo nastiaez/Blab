@@ -14,7 +14,9 @@ launch rule that an unclaimed link remains valid until successfully claimed.
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
-## Active invite verification — 2026-09-09
+## Active invite verification — 2026-09-10
+
+Latest sharing checkpoint: Messages draft contains the exact invite, Back prepares a fresh link, native dismissal preserves it, and Copy rotates it. No SMS sent. Gmail needs account setup; WhatsApp/Telegram are absent. Owner asked to connect a signed-in Android phone. Evidence: `docs/qa/2026-09-10-share-targets/`. Delivery and full share-app acceptance remain open.
 
 Current priority: remaining share-target/device acceptance → final store-install handoff. Owner-requested Alice browser/Bob emulator pass is complete; local backend recovered and fresh database/integration checks passed. Evidence: `docs/qa/2026-09-09-browser-emulator/`. This does not claim every share target, public App Links, or Play installation. Failure/retry review is complete for the current local repairs; source commit/push is verified at `9e66db4` on `fix/invite-flow-verification`. The latest check pass covers 78 cases, including the repaired setup-refresh race and added share/preparation retry coverage. Android compiles/installs; the local backend was recovered for the subsequent browser/emulator pass, and fresh database/integration evidence now exists. Full physical-device/share-target acceptance remains open.
 
@@ -33,6 +35,8 @@ Owner refinement on 2026-09-08: `Only one friend can use this link` now sits bel
 The required first-language sheet now follows the owner’s warm-white, divided-list styling with a slim scrollbar and subtle 8% warm veil. The later spacing refinement increases rows to 56 px and sheet content to 520 px, and hides the empty-state card until language setup completes. The original no-dimming treatment is superseded; owner review includes scrolling, language selection, and Back/recovery. No owner checkbox is marked complete by these visual changes.
 
 ## Launch blockers
+
+**Private Play test prerequisites (2026-09-10):** Original upload-signing files are absent at their recorded locations and must be restored from the owner-confirmed backup, not replaced. Production configuration still contains three placeholders; hosted parity needs verification. The permanent-domain association returns 404, although the invite fallback is 200. Obtain the actual Play app-signing certificate and finish release configuration before claiming a Play installation pass. No release package/upload or owner gate completed.
 
 **Invite website publication verified (2026-09-09):** Owner commit `01e2651` published successfully through the existing Vercel connection. Both public invite routes return HTTP 200; mobile browser checks confirm logo navigation, invite referrer, and unchanged homepage. Website-access blocker is resolved. Remaining release gates: actual App Store listing, verified Google Play install path, Play signing association, and owner manual handoff tests; these are not marked complete.
 

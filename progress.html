@@ -1480,10 +1480,11 @@
         title: 'Play signing and verified links',
         note: 'Current external blocker',
         tasks: [
-          { id: 'play-create-app', type: 'release', label: 'Create the Play Console app and enable Play App Signing', detail: 'Use the final package identity and the dedicated upload key already prepared outside the project.' },
+          { id: 'play-create-app', type: 'release', label: 'Create the Play Console app and enable Play App Signing', detail: 'Use the final package identity. The original upload key was backed up, but is missing from this computer; restore it before preparing the private test.' },
+          { id: 'play-restore-release-setup', type: 'release', label: 'Restore the saved signing files and finish private-test setup', detail: '10 September: signing files are missing and production settings are incomplete. Restore the existing backup and verify the live services before preparing a Play test version.' },
           { id: 'play-certificates', type: 'release', label: 'Record the Play app-signing certificate', detail: 'Add its public SHA-256 alongside the controlled upload certificate and remove obsolete debug trust.' },
           { id: 'play-google-oauth', type: 'release', label: 'Register the Play signing certificate for Google sign-in', detail: 'The Play-delivered build must use Google OAuth successfully, not only local or upload-signed builds.' },
-          { id: 'play-deploy-links', type: 'release', label: 'Publish final Android App Link association', detail: 'Serve correct production certificates over HTTPS with JSON content type and no redirect.' },
+          { id: 'play-deploy-links', type: 'release', label: 'Publish final Android App Link association', detail: '10 September: the loveblab.com association is missing, although the invite page opens. Publish the actual Play signing certificate and verify installed-app opening.' },
           { id: 'play-install-link-test', type: 'check', label: 'Verify an invite on the Play-installed build', detail: 'Android must report the domain verified and open a valid invite directly without an app chooser.' },
           { id: 'play-web-fallback', type: 'check', label: 'Verify the no-app web fallback', detail: 'A device without Blab must see a working invite landing with a valid Play Store destination.' }
         ]
@@ -1841,7 +1842,7 @@
           { id: 'invite-website-access', type: 'release', label: 'The invite page is live. Open loveblab.com/i/preview and confirm the page appears and the Blab logo returns to the homepage.' },
           { id: 'invite-flow-edge-recovery', type: 'check', label: 'Verify the refreshed language sheet, English selection, Back from setup, interrupted joining, and fresh links after native Copy.' },
           { id: 'invite-install-handoff', type: 'release', label: 'After domain setup, verify a fresh Play install preserves the invite through signup.' },
-          { id: 'invite-flow-verify', type: 'check', label: 'Browser + Android emulator invite checks passed. Finish the remaining device/share-target checks.' },
+          { id: 'invite-flow-verify', type: 'check', label: 'Messages draft/return and Copy checked. Finish email, WhatsApp, Telegram and recipient delivery.', detail: '10 September: Messages receives the complete invite; Back prepares a fresh link and dismissing sharing keeps it. No SMS sent. Gmail needs login; WhatsApp and Telegram need a signed-in phone. Earlier browser/emulator invite evidence remains saved.' },
           { id: 'invite-flow-commit', type: 'flow', label: 'Invite repairs are committed; review the saved checkpoint before final acceptance.' },
           { id: 'invite-flow-push', type: 'release', label: 'Invite repairs are uploaded to GitHub; confirm the saved checkpoint before final acceptance.' }
         ]
