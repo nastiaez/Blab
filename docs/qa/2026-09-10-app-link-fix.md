@@ -1,5 +1,9 @@
 # Installed invite association repair — 10 September 2026
 
+## Publication follow-up — resolved
+
+Owner commit `fefed3053584c76da1b4ba897af3ea73461de127` (`Update README.md`) triggered successful Vercel deployment. The permanent-domain association now responds HTTP 200 JSON with package `blab.nastia.ez` and the expected controlled release certificate. Previous publication failures below are historical. Original signing-file restoration and matching signed-app verification remain outstanding; no current debug or Play-install pass is claimed.
+
 ## Approved fix
 
 Owner asked to fix the confirmed default installed-link failure. Android manifest already declares `https://loveblab.com/i/`; the actual landing-site repository was missing the root Digital Asset Links file. Add it to the existing landing project without changing homepage/invite UI or introducing device overrides.
