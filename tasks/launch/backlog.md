@@ -38,6 +38,8 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 
 ## Launch blockers
 
+**Independent fallback test (2026-09-10):** No existing signed APK/AAB was found locally or in GitHub releases/artifacts. With temporary Android user link selection, a fresh Alice invite opened Bob Link QA’s existing chat, Bob’s new message reached Alice’s browser, and a cold-start repeat reopened the same chat. User selection was restored to disabled afterward; no forced verification or production debug certificate was used. This is conditional journey evidence, not automatic association or Play proof. See `docs/qa/2026-09-10-self-test/README.md`.
+
 **Google confirms the website association (2026-09-10):** Public verification returns `linked: true` for the approved release identity. Matching-app testing is still waiting for the original signing backup; the bounded 1Password account lookup returned no data before timing out.
 
 **Association publication resolved (2026-09-10):** Owner commit `fefed30` published successfully; the live permanent-domain association is HTTP 200 JSON with the approved controlled release certificate. Previous Vercel publication failure below is historical. Remaining installed-link prerequisite is a matching signed app/restored original signing files; Play identity and actual install/referrer tests are still open.
