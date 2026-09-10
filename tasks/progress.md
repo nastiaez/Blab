@@ -530,6 +530,8 @@
 - **Out of scope:** post-launch vertical action list, fancy selected-message animation/scrim, edit history, audio messages, and a separate device-received receipt state.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
+
+- **Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.
 - **Independent fallback test (2026-09-10):** No existing signed APK/AAB was found locally or in GitHub releases/artifacts. With temporary Android user link selection, a fresh Alice invite opened Bob Link QA’s existing chat, Bob’s new message reached Alice’s browser, and a cold-start repeat reopened the same chat. User selection was restored to disabled afterward; no forced verification or production debug certificate was used. This is conditional journey evidence, not automatic association or Play proof. See `docs/qa/2026-09-10-self-test/README.md`.
 
 - **Google association validated (2026-09-10):** Digital Asset Links reports `linked: true` for loveblab.com and the approved controlled release identity. Original key files are still absent and bounded 1Password access did not respond; matching-device verification remains blocked on the saved backup, not website publication.
@@ -901,3 +903,5 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-10 — Prepared and pushed the permanent-domain association fix to landing main `db051ec`; four regression/site checks pass and homepage is unchanged. Vercel rejected contributor publication. Original release signing files remain missing, so live/matching-app verification is blocked and no installed-link completion is claimed.
 
 - 2026-09-10 — Owner README edit triggered successful association publication (`fefed30`). Verified live HTTP 200 JSON, correct controlled release identity, and unchanged homepage. Publication blocker resolved; matching signed-app and Play verification remain open.
+
+- 2026-09-10 — Recorded owner deferral of automatic installed-app invite-opening verification until after launch; retained unverified status and separate Play install-continuation gate.

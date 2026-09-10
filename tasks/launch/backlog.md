@@ -16,11 +16,13 @@ This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define 
 
 ## Active invite verification — 2026-09-10
 
+**Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.
+
 **Installed-app tap test — failed:** Owner-requested Alice browser/Bob emulator repeat used real external browser link taps. Default routing opens the download page, not Blab; the association endpoint is 404. With temporary user link approval only, existing-pair reuse, fresh signup, required language setup, messages, cold-start repeat and claimed/invalid states pass. Approval was removed and default failure reproduced. Evidence: `docs/qa/2026-09-10-installed-invite/`. Next: correct signed-app domain association and repeat without overrides; private Play installation remains separate. Owner-approved sharing/Copy stays done.
 
 **Owner-approved sharing/copy — done (2026-09-10):** Owner reviewed exact clipboard contents and explicitly asked to mark social sharing and copying done. This accepts the narrowed check: Telegram dispatch, Messages draft/return, native Copy and dismissal. WhatsApp and authenticated Telegram/email recipient delivery were not tested. The owner cancelled all additional Telegram login and purchase work; the pending browser login was closed. Evidence: `docs/qa/2026-09-10-share-targets/`.
 
-Current priority: final owner review of no-expiry/failure-retry behavior already exercised in browser/emulator, then verified installed-app and private Play install handoff. Alice browser/Bob emulator evidence is in `docs/qa/2026-09-09-browser-emulator/`; local integration and 15 database checks passed. Current repairs have 78 focused checks. Source commit/push is complete on `fix/invite-flow-verification`; share acceptance does not mark all remaining invite or store gates complete.
+Current priority: final owner review of no-expiry/failure-retry behavior already exercised in browser/emulator, then the separate private Play install handoff. Automatic installed-app opening verification is owner-deferred until after launch. Alice browser/Bob emulator evidence is in `docs/qa/2026-09-09-browser-emulator/`; local integration and 15 database checks passed. Current repairs have 78 focused checks. Source commit/push is complete on `fix/invite-flow-verification`; share acceptance does not mark all remaining invite or store gates complete.
 
 Step 2.3b has a local verification record at
 `docs/qa/2026-09-08-invite-flow/README.md` with actual screenshot proof. Owner checks remain pending for
