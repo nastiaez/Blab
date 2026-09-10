@@ -38,6 +38,8 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 
 ## Launch blockers
 
+**Installed-link fix source ready, publication blocked (2026-09-10):** `nastiaez/blab-landing` main `db051ec` adds the missing association using the already approved controlled release certificate, not the emulator debug certificate. Four site checks pass, homepage unchanged. Vercel rejected the deployment because Git author `aswinckr` lacks project access. Need owner-triggered publication plus a matching signed app; original key files are missing locally and the Play app-signing certificate is still unverified. Full evidence: `docs/qa/2026-09-10-app-link-fix.md`.
+
 **Private Play test prerequisites (2026-09-10):** Original upload-signing files are absent at their recorded locations and must be restored from the owner-confirmed backup, not replaced. Production configuration still contains three placeholders; hosted parity needs verification. The permanent-domain association returns 404, although the invite fallback is 200. Obtain the actual Play app-signing certificate and finish release configuration before claiming a Play installation pass. No release package/upload or owner gate completed.
 
 **Invite website publication verified (2026-09-09):** Owner commit `01e2651` published successfully through the existing Vercel connection. Both public invite routes return HTTP 200; mobile browser checks confirm logo navigation, invite referrer, and unchanged homepage. Website-access blocker is resolved. Remaining release gates: actual App Store listing, verified Google Play install path, Play signing association, and owner manual handoff tests; these are not marked complete.
