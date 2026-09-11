@@ -81,10 +81,7 @@ class _ReactionChip extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFFFFCF8),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFFDCD2C8),
-                  width: 0.75,
-                ),
+                border: Border.all(color: const Color(0xFFDCD2C8), width: 0.75),
                 boxShadow: isPractice
                     ? const [
                         BoxShadow(

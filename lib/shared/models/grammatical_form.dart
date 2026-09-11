@@ -26,6 +26,7 @@ extension ConversationToneWire on ConversationTone {
   };
 }
 
-ConversationTone conversationToneFromWire(String? value) => value == 'respectful'
+ConversationTone conversationToneFromWire(String? value) =>
+    value == 'respectful'
     ? ConversationTone.respectful
     : ConversationTone.informal;

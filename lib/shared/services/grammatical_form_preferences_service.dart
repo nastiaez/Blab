@@ -27,7 +27,11 @@ class GrammaticalFormPreferencesService {
 
   Future<GrammaticalFormPreferences> fetch(String chatId) async {
     final results = await Future.wait([
-      _client.from('profiles').select('grammatical_form').eq('id', _userId).single(),
+      _client
+          .from('profiles')
+          .select('grammatical_form')
+          .eq('id', _userId)
+          .single(),
       _client
           .from('chat_members')
           .select('partner_grammatical_form,conversation_tone')
@@ -42,7 +46,9 @@ class GrammaticalFormPreferencesService {
       partnerForm: grammaticalFormFromWire(
         membership['partner_grammatical_form'] as String?,
       ),
-      tone: conversationToneFromWire(membership['conversation_tone'] as String?),
+      tone: conversationToneFromWire(
+        membership['conversation_tone'] as String?,
+      ),
     );
   }
 

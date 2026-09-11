@@ -26,20 +26,17 @@ void main() {
       );
     });
 
-    test(
-      'practice mode ignores the primary known language entirely',
-      () {
-        // Global constraint: practice mode has no known-language exception.
-        expect(
-          resolveTranslationTarget(
-            mode: ChatMode.practice,
-            learningLanguageCode: 'de',
-            primaryKnownLanguageCode: 'de',
-          ),
-          'de',
-        );
-      },
-    );
+    test('practice mode ignores the primary known language entirely', () {
+      // Global constraint: practice mode has no known-language exception.
+      expect(
+        resolveTranslationTarget(
+          mode: ChatMode.practice,
+          learningLanguageCode: 'de',
+          primaryKnownLanguageCode: 'de',
+        ),
+        'de',
+      );
+    });
   });
 
   group('shouldRequestTranslation', () {

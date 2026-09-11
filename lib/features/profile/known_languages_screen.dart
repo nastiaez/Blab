@@ -57,7 +57,10 @@ class _KnownLanguagesScreenState extends ConsumerState<KnownLanguagesScreen> {
     try {
       await ref
           .read(profileServiceProvider)
-          .setKnownLanguages(languageCodes: selected.toList(), primaryCode: primary);
+          .setKnownLanguages(
+            languageCodes: selected.toList(),
+            primaryCode: primary,
+          );
       ref.invalidate(currentProfileProvider);
       if (!mounted) return;
       context.pop();

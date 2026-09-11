@@ -85,7 +85,9 @@ class _GalleryPickerSheetState extends State<_GalleryPickerSheet> {
       onlyAll: true,
       type: RequestType.image,
       filterOption: FilterOptionGroup(
-        orders: [const OrderOption(type: OrderOptionType.createDate, asc: false)],
+        orders: [
+          const OrderOption(type: OrderOptionType.createDate, asc: false),
+        ],
       ),
     );
     if (!mounted) return;
@@ -294,7 +296,10 @@ class _PermissionDenied extends StatelessWidget {
             TextButton.icon(
               key: const ValueKey('gallery-picker-camera-fallback'),
               onPressed: onOpenCamera,
-              icon: const Icon(Icons.photo_camera_outlined, color: Colors.white70),
+              icon: const Icon(
+                Icons.photo_camera_outlined,
+                color: Colors.white70,
+              ),
               label: const Text(
                 'Camera',
                 style: TextStyle(color: Colors.white70),

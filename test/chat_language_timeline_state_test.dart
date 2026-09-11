@@ -74,31 +74,37 @@ void main() {
     },
   );
 
-  test('a refreshed timeline replaces a stale post-switch recovery copy', () async {
-    const staleTimeline = <Map<String, dynamic>>[
-      {
-        'revision': 2,
-        'learning_language': 'de',
-        'created_at': '2026-08-29T10:00:00.000Z',
-      },
-    ];
-    SharedPreferences.setMockInitialValues({
-      'cached_language_timeline:alice:chat-1': jsonEncode(staleTimeline),
-    });
-    final container = _container(_TimelineService(result: _timeline), 'alice');
-    addTearDown(container.dispose);
+  test(
+    'a refreshed timeline replaces a stale post-switch recovery copy',
+    () async {
+      const staleTimeline = <Map<String, dynamic>>[
+        {
+          'revision': 2,
+          'learning_language': 'de',
+          'created_at': '2026-08-29T10:00:00.000Z',
+        },
+      ];
+      SharedPreferences.setMockInitialValues({
+        'cached_language_timeline:alice:chat-1': jsonEncode(staleTimeline),
+      });
+      final container = _container(
+        _TimelineService(result: _timeline),
+        'alice',
+      );
+      addTearDown(container.dispose);
 
-    expect(
-      await container.read(chatLanguageTimelineProvider('chat-1').future),
-      staleTimeline,
-    );
+      expect(
+        await container.read(chatLanguageTimelineProvider('chat-1').future),
+        staleTimeline,
+      );
 
-    await Future<void>.delayed(Duration.zero);
-    expect(
-      await container.read(chatLanguageTimelineProvider('chat-1').future),
-      _timeline,
-    );
-  });
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        await container.read(chatLanguageTimelineProvider('chat-1').future),
+        _timeline,
+      );
+    },
+  );
 
   test('a successful timeline fetch is saved only for that account', () async {
     final container = _container(_TimelineService(result: _timeline), 'alice');

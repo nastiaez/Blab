@@ -7,7 +7,7 @@ void main() {
   const minTop = 60.0;
   const maxBottom = 700.0;
 
-test('short bubble prefers the available space above by default', () {
+  test('short bubble prefers the available space above by default', () {
     final bubbleRect = const Rect.fromLTWH(20, 300, 200, 50);
     final top = computeReactionRowTop(
       bubbleRect: bubbleRect,

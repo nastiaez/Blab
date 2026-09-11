@@ -142,14 +142,12 @@ void main() {
         expect(claimedChat['partner_id'], aliceId);
         expect(claimedChat['needs_practice_language_selection'], isTrue);
 
-        await ChatService(fresh).setLearningLanguage(
-          chatId: signupChat,
-          langCode: 'fr',
-        );
-        await ChatService(alice).setLearningLanguage(
-          chatId: signupChat,
-          langCode: 'de',
-        );
+        await ChatService(
+          fresh,
+        ).setLearningLanguage(chatId: signupChat, langCode: 'fr');
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: signupChat, langCode: 'de');
 
         final repeatInvite = await ChatService(alice).createInvite();
         tokens.add(repeatInvite.token);
