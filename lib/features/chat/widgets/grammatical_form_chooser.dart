@@ -136,7 +136,6 @@ class GrammaticalFormChooser extends StatefulWidget {
 
 class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
   static final Set<String> _explainedKeys = <String>{};
-  GrammaticalForm? _selected;
   bool _saving = false;
   bool _editing = false;
   late bool _showExplanation;
@@ -151,7 +150,7 @@ class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
         (key == null || _explainedKeys.add(key));
   }
 
-  GrammaticalForm? get selected => _selected ?? widget.selectedForm;
+  GrammaticalForm? get selected => widget.selectedForm;
 
   Future<void> _choose(GrammaticalForm value) async {
     setState(() => _saving = true);
@@ -159,9 +158,14 @@ class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
       await widget.onSelected(value);
       if (mounted) {
         setState(() {
-          _selected = value;
           _editing = false;
         });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Couldn’t save. Try again.")),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -171,17 +175,16 @@ class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
   @override
   Widget build(BuildContext context) {
     final chosen = selected;
-    if (chosen != null && _selected == null && widget.onChange == null) {
+    if (chosen != null && widget.onChange == null) {
       return const SizedBox.shrink();
     }
-    if (chosen != null && _selected == null && !_editing) {
+    if (chosen != null && !_editing) {
       return _ConfirmationRow(
         alternatives: widget.alternatives,
         form: chosen,
         onChange: () {
           widget.onChange?.call();
           setState(() {
-            _selected = null;
             _editing = true;
           });
         },

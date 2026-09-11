@@ -917,4 +917,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tapToRemove => 'Tippen zum Entfernen';
+
+  @override
+  String usingFeminineForms(String person) {
+    return 'Weibliche Formen für $person';
+  }
+
+  @override
+  String usingMasculineForms(String person) {
+    return 'Männliche Formen für $person';
+  }
+
+  @override
+  String get usingFeminineFormsForYou => 'Weibliche Formen für dich';
+
+  @override
+  String get usingMasculineFormsForYou => 'Männliche Formen für dich';
 }

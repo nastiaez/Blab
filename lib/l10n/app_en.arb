@@ -136,5 +136,23 @@
   "photos": "Photos", "photoAccessNeeded": "Photo access needed", "photoAccessNeededBody": "Allow access to your photos to share one in chat.", "openSettings": "Open Settings", "noPhotosFound": "No photos yet", "photoMessagePreview": "Photo", "searchEmoji": "Search emoji",
   "reactionsCount": "{count, plural, one{{count} reaction} other{{count} reactions}}",
   "@reactionsCount": {"placeholders": {"count": {"type": "int"}}},
-  "tapToRemove": "Tap to remove"
+  "tapToRemove": "Tap to remove",
+  "usingFeminineForms": "Using feminine forms for {person}",
+  "@usingFeminineForms": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "usingMasculineForms": "Using masculine forms for {person}",
+  "@usingMasculineForms": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "usingFeminineFormsForYou": "Using feminine forms for you",
+  "usingMasculineFormsForYou": "Using masculine forms for you"
 }

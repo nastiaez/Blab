@@ -25,6 +25,19 @@ import 'package:visibility_detector/visibility_detector.dart';
 class _ReplyPreviewChatService implements ChatService {
   _ReplyPreviewChatService();
 
+  @override
+  Future<List<Map<String, dynamic>>> fetchLanguageTimeline(
+    String chatId,
+  ) async => [
+    {
+      'chat_id': chatId,
+      'user_id': 'alice',
+      'revision': 1,
+      'learning_language': 'ta',
+      'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
+    },
+  ];
+
   final source = Message(
     id: 'source-message',
     chatId: 'chat-1',
@@ -191,7 +204,7 @@ class _NoopPushTokenRepository implements PushTokenRepository {
   Future<void> unregister(String token) async {}
 }
 
-Widget _host(ChatService service) {
+Widget _host(ChatService service, {TranslateMessageFn? translateMessage}) {
   return ProviderScope(
     overrides: [
       chatServiceProvider.overrideWithValue(service),
@@ -203,9 +216,12 @@ Widget _host(ChatService service) {
         _UnsupportedPushGateway(),
       ),
       pushTokenRepositoryProvider.overrideWithValue(_NoopPushTokenRepository()),
-      translateMessageFnProvider.overrideWithValue((messageId) async {
-        throw MessageTranslationFailed('unexpected_live_translation');
-      }),
+      translateMessageFnProvider.overrideWithValue(
+        translateMessage ??
+            (messageId) async {
+              throw MessageTranslationFailed('unexpected_live_translation');
+            },
+      ),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
       // Finding #1/#5 (final whole-branch review): the translation pipeline
       // now targets the reader's primary known language and gates every
@@ -253,13 +269,24 @@ void main() {
   testWidgets('reply quote preview uses cached translation when available', (
     tester,
   ) async {
-    await tester.pumpWidget(_host(_ReplyPreviewChatService()));
+    final service = _ReplyPreviewChatService();
+    var liveTranslationCalls = 0;
+    await tester.pumpWidget(
+      _host(
+        service,
+        translateMessage: (messageId) async {
+          liveTranslationCalls++;
+          throw MessageTranslationFailed('unexpected_live_translation');
+        },
+      ),
+    );
     await tester.pump(const Duration(milliseconds: 500));
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.text('ஆம்'), findsOneWidget);
     expect(find.text('இன்று வருகிறாயா?'), findsOneWidget);
+    expect(liveTranslationCalls, 0);
   });
 
   testWidgets('translated reply quote does not overflow at mobile width', (

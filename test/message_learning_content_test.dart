@@ -2,6 +2,7 @@ import 'package:blab/features/chat/widgets/inline_correction_text.dart';
 import 'package:blab/features/chat/widgets/message_learning_content.dart';
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/shared/models/chat.dart';
+import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,8 @@ void main() {
     bool expanded = true,
     VoidCallback? onToggleExpanded,
     VoidCallback? onRetry,
+    GrammaticalForm? resolvedForm,
+    GrammaticalFormAlternatives? formAlternativesOverride,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -60,6 +63,8 @@ void main() {
           unavailableText: 'Translation unavailable',
           retryText: 'Retry',
           onRetry: onRetry,
+          resolvedForm: resolvedForm,
+          formAlternativesOverride: formAlternativesOverride,
           mode: mode,
           knownLanguageCodes: knownLanguageCodes,
           resolvedSourceLang: resolvedSourceLang,
@@ -120,11 +125,17 @@ void main() {
     'inline correction keeps cosmetic edits clean and strikes replacement',
     () {
       expect(
-        correctionSegments(
-          'was machen du',
-          'Was machst du?',
-        ).map((segment) => (segment.text, segment.struck)).toList(),
-        [('Was ', false), ('machen', true), (' machst du?', false)],
+        correctionSegments('was machen du', 'Was machst du?')
+            .map((segment) => (segment.text, segment.struck, segment.corrected))
+            .toList(),
+        [
+          ('Was ', false, false),
+          ('machen', true, false),
+          (' ', false, false),
+          ('machst', false, true),
+          (' du', false, false),
+          ('?', false, true),
+        ],
       );
     },
   );
@@ -612,6 +623,93 @@ void main() {
 
   // FR-23: single-lane default + known-language bypass.
 
+  testWidgets('masculine visible form uses masculine word metadata', (
+    tester,
+  ) async {
+    final translated = await MessageTranslator(
+      invoke: ({required messageId}) async => {
+        'translation': 'Я прийшла.',
+        'interfaceText': 'I arrived.',
+        'interfaceLang': 'en',
+        'sourceLang': 'en',
+        'mode': 'translation',
+        'explanation': null,
+        'confidence': null,
+        'tokens': [
+          {'text': 'Я', 'gloss': 'I', 'roman': 'Ya', 'isContent': true},
+          {'text': ' ', 'gloss': null, 'roman': null, 'isContent': false},
+          {
+            'text': 'прийшла',
+            'gloss': 'arrived',
+            'roman': 'pryishla',
+            'isContent': true,
+          },
+          {'text': '.', 'gloss': null, 'roman': null, 'isContent': false},
+        ],
+        'formAlternatives': {
+          'before': '',
+          'feminine': 'Я прийшла',
+          'masculine': 'Я прийшов',
+          'after': '.',
+          'subjectName': 'Bob',
+          'subjectIsViewer': true,
+          'subjectRole': 'author',
+          'suggestedForm': 'feminine',
+          'feminineTokens': [
+            {'text': 'Я', 'gloss': 'I', 'roman': 'Ya', 'isContent': true},
+            {'text': ' ', 'gloss': null, 'roman': null, 'isContent': false},
+            {
+              'text': 'прийшла',
+              'gloss': 'arrived',
+              'roman': 'pryishla',
+              'isContent': true,
+            },
+            {'text': '.', 'gloss': null, 'roman': null, 'isContent': false},
+          ],
+          'masculineTokens': [
+            {'text': 'Я', 'gloss': 'I', 'roman': 'Ya', 'isContent': true},
+            {'text': ' ', 'gloss': null, 'roman': null, 'isContent': false},
+            {
+              'text': 'прийшов',
+              'gloss': 'arrived',
+              'roman': 'pryishov',
+              'isContent': true,
+            },
+            {'text': '.', 'gloss': null, 'roman': null, 'isContent': false},
+          ],
+        },
+      },
+    ).translate(messageId: 'message-1');
+
+    await tester.pumpWidget(
+      host(
+        AsyncData(translated),
+        authoredText: 'I arrived.',
+        mode: ChatMode.practice,
+        learningCode: 'uk',
+        resolvedForm: GrammaticalForm.masculine,
+        expanded: false,
+      ),
+    );
+
+    final line = tester.widget<MessageText>(find.byType(MessageText));
+    expect(line.text, 'Я прийшов.');
+    expect(
+      line.tokens
+          ?.map(
+            (token) =>
+                (token.text, token.gloss, token.romanization, token.isContent),
+          )
+          .toList(),
+      [
+        ('Я', 'I', 'Ya', true),
+        (' ', null, null, false),
+        ('прийшов', 'arrived', 'pryishov', true),
+        ('.', null, null, false),
+      ],
+    );
+  });
+
   testWidgets('normal mode, known source language shows original only', (
     tester,
   ) async {
@@ -630,6 +728,44 @@ void main() {
     expect(find.text('Привіт'), findsOneWidget);
     expect(find.text('Hi'), findsNothing);
   });
+
+  testWidgets(
+    'normal known source keeps exact authored text despite form alternatives',
+    (tester) async {
+      const alternatives = GrammaticalFormAlternatives(
+        before: 'Ти ',
+        feminine: 'ходила',
+        masculine: 'ходив',
+        after: '?',
+        subjectName: 'Bob',
+        subjectIsViewer: true,
+        subjectRole: 'recipient',
+      );
+      const authored = 'Did YOU go...?';
+      await tester.pumpWidget(
+        host(
+          const AsyncData(
+            MessageTranslation(
+              translation: 'Ти ходила?',
+              interfaceText: authored,
+              interfaceLang: 'en',
+              sourceLang: 'en',
+              tokens: [],
+              formAlternatives: alternatives,
+            ),
+          ),
+          authoredText: authored,
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['en'],
+          resolvedForm: GrammaticalForm.masculine,
+          expanded: false,
+        ),
+      );
+
+      expect(find.text(authored), findsOneWidget);
+      expect(find.text('Ти ходив?'), findsNothing);
+    },
+  );
 
   testWidgets(
     'normal mode, unknown source language shows the translation, no second lane',

@@ -1,6 +1,6 @@
 begin;
 
-select plan(28);
+select plan(30);
 
 select has_table(
   'public',
@@ -60,6 +60,24 @@ select ok(
     'execute'
   ),
   'authenticated users cannot complete cache writes'
+);
+
+select ok(
+  not has_function_privilege(
+    'service_role',
+    'public.complete_message_translation(uuid,uuid,text,text,text,text,text,text,text,text,text,jsonb,jsonb)',
+    'execute'
+  ),
+  'service role cannot use the legacy unversioned completion contract'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.complete_message_translation(uuid,uuid,text,text,text,text,text,text,text,text,text,jsonb,jsonb,text)',
+    'execute'
+  ),
+  'service role can use the versioned completion contract'
 );
 
 insert into public.chats (id)
@@ -259,7 +277,8 @@ select ok(
     null,
     null,
     '[{"text":"Hallo aktuell","gloss":"Hello current","isContent":true}]'::jsonb,
-    null
+    null,
+    'automatic-forms-v2'
   ),
   'service role can complete an unchanged authorized translation'
 );
@@ -373,7 +392,8 @@ select is(
     null,
     null,
     '[]'::jsonb,
-    null
+    null,
+    'automatic-forms-v2'
   ),
   false,
   'completion rejects a source that changed after preparation'

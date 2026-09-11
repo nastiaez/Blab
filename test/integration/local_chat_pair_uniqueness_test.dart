@@ -48,25 +48,27 @@ void main() {
         final bobId = bob.auth.currentUser!.id;
         final sortedIds = [aliceId, bobId]..sort();
 
-        final firstInvite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
+        final firstInvite = await ChatService(alice).createInvite();
         tokens.add(firstInvite.token);
         canonicalChatId = await ChatService(
           bob,
-        ).claimInvite(token: firstInvite.token, myLearningLanguage: 'fr');
+        ).claimInvite(token: firstInvite.token);
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: canonicalChatId, langCode: 'de');
+        await ChatService(
+          bob,
+        ).setLearningLanguage(chatId: canonicalChatId, langCode: 'fr');
 
         final historyMessage = await ChatService(
           alice,
         ).sendMessage(chatId: canonicalChatId, body: 'preserved history');
 
-        final secondInvite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'es');
+        final secondInvite = await ChatService(alice).createInvite();
         tokens.add(secondInvite.token);
         final reusedChatId = await ChatService(
           bob,
-        ).claimInvite(token: secondInvite.token, myLearningLanguage: 'it');
+        ).claimInvite(token: secondInvite.token);
         expect(reusedChatId, canonicalChatId);
 
         final members = List<Map<String, dynamic>>.from(
@@ -79,36 +81,28 @@ void main() {
           members.singleWhere(
             (row) => row['user_id'] == aliceId,
           )['learning_language'],
-          'es',
+          'de',
         );
         expect(
           members.singleWhere(
             (row) => row['user_id'] == bobId,
           )['learning_language'],
-          'it',
+          'fr',
         );
         for (final member in members) {
-          final cutoff = DateTime.parse(
-            member['translation_cutoff_at'] as String,
-          );
-          expect(cutoff.isBefore(historyMessage.createdAt), isFalse);
+          expect(member['translation_cutoff_at'], isNull);
         }
-        final bobCutoff =
-            members.singleWhere(
-                  (row) => row['user_id'] == bobId,
-                )['translation_cutoff_at']
-                as String;
 
         await ChatService(
           bob,
-        ).setLearningLanguage(chatId: canonicalChatId, langCode: 'it');
+        ).setLearningLanguage(chatId: canonicalChatId, langCode: 'fr');
         final unchangedCutoff = await admin
             .from('chat_members')
             .select('translation_cutoff_at')
             .eq('chat_id', canonicalChatId)
             .eq('user_id', bobId)
             .single();
-        expect(unchangedCutoff['translation_cutoff_at'], bobCutoff);
+        expect(unchangedCutoff['translation_cutoff_at'], isNull);
 
         await ChatService(
           bob,
@@ -122,7 +116,7 @@ void main() {
         expect(
           DateTime.parse(
             changedCutoff['translation_cutoff_at'] as String,
-          ).isBefore(DateTime.parse(bobCutoff)),
+          ).isBefore(historyMessage.createdAt),
           isFalse,
         );
 
@@ -141,13 +135,11 @@ void main() {
           'preserved history',
         );
 
-        final reverseInvite = await ChatService(
-          bob,
-        ).createInvite(myLearningLanguage: 'uk');
+        final reverseInvite = await ChatService(bob).createInvite();
         tokens.add(reverseInvite.token);
         final reverseChatId = await ChatService(
           alice,
-        ).claimInvite(token: reverseInvite.token, myLearningLanguage: 'pt');
+        ).claimInvite(token: reverseInvite.token);
         expect(reverseChatId, canonicalChatId);
         final reverseMembers = List<Map<String, dynamic>>.from(
           await admin
@@ -159,29 +151,23 @@ void main() {
           reverseMembers.singleWhere(
             (row) => row['user_id'] == aliceId,
           )['learning_language'],
-          'pt',
+          'de',
         );
         expect(
           reverseMembers.singleWhere(
             (row) => row['user_id'] == bobId,
           )['learning_language'],
-          'uk',
+          'de',
         );
 
         final concurrentInvites = await Future.wait([
-          ChatService(alice).createInvite(myLearningLanguage: 'pt'),
-          ChatService(alice).createInvite(myLearningLanguage: 'uk'),
+          ChatService(alice).createInvite(),
+          ChatService(alice).createInvite(),
         ]);
         tokens.addAll(concurrentInvites.map((invite) => invite.token));
         final concurrentClaims = await Future.wait([
-          ChatService(bob).claimInvite(
-            token: concurrentInvites[0].token,
-            myLearningLanguage: 'de',
-          ),
-          ChatService(bob).claimInvite(
-            token: concurrentInvites[1].token,
-            myLearningLanguage: 'fr',
-          ),
+          ChatService(bob).claimInvite(token: concurrentInvites[0].token),
+          ChatService(bob).claimInvite(token: concurrentInvites[1].token),
         ]);
         expect(concurrentClaims.toSet(), {canonicalChatId});
 

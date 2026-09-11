@@ -8,18 +8,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  confirmedFormAlternativesMatchAudit,
+  applyConfirmedFormAudit,
   correctionNeedsRetry,
-  type FormParticipantContext,
+  directSubjectRole,
   FORM_AUDIT_RESPONSE_FORMAT,
   formAuditSystemPrompt,
-  formAlternativesFromConfirmedAudit,
+  type FormParticipantContext,
   genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
   LANG_NAMES,
   missingFormAlternativesNeedsAudit,
+  normalizeFormSubject,
   OPENROUTER_PROVIDER,
   parseFormAuditResult,
   parseProviderResult,
@@ -43,6 +44,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
+const CACHE_CONTRACT_VERSION = "automatic-forms-v2";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -141,22 +143,38 @@ async function auditGrammaticalForm(
   translatedText: string,
   sourceLang: string,
   targetLang: string,
+  interfaceLang: string,
   formContext: FormParticipantContext,
 ) {
+  const directRole = directSubjectRole(sourceText, sourceLang);
+  const directViewer = directRole === "author"
+    ? formContext.messageAuthor === "viewer"
+    : formContext.messageAuthor !== "viewer";
+  const subjectHint = directRole
+    ? `\nThis direct sentence concerns ${
+      directViewer ? formContext.viewerName : formContext.partnerName
+    }. If agreement changes, subjectIsViewer must be ${directViewer}; suggest a form for that person only.`
+    : "";
   let response: Response;
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 1000,
+      max_completion_tokens: 4000,
       response_format: FORM_AUDIT_RESPONSE_FORMAT,
       messages: [
         {
           role: "system",
-          content: formAuditSystemPrompt(sourceLang, targetLang, formContext),
+          content: formAuditSystemPrompt(
+            sourceLang,
+            targetLang,
+            interfaceLang,
+            formContext,
+          ),
         },
         {
           role: "user",
-          content: `Source message:\n${sourceText}\n\nCandidate translation:\n${translatedText}`,
+          content:
+            `Source message:\n${sourceText}\n\nCandidate translation:\n${translatedText}${subjectHint}`,
         },
       ],
     });
@@ -265,7 +283,8 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data: userData, error: userError } = await userClient.auth.getUser();
+    const { data: userData, error: userError } = await userClient.auth
+      .getUser();
     if (userError || !userData.user) {
       return json({ error: "authentication_required" }, 401);
     }
@@ -366,12 +385,6 @@ Deno.serve(async (req) => {
   let providerFailure = "unknown";
   let lastFailedSourceLang: string | null = null;
   for (const credential of providerKeys) {
-    let formChoiceConfirmedRequired = false;
-    let auditedSubjectIsViewer: boolean | null = null;
-    let auditedBefore: string | null = null;
-    let auditedFeminine: string | null = null;
-    let auditedMasculine: string | null = null;
-    let auditedAfter: string | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
       const targetName = LANG_NAMES[targetLang] ?? targetLang;
@@ -379,12 +392,9 @@ Deno.serve(async (req) => {
           lastFailedSourceLang !== targetLang
         ? ` Your previous response detected sourceLang=${lastFailedSourceLang}, which is not ${targetLang}, so mode=none/correction was invalid there — mode must be translation, and "translation" must be a genuine full-sentence rendering in ${targetName}, not a copy of the input.`
         : "";
-      const formAuditGuidance = formChoiceConfirmedRequired
-        ? ` A separate grammatical-form audit confirmed that this sentence requires a feminine/masculine choice for the ${auditedSubjectIsViewer ? "viewer" : "partner"}. The exact minimal split is ${JSON.stringify({before: auditedBefore, feminine: auditedFeminine, masculine: auditedMasculine, after: auditedAfter})}. You MUST set translation to before + feminine + after and return those exact minimal fragments in formAlternatives with the affected participant and correct subjectIsViewer value. Do not repeat the whole sentence inside feminine or masculine. A null value is invalid.`
-        : "";
       const retryGuidance = attempt === 0
         ? ""
-        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${wrongModeGuidance}${formAuditGuidance}`;
+        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${wrongModeGuidance}`;
       let llm: Response;
       try {
         llm = await fetchChatCompletion(credential, {
@@ -444,7 +454,7 @@ Deno.serve(async (req) => {
         });
         continue;
       }
-      const candidate = parseProviderResult(
+      let candidate = parseProviderResult(
         content,
         text,
         targetLang,
@@ -481,37 +491,6 @@ Deno.serve(async (req) => {
         });
         continue;
       }
-      if (formChoiceConfirmedRequired) {
-        const confirmedAudit = {
-          requiresChoice: true,
-          subjectIsViewer: auditedSubjectIsViewer,
-          before: auditedBefore,
-          feminine: auditedFeminine,
-          masculine: auditedMasculine,
-          after: auditedAfter,
-        };
-        if (
-          !confirmedFormAlternativesMatchAudit(
-            candidate.formAlternatives,
-            confirmedAudit,
-          )
-        ) {
-          candidate.formAlternatives = formAlternativesFromConfirmedAudit(
-            candidate,
-            confirmedAudit,
-            formContext!,
-          );
-        }
-        if (
-          !confirmedFormAlternativesMatchAudit(
-            candidate.formAlternatives,
-            confirmedAudit,
-          )
-        ) {
-          providerFailure = `${credential.provider}_missing_confirmed_form_alternatives`;
-          continue;
-        }
-      }
       const needsFormAudit = formContext !== undefined &&
         missingFormAlternativesNeedsAudit(
           candidate,
@@ -526,25 +505,35 @@ Deno.serve(async (req) => {
           candidate.translation,
           candidate.sourceLang,
           targetLang,
+          interfaceLang,
           formContext!,
         );
         if (audit === null) {
           providerFailure = `${credential.provider}_form_audit_unavailable`;
           break;
         }
-        if (!audit.requiresChoice) {
-          // The focused audit confirmed this sentence is naturally identical
-          // for both participant forms, so the null alternatives are valid.
+        if (audit.requiresChoice) {
+          const auditedCandidate = applyConfirmedFormAudit(
+            candidate,
+            audit,
+            formContext!,
+          );
+          if (auditedCandidate === null) {
+            providerFailure = `${credential.provider}_invalid_form_audit`;
+            continue;
+          }
+          candidate = auditedCandidate;
         } else {
-          formChoiceConfirmedRequired = true;
-          auditedSubjectIsViewer = audit.subjectIsViewer;
-          auditedBefore = audit.before;
-          auditedFeminine = audit.feminine;
-          auditedMasculine = audit.masculine;
-          auditedAfter = audit.after;
-          providerFailure = `${credential.provider}_missing_form_alternatives`;
-          continue;
+          candidate.formAlternatives = null;
         }
+      }
+      if (candidate.formAlternatives && formContext) {
+        candidate.formAlternatives = normalizeFormSubject(
+          candidate.formAlternatives,
+          formContext,
+          text,
+          candidate.sourceLang,
+        );
       }
       if (translationNeedsRetry(candidate, targetLang, text)) {
         lastFailedSourceLang = candidate.sourceLang;
@@ -608,6 +597,7 @@ Deno.serve(async (req) => {
       p_confidence: result.confidence,
       p_tokens: result.tokens,
       p_form_alternatives: result.formAlternatives,
+      p_cache_contract_version: CACHE_CONTRACT_VERSION,
     })
     : await admin.rpc("complete_message_translation", {
       p_message_id: messageId,
@@ -623,6 +613,7 @@ Deno.serve(async (req) => {
       p_confidence: result.confidence,
       p_tokens: result.tokens,
       p_form_alternatives: result.formAlternatives,
+      p_cache_contract_version: CACHE_CONTRACT_VERSION,
     });
   const { data: completed, error: completionError } = completion;
   if (completionError) {

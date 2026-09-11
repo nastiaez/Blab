@@ -59,7 +59,8 @@ select ok(
     null,
     null,
     '[{"text":"Привіт","gloss":"Hello","roman":"Pryvit","isContent":true}]'::jsonb,
-    null
+    null,
+    'automatic-forms-v2'
   ),
   'completion accepts primary known language when the app language differs'
 );

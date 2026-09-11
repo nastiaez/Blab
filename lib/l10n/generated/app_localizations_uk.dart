@@ -907,4 +907,20 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get tapToRemove => 'Натисніть, щоб прибрати';
+
+  @override
+  String usingFeminineForms(String person) {
+    return 'Жіночі форми для $person';
+  }
+
+  @override
+  String usingMasculineForms(String person) {
+    return 'Чоловічі форми для $person';
+  }
+
+  @override
+  String get usingFeminineFormsForYou => 'Жіночі форми для вас';
+
+  @override
+  String get usingMasculineFormsForYou => 'Чоловічі форми для вас';
 }

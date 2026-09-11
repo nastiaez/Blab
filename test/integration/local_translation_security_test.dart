@@ -87,23 +87,39 @@ Future<Map<String, dynamic>> _invokeProviderTranslation(
   }
 }
 
-Future<List<({SupabaseClient client, String language})>> _setInterfaceLanguage(
+typedef _ProfileLanguageSnapshot = ({
+  SupabaseClient client,
+  String interfaceLanguage,
+  List<String> knownLanguages,
+  String? primaryKnownLanguage,
+});
+
+Future<List<_ProfileLanguageSnapshot>> _setTranslationLanguage(
   Iterable<SupabaseClient> clients,
   String language,
 ) async {
-  final previous = <({SupabaseClient client, String language})>[];
+  final previous = <_ProfileLanguageSnapshot>[];
   for (final client in clients) {
     final user = client.auth.currentUser;
     if (user == null) continue;
     final row = await client
         .from('profiles')
-        .select('interface_language')
+        .select('interface_language,known_languages,primary_known_language')
         .eq('id', user.id)
         .single();
     previous.add((
       client: client,
-      language: row['interface_language'] as String,
+      interfaceLanguage: row['interface_language'] as String,
+      knownLanguages: List<String>.from(row['known_languages'] as List),
+      primaryKnownLanguage: row['primary_known_language'] as String?,
     ));
+    await client
+        .from('profiles')
+        .update({
+          'known_languages': [language],
+          'primary_known_language': language,
+        })
+        .eq('id', user.id);
     await client.rpc(
       'update_my_interface_language',
       params: {'p_interface_language': language},
@@ -113,13 +129,20 @@ Future<List<({SupabaseClient client, String language})>> _setInterfaceLanguage(
 }
 
 Future<void> _restoreInterfaceLanguages(
-  List<({SupabaseClient client, String language})> previous,
+  List<_ProfileLanguageSnapshot> previous,
 ) async {
   for (final entry in previous) {
     try {
+      await entry.client
+          .from('profiles')
+          .update({
+            'known_languages': entry.knownLanguages,
+            'primary_known_language': entry.primaryKnownLanguage,
+          })
+          .eq('id', entry.client.auth.currentUser!.id);
       await entry.client.rpc(
         'update_my_interface_language',
-        params: {'p_interface_language': entry.language},
+        params: {'p_interface_language': entry.interfaceLanguage},
       );
     } catch (_) {
       // Cleanup must continue even if an account was suspended by this test.
@@ -155,7 +178,7 @@ void main() {
       String? chatId;
       String? inviteToken;
       String? reportId;
-      var previousLocales = <({SupabaseClient client, String language})>[];
+      var previousLocales = <_ProfileLanguageSnapshot>[];
 
       try {
         await Future.wait([
@@ -164,15 +187,17 @@ void main() {
           _signIn(carol, 'carol@blab.test'),
         ]);
         await _clearTranslationUsage(admin, [alice, bob]);
-        previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
+        previousLocales = await _setTranslationLanguage([alice, bob], 'en');
 
-        final invite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
+        final invite = await ChatService(alice).createInvite();
         inviteToken = invite.token;
-        chatId = await ChatService(
+        chatId = await ChatService(bob).claimInvite(token: invite.token);
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: chatId, langCode: 'de');
+        await ChatService(
           bob,
-        ).claimInvite(token: invite.token, myLearningLanguage: 'fr');
+        ).setLearningLanguage(chatId: chatId, langCode: 'fr');
         final message = await ChatService(
           bob,
         ).sendMessage(chatId: chatId, body: 'Hello secure translation');
@@ -244,6 +269,8 @@ void main() {
                   'isContent': true,
                 },
               ],
+              'p_form_alternatives': null,
+              'p_cache_contract_version': 'automatic-forms-v2',
             },
           ),
           isTrue,
@@ -295,6 +322,8 @@ void main() {
               'p_explanation': null,
               'p_confidence': null,
               'p_tokens': <Map<String, dynamic>>[],
+              'p_form_alternatives': null,
+              'p_cache_contract_version': 'automatic-forms-v2',
             },
           ),
           isFalse,
@@ -358,21 +387,23 @@ void main() {
       final clients = [admin, alice, bob];
       String? chatId;
       String? inviteToken;
-      var previousLocales = <({SupabaseClient client, String language})>[];
+      var previousLocales = <_ProfileLanguageSnapshot>[];
 
       try {
         await Future.wait([
           _signIn(alice, 'alice@blab.test'),
           _signIn(bob, 'bob@blab.test'),
         ]);
-        previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
-        final invite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
+        previousLocales = await _setTranslationLanguage([alice, bob], 'en');
+        final invite = await ChatService(alice).createInvite();
         inviteToken = invite.token;
-        chatId = await ChatService(
+        chatId = await ChatService(bob).claimInvite(token: invite.token);
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: chatId, langCode: 'de');
+        await ChatService(
           bob,
-        ).claimInvite(token: invite.token, myLearningLanguage: 'fr');
+        ).setLearningLanguage(chatId: chatId, langCode: 'fr');
         final message = await ChatService(
           bob,
         ).sendMessage(chatId: chatId, body: 'Hello from the secure route');
@@ -434,21 +465,23 @@ void main() {
       final clients = [admin, alice, carol];
       String? chatId;
       String? inviteToken;
-      var previousLocales = <({SupabaseClient client, String language})>[];
+      var previousLocales = <_ProfileLanguageSnapshot>[];
 
       try {
         await Future.wait([
           _signIn(alice, 'alice@blab.test'),
           _signIn(carol, 'carol@blab.test'),
         ]);
-        previousLocales = await _setInterfaceLanguage([alice, carol], 'en');
-        final invite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
+        previousLocales = await _setTranslationLanguage([alice, carol], 'en');
+        final invite = await ChatService(alice).createInvite();
         inviteToken = invite.token;
-        chatId = await ChatService(
+        chatId = await ChatService(carol).claimInvite(token: invite.token);
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: chatId, langCode: 'de');
+        await ChatService(
           carol,
-        ).claimInvite(token: invite.token, myLearningLanguage: 'de');
+        ).setLearningLanguage(chatId: chatId, langCode: 'de');
         final message = await ChatService(
           alice,
         ).sendMessage(chatId: chatId, body: 'Machen du');
@@ -566,7 +599,7 @@ void main() {
       final clients = [admin, alice, bob];
       String? chatId;
       String? inviteToken;
-      var previousLocales = <({SupabaseClient client, String language})>[];
+      var previousLocales = <_ProfileLanguageSnapshot>[];
 
       try {
         await Future.wait([
@@ -574,14 +607,16 @@ void main() {
           _signIn(bob, 'bob@blab.test'),
         ]);
         await _clearTranslationUsage(admin, [alice, bob]);
-        previousLocales = await _setInterfaceLanguage([alice, bob], 'en');
-        final invite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'en');
+        previousLocales = await _setTranslationLanguage([alice, bob], 'en');
+        final invite = await ChatService(alice).createInvite();
         inviteToken = invite.token;
-        chatId = await ChatService(
+        chatId = await ChatService(bob).claimInvite(token: invite.token);
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: chatId, langCode: 'en');
+        await ChatService(
           bob,
-        ).claimInvite(token: invite.token, myLearningLanguage: 'en');
+        ).setLearningLanguage(chatId: chatId, langCode: 'en');
 
         final clean = await ChatService(alice).sendMessage(
           chatId: chatId,

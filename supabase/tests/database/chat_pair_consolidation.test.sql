@@ -46,7 +46,8 @@ insert into public.message_translations (
   translation_text,
   interface_text,
   source_lang,
-  source_hash
+  source_hash,
+  cache_contract_version
 ) values (
   '42000000-0000-4000-8000-000000000002', 'de', 'en', 'Duplikatverlauf',
   'Duplicate history',
@@ -54,7 +55,8 @@ insert into public.message_translations (
   encode(
     extensions.digest(convert_to('duplicate history', 'UTF8'), 'sha256'),
     'hex'
-  )
+  ),
+  'automatic-forms-v2'
 );
 
 insert into public.invites (

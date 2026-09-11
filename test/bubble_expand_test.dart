@@ -84,6 +84,19 @@ class _BubbleExpandChatService implements ChatService {
   ];
 
   @override
+  Future<List<Map<String, dynamic>>> fetchLanguageTimeline(
+    String chatId,
+  ) async => [
+    {
+      'chat_id': chatId,
+      'user_id': 'alice',
+      'revision': 1,
+      'learning_language': 'de',
+      'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
+    },
+  ];
+
+  @override
   Stream<List<Map<String, dynamic>>> watchMyMemberships() =>
       const Stream.empty();
 

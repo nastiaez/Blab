@@ -23,6 +23,10 @@ class GrammaticalFormAlternatives {
     required this.after,
     required this.subjectName,
     required this.subjectIsViewer,
+    this.suggestedForm = GrammaticalForm.feminine,
+    this.subjectRole,
+    this.feminineTokens = const [],
+    this.masculineTokens = const [],
   });
 
   final String before;
@@ -31,9 +35,57 @@ class GrammaticalFormAlternatives {
   final String after;
   final String subjectName;
   final bool subjectIsViewer;
+  final GrammaticalForm suggestedForm;
+  final String? subjectRole;
+  final List<MessageToken> feminineTokens;
+  final List<MessageToken> masculineTokens;
+
+  GrammaticalFormAlternatives forMessage({
+    required bool isOutgoing,
+    required String sourceText,
+    required String viewerName,
+    required String partnerName,
+  }) {
+    var role = subjectRole;
+    if (role == null) {
+      final direct = [
+        RegExp(
+          r'^(?:did|do) (?:i|you) (?:go|visit)(?: (?:to )?(?:the )?(?:supermarket|museum|store|park|school|office))?(?: (?:yesterday|today|last night|this morning))?[.!?]?$',
+          caseSensitive: false,
+        ),
+        RegExp(
+          r'^(?:(?:i|you) (?:am|are|was|were|feel|felt)|(?:am|are|was|were) (?:i|you)) (?:very |so )?(?:tired|happy|sad|ready|exhausted|proud|angry|excited|afraid|alone)(?: (?:yesterday|today|last night|this morning))?[.!?]?$',
+          caseSensitive: false,
+        ),
+      ];
+      if (direct.any((pattern) => pattern.hasMatch(sourceText.trim()))) {
+        role = RegExp(r'\bi\b', caseSensitive: false).hasMatch(sourceText)
+            ? 'author'
+            : 'recipient';
+      }
+    }
+    final viewer = role == null
+        ? subjectIsViewer
+        : (role == 'author' ? isOutgoing : !isOutgoing);
+    return GrammaticalFormAlternatives(
+      before: before,
+      feminine: feminine,
+      masculine: masculine,
+      after: after,
+      subjectName: viewer ? viewerName : partnerName,
+      subjectIsViewer: viewer,
+      suggestedForm: suggestedForm,
+      subjectRole: role,
+      feminineTokens: feminineTokens,
+      masculineTokens: masculineTokens,
+    );
+  }
 
   String resolved(GrammaticalForm form) =>
       '$before${form == GrammaticalForm.feminine ? feminine : masculine}$after';
+
+  List<MessageToken> tokensFor(GrammaticalForm form) =>
+      form == GrammaticalForm.feminine ? feminineTokens : masculineTokens;
 }
 
 class MessageTranslation {
@@ -177,29 +229,12 @@ class MessageTranslator {
             confidence == null)) {
       throw MessageTranslationFailed('missing_correction_details');
     }
-    final rawParsedTokens = <MessageToken>[];
-    if (rawTokens is List) {
-      for (final t in rawTokens) {
-        if (t is! Map) continue;
-        final tokenText = t['text'];
-        if (tokenText is! String) continue;
-        final isContent = t['isContent'] as bool? ?? true;
-        rawParsedTokens.add(
-          MessageToken(
-            text: tokenText,
-            gloss: t['gloss'] as String?,
-            romanization: t['roman'] as String?,
-            isContent: isContent,
-          ),
-        );
-      }
-    }
     return MessageTranslation(
       translation: translation,
       interfaceText: interfaceText,
       interfaceLang: interfaceLang,
       sourceLang: detectedSourceLang,
-      tokens: sanitizeMessageTokens(rawParsedTokens, translation),
+      tokens: _parseMessageTokens(rawTokens, translation),
       mode: mode,
       explanation: mode == LearningAidMode.correction
           ? (rawExplanation as String).trim()
@@ -236,7 +271,40 @@ GrammaticalFormAlternatives? parseGrammaticalFormAlternatives(Object? raw) {
     after: after,
     subjectName: subjectName,
     subjectIsViewer: subjectIsViewer,
+    suggestedForm:
+        grammaticalFormFromWire(raw['suggestedForm'] as String?) ??
+        GrammaticalForm.feminine,
+    subjectRole:
+        raw['subjectRole'] == 'author' || raw['subjectRole'] == 'recipient'
+        ? raw['subjectRole'] as String
+        : null,
+    feminineTokens: _parseMessageTokens(
+      raw['feminineTokens'],
+      '$before$feminine$after',
+    ),
+    masculineTokens: _parseMessageTokens(
+      raw['masculineTokens'],
+      '$before$masculine$after',
+    ),
   );
+}
+
+List<MessageToken> _parseMessageTokens(Object? raw, String expectedText) {
+  final parsed = <MessageToken>[];
+  if (raw is List) {
+    for (final value in raw) {
+      if (value is! Map || value['text'] is! String) continue;
+      parsed.add(
+        MessageToken(
+          text: value['text'] as String,
+          gloss: value['gloss'] as String?,
+          romanization: value['roman'] as String?,
+          isContent: value['isContent'] as bool? ?? true,
+        ),
+      );
+    }
+  }
+  return sanitizeMessageTokens(parsed, expectedText);
 }
 
 List<GrammaticalFormAlternatives> parseGrammaticalFormAlternativesList(

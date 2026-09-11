@@ -14,6 +14,18 @@ launch rule that an unclaimed link remains valid until successfully claimed.
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
+## Active grammatical-form verification — 2026-09-10
+
+**New visible-preview defect (2026-09-11):** Chats preview can show canonical feminine while the message bubble uses resolved masculine. Reproduced with Bob's “Did you go to the park today?” after restart. Unchecked follow-up; the note redesign does not claim to repair the preview path.
+
+**2026-09-11 redesign — in progress:** Owner replaces chooser/markers and next-message expiry with complete name-suggested forms (feminine fallback), one persistent note per participant/chat, and Change → existing Translation preferences. Correct author/recipient attribution before suggesting. Annotated message and future messages update; other history stays frozen. Local browser/emulator note, settings correction, no-repeat and restart checks pass; owner verification/full matrix remain pending. Evidence: `docs/qa/2026-09-11-automatic-forms/README.md`. Earlier correction-window evidence is historical, not acceptance of this replacement.
+
+**Correction window — awaiting owner check (2026-09-11):** Owner approved one message per chat: latest successful explicit choice, any send date, until the next same-chat sent/received message. Change and matching Settings edit that message; older completed history stays fixed. Persistence, chooser repair, accessibility-state preservation and prepared-history alternatives verified on Alice browser/Bob emulator. 33 focused and 52 regression checks pass; both packages produced. Evidence: `docs/qa/2026-09-10-form-correction-window/README.md`. Wrong-person and false-success translation validation remain separate open defects.
+
+**Root-cause investigation (2026-09-10):** Confirmed unchecked wrong-person metadata; wrong source-language/none accepted as success, suppressing Retry; prepared-history loading drops form alternatives; temporary choice can override updated settings; selection/confirmation condition fails in isolated and full-chat diagnostics. Externally selected Change control passes, so the exact prior inert tap still needs integration isolation. Existing spec intentionally leaves older completed messages unchanged after settings changes. No fixes made. See `docs/qa/2026-09-10-ukrainian-forms/ROOT-CAUSES.md`.
+
+**Ukrainian manual test (2026-09-10):** Alice browser/Bob emulator reproduced three failures: incoming “you” chooser identifies/saves the partner instead of the viewer; temporary Change does not reopen options; outgoing English “I was tired yesterday.” remains English for Ukrainian (stored source uk, aid mode none). Feminine rendering and settings fallback persistence across restart pass in isolation. No fixes made; full matrix stays open. Evidence: `docs/qa/2026-09-10-ukrainian-forms/README.md`.
+
 ## Active invite verification — 2026-09-10
 
 **Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.

@@ -14,6 +14,7 @@ import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/connectivity_state.dart';
 import 'unread_chat_state.dart';
 import 'pending_sends_state.dart';
+import 'form_correction_state.dart';
 
 /// Dev/QA one-shot: when armed, the next outgoing send is simulated to fail
 /// so PRD US-030's retry/delete affordances can be exercised deterministically.
@@ -136,6 +137,12 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     Future<void>.microtask(() {
       try {
         ref.read(pendingSendsProvider(chatId).notifier).reconcile(ids);
+        unawaited(
+          ref
+              .read(formCorrectionProvider.notifier)
+              .observe(chatId, messages)
+              .catchError((Object _) {}),
+        );
       } catch (_) {
         // The chat may have been disposed before the microtask runs.
       }
@@ -193,7 +200,15 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
               break;
             case MessageChangeType.remove:
               final id = change.row?['id'];
-              if (id is String) _messagesById.remove(id);
+              if (id is String) {
+                _messagesById.remove(id);
+                unawaited(
+                  ref
+                      .read(formCorrectionProvider.notifier)
+                      .mutate((s) => s.removeMessage(chatId, id))
+                      .catchError((Object _) {}),
+                );
+              }
               break;
             case MessageChangeType.resync:
               final loadedCount = _messagesById.length < pageSize
@@ -273,6 +288,10 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       replyTo: replyTo,
     );
     ref.read(pendingSendsProvider(chatId).notifier).add(pending);
+    await ref
+        .read(formCorrectionProvider.notifier)
+        .closeChat(chatId)
+        .catchError((Object _) {});
     // Offline: leave it on the clock. [flushPending] retries on reconnect.
     if (!_online) return;
     await _attemptSend(tempId, trimmed, replyToId: replyTo?.id);
@@ -307,6 +326,10 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       replyTo: replyTo,
     );
     ref.read(pendingSendsProvider(chatId).notifier).add(pending);
+    await ref
+        .read(formCorrectionProvider.notifier)
+        .closeChat(chatId)
+        .catchError((Object _) {});
     if (!_online) {
       ref
           .read(pendingSendsProvider(chatId).notifier)
@@ -536,6 +559,10 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     await ref
         .read(chatServiceProvider)
         .editMessage(messageId: id, newBody: trimmed);
+    await ref
+        .read(formCorrectionProvider.notifier)
+        .mutate((s) => s.removeMessage(chatId, id))
+        .catchError((Object _) {});
   }
 
   /// Soft-delete a message. Hides it locally right away (so it disappears
@@ -549,6 +576,10 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     ref.read(pendingSendsProvider(chatId).notifier).remove(id);
     try {
       await ref.read(chatServiceProvider).softDelete(id);
+      await ref
+          .read(formCorrectionProvider.notifier)
+          .mutate((s) => s.removeMessage(chatId, id))
+          .catchError((Object _) {});
     } catch (_) {
       ref.read(hiddenMessagesProvider(chatId).notifier).unhide(id);
       rethrow;

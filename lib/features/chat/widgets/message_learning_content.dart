@@ -54,6 +54,7 @@ class MessageLearningContent extends StatelessWidget {
     this.onFormSelected,
     this.onFormMarkerTap,
     this.resolvedForm,
+    this.formAlternativesOverride,
     this.activeFormChoiceIndex = 0,
     this.showFormExplanation = false,
     this.formExplanation,
@@ -71,6 +72,7 @@ class MessageLearningContent extends StatelessWidget {
   final Future<void> Function(GrammaticalForm form)? onFormSelected;
   final ValueChanged<int>? onFormMarkerTap;
   final GrammaticalForm? resolvedForm;
+  final GrammaticalFormAlternatives? formAlternativesOverride;
   final int activeFormChoiceIndex;
   final bool showFormExplanation;
   final String? formExplanation;
@@ -135,12 +137,25 @@ class MessageLearningContent extends StatelessWidget {
       )) {
         return Text(authoredText, style: primaryStyle);
       }
-      final formChoices = value.formChoices;
-      if (formChoices.isNotEmpty && onFormSelected != null) {
+      // Normal mode preserves authored text when the reader knows its source,
+      // even if a cached translation also carries form alternatives.
+      if (mode == ChatMode.normal &&
+          knownLanguageCodes.contains(value.sourceLang)) {
+        return Text(authoredText, style: primaryStyle);
+      }
+      final formChoices = formAlternativesOverride == null
+          ? value.formChoices
+          : [formAlternativesOverride!];
+      if (formChoices.isNotEmpty &&
+          (onFormSelected != null || resolvedForm != null)) {
         if (resolvedForm != null) {
           return MessageText(
             text: formChoices.first.resolved(resolvedForm!),
-            tokens: value.tokens,
+            tokens: formChoices.first.tokensFor(resolvedForm!).isNotEmpty
+                ? formChoices.first.tokensFor(resolvedForm!)
+                : resolvedForm == GrammaticalForm.feminine
+                ? value.tokens
+                : const [],
             languageCode: learningLanguageCode,
             popupTopInset: popupTopInset,
             style: primaryStyle,
@@ -220,19 +235,27 @@ class MessageLearningContent extends StatelessWidget {
     final authorCorrection =
         isOutgoing && value.mode == LearningAidMode.correction;
 
+    final formChoices = formAlternativesOverride == null
+        ? value.formChoices
+        : [formAlternativesOverride!];
     final Widget learningLine =
-        value.formChoices.isNotEmpty && onFormSelected != null
+        formChoices.isNotEmpty &&
+            (onFormSelected != null || resolvedForm != null)
         ? resolvedForm != null
               ? MessageText(
-                  text: value.formChoices.first.resolved(resolvedForm!),
-                  tokens: value.tokens,
+                  text: formChoices.first.resolved(resolvedForm!),
+                  tokens: formChoices.first.tokensFor(resolvedForm!).isNotEmpty
+                      ? formChoices.first.tokensFor(resolvedForm!)
+                      : resolvedForm == GrammaticalForm.feminine
+                      ? value.tokens
+                      : const [],
                   languageCode: learningLanguageCode,
                   popupTopInset: popupTopInset,
                   style: primaryStyle,
                 )
               : GrammaticalFormAlternativesText(
-                  alternatives: value.formChoices.first,
-                  alternativesList: value.formChoices,
+                  alternatives: formChoices.first,
+                  alternativesList: formChoices,
                   style: primaryStyle,
                   onMarkerTap: onFormMarkerTap,
                   activeIndex: activeFormChoiceIndex,
