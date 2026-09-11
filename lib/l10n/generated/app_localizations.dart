@@ -1715,6 +1715,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Using masculine forms for {person}'**
   String usingMasculineForms(String person);
+
+  /// No description provided for @usingFeminineFormsForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Using feminine forms for you'**
+  String get usingFeminineFormsForYou;
+
+  /// No description provided for @usingMasculineFormsForYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Using masculine forms for you'**
+  String get usingMasculineFormsForYou;
 }
 
 class _AppLocalizationsDelegate

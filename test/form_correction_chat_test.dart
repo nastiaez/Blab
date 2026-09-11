@@ -285,7 +285,11 @@ class _RecordingTtsService implements TtsService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-ProviderContainer _buildContainer(ChatService service, {TtsService? tts}) {
+ProviderContainer _buildContainer(
+  ChatService service, {
+  TtsService? tts,
+  _FormStore? forms,
+}) {
   // Default to a recording fake (never a real platform-channel TtsService)
   // so every test in this file stays free of MissingPluginException, even
   // ones that don't care about the speak calls.
@@ -294,7 +298,9 @@ ProviderContainer _buildContainer(ChatService service, {TtsService? tts}) {
     overrides: [
       chatServiceProvider.overrideWithValue(service),
       chatLanguageTimelineProvider('chat-1').overrideWith((ref) async => []),
-      grammaticalFormPreferencesServiceProvider.overrideWithValue(_FormStore()),
+      grammaticalFormPreferencesServiceProvider.overrideWithValue(
+        forms ?? _FormStore(),
+      ),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue('alice'),
       isOnlineProvider.overrideWithValue(false),
@@ -343,6 +349,12 @@ Widget _host(ProviderContainer container) => UncontrolledProviderScope(
           builder: (_, state) => TranslationPreferencesScreen(
             chatId: state.pathParameters['id']!,
             partnerName: state.uri.queryParameters['name'] ?? 'Bob',
+            initialSubjectIsViewer:
+                switch (state.uri.queryParameters['subject']) {
+                  'viewer' => true,
+                  'partner' => false,
+                  _ => null,
+                },
           ),
         ),
       ],
@@ -360,8 +372,11 @@ Future<void> _settle(WidgetTester tester) async {
 class _FormStore implements GrammaticalFormPreferencesService {
   GrammaticalForm? partner;
   GrammaticalForm? own;
+  final List<GrammaticalForm?> ownWrites = [];
+  final List<GrammaticalForm?> partnerWrites = [];
   @override
   Future<void> setOwnForm(GrammaticalForm? form) async {
+    ownWrites.add(form);
     own = form;
   }
 
@@ -374,12 +389,31 @@ class _FormStore implements GrammaticalFormPreferencesService {
       );
   @override
   Future<void> setPartnerForm(String chatId, GrammaticalForm? form) async {
+    partnerWrites.add(form);
     partner = form;
   }
 
   @override
   dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);
 }
+
+FormResolution _viewerNoteResolution(GrammaticalForm form) => FormResolution(
+  chatId: 'chat-1',
+  messageId: 'incoming-message',
+  targetLang: 'uk',
+  sourceText: 'Did you go yesterday?',
+  alternatives: const GrammaticalFormAlternatives(
+    before: 'Ти ',
+    feminine: 'ходила',
+    masculine: 'ходив',
+    after: ' вчора?',
+    subjectName: 'Alice',
+    subjectIsViewer: true,
+    subjectRole: 'recipient',
+    suggestedForm: GrammaticalForm.feminine,
+  ),
+  form: form,
+);
 
 void main() {
   setUp(() {
@@ -429,35 +463,123 @@ void main() {
       null,
     );
   });
-  testWidgets(
-    'complete automatic sentence names incoming recipient and Change opens preferences',
-    (t) async {
-      final c = _buildContainer(
-        _BubbleExpandChatService(
-          text: 'Did you go yesterday?',
-          translatedText: 'Ти ходила вчора?',
-          sourceLang: 'en',
-        ),
-      );
-      await t.pumpWidget(_host(c));
-      await _settle(t);
-      expect(
-        find.byWidgetPredicate(
-          (w) => w is MessageText && w.text == 'Ти ходила вчора?',
-        ),
-        findsWidgets,
-      );
-      expect(find.text('Using feminine forms for Alice'), findsOneWidget);
-      expect(find.byType(GrammaticalFormChooser), findsNothing);
-      expect(find.byType(GrammaticalFormMarker), findsNothing);
-      expect(find.text('#1'), findsNothing);
-      await t.tap(find.text('Change'));
-      await _settle(t);
-      expect(find.text('Translation preferences'), findsOneWidget);
-      await t.pumpWidget(const SizedBox.shrink());
-      c.dispose();
-    },
-  );
+  testWidgets('automatic viewer form uses you and Change opens own picker', (
+    t,
+  ) async {
+    final forms = _FormStore();
+    final c = _buildContainer(
+      _BubbleExpandChatService(
+        text: 'Did you go yesterday?',
+        translatedText: 'Ти ходила вчора?',
+        sourceLang: 'en',
+      ),
+      forms: forms,
+    );
+    await t.pumpWidget(_host(c));
+    await _settle(t);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is MessageText && w.text == 'Ти ходила вчора?',
+      ),
+      findsWidgets,
+    );
+    expect(find.text('Using feminine forms for you'), findsOneWidget);
+    expect(find.text('Using feminine forms for Alice'), findsNothing);
+    expect(find.byType(GrammaticalFormChooser), findsNothing);
+    expect(find.byType(GrammaticalFormMarker), findsNothing);
+    expect(find.text('#1'), findsNothing);
+    await t.tap(find.text('Change'));
+    await _settle(t);
+    expect(find.text('Translation preferences'), findsOneWidget);
+    expect(find.text('Grammatical form'), findsOneWidget);
+    expect(find.text('Feminine'), findsOneWidget);
+    expect(find.text('Masculine'), findsOneWidget);
+    expect(find.text('Not set'), findsWidgets);
+    await t.tap(find.text('Masculine'));
+    await _settle(t);
+    expect(forms.ownWrites, [GrammaticalForm.masculine]);
+    expect(forms.partnerWrites, isEmpty);
+    await t.pumpWidget(const SizedBox.shrink());
+    c.dispose();
+  });
+  testWidgets('provisional automatic note does not save a form preference', (
+    t,
+  ) async {
+    final forms = _FormStore();
+    final c = _buildContainer(
+      _BubbleExpandChatService(
+        text: 'Did you go yesterday?',
+        translatedText: 'Ти ходила вчора?',
+        sourceLang: 'en',
+      ),
+      forms: forms,
+    );
+    await t.pumpWidget(_host(c));
+    await _settle(t);
+
+    expect(forms.ownWrites, isEmpty);
+    expect(forms.partnerWrites, isEmpty);
+    expect(forms.own, isNull);
+    expect(forms.partner, isNull);
+    expect(find.text('Using feminine forms for you'), findsOneWidget);
+
+    await t.pumpWidget(const SizedBox.shrink());
+    c.dispose();
+  });
+  testWidgets('provisional partner note does not save a form preference', (
+    t,
+  ) async {
+    final forms = _FormStore();
+    final c = _buildContainer(
+      _BubbleExpandChatService(
+        isOutgoing: true,
+        text: 'Did you go yesterday?',
+        translatedText: 'Ти ходила вчора?',
+        sourceLang: 'en',
+      ),
+      forms: forms,
+    );
+    await t.pumpWidget(_host(c));
+    await _settle(t);
+
+    expect(forms.ownWrites, isEmpty);
+    expect(forms.partnerWrites, isEmpty);
+    expect(forms.own, isNull);
+    expect(forms.partner, isNull);
+    expect(find.text('Using feminine forms for Bob'), findsOneWidget);
+
+    await t.pumpWidget(const SizedBox.shrink());
+    c.dispose();
+  });
+  testWidgets('partner note keeps the name and Change opens partner picker', (
+    t,
+  ) async {
+    final forms = _FormStore();
+    final c = _buildContainer(
+      _BubbleExpandChatService(
+        isOutgoing: true,
+        text: 'Did you go yesterday?',
+        translatedText: 'Ти ходила вчора?',
+        sourceLang: 'en',
+      ),
+      forms: forms,
+    );
+    await t.pumpWidget(_host(c));
+    await _settle(t);
+
+    expect(find.text('Using feminine forms for Bob'), findsOneWidget);
+    await t.tap(find.text('Change'));
+    await _settle(t);
+    expect(find.text('Translation preferences'), findsOneWidget);
+    expect(find.text('Grammatical form'), findsOneWidget);
+    await t.tap(find.text('Masculine'));
+    await _settle(t);
+    expect(forms.ownWrites, isEmpty);
+    expect(forms.partnerWrites, [GrammaticalForm.masculine]);
+
+    await t.pumpWidget(const SizedBox.shrink());
+    c.dispose();
+  });
   testWidgets('saved own form wins over automatic feminine fallback', (
     t,
   ) async {
@@ -479,19 +601,142 @@ void main() {
       ),
       findsWidgets,
     );
-    expect(find.text('Using masculine forms for Alice'), findsOneWidget);
+    expect(find.text('Using masculine forms for you'), findsOneWidget);
     await t.pumpWidget(const SizedBox.shrink());
     c.dispose();
   });
+  testWidgets('reopened annotated note follows the current saved form', (
+    t,
+  ) async {
+    String? copied;
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    final service = _BubbleExpandChatService(
+      text: 'Did you go yesterday?',
+      translatedText: 'Ти ходила вчора?',
+      sourceLang: 'en',
+    );
+    final forms = _FormStore()..own = GrammaticalForm.masculine;
+    final c = _buildContainer(service, forms: forms);
+    await c.read(formCorrectionProvider.future);
+    await c
+        .read(formCorrectionProvider.notifier)
+        .mutate(
+          (ledger) => ledger.record(
+            _viewerNoteResolution(GrammaticalForm.feminine),
+            explicit: false,
+            messages: [service.message],
+            note: true,
+          ),
+        );
+
+    await t.pumpWidget(_host(c));
+    await _settle(t);
+
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is MessageText && w.text == 'Ти ходив вчора?',
+      ),
+      findsWidgets,
+    );
+    expect(find.text('Using masculine forms for you'), findsOneWidget);
+    await t.longPress(
+      find
+          .byWidgetPredicate(
+            (w) => w is MessageText && w.text == 'Ти ходив вчора?',
+          )
+          .first,
+    );
+    await _settle(t);
+    await t.tap(find.text('Copy'));
+    await _settle(t);
+    expect(copied, 'Ти ходив вчора?');
+    await t.pumpWidget(const SizedBox.shrink());
+    c.dispose();
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      null,
+    );
+  });
+  testWidgets(
+    'reopened annotated note falls back after preference is cleared',
+    (t) async {
+      String? copied;
+      t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      final service = _BubbleExpandChatService(
+        text: 'Did you go yesterday?',
+        translatedText: 'Ти ходила вчора?',
+        sourceLang: 'en',
+      );
+      final forms = _FormStore();
+      final c = _buildContainer(service, forms: forms);
+      await c.read(formCorrectionProvider.future);
+      await c
+          .read(formCorrectionProvider.notifier)
+          .mutate(
+            (ledger) => ledger.record(
+              _viewerNoteResolution(GrammaticalForm.masculine),
+              explicit: false,
+              messages: [service.message],
+              note: true,
+            ),
+          );
+
+      await t.pumpWidget(_host(c));
+      await _settle(t);
+
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is MessageText && w.text == 'Ти ходила вчора?',
+        ),
+        findsWidgets,
+      );
+      expect(find.text('Using feminine forms for you'), findsOneWidget);
+      await t.longPress(
+        find
+            .byWidgetPredicate(
+              (w) => w is MessageText && w.text == 'Ти ходила вчора?',
+            )
+            .first,
+      );
+      await _settle(t);
+      await t.tap(find.text('Copy'));
+      await _settle(t);
+      expect(copied, 'Ти ходила вчора?');
+      await t.pumpWidget(const SizedBox.shrink());
+      c.dispose();
+      t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      );
+    },
+  );
   testWidgets('annotated message remains correctable after another message', (
     t,
   ) async {
+    final forms = _FormStore();
     final c = _buildContainer(
       _BubbleExpandChatService(
         text: 'Did you go yesterday?',
         translatedText: 'Ти ходила вчора?',
         sourceLang: 'en',
       ),
+      forms: forms,
     );
     await t.pumpWidget(_host(c));
     await _settle(t);
@@ -499,12 +744,14 @@ void main() {
         .read(chatMessagesProvider('chat-1').notifier)
         .addOutgoing('Next message');
     await _settle(t);
+    await forms.setOwnForm(GrammaticalForm.masculine);
     await c
         .read(formCorrectionProvider.notifier)
         .changePreference(
           subjectIsViewer: true,
           form: GrammaticalForm.masculine,
         );
+    c.invalidate(grammaticalFormPreferencesProvider('chat-1'));
     await _settle(t);
     expect(
       find.byWidgetPredicate(
@@ -512,7 +759,7 @@ void main() {
       ),
       findsWidgets,
     );
-    expect(find.text('Using masculine forms for Alice'), findsOneWidget);
+    expect(find.text('Using masculine forms for you'), findsOneWidget);
     expect(find.text('Change'), findsOneWidget);
     await t.pumpWidget(const SizedBox.shrink());
     c.dispose();

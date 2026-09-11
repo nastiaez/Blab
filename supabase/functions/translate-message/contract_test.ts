@@ -1,12 +1,15 @@
 import {
   characterCount,
   correctionNeedsRetry,
+  FORM_AUDIT_RESPONSE_FORMAT,
+  formAuditSystemPrompt,
   genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
+  parseFormAuditResult,
   parseProviderResult,
   providerCredentials,
   providerMessages,
@@ -21,6 +24,34 @@ import * as contract from "./contract.ts";
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
 }
+
+const ukFeminineAuditTokens = [
+  { text: "Ти", gloss: "you", roman: "Ty", isContent: true },
+  { text: " ", gloss: null, roman: null, isContent: false },
+  { text: "ходила", gloss: "went", roman: "khodyla", isContent: true },
+  { text: " ", gloss: null, roman: null, isContent: false },
+  {
+    text: "вчора",
+    gloss: "yesterday",
+    roman: "vchora",
+    isContent: true,
+  },
+  { text: "?", gloss: null, roman: null, isContent: false },
+];
+
+const ukMasculineAuditTokens = [
+  { text: "Ти", gloss: "you", roman: "Ty", isContent: true },
+  { text: " ", gloss: null, roman: null, isContent: false },
+  { text: "ходив", gloss: "went", roman: "khodyv", isContent: true },
+  { text: " ", gloss: null, roman: null, isContent: false },
+  {
+    text: "вчора",
+    gloss: "yesterday",
+    roman: "vchora",
+    isContent: true,
+  },
+  { text: "?", gloss: null, roman: null, isContent: false },
+];
 
 Deno.test("counts user-perceived characters", () => {
   assert(characterCount("a") === 1, "ASCII character count");
@@ -158,11 +189,28 @@ Deno.test("provider messages include recent context but translate only current t
   );
 });
 
-Deno.test("provider uses saved form then name suggestion then feminine without rewriting", () => {
-  const prompt = systemPrompt("auto", "uk", "de");
+Deno.test("provider keeps private forms out while suggesting by name", () => {
+  const formContext = {
+    viewerName: "Alice",
+    partnerName: "Bob",
+    messageAuthor: "viewer" as const,
+    viewerForm: "masculine" as const,
+    partnerForm: "feminine" as const,
+    tone: "informal" as const,
+  };
+  const prompt = systemPrompt("auto", "uk", "de", formContext);
   assert(
-    prompt.includes("Use an explicit saved grammatical form first"),
-    "saved form wins",
+    prompt === systemPrompt("auto", "uk", "de", {
+      ...formContext,
+      viewerForm: null,
+      partnerForm: null,
+    }),
+    "private saved forms must not alter the shared prompt",
+  );
+  assert(
+    !prompt.includes("Viewer saved form") &&
+      !prompt.includes("Partner saved form"),
+    "private saved forms must not appear in the shared prompt",
   );
   assert(
     prompt.includes("use feminine if the name is ambiguous"),
@@ -332,15 +380,23 @@ Deno.test("focused grammatical-form audit requires a participant when a choice i
     "the focused grammatical-form audit response must be validated",
   );
 
-  const required = parseAudit!(
-    '{"requiresChoice":true,"subjectIsViewer":false,"before":"Ти ","feminine":"ходила","masculine":"ходив","after":" до супермаркету вчора?"}',
-  );
+  const required = parseAudit!(JSON.stringify({
+    requiresChoice: true,
+    subjectIsViewer: false,
+    before: "Ти ",
+    feminine: "ходила",
+    masculine: "ходив",
+    after: " вчора?",
+    suggestedForm: "feminine",
+    feminineTokens: ukFeminineAuditTokens,
+    masculineTokens: ukMasculineAuditTokens,
+  }));
   assert(
     required?.requiresChoice === true &&
       required.subjectIsViewer === false &&
       required.before === "Ти " && required.feminine === "ходила" &&
       required.masculine === "ходив" &&
-      required.after === " до супермаркету вчора?",
+      required.after === " вчора?",
     "a required partner form retains only the shortest changing fragment",
   );
   assert(
@@ -350,14 +406,160 @@ Deno.test("focused grammatical-form audit requires a participant when a choice i
     "a required choice without both exact fragments is rejected",
   );
 
-  const neutral = parseAudit!(
-    '{"requiresChoice":false,"subjectIsViewer":null,"before":null,"feminine":null,"masculine":null,"after":null}',
-  );
+  const neutral = parseAudit!(JSON.stringify({
+    requiresChoice: false,
+    subjectIsViewer: null,
+    before: null,
+    feminine: null,
+    masculine: null,
+    after: null,
+    suggestedForm: null,
+    feminineTokens: null,
+    masculineTokens: null,
+  }));
   assert(
     neutral?.requiresChoice === false && neutral.subjectIsViewer === null &&
       neutral.before === null && neutral.feminine === null &&
       neutral.masculine === null && neutral.after === null,
     "a genuinely form-neutral sentence is accepted",
+  );
+});
+
+Deno.test("focused grammatical-form audit requires complete token metadata for both renderings", () => {
+  const valid = parseFormAuditResult(JSON.stringify({
+    requiresChoice: true,
+    subjectIsViewer: false,
+    before: "Ти ",
+    feminine: "ходила",
+    masculine: "ходив",
+    after: " вчора?",
+    suggestedForm: "masculine",
+    feminineTokens: ukFeminineAuditTokens,
+    masculineTokens: ukMasculineAuditTokens,
+  }));
+  if (
+    valid === null || valid.feminineTokens === null ||
+    valid.masculineTokens === null
+  ) {
+    throw new Error("valid form audit token metadata was rejected");
+  }
+  assert(
+    valid.feminineTokens.map((token) => token.text).join("") ===
+        "Ти ходила вчора?" &&
+      valid.masculineTokens.map((token) => token.text).join("") ===
+        "Ти ходив вчора?",
+    "both complete form renderings retain validated token metadata",
+  );
+
+  const missingRoman = JSON.parse(JSON.stringify({
+    ...valid,
+    feminineTokens: valid.feminineTokens.map((token) =>
+      token.text === "ходила" ? { ...token, roman: null } : token
+    ),
+  }));
+  assert(
+    parseFormAuditResult(JSON.stringify(missingRoman)) === null,
+    "non-Latin content tokens without romanization are rejected",
+  );
+
+  const nonLatinRomanization = JSON.parse(JSON.stringify({
+    ...valid,
+    feminineTokens: valid.feminineTokens.map((token) =>
+      token.text === "ходила" ? { ...token, roman: "ходила" } : token
+    ),
+  }));
+  assert(
+    parseFormAuditResult(JSON.stringify(nonLatinRomanization)) === null,
+    "romanization for non-Latin content must itself use Latin script",
+  );
+
+  const mismatchedMasculine = {
+    ...valid,
+    masculineTokens: valid.masculineTokens.map((token) =>
+      token.text === "ходив" ? { ...token, text: "ходила" } : token
+    ),
+  };
+  assert(
+    parseFormAuditResult(JSON.stringify(mismatchedMasculine)) === null,
+    "each form token array must reproduce its complete sentence exactly",
+  );
+});
+
+Deno.test("strict form schemas require both complete token arrays", () => {
+  const translationAlternatives = TRANSLATION_RESPONSE_FORMAT.json_schema.schema
+    .properties.formAlternatives as {
+      required?: readonly string[];
+      properties?: Record<string, unknown>;
+    };
+  assert(
+    translationAlternatives.required?.includes("feminineTokens") === true &&
+      translationAlternatives.required?.includes("masculineTokens") === true,
+    "translation alternatives require both token arrays",
+  );
+  const audit = FORM_AUDIT_RESPONSE_FORMAT.json_schema.schema as {
+    required: readonly string[];
+  };
+  assert(
+    audit.required.includes("feminineTokens") &&
+      audit.required.includes("masculineTokens"),
+    "the focused audit requires both token arrays",
+  );
+});
+
+Deno.test("provider alternatives retain complete tokens for both forms", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Ти ходила вчора?",
+      interfaceText: "Did you go yesterday?",
+      explanation: null,
+      confidence: null,
+      tokens: ukFeminineAuditTokens,
+      formAlternatives: {
+        before: "Ти ",
+        feminine: "ходила",
+        masculine: "ходив",
+        after: " вчора?",
+        subjectName: "Bob",
+        subjectIsViewer: false,
+        suggestedForm: "masculine",
+        feminineTokens: ukFeminineAuditTokens,
+        masculineTokens: ukMasculineAuditTokens,
+      },
+    }),
+    "Did you go yesterday?",
+    "uk",
+    "en",
+  );
+  assert(
+    result?.formAlternatives?.feminineTokens.map((token) => token.text).join(
+          "",
+        ) === "Ти ходила вчора?" &&
+      result.formAlternatives.masculineTokens.map((token) => token.text).join(
+          "",
+        ) === "Ти ходив вчора?",
+    "both validated token arrays survive provider parsing",
+  );
+});
+
+Deno.test("focused audit prompt localizes word metadata", () => {
+  const prompt = formAuditSystemPrompt("en", "uk", "es", {
+    viewerName: "Alice",
+    partnerName: "Bob",
+    messageAuthor: "viewer",
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal",
+  });
+  assert(
+    prompt.includes("Spanish (es)") &&
+      prompt.includes("1-3 word Spanish gloss"),
+    "the audit receives the interface language for localized glosses",
+  );
+  assert(
+    prompt.includes("Alice") && prompt.includes("Bob"),
+    "the audit receives both participant names",
   );
 });
 
@@ -371,6 +573,8 @@ Deno.test("confirmed alternatives must keep the audit's minimal changing fragmen
         after: string;
         subjectName: string;
         subjectIsViewer: boolean;
+        feminineTokens: unknown[];
+        masculineTokens: unknown[];
       } | null,
       audit: {
         requiresChoice: boolean;
@@ -379,6 +583,8 @@ Deno.test("confirmed alternatives must keep the audit's minimal changing fragmen
         feminine: string | null;
         masculine: string | null;
         after: string | null;
+        feminineTokens: unknown[] | null;
+        masculineTokens: unknown[] | null;
       },
     ) => boolean;
   }).confirmedFormAlternativesMatchAudit;
@@ -392,7 +598,10 @@ Deno.test("confirmed alternatives must keep the audit's minimal changing fragmen
     before: "Ти ",
     feminine: "ходила",
     masculine: "ходив",
-    after: " до супермаркету вчора?",
+    after: " вчора?",
+    suggestedForm: "feminine" as const,
+    feminineTokens: ukFeminineAuditTokens,
+    masculineTokens: ukMasculineAuditTokens,
   };
   assert(
     matchesAudit!(
@@ -403,7 +612,9 @@ Deno.test("confirmed alternatives must keep the audit's minimal changing fragmen
         before: "Ти ",
         feminine: "ходила",
         masculine: "ходив",
-        after: " до супермаркету вчора?",
+        after: " вчора?",
+        feminineTokens: ukFeminineAuditTokens,
+        masculineTokens: ukMasculineAuditTokens,
       },
       audit,
     ),
@@ -413,11 +624,13 @@ Deno.test("confirmed alternatives must keep the audit's minimal changing fragmen
     !matchesAudit!(
       {
         before: "",
-        feminine: "Ти ходила до супермаркету вчора?",
-        masculine: "Ти ходив до супермаркету вчора?",
+        feminine: "Ти ходила вчора?",
+        masculine: "Ти ходив вчора?",
         after: "",
         subjectName: "Bob",
         subjectIsViewer: false,
+        feminineTokens: ukFeminineAuditTokens,
+        masculineTokens: ukMasculineAuditTokens,
       },
       audit,
     ),
@@ -445,6 +658,8 @@ Deno.test("focused audit can attach minimal alternatives to its exact feminine t
         feminine: string | null;
         masculine: string | null;
         after: string | null;
+        feminineTokens: unknown[] | null;
+        masculineTokens: unknown[] | null;
       },
       formContext: {
         viewerName: string;
@@ -461,6 +676,8 @@ Deno.test("focused audit can attach minimal alternatives to its exact feminine t
       after: string;
       subjectName: string;
       subjectIsViewer: boolean;
+      feminineTokens: unknown[];
+      masculineTokens: unknown[];
     } | null;
   }).formAlternativesFromConfirmedAudit;
   assert(
@@ -473,12 +690,15 @@ Deno.test("focused audit can attach minimal alternatives to its exact feminine t
     before: "Ти ",
     feminine: "ходила",
     masculine: "ходив",
-    after: " до супермаркету вчора?",
+    after: " вчора?",
+    suggestedForm: "feminine" as const,
+    feminineTokens: ukFeminineAuditTokens,
+    masculineTokens: ukMasculineAuditTokens,
   };
   const result = {
     mode: "translation" as const,
     sourceLang: "en",
-    translation: "Ти ходила до супермаркету вчора?",
+    translation: "Ти ходила вчора?",
     interfaceText: "Did you go to the supermarket yesterday?",
     explanation: null,
     confidence: null,
@@ -498,18 +718,84 @@ Deno.test("focused audit can attach minimal alternatives to its exact feminine t
     alternatives?.before === "Ти " &&
       alternatives.feminine === "ходила" &&
       alternatives.masculine === "ходив" &&
-      alternatives.after === " до супермаркету вчора?" &&
+      alternatives.after === " вчора?" &&
       alternatives.subjectName === "Bob" &&
-      alternatives.subjectIsViewer === false,
+      alternatives.subjectIsViewer === false &&
+      JSON.stringify(alternatives.feminineTokens) ===
+        JSON.stringify(ukFeminineAuditTokens) &&
+      JSON.stringify(alternatives.masculineTokens) ===
+        JSON.stringify(ukMasculineAuditTokens),
     "the omitted provider object is rebuilt from the confirmed minimal split",
   );
   assert(
     alternativesFromAudit!(
-      { ...result, translation: "Ти ходив до супермаркету вчора?" },
+      { ...result, translation: "Ти ходив вчора?" },
       audit,
       formContext,
     ) === null,
     "the audit cannot overwrite a different rendered translation",
+  );
+});
+
+Deno.test("confirmed audit makes feminine translation metadata canonical", () => {
+  const applyAudit = (contract as unknown as {
+    applyConfirmedFormAudit?: (
+      result: Record<string, unknown>,
+      audit: Record<string, unknown>,
+      formContext: Record<string, unknown>,
+    ) => {
+      translation: string;
+      tokens: unknown[];
+      formAlternatives: {
+        feminineTokens: unknown[];
+        masculineTokens: unknown[];
+      };
+    } | null;
+  }).applyConfirmedFormAudit;
+  assert(
+    typeof applyAudit === "function",
+    "the audited rendering must be applied as one validated operation",
+  );
+  const applied = applyAudit!(
+    {
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Ти ходив вчора?",
+      interfaceText: "Did you go yesterday?",
+      explanation: null,
+      confidence: null,
+      tokens: ukMasculineAuditTokens,
+      formAlternatives: null,
+    },
+    {
+      requiresChoice: true,
+      subjectIsViewer: false,
+      before: "Ти ",
+      feminine: "ходила",
+      masculine: "ходив",
+      after: " вчора?",
+      suggestedForm: "masculine",
+      feminineTokens: ukFeminineAuditTokens,
+      masculineTokens: ukMasculineAuditTokens,
+    },
+    {
+      viewerName: "Alice",
+      partnerName: "Bob",
+      messageAuthor: "viewer",
+      viewerForm: null,
+      partnerForm: null,
+      tone: "informal",
+    },
+  );
+  assert(
+    applied?.translation === "Ти ходила вчора?" &&
+      JSON.stringify(applied.tokens) ===
+        JSON.stringify(ukFeminineAuditTokens) &&
+      JSON.stringify(applied.formAlternatives.feminineTokens) ===
+        JSON.stringify(ukFeminineAuditTokens) &&
+      JSON.stringify(applied.formAlternatives.masculineTokens) ===
+        JSON.stringify(ukMasculineAuditTokens),
+    "canonical translation and top-level tokens use the feminine rendering",
   );
 });
 

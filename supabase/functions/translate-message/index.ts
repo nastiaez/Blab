@@ -8,10 +8,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  applyConfirmedFormAudit,
   correctionNeedsRetry,
   directSubjectRole,
   FORM_AUDIT_RESPONSE_FORMAT,
-  formAlternativesFromConfirmedAudit,
   formAuditSystemPrompt,
   type FormParticipantContext,
   genderedAmbiguityNeedsRetry,
@@ -44,6 +44,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
+const CACHE_CONTRACT_VERSION = "automatic-forms-v2";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -142,9 +143,10 @@ async function auditGrammaticalForm(
   translatedText: string,
   sourceLang: string,
   targetLang: string,
+  interfaceLang: string,
   formContext: FormParticipantContext,
 ) {
-  const directRole = directSubjectRole(sourceText);
+  const directRole = directSubjectRole(sourceText, sourceLang);
   const directViewer = directRole === "author"
     ? formContext.messageAuthor === "viewer"
     : formContext.messageAuthor !== "viewer";
@@ -157,12 +159,17 @@ async function auditGrammaticalForm(
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 1000,
+      max_completion_tokens: 4000,
       response_format: FORM_AUDIT_RESPONSE_FORMAT,
       messages: [
         {
           role: "system",
-          content: formAuditSystemPrompt(sourceLang, targetLang, formContext),
+          content: formAuditSystemPrompt(
+            sourceLang,
+            targetLang,
+            interfaceLang,
+            formContext,
+          ),
         },
         {
           role: "user",
@@ -447,7 +454,7 @@ Deno.serve(async (req) => {
         });
         continue;
       }
-      const candidate = parseProviderResult(
+      let candidate = parseProviderResult(
         content,
         text,
         targetLang,
@@ -498,6 +505,7 @@ Deno.serve(async (req) => {
           candidate.translation,
           candidate.sourceLang,
           targetLang,
+          interfaceLang,
           formContext!,
         );
         if (audit === null) {
@@ -505,17 +513,16 @@ Deno.serve(async (req) => {
           break;
         }
         if (audit.requiresChoice) {
-          candidate.translation =
-            `${audit.before}${audit.feminine}${audit.after}`;
-          candidate.formAlternatives = formAlternativesFromConfirmedAudit(
+          const auditedCandidate = applyConfirmedFormAudit(
             candidate,
             audit,
             formContext!,
           );
-          if (candidate.formAlternatives === null) {
+          if (auditedCandidate === null) {
             providerFailure = `${credential.provider}_invalid_form_audit`;
             continue;
           }
+          candidate = auditedCandidate;
         } else {
           candidate.formAlternatives = null;
         }
@@ -525,6 +532,7 @@ Deno.serve(async (req) => {
           candidate.formAlternatives,
           formContext,
           text,
+          candidate.sourceLang,
         );
       }
       if (translationNeedsRetry(candidate, targetLang, text)) {
@@ -589,6 +597,7 @@ Deno.serve(async (req) => {
       p_confidence: result.confidence,
       p_tokens: result.tokens,
       p_form_alternatives: result.formAlternatives,
+      p_cache_contract_version: CACHE_CONTRACT_VERSION,
     })
     : await admin.rpc("complete_message_translation", {
       p_message_id: messageId,
@@ -604,6 +613,7 @@ Deno.serve(async (req) => {
       p_confidence: result.confidence,
       p_tokens: result.tokens,
       p_form_alternatives: result.formAlternatives,
+      p_cache_contract_version: CACHE_CONTRACT_VERSION,
     });
   const { data: completed, error: completionError } = completion;
   if (completionError) {

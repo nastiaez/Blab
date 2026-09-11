@@ -8,10 +8,12 @@ class GrammaticalFormNote extends StatelessWidget {
     super.key,
     required this.form,
     required this.person,
+    required this.subjectIsViewer,
     required this.onChange,
   });
   final GrammaticalForm form;
   final String person;
+  final bool subjectIsViewer;
   final VoidCallback onChange;
 
   @override
@@ -22,8 +24,12 @@ class GrammaticalFormNote extends StatelessWidget {
       children: [
         Text(
           form == GrammaticalForm.feminine
-              ? context.l10n.usingFeminineForms(person)
-              : context.l10n.usingMasculineForms(person),
+              ? (subjectIsViewer
+                    ? context.l10n.usingFeminineFormsForYou
+                    : context.l10n.usingFeminineForms(person))
+              : (subjectIsViewer
+                    ? context.l10n.usingMasculineFormsForYou
+                    : context.l10n.usingMasculineForms(person)),
           style: const TextStyle(
             fontSize: 12,
             color: Color(0xFF796355),

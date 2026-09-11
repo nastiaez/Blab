@@ -2906,24 +2906,37 @@ class _BubbleState extends ConsumerState<_Bubble> {
                   : value.partnerForm,
             _ => null,
           };
-    final resolvedForm =
-        snapshot?.form ??
-        persistedForm ??
-        (formAlternatives == null
-            ? null
-            : formLedger?.suggestionFor(
-                chatId,
-                formAlternatives.subjectIsViewer,
-              )) ??
-        formAlternatives?.suggestedForm;
+    final fallbackForm = formAlternatives == null
+        ? null
+        : formLedger?.suggestionFor(chatId, formAlternatives.subjectIsViewer) ??
+              formAlternatives.suggestedForm;
+    final isCurrentNoteTarget = formLedger?.hasNote(resolutionKey) ?? false;
+    final noteNeedsTargetTransfer =
+        formAlternatives != null &&
+        !isCurrentNoteTarget &&
+        (formLedger?.hasPersonNoteOnMessage(
+              chatId,
+              formAlternatives.subjectIsViewer,
+              message.id,
+            ) ??
+            false);
+    final resolvedForm = isCurrentNoteTarget && formPreferences.asData != null
+        ? persistedForm ?? fallbackForm
+        : snapshot?.form ?? persistedForm ?? fallbackForm;
     List<Message> correctionMessages() => [
       ...?ref.read(chatMessagesProvider(chatId)).asData?.value,
       ...ref.read(pendingSendsProvider(chatId)),
     ];
-    final currentMessages = correctionMessages();
+    final noteNeedsReconciliation =
+        isCurrentNoteTarget &&
+        snapshot != null &&
+        resolvedForm != null &&
+        snapshot.form != resolvedForm;
     if (formLedger != null &&
         (snapshot == null ||
             snapshot.form == null ||
+            noteNeedsReconciliation ||
+            noteNeedsTargetTransfer ||
             (formAlternatives != null &&
                 !formLedger.hasPersonNote(
                   chatId,
@@ -2937,21 +2950,43 @@ class _BubbleState extends ConsumerState<_Bubble> {
         unawaited(
           ref
               .read(formCorrectionProvider.notifier)
-              .mutate(
-                (ledger) => ledger.record(
+              .mutate((ledger) {
+                if (!mounted) return ledger;
+                final latestMessages = correctionMessages();
+                if (!latestMessages.any(
+                  (current) =>
+                      current.id == message.id &&
+                      current.originalText == message.originalText,
+                )) {
+                  return ledger;
+                }
+                final latestPreferences = ref
+                    .read(grammaticalFormPreferencesProvider(chatId))
+                    .asData
+                    ?.value;
+                if (latestPreferences == null) return ledger;
+                final alreadySaved = formAlternatives.subjectIsViewer
+                    ? latestPreferences.ownForm
+                    : latestPreferences.partnerForm;
+                final effectiveForm =
+                    alreadySaved ?? formAlternatives.suggestedForm;
+                if (ledger.hasNote(resolutionKey)) {
+                  return ledger.reconcileNoteForm(resolutionKey, effectiveForm);
+                }
+                return ledger.record(
                   FormResolution(
                     chatId: chatId,
                     messageId: message.id,
                     targetLang: targetLanguageCode,
                     sourceText: message.originalText,
                     alternatives: formAlternatives,
-                    form: resolvedForm,
+                    form: effectiveForm,
                   ),
                   explicit: false,
                   note: true,
-                  messages: currentMessages,
-                ),
-              )
+                  messages: latestMessages,
+                );
+              })
               .catchError((Object _) {}),
         );
       });
@@ -3197,8 +3232,9 @@ class _BubbleState extends ConsumerState<_Bubble> {
                   GrammaticalFormNote(
                     form: resolvedForm,
                     person: formAlternatives.subjectName,
+                    subjectIsViewer: formAlternatives.subjectIsViewer,
                     onChange: () => context.push(
-                      '/chat/$chatId/translation-preferences?name=${Uri.encodeComponent(widget.partnerName)}',
+                      '/chat/$chatId/translation-preferences?name=${Uri.encodeComponent(widget.partnerName)}&subject=${formAlternatives.subjectIsViewer ? 'viewer' : 'partner'}',
                     ),
                   ),
               ],

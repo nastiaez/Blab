@@ -137,6 +137,12 @@ class MessageLearningContent extends StatelessWidget {
       )) {
         return Text(authoredText, style: primaryStyle);
       }
+      // Normal mode preserves authored text when the reader knows its source,
+      // even if a cached translation also carries form alternatives.
+      if (mode == ChatMode.normal &&
+          knownLanguageCodes.contains(value.sourceLang)) {
+        return Text(authoredText, style: primaryStyle);
+      }
       final formChoices = formAlternativesOverride == null
           ? value.formChoices
           : [formAlternativesOverride!];
@@ -145,7 +151,11 @@ class MessageLearningContent extends StatelessWidget {
         if (resolvedForm != null) {
           return MessageText(
             text: formChoices.first.resolved(resolvedForm!),
-            tokens: value.tokens,
+            tokens: formChoices.first.tokensFor(resolvedForm!).isNotEmpty
+                ? formChoices.first.tokensFor(resolvedForm!)
+                : resolvedForm == GrammaticalForm.feminine
+                ? value.tokens
+                : const [],
             languageCode: learningLanguageCode,
             popupTopInset: popupTopInset,
             style: primaryStyle,
@@ -234,7 +244,11 @@ class MessageLearningContent extends StatelessWidget {
         ? resolvedForm != null
               ? MessageText(
                   text: formChoices.first.resolved(resolvedForm!),
-                  tokens: value.tokens,
+                  tokens: formChoices.first.tokensFor(resolvedForm!).isNotEmpty
+                      ? formChoices.first.tokensFor(resolvedForm!)
+                      : resolvedForm == GrammaticalForm.feminine
+                      ? value.tokens
+                      : const [],
                   languageCode: learningLanguageCode,
                   popupTopInset: popupTopInset,
                   style: primaryStyle,

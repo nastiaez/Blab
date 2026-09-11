@@ -6,6 +6,7 @@ import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/features/chat/state/form_correction_state.dart';
 import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/models/message.dart';
+import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,6 +31,18 @@ FormResolution choice(String id, {String chat = 'c', bool own = true}) =>
         after: '?',
         subjectName: 'Bob',
         subjectIsViewer: own,
+        feminineTokens: const [
+          MessageToken(text: 'Ти', gloss: 'you', romanization: 'Ty'),
+          MessageToken(text: ' ', isContent: false),
+          MessageToken(text: 'ходила', gloss: 'went', romanization: 'khodyla'),
+          MessageToken(text: '?', isContent: false),
+        ],
+        masculineTokens: const [
+          MessageToken(text: 'Ти', gloss: 'you', romanization: 'Ty'),
+          MessageToken(text: ' ', isContent: false),
+          MessageToken(text: 'ходив', gloss: 'went', romanization: 'khodyv'),
+          MessageToken(text: '?', isContent: false),
+        ],
       ),
       form: GrammaticalForm.feminine,
     );
@@ -117,6 +130,18 @@ void main() {
       final restored = account('alice'), other = account('bob');
       final l = await restored.read(formCorrectionProvider.future);
       expect(l.resolutions[choice('a').key]!.form, GrammaticalForm.masculine);
+      expect(
+        l.resolutions[choice('a').key]!.alternatives.masculineTokens[2].text,
+        'ходив',
+      );
+      expect(
+        l
+            .resolutions[choice('a').key]!
+            .alternatives
+            .masculineTokens[2]
+            .romanization,
+        'khodyv',
+      );
       expect(l.isActive(choice('a').key), true);
       expect(
         (await other.read(formCorrectionProvider.future)).resolutions,
@@ -124,6 +149,60 @@ void main() {
       );
       restored.dispose();
       other.dispose();
+    },
+  );
+  test(
+    'clearing saved masculine through notifier restores persisted suggestion',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      ProviderContainer account() => ProviderContainer(
+        overrides: [currentUserIdProvider.overrideWithValue('alice')],
+      );
+      final c = account();
+      await c.read(formCorrectionProvider.future);
+      final n = c.read(formCorrectionProvider.notifier);
+      final savedMasculine = choice(
+        'annotated',
+      ).withForm(GrammaticalForm.masculine);
+      expect(
+        savedMasculine.alternatives.suggestedForm,
+        GrammaticalForm.feminine,
+      );
+      await n.mutate(
+        (ledger) => ledger.record(
+          savedMasculine,
+          explicit: false,
+          messages: [msg('annotated', 1)],
+          note: true,
+        ),
+      );
+      expect(
+        c
+            .read(formCorrectionProvider)
+            .requireValue
+            .resolutions[savedMasculine.key]!
+            .form,
+        GrammaticalForm.masculine,
+      );
+
+      await n.changePreference(subjectIsViewer: true, form: null);
+      expect(
+        c
+            .read(formCorrectionProvider)
+            .requireValue
+            .resolutions[savedMasculine.key]!
+            .form,
+        GrammaticalForm.feminine,
+      );
+      c.dispose();
+
+      final restored = account();
+      final persisted = await restored.read(formCorrectionProvider.future);
+      expect(
+        persisted.resolutions[savedMasculine.key]!.form,
+        GrammaticalForm.feminine,
+      );
+      restored.dispose();
     },
   );
   test('legacy window alone does not permit history correction', () {
@@ -231,11 +310,77 @@ void main() {
     'editing the selected message invalidates its resolution and window',
     () {
       final a = choice('a');
-      final l = const FormCorrectionLedger()
-          .record(a, explicit: true, messages: [msg('a', 1)])
-          .observe('c', [msg('a', 1, text: 'Different subject')]);
+      final annotated = const FormCorrectionLedger().record(
+        a,
+        explicit: true,
+        messages: [msg('a', 1)],
+        note: true,
+      );
+      expect(annotated.hasPersonNote('c', true), true);
+      final l = annotated.observe('c', [
+        msg('a', 1, text: 'Different subject'),
+      ]);
       expect(l.isActive(a.key), false);
       expect(l.resolutions.containsKey(a.key), false);
+      expect(l.hasPersonNote('c', true), false);
+      final replacement = choice('replacement');
+      final repaired = l.record(
+        replacement,
+        explicit: false,
+        messages: [msg('replacement', 2)],
+        note: true,
+      );
+      expect(repaired.hasNote(replacement.key), true);
     },
   );
+  test('direct delete releases the note target for a replacement', () {
+    final a = choice('a');
+    final annotated = const FormCorrectionLedger().record(
+      a,
+      explicit: false,
+      messages: [msg('a', 1)],
+      note: true,
+    );
+    expect(annotated.hasPersonNote('c', true), true);
+
+    final deleted = annotated.removeMessage('c', 'a');
+    expect(deleted.resolutions.containsKey(a.key), false);
+    expect(deleted.hasPersonNote('c', true), false);
+
+    final replacement = choice('replacement');
+    final repaired = deleted.record(
+      replacement,
+      explicit: false,
+      messages: [msg('replacement', 2)],
+      note: true,
+    );
+    expect(repaired.hasNote(replacement.key), true);
+  });
+  test('delayed note recording cannot restore an edited source snapshot', () {
+    final a = choice('a');
+    final editedMessages = [msg('a', 1, text: 'Different subject')];
+
+    final delayed = const FormCorrectionLedger().record(
+      a,
+      explicit: false,
+      messages: editedMessages,
+      note: true,
+    );
+
+    expect(delayed.resolutions.containsKey(a.key), false);
+    expect(delayed.hasPersonNote('c', true), false);
+  });
+  test('delayed note recording cannot restore a deleted message', () {
+    final a = choice('a');
+
+    final delayed = const FormCorrectionLedger().record(
+      a,
+      explicit: false,
+      messages: const [],
+      note: true,
+    );
+
+    expect(delayed.resolutions.containsKey(a.key), false);
+    expect(delayed.hasPersonNote('c', true), false);
+  });
 }

@@ -204,6 +204,11 @@ final GoRouter blabRouter = GoRouter(
       builder: (context, state) => TranslationPreferencesScreen(
         chatId: state.pathParameters['id'],
         partnerName: state.uri.queryParameters['name'],
+        initialSubjectIsViewer: switch (state.uri.queryParameters['subject']) {
+          'viewer' => true,
+          'partner' => false,
+          _ => null,
+        },
       ),
     ),
     GoRoute(

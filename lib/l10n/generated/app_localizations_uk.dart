@@ -917,4 +917,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String usingMasculineForms(String person) {
     return 'Чоловічі форми для $person';
   }
+
+  @override
+  String get usingFeminineFormsForYou => 'Жіночі форми для вас';
+
+  @override
+  String get usingMasculineFormsForYou => 'Чоловічі форми для вас';
 }

@@ -37,5 +37,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "usingFeminineFormsForYou": "Formas femeninas para ti",
+  "usingMasculineFormsForYou": "Formas masculinas para ti"
 }

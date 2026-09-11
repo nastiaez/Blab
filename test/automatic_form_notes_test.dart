@@ -1,12 +1,13 @@
 import 'package:blab/features/chat/state/form_correction_state.dart';
 import 'package:blab/shared/models/grammatical_form.dart';
+import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-FormResolution record(String id) => FormResolution(
+FormResolution record(String id, {String targetLang = 'uk'}) => FormResolution(
   chatId: 'chat',
   messageId: id,
-  targetLang: 'uk',
+  targetLang: targetLang,
   sourceText: 'Did you go?',
   alternatives: const GrammaticalFormAlternatives(
     before: 'Ти ',
@@ -17,6 +18,15 @@ FormResolution record(String id) => FormResolution(
     subjectIsViewer: true,
   ),
   form: GrammaticalForm.feminine,
+);
+Message messageFor(FormResolution value) => Message(
+  id: value.messageId,
+  chatId: value.chatId,
+  isOutgoing: false,
+  originalText: value.sourceText,
+  translation: '',
+  sentAt: DateTime.utc(2026, 9, 11),
+  status: MessageStatus.delivered,
 );
 void main() {
   test(
@@ -29,7 +39,12 @@ void main() {
         messages: [],
       );
       l = l
-          .record(fresh, explicit: false, messages: [], note: true)
+          .record(
+            fresh,
+            explicit: false,
+            messages: [messageFor(fresh)],
+            note: true,
+          )
           .changePreference(
             subjectIsViewer: true,
             form: GrammaticalForm.masculine,
@@ -38,7 +53,12 @@ void main() {
       expect(l.resolutions[fresh.key]!.form, GrammaticalForm.masculine);
       final migrated = const FormCorrectionLedger()
           .record(old, explicit: false, messages: [])
-          .record(old, explicit: false, messages: [], note: true);
+          .record(
+            old,
+            explicit: false,
+            messages: [messageFor(old)],
+            note: true,
+          );
       expect(migrated.hasNote(old.key), true);
     },
   );
@@ -47,7 +67,7 @@ void main() {
     final l = const FormCorrectionLedger().record(
       a,
       explicit: false,
-      messages: [],
+      messages: [messageFor(a)],
       note: true,
     );
     final value = MessageTranslation(
@@ -93,8 +113,18 @@ void main() {
   test('automatic note appears once per person and survives next message', () {
     final a = record('a'), b = record('b');
     final l = const FormCorrectionLedger()
-        .record(a, explicit: false, messages: [], note: true)
-        .record(b, explicit: false, messages: [], note: true)
+        .record(
+          a,
+          explicit: false,
+          messages: [messageFor(a), messageFor(b)],
+          note: true,
+        )
+        .record(
+          b,
+          explicit: false,
+          messages: [messageFor(a), messageFor(b)],
+          note: true,
+        )
         .closeChat('chat');
     expect(l.hasNote(a.key), true);
     expect(l.hasNote(b.key), false);
@@ -109,40 +139,155 @@ void main() {
       true,
     );
   });
-  test('clearing an automatic note falls back to feminine, never a gap', () {
-    final a = record('a');
-    final l = const FormCorrectionLedger()
-        .record(a, explicit: false, messages: [], note: true)
-        .changePreference(subjectIsViewer: true, form: null);
-    expect(l.resolutions[a.key]!.form, GrammaticalForm.feminine);
-  });
-  test('stable recipient role maps incoming you to viewer, not sender', () {
-    final a = parseGrammaticalFormAlternatives({
+  test(
+    'same annotated message keeps its note after target-language change',
+    () {
+      final ukrainian = record('a');
+      final spanish = record('a', targetLang: 'es');
+      final later = record('b', targetLang: 'es');
+      final spanishLedger = const FormCorrectionLedger()
+          .record(
+            ukrainian,
+            explicit: false,
+            messages: [messageFor(ukrainian), messageFor(later)],
+            note: true,
+          )
+          .record(
+            spanish,
+            explicit: false,
+            messages: [messageFor(spanish), messageFor(later)],
+            note: true,
+          )
+          .record(
+            later,
+            explicit: false,
+            messages: [messageFor(spanish), messageFor(later)],
+            note: true,
+          );
+
+      expect(spanishLedger.hasNote(ukrainian.key), false);
+      expect(spanishLedger.hasNote(spanish.key), true);
+      expect(spanishLedger.hasNote(later.key), false);
+      expect(spanishLedger.hasPersonNoteOnMessage('chat', true, 'a'), true);
+
+      final ukrainianAgain = spanishLedger.record(
+        ukrainian,
+        explicit: false,
+        messages: [messageFor(ukrainian), messageFor(later)],
+        note: true,
+      );
+      expect(ukrainianAgain.hasNote(ukrainian.key), true);
+      expect(ukrainianAgain.hasNote(spanish.key), false);
+    },
+  );
+  test('stable roles bind to the same person for opposite viewers', () {
+    final recipient = parseGrammaticalFormAlternatives({
       'before': 'Ти ',
       'feminine': 'ходила',
       'masculine': 'ходив',
       'after': '?',
-      'subjectName': 'Alice',
-      'subjectIsViewer': false,
+      'subjectName': 'stale provider name',
+      'subjectIsViewer': true,
       'subjectRole': 'recipient',
-      'suggestedForm': 'masculine',
+      'suggestedForm': 'feminine',
     })!;
-    final incoming = a.forMessage(
-      isOutgoing: false,
+    final bobView = recipient.forMessage(
+      isOutgoing: true,
       sourceText: 'Did you go?',
       viewerName: 'Bob',
       partnerName: 'Alice',
     );
-    expect(incoming.subjectIsViewer, true);
-    expect(incoming.subjectName, 'Bob');
-    expect(incoming.suggestedForm, GrammaticalForm.masculine);
-    final outgoing = a.forMessage(
-      isOutgoing: true,
+    final aliceView = recipient.forMessage(
+      isOutgoing: false,
       sourceText: 'Did you go?',
       viewerName: 'Alice',
       partnerName: 'Bob',
     );
-    expect(outgoing.subjectIsViewer, false);
-    expect(outgoing.subjectName, 'Bob');
+    expect(bobView.subjectIsViewer, false);
+    expect(aliceView.subjectIsViewer, true);
+    expect(bobView.subjectName, 'Alice');
+    expect(aliceView.subjectName, 'Alice');
+
+    final author = parseGrammaticalFormAlternatives({
+      'before': '',
+      'feminine': 'втомилася',
+      'masculine': 'втомився',
+      'after': '.',
+      'subjectName': 'stale provider name',
+      'subjectIsViewer': false,
+      'subjectRole': 'author',
+      'suggestedForm': 'feminine',
+    })!;
+    final authorAsBob = author.forMessage(
+      isOutgoing: true,
+      sourceText: 'I was tired.',
+      viewerName: 'Bob',
+      partnerName: 'Alice',
+    );
+    final authorAsAlice = author.forMessage(
+      isOutgoing: false,
+      sourceText: 'I was tired.',
+      viewerName: 'Alice',
+      partnerName: 'Bob',
+    );
+    expect(authorAsBob.subjectIsViewer, true);
+    expect(authorAsAlice.subjectIsViewer, false);
+    expect(authorAsBob.subjectName, 'Bob');
+    expect(authorAsAlice.subjectName, 'Bob');
+
+    final bobPrivate = FormResolution(
+      chatId: 'chat',
+      messageId: 'bob-private',
+      targetLang: 'uk',
+      sourceText: 'I was tired.',
+      alternatives: authorAsBob,
+      form: GrammaticalForm.masculine,
+    );
+    final bobLedger = const FormCorrectionLedger().record(
+      bobPrivate,
+      explicit: false,
+      messages: [messageFor(bobPrivate)],
+      note: true,
+    );
+    final bobTranslation = MessageTranslation(
+      translation: authorAsBob.resolved(GrammaticalForm.feminine),
+      interfaceText: 'I was tired.',
+      interfaceLang: 'en',
+      sourceLang: 'en',
+      tokens: const [],
+      formAlternatives: authorAsBob,
+    );
+    final aliceTranslation = MessageTranslation(
+      translation: authorAsAlice.resolved(GrammaticalForm.feminine),
+      interfaceText: 'I was tired.',
+      interfaceLang: 'en',
+      sourceLang: 'en',
+      tokens: const [],
+      formAlternatives: authorAsAlice,
+    );
+    expect(
+      bobLedger
+          .resolveTranslation(
+            bobTranslation,
+            chatId: 'chat',
+            messageId: 'bob-private',
+            targetLang: 'uk',
+            sourceText: 'I was tired.',
+          )
+          .translation,
+      'втомився.',
+    );
+    expect(
+      const FormCorrectionLedger()
+          .resolveTranslation(
+            aliceTranslation,
+            chatId: 'chat',
+            messageId: 'bob-private',
+            targetLang: 'uk',
+            sourceText: 'I was tired.',
+          )
+          .translation,
+      'втомилася.',
+    );
   });
 }

@@ -921,4 +921,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String usingMasculineForms(String person) {
     return 'Formas masculinas para $person';
   }
+
+  @override
+  String get usingFeminineFormsForYou => 'Formas femeninas para ti';
+
+  @override
+  String get usingMasculineFormsForYou => 'Formas masculinas para ti';
 }

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../shared/models/grammatical_form.dart';
 import '../../../shared/models/message.dart';
+import '../../../shared/models/message_token.dart';
 import '../../../shared/services/message_translator.dart';
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
@@ -49,6 +50,12 @@ class FormResolution {
       'subjectIsViewer': alternatives.subjectIsViewer,
       'suggestedForm': alternatives.suggestedForm.wire,
       'subjectRole': alternatives.subjectRole,
+      'feminineTokens': alternatives.feminineTokens
+          .map(_messageTokenToJson)
+          .toList(growable: false),
+      'masculineTokens': alternatives.masculineTokens
+          .map(_messageTokenToJson)
+          .toList(growable: false),
     },
   };
   static FormResolution? fromJson(Map<String, dynamic> raw) {
@@ -67,6 +74,13 @@ class FormResolution {
     );
   }
 }
+
+Map<String, dynamic> _messageTokenToJson(MessageToken token) => {
+  'text': token.text,
+  'gloss': token.gloss,
+  'roman': token.romanization,
+  'isContent': token.isContent,
+};
 
 class FormCorrectionWindow {
   const FormCorrectionWindow(this.key, this.boundary, this.knownIds);
@@ -93,6 +107,11 @@ class FormCorrectionLedger {
   bool hasNote(String key) => noteTargets.values.contains(key);
   bool hasPersonNote(String chatId, bool viewer) =>
       noteTargets.containsKey(jsonEncode([chatId, viewer]));
+  bool hasPersonNoteOnMessage(String chatId, bool viewer, String messageId) {
+    final key = noteTargets[jsonEncode([chatId, viewer])];
+    final resolution = key == null ? null : resolutions[key];
+    return resolution?.messageId == messageId;
+  }
 
   MessageTranslation resolveTranslation(
     MessageTranslation value, {
@@ -125,6 +144,16 @@ class FormCorrectionLedger {
     return resolutions[target]?.alternatives.suggestedForm;
   }
 
+  FormCorrectionLedger reconcileNoteForm(String key, GrammaticalForm form) {
+    final current = resolutions[key];
+    if (!hasNote(key) || current == null || current.form == form) return this;
+    return FormCorrectionLedger(
+      resolutions: {...resolutions, key: current.withForm(form)},
+      windows: windows,
+      noteTargets: noteTargets,
+    );
+  }
+
   bool isActive(String key) => windows.values.any((w) => w.key == key);
   FormCorrectionLedger record(
     FormResolution value, {
@@ -132,22 +161,38 @@ class FormCorrectionLedger {
     required List<Message> messages,
     bool note = false,
   }) {
+    if (note &&
+        !messages.any(
+          (message) =>
+              message.id == value.messageId &&
+              message.originalText == value.sourceText,
+        )) {
+      return this;
+    }
+    final personNoteKey = jsonEncode([
+      value.chatId,
+      value.alternatives.subjectIsViewer,
+    ]);
+    final priorNoteKey = noteTargets[personNoteKey];
+    final priorNote = priorNoteKey == null ? null : resolutions[priorNoteKey];
+    final canClaimNote =
+        priorNoteKey == null ||
+        priorNote == null ||
+        (priorNote.chatId == value.chatId &&
+            priorNote.messageId == value.messageId &&
+            priorNote.alternatives.subjectIsViewer ==
+                value.alternatives.subjectIsViewer);
     final existing = resolutions[value.key];
     if (!explicit &&
         existing != null &&
         (existing.form != null || isActive(value.key) || value.form == null)) {
-      if (!note ||
-          hasPersonNote(value.chatId, value.alternatives.subjectIsViewer)) {
+      if (!note || !canClaimNote) {
         return this;
       }
       return FormCorrectionLedger(
         resolutions: {...resolutions, value.key: value.withForm(existing.form)},
         windows: windows,
-        noteTargets: {
-          ...noteTargets,
-          jsonEncode([value.chatId, value.alternatives.subjectIsViewer]):
-              value.key,
-        },
+        noteTargets: {...noteTargets, personNoteKey: value.key},
       );
     }
     final nextWindows = {...windows};
@@ -165,11 +210,8 @@ class FormCorrectionLedger {
     return FormCorrectionLedger(
       resolutions: {...resolutions, value.key: value},
       windows: nextWindows,
-      noteTargets: note
-          ? ({...noteTargets}..putIfAbsent(
-              jsonEncode([value.chatId, value.alternatives.subjectIsViewer]),
-              () => value.key,
-            ))
+      noteTargets: note && canClaimNote
+          ? {...noteTargets, personNoteKey: value.key}
           : noteTargets,
     );
   }
@@ -207,10 +249,12 @@ class FormCorrectionLedger {
   FormCorrectionLedger removeMessage(String chatId, String messageId) {
     final next = {...resolutions}
       ..removeWhere((k, r) => r.chatId == chatId && r.messageId == messageId);
+    final nextNotes = {...noteTargets}
+      ..removeWhere((_, resolutionKey) => !next.containsKey(resolutionKey));
     final w = windows[chatId];
     return FormCorrectionLedger(
       resolutions: next,
-      noteTargets: noteTargets,
+      noteTargets: nextNotes,
       windows: w != null && !next.containsKey(w.key)
           ? ({...windows}..remove(chatId))
           : windows,
@@ -289,7 +333,7 @@ class FormCorrectionNotifier extends AsyncNotifier<FormCorrectionLedger> {
     final account = ref.watch(currentUserIdProvider);
     if (account == null) return const FormCorrectionLedger();
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('form-corrections-v1:$account');
+    final raw = prefs.getString('form-corrections-v2:$account');
     if (raw == null) return const FormCorrectionLedger();
     try {
       return FormCorrectionLedger.fromJson(
@@ -312,7 +356,7 @@ class FormCorrectionNotifier extends AsyncNotifier<FormCorrectionLedger> {
       if (account != null) {
         final prefs = await SharedPreferences.getInstance();
         if (!await prefs.setString(
-          'form-corrections-v1:$account',
+          'form-corrections-v2:$account',
           jsonEncode(next.toJson()),
         )) {
           throw StateError('form_save_failed');

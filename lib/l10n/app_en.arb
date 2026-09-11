@@ -152,5 +152,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "usingFeminineFormsForYou": "Using feminine forms for you",
+  "usingMasculineFormsForYou": "Using masculine forms for you"
 }

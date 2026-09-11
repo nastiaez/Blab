@@ -37,5 +37,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "usingFeminineFormsForYou": "Жіночі форми для вас",
+  "usingMasculineFormsForYou": "Чоловічі форми для вас"
 }

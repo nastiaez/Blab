@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'state/form_correction_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,28 +15,98 @@ const _preferenceMuted = Color(0xFF917869);
 
 /// US-042 / FR-35. Own form is account-wide; partner form and tone are scoped
 /// to this membership row only.
-class TranslationPreferencesScreen extends ConsumerWidget {
+class TranslationPreferencesScreen extends ConsumerStatefulWidget {
   const TranslationPreferencesScreen({
     super.key,
     this.chatId,
     this.partnerName,
+    this.initialSubjectIsViewer,
   });
 
   final String? chatId;
   final String? partnerName;
+  final bool? initialSubjectIsViewer;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TranslationPreferencesScreen> createState() =>
+      _TranslationPreferencesScreenState();
+}
+
+class _TranslationPreferencesScreenState
+    extends ConsumerState<TranslationPreferencesScreen> {
+  bool _didOpenInitialFormPicker = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final chatId = widget.chatId;
+    final partnerName = widget.partnerName;
     final isProfile = chatId == null;
     final chatPrefs = isProfile
         ? null
-        : ref.watch(grammaticalFormPreferencesProvider(chatId!));
+        : ref.watch(grammaticalFormPreferencesProvider(chatId));
     final profile = ref.watch(currentProfileProvider);
     final ownForm = isProfile
         ? profile.asData?.value == null
               ? null
               : grammaticalFormFromWire(profile.asData!.value.grammaticalForm)
         : chatPrefs?.asData?.value.ownForm;
+
+    Future<void> saveOwnForm(GrammaticalForm? value) async {
+      await ref.read(formCorrectionProvider.notifier).refreshActiveWindows();
+      await ref
+          .read(grammaticalFormPreferencesServiceProvider)
+          .setOwnForm(value);
+      await ref
+          .read(formCorrectionProvider.notifier)
+          .changePreference(subjectIsViewer: true, form: value);
+      ref.invalidate(currentProfileProvider);
+      ref.invalidate(grammaticalFormPreferencesProvider);
+      if (chatId != null) {
+        ref.invalidate(grammaticalFormPreferencesProvider(chatId));
+      }
+    }
+
+    Future<void> savePartnerForm(GrammaticalForm? value) async {
+      if (chatId == null) return;
+      await ref
+          .read(formCorrectionProvider.notifier)
+          .refreshActiveWindows(chatId: chatId);
+      await ref
+          .read(grammaticalFormPreferencesServiceProvider)
+          .setPartnerForm(chatId, value);
+      await ref
+          .read(formCorrectionProvider.notifier)
+          .changePreference(
+            subjectIsViewer: false,
+            form: value,
+            chatId: chatId,
+          );
+      ref.invalidate(grammaticalFormPreferencesProvider(chatId));
+    }
+
+    Future<void> pickOwnForm() =>
+        _pickForm(context, current: ownForm, onSelected: saveOwnForm);
+
+    Future<void> pickPartnerForm() => _pickForm(
+      context,
+      current: chatPrefs?.asData?.value.partnerForm,
+      onSelected: savePartnerForm,
+    );
+
+    final initialSubjectIsViewer = widget.initialSubjectIsViewer;
+    final initialPreferencesReady = isProfile
+        ? profile.asData != null
+        : chatPrefs?.asData != null;
+    if (!_didOpenInitialFormPicker &&
+        initialSubjectIsViewer != null &&
+        initialPreferencesReady &&
+        (initialSubjectIsViewer || !isProfile)) {
+      _didOpenInitialFormPicker = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(initialSubjectIsViewer ? pickOwnForm() : pickPartnerForm());
+      });
+    }
 
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
@@ -74,31 +146,7 @@ class TranslationPreferencesScreen extends ConsumerWidget {
               _PreferenceRow(
                 label: 'Your gender form',
                 value: ownForm?.label ?? 'Not set',
-                onTap: () => _pickForm(
-                  context,
-                  current: ownForm,
-                  onSelected: (value) async {
-                    await ref
-                        .read(formCorrectionProvider.notifier)
-                        .refreshActiveWindows();
-                    await ref
-                        .read(grammaticalFormPreferencesServiceProvider)
-                        .setOwnForm(value);
-                    await ref
-                        .read(formCorrectionProvider.notifier)
-                        .changePreference(subjectIsViewer: true, form: value);
-                    ref.invalidate(currentProfileProvider);
-                    // The profile form is account-wide. Refresh every open
-                    // chat's preference snapshot so an active conversation
-                    // immediately reflects set, changed, or cleared forms.
-                    ref.invalidate(grammaticalFormPreferencesProvider);
-                    if (chatId != null) {
-                      ref.invalidate(
-                        grammaticalFormPreferencesProvider(chatId!),
-                      );
-                    }
-                  },
-                ),
+                onTap: pickOwnForm,
               ),
               if (!isProfile) ...[
                 const Divider(height: 1, color: BlabColors.chatDivider),
@@ -106,28 +154,7 @@ class TranslationPreferencesScreen extends ConsumerWidget {
                   label: "${partnerName ?? 'Partner'}'s gender form",
                   value:
                       chatPrefs?.asData?.value.partnerForm?.label ?? 'Not set',
-                  onTap: () => _pickForm(
-                    context,
-                    current: chatPrefs?.asData?.value.partnerForm,
-                    onSelected: (value) async {
-                      await ref
-                          .read(formCorrectionProvider.notifier)
-                          .refreshActiveWindows(chatId: chatId!);
-                      await ref
-                          .read(grammaticalFormPreferencesServiceProvider)
-                          .setPartnerForm(chatId!, value);
-                      await ref
-                          .read(formCorrectionProvider.notifier)
-                          .changePreference(
-                            subjectIsViewer: false,
-                            form: value,
-                            chatId: chatId!,
-                          );
-                      ref.invalidate(
-                        grammaticalFormPreferencesProvider(chatId!),
-                      );
-                    },
-                  ),
+                  onTap: pickPartnerForm,
                 ),
                 const Divider(height: 1, color: BlabColors.chatDivider),
                 _PreferenceRow(
@@ -141,9 +168,9 @@ class TranslationPreferencesScreen extends ConsumerWidget {
                     onSelected: (value) async {
                       await ref
                           .read(grammaticalFormPreferencesServiceProvider)
-                          .setTone(chatId!, value);
+                          .setTone(chatId, value);
                       ref.invalidate(
-                        grammaticalFormPreferencesProvider(chatId!),
+                        grammaticalFormPreferencesProvider(chatId),
                       );
                     },
                   ),

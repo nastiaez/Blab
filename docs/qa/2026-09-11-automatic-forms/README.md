@@ -24,7 +24,23 @@ The first museum result predates the stronger direct-subject audit hint and gues
 - Chats-list preview still uses canonical feminine text in cases where the bubble displays masculine. Captured after restarting Bob: park preview feminine vs masculine bubble. Track as a separate visible-preview follow-up; no claim it is fixed.
 - Existing false-success/source-language bug hides Retry for old “I was tired yesterday.” messages. They remain visible in historical screenshots; not repaired by this task.
 - Full 11-language/caption/multi-person matrix, physical-device typography/accessibility pass, cross-device correction-note synchronization and owner confirmation remain unverified. Local note history is account/device scoped as documented.
-- No production deployment, commit or GitHub push performed for this redesign.
+- No production deployment was performed; branch publication is handled as a separate release step.
 
 ## Owner review journey
 Open the chat note → Change → Your gender form → choose the other form → Back. Confirm the note and its sentence update together, other completed messages do not change, and later messages do not repeat the note. Owner tracker remains unchecked until explicit confirmation.
+
+## Self-routing UX correction
+- Viewer-owned notes now say `Using feminine forms for you` or `Using masculine forms for you`; partner-owned notes retain the partner's display name.
+- `Change` carries the note subject into Translation preferences and opens the matching grammatical-form picker immediately. The verified viewer journey opens `Your gender form`, not the partner row.
+- Fresh installed-Android evidence captures feminine viewer copy, the directly opened viewer picker, and the resulting masculine sentence/note. Focused Flutter verification passes 25 tests; scoped analysis, formatting, `git diff --check`, and the Impeccable detector are clean.
+
+## Hardening follow-up
+- Shared translation and prepared-package alternatives now use stable `author` / `recipient` ownership and cannot include either viewer's saved form. A migration invalidates every legacy shared/prepared cache variant, replaces completed/in-flight jobs with fresh IDs, and requires a v2 completion contract so stale workers or foreground requests cannot repopulate private preference-dependent output. Database checks enforce both cache version and the stable form shape.
+- Feminine and masculine renderings now carry independently validated full-sentence token arrays, so either visible form keeps the correct gloss and romanization metadata.
+- Provisional name-based suggestions stay local and do not write account or partner preferences. Saved preferences remain authoritative; clearing returns to the original suggestion.
+- Edited and deleted messages release their note ownership. A delayed callback is rejected by the ledger unless the exact message ID and source snapshot still exist. Switching target language transfers the note to the same message instead of orphaning it.
+- Focused Flutter verification: 29 ledger/note/chat tests pass; the masculine-token and Normal-known-source regressions pass independently. Scoped analysis, formatting, `deno check`, and `git diff --check` pass.
+- Direct-person normalization no longer guesses from generic word endings. It accepts explicit or tightly bounded language forms, recognizes participant names directly, permits capitalized German nouns, distinguishes Dutch subject `je` from possessive `je`, and leaves ambiguous Italian `sono` clauses to the audit. Controls cover ordinary English/German sentences plus the reported Dutch, Italian, Portuguese, and Spanish false positives.
+- Translate-message verification: 72 tests pass; one existing corrected-interface-text contract test still fails and is not part of this hardening.
+- Full Flutter verification: 451 pass, 15 skip, 10 existing UI-contract failures. The failures are old bubble-expand expectations plus the known inline token-segmentation assertion; none are counted as fixed by this work.
+- Owner/device/language-matrix gates remain open. No production deployment was performed.

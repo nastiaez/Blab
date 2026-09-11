@@ -923,3 +923,7 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-11 — Replaced Step 2.12 chooser/expiry scope with owner-approved automatic name suggestion, feminine fallback, persistent once-per-person note and existing Settings navigation; owner and complete language-matrix checks remain open.
 
 - 2026-09-11 — Recorded local automatic-form note verification and new Chats-preview canonical-form mismatch. No owner launch checkbox or full grammar milestone completed.
+
+- 2026-09-11 — Hardened automatic grammatical forms after independent review: shared caches are private-preference-free and role-stable, both rendered forms retain their own lookup metadata, saved/cleared preferences reconcile correctly, and stale edit/delete callbacks cannot reclaim a note. Focused server/client checks and scoped analysis pass; the existing server failure, 10 existing Flutter UI-contract failures, Chats-preview mismatch, owner/device review, and full language matrix remain explicitly open. No deployment, commit, or push performed.
+
+- 2026-09-11 — Replaced unsafe multilingual subject heuristics after final review: German nouns no longer look like people, common English/German direct clauses resolve, Dutch possessive `je` and ambiguous Italian `sono` stay audit-owned, and generic Spanish/Portuguese noun endings no longer claim participant identity. All 28 ownership tests and 31 focused Flutter checks pass; the existing server/UI baseline failures and owner/device gates remain open.
