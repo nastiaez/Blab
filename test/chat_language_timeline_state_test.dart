@@ -10,10 +10,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _TimelineService implements ChatService {
-  _TimelineService({required this.result, this.error, this.stall = false});
+  _TimelineService({required this.result, this.stall = false});
 
   final List<Map<String, dynamic>> result;
-  final Object? error;
   final bool stall;
 
   @override
@@ -21,7 +20,6 @@ class _TimelineService implements ChatService {
     String chatId,
   ) async {
     if (stall) return Completer<List<Map<String, dynamic>>>().future;
-    if (error case final value?) throw value;
     return result;
   }
 
