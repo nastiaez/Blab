@@ -905,3 +905,5 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-10 — Owner README edit triggered successful association publication (`fefed30`). Verified live HTTP 200 JSON, correct controlled release identity, and unchanged homepage. Publication blocker resolved; matching signed-app and Play verification remain open.
 
 - 2026-09-10 — Recorded owner deferral of automatic installed-app invite-opening verification until after launch; retained unverified status and separate Play install-continuation gate.
+
+- 2026-09-11 — Added the owner-approved Telegram-inspired reaction-row motion: anchored 250 ms soft overshoot, 30 ms emoji cascade, 150 ms fade dismissal, and reduced-motion handling. Focused chat tests, static analysis, Android release packaging, and the owner-approved emulator motion capture pass; Step 2.13 remains open for the later full device matrix.

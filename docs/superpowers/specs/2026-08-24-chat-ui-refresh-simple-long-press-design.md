@@ -23,7 +23,7 @@ For launch, Blab needs one simple, familiar message interaction: word tap for le
 
 ## Non-goals
 
-- No dimmed-background, lifted-bubble, fixed-position bubble, or elaborate long-press motion.
+- No dimmed-background, lifted-bubble, fixed-position bubble, or elaborate selected-message motion. The floating reaction row still uses the lightweight entrance and exit motion defined below.
 - No post-launch vertical action-list design. The launch version keeps the compact horizontal row.
 - No audio messages.
 - No edit-history screen.
@@ -100,6 +100,11 @@ The floating chat settings menu keeps two 52 px rows separated by a 1 px `#E1DAD
   - only a viewport-filling message may place the row over the bubble near the long-press point;
   - message-action row replacing the composer;
   - no scrim, background dimming, bubble lift, or bubble repositioning.
+- The reaction row follows Telegram's compact choreography, softened for Blab:
+  - its container scales from 88% to 100% over 250 ms with a soft overshoot, anchored toward the message side (left for incoming, right for outgoing);
+  - the six quick reactions and trailing more button settle in at 30 ms intervals, each using a 150 ms ease-out scale;
+  - dismissal keeps the container at full size and fades it out over 150 ms;
+  - when reduced motion is enabled, the row appears and disappears without scale, overshoot, or stagger.
 - In Practice, the selected bubble also reveals the primary-known-language translation using the existing divider and second-line treatment.
 - Tapping the chat canvas or beginning a message-list scroll closes reactions, actions, and any temporary Translation/Original line.
 - The first tap on Back, avatar/profile, settings, overflow, or the mode switch dismisses message selection only. A second tap performs that control’s normal action.

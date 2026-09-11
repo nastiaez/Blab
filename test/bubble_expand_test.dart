@@ -829,6 +829,40 @@ void main() {
     await _settle(tester);
   });
 
+  testWidgets('dismissed reaction row finishes its fade before removal', (
+    tester,
+  ) async {
+    final container = _buildContainer(_BubbleExpandChatService());
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+
+    await tester.longPress(find.byType(MessageInteractionTarget));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('floating-reaction-container-opacity')),
+      findsOneWidget,
+    );
+
+    await tester.tapAt(
+      tester.getCenter(find.byKey(const ValueKey('mode-toggle'))),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 75));
+    final fading = tester.widget<FadeTransition>(
+      find.byKey(const ValueKey('floating-reaction-container-opacity')),
+    );
+    expect(fading.opacity.value, closeTo(0.5, 0.08));
+
+    await tester.pump(const Duration(milliseconds: 76));
+    expect(
+      find.byKey(const ValueKey('floating-reaction-container-opacity')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('message-action-listen')), findsNothing);
+    await _settle(tester);
+  });
+
   testWidgets('swiping open chat background does not change mode', (
     tester,
   ) async {
