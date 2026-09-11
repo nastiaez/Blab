@@ -106,7 +106,7 @@ Bob: masculine · Change
 ```
 
 - Each `Change` action reopens only that person’s choices while the selected text remains visible.
-- Confirmation rows disappear after the next message is sent or received.
+- Confirmation rows disappear after the next new message is sent or received in that chat (including an offline queued send). One message per chat remains eligible: the viewer’s latest successful explicit form choice, regardless of send date or visibility. Navigation and restart retain it; another explicit choice transfers it. See [the precise correction-window rule](2026-09-10-form-correction-window-design.md).
 - Rows have no fill, outline, shadow, or divider.
 - Person and form: regular 12 px `#8C735F`.
 - `Change`: medium 12 px `#231208`, with a minimum 44 px tap target and an 8 px visual gap.
@@ -131,7 +131,7 @@ Blab stores only **not set**, **feminine**, or **masculine**.
 3. A later opposite authored form is corrected automatically using the normal visible correction treatment.
 4. Do not show a contradiction chooser, warning, error, or grammatical explanation.
 5. An authored contradiction never changes the saved value. The user can revise a just-made choice through its temporary `Change` action; after that row disappears, the value changes only in Translation preferences.
-6. An explicit preference change affects future translations and corrections. It does not rewrite older completed messages.
+6. An explicit preference change affects future translations and corrections. It can update the active correction-window message only; it does not rewrite other completed messages.
 
 A future Deep Dive feature may explain why a correction happened and offer a form choice. That is outside this scope.
 
@@ -205,7 +205,7 @@ The interaction works across Blab’s 11 learning languages, but appears only wh
 - **Preference save failure:** keep the chooser open and unresolved, preserve the message, and show the standard transient save failure.
 - **Edit changes subject or form:** reevaluate the edited message using the current authoritative preferences.
 - **Display name changes:** update future chooser copy without changing the saved person association.
-- **Preference changed in settings:** resolve loaded unresolved markers for that person; future translations and corrections use the new value; older completed messages remain unchanged.
+- **Preference changed in settings:** resolve loaded unresolved markers for that person; the active correction-window message updates too; future translations and corrections use the new value; other completed messages remain unchanged.
 - **Reduced motion:** resolve markers and confirmations instantly without decorative motion.
 
 ## V1 limits
