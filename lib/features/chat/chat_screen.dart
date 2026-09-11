@@ -2168,7 +2168,8 @@ class _MessageList extends ConsumerWidget {
           isLastInGroup: isLastInGroup,
         ),
       );
-      if (m.id == firstPendingId) {
+      if (m.id == firstPendingId &&
+          shouldShowPendingTranslationGroupStatus(pendingIncoming.length)) {
         items.add(_PendingTranslationStatusItem(pendingIncoming.length));
       }
     }
@@ -3039,30 +3040,6 @@ class _BubbleState extends ConsumerState<_Bubble> {
       originalWasRevealedAfterFailure: _incomingOriginalRevealedAfterFailure,
     )) {
       _incomingWasHeld = true;
-      return Container(
-        key: const ValueKey('incoming-translation-skeleton'),
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: BlabColors.bubbleIncomingSurface,
-          border: Border.all(color: BlabColors.bubbleIncomingOutline),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(18),
-            topRight: Radius.circular(18),
-            bottomLeft: Radius.circular(4),
-            bottomRight: Radius.circular(18),
-          ),
-        ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _TranslationSkeletonLine(width: 76),
-            SizedBox(height: 7),
-            _TranslationSkeletonLine(width: 118),
-          ],
-        ),
-      );
     }
 
     final authoredContent = buildLearningContent(
@@ -3087,8 +3064,11 @@ class _BubbleState extends ConsumerState<_Bubble> {
         _incomingOriginalRevealedAfterFailure &&
         showLearningAid &&
         liveTranslation is! AsyncError<MessageTranslation>;
+    final pendingContent = !isOut && !retryingRevealedIncoming
+        ? const IncomingTranslationPlaceholder()
+        : authoredContent;
     final animateTranslationLifecycle =
-        ((isOut && isPractice) || retryingRevealedIncoming) &&
+        ((isOut && isPractice) || !isOut) &&
         showLearningAid &&
         liveTranslation is! AsyncError<MessageTranslation>;
     final messageLearningContent = animateTranslationLifecycle
@@ -3097,9 +3077,9 @@ class _BubbleState extends ConsumerState<_Bubble> {
               'translation-lifecycle-$targetLanguageCode-'
               '${message.originalText.hashCode}',
             ),
-            authoredContent: authoredContent,
+            authoredContent: pendingContent,
             finalContent: finalContent,
-            resolved: resolvedForLifecycle,
+            resolved: resolvedForLifecycle && !holdIncomingUntilPrevious,
             delivered:
                 message.status == MessageStatus.delivered ||
                 message.status == MessageStatus.read,
@@ -3414,26 +3394,6 @@ class _UnsupportedLanguageNotice extends StatelessWidget {
             fontWeight: FontWeight.w400,
             color: Color(0xFF917869),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TranslationSkeletonLine extends StatelessWidget {
-  const _TranslationSkeletonLine({required this.width});
-
-  final double width;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: 12,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xFFEAE6E0),
-          borderRadius: BorderRadius.circular(6),
         ),
       ),
     );

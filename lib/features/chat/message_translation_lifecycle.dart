@@ -20,6 +20,9 @@ bool shouldHoldIncomingTranslation({
   required bool originalWasRevealedAfterFailure,
 }) => !isOutgoing && processing && !originalWasRevealedAfterFailure;
 
+bool shouldShowPendingTranslationGroupStatus(int pendingCount) =>
+    pendingCount > 1;
+
 bool translationResultIsUnchanged(
   String authoredText,
   MessageTranslation result,

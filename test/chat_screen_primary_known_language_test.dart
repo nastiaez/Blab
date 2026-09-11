@@ -61,6 +61,8 @@ class _PrimaryKnownLanguageChatService implements ChatService {
     this.preparedPackages = const [],
     this.languageTimeline = const [],
     this.messageText = 'Hallo',
+    this.previousMessageIsOutgoing = true,
+    this.previousMessageText = 'Earlier',
     DateTime? messageSentAt,
     DateTime? previousMessageSentAt,
   }) : message = Message(
@@ -77,8 +79,8 @@ class _PrimaryKnownLanguageChatService implements ChatService {
            : Message(
                id: 'msg-0',
                chatId: 'chat-1',
-               isOutgoing: true,
-               originalText: 'Earlier',
+               isOutgoing: previousMessageIsOutgoing,
+               originalText: previousMessageText,
                translation: '',
                sentAt: previousMessageSentAt,
                status: MessageStatus.delivered,
@@ -93,6 +95,8 @@ class _PrimaryKnownLanguageChatService implements ChatService {
   final List<Map<String, dynamic>> preparedPackages;
   final List<Map<String, dynamic>> languageTimeline;
   final String messageText;
+  final bool previousMessageIsOutgoing;
+  final String previousMessageText;
   int languageTimelineFetchCount = 0;
 
   final Message message;
@@ -287,13 +291,19 @@ class _NoopTyping implements TypingTransport {
   Future<void> close() async {}
 }
 
-Widget _host(ProviderContainer container) {
+Widget _host(ProviderContainer container, {bool disableAnimations = false}) {
   return UncontrolledProviderScope(
     container: container,
-    child: const MaterialApp(
+    child: MaterialApp(
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: ChatScreen(chatId: 'chat-1'),
+      home: MediaQuery(
+        data: MediaQueryData(
+          disableAnimations: disableAnimations,
+          accessibleNavigation: disableAnimations,
+        ),
+        child: const ChatScreen(chatId: 'chat-1'),
+      ),
     ),
   );
 }
@@ -305,27 +315,44 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+Future<void> _pumpUntilFound(
+  WidgetTester tester,
+  Finder finder, {
+  int maxPumps = 30,
+}) async {
+  for (var i = 0; i < maxPumps; i++) {
+    if (finder.evaluate().isNotEmpty) return;
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+  fail('Timed out waiting for ${finder.describeMatch(Plurality.one)}');
+}
+
 ProviderContainer _containerForHeader(
   ChatService service, {
   List<Map<String, dynamic>> languageTimeline = const [],
   bool loadLanguageTimelineFromService = false,
   String primaryKnownLanguage = 'uk',
   List<String> knownLanguages = const ['uk'],
+  bool isOnline = false,
+  Future<MessageTranslation> Function(String messageId)? translate,
 }) {
   return ProviderContainer(
     overrides: [
       chatServiceProvider.overrideWithValue(service),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue('alice'),
-      isOnlineProvider.overrideWithValue(false),
+      isOnlineProvider.overrideWithValue(isOnline),
       typingIndicatorsEnabledProvider.overrideWithValue(false),
       pushNotificationGatewayProvider.overrideWithValue(
         _UnsupportedPushGateway(),
       ),
       pushTokenRepositoryProvider.overrideWithValue(_NoopPushTokenRepository()),
-      translateMessageFnProvider.overrideWithValue((messageId) async {
-        throw MessageTranslationFailed('unexpected_live_translation');
-      }),
+      translateMessageFnProvider.overrideWithValue(
+        translate ??
+            (messageId) async {
+              throw MessageTranslationFailed('unexpected_live_translation');
+            },
+      ),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
       if (!loadLanguageTimelineFromService)
         chatLanguageTimelineProvider.overrideWith(
@@ -478,6 +505,171 @@ void main() {
       // gotten a permanent cache miss.
       expect(find.text('Привіт'), findsOneWidget);
       expect(find.text('Hallo'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'one pending incoming message uses the shared lifecycle without a status row',
+    (tester) async {
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          chatMode: 'practice',
+          learningLanguageCode: 'de',
+          messageText: 'Hello there',
+        ),
+        primaryKnownLanguage: 'en',
+        knownLanguages: const ['en'],
+      );
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+
+      expect(
+        find.byKey(const ValueKey('incoming-translation-placeholder')),
+        findsNWidgets(2),
+      );
+      expect(find.byKey(const ValueKey('translation-wave')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('incoming-translation-skeleton')),
+        findsNothing,
+      );
+      expect(find.text('Translating…'), findsNothing);
+      expect(find.text('Hello there'), findsNothing);
+
+      container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .hydrateFromDb(
+            const {
+              'msg-1': MessageTranslation(
+                translation: 'Hallo zusammen',
+                interfaceText: 'Hello there',
+                interfaceLang: 'en',
+                sourceLang: 'en',
+                tokens: [],
+                mode: LearningAidMode.translation,
+              ),
+            },
+            'de',
+            'en',
+            replaceExisting: true,
+          );
+      final clear = find.byKey(const ValueKey('translation-clear'));
+      await _pumpUntilFound(tester, clear);
+      expect(clear, findsOneWidget);
+      expect(find.text('Hello there'), findsNothing);
+      expect(find.text('Hallo zusammen'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 121));
+      expect(
+        find.byKey(const ValueKey('translation-reshape-empty')),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.byKey(const ValueKey('translation-land')), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 221));
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is MessageText && widget.text == 'Hallo zusammen',
+        ),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
+    },
+  );
+
+  testWidgets(
+    'reduced motion keeps incoming placeholder static and swaps directly',
+    (tester) async {
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          chatMode: 'practice',
+          learningLanguageCode: 'de',
+          messageText: 'Reduced motion message',
+        ),
+        primaryKnownLanguage: 'en',
+        knownLanguages: const ['en'],
+      );
+
+      await tester.pumpWidget(_host(container, disableAnimations: true));
+      await _settle(tester);
+
+      expect(
+        find.byKey(const ValueKey('incoming-translation-placeholder')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
+      expect(find.text('Translating…'), findsNothing);
+      expect(find.text('Reduced motion message'), findsNothing);
+
+      container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .hydrateFromDb(
+            const {
+              'msg-1': MessageTranslation(
+                translation: 'Nachricht ohne Bewegung',
+                interfaceText: 'Reduced motion message',
+                interfaceLang: 'en',
+                sourceLang: 'en',
+                tokens: [],
+                mode: LearningAidMode.translation,
+              ),
+            },
+            'de',
+            'en',
+            replaceExisting: true,
+          );
+      final finalMessage = find.byWidgetPredicate(
+        (widget) =>
+            widget is MessageText && widget.text == 'Nachricht ohne Bewegung',
+      );
+      await _pumpUntilFound(tester, finalMessage);
+
+      expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
+      expect(find.byKey(const ValueKey('translation-clear')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('translation-reshape-empty')),
+        findsNothing,
+      );
+      expect(finalMessage, findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
+    },
+  );
+
+  testWidgets(
+    'simultaneous incoming messages share one count and own separate placeholders',
+    (tester) async {
+      final now = DateTime.now();
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          chatMode: 'practice',
+          learningLanguageCode: 'de',
+          messageText: 'Second message',
+          messageSentAt: now,
+          previousMessageSentAt: now.subtract(const Duration(seconds: 1)),
+          previousMessageIsOutgoing: false,
+          previousMessageText: 'First message',
+        ),
+        primaryKnownLanguage: 'en',
+        knownLanguages: const ['en'],
+      );
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+
+      expect(
+        find.byKey(const ValueKey('incoming-translation-placeholder')),
+        findsNWidgets(4),
+      );
+      expect(find.text('Translating 2 messages…'), findsOneWidget);
+      expect(find.text('Translating…'), findsNothing);
+      expect(find.text('First message'), findsNothing);
+      expect(find.text('Second message'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
     },
   );
 

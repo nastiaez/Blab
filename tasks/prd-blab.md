@@ -604,6 +604,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Mechanical writing fixes are silent; clear author mistakes use the normal inline correction treatment; recipients see only clean output
 - [ ] Emoji, URLs, mentions, hashtags, code, protected names, and number-only content are never corrected or translated; mixed messages preserve them in natural target-language order
 - [ ] Incoming Practice messages wait for their target-language result; incoming Normal messages translate only when their source is unknown to the reader
+- [ ] Pending incoming translation uses the same lifecycle timing and resolve motion as outgoing translation, but keeps authored text private behind two neutral placeholder lines; a single pending bubble has no separate status row
 - [ ] After one quiet retry and no more than ten seconds, language-help failure preserves readable original text and shows an actionable Retry; delivery failure remains a separate state
 - [ ] Cached messages, mode switches, edits, deletion, captions, grammatical alternatives, off-screen resolution, concurrent sends, and reduced-motion behavior follow `2026-08-12-translating-state-animation-design.md`
 
@@ -615,7 +616,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Acceptance Criteria:**
 - [ ] After message delivery, Blab prepares and persists the recipient's Practice and Normal views without requiring that participant to open the chat
 - [ ] Under normal service availability, opening a prepared chat paints final messages immediately with no replayed translation state
-- [ ] A genuine remaining miss appears as a normal incoming bubble with two static `#EAE6E0` skeleton lines; one muted group row reads `Translating…` or `Translating N messages…`
+- [ ] A genuine remaining miss appears as a normal incoming bubble with two `#EAE6E0` placeholder lines; slow work waves across the lines, then clears, reshapes, and lands final text using the outgoing lifecycle timing
+- [ ] One pending message has no standalone status row; two or more pending messages use one muted `Translating N messages…` group row
 - [ ] Pending results reveal oldest-first, and each ready result appears without waiting for every other pending message
 - [ ] Incoming Practice never exposes the authored message while processing; Normal shows authored text immediately when the reader knows its source language
 - [ ] A final failure replaces only that skeleton with readable authored text plus `Couldn’t translate · Retry` and never blocks later messages
