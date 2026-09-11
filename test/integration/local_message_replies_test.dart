@@ -64,23 +64,31 @@ void main() {
           _signIn(carol, 'carol@blab.test'),
         ]);
 
-        final bobInvite = await ChatService(
-          alice,
-        ).createInvite(myLearningLanguage: 'de');
+        final bobInvite = await ChatService(alice).createInvite();
         inviteTokens.add(bobInvite.token);
         final aliceBobChat = await ChatService(
           bob,
-        ).claimInvite(token: bobInvite.token, myLearningLanguage: 'fr');
+        ).claimInvite(token: bobInvite.token);
         chatIds.add(aliceBobChat);
-
-        final carolInvite = await ChatService(
+        await ChatService(
           alice,
-        ).createInvite(myLearningLanguage: 'de');
+        ).setLearningLanguage(chatId: aliceBobChat, langCode: 'de');
+        await ChatService(
+          bob,
+        ).setLearningLanguage(chatId: aliceBobChat, langCode: 'fr');
+
+        final carolInvite = await ChatService(alice).createInvite();
         inviteTokens.add(carolInvite.token);
         final aliceCarolChat = await ChatService(
           carol,
-        ).claimInvite(token: carolInvite.token, myLearningLanguage: 'es');
+        ).claimInvite(token: carolInvite.token);
         chatIds.add(aliceCarolChat);
+        await ChatService(
+          alice,
+        ).setLearningLanguage(chatId: aliceCarolChat, langCode: 'de');
+        await ChatService(
+          carol,
+        ).setLearningLanguage(chatId: aliceCarolChat, langCode: 'es');
 
         final realtimeService = ChatService(alice);
         final changes = StreamIterator(
@@ -228,17 +236,19 @@ void main() {
             'p_explanation': null,
             'p_confidence': null,
             'p_tokens': <Map<String, dynamic>>[],
+            'p_form_alternatives': null,
+            'p_cache_contract_version': 'automatic-forms-v2',
           },
         );
         expect(completed, isTrue);
         final cached = await ChatService(alice).fetchCachedTranslation(
           messageId: source.id,
-          targetLang: 'de',
-          interfaceLang: 'en',
+          targetLang: prepared['targetLang'] as String,
+          interfaceLang: prepared['interfaceLang'] as String,
         );
         expect(cached?.text, 'alte Uebersetzung');
         expect(cached?.interfaceText, 'reply source');
-        expect(cached?.interfaceLang, 'en');
+        expect(cached?.interfaceLang, prepared['interfaceLang']);
         expect(cached?.sourceLang, 'en');
         expect(cached?.mode, 'translation');
         expect(
