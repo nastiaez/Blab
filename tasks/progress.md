@@ -279,6 +279,12 @@
   - [x] L-15 writing correction extension (2026-07-18): provider modes `translation|correction|none`, author-only inline correction marks, recipient-clean corrected output, localized author explanations, shared authorized cache/RLS, and dual learning/interface output lanes.
 
 ### Step 2.8 — Grammatical-form preferences `[ ]` ← in progress
+- **Automatic-form simplification started (2026-09-11):** Owner approved full sentences, name suggestions with feminine fallback, one `Using … forms for … · Change` note per person/chat, and existing Translation preferences navigation. Supersedes required markers/chooser and next-message expiry. Includes correct participant attribution; implementation underway.
+- **Correction window locally verified (2026-09-11):** Change and matching Settings update only the latest explicitly chosen message until next same-chat send/receive; survives restart/overnight, then completed history remains fixed. Fixed accessibility-triggered chooser remount, controlled selection and prepared alternatives hydration. Android/browser packaged; 33 focused + 52 regression tests pass. Evidence: `docs/qa/2026-09-10-form-correction-window/README.md`. Owner acceptance and upstream person/language fixes remain open.
+- **Immediate-correction rule approved; implementation started (2026-09-10):** Most recently explicitly chosen message per chat remains revisable through Change/Settings until the next new same-chat message; send date/visibility do not define eligibility. Preserve other completed history. Design/plan: `2026-09-10-form-correction-window`; upstream person/language bugs remain separately open.
+- **Root-cause investigation (2026-09-10):** Confirmed unchecked wrong-person metadata; wrong source-language/none accepted as success, suppressing Retry; prepared-history loading drops form alternatives; temporary choice can override updated settings; selection/confirmation condition fails in isolated and full-chat diagnostics. Externally selected Change control passes, so the exact prior inert tap still needs integration isolation. Existing spec intentionally leaves older completed messages unchanged after settings changes. No fixes made. See `docs/qa/2026-09-10-ukrainian-forms/ROOT-CAUSES.md`.
+- **Ukrainian manual test (2026-09-10):** Alice browser/Bob emulator reproduced three failures: incoming “you” chooser identifies/saves the partner instead of the viewer; temporary Change does not reopen options; outgoing English “I was tired yesterday.” remains English for Ukrainian (stored source uk, aid mode none). Feminine rendering and settings fallback persistence across restart pass in isolation. No fixes made; full matrix stays open. Evidence: `docs/qa/2026-09-10-ukrainian-forms/README.md`.
+- **Ukrainian owner-requested test started (2026-09-10):** Alice browser and Bob Link QA emulator; verify unknown-form prompt, feminine/masculine resolution and memory. Test-only pass; no product changes or completion claimed.
 - **Scope:** US-042, FR-34, FR-35. Unknown required feminine/masculine forms use persistent inline markers with a non-blocking default-open chooser. Self preferences are account-wide; partner fallbacks and conversation tone are private to each chat; saved forms remain authoritative until changed in Translation preferences.
 - **Done when:**
   - Unknown required forms show an ellipsis marker for one subject or numbered markers for multiple subjects; choosing resolves linked agreement and a temporary confirmation offers Change
@@ -501,17 +507,19 @@
   - [x] Follow-on Bob browser check: after Spanish → French, the existing `Hasta pronto.` bubble stayed Spanish above `Now learning French`; three later messages resolved in French below it. Two required the visible Retry action before resolving, while the third completed on its first attempt; the history boundary is correct, but first-attempt translation reliability remains an open separate issue.
   - [x] Third-era Bob browser check: after French → Dutch, the existing Spanish and French bubbles stayed in their own eras above `Now learning Dutch`; two later messages resolved directly in Dutch below it.
 
-### Step 2.12 — Grammatical-form choices + translation preferences `[ ]`
-- **Design:** `docs/superpowers/specs/2026-08-14-grammatical-form-preferences-design.md`.
-- **Scope:** US-042, FR-34, FR-35. Add persistent in-sentence markers and a non-blocking default-open chooser when a generated translation requires an unknown feminine or masculine form; learn a first explicit authored form silently; automatically correct later opposite authored forms to the authoritative saved value; add account-wide self form, private one-to-one partner fallback, and independent per-chat conversation tone to Translation preferences. Apply the target-language matrix across all 11 supported learning languages and to photo captions.
+### Step 2.12 — Automatic grammatical forms + translation preferences `[ ]` ← in progress
+- **Local verification (2026-09-11):** Complete-note redesign implemented and packaged for Android/web. Alice browser/Bob emulator verified recipient identity, Change → existing preferences, annotated-message correction, future masculine output, no repeated note and restart persistence. 37 focused Flutter checks and 4 new server checks pass. Independent bounded review clear. Evidence: `docs/qa/2026-09-11-automatic-forms/README.md`. Owner acceptance/full matrix remain pending; newly found canonical-form Chats preview mismatch and existing false-success Retry defect stay open.
+
+- **Design:** `docs/superpowers/specs/2026-09-11-automatic-grammatical-forms-design.md` supersedes the 2026-08-14 chooser and 2026-09-10 expiring correction window.
+- **Scope:** US-042, FR-34, FR-35. Complete automatic form: saved preference, name suggestion, feminine fallback. One quiet note per participant/chat; Change opens existing Translation preferences. Retain authored-form learning, account/private preference scope, tone and the full 11-language/caption matrix.
 - **Done when:**
-  - One unknown subject renders as an ellipsis marker; multiple unknown subjects render numbered markers, with one default-open chooser and linked agreement resolved per subject.
-  - Choosing resolves the message and future translations; the muted `[Person]: [form] · Change` confirmation disappears after the next message.
-  - Unresolved markers persist in history; the newest opens on chat reopen, and a later choice quietly resolves earlier markers for the same viewer or partner.
+  - Complete sentences have no grammatical gaps or word-choice containers; ambiguous names use feminine without neutral rewriting.
+  - One localized note names the correct participant; incoming you is the viewer and I is the author. Change opens existing preferences.
+  - The annotated message and future messages follow preference changes even after another message; all other completed snapshots stay frozen. Clearing preferences restores a complete suggested form.
   - A first authored form is learned silently; later opposite authored forms receive the normal visible correction until the preference changes in settings.
   - Self form works account-wide; partner fallback stays private to the one-to-one relationship; tone stays per chat.
   - Translation preferences expose all three controls with correct scope and allow clearing a form to `Not set`.
-  - Content QA passes for all 11 languages, including linked French/Hindi agreement, Tamil third-person forms, and no unnecessary chooser in English/Turkish.
+  - Content QA passes for all 11 languages, including linked French/Hindi agreement, Tamil third-person forms, and no unnecessary form note in English/Turkish.
   - Accessibility, automated checks, and a manual device pass satisfy the full US-042 checklist.
 
 ### Step 2.13 — Chat UI refresh + simple long press `[ ]` ← in progress
@@ -905,3 +913,13 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-10 — Owner README edit triggered successful association publication (`fefed30`). Verified live HTTP 200 JSON, correct controlled release identity, and unchanged homepage. Publication blocker resolved; matching signed-app and Play verification remain open.
 
 - 2026-09-10 — Recorded owner deferral of automatic installed-app invite-opening verification until after launch; retained unverified status and separate Play install-continuation gate.
+
+- 2026-09-10 — First Ukrainian owner-requested test recorded wrong-person selection, inactive Change and untranslated outgoing self-reference; kept grammar completion open pending repair approval and retest.
+
+- 2026-09-10 — US-042 refined with the owner-approved message-bound immediate-correction window; implementing under Step 2.8 without broad historical rewriting.
+
+- 2026-09-11 — Implemented the bounded US-042 correction window and repaired accessibility-triggered Change resets; Alice/browser and Bob/emulator journey passes locally. Owner checks remain open; wrong-person/false-success translation defects remain separate.
+
+- 2026-09-11 — Replaced Step 2.12 chooser/expiry scope with owner-approved automatic name suggestion, feminine fallback, persistent once-per-person note and existing Settings navigation; owner and complete language-matrix checks remain open.
+
+- 2026-09-11 — Recorded local automatic-form note verification and new Chats-preview canonical-form mismatch. No owner launch checkbox or full grammar milestone completed.

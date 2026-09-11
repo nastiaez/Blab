@@ -1381,7 +1381,11 @@
         note: 'One Codex spec',
         tasks: [
           { id: 'owner-form-polish', type: 'ux', label: 'Polish the UI for the feminine/masculine choice.', done: true },
-          { id: 'owner-form-memory', type: 'check', label: 'Test that the selected preference is actually remembered correctly.' },
+          { id: 'owner-form-person-attribution', type: 'bug', label: 'Use the correct person for grammatical forms.', detail: 'Check incoming you names the recipient and I names the author. Automatic-form repair locally verified with Alice browser/Bob emulator; owner verification pending.' },
+          { id: 'owner-form-preview', type: 'bug', label: 'Match the Chats preview to the form displayed in the conversation.', detail: 'Local check on 11 September: the park-message preview remains feminine while Bob’s conversation uses masculine. Still open.' },
+          { id: 'owner-form-false-success', type: 'bug', label: 'Fix untranslated messages being treated as successful, hiding Retry.', detail: 'I was tired yesterday remains English when Ukrainian is required. Wrong source-language detection is accepted as success; still open.' },
+          { id: 'owner-form-correction-window', type: 'check', label: 'Show complete automatic forms with one Change note per person.', detail: 'Saved form, then name suggestion, then feminine fallback. Change opens existing Translation preferences and updates the annotated message plus future messages; other completed history stays unchanged. No markers or choice containers. Local note, preferences, correction and restart checks pass. Owner confirmation and full language matrix pending.' },
+          { id: 'owner-form-memory', type: 'check', label: 'Test that the selected preference is actually remembered correctly.', detail: '10 September Ukrainian check: saved partner setting survives restart, but an incoming you sentence saves against the wrong person. Full memory/ownership check remains open.' },
           { id: 'owner-form-preferences-ui', type: 'ux', label: 'Check the new Translation Preferences UI and make sure it feels understandable.' },
           { id: 'owner-form-cases', type: 'flow', label: 'Finish/test the persistence and contradiction cases already identified in the existing launch work.' }
         ]
@@ -1877,6 +1881,7 @@
         tasks: [
           ...ownerLaunchGroups[2].tasks,
           ...tasksById('core-form-cache', 'core-form-contradiction', 'core-form-copy', 'core-language-matrix'),
+          { id: 'form-ukrainian-regressions', type: 'check', label: 'Fix Ukrainian choice ownership, Change, and untranslated self-reference', detail: '10 September Alice/Bob test failed: incoming you asks for Alice rather than Bob, Change does not reopen, and I was tired yesterday stays English. Investigation found unchecked language/person results, lost history choices and inconsistent confirmation state. The exact inert Change tap still needs integration isolation. Repair and retest required; no pass claimed.' },
           { id: 'form-choice-attachment', type: 'ux', label: 'Make the grammatical-gender choice clearly belong to the message that triggered it, not the message below.' },
           { id: 'form-localization', type: 'flow', label: 'Finish grammatical-form localization across all 11 learning languages.' },
           { id: 'form-commit', type: 'flow', label: 'Commit the grammatical-form work.' },

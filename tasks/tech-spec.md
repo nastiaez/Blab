@@ -237,3 +237,12 @@ These are *study material*, not code to copy. Signal source is AGPL-3.0 — do n
   https://signal.org/docs/specifications/x3dh/
 - **`libsignal`** — official protocol implementation (Rust core, language bindings). Evaluate for Dart/Flutter bindings before reinventing.
   https://github.com/signalapp/libsignal
+
+### Resolved decision — immediate form correction (2026-09-10)
+
+**Superseded by 2026-09-11 automatic forms below.** Previously: use an account-scoped device-persisted source/target-specific form ledger and one message-bound correction window per chat. The latest explicit form selection, not message sent-time or visibility, owns the window. Settings and inline Change update only the matching active resolution until a new same-chat message. Preserve completed snapshots; retain alternatives from prepared packages. Server preferences remain authoritative for future work. See `docs/superpowers/specs/2026-09-10-form-correction-window-design.md`.
+
+- **2026-09-11 — US-042 state continuity:** MessageArrival retains its child tree with identity transforms when animation/accessibility settings change, preventing chooser-state loss. Closed null snapshots remain unanswered and can resolve passively later; only stored snapshots override prepared alternatives, preserving untouched multi-person markers.
+
+### Resolved decision — Automatic grammatical-form notes (2026-09-11)
+US-042 / FR-34 supersedes the chooser and expiring correction window. Retain canonical feminine server text with linked alternatives; add optional suggestedForm and stable author/recipient subjectRole metadata. Audit ownership on every bounded eligible provider attempt, including responses already containing alternatives. Viewer-relative client binding uses the message direction and actual participant names. Explicit preferences win; provisional name suggestions fall back to feminine and are not profile writes. Extend the account/device source-target ledger with one persistent annotated resolution per participant/chat; settings update these targets, while other snapshots stay frozen. Change uses the existing translation-preferences route. Existing snapshots/windows remain readable for compatibility; legacy windows cannot mutate history. Completed snapshots can acquire their first note without changing their text. Copy, Listen and quote previews resolve from the same stored form. See `docs/superpowers/specs/2026-09-11-automatic-grammatical-forms-design.md`.
