@@ -41,6 +41,12 @@ Open the chat note → Change → Your gender form → choose the other form →
 - Edited and deleted messages release their note ownership. A delayed callback is rejected by the ledger unless the exact message ID and source snapshot still exist. Switching target language transfers the note to the same message instead of orphaning it.
 - Focused Flutter verification: 29 ledger/note/chat tests pass; the masculine-token and Normal-known-source regressions pass independently. Scoped analysis, formatting, `deno check`, and `git diff --check` pass.
 - Direct-person normalization no longer guesses from generic word endings. It accepts explicit or tightly bounded language forms, recognizes participant names directly, permits capitalized German nouns, distinguishes Dutch subject `je` from possessive `je`, and leaves ambiguous Italian `sono` clauses to the audit. Controls cover ordinary English/German sentences plus the reported Dutch, Italian, Portuguese, and Spanish false positives.
-- Translate-message verification: 72 tests pass; one existing corrected-interface-text contract test still fails and is not part of this hardening.
-- Full Flutter verification: 451 pass, 15 skip, 10 existing UI-contract failures. The failures are old bubble-expand expectations plus the known inline token-segmentation assertion; none are counted as fixed by this work.
+- Translate-message verification after deferred-failure cleanup: 74 tests pass with no failures.
+- Full Flutter verification after deferred-failure cleanup: 462 pass, 15 skip, with no failures.
 - Owner/device/language-matrix gates remain open. No production deployment was performed.
+
+## Deferred failure cleanup
+- The corrected-interface failure was a real server/database contradiction: the provider contract requested a clean interface-language sentence, but TypeScript normalization restored the authored mistake and both completion RPCs rejected any corrected value. Corrected interface text is now preserved while same target/interface lanes remain strictly identical.
+- The two reply-preview failures shared a stale test fixture. Cached Tamil quote rendering already worked, but the fake omitted the required viewer-private language timeline, so the parent bubble remained behind the historical-language safety gate. Both reply fixtures now provide a baseline language era and prove that cached parent/quote text renders without a live provider call.
+- The seven bubble-action failures had the same missing-timeline fixture root cause. Restoring the baseline era makes the existing failure hints, long-press actions, TTS, Original toggle, Reply action, and mode-switch dismissal assertions pass without production UI changes.
+- The remaining correction assertion expected one fused span. The renderer intentionally separates replacement words and punctuation into independently tappable segments; the test now verifies unchanged, struck, and corrected semantics directly.

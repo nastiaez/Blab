@@ -109,3 +109,35 @@ Deno.test("automatic-form migration rejects every legacy completion contract", a
     "foreground and worker RPC calls must both send the current contract",
   );
 });
+
+Deno.test("completion RPCs preserve corrected source-interface text", async () => {
+  const sql = (await Deno.readTextFile(migrationUrl))
+    .replace(/--.*$/gm, "")
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim()
+    .toLowerCase();
+
+  assert(
+    sql.match(
+      /create or replace function public\.complete_message_translation\(/g,
+    )?.length === 1,
+    "the migration must replace the foreground completion validator",
+  );
+  assert(
+    sql.match(
+      /create or replace function public\.complete_message_translation_job\(/g,
+    )?.length === 1,
+    "the migration must replace the worker completion validator",
+  );
+  assert(
+    !sql.includes(
+      "p_source_lang = p_interface_lang and p_source_lang <> p_target_lang and p_interface_text <> btrim(v_body)",
+    ) &&
+      !sql.includes(
+        "p_source_lang = v_job.primary_known_language and p_source_lang <> v_job.learning_language and p_interface_text <> btrim(v_message.body)",
+      ),
+    "translation completions must not reject a corrected interface-language line",
+  );
+});

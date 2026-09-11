@@ -125,11 +125,17 @@ void main() {
     'inline correction keeps cosmetic edits clean and strikes replacement',
     () {
       expect(
-        correctionSegments(
-          'was machen du',
-          'Was machst du?',
-        ).map((segment) => (segment.text, segment.struck)).toList(),
-        [('Was ', false), ('machen', true), (' machst du?', false)],
+        correctionSegments('was machen du', 'Was machst du?')
+            .map((segment) => (segment.text, segment.struck, segment.corrected))
+            .toList(),
+        [
+          ('Was ', false, false),
+          ('machen', true, false),
+          (' ', false, false),
+          ('machst', false, true),
+          (' du', false, false),
+          ('?', false, true),
+        ],
       );
     },
   );

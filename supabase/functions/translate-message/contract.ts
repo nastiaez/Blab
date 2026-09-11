@@ -1053,15 +1053,17 @@ export function parseProviderResult(
     result.confidence = null;
     result.tokens = [];
   }
-  // These display lines are fully determined by trusted inputs. Normalize
-  // them instead of rejecting an otherwise valid provider translation when
-  // the model rewrites a typo or returns two slightly different copies.
+  // Duplicate target/interface lanes are fully determined by the learning
+  // translation. A distinct source/interface lane may contain a provider's
+  // clean correction, with the authored text retained as its safe fallback.
   if (interfaceLang === targetLang) {
     result.interfaceText = result.translation;
-  } else if (sourceLang === interfaceLang) {
-    // Same-language display line: the DB requires this to exactly match the
-    // original message, so never trust the provider's copy of it (models
-    // routinely "fix" punctuation/capitalization, which breaks that check).
+  } else if (
+    sourceLang === interfaceLang && result.interfaceText.trim().length === 0
+  ) {
+    // Keep a provider correction in the reader's interface language. Falling
+    // back to the authored line is only necessary when that lane is missing;
+    // otherwise clear source mistakes would leak into the main chat display.
     result.interfaceText = text;
   } else if (result.interfaceText.trim().length === 0) {
     result.interfaceText = text;
