@@ -1,72 +1,29 @@
-import 'package:blab/app/router.dart';
-import 'package:blab/app/theme.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<void> _bootAt(WidgetTester tester, String location) async {
-  blabRouter.go(location);
-  await tester.pumpWidget(
-    ProviderScope(
-      child: MaterialApp.router(theme: blabTheme, routerConfig: blabRouter),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  // ── Screen 1: invite landing ──────────────────────────────────────────────
-
-  testWidgets('/invite shows avatar, name, subtitle and CTA', (tester) async {
-    await _bootAt(tester, '/invite?from=Nastia');
-
-    expect(find.text('Nastia'), findsOneWidget);
-    expect(find.text('invited you to chat'), findsOneWidget);
-    expect(find.text('Join Nastia'), findsOneWidget);
+  test('all web invites use the same non-claiming landing', () {
+    final config = jsonDecode(File('web/vercel.json').readAsStringSync());
+    expect(
+      (config['rewrites'] as List).any(
+        (row) =>
+            row['source'] == '/i/:token' && row['destination'] == '/i.html',
+      ),
+      isTrue,
+    );
+    final html = File('web/i.html').readAsStringSync();
+    expect(html, contains('You’re invited to Blab'));
+    expect(html, contains('Download on the App Store'));
+    expect(html, contains('Download on Google Play'));
+    expect(html, isNot(contains('supabase')));
+    expect(html, isNot(contains('claim_invite')));
+    expect(html, isNot(contains('Open in Blab')));
+    expect(html, isNot(contains('Pick a language')));
   });
-
-  testWidgets('/invite?status=expired shows expired heading + no CTA', (
-    tester,
-  ) async {
-    await _bootAt(tester, '/invite?status=expired&from=Nastia');
-
-    expect(find.text('This invite expired'), findsOneWidget);
-    expect(find.text('Join Nastia'), findsNothing);
-    expect(find.byIcon(Icons.timer_off_outlined), findsOneWidget);
+  test('nested invite URL loads the approved logo from the site root', () {
+    final html = File('web/i.html').readAsStringSync();
+    expect(html, contains('src="/blab-logo_black.svg"'));
+    expect(File('web/blab-logo_black.svg').existsSync(), isTrue);
   });
-
-  testWidgets('/invite?status=used shows used heading + no CTA', (
-    tester,
-  ) async {
-    await _bootAt(tester, '/invite?status=used&from=Nastia');
-
-    expect(find.text('This invite was already claimed'), findsOneWidget);
-    expect(find.text('Join Nastia'), findsNothing);
-    expect(find.byIcon(Icons.link_off), findsOneWidget);
-  });
-
-  // ── Screen 2: language picker ─────────────────────────────────────────────
-
-  testWidgets('/invite/pick-language default state shows disabled Say hello', (
-    tester,
-  ) async {
-    await _bootAt(tester, '/invite/pick-language?inviter=Nastia');
-
-    expect(find.text('Pick a language'), findsOneWidget);
-    expect(find.text('Say hello'), findsOneWidget);
-    // No language pre-selected — no checkmark visible.
-    expect(find.byIcon(Icons.check), findsNothing);
-  });
-
-  testWidgets(
-    '/invite/pick-language tapping a language activates CTA with greeting',
-    (tester) async {
-      await _bootAt(tester, '/invite/pick-language?inviter=Nastia');
-
-      await tester.tap(find.text('French'));
-      await tester.pump();
-
-      expect(find.text('Say bonjour'), findsOneWidget);
-    },
-  );
 }

@@ -1,8 +1,48 @@
 import 'package:blab/features/invite/invite_continuation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test(
+    'a completed older claim does not erase a newer pending invite',
+    () async {
+      await savePendingInvite('first');
+      await savePendingInvite('second');
+      await clearPendingInvite(matchingToken: 'first');
+      expect(await loadPendingInvite(), 'second');
+    },
+  );
+
+  test(
+    'background continuation retains transient failures and consumes success',
+    () async {
+      await savePendingInvite('pending');
+      await resumePendingInvite(claim: (_) async => throw Exception('offline'));
+      expect(await loadPendingInvite(), 'pending');
+      await resumePendingInvite(
+        claim: (invite) async {
+          expect(invite.token, 'pending');
+          return 'chat';
+        },
+      );
+      expect(await loadPendingInvite(), isNull);
+    },
+  );
+
+  test('background terminal failure clears only its token', () async {
+    await savePendingInvite('first');
+    await resumePendingInvite(
+      claim: (_) async {
+        await savePendingInvite('second');
+        throw const PostgrestException(message: 'invite_already_claimed');
+      },
+    );
+    expect(await loadPendingInvite(), 'second');
+  });
+
   test('invite continuation round-trips encoded auth route values', () {
     const continuation = InviteContinuation(
       token: 'token/with spaces',
@@ -22,7 +62,7 @@ void main() {
     expect(continuation.resolverLocation, '/i/token%2Fwith%20spaces');
   });
 
-  test('continuation without both token and language cannot resume', () {
+  test('continuation needs only a token, not a language', () {
     expect(
       const InviteContinuation(
         token: null,
@@ -37,7 +77,7 @@ void main() {
         inviterName: 'Alice',
         learningLanguage: null,
       ).canResume,
-      isFalse,
+      isTrue,
     );
   });
 

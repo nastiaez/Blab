@@ -861,7 +861,7 @@ abstract class AppLocalizations {
   /// No description provided for @noConnection.
   ///
   /// In en, this message translates to:
-  /// **'No connection — messages will send when you\'re back online'**
+  /// **'No connection'**
   String get noConnection;
 
   /// No description provided for @learningLanguage.

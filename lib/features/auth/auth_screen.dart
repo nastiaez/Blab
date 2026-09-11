@@ -242,32 +242,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _completeAuthentication() async {
     final continuation = InviteContinuation(
-      token: widget.inviteToken ?? await loadPendingInvite(),
+      token: await loadPendingInvite() ?? widget.inviteToken,
     );
     if (!mounted) return;
-    if (!continuation.canResume) {
-      context.go('/chats');
-      return;
-    }
-
-    try {
-      final chatId = await ref.read(inviteClaimActionProvider)(continuation);
-      await clearPendingInvite();
-      if (!mounted) return;
-      context.go('/chat/$chatId');
-    } catch (e) {
-      if (!mounted) return;
-      final failure = inviteClaimFailureFor(e);
-      if (isTerminalInviteClaimFailure(failure)) {
-        await clearPendingInvite();
-        if (!mounted) return;
-        context.go(continuation.resolverLocation);
-      } else {
-        setState(
-          () => _formErr = localizedInviteClaimMessage(context.l10n, failure),
-        );
-      }
-    }
+    context.go(
+      continuation.canResume ? continuation.resolverLocation : '/chats',
+    );
   }
 
   void _switchMode() {

@@ -14,7 +14,43 @@ launch rule that an unclaimed link remains valid until successfully claimed.
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
+## Active invite verification — 2026-09-10
+
+**Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.
+
+**Installed-app tap test — failed:** Owner-requested Alice browser/Bob emulator repeat used real external browser link taps. Default routing opens the download page, not Blab; the association endpoint is 404. With temporary user link approval only, existing-pair reuse, fresh signup, required language setup, messages, cold-start repeat and claimed/invalid states pass. Approval was removed and default failure reproduced. Evidence: `docs/qa/2026-09-10-installed-invite/`. Next: correct signed-app domain association and repeat without overrides; private Play installation remains separate. Owner-approved sharing/Copy stays done.
+
+**Owner-approved sharing/copy — done (2026-09-10):** Owner reviewed exact clipboard contents and explicitly asked to mark social sharing and copying done. This accepts the narrowed check: Telegram dispatch, Messages draft/return, native Copy and dismissal. WhatsApp and authenticated Telegram/email recipient delivery were not tested. The owner cancelled all additional Telegram login and purchase work; the pending browser login was closed. Evidence: `docs/qa/2026-09-10-share-targets/`.
+
+Current priority: final owner review of no-expiry/failure-retry behavior already exercised in browser/emulator, then the separate private Play install handoff. Automatic installed-app opening verification is owner-deferred until after launch. Alice browser/Bob emulator evidence is in `docs/qa/2026-09-09-browser-emulator/`; local integration and 15 database checks passed. Current repairs have 78 focused checks. Source commit/push is complete on `fix/invite-flow-verification`; share acceptance does not mark all remaining invite or store gates complete.
+
+Step 2.3b has a local verification record at
+`docs/qa/2026-09-08-invite-flow/README.md` with actual screenshot proof. Owner checks remain pending for
+English/first-language selection, Back and save-error recovery, offline invite
+continuation, new/returning recipients, and existing-pair reuse. Native sharing/Copy now has explicit owner approval.
+The static landing and Play install-referrer handoff are included in implementation;
+real store installation and public Loveblab domain verification are deferred until
+the owner’s final domain/release pass. Local Alice/Bob two-way messages and
+independent English/German choices, installed recipient, normal signup, native
+Copy, and same-pair re-invite have been exercised; these do not substitute for owner confirmation.
+
+Owner refinement on 2026-09-08: `Only one friend can use this link` now sits below the invite card without a bullet; Android screenshot 23 records the latest copy. Invite owner checks remain pending.
+
+The required first-language sheet now follows the owner’s warm-white, divided-list styling with a slim scrollbar and subtle 8% warm veil. The later spacing refinement increases rows to 56 px and sheet content to 520 px, and hides the empty-state card until language setup completes. The original no-dimming treatment is superseded; owner review includes scrolling, language selection, and Back/recovery. No owner checkbox is marked complete by these visual changes.
+
 ## Launch blockers
+
+**Independent fallback test (2026-09-10):** No existing signed APK/AAB was found locally or in GitHub releases/artifacts. With temporary Android user link selection, a fresh Alice invite opened Bob Link QA’s existing chat, Bob’s new message reached Alice’s browser, and a cold-start repeat reopened the same chat. User selection was restored to disabled afterward; no forced verification or production debug certificate was used. This is conditional journey evidence, not automatic association or Play proof. See `docs/qa/2026-09-10-self-test/README.md`.
+
+**Google confirms the website association (2026-09-10):** Public verification returns `linked: true` for the approved release identity. Matching-app testing is still waiting for the original signing backup; the bounded 1Password account lookup returned no data before timing out.
+
+**Association publication resolved (2026-09-10):** Owner commit `fefed30` published successfully; the live permanent-domain association is HTTP 200 JSON with the approved controlled release certificate. Previous Vercel publication failure below is historical. Remaining installed-link prerequisite is a matching signed app/restored original signing files; Play identity and actual install/referrer tests are still open.
+
+**Installed-link fix source ready, publication blocked (2026-09-10):** `nastiaez/blab-landing` main `db051ec` adds the missing association using the already approved controlled release certificate, not the emulator debug certificate. Four site checks pass, homepage unchanged. Vercel rejected the deployment because Git author `aswinckr` lacks project access. Need owner-triggered publication plus a matching signed app; original key files are missing locally and the Play app-signing certificate is still unverified. Full evidence: `docs/qa/2026-09-10-app-link-fix.md`.
+
+**Private Play test prerequisites (2026-09-10):** Original upload-signing files are absent at their recorded locations and must be restored from the owner-confirmed backup, not replaced. Production configuration still contains three placeholders; hosted parity needs verification. The permanent-domain association returns 404, although the invite fallback is 200. Obtain the actual Play app-signing certificate and finish release configuration before claiming a Play installation pass. No release package/upload or owner gate completed.
+
+**Invite website publication verified (2026-09-09):** Owner commit `01e2651` published successfully through the existing Vercel connection. Both public invite routes return HTTP 200; mobile browser checks confirm logo navigation, invite referrer, and unchanged homepage. Website-access blocker is resolved. Remaining release gates: actual App Store listing, verified Google Play install path, Play signing association, and owner manual handoff tests; these are not marked complete.
 
 | Order | Work ID | Audit ID | Scope | Depends on | Status | Work record |
 | ---: | --- | --- | --- | --- | --- | --- |

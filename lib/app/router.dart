@@ -179,9 +179,8 @@ final GoRouter blabRouter = GoRouter(
     ),
     GoRoute(
       path: '/chats/new',
-      builder: (context, state) => NewChatScreen(
-        initialToken: state.uri.queryParameters['token'],
-      ),
+      builder: (context, state) =>
+          NewChatScreen(initialToken: state.uri.queryParameters['token']),
     ),
     GoRoute(
       path: '/chats/empty',

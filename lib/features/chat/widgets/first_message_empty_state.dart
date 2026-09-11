@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../shared/models/chat.dart';
 
-/// Shown in a chat that has no messages yet: what you are learning here, plus a nudge
-/// to send the first message. Plain text — no flags, card, or icons. Clears
-/// as soon as a message is sent. US-026.
+/// US-027.
 class FirstMessageEmptyState extends StatelessWidget {
   const FirstMessageEmptyState({super.key, required this.chat});
 
@@ -13,6 +11,8 @@ class FirstMessageEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (chat.needsPracticeLanguageSelection) return const SizedBox.shrink();
+
     const lineStyle = TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w500,

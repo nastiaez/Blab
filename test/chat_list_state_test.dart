@@ -47,8 +47,66 @@ class _StalledChatListService extends _FakeChatService {
       Completer<List<Map<String, dynamic>>>().future;
 }
 
+class _SetupRefreshRaceService extends _FakeChatService {
+  _SetupRefreshRaceService()
+    : super([
+        {
+          'chat_id': 'new-chat',
+          'needs_practice_language_selection': true,
+          'my_learning': 'en',
+        },
+      ]);
+
+  final stale = Completer<List<Map<String, dynamic>>>();
+  int calls = 0;
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchChatList() async {
+    if (++calls == 1) return rows;
+    if (calls == 2) return stale.future;
+    return [
+      {
+        'chat_id': 'new-chat',
+        'needs_practice_language_selection': false,
+        'my_learning': 'de',
+        'last_body': 'Fresh message',
+      },
+    ];
+  }
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test('successful setup survives a refresh started before the save', () async {
+    final service = _SetupRefreshRaceService();
+    final container = ProviderContainer(
+      overrides: [chatServiceProvider.overrideWithValue(service)],
+    );
+    addTearDown(container.dispose);
+    await container.read(chatListProvider.future);
+    final notifier = container.read(chatListProvider.notifier);
+    final staleRefresh = notifier.refresh();
+    notifier.confirmPracticeLanguageSelection(
+      'new-chat',
+      kBlabLanguages.firstWhere((language) => language.code == 'de'),
+    );
+    expect(
+      container
+          .read(chatListProvider)
+          .value!
+          .single
+          .needsPracticeLanguageSelection,
+      isFalse,
+    );
+    final afterSave = notifier.refresh();
+    service.stale.complete(service.rows);
+    await Future.wait([staleRefresh, afterSave]);
+    final chat = container.read(chatListProvider).value!.single;
+    expect(chat.needsPracticeLanguageSelection, isFalse);
+    expect(chat.learningLanguage.code, 'de');
+    expect(chat.lastMessage, 'Fresh message');
+  });
 
   test(
     'cached chats render before a stalled server request completes',
@@ -89,6 +147,36 @@ void main() {
 
       expect(chats.single.partnerName, 'Bob');
       expect(chats.single.lastMessage, 'Cached hello');
+    },
+  );
+
+  test(
+    'new connection shares newest-activity priority and setup gates previews',
+    () async {
+      final fake = _FakeChatService([
+        {'chat_id': 'older', 'last_at': '2026-09-01T12:00:00Z'},
+        {
+          'chat_id': 'new',
+          'last_at': '2026-09-07T12:00:00Z',
+          'needs_practice_language_selection': true,
+          'last_body': 'Hallo',
+          'last_practice_body': 'Hello',
+        },
+        {
+          'chat_id': 'selected',
+          'last_at': '2026-09-06T12:00:00Z',
+          'last_body': 'Hallo',
+          'last_practice_body': 'Hello',
+        },
+      ]);
+      final container = ProviderContainer(
+        overrides: [chatServiceProvider.overrideWithValue(fake)],
+      );
+      addTearDown(container.dispose);
+      final chats = await container.read(chatListProvider.future);
+      expect(chats.map((chat) => chat.id), ['new', 'selected', 'older']);
+      expect(chats.first.lastMessage, 'Hallo');
+      expect(chats[1].lastMessage, 'Hello');
     },
   );
 
@@ -214,7 +302,7 @@ void main() {
     addTearDown(container.dispose);
     await container.read(chatListProvider.future);
 
-    fake.rows.single['last_body'] = 'after translation refresh';
+    fake.rows.single['last_practice_body'] = 'after translation refresh';
     fake.emitTranslationChange();
 
     final deadline = DateTime.now().add(const Duration(seconds: 1));

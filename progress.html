@@ -1455,7 +1455,7 @@
           { id: 'journey-apple-android', type: 'bug', label: 'Remove the dead Apple sign-in action from Android v1', detail: 'Do not ship a production button that ends in “coming soon”; restore it with the iOS release.' },
           { id: 'journey-warm-link', type: 'bug', label: 'Close warm invite-link routing', detail: 'A received invite must navigate to the invite while Blab is already open, not only from a cold start.' },
           { id: 'journey-invite-two-device', type: 'check', label: 'Pass the full invite journey on two devices', detail: 'Create, share, open, sign up or sign in, claim once, and confirm both people land in the same chat.' },
-          { id: 'journey-share-intents', type: 'check', label: 'Pass every invite-share target on a physical phone', detail: 'WhatsApp, Telegram, Email, More, Copy, fallback behavior, and success feedback.' },
+          { id: 'journey-share-intents', type: 'check', label: 'Sharing to social apps and copying the invite link — approved', detail: 'Owner approved the narrowed handoff/clipboard check on 10 September. Telegram dispatch, Messages draft/return and native Copy checked. WhatsApp and authenticated recipient delivery were not tested; no claim that every target passed.', done: true },
           { id: 'journey-media', type: 'check', label: 'Pass the complete photo journey on a physical phone', detail: 'Gallery permission states, multi-select, camera, preview, caption, send, receive, and sharing an image into Blab.' },
           { id: 'journey-realtime', type: 'check', label: 'Pass live messaging on two simultaneous devices', detail: 'Send, receive, reply, edit, delete, reactions, read receipts, typing, reconnect, and chat-list updates.' },
           { id: 'journey-account', type: 'check', label: 'Pass the complete account journey', detail: 'Email sign-up, Google sign-in, reset password, change password, change email, edit name, logout, and delete account.' },
@@ -1480,10 +1480,11 @@
         title: 'Play signing and verified links',
         note: 'Current external blocker',
         tasks: [
-          { id: 'play-create-app', type: 'release', label: 'Create the Play Console app and enable Play App Signing', detail: 'Use the final package identity and the dedicated upload key already prepared outside the project.' },
+          { id: 'play-create-app', type: 'release', label: 'Create the Play Console app and enable Play App Signing', detail: 'Use the final package identity. The original upload key was backed up, but is missing from this computer; restore it before preparing the private test.' },
+          { id: 'play-restore-release-setup', type: 'release', label: 'Restore the saved signing files and finish private-test setup', detail: '10 September: signing files are missing and production settings are incomplete. Restore the existing backup and verify the live services before preparing a Play test version.' },
           { id: 'play-certificates', type: 'release', label: 'Record the Play app-signing certificate', detail: 'Add its public SHA-256 alongside the controlled upload certificate and remove obsolete debug trust.' },
           { id: 'play-google-oauth', type: 'release', label: 'Register the Play signing certificate for Google sign-in', detail: 'The Play-delivered build must use Google OAuth successfully, not only local or upload-signed builds.' },
-          { id: 'play-deploy-links', type: 'release', label: 'Publish final Android App Link association', detail: 'Serve correct production certificates over HTTPS with JSON content type and no redirect.' },
+          { id: 'play-deploy-links', type: 'release', label: 'Complete the signed-app website connection', detail: '10 September: owner-triggered publication succeeded. The website now serves the approved controlled release identity. A matching signed app still needs verification; the Play signing identity and Play-installed test remain open.' },
           { id: 'play-install-link-test', type: 'check', label: 'Verify an invite on the Play-installed build', detail: 'Android must report the domain verified and open a valid invite directly without an app chooser.' },
           { id: 'play-web-fallback', type: 'check', label: 'Verify the no-app web fallback', detail: 'A device without Blab must see a working invite landing with a valid Play Store destination.' }
         ]
@@ -1838,9 +1839,13 @@
           ...tasksById('core-first-use'),
           { id: 'invite-flow-spec', type: 'flow', label: 'Review the approved launch invite-flow spec: no expiry, no contact discovery, and practice-language choice inside the new chat.' },
           { id: 'invite-flow-build', type: 'flow', label: 'Finish the active invite-flow work and its failure/retry states.' },
-          { id: 'invite-flow-verify', type: 'check', label: 'Pass the invite flow on two devices and every share target.' },
-          { id: 'invite-flow-commit', type: 'flow', label: 'Commit the invite-flow work.' },
-          { id: 'invite-flow-push', type: 'release', label: 'Push the invite-flow work to GitHub.' }
+          { id: 'invite-website-access', type: 'release', label: 'The invite page is live. Open loveblab.com/i/preview and confirm the page appears and the Blab logo returns to the homepage.' },
+          { id: 'invite-flow-edge-recovery', type: 'check', label: 'Verify the refreshed language sheet, English selection, Back from setup, interrupted joining, and fresh links after native Copy.' },
+          { id: 'invite-install-handoff', type: 'release', label: 'After domain setup, verify a fresh Play install preserves the invite through signup.' },
+          { id: 'invite-installed-handoff', type: 'check', label: 'After launch: verify invite taps open installed Blab automatically', detail: 'Owner deferred this test until after launch on 10 September; it remains unverified, not passed. The website connection is published and Google confirms it. An independent emulator retest passed with temporary user-selected link handling: fresh invite, received message, and cold reopening. The setting was restored. Automatic opening without overrides still needs the original signing backup and matching app; not yet verified.' },
+          { id: 'invite-flow-verify', type: 'check', label: 'Sharing to social apps and copying the invite link — approved', detail: 'Owner explicitly accepted the narrowed check on 10 September after reviewing clipboard contents. Telegram dispatch, Messages draft/return and Copy verified. WhatsApp, signed-in Telegram composer and recipient delivery remain unverified and are not implied by this approval.', done: true },
+          { id: 'invite-flow-commit', type: 'flow', label: 'Invite repairs are committed; review the saved checkpoint before final acceptance.' },
+          { id: 'invite-flow-push', type: 'release', label: 'Invite repairs are uploaded to GitHub; confirm the saved checkpoint before final acceptance.' }
         ]
       },
       {

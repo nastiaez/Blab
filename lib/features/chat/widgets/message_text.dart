@@ -112,11 +112,7 @@ class _MessageTextState extends ConsumerState<MessageText> {
           // is a full line tall on its own, so taps anywhere on the line
           // still land on the word under them.
           child: Text.rich(
-            TextSpan(
-              text: t.text,
-              style: widget.style,
-              recognizer: recognizer,
-            ),
+            TextSpan(text: t.text, style: widget.style, recognizer: recognizer),
             key: key,
           ),
         ),

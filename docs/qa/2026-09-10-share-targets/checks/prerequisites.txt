@@ -1,0 +1,8 @@
+2026-09-10 read-only checks
+Production configuration validation: failed, contains placeholders.
+Placeholder names only: GOOGLE_WEB_CLIENT_ID, FIREBASE_PROJECT_ID, SENTRY_DSN.
+Original signing files missing at documented locations.
+https://loveblab.com/.well-known/assetlinks.json: HTTP 404.
+https://loveblab.com/i/preview: HTTP 200.
+Android domain state loveblab.com: 1024, not verified.
+Emulator Wi-Fi and mobile data enabled.

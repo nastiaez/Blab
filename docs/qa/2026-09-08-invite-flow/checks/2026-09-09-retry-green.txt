@@ -1,0 +1,19 @@
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart
+00:00 +0: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: successful setup survives a refresh started before the save
+00:00 +1: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: cached chats render before a stalled server request completes
+00:00 +2: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: new connection shares newest-activity priority and setup gates previews
+00:00 +3: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: maps chat_list rows to Chat tiles
+00:00 +4: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: null my_mode defaults to practice
+00:00 +5: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: empty rows → empty list
+00:00 +6: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: incoming message changes refresh the chat-list preview
+00:00 +7: /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: translation changes refresh the chat-list preview
+00:01 +8: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: system Back exits required setup without trapping the chat
+00:01 +9: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: system Back exits required setup without trapping the chat
+00:01 +10: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: failed next link disables sharing until inline retry succeeds
+00:01 +11: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: failed next link disables sharing until inline retry succeeds
+00:01 +12: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: failed selection stays open and can retry successfully
+00:01 +13: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: dismissing native sharing preserves the current link
+00:02 +14: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:02 +15: /Users/aswin/clawd/projects/blab/Blab/test/required_practice_language_sheet_test.dart: saving blocks duplicate selection, outside tap and drag
+00:02 +16: /Users/aswin/clawd/projects/blab/Blab/test/new_chat_screen_test.dart: offline invite does not request a link or show a second error
+00:02 +17: All tests passed!

@@ -86,7 +86,7 @@ void main() {
       matches(
         RegExp(
           r'<intent-filter android:autoVerify="true">[\s\S]*?'
-          r'android:host="blab-gray\.vercel\.app"[\s\S]*?'
+          r'android:host="loveblab\.com"[\s\S]*?'
           r'android:pathPrefix="/i/"[\s\S]*?</intent-filter>',
         ),
       ),

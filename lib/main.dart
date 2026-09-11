@@ -14,6 +14,10 @@ import 'app/theme.dart';
 import 'features/chat/state/chat_state.dart';
 import 'features/chat/state/message_translations_state.dart';
 import 'features/share/android_share_intent_service.dart';
+import 'features/invite/invite_continuation.dart';
+import 'features/invite/invite_install_referrer.dart';
+import 'features/invite/prepared_invite_state.dart';
+import 'shared/state/connectivity_state.dart';
 import 'l10n/l10n.dart';
 import 'shared/data/invite_host.dart';
 import 'shared/data/firebase_config.dart';
@@ -85,6 +89,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   String? _knownEmail;
   String? _knownUserId;
   bool _checkingUserOnResume = false;
+  int _incomingInviteRevision = 0;
+  bool _resumingInvite = false;
+  bool _initialInviteLinksReady = false;
   final PushTapRouter _pushTapRouter = PushTapRouter();
   final AndroidShareIntentService _shareIntentService =
       const AndroidShareIntentService();
@@ -182,6 +189,51 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     } catch (_) {
       // app_links unavailable (tests, headless) — ignore.
     }
+    final linkRevision = _incomingInviteRevision;
+    final installToken = await readInstallInvite();
+    if (mounted &&
+        linkRevision == _incomingInviteRevision &&
+        _incomingInviteRevision == 0 &&
+        installToken != null &&
+        !blabRouter.routeInformationProvider.value.uri.path.startsWith('/i/')) {
+      blabRouter.go(InviteContinuation(token: installToken).resolverLocation);
+    }
+    _initialInviteLinksReady = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_resumeSavedInvite(openInvite: true));
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  Future<void> _resumeSavedInvite({bool openInvite = false}) async {
+    if (!mounted || !_initialInviteLinksReady || _resumingInvite) return;
+    final userId = _knownUserId;
+    if (userId == null) return;
+    bool routeAllowsResume() {
+      final path = blabRouter.routeInformationProvider.value.uri.path;
+      if (path.startsWith('/i/')) return false;
+      if (path.startsWith('/auth')) return openInvite && path == '/auth';
+      return true;
+    }
+
+    if (!routeAllowsResume()) return;
+    _resumingInvite = true;
+    try {
+      final token = await loadPendingInvite();
+      if (!mounted ||
+          token == null ||
+          _knownUserId != userId ||
+          !routeAllowsResume()) {
+        return;
+      }
+      if (openInvite) {
+        blabRouter.go(InviteContinuation(token: token).resolverLocation);
+      } else if (ref.read(isOnlineProvider)) {
+        await resumePendingInvite(claim: ref.read(inviteClaimActionProvider));
+      }
+    } finally {
+      _resumingInvite = false;
+    }
   }
 
   void _initAndroidShareIntents() {
@@ -216,9 +268,10 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     // Verified Android App Link: https://<host>/i/<token>
     if (uri.scheme == 'https' &&
         uri.host == kInviteHost &&
-        uri.pathSegments.length >= 2 &&
+        uri.pathSegments.length == 2 &&
         uri.pathSegments.first == 'i') {
-      blabRouter.go('/i/${uri.pathSegments[1]}');
+      _incomingInviteRevision++;
+      blabRouter.go('/i/${Uri.encodeComponent(uri.pathSegments[1])}');
       return;
     }
     // Legacy custom-scheme deep link: blab://i/<token>. Kept for
@@ -226,8 +279,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     // flight that used the pre-HTTPS scheme.
     if (uri.scheme == 'blab' &&
         uri.host == 'i' &&
-        uri.pathSegments.isNotEmpty) {
-      blabRouter.go('/i/${uri.pathSegments.first}');
+        uri.pathSegments.length == 1) {
+      _incomingInviteRevision++;
+      blabRouter.go('/i/${Uri.encodeComponent(uri.pathSegments.first)}');
       return;
     }
   }
@@ -236,6 +290,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshAndDetectEmailChange();
+      unawaited(_resumeSavedInvite());
       unawaited(
         ref.read(pushNotificationsProvider.notifier).refreshPermission(),
       );
@@ -285,6 +340,10 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(preparedInviteProvider);
+    ref.listen(isOnlineProvider, (previous, online) {
+      if (online && previous != true) unawaited(_resumeSavedInvite());
+    });
     final interfaceLanguage = ref.watch(interfaceLanguageProvider);
     final push = ref.watch(pushNotificationsProvider);
     final pendingChatId = push.pendingChatId;

@@ -1,0 +1,14 @@
+00:00 +0: loading /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart
+00:00 +0: successful setup survives a refresh started before the save
+00:00 +0 -1: successful setup survives a refresh started before the save [E]
+  Expected: false
+    Actual: <true>
+
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test/chat_list_state_test.dart 102:5                main.<fn>
+
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  /Users/aswin/clawd/projects/blab/Blab/test/chat_list_state_test.dart: successful setup survives a refresh started before the save

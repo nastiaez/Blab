@@ -23,7 +23,10 @@ void main() {
     for (final emoji in kQuickMessageReactions) {
       expect(find.text(emoji), findsOneWidget);
     }
-    expect(find.byKey(const ValueKey('floating-reaction-more')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('floating-reaction-more')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const ValueKey('floating-reaction-selected')),
       findsNothing,
@@ -51,9 +54,7 @@ void main() {
     );
   });
 
-  testWidgets('tapping an emoji fires onPick with that emoji', (
-    tester,
-  ) async {
+  testWidgets('tapping an emoji fires onPick with that emoji', (tester) async {
     String? picked;
     await tester.pumpWidget(
       MaterialApp(

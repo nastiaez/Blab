@@ -415,8 +415,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get offline => 'Немає мережі';
 
   @override
-  String get noConnection =>
-      'Немає з\'єднання — повідомлення надішлються, коли ви знову будете онлайн';
+  String get noConnection => 'Немає з’єднання';
 
   @override
   String get learningLanguage => 'Мова вивчення';

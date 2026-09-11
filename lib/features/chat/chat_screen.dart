@@ -10,7 +10,6 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../app/app_messenger.dart';
@@ -23,6 +22,7 @@ import '../../shared/models/message_reaction.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/services/local_chat_history_cache.dart';
 import '../../shared/state/chat_list_state.dart';
+import '../../shared/state/auth_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
@@ -179,12 +179,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _requiredLanguageSheetVisible = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final picked = await showRequiredPracticeLanguageSheet(context);
-      if (!mounted) return;
       try {
-        await ref
-            .read(learningLanguageProvider(widget.chatId).notifier)
-            .set(picked);
+        final picked = await showRequiredPracticeLanguageSheet(
+          context,
+          onSelected: (language) => ref
+              .read(learningLanguageProvider(widget.chatId).notifier)
+              .set(language),
+        );
+        if (!mounted) return;
+        if (picked == null) {
+          context.go('/chats');
+          return;
+        }
         await _showModeTipOnce(_ModeTip.practice);
       } finally {
         _requiredLanguageSheetVisible = false;
@@ -193,7 +199,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _showModeTipOnce(_ModeTip tip) async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final userId = ref.read(currentUserIdProvider);
     if (userId == null) return;
     final preferences = await SharedPreferences.getInstance();
     final key = modeTipSeenStorageKey(userId: userId, mode: tip.name);
@@ -212,6 +218,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _markResolvedAtBottom() {
     if (!_scroll.hasClients || _scroll.position.pixels > 1) return;
+    if (ref
+            .read(chatListProvider)
+            .value
+            ?.any(
+              (chat) =>
+                  chat.id == widget.chatId &&
+                  chat.needsPracticeLanguageSelection,
+            ) ??
+        true) {
+      return;
+    }
     final messages =
         ref.read(chatMessagesProvider(widget.chatId)).value ??
         const <Message>[];
@@ -701,7 +718,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       fallbackLanguageCode: learningLang.code,
     );
     String targetForMessage(Message message) {
-      if (knownLanguages == null) return '';
+      if (chat.needsPracticeLanguageSelection || knownLanguages == null) {
+        return '';
+      }
       final era = eraForMessage(message);
       return resolveTranslationTarget(
         mode: chatMode,
@@ -1138,6 +1157,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   languageCode: learningLang.code,
                                   languageTimelineRows: languageTimelineRows,
                                   languageTimelineReady: languageTimelineReady,
+                                  practiceSetupRequired:
+                                      chat.needsPracticeLanguageSelection,
                                   translationInterfaceLanguageCode:
                                       translationInterfaceLang,
                                   unreadMessageIds: unreadIds,
@@ -1361,29 +1382,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                 ),
               if (_visibleModeTip != null)
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () => setState(() => _visibleModeTip = null),
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-              if (_visibleModeTip != null)
                 Positioned(
                   top:
                       MediaQuery.paddingOf(context).top + kChatHeaderHeight + 8,
                   right: 16,
-                  child: _ModeTipCard(
-                    tip: _visibleModeTip!,
-                    practiceLanguage: learningLang.name,
-                    primaryKnownLanguage: _languageNameForCode(
-                      knownLanguages?.primary,
+                  child: TapRegion(
+                    onTapOutside: (_) => setState(() => _visibleModeTip = null),
+                    child: _ModeTipCard(
+                      tip: _visibleModeTip!,
+                      practiceLanguage: learningLang.name,
+                      primaryKnownLanguage: _languageNameForCode(
+                        knownLanguages?.primary,
+                      ),
+                      onDismiss: () => setState(() => _visibleModeTip = null),
+                      onEditKnownLanguages: () {
+                        setState(() => _visibleModeTip = null);
+                        context.push('/profile/known-languages');
+                      },
                     ),
-                    onDismiss: () => setState(() => _visibleModeTip = null),
-                    onEditKnownLanguages: () {
-                      setState(() => _visibleModeTip = null);
-                      context.push('/profile/known-languages');
-                    },
                   ),
                 ),
               if (_selectedMessage != null &&
@@ -1733,76 +1749,112 @@ class _ModeTipCard extends StatelessWidget {
         : 'Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.';
     return Material(
       color: Colors.transparent,
-      child: Container(
-        width: 280,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF88C5A),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x33231208),
-              offset: Offset(0, 2),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      color: Color(0xFF46281C),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                InkResponse(
-                  onTap: onDismiss,
-                  radius: 20,
-                  child: const Icon(
-                    Icons.close,
-                    size: 18,
-                    color: Color(0xFF46281C),
-                  ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 280,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF88C5A),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33231208),
+                  offset: Offset(0, 2),
+                  blurRadius: 8,
                 ),
               ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              body,
-              style: const TextStyle(
-                color: Color(0xFF46281C),
-                fontSize: 12,
-                height: 16 / 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Color(0xFF46281C),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    InkResponse(
+                      onTap: onDismiss,
+                      radius: 20,
+                      child: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: Color(0xFF46281C),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    color: Color(0xFF46281C),
+                    fontSize: 12,
+                    height: 16 / 12,
+                  ),
+                ),
+                if (!practice) ...[
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: onEditKnownLanguages,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(44, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: const Color(0xFF46281C),
+                    ),
+                    child: const Text(
+                      'Edit known languages',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Positioned(
+            top: -6,
+            right: (practice ? 135 : 129) / 2 + 26,
+            child: const IgnorePointer(
+              child: CustomPaint(
+                key: ValueKey('mode-tip-pointer'),
+                size: Size(12, 6),
+                painter: _ModeTipPointerPainter(),
               ),
             ),
-            if (!practice) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: onEditKnownLanguages,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(44, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: const Color(0xFF46281C),
-                ),
-                child: const Text(
-                  'Edit known languages',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _ModeTipPointerPainter extends CustomPainter {
+  const _ModeTipPointerPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pointer = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(pointer, Paint()..color = const Color(0xFFF88C5A));
+  }
+
+  @override
+  bool shouldRepaint(_ModeTipPointerPainter oldDelegate) => false;
 }
 
 // ─────────────────────────── menu ────────────────────────────────────────────
@@ -1942,6 +1994,7 @@ class _MessageList extends ConsumerWidget {
     required this.languageCode,
     required this.languageTimelineRows,
     required this.languageTimelineReady,
+    required this.practiceSetupRequired,
     required this.translationInterfaceLanguageCode,
     required this.unreadMessageIds,
     required this.unreadDividerKey,
@@ -1969,6 +2022,7 @@ class _MessageList extends ConsumerWidget {
   final String languageCode;
   final List<Map<String, dynamic>> languageTimelineRows;
   final bool languageTimelineReady;
+  final bool practiceSetupRequired;
 
   /// The reader's primary known language (modes-known-languages spec): the
   /// translation pipeline's "interface" slot — cache-row key and second-lane
@@ -2006,7 +2060,7 @@ class _MessageList extends ConsumerWidget {
       fallbackLanguageCode: languageCode,
     );
     String targetForMessage(Message message) {
-      if (knownLanguages == null) return '';
+      if (practiceSetupRequired || knownLanguages == null) return '';
       return resolveTranslationTarget(
         mode: mode,
         learningLanguageCode: eraForMessage(message).languageCode,
@@ -2179,7 +2233,8 @@ class _MessageList extends ConsumerWidget {
               replyLanguageCode: replyEra.languageCode,
               translationInterfaceLanguageCode:
                   translationInterfaceLanguageCode,
-              shouldTranslate: languageTimelineReady,
+              shouldTranslate: languageTimelineReady && !practiceSetupRequired,
+              practiceSetupRequired: practiceSetupRequired,
               translationCutoffAt: null,
               popupTopInset: popupTopInset,
               deferTranslationResolve: deferTranslationResolve,
@@ -2399,6 +2454,7 @@ class _MessageRow extends ConsumerWidget {
     required this.replyLanguageCode,
     required this.translationInterfaceLanguageCode,
     required this.shouldTranslate,
+    required this.practiceSetupRequired,
     required this.translationCutoffAt,
     required this.popupTopInset,
     required this.deferTranslationResolve,
@@ -2427,6 +2483,7 @@ class _MessageRow extends ConsumerWidget {
   /// [_MessageList.translationInterfaceLanguageCode].
   final String translationInterfaceLanguageCode;
   final bool shouldTranslate;
+  final bool practiceSetupRequired;
   final DateTime? translationCutoffAt;
   final double popupTopInset;
   final bool deferTranslationResolve;
@@ -2487,6 +2544,7 @@ class _MessageRow extends ConsumerWidget {
           translationCutoffAt: translationCutoffAt,
         );
     final canRequestReplyTranslation =
+        !practiceSetupRequired &&
         replyTo != null &&
         shouldRequestBubbleTranslation(
           targetLanguageCode: replyTargetLang,
@@ -2581,7 +2639,10 @@ class _MessageRow extends ConsumerWidget {
           // Threshold lowered to 0.5 so partially-visible bubbles still
           // register — bottom-of-list messages were sometimes cropped by
           // the input bar and never crossed 0.9.
-          if (!isOut && readableForRead && info.visibleFraction > 0.5) {
+          if (!practiceSetupRequired &&
+              !isOut &&
+              readableForRead &&
+              info.visibleFraction > 0.5) {
             readsNotifier!.reportVisible(message.id);
           }
         },

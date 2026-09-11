@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
+import 'invite_share_service.dart';
 
 import '../../app/theme.dart';
 import '../../shared/data/invite_host.dart';
-import '../../shared/state/chat_list_state.dart';
+import 'prepared_invite_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 
@@ -20,53 +21,36 @@ class NewChatScreen extends ConsumerStatefulWidget {
 }
 
 class _NewChatScreenState extends ConsumerState<NewChatScreen> {
-  String? _token;
-  bool _loading = true;
   bool _sharing = false;
-  bool _failed = false;
+  bool _shareFailed = false;
 
   @override
   void initState() {
     super.initState();
-    _token = widget.initialToken;
-    if (_token == null) {
-      _prepareInvite();
-    } else {
-      _loading = false;
-    }
-  }
-
-  Future<void> _prepareInvite() async {
-    setState(() {
-      _loading = true;
-      _failed = false;
-    });
-    try {
-      final invite = await ref.read(chatServiceProvider).createInvite();
-      if (!mounted) return;
-      setState(() => _token = invite.token);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _failed = true);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    if (widget.initialToken case final token?) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(preparedInviteProvider.notifier).useToken(token);
+      });
     }
   }
 
   Future<void> _sendInvite() async {
-    final token = _token;
-    if (_sharing || token == null) return;
-    setState(() => _sharing = true);
+    final token = ref.read(preparedInviteProvider).token;
+    if (_sharing || token == null || !ref.read(isOnlineProvider)) return;
+    setState(() {
+      _sharing = true;
+      _shareFailed = false;
+    });
     try {
       final link = 'https://$kInviteHost/i/$token';
-      final result = await SharePlus.instance.share(
-        ShareParams(text: 'Let’s chat on Blab\n$link'),
-      );
+      final exposed = await shareInviteText('Let’s chat on Blab\n$link');
       // A link is never invalidated by sharing. Prepare another one in the
       // background for the next invite while keeping this page in place.
-      if (mounted && result.status != ShareResultStatus.dismissed) {
-        _prepareInvite();
+      if (mounted && exposed) {
+        unawaited(ref.read(preparedInviteProvider.notifier).consume());
       }
+    } catch (_) {
+      if (mounted) setState(() => _shareFailed = true);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -74,10 +58,15 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final online = ref.watch(onlineProvider).value ?? true;
-    final link = _token == null ? null : 'loveblab.com/i/$_token';
+    final online = ref.watch(isOnlineProvider);
+    final invite = ref.watch(preparedInviteProvider);
+    final link = invite.token == null ? null : '$kInviteHost/i/${invite.token}';
     final enabled =
-        online && !_loading && !_sharing && !_failed && link != null;
+        online &&
+        !invite.loading &&
+        !_sharing &&
+        !invite.failed &&
+        link != null;
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F2),
       appBar: AppBar(
@@ -102,8 +91,15 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _InviteCard(link: link, loading: _loading),
-                  if (_failed) ...[
+                  _InviteCard(link: link, loading: invite.loading),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(18, 12, 18, 0),
+                    child: Text(
+                      'Only one friend can use this link',
+                      style: TextStyle(color: Color(0xFF917869), fontSize: 13),
+                    ),
+                  ),
+                  if (online && invite.failed) ...[
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -117,12 +113,25 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                           ),
                         ),
                         TextButton(
-                          onPressed: _prepareInvite,
+                          onPressed: () => ref
+                              .read(preparedInviteProvider.notifier)
+                              .prepare(),
                           child: const Text('Try again'),
                         ),
                       ],
                     ),
                   ],
+                  if (_shareFailed)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: Text(
+                        'Couldn’t open sharing. Try again.',
+                        style: TextStyle(
+                          color: Color(0xFF917869),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                   const Spacer(),
                   SizedBox(
                     height: 52,
@@ -188,11 +197,6 @@ class _InviteCard extends StatelessWidget {
                 ? 'Preparing your link…'
                 : link ?? 'Invite link unavailable',
             style: const TextStyle(color: Color(0xFF917869), fontSize: 15),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            '· One friend can use this link',
-            style: TextStyle(color: Color(0xFF917869), fontSize: 13),
           ),
         ],
       ),

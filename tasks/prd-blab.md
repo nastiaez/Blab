@@ -125,7 +125,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Entry points are Chats + and the no-chats `Invite someone` action; there is no contacts screen, contacts permission, or language picker before this page
-- [ ] Header: `Invite a friend`; link card: `Let’s chat on Blab` + `loveblab.com/i/{token}`; helper: `One friend can use this link`
+- [ ] Header: `Invite a friend`; link card: `Let’s chat on Blab` + `loveblab.com/i/{token}`; helper below the card, without a bullet: `Only one friend can use this link`
 - [ ] Primary `Send invite` button has no icon and opens the native share sheet
 - [ ] The shared text is `Let’s chat on Blab` plus the invite URL
 - [ ] Returning from Copy or another app returns to this same page, not Chats; no success page is shown
@@ -409,9 +409,10 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a participant in a newly created chat, I want to choose my practice language in context before I start messaging.
 
 **Acceptance Criteria:**
-- [ ] Empty chat background shows a simple text container: `No messages here yet…` + `Send any message to start.`; no launch illustration
+- [ ] After the required language choice, an empty chat shows a simple text container: `No messages here yet…` + `Send any message to start.`; no launch illustration. Hide this container while initial language selection is required so it cannot peek above the open sheet
 - [ ] Required bottom sheet title: `Choose a language to practice`; helper: `You can change it anytime.`; it uses the existing language list
-- [ ] The sheet shows over the chat with no blur and no dimmed scrim; authored first messages remain visible behind it if they already exist
+- [ ] The sheet shows over the chat with no blur and a subtle `#46281C` 8% veil; authored first messages remain visible behind it if they already exist
+- [ ] Required-sheet styling follows the owner’s 2026-09-08 refinement: warm-white `#FFFCF8` surface, 24 px top corners, warm outline/shadow, 22 px bold title, 14 px muted helper, 15 px language rows with generous 56 px minimum tap targets and dividers, and a persistent slim scrollbar
 - [ ] Tapping outside or swiping down does not close the sheet; composer, messages, and mode switch are inactive until selection
 - [ ] Back leaves for Chats; reopening the new chat shows the required sheet again. Profile and Settings remain reachable outside the chat
 - [ ] Each participant's choice is independent and affects only their own display
@@ -707,7 +708,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
 - FR-20: Change learning language sheet: 11 languages, checkmark on current, updates header label
 - FR-21: Send button disabled-state dims the circle fill to 40% when input is empty while keeping the arrow solid white; input is an auto-growing textarea
-- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet has no blur or dimmed scrim and must be completed before chat interaction
+- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet uses no blur and a subtle 8% warm scrim, hides the empty-state container, and must be completed before chat interaction
 - FR-23: Translations toggle scoped per chat (phone3 vs phone4 separate state)
 - FR-24: Word popup audio uses on-device TTS only — no external API. When TTS unavailable for the language, speaker icon stays in place but renders disabled (40% opacity, no tap, no tooltip, no text)
 - FR-25: Delivery failure shows `Not sent · Tap to try again`; language-help failure shows `Couldn’t translate · Retry`. Both are `#C62828` text-only rows below the bubble with no standalone icon; pending remains a clock

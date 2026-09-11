@@ -1,0 +1,30 @@
+supabase_edge_runtime_Language_App	Up 11 hours
+supabase_db_Language_App	Up 13 hours (healthy)
+supabase_studio_Language_App	Up 13 hours (healthy)
+supabase_pg_meta_Language_App	Up 13 hours (healthy)
+supabase_storage_Language_App	Up 13 hours (healthy)
+supabase_rest_Language_App	Up 13 hours
+supabase_realtime_Language_App	Up 13 hours (healthy)
+supabase_inbucket_Language_App	Up 13 hours (healthy)
+supabase_auth_Language_App	Up 13 hours (healthy)
+supabase_kong_Language_App	Up 13 hours (healthy)
+supabase_vector_Language_App	Up 13 hours (healthy)
+supabase_analytics_Language_App	Up 13 hours (healthy)
+
+               user_id                | learning_language | practice_language_selected_at
+--------------------------------------+-------------------+-------------------------------
+ 00000000-0000-4000-8000-00000000000a | en                | 2026-09-07 20:36:50.780761+00
+ 00000000-0000-4000-8000-00000000000b | de                | 2026-09-07 20:37:09.042236+00
+(2 rows)
+
+
+ status | count
+--------+-------
+ ready  |     4
+(1 row)
+
+
+ alice_bob_chat_count
+----------------------
+                    1
+(1 row)

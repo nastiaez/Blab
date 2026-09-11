@@ -9,7 +9,7 @@ import 'package:blab/shared/models/chat.dart';
 BlabLanguage _lang(String code) =>
     kBlabLanguages.firstWhere((l) => l.code == code);
 
-Chat _chat() => Chat(
+Chat _chat({bool needsPracticeLanguageSelection = false}) => Chat(
   id: 'c1',
   partnerId: 'u2',
   partnerName: 'Nastia',
@@ -22,22 +22,49 @@ Chat _chat() => Chat(
   lastMessageTranslation: '',
   timestamp: DateTime.parse('2026-06-10T00:00:00Z'),
   unreadCount: 0,
+  needsPracticeLanguageSelection: needsPracticeLanguageSelection,
 );
 
 void main() {
+  testWidgets('first-message prompt waits until required language is chosen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FirstMessageEmptyState(
+            chat: _chat(needsPracticeLanguageSelection: true),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('No messages here yet…'), findsNothing);
+    expect(find.text('Send any message to start.'), findsNothing);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: FirstMessageEmptyState(chat: _chat())),
+      ),
+    );
+    expect(find.text('No messages here yet…'), findsOneWidget);
+    expect(find.text('Send any message to start.'), findsOneWidget);
+  });
+
   Future<void> pump(WidgetTester tester) => tester.pumpWidget(
     MaterialApp(
       home: Scaffold(body: FirstMessageEmptyState(chat: _chat())),
     ),
   );
 
-  testWidgets('states what you are learning with the partner', (tester) async {
-    await pump(tester);
-    expect(find.text("You're learning Spanish with Nastia"), findsOneWidget);
-    expect(find.text('You learn Spanish'), findsNothing);
-    expect(find.text('Nastia learns Dutch'), findsNothing);
-    expect(find.text('Send any message to start.'), findsOneWidget);
-  });
+  testWidgets(
+    'new chat invites a first message without choosing either person’s language',
+    (tester) async {
+      await pump(tester);
+      expect(find.text('No messages here yet…'), findsOneWidget);
+      expect(find.text('You learn Spanish'), findsNothing);
+      expect(find.text('Nastia learns Dutch'), findsNothing);
+      expect(find.text('Send any message to start.'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'has no flags, no exchange card, no pointer icon, no "connected"',
