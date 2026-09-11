@@ -55,7 +55,9 @@ void main() {
     expect(scale.transform.getMaxScaleOnAxis(), closeTo(1, 0.001));
   });
 
-  testWidgets('reduced motion skips bubble arrival transforms', (tester) async {
+  testWidgets('reduced motion keeps bubble arrival visually stationary', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: MessageArrival(
@@ -67,7 +69,15 @@ void main() {
       ),
     );
 
-    expect(find.byKey(const ValueKey('message-arrival')), findsNothing);
+    final arrival = find.byKey(const ValueKey('message-arrival'));
+    final transforms = tester.widgetList<Transform>(
+      find.descendant(of: arrival, matching: find.byType(Transform)),
+    );
+    expect(transforms, isNotEmpty);
+    expect(transforms.every((w) => w.transform.isIdentity()), isTrue);
+    final before = tester.getRect(find.text('New message'));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.getRect(find.text('New message')), before);
     expect(find.text('New message'), findsOneWidget);
   });
 

@@ -23,6 +23,8 @@ class GrammaticalFormAlternatives {
     required this.after,
     required this.subjectName,
     required this.subjectIsViewer,
+    this.suggestedForm = GrammaticalForm.feminine,
+    this.subjectRole,
   });
 
   final String before;
@@ -31,6 +33,47 @@ class GrammaticalFormAlternatives {
   final String after;
   final String subjectName;
   final bool subjectIsViewer;
+  final GrammaticalForm suggestedForm;
+  final String? subjectRole;
+
+  GrammaticalFormAlternatives forMessage({
+    required bool isOutgoing,
+    required String sourceText,
+    required String viewerName,
+    required String partnerName,
+  }) {
+    var role = subjectRole;
+    if (role == null) {
+      final direct = [
+        RegExp(
+          r'^(?:did|do) (?:i|you) (?:go|visit)(?: (?:to )?(?:the )?(?:supermarket|museum|store|park|school|office))?(?: (?:yesterday|today|last night|this morning))?[.!?]?$',
+          caseSensitive: false,
+        ),
+        RegExp(
+          r'^(?:(?:i|you) (?:am|are|was|were|feel|felt)|(?:am|are|was|were) (?:i|you)) (?:very |so )?(?:tired|happy|sad|ready|exhausted|proud|angry|excited|afraid|alone)(?: (?:yesterday|today|last night|this morning))?[.!?]?$',
+          caseSensitive: false,
+        ),
+      ];
+      if (direct.any((pattern) => pattern.hasMatch(sourceText.trim()))) {
+        role = RegExp(r'\bi\b', caseSensitive: false).hasMatch(sourceText)
+            ? 'author'
+            : 'recipient';
+      }
+    }
+    final viewer = role == null
+        ? subjectIsViewer
+        : (role == 'author' ? isOutgoing : !isOutgoing);
+    return GrammaticalFormAlternatives(
+      before: before,
+      feminine: feminine,
+      masculine: masculine,
+      after: after,
+      subjectName: viewer ? viewerName : partnerName,
+      subjectIsViewer: viewer,
+      suggestedForm: suggestedForm,
+      subjectRole: role,
+    );
+  }
 
   String resolved(GrammaticalForm form) =>
       '$before${form == GrammaticalForm.feminine ? feminine : masculine}$after';
@@ -236,6 +279,13 @@ GrammaticalFormAlternatives? parseGrammaticalFormAlternatives(Object? raw) {
     after: after,
     subjectName: subjectName,
     subjectIsViewer: subjectIsViewer,
+    suggestedForm:
+        grammaticalFormFromWire(raw['suggestedForm'] as String?) ??
+        GrammaticalForm.feminine,
+    subjectRole:
+        raw['subjectRole'] == 'author' || raw['subjectRole'] == 'recipient'
+        ? raw['subjectRole'] as String
+        : null,
   );
 }
 

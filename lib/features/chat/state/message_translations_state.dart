@@ -129,6 +129,9 @@ MessageTranslation _translationFromPreparedPackage(
       if (token is Map) tokens.add(Map<String, dynamic>.from(token));
     }
   }
+  if (row['form_alternatives'] is Map || row['form_alternatives'] is List) {
+    tokens.add({'formAlternatives': row['form_alternatives']});
+  }
   final learningText = row['translation_text'] as String? ?? '';
   final interfaceText = row['interface_text'] as String? ?? learningText;
   final packageLearningLanguage = row['learning_language'] as String?;

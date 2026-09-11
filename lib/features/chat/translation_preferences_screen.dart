@@ -1,3 +1,4 @@
+import 'state/form_correction_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -78,13 +79,14 @@ class TranslationPreferencesScreen extends ConsumerWidget {
                   current: ownForm,
                   onSelected: (value) async {
                     await ref
+                        .read(formCorrectionProvider.notifier)
+                        .refreshActiveWindows();
+                    await ref
                         .read(grammaticalFormPreferencesServiceProvider)
                         .setOwnForm(value);
-                    ref
-                        .read(
-                          grammaticalFormPreferenceRevisionProvider.notifier,
-                        )
-                        .bump();
+                    await ref
+                        .read(formCorrectionProvider.notifier)
+                        .changePreference(subjectIsViewer: true, form: value);
                     ref.invalidate(currentProfileProvider);
                     // The profile form is account-wide. Refresh every open
                     // chat's preference snapshot so an active conversation
@@ -109,13 +111,18 @@ class TranslationPreferencesScreen extends ConsumerWidget {
                     current: chatPrefs?.asData?.value.partnerForm,
                     onSelected: (value) async {
                       await ref
+                          .read(formCorrectionProvider.notifier)
+                          .refreshActiveWindows(chatId: chatId!);
+                      await ref
                           .read(grammaticalFormPreferencesServiceProvider)
                           .setPartnerForm(chatId!, value);
-                      ref
-                          .read(
-                            grammaticalFormPreferenceRevisionProvider.notifier,
-                          )
-                          .bump();
+                      await ref
+                          .read(formCorrectionProvider.notifier)
+                          .changePreference(
+                            subjectIsViewer: false,
+                            form: value,
+                            chatId: chatId!,
+                          );
                       ref.invalidate(
                         grammaticalFormPreferencesProvider(chatId!),
                       );
@@ -160,7 +167,10 @@ class _PreferenceCard extends StatelessWidget {
       border: Border.all(color: BlabColors.chatDivider),
       borderRadius: BorderRadius.circular(14),
     ),
-    child: Column(children: children),
+    child: Material(
+      type: MaterialType.transparency,
+      child: Column(children: children),
+    ),
   );
 }
 
@@ -238,9 +248,17 @@ Future<void> _pickForm(
   );
   if (!context.mounted) return;
   if (selected == null) return;
-  await onSelected(
-    selected == 'not_set' ? null : grammaticalFormFromWire(selected),
-  );
+  try {
+    await onSelected(
+      selected == 'not_set' ? null : grammaticalFormFromWire(selected),
+    );
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t save. Try again.')),
+      );
+    }
+  }
 }
 
 Future<void> _pickTone(

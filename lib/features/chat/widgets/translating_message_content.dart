@@ -43,7 +43,6 @@ class _MessageArrivalState extends State<MessageArrival>
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.animate || widget.reduceMotion) return widget.child;
     final alignment = widget.outgoing
         ? Alignment.bottomRight
         : Alignment.bottomLeft;
@@ -51,14 +50,20 @@ class _MessageArrivalState extends State<MessageArrival>
       key: const ValueKey('message-arrival'),
       animation: _controller,
       child: widget.child,
-      builder: (context, child) => Transform.translate(
-        offset: Offset(0, 2 * (1 - _controller.value)),
-        child: Transform.scale(
-          alignment: alignment,
-          scale: 0.98 + (0.02 * _controller.value),
-          child: child,
-        ),
-      ),
+      builder: (context, child) {
+        // US-042: motion/accessibility changes must retain chooser state.
+        final progress = !widget.animate || widget.reduceMotion
+            ? 1.0
+            : _controller.value;
+        return Transform.translate(
+          offset: Offset(0, 2 * (1 - progress)),
+          child: Transform.scale(
+            alignment: alignment,
+            scale: 0.98 + (0.02 * progress),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

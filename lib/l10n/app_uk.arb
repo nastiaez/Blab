@@ -21,5 +21,21 @@
   "photos": "Фото", "photoAccessNeeded": "Потрібен доступ до фото", "photoAccessNeededBody": "Дозвольте доступ до фото, щоб надіслати одне в чаті.", "openSettings": "Відкрити налаштування", "noPhotosFound": "Поки що немає фото", "photoMessagePreview": "Фото", "searchEmoji": "Пошук емодзі",
   "reactionsCount": "{count, plural, one{{count} реакція} few{{count} реакції} many{{count} реакцій} other{{count} реакції}}",
   "@reactionsCount": {"placeholders": {"count": {"type": "int"}}},
-  "tapToRemove": "Натисніть, щоб прибрати"
+  "tapToRemove": "Натисніть, щоб прибрати",
+  "usingFeminineForms": "Жіночі форми для {person}",
+  "@usingFeminineForms": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  },
+  "usingMasculineForms": "Чоловічі форми для {person}",
+  "@usingMasculineForms": {
+    "placeholders": {
+      "person": {
+        "type": "String"
+      }
+    }
+  }
 }

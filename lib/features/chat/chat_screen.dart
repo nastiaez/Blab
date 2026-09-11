@@ -16,7 +16,6 @@ import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/models/chat.dart';
-import '../../shared/models/grammatical_form.dart';
 import '../../shared/models/message.dart';
 import '../../shared/models/message_reaction.dart';
 import '../../shared/services/chat_service.dart';
@@ -41,6 +40,7 @@ import 'state/unread_chat_state.dart';
 import 'state/message_reactions_state.dart';
 import 'state/message_translations_state.dart';
 import 'state/grammatical_form_preferences_state.dart';
+import 'state/form_correction_state.dart';
 import 'state/pending_sends_state.dart';
 import 'state/typing_state.dart';
 import 'language_timeline.dart';
@@ -60,7 +60,8 @@ import 'widgets/learning_language_sheet.dart';
 import 'widgets/message_action_row.dart';
 import 'widgets/message_interaction_target.dart';
 import 'widgets/message_learning_content.dart';
-import 'widgets/grammatical_form_chooser.dart';
+import 'widgets/grammatical_form_note.dart';
+import '../../shared/state/profile_state.dart';
 import 'widgets/message_reaction_bar.dart';
 import 'widgets/mode_toggle.dart';
 import 'widgets/partner_profile_sheet.dart';
@@ -758,7 +759,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 .resolvedSourceLangFor(selectedMessage.id);
       selectedPresentation = resolveMessagePresentation(
         authoredText: selectedMessage.originalText,
-        translation: selectedTranslation,
+        translation: selectedTranslation?.whenData(
+          (value) =>
+              (ref.watch(formCorrectionProvider).asData?.value ??
+                      const FormCorrectionLedger())
+                  .resolveTranslation(
+                    value,
+                    chatId: widget.chatId,
+                    messageId: selectedMessage.id,
+                    targetLang: selectedTargetLang,
+                    sourceText: selectedMessage.originalText,
+                  ),
+        ),
         mode: chatMode,
         knownLanguageCodes: knownLanguages?.codes ?? const <String>[],
         resolvedSourceLang: selectedSourceLang,
@@ -2755,8 +2767,6 @@ class _Bubble extends ConsumerStatefulWidget {
 class _BubbleState extends ConsumerState<_Bubble> {
   bool _incomingOriginalRevealedAfterFailure = false;
   bool _incomingWasHeld = false;
-  final Map<String, GrammaticalForm> _temporaryFormSelections =
-      <String, GrammaticalForm>{};
   int _openFormChoiceIndex = 0;
 
   @override
@@ -2768,7 +2778,6 @@ class _BubbleState extends ConsumerState<_Bubble> {
         oldWidget.targetLanguageCode != widget.targetLanguageCode) {
       _incomingOriginalRevealedAfterFailure = false;
       _incomingWasHeld = false;
-      _temporaryFormSelections.clear();
       _openFormChoiceIndex = 0;
     }
   }
@@ -2868,14 +2877,26 @@ class _BubbleState extends ConsumerState<_Bubble> {
           );
     }
 
+    final formLedger = ref.watch(formCorrectionProvider).asData?.value;
+    final resolutionKey = formResolutionKey(
+      chatId,
+      message.id,
+      targetLanguageCode,
+    );
+    final stored = formLedger?.resolutions[resolutionKey];
+    final snapshot = stored?.sourceText == message.originalText ? stored : null;
     final formChoices = resolvedTranslation?.formChoices ?? const [];
-    final formAlternatives = formChoices.isEmpty ? null : formChoices.first;
-    final formSubjectKey = formAlternatives?.subjectIsViewer == true
-        ? 'viewer'
-        : 'partner';
-    final temporaryForm = formAlternatives == null
-        ? null
-        : _temporaryFormSelections[formSubjectKey];
+    final formAlternatives =
+        (snapshot?.alternatives ??
+                (formChoices.isEmpty ? null : formChoices.first))
+            ?.forMessage(
+              isOutgoing: isOut,
+              sourceText: message.originalText,
+              viewerName:
+                  ref.watch(currentProfileProvider).asData?.value.displayName ??
+                  context.l10n.you,
+              partnerName: widget.partnerName,
+            );
     final persistedForm = formAlternatives == null
         ? null
         : switch (formPreferences) {
@@ -2885,25 +2906,56 @@ class _BubbleState extends ConsumerState<_Bubble> {
                   : value.partnerForm,
             _ => null,
           };
-    final resolvedForm = temporaryForm ?? persistedForm;
-    Future<void> saveForm(GrammaticalForm form) async {
-      final alternatives = formAlternatives;
-      if (alternatives == null) return;
-      final service = ref.read(grammaticalFormPreferencesServiceProvider);
-      if (alternatives.subjectIsViewer) {
-        await service.setOwnForm(form);
-      } else {
-        await service.setPartnerForm(chatId, form);
-      }
-      if (mounted) {
-        setState(() => _temporaryFormSelections[formSubjectKey] = form);
-      }
-      // Resolve this message locally. Do not invalidate the translation
-      // cache here: the selected text should fade into place without
-      // replaying the translation wave or restarting the provider request.
-      ref.invalidate(grammaticalFormPreferencesProvider(chatId));
+    final resolvedForm =
+        snapshot?.form ??
+        persistedForm ??
+        (formAlternatives == null
+            ? null
+            : formLedger?.suggestionFor(
+                chatId,
+                formAlternatives.subjectIsViewer,
+              )) ??
+        formAlternatives?.suggestedForm;
+    List<Message> correctionMessages() => [
+      ...?ref.read(chatMessagesProvider(chatId)).asData?.value,
+      ...ref.read(pendingSendsProvider(chatId)),
+    ];
+    final currentMessages = correctionMessages();
+    if (formLedger != null &&
+        (snapshot == null ||
+            snapshot.form == null ||
+            (formAlternatives != null &&
+                !formLedger.hasPersonNote(
+                  chatId,
+                  formAlternatives.subjectIsViewer,
+                ))) &&
+        formPreferences.asData != null &&
+        formAlternatives != null &&
+        resolvedForm != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          ref
+              .read(formCorrectionProvider.notifier)
+              .mutate(
+                (ledger) => ledger.record(
+                  FormResolution(
+                    chatId: chatId,
+                    messageId: message.id,
+                    targetLang: targetLanguageCode,
+                    sourceText: message.originalText,
+                    alternatives: formAlternatives,
+                    form: resolvedForm,
+                  ),
+                  explicit: false,
+                  note: true,
+                  messages: currentMessages,
+                ),
+              )
+              .catchError((Object _) {}),
+        );
+      });
     }
-
     final showLearningAid =
         shouldTranslate &&
         kSupportedLearningLanguages.contains(targetLanguageCode);
@@ -2932,8 +2984,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
       unavailableText: context.l10n.translationUnavailable,
       retryText: context.l10n.retry,
       onRetry: canRetryTranslation ? retryTranslation : null,
-      onFormSelected: formAlternatives == null ? null : saveForm,
       resolvedForm: resolvedForm,
+      formAlternativesOverride: formAlternatives,
       onFormMarkerTap: (index) {
         if (!mounted) return;
         setState(() => _openFormChoiceIndex = index);
@@ -3100,7 +3152,17 @@ class _BubbleState extends ConsumerState<_Bubble> {
                             replyTo: replyTo,
                             partnerName: widget.partnerName,
                             parentIsOutgoing: isOut,
-                            translation: replyTranslation,
+                            translation: replyTranslation?.whenData(
+                              (value) =>
+                                  (formLedger ?? const FormCorrectionLedger())
+                                      .resolveTranslation(
+                                        value,
+                                        chatId: chatId,
+                                        messageId: replyTo.id,
+                                        targetLang: replyTargetLanguageCode,
+                                        sourceText: replyTo.originalText,
+                                      ),
+                            ),
                             mode: mode,
                             knownLanguageCodes: knownLanguageCodes,
                           ),
@@ -3128,20 +3190,17 @@ class _BubbleState extends ConsumerState<_Bubble> {
                     ),
                   ),
                 ),
-                if (formAlternatives != null &&
-                    (persistedForm == null || temporaryForm != null)) ...[
-                  const SizedBox(height: 8),
-                  GrammaticalFormChooser(
-                    alternatives: formAlternatives,
-                    onSelected: saveForm,
-                    selectedForm: temporaryForm,
-                    onChange: () {},
-                    showExplanation: persistedForm == null,
-                    firstTimeExplanation:
-                        'Some languages change words to match the person they describe.',
-                    explanationKey: targetLanguageCode,
+                if (showLearningAid &&
+                    formAlternatives != null &&
+                    resolvedForm != null &&
+                    (formLedger?.hasNote(resolutionKey) ?? false))
+                  GrammaticalFormNote(
+                    form: resolvedForm,
+                    person: formAlternatives.subjectName,
+                    onChange: () => context.push(
+                      '/chat/$chatId/translation-preferences?name=${Uri.encodeComponent(widget.partnerName)}',
+                    ),
                   ),
-                ],
               ],
             ),
           ),

@@ -158,32 +158,21 @@ Deno.test("provider messages include recent context but translate only current t
   );
 });
 
-Deno.test("provider prompt forbids gender guessing and preserves address", () => {
+Deno.test("provider uses saved form then name suggestion then feminine without rewriting", () => {
   const prompt = systemPrompt("auto", "uk", "de");
   assert(
-    prompt.includes(
-      "Never guess gender from a name, profile name, username, message topic, or text style.",
-    ),
-    "provider must not infer gender from weak signals",
+    prompt.includes("Use an explicit saved grammatical form first"),
+    "saved form wins",
   );
   assert(
-    prompt.includes(
-      "Use gendered wording only when explicit pronouns or gender metadata are provided.",
-    ),
-    "gendered wording needs explicit metadata",
+    prompt.includes("use feminine if the name is ambiguous"),
+    "ambiguous names use feminine",
   );
   assert(
-    prompt.includes(
-      "If the source language is ambiguous, use neutral wording that avoids adding gender.",
-    ),
-    "ambiguous sources need neutral output",
+    prompt.includes("Do not replace them with an awkward neutral rewrite"),
+    "keep the sentence",
   );
-  assert(
-    prompt.includes(
-      "Preserve informal/formal address exactly when the source marks it.",
-    ),
-    "du/Sie and equivalent address should be preserved",
-  );
+  assert(prompt.includes("Preserve authored formality"), "preserve address");
 });
 
 Deno.test("English to Ukrainian rejects parenthetical gender alternatives", () => {
@@ -252,7 +241,7 @@ Deno.test("English to Ukrainian rejects parenthetical gender alternatives", () =
 
   assert(
     systemPrompt("auto", "uk", "uk").includes(
-      "Do not use parenthetical or slash gender alternatives",
+      "never use parentheses or slash alternatives in translation",
     ),
     "prompt must explicitly reject both-gender workaround forms",
   );
@@ -309,21 +298,21 @@ Deno.test("unresolved form forces one explicit audit before accepting a translat
     "the first masculine-only result must be audited",
   );
   assert(
-    !needsAudit!(candidate!, "uk", formContext, 1),
-    "the explicit audit must not create an endless retry loop",
+    needsAudit!(candidate!, "uk", formContext, 1),
+    "a retried candidate also needs ownership validation within the bounded attempt loop",
   );
   assert(
     !needsAudit!(candidate!, "en", formContext, 0),
     "languages with natural gender-neutral wording do not need an audit",
   );
   assert(
-    !needsAudit!(
+    needsAudit!(
       candidate!,
       "uk",
       { ...formContext, viewerForm: "feminine", partnerForm: "masculine" },
       0,
     ),
-    "fully resolved participant forms do not need an audit",
+    "saved forms still need alternatives so the annotated message can be corrected",
   );
 });
 
@@ -524,48 +513,36 @@ Deno.test("focused audit can attach minimal alternatives to its exact feminine t
   );
 });
 
-Deno.test("prompt includes Ukrainian and German neutral-gender examples", () => {
-  const prompt = systemPrompt("auto", "de", "en");
+Deno.test("prompt distinguishes author and recipient for Ukrainian questions", () => {
+  const prompt = systemPrompt("auto", "uk", "en");
   assert(
-    prompt.includes(
-      'English "I was happy to help" to Ukrainian: prefer "Мені було приємно допомогти"',
-    ),
-    "Ukrainian ambiguous speaker examples should avoid gendered past-tense adjectives",
+    prompt.includes("ONLY when the viewer authored"),
+    "outgoing example is scoped",
   );
   assert(
     prompt.includes(
-      'English "I was glad to see you" to Ukrainian: prefer "Мені було приємно побачитись з тобою"',
+      "When the partner authored that same question, subjectIsViewer MUST instead be true",
     ),
-    "Ukrainian ambiguous speaker examples should still use natural conversational wording",
-  );
-  assert(
-    prompt.includes(
-      'English "I am your friend" to German: prefer "Ich bin mit dir befreundet"',
-    ),
-    "German ambiguous speaker examples should avoid Freund/Freundin guesses",
+    "incoming question names viewer",
   );
 });
 
-Deno.test("prompt includes Ukrainian to German informal address example", () => {
-  const prompt = systemPrompt("auto", "de", "en");
+Deno.test("prompt preserves supplied conversation tone", () => {
   assert(
-    prompt.includes(
-      'Ukrainian "Ти дивишся..." to German: prefer informal "Du schaust..."',
+    systemPrompt("auto", "de", "en").includes(
+      "use the supplied per-chat tone: informal or respectful",
     ),
-    "Ukrainian informal address must be anchored to German du examples",
+    "preserve address fallback",
   );
 });
 
-Deno.test("interface repair prompt reuses the gender and address rules", () => {
+Deno.test("interface repair reuses provisional form and address rules", () => {
   const prompt = interfaceRepairSystemPrompt("de", "uk");
   assert(
-    prompt.includes("Never guess gender from a name"),
-    "interface repair must not lose the main translation gender/address contract",
+    prompt.includes("use feminine if the name is ambiguous"),
+    "same fallback rule",
   );
-  assert(
-    prompt.includes('English "I was happy to help" to Ukrainian'),
-    "interface repair should keep the Ukrainian neutral-gender example",
-  );
+  assert(prompt.includes("Preserve authored formality"), "same address rule");
 });
 
 Deno.test("provider responses use strict schemas", () => {
@@ -734,7 +711,10 @@ Deno.test("provider repairs token punctuation without losing word metadata", () 
   );
 
   assert(result !== null, "valid translation should pass");
-  assert(result !== null && result.tokens.length > 0, "word metadata is retained");
+  assert(
+    result !== null && result.tokens.length > 0,
+    "word metadata is retained",
+  );
   assert(
     result?.tokens.map((token) => (token as { text: string }).text).join("") ===
       "Я набираю дуже довгий текст.",
