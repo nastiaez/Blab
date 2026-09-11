@@ -68,6 +68,44 @@ class _MessageArrivalState extends State<MessageArrival>
   }
 }
 
+class IncomingTranslationPlaceholder extends StatelessWidget {
+  const IncomingTranslationPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      key: ValueKey('incoming-translation-placeholder'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _IncomingTranslationPlaceholderLine(width: 76),
+        SizedBox(height: 7),
+        _IncomingTranslationPlaceholderLine(width: 118),
+      ],
+    );
+  }
+}
+
+class _IncomingTranslationPlaceholderLine extends StatelessWidget {
+  const _IncomingTranslationPlaceholderLine({required this.width});
+
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: 12,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Color(0xFFEAE6E0),
+          borderRadius: BorderRadius.all(Radius.circular(6)),
+        ),
+      ),
+    );
+  }
+}
+
 enum _TranslationVisualPhase {
   fastHold,
   authored,

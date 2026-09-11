@@ -54,10 +54,10 @@ Incoming and outgoing translation must feel like two directions of the same Blab
 
 ## Acceptance criteria
 
-- [ ] A slow incoming message visibly waves across only the two placeholder lines, then clears, reshapes empty, and lands translated text.
-- [ ] Incoming and outgoing use matching timing and easing without exposing incoming authored text.
-- [ ] One pending incoming message has no standalone status row; multiple pending messages show one accurate group count.
-- [ ] Simultaneous messages resolve oldest-first without phase leakage or animation reset.
-- [ ] Reduced motion uses static placeholder lines and a direct final swap.
-- [ ] Cached/off-screen results render final without replay.
-- [ ] Device video and screenshots demonstrate the approved lifecycle.
+- [x] A slow incoming message visibly waves across only the two placeholder lines, then clears, reshapes empty, and lands translated text.
+- [x] Incoming and outgoing use matching timing and easing without exposing incoming authored text.
+- [x] One pending incoming message has no standalone status row; multiple pending messages show one accurate group count.
+- [x] Simultaneous messages resolve oldest-first without phase leakage or animation reset.
+- [x] Reduced motion uses static placeholder lines and a direct final swap.
+- [x] Cached/off-screen results render final without replay.
+- [x] Device video and screenshots demonstrate the approved lifecycle.

@@ -10,21 +10,24 @@ Widget _host({
   bool showAuthoredImmediately = false,
   bool deferResolve = false,
   bool keepAuthoredDuringFastHold = false,
+  bool outgoing = true,
+  Widget? authoredContent,
+  Widget? finalContent,
 }) {
   return MaterialApp(
     home: Scaffold(
       body: Align(
         alignment: Alignment.centerRight,
         child: TranslatingMessageContent(
-          authoredContent: const Text('I will be late 😊'),
-          finalContent: Text(
-            unchanged ? 'I will be late 😊' : 'Ich komme später 😊',
-          ),
+          authoredContent: authoredContent ?? const Text('I will be late 😊'),
+          finalContent:
+              finalContent ??
+              Text(unchanged ? 'I will be late 😊' : 'Ich komme später 😊'),
           resolved: resolved,
           delivered: delivered,
           unchanged: unchanged,
           reduceMotion: reduceMotion,
-          outgoing: true,
+          outgoing: outgoing,
           showAuthoredImmediately: showAuthoredImmediately,
           deferResolve: deferResolve,
           keepAuthoredDuringFastHold: keepAuthoredDuringFastHold,
@@ -225,5 +228,60 @@ void main() {
     await tester.pumpWidget(_host(resolved: true));
     await tester.pump();
     expect(find.byKey(const ValueKey('translation-clear')), findsOneWidget);
+  });
+
+  testWidgets('two pending messages keep independent lifecycle phases', (
+    tester,
+  ) async {
+    Widget messages({required bool firstResolved}) => MaterialApp(
+      home: Column(
+        children: [
+          TranslatingMessageContent(
+            key: const ValueKey('first-lifecycle'),
+            authoredContent: const Text('First placeholder'),
+            finalContent: const Text('First final'),
+            resolved: firstResolved,
+            delivered: true,
+            unchanged: false,
+            reduceMotion: false,
+            outgoing: false,
+          ),
+          const TranslatingMessageContent(
+            key: ValueKey('second-lifecycle'),
+            authoredContent: Text('Second placeholder'),
+            finalContent: Text('Second final'),
+            resolved: false,
+            delivered: true,
+            unchanged: false,
+            reduceMotion: false,
+            outgoing: false,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(messages(firstResolved: false));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.byKey(const ValueKey('translation-wave')), findsNWidgets(2));
+
+    await tester.pumpWidget(messages(firstResolved: true));
+    await tester.pump();
+
+    final first = find.byKey(const ValueKey('first-lifecycle'));
+    final second = find.byKey(const ValueKey('second-lifecycle'));
+    expect(
+      find.descendant(
+        of: first,
+        matching: find.byKey(const ValueKey('translation-clear')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: second,
+        matching: find.byKey(const ValueKey('translation-wave')),
+      ),
+      findsOneWidget,
+    );
   });
 }
