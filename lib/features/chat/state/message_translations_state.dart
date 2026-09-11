@@ -757,6 +757,20 @@ class MessageTranslationsNotifier
       }
       _cancelLoadingTimeout(key);
       state = {...state, key: AsyncError(error, stack)};
+      if (error is MessageTranslationFailed && error.reason == 'timeout') {
+        // The request may commit its cache row just after the client-side
+        // deadline. The loading timer normally schedules this recovery, but
+        // when the live deadline wins the race this catch path cancels that
+        // timer first. Schedule the same bounded cache recheck here so timer
+        // ordering cannot strand a committed translation behind Retry.
+        _scheduleLateCacheRecovery(
+          key: key,
+          messageId: messageId,
+          text: text,
+          targetLang: targetLang,
+          interfaceLang: interfaceLang,
+        );
+      }
       if (error is MessageTranslationFailed &&
           error.reason == 'translation_limit_reached' &&
           error.retryAfter != null) {

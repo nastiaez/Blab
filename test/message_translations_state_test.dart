@@ -308,7 +308,10 @@ void main() {
       final container = _container(
         chatService: _ControlledCacheChatService(cachedByMessageId: cached),
         lifecycleDeadline: const Duration(milliseconds: 10),
-        loadingTimeout: const Duration(milliseconds: 10),
+        // Keep the visual loading timer later than the live request deadline.
+        // This deterministically exercises the catch path that previously
+        // cancelled the only late-cache recovery timer.
+        loadingTimeout: const Duration(milliseconds: 100),
         lateCacheRecoveryDelay: const Duration(milliseconds: 10),
         translateFn: (id) => Completer<MessageTranslation>().future,
       );
