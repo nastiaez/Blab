@@ -24,11 +24,11 @@ Expected acceptance case: after English messages from Alice, Bob's German view t
 
 ## 2. Abbreviations combined with names
 
-Participant display names are treated deterministically as names, not language evidence. The remaining meaningful text is classified separately.
+Participant display names are treated deterministically as names, not language evidence. A recognized abbreviation is also strong source-language evidence when the remaining text contains only compatible Latin-script words or likely names. This covers names outside the current chat, such as `Nastia`, without treating capitalization alone as proof of a name.
 
 Meaning-bearing abbreviations such as `OMG` are expanded conceptually and translated into a natural target-language expression. Names keep their identity and are transliterated when the target script differs. If the provider returns `sourceLang=other` for a supported-looking abbreviation-plus-participant-name message, the result is rejected and the existing single retry runs with explicit guidance.
 
-This guard applies only when a known participant name and recognizable supported-language content are both present. Genuinely unsupported messages, including Chinese while Chinese remains unsupported, still return the unsupported-language state.
+This guard applies only when a recognized abbreviation is present and all remaining meaningful text is compatible with that supported language. Genuinely unsupported messages, including Chinese while Chinese remains unsupported, still return the unsupported-language state.
 
 Expected examples:
 

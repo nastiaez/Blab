@@ -3,6 +3,7 @@ import {
   correctionNeedsRetry,
   FORM_AUDIT_RESPONSE_FORMAT,
   formAuditSystemPrompt,
+  type FormParticipantContext,
   genderedAmbiguityNeedsRetry,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
@@ -16,7 +17,9 @@ import {
   providerResultFailureReason,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
+  type TranslationContextMessage,
   translationNeedsRetry,
+  type TranslationResult,
   validateRequest,
 } from "./contract.ts";
 import * as contract from "./contract.ts";
@@ -176,7 +179,7 @@ Deno.test("provider messages include recent context but translate only current t
     "system prompt should include context",
   );
   assert(
-    messages[0].content.includes("Use context only"),
+    messages[0].content.includes("Do not translate this context block"),
     "context must not become translation input",
   );
   assert(
@@ -1379,6 +1382,206 @@ Deno.test("provider retries a misclassified short source", () => {
     translationNeedsRetry(misclassified!, "ta", "sorry"),
     "discarding a plausible target-language rewrite must request one retry",
   );
+});
+
+type SourceEvidenceNeedsRetry = (args: {
+  result: TranslationResult;
+  sourceText: string;
+  targetLang: string;
+  context?: TranslationContextMessage[];
+  formContext?: FormParticipantContext;
+}) => boolean;
+
+function sourceEvidenceRetry(): SourceEvidenceNeedsRetry {
+  const candidate = (contract as unknown as {
+    sourceEvidenceNeedsRetry?: SourceEvidenceNeedsRetry;
+  }).sourceEvidenceNeedsRetry;
+  assert(candidate !== undefined, "sourceEvidenceNeedsRetry must be exported");
+  return candidate!;
+}
+
+Deno.test("source evidence retry rejects No misclassified as German", () => {
+  const noAsGerman = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "de",
+      translation: "No",
+      interfaceText: "No",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "No",
+    "de",
+    "en",
+  );
+  assert(noAsGerman !== null, "the provider result is valid");
+  assert(
+    sourceEvidenceRetry()({
+      result: noAsGerman!,
+      sourceText: "No",
+      targetLang: "de",
+      context: [{ speaker: "partner", text: "I am not coming today" }],
+      formContext: {
+        viewerName: "Bob",
+        partnerName: "Alice",
+        messageAuthor: "partner",
+        viewerForm: null,
+        partnerForm: null,
+        tone: "informal",
+        authorPrimaryKnownLanguage: "en",
+      },
+    }),
+    "same-sender English evidence must reject the German classification",
+  );
+});
+
+Deno.test("source evidence retry preserves genuine target-language text", () => {
+  const german = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "de",
+      translation: "Nein",
+      interfaceText: "No",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "Nein",
+    "de",
+    "en",
+  );
+  assert(german !== null, "the provider result is valid");
+  assert(
+    !sourceEvidenceRetry()({
+      result: german!,
+      sourceText: "Nein",
+      targetLang: "de",
+      context: [],
+      formContext: {
+        viewerName: "Alice",
+        partnerName: "Bob",
+        messageAuthor: "viewer",
+        viewerForm: null,
+        partnerForm: null,
+        tone: "informal",
+        authorPrimaryKnownLanguage: "de",
+      },
+    }),
+    "matching target-language evidence must remain accepted",
+  );
+});
+
+Deno.test("source evidence retry recognizes an abbreviation plus a name", () => {
+  const translated = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "other",
+      translation: "Oh mein Gott, Nastia!",
+      interfaceText: "OMG Nastia",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "OMG Nastia",
+    "de",
+    "en",
+  );
+  assert(translated !== null, "the provider result is valid");
+  const formContext: FormParticipantContext = {
+    viewerName: "Alice",
+    partnerName: "Nastia",
+    messageAuthor: "viewer",
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal",
+    authorPrimaryKnownLanguage: "en",
+  };
+
+  assert(
+    sourceEvidenceRetry()({
+      result: translated!,
+      sourceText: "OMG Nastia",
+      targetLang: "de",
+      formContext,
+    }),
+    "known English abbreviation plus participant name must be reclassified",
+  );
+  assert(
+    !sourceEvidenceRetry()({
+      result: translated!,
+      sourceText: "你好 Nastia",
+      targetLang: "de",
+      formContext,
+    }),
+    "unsupported-script content must remain unsupported",
+  );
+  assert(
+    !sourceEvidenceRetry()({
+      result: translated!,
+      sourceText: "Hello Stranger",
+      targetLang: "de",
+      formContext,
+    }),
+    "capitalization without a recognized abbreviation is not enough",
+  );
+});
+
+Deno.test("abbreviation plus name source evidence covers every target language", () => {
+  const translated: TranslationResult = {
+    mode: "translation",
+    sourceLang: "other",
+    translation: "translated",
+    interfaceText: "OMG Nastia",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  const formContext: FormParticipantContext = {
+    viewerName: "Alice",
+    partnerName: "Bob",
+    messageAuthor: "viewer",
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal",
+    authorPrimaryKnownLanguage: "en",
+  };
+
+  for (
+    const targetLang of [
+      "en",
+      "nl",
+      "fr",
+      "de",
+      "hi",
+      "it",
+      "pt",
+      "es",
+      "ta",
+      "tr",
+      "uk",
+    ]
+  ) {
+    assert(
+      sourceEvidenceRetry()({
+        result: translated,
+        sourceText: "OMG Nastia",
+        targetLang,
+        formContext,
+      }),
+      `OMG plus a name must be reclassified for ${targetLang}`,
+    );
+    assert(
+      systemPrompt("auto", targetLang, "en", formContext).includes(
+        "abbreviation combined with compatible Latin-script words or names",
+      ),
+      `the ${targetLang} prompt must keep abbreviation-plus-name supported`,
+    );
+  }
 });
 
 Deno.test("source classification retry preserves valid short messages", () => {

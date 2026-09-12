@@ -132,7 +132,7 @@ git commit -m "fix: add translation source-language evidence"
 - Modify: `supabase/functions/translate-message/index.ts`
 - Test: `supabase/functions/translate-message/contract_test.ts`
 
-- [ ] **Step 1: Write failing source-evidence retry tests**
+- [x] **Step 1: Write failing source-evidence retry tests**
 
 Export a wished-for `sourceEvidenceNeedsRetry` API and test these cases separately:
 
@@ -185,9 +185,9 @@ assert(!sourceEvidenceNeedsRetry({
 }), "genuine target-language text must remain accepted");
 ```
 
-Add another failing test where `sourceLang=other`, the text is `OMG Nastia`, and `Nastia` is the supplied partner name. Add negative tests for `你好 Nastia`, an unknown capitalized token, URLs, emoji-only text, and long prose.
+Add another failing test where `sourceLang=other` and the text is `OMG Nastia`. Add negative tests for `你好 Nastia`, capitalization without a recognized abbreviation, URLs, emoji-only text, and long prose.
 
-- [ ] **Step 2: Run the focused tests and verify RED**
+- [x] **Step 2: Run the focused tests and verify RED**
 
 ```bash
 deno test --filter "source evidence retry" supabase/functions/translate-message/contract_test.ts
@@ -195,7 +195,7 @@ deno test --filter "source evidence retry" supabase/functions/translate-message/
 
 Expected: FAIL because `sourceEvidenceNeedsRetry` does not exist.
 
-- [ ] **Step 3: Implement the bounded evidence predicate**
+- [x] **Step 3: Implement the bounded evidence predicate**
 
 Implement one pure helper with this signature:
 
@@ -218,15 +218,15 @@ export function sourceEvidenceNeedsRetry({
 It returns `true` only for:
 
 1. a short plain one-word/utterance result that claims `sourceLang=targetLang`, remains unchanged in `mode=none`, and has conflicting same-sender or author-primary-language evidence; or
-2. `sourceLang=other` when the input contains a supplied participant name plus one of the existing supported chat abbreviations (`omg`, `ttyl`, `brb`, `lol`, `lmao`, `idk`, `fyi`, `wtf`).
+2. `sourceLang=other` when the input contains one of the existing supported chat abbreviations (`omg`, `ttyl`, `brb`, `lol`, `lmao`, `idk`, `fyi`, `wtf`) and every remaining meaningful token is compatible Latin-script text or a likely name.
 
-Use Unicode-aware token boundaries. Remove supplied participant names before matching abbreviations. Do not treat capitalization alone as a name and do not accept unsupported-script residue.
+Use Unicode-aware token boundaries. Participant names remain deterministic evidence when present, but do not require the name to belong to the chat. Do not treat capitalization alone as a name and do not accept unsupported-script residue.
 
-- [ ] **Step 4: Strengthen first-attempt and retry guidance**
+- [x] **Step 4: Strengthen first-attempt and retry guidance**
 
 In `systemPrompt`, state that a meaning-bearing abbreviation combined with a supplied participant name remains supported language and must be translated naturally. Update `sourceClassificationRetryGuidance` to mention same-sender context and the author hint, without hardcoding `No`, `Nastia`, or a target language.
 
-- [ ] **Step 5: Wire the helper into the existing provider loop**
+- [x] **Step 5: Wire the helper into the existing provider loop**
 
 Before `translationNeedsRetry`, call:
 
@@ -247,7 +247,7 @@ if (sourceEvidenceNeedsRetry({
 
 This uses the existing second attempt; it must not add a third attempt or touch the normal successful path.
 
-- [ ] **Step 6: Verify GREEN and the eleven-language matrix**
+- [x] **Step 6: Verify GREEN and the eleven-language matrix**
 
 Add table-driven prompt/contract cases for every supported target code. They must prove that abbreviation-plus-name input stays on the supported translation path without asserting one exact stylistic phrase. Run:
 
@@ -258,7 +258,7 @@ deno check supabase/functions/translate-message/index.ts
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit translation classification hardening**
+- [x] **Step 7: Commit translation classification hardening**
 
 ```bash
 git add supabase/functions/translate-message/contract.ts supabase/functions/translate-message/contract_test.ts supabase/functions/translate-message/index.ts

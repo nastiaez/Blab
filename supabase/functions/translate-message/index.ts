@@ -28,6 +28,7 @@ import {
   providerMessages,
   providerResultFailureReason,
   sourceClassificationRetryGuidance,
+  sourceEvidenceNeedsRetry,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
@@ -518,6 +519,25 @@ Deno.serve(async (req) => {
           text,
           candidate.sourceLang,
         );
+      }
+      if (
+        sourceEvidenceNeedsRetry({
+          result: candidate,
+          sourceText: text,
+          targetLang,
+          context,
+          formContext,
+        })
+      ) {
+        previousSourceClassificationConflict = true;
+        lastFailedSourceLang = candidate.sourceLang;
+        providerFailure = `${credential.provider}_source_evidence_conflict`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
       }
       if (translationNeedsRetry(candidate, targetLang, text)) {
         previousSourceClassificationConflict =

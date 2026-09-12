@@ -891,11 +891,98 @@ function canRetrySourceClassification(text: string): boolean {
     SHORT_PLAIN_SOURCE.test(value);
 }
 
+const SUPPORTED_CHAT_ABBREVIATIONS = new Set([
+  "omg",
+  "ttyl",
+  "brb",
+  "lol",
+  "lmao",
+  "idk",
+  "fyi",
+  "wtf",
+]);
+
+function scriptCompatibleWithLanguage(text: string, language: string): boolean {
+  const letters = Array.from(text).filter((character) =>
+    /\p{L}/u.test(character)
+  );
+  if (letters.length === 0) return false;
+  const pattern = language === "uk"
+    ? /\p{Script=Cyrillic}/u
+    : language === "hi"
+    ? /\p{Script=Devanagari}/u
+    : language === "ta"
+    ? /\p{Script=Tamil}/u
+    : /\p{Script=Latin}/u;
+  return letters.every((character) => pattern.test(character));
+}
+
+function supportedAbbreviationText(text: string): boolean {
+  const words = text.match(/[\p{L}\p{M}]+(?:['’-][\p{L}\p{M}]+)*/gu) ?? [];
+  if (
+    !words.some((word) =>
+      SUPPORTED_CHAT_ABBREVIATIONS.has(word.toLocaleLowerCase())
+    )
+  ) return false;
+  return words.every((word) =>
+    SUPPORTED_CHAT_ABBREVIATIONS.has(word.toLocaleLowerCase()) ||
+    /^[\p{Script=Latin}\p{M}]+(?:['’-][\p{Script=Latin}\p{M}]+)*$/u.test(word)
+  );
+}
+
+/// Rejects only provider source labels contradicted by bounded, private
+/// evidence already attached to this translation job. The existing provider
+/// loop owns the single retry; this predicate never performs extra work.
+export function sourceEvidenceNeedsRetry({
+  result,
+  sourceText,
+  targetLang,
+  context = [],
+  formContext,
+}: {
+  result: TranslationResult;
+  sourceText: string;
+  targetLang: string;
+  context?: TranslationContextMessage[];
+  formContext?: FormParticipantContext;
+}): boolean {
+  if (
+    result.sourceLang === OTHER_SOURCE_LANG &&
+    supportedAbbreviationText(sourceText)
+  ) return true;
+
+  if (
+    result.sourceLang !== targetLang ||
+    result.mode !== "none" ||
+    result.translation.trim().toLocaleLowerCase() !==
+      sourceText.trim().toLocaleLowerCase() ||
+    !canRetrySourceClassification(sourceText)
+  ) return false;
+
+  if (!scriptCompatibleWithLanguage(sourceText, targetLang)) return true;
+
+  const authorLanguage = formContext?.authorPrimaryKnownLanguage;
+  if (
+    authorLanguage != null &&
+    authorLanguage !== targetLang &&
+    scriptCompatibleWithLanguage(sourceText, authorLanguage)
+  ) return true;
+
+  if (formContext === undefined) return false;
+  const sameSenderContext = context.filter((entry) =>
+    entry.speaker === formContext.messageAuthor
+  );
+  return sameSenderContext.some((entry) =>
+    !scriptCompatibleWithLanguage(entry.text, targetLang) &&
+    scriptCompatibleWithLanguage(sourceText, authorLanguage ?? targetLang)
+  );
+}
+
 export function sourceClassificationRetryGuidance(
   targetLang: string,
 ): string {
   const targetName = LANG_NAMES[targetLang] ?? targetLang;
-  return ` The previous response claimed the authored input was already ${targetName} (${targetLang}) but also rewrote it without valid correction metadata. Re-detect the source language from the original authored text. If it is not truly ${targetName}, use mode=translation and return the complete ${targetName} translation.`;
+  return ` The previous source-language classification conflicted with the authored text or its bounded evidence. Re-detect the original authored text independently from the target language. For a genuinely ambiguous short utterance, use recent messages from the same sender and then the author's primary known language as a weak final tie-breaker. A meaning-bearing chat abbreviation combined with compatible Latin-script words or names remains supported language. If the source is not truly ${targetName} (${targetLang}), use mode=translation and return the complete ${targetName} translation.`;
 }
 
 /// A provider sometimes returns the untranslated source as "translation"
@@ -1374,6 +1461,7 @@ Rules:
 - Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
 - A likely personal name is not an unsupported language. Keep its identity, and when the target script differs, transliterate it rather than translating its meaning. Use conversation context and the supplied participant names when available; do not infer a name from capitalization alone.
 - Treat meaning-bearing chat abbreviations such as brb and ttyl as language: translate their meaning when the target language has a natural equivalent; otherwise preserve them.
+- A meaning-bearing chat abbreviation combined with compatible Latin-script words or names remains supported language. Translate the abbreviation naturally and preserve or transliterate names; do not label the message unsupported merely because a name follows the abbreviation.
 - Preserve paragraph breaks exactly. If the input is one paragraph, translation and interfaceText must also be one paragraph with no newline characters.
 - ${GENDER_ADDRESS_RULES.replaceAll("\n", "\n- ")}
 - First detect sourceLang, then choose exactly one mode.
