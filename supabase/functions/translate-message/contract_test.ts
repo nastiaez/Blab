@@ -189,6 +189,42 @@ Deno.test("provider messages include recent context but translate only current t
   );
 });
 
+Deno.test("provider messages include bounded source evidence", () => {
+  const messages = providerMessages({
+    sourceLang: "auto",
+    targetLang: "de",
+    interfaceLang: "en",
+    text: "No",
+    context: [
+      { speaker: "partner", text: "I am not coming today" },
+      { speaker: "viewer", text: "Are you sure?" },
+    ],
+    formContext: {
+      viewerName: "Bob",
+      partnerName: "Alice",
+      messageAuthor: "partner",
+      viewerForm: null,
+      partnerForm: null,
+      tone: "informal",
+      authorPrimaryKnownLanguage: "en",
+    },
+  });
+  const system = messages[0].content;
+
+  assert(
+    system.includes("same sender"),
+    "same-sender context is available as source evidence",
+  );
+  assert(
+    system.includes("primary known language is English (en)"),
+    "the author's primary known language is a final hint",
+  );
+  assert(
+    system.includes("translate only the current user message"),
+    "context must remain excluded from translation input",
+  );
+});
+
 Deno.test("provider keeps private forms out while suggesting by name", () => {
   const formContext = {
     viewerName: "Alice",

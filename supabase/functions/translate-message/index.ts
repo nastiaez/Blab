@@ -193,6 +193,11 @@ function formContextFrom(value: unknown): FormParticipantContext | undefined {
     !isForm(raw.partnerForm) ||
     (raw.tone !== "informal" && raw.tone !== "respectful")
   ) return undefined;
+  const authorPrimaryKnownLanguage =
+    typeof raw.authorPrimaryKnownLanguage === "string" &&
+      raw.authorPrimaryKnownLanguage in LANG_NAMES
+      ? raw.authorPrimaryKnownLanguage
+      : null;
   return {
     viewerName: raw.viewerName,
     partnerName: raw.partnerName,
@@ -200,6 +205,7 @@ function formContextFrom(value: unknown): FormParticipantContext | undefined {
     viewerForm: raw.viewerForm,
     partnerForm: raw.partnerForm,
     tone: raw.tone,
+    authorPrimaryKnownLanguage,
   };
 }
 

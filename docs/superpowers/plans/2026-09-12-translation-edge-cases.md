@@ -19,7 +19,7 @@
 - Modify: `supabase/functions/translate-message/index.ts`
 - Test: `supabase/functions/translate-message/contract_test.ts`
 
-- [ ] **Step 1: Add a failing pgTAP assertion for the author's primary known language**
+- [x] **Step 1: Add a failing pgTAP assertion for the author's primary known language**
 
 Increase the plan count in `message_preparation_worker.test.sql`, set the sender fixture's `primary_known_language` to `en`, and assert that a partner-viewer job receives it:
 
@@ -38,7 +38,7 @@ select is(
 );
 ```
 
-- [ ] **Step 2: Run the database test and verify RED**
+- [x] **Step 2: Run the database test and verify RED**
 
 Run:
 
@@ -48,7 +48,7 @@ supabase test db supabase/tests/database/message_preparation_worker.test.sql
 
 Expected: FAIL because `formContext.authorPrimaryKnownLanguage` is absent.
 
-- [ ] **Step 3: Add the forward SQL migration**
+- [x] **Step 3: Add the forward SQL migration**
 
 Copy the current `request_message_translation_job(uuid)` body from `20260829000003_message_preparation_worker.sql` into a new `create or replace function`. Preserve every status, cache, authorization, context, and job check. Add only:
 
@@ -79,7 +79,7 @@ end
 
 Retain the existing function owner, revoke, and service-role grant statements.
 
-- [ ] **Step 4: Parse and prompt with the author hint**
+- [x] **Step 4: Parse and prompt with the author hint**
 
 Extend `FormParticipantContext` compatibly:
 
@@ -99,7 +99,7 @@ const authorLanguageHint = formContext?.authorPrimaryKnownLanguage == null
 
 Change the recent-context instruction so same-sender messages may resolve the source language of an ambiguous short current utterance, while context remains forbidden as translation input.
 
-- [ ] **Step 5: Add and run focused contract tests**
+- [x] **Step 5: Add and run focused contract tests**
 
 Add assertions that `providerMessages`:
 
@@ -118,7 +118,7 @@ supabase test db supabase/tests/database/message_preparation_worker.test.sql
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit the source-evidence contract**
+- [x] **Step 6: Commit the source-evidence contract**
 
 ```bash
 git add supabase/migrations/20260912000002_translation_author_language_context.sql supabase/tests/database/message_preparation_worker.test.sql supabase/functions/translate-message/contract.ts supabase/functions/translate-message/index.ts supabase/functions/translate-message/contract_test.ts

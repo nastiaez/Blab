@@ -1,8 +1,12 @@
 begin;
 
-select plan(6);
+select plan(7);
 
 delete from public.message_preparation_jobs;
+
+update public.profiles
+set primary_known_language = 'en'
+where id = '00000000-0000-4000-8000-00000000000a';
 
 insert into public.chats (id)
 values ('5b000000-0000-4000-8000-000000000001');
@@ -72,6 +76,18 @@ select is(
   (select min(attempts) from claimed_jobs),
   1,
   'claiming records the first attempt'
+);
+
+select is(
+  public.request_message_translation_job(
+    (
+      select id
+      from claimed_jobs
+      where viewer_id = '00000000-0000-4000-8000-00000000000c'
+    )
+  ) #>> '{formContext,authorPrimaryKnownLanguage}',
+  'en',
+  'translation preparation supplies the message author primary known language'
 );
 
 select ok(

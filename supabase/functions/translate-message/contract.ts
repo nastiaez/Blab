@@ -28,6 +28,7 @@ export type FormParticipantContext = {
   viewerForm: "feminine" | "masculine" | null;
   partnerForm: "feminine" | "masculine" | null;
   tone: "informal" | "respectful";
+  authorPrimaryKnownLanguage?: string | null;
 };
 
 const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
@@ -91,7 +92,7 @@ export function providerMessages({
 }): Array<{ role: "system" | "user"; content: string }> {
   const contextText = context.length === 0
     ? ""
-    : `\n\nRecent chat context, oldest to newest. Use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, and dates. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
+    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, and dates. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
       context
         .map((entry) => `${entry.speaker}: ${entry.text}`)
         .join("\n")
@@ -1341,12 +1342,17 @@ export function systemPrompt(
   const formInstruction = formContext === undefined
     ? "No participant grammatical-form data is available."
     : `Participants: viewer=${formContext.viewerName}; partner=${formContext.partnerName}; current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}. For a direct first/second-person message, "I" normally refers to the author and "you" to the other participant. Saved grammatical-form choices are applied privately by the client and must not be inferred or encoded in this shared translation.`;
+  const authorLanguageHint = formContext?.authorPrimaryKnownLanguage == null
+    ? ""
+    : ` The author's primary known language is ${
+      LANG_NAMES[formContext.authorPrimaryKnownLanguage]
+    } (${formContext.authorPrimaryKnownLanguage}); use it only as a final tie-breaker when the current text is genuinely ambiguous and compatible with that language.`;
   return `You normalize a message for a language-learning chat.
 
 ${sourceInstruction}
 The viewer's learning language is ${targetName} (${targetLang}).
 The viewer's interface language is ${interfaceName} (${interfaceLang}).
-${formInstruction}
+${formInstruction}${authorLanguageHint}
 
 Return strict JSON only:
 {
