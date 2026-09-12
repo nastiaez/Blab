@@ -330,6 +330,7 @@ Future<void> _pumpUntilFound(
 ProviderContainer _containerForHeader(
   ChatService service, {
   List<Map<String, dynamic>> languageTimeline = const [],
+  List<String> unreadMessageIds = const [],
   bool loadLanguageTimelineFromService = false,
   String primaryKnownLanguage = 'uk',
   List<String> knownLanguages = const ['uk'],
@@ -358,6 +359,9 @@ ProviderContainer _containerForHeader(
         chatLanguageTimelineProvider.overrideWith(
           (ref, chatId) async => languageTimeline,
         ),
+      chatUnreadMessageIdsProvider.overrideWith(
+        (ref, chatId) async => unreadMessageIds,
+      ),
       currentProfileProvider.overrideWith(
         (_) async => UserProfile(
           displayName: 'Alice',
@@ -639,7 +643,7 @@ void main() {
   );
 
   testWidgets(
-    'simultaneous incoming messages share one count and own separate placeholders',
+    'simultaneous incoming messages use only accessible bubble placeholders',
     (tester) async {
       final now = DateTime.now();
       final container = _containerForHeader(
@@ -662,14 +666,82 @@ void main() {
         find.byKey(const ValueKey('incoming-translation-placeholder')),
         findsNWidgets(4),
       );
-      expect(find.text('Translating 2 messages…'), findsOneWidget);
+      expect(find.text('Translating 2 messages…'), findsNothing);
       expect(find.text('Translating…'), findsNothing);
+      expect(find.bySemanticsLabel('Translating…'), findsNWidgets(2));
       expect(find.text('First message'), findsNothing);
       expect(find.text('Second message'), findsNothing);
 
       await tester.pumpWidget(const SizedBox.shrink());
       container.dispose();
       await tester.pump();
+    },
+  );
+
+  testWidgets(
+    'unread divider stays anchored as translations resolve and mode changes',
+    (tester) async {
+      final now = DateTime.now();
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          chatMode: 'practice',
+          learningLanguageCode: 'de',
+          messageText: 'The second original message is intentionally longer.',
+          messageSentAt: now,
+          previousMessageSentAt: now.subtract(const Duration(seconds: 1)),
+          previousMessageIsOutgoing: false,
+          previousMessageText:
+              'The first original message is also intentionally much longer.',
+        ),
+        unreadMessageIds: const ['msg-0', 'msg-1'],
+        primaryKnownLanguage: 'en',
+        knownLanguages: const ['en'],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+
+      final divider = find.text('2 new messages');
+      expect(divider, findsOneWidget);
+      final initialTop = tester.getTopLeft(divider).dy;
+
+      container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .hydrateFromDb(
+            const {
+              'msg-0': MessageTranslation(
+                translation: 'Erste Nachricht.',
+                interfaceText:
+                    'The first original message is also intentionally much longer.',
+                interfaceLang: 'en',
+                sourceLang: 'en',
+                tokens: [],
+                mode: LearningAidMode.translation,
+              ),
+              'msg-1': MessageTranslation(
+                translation: 'Zweite Nachricht.',
+                interfaceText:
+                    'The second original message is intentionally longer.',
+                interfaceLang: 'en',
+                sourceLang: 'en',
+                tokens: [],
+                mode: LearningAidMode.translation,
+              ),
+            },
+            'de',
+            'en',
+            replaceExisting: true,
+          );
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(tester.getTopLeft(divider).dy, closeTo(initialTop, 1));
+
+      await tester.tap(find.byKey(const ValueKey('mode-toggle')));
+      await _settle(tester);
+      expect(divider, findsOneWidget);
+      expect(tester.getTopLeft(divider).dy, closeTo(initialTop, 1));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 9));
     },
   );
 
