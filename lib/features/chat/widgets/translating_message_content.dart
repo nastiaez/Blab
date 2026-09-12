@@ -69,19 +69,31 @@ class _MessageArrivalState extends State<MessageArrival>
 }
 
 class IncomingTranslationPlaceholder extends StatelessWidget {
-  const IncomingTranslationPlaceholder({super.key});
+  const IncomingTranslationPlaceholder({
+    super.key,
+    required this.semanticsLabel,
+  });
+
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      key: ValueKey('incoming-translation-placeholder'),
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _IncomingTranslationPlaceholderLine(width: 76),
-        SizedBox(height: 7),
-        _IncomingTranslationPlaceholderLine(width: 118),
-      ],
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: semanticsLabel,
+      child: const ExcludeSemantics(
+        child: Column(
+          key: ValueKey('incoming-translation-placeholder'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _IncomingTranslationPlaceholderLine(width: 76),
+            SizedBox(height: 7),
+            _IncomingTranslationPlaceholderLine(width: 118),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -372,7 +384,7 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
                     stops: const [0, 0.22, 0.36, 0.5, 0.64, 0.78, 1],
                   ).createShader(bounds);
                 },
-                child: widget.authoredContent,
+                child: ExcludeSemantics(child: widget.authoredContent),
               ),
             ),
           ],

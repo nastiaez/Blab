@@ -68,11 +68,6 @@ class _LifecyclePreviewScreenState extends State<_LifecyclePreviewScreen> {
     final reduceMotion =
         MediaQuery.disableAnimationsOf(context) ||
         MediaQuery.accessibleNavigationOf(context);
-    final pendingBatchCount = [
-      _firstBatchResolved,
-      _secondBatchResolved,
-    ].where((resolved) => !resolved).length;
-
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
       body: SafeArea(
@@ -100,17 +95,22 @@ class _LifecyclePreviewScreenState extends State<_LifecyclePreviewScreen> {
                       outgoing: false,
                       resolved: _pairedResolved,
                       reduceMotion: reduceMotion,
-                      pendingContent: const IncomingTranslationPlaceholder(),
+                      pendingContent: const IncomingTranslationPlaceholder(
+                        semanticsLabel: 'Translating…',
+                      ),
                       finalContent: const Text('I’ll bring coffee.'),
                     ),
                     if (_showBatch) ...[
                       const SizedBox(height: 22),
+                      const _NewMessagesDivider(count: 2),
                       _LifecycleBubble(
                         key: const ValueKey('batch-one'),
                         outgoing: false,
                         resolved: _firstBatchResolved,
                         reduceMotion: reduceMotion,
-                        pendingContent: const IncomingTranslationPlaceholder(),
+                        pendingContent: const IncomingTranslationPlaceholder(
+                          semanticsLabel: 'Translating…',
+                        ),
                         finalContent: const Text('See you at seven.'),
                       ),
                       const SizedBox(height: 6),
@@ -119,26 +119,10 @@ class _LifecyclePreviewScreenState extends State<_LifecyclePreviewScreen> {
                         outgoing: false,
                         resolved: _secondBatchResolved,
                         reduceMotion: reduceMotion,
-                        pendingContent: const IncomingTranslationPlaceholder(),
+                        pendingContent: const IncomingTranslationPlaceholder(
+                          semanticsLabel: 'Translating…',
+                        ),
                         finalContent: const Text('I’ll send the address.'),
-                      ),
-                      AnimatedSwitcher(
-                        duration: reduceMotion
-                            ? Duration.zero
-                            : const Duration(milliseconds: 150),
-                        child: pendingBatchCount > 1
-                            ? Padding(
-                                key: const ValueKey('batch-status'),
-                                padding: const EdgeInsets.only(top: 9),
-                                child: Text(
-                                  'Translating $pendingBatchCount messages…',
-                                  style: const TextStyle(
-                                    color: BlabColors.textMuted,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
                       ),
                     ],
                   ],
@@ -266,6 +250,36 @@ class _ChatHeader extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NewMessagesDivider extends StatelessWidget {
+  const _NewMessagesDivider({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: Color(0xFFE1DAD2), height: 1)),
+          const SizedBox(width: 8),
+          Text(
+            '$count new messages',
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.25,
+              color: BlabColors.textMuted,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(child: Divider(color: Color(0xFFE1DAD2), height: 1)),
         ],
       ),
     );

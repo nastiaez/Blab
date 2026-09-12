@@ -2112,7 +2112,6 @@ class _MessageList extends ConsumerWidget {
       return entry is! AsyncData<MessageTranslation> &&
           entry is! AsyncError<MessageTranslation>;
     }).toList();
-    final firstPendingId = pendingIncoming.firstOrNull?.id;
     final pendingIds = pendingIncoming.map((message) => message.id).toSet();
     final hasEarlierPending = <String, bool>{};
     var earlierPending = false;
@@ -2168,10 +2167,6 @@ class _MessageList extends ConsumerWidget {
           isLastInGroup: isLastInGroup,
         ),
       );
-      if (m.id == firstPendingId &&
-          shouldShowPendingTranslationGroupStatus(pendingIncoming.length)) {
-        items.add(_PendingTranslationStatusItem(pendingIncoming.length));
-      }
     }
     while (languageChangeIndex < languageChanges.length) {
       final change = languageChanges[languageChangeIndex++];
@@ -2217,9 +2212,6 @@ class _MessageList extends ConsumerWidget {
         }
         if (item is _UnreadDividerItem) {
           return _UnreadDivider(key: unreadDividerKey, count: item.count);
-        }
-        if (item is _PendingTranslationStatusItem) {
-          return _PendingTranslationStatus(count: item.count);
         }
         if (item is _LanguageTimelineItem) {
           return _LanguageTimelineMarker(
@@ -2299,11 +2291,6 @@ class _DateDividerItem extends _ListItem {
 
 class _UnreadDividerItem extends _ListItem {
   const _UnreadDividerItem(this.count);
-  final int count;
-}
-
-class _PendingTranslationStatusItem extends _ListItem {
-  const _PendingTranslationStatusItem(this.count);
   final int count;
 }
 
@@ -2423,31 +2410,6 @@ class _UnreadDivider extends StatelessWidget {
           const SizedBox(width: 8),
           const Expanded(child: Divider(color: Color(0xFFE1DAD2), height: 1)),
         ],
-      ),
-    );
-  }
-}
-
-class _PendingTranslationStatus extends StatelessWidget {
-  const _PendingTranslationStatus({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 12, top: 2, bottom: 6),
-        child: Text(
-          count == 1 ? 'Translating…' : 'Translating $count messages…',
-          style: const TextStyle(
-            fontSize: 12,
-            height: 1.25,
-            color: BlabColors.textMuted,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
       ),
     );
   }
@@ -3065,7 +3027,9 @@ class _BubbleState extends ConsumerState<_Bubble> {
         showLearningAid &&
         liveTranslation is! AsyncError<MessageTranslation>;
     final pendingContent = !isOut && !retryingRevealedIncoming
-        ? const IncomingTranslationPlaceholder()
+        ? IncomingTranslationPlaceholder(
+            semanticsLabel: context.l10n.translating,
+          )
         : authoredContent;
     final animateTranslationLifecycle =
         ((isOut && isPractice) || !isOut) &&
