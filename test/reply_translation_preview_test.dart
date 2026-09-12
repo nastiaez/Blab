@@ -23,20 +23,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class _ReplyPreviewChatService implements ChatService {
-  _ReplyPreviewChatService();
+  _ReplyPreviewChatService({
+    this.learningLanguageCode = 'ta',
+    this.languageTimeline,
+  });
+
+  final String learningLanguageCode;
+  final List<Map<String, dynamic>>? languageTimeline;
 
   @override
   Future<List<Map<String, dynamic>>> fetchLanguageTimeline(
     String chatId,
-  ) async => [
-    {
-      'chat_id': chatId,
-      'user_id': 'alice',
-      'revision': 1,
-      'learning_language': 'ta',
-      'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
-    },
-  ];
+  ) async =>
+      languageTimeline ??
+      [
+        {
+          'chat_id': chatId,
+          'user_id': 'alice',
+          'revision': 1,
+          'learning_language': 'ta',
+          'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
+        },
+      ];
 
   final source = Message(
     id: 'source-message',
@@ -65,7 +73,7 @@ class _ReplyPreviewChatService implements ChatService {
       'chat_id': 'chat-1',
       'partner_id': 'bob',
       'partner_name': 'Bob',
-      'my_learning': 'ta',
+      'my_learning': learningLanguageCode,
       'partner_learning': 'en',
       'last_body': 'Yes',
       'last_at': reply.sentAt.toIso8601String(),
@@ -103,16 +111,19 @@ class _ReplyPreviewChatService implements ChatService {
     required String targetLang,
     required String interfaceLang,
   }) async {
-    return _translationFor(messageId, interfaceLang);
+    return _translationFor(messageId, targetLang, interfaceLang);
   }
 
   CachedMessageTranslation? _translationFor(
     String messageId,
+    String targetLang,
     String interfaceLang,
   ) {
     if (messageId == source.id) {
       return (
-        text: 'இன்று வருகிறாயா?',
+        text: targetLang == 'de'
+            ? 'Kommst du heute?'
+            : 'இன்று வருகிறாயா?',
         interfaceText: source.originalText,
         interfaceLang: interfaceLang,
         sourceLang: 'en',
@@ -124,7 +135,7 @@ class _ReplyPreviewChatService implements ChatService {
     }
     if (messageId == reply.id) {
       return (
-        text: 'ஆம்.',
+        text: targetLang == 'de' ? 'Ja.' : 'ஆம்.',
         interfaceText: reply.originalText,
         interfaceLang: interfaceLang,
         sourceLang: 'en',
@@ -146,7 +157,7 @@ class _ReplyPreviewChatService implements ChatService {
   }) async {
     final result = <String, CachedMessageTranslation>{};
     for (final id in messageIds) {
-      final translation = _translationFor(id, interfaceLang);
+      final translation = _translationFor(id, targetLang, interfaceLang);
       if (translation != null) result[id] = translation;
     }
     return result;
@@ -304,6 +315,41 @@ void main() {
     final exception = tester.takeException();
     expect(exception, isNull);
   });
+
+  testWidgets(
+    'reply quote keeps the referenced message era after a language switch',
+    (tester) async {
+      final service = _ReplyPreviewChatService(
+        learningLanguageCode: 'de',
+        languageTimeline: [
+          {
+            'chat_id': 'chat-1',
+            'user_id': 'alice',
+            'revision': 1,
+            'learning_language': 'ta',
+            'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
+          },
+          {
+            'chat_id': 'chat-1',
+            'user_id': 'alice',
+            'revision': 2,
+            'learning_language': 'de',
+            'created_at': DateTime.utc(2026, 8, 3, 12, 0, 30).toIso8601String(),
+          },
+        ],
+      );
+
+      await tester.pumpWidget(_host(service));
+      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(find.text('இன்று வருகிறாயா?'), findsOneWidget);
+      expect(find.text('Ja'), findsOneWidget);
+      expect(find.text('Kommst du heute?'), findsNothing);
+    },
+  );
 
   testWidgets('swiping a delivered message starts reply mode', (tester) async {
     await tester.pumpWidget(_host(_ReplyPreviewChatService()));
