@@ -642,11 +642,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Completed Practice results remain in their historical learning language after a later language change
-- [ ] A private centered marker `Now learning [language]` appears in both modes using the date-label treatment: regular 12 px `#8C735F`, no lines, pill, outline, or icon. When it starts a dated section, the order is date label → language marker → messages, with 18 px from the previous bubble to the date label, 10 px from the date label to the language marker, and 10 px from the marker to the next bubble. When it sits between message bubbles, it keeps 10 px of visible space above and below the marker.
+- [ ] A private centered marker equivalent to `Now learning [language]` is fully localized to the viewer's interface language and appears in both modes using the date-label treatment: regular 12 px `#8C735F`, no lines, pill, outline, or icon. When it starts a dated section, the order is date label → language marker → messages, with 18 px from the previous bubble to the date label, 10 px from the date label to the language marker, and 10 px from the marker to the next bubble. When it sits between message bubbles, it keeps 10 px of visible space above and below the marker.
 - [ ] The marker and language history belong only to that participant and never appear in the partner's view
 - [ ] Still-pending unseen work is cancelled or invalidated, reassigned to the new language, and placed below the marker
 - [ ] A late result for the old language can never overwrite the active new-language result
-- [ ] Repeated switching creates small private timeline events without duplicating original messages or clearing completed translations
+- [ ] Repeated switching creates small private timeline events without duplicating original messages or clearing completed translations; consecutive changes with no intervening message keep every private revision internally but show only the final marker at that visible boundary
 
 ---
 
