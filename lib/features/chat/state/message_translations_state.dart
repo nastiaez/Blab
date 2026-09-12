@@ -6,6 +6,7 @@ import '../../../shared/models/message_token.dart';
 import '../../../shared/services/chat_service.dart';
 import '../../../shared/services/message_translator.dart';
 import '../../../shared/state/chat_list_state.dart';
+import '../../../shared/state/auth_state.dart';
 import '../message_translation_lifecycle.dart';
 import 'grammatical_form_preferences_state.dart';
 
@@ -39,6 +40,14 @@ final translationLateCacheRecoveryDelayProvider = Provider<Duration>(
 final translationAutoRetryCooldownProvider = Provider<Duration>(
   (ref) => const Duration(seconds: 15),
 );
+
+bool isAutomaticTranslationRetryAllowed(Object error) {
+  if (error is! MessageTranslationFailed) return false;
+  return switch (error.reason) {
+    'timeout' || 'invoke_failed' || 'translation_unavailable' => true,
+    _ => false,
+  };
+}
 
 /// Composite cache key — same message viewed in two different target
 /// languages (e.g. the same chat opened by users with different
@@ -191,6 +200,7 @@ class MessageTranslationsNotifier
 
   @override
   Map<String, AsyncValue<MessageTranslation>> build() {
+    ref.watch(currentUserIdProvider);
     final formPreferenceRevision = ref.watch(
       grammaticalFormPreferenceRevisionProvider,
     );
@@ -819,10 +829,7 @@ class MessageTranslationsNotifier
       final value = entry.value;
       if (value is! AsyncError<MessageTranslation>) continue;
       final error = value.error;
-      if (error is MessageTranslationFailed &&
-          error.reason == 'translation_limit_reached') {
-        continue;
-      }
+      if (!isAutomaticTranslationRetryAllowed(error)) continue;
       final parts = entry.key.split('|');
       if (parts.length != 3 ||
           parts[1] != targetLang ||

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/services/local_chat_history_cache.dart';
+import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 
 /// Snapshot taken on chat entry. It intentionally stays stable for the
@@ -11,6 +12,7 @@ import '../../../shared/state/chat_list_state.dart';
 /// of disappearing row-by-row as receipts are emitted (FR-39).
 final chatUnreadMessageIdsProvider =
     FutureProvider.family<List<String>, String>((ref, chatId) async {
+      ref.watch(currentUserIdProvider);
       return ref.read(chatServiceProvider).fetchUnreadMessageIds(chatId);
     });
 
@@ -21,6 +23,7 @@ final chatLanguageTimelineProvider =
       ref,
       chatId,
     ) async {
+      ref.watch(currentUserIdProvider);
       final cache = ref.watch(localChatHistoryCacheProvider);
       final recovered = await cache?.loadLanguageTimeline(chatId) ?? const [];
       if (recovered.isNotEmpty) {

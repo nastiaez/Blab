@@ -49,9 +49,18 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   final String chatId;
   final Set<String> _pending = <String>{};
   Timer? _flush;
+  String? _activeUserId;
+  bool _identityInitialized = false;
 
   @override
   Set<String> build() {
+    final userId = ref.watch(currentUserIdProvider);
+    if (_identityInitialized && userId != _activeUserId) {
+      _flush?.cancel();
+      _pending.clear();
+    }
+    _activeUserId = userId;
+    _identityInitialized = true;
     final privacy = ref.watch(readReceiptsTransportStateProvider);
     if (privacy.isLoaded && !privacy.enabled) {
       _flush?.cancel();

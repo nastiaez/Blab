@@ -2,6 +2,28 @@ begin;
 
 select plan(1);
 
+insert into public.chats (id)
+values ('58000000-0000-4000-8000-000000000001');
+
+insert into public.chat_members (
+  chat_id,
+  user_id,
+  learning_language,
+  mode
+) values
+  (
+    '58000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-00000000000a',
+    'de',
+    'normal'
+  ),
+  (
+    '58000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-00000000000b',
+    'uk',
+    'practice'
+  );
+
 update public.chat_members
 set learning_language = 'uk',
     mode = 'practice',

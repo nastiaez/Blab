@@ -72,7 +72,10 @@ class ChatPaginationNotifier extends Notifier<ChatPaginationState> {
   final String chatId;
 
   @override
-  ChatPaginationState build() => const ChatPaginationState.initial();
+  ChatPaginationState build() {
+    ref.watch(currentUserIdProvider);
+    return const ChatPaginationState.initial();
+  }
 
   void update({required bool hasMore, required bool isLoading}) {
     state = ChatPaginationState(hasMore: hasMore, isLoading: isLoading);
@@ -604,7 +607,10 @@ class HiddenMessagesNotifier extends Notifier<Set<String>> {
   final String chatId;
 
   @override
-  Set<String> build() => <String>{};
+  Set<String> build() {
+    ref.watch(currentUserIdProvider);
+    return <String>{};
+  }
 
   void hide(String id) => state = {...state, id};
   void unhide(String id) => state = {...state}..remove(id);
@@ -673,7 +679,11 @@ class ChatModeResetSignalNotifier extends Notifier<int> {
   ChatModeResetSignalNotifier(this.chatId);
   final String chatId;
   @override
-  int build() => 0;
+  int build() {
+    ref.watch(currentUserIdProvider);
+    return 0;
+  }
+
   void bump() => state++;
 }
 
@@ -691,7 +701,10 @@ class ReplyingToNotifier extends Notifier<Message?> {
   final String chatId;
 
   @override
-  Message? build() => null;
+  Message? build() {
+    ref.watch(currentUserIdProvider);
+    return null;
+  }
 
   void set(Message m) {
     // Cancel an in-flight edit when replying.
@@ -716,7 +729,10 @@ class EditingNotifier extends Notifier<Message?> {
   final String chatId;
 
   @override
-  Message? build() => null;
+  Message? build() {
+    ref.watch(currentUserIdProvider);
+    return null;
+  }
 
   void set(Message m) {
     // Cancel an in-flight reply when editing.

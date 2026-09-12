@@ -1,4 +1,5 @@
 import 'package:blab/shared/state/privacy_settings.dart';
+import 'package:blab/shared/state/auth_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,17 @@ Future<PrivacySettingState> _waitUntilLoaded(
   }
   return container.read(provider);
 }
+
+class _UserIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => 'alice';
+
+  void set(String? value) => state = value;
+}
+
+final _userIdProvider = NotifierProvider<_UserIdNotifier, String?>(
+  _UserIdNotifier.new,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,4 +84,46 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+    'privacy choices fail closed and stay isolated across accounts',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final container = ProviderContainer(
+        overrides: [
+          currentUserIdProvider.overrideWith(
+            (ref) => ref.watch(_userIdProvider),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await _waitUntilLoaded(container, typingIndicatorsProvider);
+      await _waitUntilLoaded(container, readReceiptsProvider);
+      await container.read(typingIndicatorsProvider.notifier).set(false);
+      await container.read(readReceiptsProvider.notifier).set(false);
+
+      container.read(_userIdProvider.notifier).set('bob');
+      expect(container.read(typingIndicatorsEnabledProvider), isFalse);
+      expect(container.read(readReceiptsEnabledProvider), isFalse);
+      expect(
+        (await _waitUntilLoaded(container, typingIndicatorsProvider)).enabled,
+        isTrue,
+      );
+      expect(
+        (await _waitUntilLoaded(container, readReceiptsProvider)).enabled,
+        isTrue,
+      );
+
+      container.read(_userIdProvider.notifier).set('alice');
+      expect(
+        (await _waitUntilLoaded(container, typingIndicatorsProvider)).enabled,
+        isFalse,
+      );
+      expect(
+        (await _waitUntilLoaded(container, readReceiptsProvider)).enabled,
+        isFalse,
+      );
+    },
+  );
 }

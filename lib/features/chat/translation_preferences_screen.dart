@@ -166,11 +166,9 @@ class _TranslationPreferencesScreenState
                         chatPrefs?.asData?.value.tone ??
                         ConversationTone.informal,
                     onSelected: (value) async {
-                      await ref
-                          .read(grammaticalFormPreferencesServiceProvider)
-                          .setTone(chatId, value);
-                      ref.invalidate(
-                        grammaticalFormPreferencesProvider(chatId),
+                      await ref.read(saveConversationToneProvider)(
+                        chatId,
+                        value,
                       );
                     },
                   ),

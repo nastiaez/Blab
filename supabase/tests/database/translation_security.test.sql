@@ -1,6 +1,6 @@
 begin;
 
-select plan(30);
+select plan(31);
 
 select has_table(
   'public',
@@ -511,6 +511,71 @@ select is(
   ) ->> 'status',
   'ready',
   'normal mode still prepares a message with no recorded source language'
+);
+
+reset role;
+
+-- A primary known language is a message-output lane, not an interface locale.
+-- All eleven Blab languages are valid here even though app chrome has four.
+update public.profiles
+set known_languages = array['en', 'hi'],
+    primary_known_language = 'hi'
+where id = '00000000-0000-4000-8000-00000000000a';
+
+update public.chat_members
+set mode = 'practice'
+where chat_id = '51000000-0000-4000-8000-000000000001'
+  and user_id = '00000000-0000-4000-8000-00000000000a';
+
+update public.translation_usage
+set minute_started_at = date_trunc('minute', now()),
+    minute_requests = 0,
+    day_started_at = (now() at time zone 'utc')::date,
+    day_requests = 0,
+    day_characters = 0
+where user_id = '00000000-0000-4000-8000-00000000000a';
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',
+  true
+);
+set local role authenticated;
+
+insert into l13_prepared (label, value)
+values (
+  'hindi-primary',
+  public.request_message_translation(
+    '52000000-0000-4000-8000-000000000006'
+  )
+);
+
+reset role;
+select set_config(
+  'request.jwt.claims',
+  '{"role":"service_role"}',
+  true
+);
+set local role service_role;
+
+select ok(
+  public.complete_message_translation(
+    '52000000-0000-4000-8000-000000000006',
+    '00000000-0000-4000-8000-00000000000a',
+    'de',
+    (select value ->> 'interfaceLang' from l13_prepared where label = 'hindi-primary'),
+    (select value ->> 'sourceHash' from l13_prepared where label = 'hindi-primary'),
+    'Kurzes implizites Subjekt',
+    'संक्षिप्त निहित विषय',
+    'en',
+    'translation',
+    null,
+    null,
+    '[{"text":"Kurzes implizites Subjekt","gloss":"संक्षिप्त निहित विषय","isContent":true}]'::jsonb,
+    null,
+    'automatic-forms-v2'
+  ),
+  'service role accepts Hindi as the primary known language output lane'
 );
 
 reset role;

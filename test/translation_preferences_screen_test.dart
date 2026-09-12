@@ -11,6 +11,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'saving tone invalidates preferences and requests fresh translations',
+    () async {
+      var builds = 0;
+      final saved = <(String, ConversationTone)>[];
+      final container = ProviderContainer(
+        overrides: [
+          setConversationToneFnProvider.overrideWithValue((chatId, tone) async {
+            saved.add((chatId, tone));
+          }),
+          grammaticalFormPreferencesProvider.overrideWith((ref, chatId) async {
+            builds++;
+            return const GrammaticalFormPreferences(
+              ownForm: null,
+              partnerForm: null,
+              tone: ConversationTone.informal,
+            );
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(grammaticalFormPreferencesProvider('chat-1').future);
+      expect(builds, 1);
+      expect(container.read(grammaticalFormPreferenceRevisionProvider), 0);
+
+      await container.read(saveConversationToneProvider)(
+        'chat-1',
+        ConversationTone.respectful,
+      );
+      await container.read(grammaticalFormPreferencesProvider('chat-1').future);
+
+      expect(saved, [('chat-1', ConversationTone.respectful)]);
+      expect(builds, 2);
+      expect(container.read(grammaticalFormPreferenceRevisionProvider), 1);
+    },
+  );
+
   testWidgets('renders the approved quiet preference hierarchy', (
     tester,
   ) async {

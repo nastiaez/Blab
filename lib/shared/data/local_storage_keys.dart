@@ -20,6 +20,14 @@ const String kPendingInviteTokenKey = 'pending_invite_token';
 String modeTipSeenStorageKey({required String userId, required String mode}) =>
     '$kModeTipSeenKeyPrefix$userId:$mode';
 
+String privacyTypingIndicatorsStorageKey(String? userId) => userId == null
+    ? kPrivacyTypingIndicatorsKey
+    : '$kPrivacyTypingIndicatorsKey:account:$userId';
+
+String privacyReadReceiptsStorageKey(String? userId) => userId == null
+    ? kPrivacyReadReceiptsKey
+    : '$kPrivacyReadReceiptsKey:account:$userId';
+
 String interfaceLanguageStorageKey(String? userId) => userId == null
     ? kGuestInterfaceLanguageKey
     : '$kAccountInterfaceLanguageKeyPrefix$userId';

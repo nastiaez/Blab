@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/local_storage_keys.dart';
+import 'auth_state.dart';
 
 /// A privacy choice is not allowed to transmit until persistence has loaded.
 /// This avoids briefly using the default-ON behavior when the saved value is
@@ -21,21 +22,26 @@ class PrivacySettingState {
 }
 
 class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
+  String? _userId;
+  int _generation = 0;
+
   @override
   PrivacySettingState build() {
-    _hydrate();
+    _userId = ref.watch(currentUserIdProvider);
+    final generation = ++_generation;
+    _hydrate(_userId, generation);
     return const PrivacySettingState.loading();
   }
 
-  Future<void> _hydrate() async {
+  Future<void> _hydrate(String? userId, int generation) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getBool(kPrivacyTypingIndicatorsKey);
-      if (ref.mounted) {
+      final stored = prefs.getBool(privacyTypingIndicatorsStorageKey(userId));
+      if (ref.mounted && generation == _generation && userId == _userId) {
         state = PrivacySettingState.ready(stored ?? true);
       }
     } catch (_) {
-      if (ref.mounted) {
+      if (ref.mounted && generation == _generation && userId == _userId) {
         state = const PrivacySettingState.ready(false);
       }
     }
@@ -43,28 +49,34 @@ class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
 
   Future<void> set(bool value) async {
     if (!state.isLoaded) return;
+    final userId = _userId;
     state = PrivacySettingState.ready(value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kPrivacyTypingIndicatorsKey, value);
+    await prefs.setBool(privacyTypingIndicatorsStorageKey(userId), value);
   }
 }
 
 class ReadReceiptsNotifier extends Notifier<PrivacySettingState> {
+  String? _userId;
+  int _generation = 0;
+
   @override
   PrivacySettingState build() {
-    _hydrate();
+    _userId = ref.watch(currentUserIdProvider);
+    final generation = ++_generation;
+    _hydrate(_userId, generation);
     return const PrivacySettingState.loading();
   }
 
-  Future<void> _hydrate() async {
+  Future<void> _hydrate(String? userId, int generation) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stored = prefs.getBool(kPrivacyReadReceiptsKey);
-      if (ref.mounted) {
+      final stored = prefs.getBool(privacyReadReceiptsStorageKey(userId));
+      if (ref.mounted && generation == _generation && userId == _userId) {
         state = PrivacySettingState.ready(stored ?? true);
       }
     } catch (_) {
-      if (ref.mounted) {
+      if (ref.mounted && generation == _generation && userId == _userId) {
         state = const PrivacySettingState.ready(false);
       }
     }
@@ -72,9 +84,10 @@ class ReadReceiptsNotifier extends Notifier<PrivacySettingState> {
 
   Future<void> set(bool value) async {
     if (!state.isLoaded) return;
+    final userId = _userId;
     state = PrivacySettingState.ready(value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kPrivacyReadReceiptsKey, value);
+    await prefs.setBool(privacyReadReceiptsStorageKey(userId), value);
   }
 }
 

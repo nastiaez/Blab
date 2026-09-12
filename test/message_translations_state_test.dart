@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:blab/features/chat/state/message_translations_state.dart';
+import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
 import 'package:blab/shared/data/translation_support.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -11,14 +12,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 ProviderContainer _container({
   required TranslateMessageFn translateFn,
+  TranslateMessageFn? forceTranslateFn,
   ChatService? chatService,
   Duration? lifecycleDeadline,
   Duration? loadingTimeout,
   Duration? lateCacheRecoveryDelay,
+  Duration? autoRetryCooldown,
 }) {
   return ProviderContainer(
     overrides: [
       translateMessageFnProvider.overrideWithValue(translateFn),
+      if (forceTranslateFn != null)
+        forceTranslateMessageFnProvider.overrideWithValue(forceTranslateFn),
       if (chatService != null)
         chatServiceProvider.overrideWithValue(chatService),
       if (lifecycleDeadline != null)
@@ -30,6 +35,10 @@ ProviderContainer _container({
       if (lateCacheRecoveryDelay != null)
         translationLateCacheRecoveryDelayProvider.overrideWithValue(
           lateCacheRecoveryDelay,
+        ),
+      if (autoRetryCooldown != null)
+        translationAutoRetryCooldownProvider.overrideWithValue(
+          autoRetryCooldown,
         ),
     ],
   );
@@ -269,6 +278,140 @@ void main() {
     expect(
       container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
       isA<AsyncError<MessageTranslation>>(),
+    );
+  });
+
+  test('automatic retry recovers a temporary transport failure', () async {
+    var calls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      autoRetryCooldown: Duration.zero,
+      translateFn: (id) async {
+        calls++;
+        if (calls <= 2) throw MessageTranslationFailed('invoke_failed');
+        return _translation('Hallo');
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    await notifier.ensure(
+      messageId: 'm1',
+      text: 'hello',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    await notifier.retryTransientFailures(
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(calls, 3);
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncData<MessageTranslation>>(),
+    );
+  });
+
+  test('automatic retry leaves permanent failures untouched', () async {
+    const permanentReasons = [
+      'invalid_message_id',
+      'translation_not_allowed',
+      'translation_stale',
+      'missing_translation',
+      'missing_interface_text',
+      'missing_interface_language',
+      'missing_source_language',
+      'missing_learning_aid_mode',
+      'invalid_correction_confidence',
+      'missing_correction_details',
+      'interface_language_changed',
+    ];
+
+    for (final reason in permanentReasons) {
+      var calls = 0;
+      final container = _container(
+        chatService: _ControlledCacheChatService(),
+        autoRetryCooldown: Duration.zero,
+        translateFn: (id) async {
+          calls++;
+          throw MessageTranslationFailed(reason);
+        },
+      );
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await notifier.retryTransientFailures(
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+
+      expect(calls, 2, reason: reason);
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncError<MessageTranslation>>(),
+        reason: reason,
+      );
+      container.dispose();
+    }
+  });
+
+  test('preference revision requests a fresh translation', () async {
+    var ordinaryCalls = 0;
+    var freshCalls = 0;
+    final container = _container(
+      chatService: _ControlledCacheChatService(),
+      translateFn: (id) async {
+        ordinaryCalls++;
+        return _translation('Informal');
+      },
+      forceTranslateFn: (id) async {
+        freshCalls++;
+        return _translation('Respectful');
+      },
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+    expect(ordinaryCalls, 1);
+    expect(freshCalls, 0);
+
+    container.read(grammaticalFormPreferenceRevisionProvider.notifier).bump();
+    await Future<void>.delayed(Duration.zero);
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        );
+
+    expect(ordinaryCalls, 1);
+    expect(freshCalls, 1);
+    expect(
+      container
+          .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+          .value!
+          .translation,
+      'Respectful',
     );
   });
 

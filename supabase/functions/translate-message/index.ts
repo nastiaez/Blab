@@ -21,7 +21,6 @@ import {
   LANG_NAMES,
   missingFormAlternativesNeedsAudit,
   normalizeFormSubject,
-  OPENROUTER_PROVIDER,
   parseFormAuditResult,
   parseProviderResult,
   type ProviderCredential,
@@ -35,6 +34,7 @@ import {
   validateRequest,
 } from "./contract.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
+import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -56,37 +56,6 @@ const CORS_HEADERS = {
 
 function providerName(credential: ProviderCredential): string {
   return credential.provider === "openrouter" ? "OpenRouter" : "OpenAI";
-}
-
-function chatCompletionEndpoint(credential: ProviderCredential): string {
-  return credential.provider === "openrouter"
-    ? "https://openrouter.ai/api/v1/chat/completions"
-    : "https://api.openai.com/v1/chat/completions";
-}
-
-function chatCompletionModel(credential: ProviderCredential): string {
-  return credential.model;
-}
-
-async function fetchChatCompletion(
-  credential: ProviderCredential,
-  body: Record<string, unknown>,
-): Promise<Response> {
-  return await fetch(chatCompletionEndpoint(credential), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${credential.apiKey}`,
-    },
-    body: JSON.stringify({
-      ...body,
-      model: chatCompletionModel(credential),
-      ...(credential.provider === "openrouter" &&
-          credential.useOpenRouterProviderPolicy
-        ? { provider: OPENROUTER_PROVIDER }
-        : {}),
-    }),
-  });
 }
 
 async function repairInterfaceText(
@@ -417,8 +386,11 @@ Deno.serve(async (req) => {
             retryGuidance,
           }),
         });
-      } catch {
-        providerFailure = `${credential.provider}_unreachable`;
+      } catch (error) {
+        const reason = error instanceof ProviderFetchError
+          ? error.reason
+          : "provider_unreachable";
+        providerFailure = `${credential.provider}_${reason}`;
         console.error("translation provider attempt failed", {
           provider: credential.provider,
           model: credential.model,
