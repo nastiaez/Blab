@@ -3264,9 +3264,11 @@ class _BubbleState extends ConsumerState<_Bubble> {
         if (showUnsupportedLanguageHint)
           _UnsupportedLanguageNotice(
             key: const ValueKey('unsupported-language-hint'),
-            text: context.l10n.unsupportedLanguageHint(
-              _languageNameForCode(languageCode),
-            ),
+            text: isOut
+                ? context.l10n.unsupportedLanguageHint(
+                    _languageNameForCode(languageCode),
+                  )
+                : context.l10n.unsupportedIncomingLanguageHint,
             alignRight: isOut,
           ),
         if (isFailed) ...[

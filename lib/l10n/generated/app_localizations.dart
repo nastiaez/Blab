@@ -108,6 +108,12 @@ abstract class AppLocalizations {
   /// **'Blab'**
   String get appName;
 
+  /// No description provided for @unsupportedIncomingLanguageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Blab can’t translate this language yet. Showing the original.'**
+  String get unsupportedIncomingLanguageHint;
+
   /// No description provided for @unsupportedLanguageHint.
   ///
   /// In en, this message translates to:

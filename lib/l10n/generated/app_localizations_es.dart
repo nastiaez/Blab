@@ -12,6 +12,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
+  String get unsupportedIncomingLanguageHint =>
+      'Blab aún no puede traducir este idioma. Se muestra el original.';
+
+  @override
   String unsupportedLanguageHint(String learningLanguage) {
     return 'Blab todavía no habla este idioma — prueba $learningLanguage.';
   }

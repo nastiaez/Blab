@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "appName": "Blab",
+  "unsupportedIncomingLanguageHint": "Blab can’t translate this language yet. Showing the original.",
   "unsupportedLanguageHint": "Blab doesn’t speak this one yet — try {learningLanguage}.",
   "@unsupportedLanguageHint": {"placeholders": {"learningLanguage": {"type": "String"}}},
   "back": "Back",

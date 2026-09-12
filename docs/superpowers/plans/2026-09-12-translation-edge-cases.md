@@ -333,7 +333,7 @@ git commit -m "fix: keep completed translations after tone changes"
 - Modify: `lib/features/chat/chat_screen.dart`
 - Test: `test/bubble_expand_test.dart`
 
-- [ ] **Step 1: Write failing incoming/outgoing widget tests**
+- [x] **Step 1: Write failing incoming/outgoing widget tests**
 
 Split the current unsupported-source test into two cases. Assert incoming Chinese shows:
 
@@ -346,7 +346,7 @@ expect(
 
 Assert outgoing Chinese retains the actionable learning-language copy and both cases keep the authored Chinese text visible with no translation Retry action.
 
-- [ ] **Step 2: Run the widget tests and verify RED**
+- [x] **Step 2: Run the widget tests and verify RED**
 
 ```bash
 flutter test test/bubble_expand_test.dart --plain-name "unsupported"
@@ -354,7 +354,7 @@ flutter test test/bubble_expand_test.dart --plain-name "unsupported"
 
 Expected: FAIL because both directions use `unsupportedLanguageHint`.
 
-- [ ] **Step 3: Add localized incoming copy and choose by author**
+- [x] **Step 3: Add localized incoming copy and choose by author**
 
 Add `unsupportedIncomingLanguageHint` to all four interface-language ARB files. Use these approved/localized values:
 
@@ -375,7 +375,7 @@ text: isOut
     : context.l10n.unsupportedIncomingLanguageHint,
 ```
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 ```bash
 flutter test test/bubble_expand_test.dart test/message_presentation_test.dart
@@ -383,7 +383,7 @@ flutter test test/bubble_expand_test.dart test/message_presentation_test.dart
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit author-aware guidance**
+- [x] **Step 5: Commit author-aware guidance**
 
 ```bash
 git add lib/l10n lib/features/chat/chat_screen.dart test/bubble_expand_test.dart
