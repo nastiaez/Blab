@@ -28,6 +28,7 @@ import {
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
+  sourceClassificationRetryGuidance,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
@@ -385,16 +386,21 @@ Deno.serve(async (req) => {
   let providerFailure = "unknown";
   let lastFailedSourceLang: string | null = null;
   for (const credential of providerKeys) {
+    let previousSourceClassificationConflict = false;
     for (let attempt = 0; attempt < 2; attempt++) {
       const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
       const targetName = LANG_NAMES[targetLang] ?? targetLang;
+      const sourceClassificationGuidance = previousSourceClassificationConflict
+        ? sourceClassificationRetryGuidance(targetLang)
+        : "";
+      previousSourceClassificationConflict = false;
       const wrongModeGuidance = lastFailedSourceLang !== null &&
           lastFailedSourceLang !== targetLang
         ? ` Your previous response detected sourceLang=${lastFailedSourceLang}, which is not ${targetLang}, so mode=none/correction was invalid there — mode must be translation, and "translation" must be a genuine full-sentence rendering in ${targetName}, not a copy of the input.`
         : "";
       const retryGuidance = attempt === 0
         ? ""
-        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${wrongModeGuidance}`;
+        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${sourceClassificationGuidance}${wrongModeGuidance}`;
       let llm: Response;
       try {
         llm = await fetchChatCompletion(credential, {
@@ -536,8 +542,12 @@ Deno.serve(async (req) => {
         );
       }
       if (translationNeedsRetry(candidate, targetLang, text)) {
+        previousSourceClassificationConflict =
+          candidate.sourceClassificationConflict === true;
         lastFailedSourceLang = candidate.sourceLang;
-        providerFailure = `${credential.provider}_untranslated`;
+        providerFailure = previousSourceClassificationConflict
+          ? `${credential.provider}_source_misclassified`
+          : `${credential.provider}_untranslated`;
         console.error("translation provider attempt failed", {
           provider: credential.provider,
           model: credential.model,

@@ -340,6 +340,10 @@ export type TranslationResult = {
   confidence: CorrectionConfidence | null;
   tokens: unknown[];
   formAlternatives: FormAlternatives | null;
+  /// Internal retry signal. The provider claimed the authored input was
+  /// already in the learning language, but returned a different rewrite
+  /// without the metadata required for a valid correction.
+  sourceClassificationConflict?: true;
 };
 
 export type FormAlternatives = {
@@ -876,6 +880,23 @@ export function interfaceOutputNeedsRetry(
     /\p{L}/u.test(result.translation);
 }
 
+const SHORT_SOURCE_RETRY_MAX_CHARS = 24;
+const SHORT_PLAIN_SOURCE = /^[\p{L}\p{M}][\p{L}\p{M}\s'’-]*$/u;
+
+function canRetrySourceClassification(text: string): boolean {
+  const value = text.trim();
+  return value.length > 0 &&
+    value.length <= SHORT_SOURCE_RETRY_MAX_CHARS &&
+    SHORT_PLAIN_SOURCE.test(value);
+}
+
+export function sourceClassificationRetryGuidance(
+  targetLang: string,
+): string {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  return ` The previous response claimed the authored input was already ${targetName} (${targetLang}) but also rewrote it without valid correction metadata. Re-detect the source language from the original authored text. If it is not truly ${targetName}, use mode=translation and return the complete ${targetName} translation.`;
+}
+
 /// A provider sometimes returns the untranslated source as "translation"
 /// while still filling in per-word gloss/roman tokens, as if word-level aid
 /// were a substitute for the required full-sentence translation. That must
@@ -885,6 +906,7 @@ export function translationNeedsRetry(
   targetLang: string,
   sourceText: string,
 ): boolean {
+  if (result.sourceClassificationConflict === true) return true;
   // Word metadata powers optional tap-to-explain affordances. A provider can
   // return a valid full-message translation while omitting or corrupting that
   // metadata; parseProviderResult already degrades it to an empty token list.
@@ -1046,6 +1068,9 @@ export function parseProviderResult(
     // A same-language rewrite without correction metadata is not safe to
     // present as a correction. Preserve the authored line and repair only
     // the interface-language rendering below.
+    if (canRetrySourceClassification(text)) {
+      result.sourceClassificationConflict = true;
+    }
     result.mode = "none";
     result.translation = text;
     result.interfaceText = interfaceLang === targetLang ? text : "";
