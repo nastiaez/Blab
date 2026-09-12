@@ -274,13 +274,13 @@ git commit -m "fix: use context for ambiguous translation sources"
 - Modify: `test/message_translations_state_test.dart`
 - Modify: `test/account_private_state_test.dart`
 
-- [ ] **Step 1: Change tests first**
+- [x] **Step 1: Change tests first**
 
 Rename the tone test to `saving tone invalidates preferences without refreshing completed translations`. Keep assertions for persistence and preferences rebuilding, but require no translation revision.
 
 Replace the existing message-state revision test with a regression test that loads a cached translation, saves a new tone, calls `ensure` again, and asserts the cached text remains present with zero fresh translation calls. Remove the account-state test's revision-only setup/assertions; its other account-private state checks remain.
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 ```bash
 flutter test test/translation_preferences_screen_test.dart test/message_translations_state_test.dart test/account_private_state_test.dart
@@ -288,7 +288,7 @@ flutter test test/translation_preferences_screen_test.dart test/message_translat
 
 Expected: FAIL because saving tone still bumps the global revision and visible entries still force `translateFresh`.
 
-- [ ] **Step 3: Remove the tone refresh path**
+- [x] **Step 3: Remove the tone refresh path**
 
 Change the save action to:
 
@@ -303,7 +303,7 @@ final saveConversationToneProvider = Provider<SetConversationToneFn>((ref) {
 
 Delete `grammaticalFormPreferenceRevisionProvider`, `forceTranslateMessageFnProvider`, `_formPreferenceRevision`, `_forceFormRefresh`, the build-time revision watcher, the cache-bypass branch, and the `translateFresh` selection. Keep the normal cache and serialized live-translation path unchanged.
 
-- [ ] **Step 4: Verify GREEN and gender non-regression**
+- [x] **Step 4: Verify GREEN and gender non-regression**
 
 ```bash
 flutter test test/translation_preferences_screen_test.dart test/message_translations_state_test.dart test/account_private_state_test.dart test/form_correction_state_test.dart test/form_correction_chat_test.dart
@@ -311,7 +311,7 @@ flutter test test/translation_preferences_screen_test.dart test/message_translat
 
 Expected: PASS; form-correction-window behavior remains unchanged.
 
-- [ ] **Step 5: Commit future-only tone behavior**
+- [x] **Step 5: Commit future-only tone behavior**
 
 ```bash
 git add lib/features/chat/state/grammatical_form_preferences_state.dart lib/features/chat/state/message_translations_state.dart test/translation_preferences_screen_test.dart test/message_translations_state_test.dart test/account_private_state_test.dart

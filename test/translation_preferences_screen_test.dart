@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'saving tone invalidates preferences and requests fresh translations',
+    'saving tone invalidates preferences without refreshing completed translations',
     () async {
       var builds = 0;
       final saved = <(String, ConversationTone)>[];
@@ -35,7 +35,6 @@ void main() {
 
       await container.read(grammaticalFormPreferencesProvider('chat-1').future);
       expect(builds, 1);
-      expect(container.read(grammaticalFormPreferenceRevisionProvider), 0);
 
       await container.read(saveConversationToneProvider)(
         'chat-1',
@@ -45,7 +44,6 @@ void main() {
 
       expect(saved, [('chat-1', ConversationTone.respectful)]);
       expect(builds, 2);
-      expect(container.read(grammaticalFormPreferenceRevisionProvider), 1);
     },
   );
 

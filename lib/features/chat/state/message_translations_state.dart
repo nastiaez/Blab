@@ -8,7 +8,6 @@ import '../../../shared/services/message_translator.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/auth_state.dart';
 import '../message_translation_lifecycle.dart';
-import 'grammatical_form_preferences_state.dart';
 
 /// Function-pointer indirection. Tests override this to swap the real
 /// translator out without monkeying with [messageTranslatorProvider].
@@ -18,11 +17,6 @@ typedef TranslateMessageFn =
 final translateMessageFnProvider = Provider<TranslateMessageFn>((ref) {
   final translator = ref.watch(messageTranslatorProvider);
   return (id) => translator.translate(messageId: id);
-});
-
-final forceTranslateMessageFnProvider = Provider<TranslateMessageFn>((ref) {
-  final translator = ref.watch(messageTranslatorProvider);
-  return (id) => translator.translateFresh(messageId: id);
 });
 
 final translationLoadingTimeoutProvider = Provider<Duration>(
@@ -195,23 +189,10 @@ class MessageTranslationsNotifier
   Set<String> _watchedMessageIds = const <String>{};
   String? _watchedLocaleKey;
   Future<void> _liveTranslationTail = Future<void>.value();
-  int? _formPreferenceRevision;
-  bool _forceFormRefresh = false;
 
   @override
   Map<String, AsyncValue<MessageTranslation>> build() {
     ref.watch(currentUserIdProvider);
-    final formPreferenceRevision = ref.watch(
-      grammaticalFormPreferenceRevisionProvider,
-    );
-    if (_formPreferenceRevision != null &&
-        _formPreferenceRevision != formPreferenceRevision) {
-      _forceFormRefresh = true;
-      // Keep the fresh path alive through the frame that rebuilds every
-      // visible bubble after the preference change.
-      Timer(const Duration(seconds: 1), () => _forceFormRefresh = false);
-    }
-    _formPreferenceRevision = formPreferenceRevision;
     _sourceTexts.clear();
     for (final timer in _retryTimers.values) {
       timer.cancel();
@@ -655,32 +636,29 @@ class MessageTranslationsNotifier
     _cancelLoadingTimeout(key);
     _sourceTexts[key] = text;
     state = {...state, key: const AsyncLoading()};
-    final forceRefresh = _forceFormRefresh;
     // 1. DB cache. Returns instantly when another session already
     // translated this message into this target language.
-    if (!forceRefresh) {
-      try {
-        final cached = await ref
-            .read(chatServiceProvider)
-            .fetchCachedTranslation(
-              messageId: messageId,
-              targetLang: targetLang,
-              interfaceLang: interfaceLang,
-            );
-        if (!ref.mounted) return;
-        if (_sourceTexts[key] != text) return;
-        if (cached != null) {
-          _cancelLoadingTimeout(key);
-          final value = _translationFromCache(cached);
-          _recordSourceLang(messageId, value);
-          state = {...state, key: AsyncData(value)};
-          return;
-        }
-      } catch (_) {
-        // Treat any DB error as a cache miss. Tests use ProviderContainer
-        // without a real Supabase client, so this path is exercised on
-        // every unit test too.
+    try {
+      final cached = await ref
+          .read(chatServiceProvider)
+          .fetchCachedTranslation(
+            messageId: messageId,
+            targetLang: targetLang,
+            interfaceLang: interfaceLang,
+          );
+      if (!ref.mounted) return;
+      if (_sourceTexts[key] != text) return;
+      if (cached != null) {
+        _cancelLoadingTimeout(key);
+        final value = _translationFromCache(cached);
+        _recordSourceLang(messageId, value);
+        state = {...state, key: AsyncData(value)};
+        return;
       }
+    } catch (_) {
+      // Treat any DB error as a cache miss. Tests use ProviderContainer
+      // without a real Supabase client, so this path is exercised on
+      // every unit test too.
     }
 
     // A page-level prepared package may finish hydrating while the visible
@@ -693,9 +671,6 @@ class MessageTranslationsNotifier
     // The function performs its own cache check and persists a verified result
     // before returning success.
     final fn = ref.read(translateMessageFnProvider);
-    final liveFn = forceRefresh
-        ? ref.read(forceTranslateMessageFnProvider)
-        : fn;
     final lifecycleDeadline = ref.read(translationLifecycleDeadlineProvider);
     Future<MessageTranslation> translateWithQuietRetry(String id) async {
       final stopwatch = Stopwatch()..start();
@@ -705,7 +680,7 @@ class MessageTranslationsNotifier
         final remaining = lifecycleDeadline - stopwatch.elapsed;
         if (remaining <= Duration.zero) break;
         try {
-          return await liveFn(id).timeout(remaining);
+          return await fn(id).timeout(remaining);
         } catch (error, stack) {
           lastError = error;
           lastStack = stack;
