@@ -105,6 +105,25 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageSpanish => 'Іспанська';
 
   @override
+  String nowLearningLanguage(String language) {
+    String _temp0 = intl.Intl.selectLogic(language, {
+      'nl': 'Тепер ви вивчаєте нідерландську',
+      'en': 'Тепер ви вивчаєте англійську',
+      'fr': 'Тепер ви вивчаєте французьку',
+      'de': 'Тепер ви вивчаєте німецьку',
+      'hi': 'Тепер ви вивчаєте гінді',
+      'it': 'Тепер ви вивчаєте італійську',
+      'pt': 'Тепер ви вивчаєте португальську',
+      'es': 'Тепер ви вивчаєте іспанську',
+      'ta': 'Тепер ви вивчаєте тамільську',
+      'tr': 'Тепер ви вивчаєте турецьку',
+      'uk': 'Тепер ви вивчаєте українську',
+      'other': 'Тепер ви вивчаєте нову мову',
+    });
+    return '$_temp0';
+  }
+
+  @override
   String get authTagline => 'Вивчайте мову, спілкуючись із другом.';
 
   @override

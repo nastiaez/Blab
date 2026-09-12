@@ -282,6 +282,12 @@ abstract class AppLocalizations {
   /// **'Spanish'**
   String get languageSpanish;
 
+  /// No description provided for @nowLearningLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'{language, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning your language}}'**
+  String nowLearningLanguage(String language);
+
   /// No description provided for @authTagline.
   ///
   /// In en, this message translates to:

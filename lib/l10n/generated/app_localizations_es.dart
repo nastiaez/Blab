@@ -105,6 +105,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get languageSpanish => 'Español';
 
   @override
+  String nowLearningLanguage(String language) {
+    String _temp0 = intl.Intl.selectLogic(language, {
+      'nl': 'Ahora aprendes neerlandés',
+      'en': 'Ahora aprendes inglés',
+      'fr': 'Ahora aprendes francés',
+      'de': 'Ahora aprendes alemán',
+      'hi': 'Ahora aprendes hindi',
+      'it': 'Ahora aprendes italiano',
+      'pt': 'Ahora aprendes portugués',
+      'es': 'Ahora aprendes español',
+      'ta': 'Ahora aprendes tamil',
+      'tr': 'Ahora aprendes turco',
+      'uk': 'Ahora aprendes ucraniano',
+      'other': 'Ahora aprendes un idioma nuevo',
+    });
+    return '$_temp0';
+  }
+
+  @override
   String get authTagline => 'Aprende un idioma chateando con un amigo.';
 
   @override

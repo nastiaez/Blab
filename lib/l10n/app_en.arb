@@ -32,6 +32,8 @@
   "languageUkrainian": "Ukrainian",
   "languageGerman": "German",
   "languageSpanish": "Spanish",
+  "nowLearningLanguage": "{language, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning your language}}",
+  "@nowLearningLanguage": {"placeholders": {"language": {"type": "String"}}},
   "authTagline": "Learn a language by chatting with a friend.",
   "signUpToChat": "Sign up to chat with {name}.",
   "@signUpToChat": {"placeholders": {"name": {"type": "String"}}},

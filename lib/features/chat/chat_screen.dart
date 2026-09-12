@@ -2322,7 +2322,7 @@ class _LanguageTimelineMarker extends StatelessWidget {
       padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
       child: Center(
         child: Text(
-          'Now learning ${_languageNameForCode(languageCode)}',
+          context.l10n.nowLearningLanguage(languageCode),
           style: const TextStyle(
             color: Color(0xFF8C735F),
             fontSize: 12,

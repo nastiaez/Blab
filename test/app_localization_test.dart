@@ -12,6 +12,17 @@ Widget _localizedText({Locale? locale}) {
   );
 }
 
+Widget _localizedLearningMarker({required Locale locale, required String code}) {
+  return MaterialApp(
+    locale: locale,
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    home: Builder(
+      builder: (context) => Text(context.l10n.nowLearningLanguage(code)),
+    ),
+  );
+}
+
 void main() {
   testWidgets('English is the app-localization default', (tester) async {
     await tester.pumpWidget(_localizedText());
@@ -29,6 +40,22 @@ void main() {
 
     for (final entry in expectations.entries) {
       await tester.pumpWidget(_localizedText(locale: Locale(entry.key)));
+      expect(find.text(entry.value), findsOneWidget);
+    }
+  });
+
+  testWidgets('learning-history marker is fully localized', (tester) async {
+    const expectations = {
+      'en': 'Now learning French',
+      'de': 'Du lernst jetzt Französisch',
+      'es': 'Ahora aprendes francés',
+      'uk': 'Тепер ви вивчаєте французьку',
+    };
+
+    for (final entry in expectations.entries) {
+      await tester.pumpWidget(
+        _localizedLearningMarker(locale: Locale(entry.key), code: 'fr'),
+      );
       expect(find.text(entry.value), findsOneWidget);
     }
   });
