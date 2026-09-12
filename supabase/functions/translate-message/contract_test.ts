@@ -1321,6 +1321,118 @@ Deno.test("provider retries only when a cross-language result copies the source"
   );
 });
 
+Deno.test("provider retries a misclassified short source", () => {
+  const misclassified = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "ta",
+      translation: "மன்னிக்கவும்",
+      interfaceText: "sorry",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "sorry",
+    "ta",
+    "en",
+  );
+
+  assert(misclassified !== null, "the provider result remains parseable");
+  assert(
+    translationNeedsRetry(misclassified!, "ta", "sorry"),
+    "discarding a plausible target-language rewrite must request one retry",
+  );
+});
+
+Deno.test("source classification retry preserves valid short messages", () => {
+  const tamil = parseProviderResult(
+    JSON.stringify({
+      mode: "none",
+      sourceLang: "ta",
+      translation: "நன்றி",
+      interfaceText: "thanks",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "நன்றி",
+    "ta",
+    "en",
+  );
+  assert(tamil !== null, "genuine Tamil remains parseable");
+  assert(
+    !translationNeedsRetry(tamil!, "ta", "நன்றி"),
+    "genuine target-language text is not retried",
+  );
+
+  const correction = parseProviderResult(
+    JSON.stringify({
+      mode: "correction",
+      sourceLang: "ta",
+      translation: "நன்றி",
+      interfaceText: "thanks",
+      explanation: "Corrected the spelling.",
+      confidence: "high",
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "நன்ரி",
+    "ta",
+    "en",
+  );
+  assert(correction !== null, "valid correction remains parseable");
+  assert(
+    !translationNeedsRetry(correction!, "ta", "நன்ரி"),
+    "a complete correction is not retried",
+  );
+});
+
+Deno.test("source classification retry excludes non-conversational and long input", () => {
+  for (
+    const source of [
+      "https://example.com",
+      "👍",
+      "sorry about missing the call yesterday",
+    ]
+  ) {
+    const parsed = parseProviderResult(
+      JSON.stringify({
+        mode: "translation",
+        sourceLang: "ta",
+        translation: "மன்னிக்கவும்",
+        interfaceText: source,
+        explanation: null,
+        confidence: null,
+        tokens: [],
+        formAlternatives: null,
+      }),
+      source,
+      "ta",
+      "en",
+    );
+    assert(parsed !== null, `${source} remains parseable`);
+    assert(
+      !translationNeedsRetry(parsed!, "ta", source),
+      `${source} does not trigger the bounded source retry`,
+    );
+  }
+});
+
+Deno.test("source classification retry guidance is generic", () => {
+  const guidance = (contract as Record<string, unknown>)[
+    "sourceClassificationRetryGuidance"
+  ];
+  assert(typeof guidance === "function", "retry guidance helper exists");
+  const text = (guidance as (targetLang: string) => string)("ta");
+  assert(text.includes("Tamil"), "guidance names the learning language");
+  assert(text.includes("Re-detect"), "guidance requests source re-detection");
+  for (const example of ["sorry", "yes", "hello"]) {
+    assert(!text.includes(example), `guidance does not hardcode ${example}`);
+  }
+});
+
 Deno.test("auto-source prompt requests learning output with localized glosses", () => {
   const prompt = systemPrompt("auto", "uk", "es");
   assert(prompt.includes("Detect the input language"), "source detection");
