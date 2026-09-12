@@ -1178,6 +1178,85 @@ void main() {
     container.dispose();
   });
 
+  testWidgets(
+    'consecutive language changes without messages show only the final marker',
+    (tester) async {
+      final sentAt = DateTime.utc(2026, 8, 3, 12, 3);
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          learningLanguageCode: 'fr',
+          messageIsOutgoing: true,
+          messageSentAt: sentAt,
+          previousMessageSentAt: DateTime.utc(2026, 8, 3, 12),
+        ),
+        languageTimeline: [
+          {
+            'revision': 1,
+            'learning_language': 'de',
+            'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
+          },
+          {
+            'revision': 2,
+            'learning_language': 'es',
+            'created_at': DateTime.utc(2026, 8, 3, 12, 1).toIso8601String(),
+          },
+          {
+            'revision': 3,
+            'learning_language': 'fr',
+            'created_at': DateTime.utc(2026, 8, 3, 12, 2).toIso8601String(),
+          },
+        ],
+      );
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+
+      expect(find.text('Now learning Spanish'), findsNothing);
+      expect(find.text('Now learning French'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+    },
+  );
+
+  testWidgets('language changes separated by messages keep both markers', (
+    tester,
+  ) async {
+    final sentAt = DateTime.utc(2026, 8, 3, 12, 3);
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        learningLanguageCode: 'fr',
+        messageIsOutgoing: true,
+        messageSentAt: sentAt,
+        previousMessageSentAt: DateTime.utc(2026, 8, 3, 12, 1, 30),
+      ),
+      languageTimeline: [
+        {
+          'revision': 1,
+          'learning_language': 'de',
+          'created_at': DateTime.utc(2026, 8, 3, 11).toIso8601String(),
+        },
+        {
+          'revision': 2,
+          'learning_language': 'es',
+          'created_at': DateTime.utc(2026, 8, 3, 12, 1).toIso8601String(),
+        },
+        {
+          'revision': 3,
+          'learning_language': 'fr',
+          'created_at': DateTime.utc(2026, 8, 3, 12, 2).toIso8601String(),
+        },
+      ],
+    );
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+
+    expect(find.text('Now learning Spanish'), findsOneWidget);
+    expect(find.text('Now learning French'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+  });
+
   test('saving a learning language refreshes its private timeline', () async {
     final service = _PrimaryKnownLanguageChatService(
       learningLanguageCode: 'uk',

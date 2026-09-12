@@ -2139,12 +2139,15 @@ class _MessageList extends ConsumerWidget {
       if (startsNewDate) {
         items.add(_DateDividerItem(m.sentAt));
       }
+      ({DateTime? when, String? language})? visibleChange;
       while (languageChangeIndex < languageChanges.length &&
           !languageChanges[languageChangeIndex].when!.isAfter(m.sentAt)) {
-        final change = languageChanges[languageChangeIndex++];
+        visibleChange = languageChanges[languageChangeIndex++];
+      }
+      if (visibleChange != null) {
         items.add(
           _LanguageTimelineItem(
-            languageCode: change.language!,
+            languageCode: visibleChange.language!,
             topPadding: startsNewDate ? 0 : 10,
             bottomPadding: (10 - messageTopGap).clamp(0, 10).toDouble(),
           ),
@@ -2168,8 +2171,8 @@ class _MessageList extends ConsumerWidget {
         ),
       );
     }
-    while (languageChangeIndex < languageChanges.length) {
-      final change = languageChanges[languageChangeIndex++];
+    if (languageChangeIndex < languageChanges.length) {
+      final change = languageChanges.last;
       items.add(
         _LanguageTimelineItem(
           languageCode: change.language!,
