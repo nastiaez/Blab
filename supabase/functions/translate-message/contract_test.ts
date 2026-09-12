@@ -1,6 +1,7 @@
 import {
   characterCount,
   correctionNeedsRetry,
+  focusedTranslationRetryMessages,
   FORM_AUDIT_RESPONSE_FORMAT,
   formAuditSystemPrompt,
   type FormParticipantContext,
@@ -15,11 +16,13 @@ import {
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
+  recognizedAbbreviationSourceLanguage,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
   type TranslationResult,
+  unsupportedSourceScript,
   validateRequest,
 } from "./contract.ts";
 import * as contract from "./contract.ts";
@@ -199,7 +202,7 @@ Deno.test("provider messages include bounded source evidence", () => {
     interfaceLang: "en",
     text: "No",
     context: [
-      { speaker: "partner", text: "I am not coming today" },
+      { speaker: "partner", text: "I am not coming today", sourceLang: "en" },
       { speaker: "viewer", text: "Are you sure?" },
     ],
     formContext: {
@@ -219,6 +222,10 @@ Deno.test("provider messages include bounded source evidence", () => {
     "same-sender context is available as source evidence",
   );
   assert(
+    system.includes("partner [source=en]: I am not coming today"),
+    "trusted prior source labels are supplied with the matching context line",
+  );
+  assert(
     system.includes("primary known language is English (en)"),
     "the author's primary known language is a final hint",
   );
@@ -226,6 +233,69 @@ Deno.test("provider messages include bounded source evidence", () => {
     system.includes("translate only the current user message"),
     "context must remain excluded from translation input",
   );
+});
+
+Deno.test("focused short retry isolates semantic translation from source detection", () => {
+  const messages = focusedTranslationRetryMessages({
+    sourceLang: "en",
+    targetLang: "de",
+    interfaceLang: "en",
+    text: "No",
+    formContext: {
+      viewerName: "Bob",
+      partnerName: "Alice",
+      messageAuthor: "partner",
+      viewerForm: null,
+      partnerForm: null,
+      tone: "informal",
+    },
+  });
+
+  assert(messages !== null, "a short pinned-source retry is eligible");
+  const system = messages![0].content;
+  assert(system.includes("English (en)"), "the source is pinned");
+  assert(system.includes("German (de)"), "the target is explicit");
+  assert(system.includes("complete utterance"), "one word remains a sentence");
+  assert(system.includes("mode=translation"), "the retry cannot choose none");
+  assert(
+    system.includes("never transliterate the expanded English phrase"),
+    "chat abbreviations must become an idiomatic target-language expression",
+  );
+  assert(
+    messages![1].content === "No",
+    "the authored message is the only user input",
+  );
+  assert(
+    focusedTranslationRetryMessages({
+      sourceLang: "en",
+      targetLang: "de",
+      interfaceLang: "en",
+      text: "This message is deliberately longer than the bounded retry limit",
+    }) === null,
+    "long messages stay on the ordinary provider path",
+  );
+});
+
+Deno.test("focused retry keeps its resolved source when provider parrots target", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "uk",
+      translation: "Боже мій, Настя",
+      interfaceText: "OMG Nastia",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "OMG Nastia",
+    "uk",
+    "en",
+    "en",
+  );
+  assert(result !== null, "the focused response remains valid");
+  assert(result!.sourceLang === "en", "the resolved source stays pinned");
+  assert(result!.mode === "translation", "the target rendering is retained");
 });
 
 Deno.test("provider keeps private forms out while suggesting by name", () => {
@@ -1422,7 +1492,11 @@ Deno.test("source evidence retry rejects No misclassified as German", () => {
       result: noAsGerman!,
       sourceText: "No",
       targetLang: "de",
-      context: [{ speaker: "partner", text: "I am not coming today" }],
+      context: [{
+        speaker: "partner",
+        text: "I am not coming today",
+        sourceLang: "en",
+      }],
       formContext: {
         viewerName: "Bob",
         partnerName: "Alice",
@@ -1434,6 +1508,58 @@ Deno.test("source evidence retry rejects No misclassified as German", () => {
       },
     }),
     "same-sender English evidence must reject the German classification",
+  );
+});
+
+Deno.test("source evidence selects the author's language for the bounded retry", () => {
+  const copiedEnglish = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "No",
+      interfaceText: "No",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "No",
+    "de",
+    "en",
+  );
+  assert(copiedEnglish !== null, "the copied provider result is valid");
+
+  const selectRetryLanguage = (contract as unknown as {
+    sourceEvidenceLanguage?: (input: {
+      result: TranslationResult;
+      sourceText: string;
+      targetLang: string;
+      context?: TranslationContextMessage[];
+      formContext?: FormParticipantContext;
+    }) => string | null;
+  }).sourceEvidenceLanguage;
+  assert(selectRetryLanguage !== undefined, "source evidence language exists");
+  assert(
+    selectRetryLanguage!({
+      result: copiedEnglish!,
+      sourceText: "No",
+      targetLang: "de",
+      context: [{
+        speaker: "partner",
+        text: "I am not coming today",
+        sourceLang: "en",
+      }],
+      formContext: {
+        viewerName: "Bob",
+        partnerName: "Alice",
+        messageAuthor: "partner",
+        viewerForm: null,
+        partnerForm: null,
+        tone: "informal",
+        authorPrimaryKnownLanguage: "en",
+      },
+    }) === "en",
+    "the one retry must pin an ambiguous English utterance to English",
   );
 });
 
@@ -1528,6 +1654,74 @@ Deno.test("source evidence retry recognizes an abbreviation plus a name", () => 
     }),
     "capitalization without a recognized abbreviation is not enough",
   );
+});
+
+Deno.test("source evidence pins a recognized English abbreviation without history", () => {
+  assert(
+    recognizedAbbreviationSourceLanguage("OMG Nastia") === "en",
+    "recognized English chat abbreviations provide source evidence immediately",
+  );
+  const translated = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "other",
+      translation: "हे भगवान, नास्त्या",
+      interfaceText: "OMG Nastia",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }),
+    "OMG Nastia",
+    "hi",
+    "en",
+  );
+  assert(translated !== null, "the provider result is valid");
+
+  const selectRetryLanguage = (contract as unknown as {
+    sourceEvidenceLanguage?: (input: {
+      result: TranslationResult;
+      sourceText: string;
+      targetLang: string;
+      context?: TranslationContextMessage[];
+      formContext?: FormParticipantContext;
+    }) => string | null;
+  }).sourceEvidenceLanguage;
+  assert(selectRetryLanguage !== undefined, "source evidence language exists");
+  assert(
+    selectRetryLanguage!({
+      result: translated!,
+      sourceText: "OMG Nastia",
+      targetLang: "hi",
+      context: [],
+      formContext: {
+        viewerName: "Bob",
+        partnerName: "Alice",
+        messageAuthor: "partner",
+        viewerForm: null,
+        partnerForm: null,
+        tone: "informal",
+        authorPrimaryKnownLanguage: null,
+      },
+    }) === "en",
+    "a recognized English abbreviation must provide the bounded retry source",
+  );
+});
+
+Deno.test("unsupported source scripts are recognized without provider guessing", () => {
+  assert(unsupportedSourceScript("你好，Bob。"), "Han script is unsupported");
+  assert(unsupportedSourceScript("مرحبا"), "Arabic script is unsupported");
+  assert(!unsupportedSourceScript("Hello Bob"), "Latin script is supported");
+  assert(
+    !unsupportedSourceScript("Привіт Bob"),
+    "Cyrillic script is supported",
+  );
+  assert(
+    !unsupportedSourceScript("नमस्ते Bob"),
+    "Devanagari script is supported",
+  );
+  assert(!unsupportedSourceScript("வணக்கம் Bob"), "Tamil script is supported");
+  assert(!unsupportedSourceScript("👋 123"), "non-letter content is neutral");
 });
 
 Deno.test("abbreviation plus name source evidence covers every target language", () => {
@@ -1667,6 +1861,14 @@ Deno.test("source classification retry guidance is generic", () => {
   const text = (guidance as (targetLang: string) => string)("ta");
   assert(text.includes("Tamil"), "guidance names the learning language");
   assert(text.includes("Re-detect"), "guidance requests source re-detection");
+  assert(
+    text.includes("complete utterance"),
+    "retry guidance treats a one-word message as a complete utterance",
+  );
+  assert(
+    text.includes("semantic meaning"),
+    "retry guidance requires the one-word meaning to be translated",
+  );
   for (const example of ["sorry", "yes", "hello"]) {
     assert(!text.includes(example), `guidance does not hardcode ${example}`);
   }

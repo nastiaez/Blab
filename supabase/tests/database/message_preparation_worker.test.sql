@@ -1,6 +1,6 @@
 begin;
 
-select plan(7);
+select plan(8);
 
 delete from public.message_preparation_jobs;
 
@@ -42,7 +42,7 @@ values
   (
     '5b000000-0000-4000-8000-000000000003',
     '5b000000-0000-4000-8000-000000000001',
-    '00000000-0000-4000-8000-00000000000c',
+    '00000000-0000-4000-8000-00000000000a',
     'Second message',
     now() - interval '1 second'
   );
@@ -108,6 +108,39 @@ select ok(
     0
   ),
   'a permanent failure becomes terminal independently'
+);
+
+insert into public.message_translations (
+  message_id, target_lang, translation_text, tokens, source_lang,
+  source_hash, interface_lang, aid_mode, interface_text,
+  cache_contract_version
+) values (
+  '5b000000-0000-4000-8000-000000000002',
+  'de',
+  'Zuerst',
+  '[]'::jsonb,
+  'en',
+  encode(digest(convert_to('Oldest first', 'UTF8'), 'sha256'), 'hex'),
+  'en',
+  'translation',
+  'Oldest first',
+  'automatic-forms-v2'
+);
+
+create temp table claimed_context_jobs as
+select * from public.claim_message_preparation_jobs_for_worker(2);
+grant select on claimed_context_jobs to service_role;
+
+select is(
+  public.request_message_translation_job(
+    (
+      select id
+      from claimed_context_jobs
+      where viewer_id = '00000000-0000-4000-8000-00000000000c'
+    )
+  ) #>> '{context,0,sourceLang}',
+  'en',
+  'translation preparation supplies a prior cached source language'
 );
 
 reset role;

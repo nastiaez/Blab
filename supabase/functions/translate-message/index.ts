@@ -11,6 +11,7 @@ import {
   applyConfirmedFormAudit,
   correctionNeedsRetry,
   directSubjectRole,
+  focusedTranslationRetryMessages,
   FORM_AUDIT_RESPONSE_FORMAT,
   formAuditSystemPrompt,
   type FormParticipantContext,
@@ -27,11 +28,14 @@ import {
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
+  recognizedAbbreviationSourceLanguage,
   sourceClassificationRetryGuidance,
+  sourceEvidenceLanguage,
   sourceEvidenceNeedsRetry,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
+  unsupportedSourceScript,
   validateRequest,
 } from "./contract.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
@@ -338,14 +342,24 @@ Deno.serve(async (req) => {
       if (typeof entry !== "object" || entry === null) return [];
       const speaker = (entry as Record<string, unknown>).speaker;
       const contextText = (entry as Record<string, unknown>).text;
+      const contextSourceLang = (entry as Record<string, unknown>).sourceLang;
       return (speaker === "viewer" || speaker === "partner") &&
           typeof contextText === "string" && contextText.trim().length > 0
-        ? [{ speaker, text: contextText }]
+        ? [{
+          speaker,
+          text: contextText,
+          sourceLang: typeof contextSourceLang === "string" &&
+              (contextSourceLang in LANG_NAMES ||
+                contextSourceLang === "other")
+            ? contextSourceLang
+            : null,
+        }]
         : [];
     })
     : [];
   const formContext = formContextFrom(rawFormContext);
-  const providerKeys = providerCredentials({
+  const deterministicUnsupported = unsupportedSourceScript(text);
+  const providerKeys = deterministicUnsupported ? [] : providerCredentials({
     openRouterKey: OPEN_ROUTER_KEY,
     openAiKey: OPENAI_API_KEY,
     openRouterModel: OPENROUTER_MODEL,
@@ -353,16 +367,30 @@ Deno.serve(async (req) => {
     openRouterProviderPolicy: OPENROUTER_PROVIDER_POLICY,
     environment: BLAB_ENV,
   });
-  if (providerKeys.length === 0) {
+  if (!deterministicUnsupported && providerKeys.length === 0) {
     console.error("translation provider key is missing");
     return json({ error: "translation_unavailable" }, 500);
   }
 
-  let result: ReturnType<typeof parseProviderResult> = null;
+  let result: ReturnType<typeof parseProviderResult> = deterministicUnsupported
+    ? {
+      mode: "translation",
+      sourceLang: "other",
+      translation: text,
+      interfaceText: text,
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }
+    : null;
   let providerFailure = "unknown";
   let lastFailedSourceLang: string | null = null;
   for (const credential of providerKeys) {
     let previousSourceClassificationConflict = false;
+    let retrySourceLang: string | null = recognizedAbbreviationSourceLanguage(
+      text,
+    );
     for (let attempt = 0; attempt < 2; attempt++) {
       const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
       const targetName = LANG_NAMES[targetLang] ?? targetLang;
@@ -378,13 +406,26 @@ Deno.serve(async (req) => {
         ? ""
         : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${sourceClassificationGuidance}${wrongModeGuidance}`;
       let llm: Response;
+      let resolvedSourceLang: string | undefined;
       try {
+        const focusedRetry = retrySourceLang === null
+          ? null
+          : focusedTranslationRetryMessages({
+            sourceLang: retrySourceLang,
+            targetLang,
+            interfaceLang,
+            text,
+            formContext,
+          });
+        resolvedSourceLang = focusedRetry === null
+          ? undefined
+          : retrySourceLang ?? undefined;
         llm = await fetchChatCompletion(credential, {
           temperature: attempt === 0 ? 0 : 0.4,
           max_completion_tokens: 12000,
           response_format: TRANSLATION_RESPONSE_FORMAT,
-          messages: providerMessages({
-            sourceLang,
+          messages: focusedRetry ?? providerMessages({
+            sourceLang: retrySourceLang ?? sourceLang,
             targetLang,
             interfaceLang,
             text,
@@ -444,6 +485,7 @@ Deno.serve(async (req) => {
         text,
         targetLang,
         interfaceLang,
+        resolvedSourceLang,
       );
       if (candidate === null) {
         providerFailure = `${credential.provider}_${
@@ -529,6 +571,13 @@ Deno.serve(async (req) => {
           formContext,
         })
       ) {
+        retrySourceLang = sourceEvidenceLanguage({
+          result: candidate,
+          sourceText: text,
+          targetLang,
+          context,
+          formContext,
+        });
         previousSourceClassificationConflict = true;
         lastFailedSourceLang = candidate.sourceLang;
         providerFailure = `${credential.provider}_source_evidence_conflict`;
@@ -540,6 +589,13 @@ Deno.serve(async (req) => {
         continue;
       }
       if (translationNeedsRetry(candidate, targetLang, text)) {
+        retrySourceLang = sourceEvidenceLanguage({
+          result: candidate,
+          sourceText: text,
+          targetLang,
+          context,
+          formContext,
+        });
         previousSourceClassificationConflict =
           candidate.sourceClassificationConflict === true;
         lastFailedSourceLang = candidate.sourceLang;

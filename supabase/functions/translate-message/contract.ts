@@ -19,6 +19,7 @@ export type ProviderCredential = {
 export type TranslationContextMessage = {
   speaker: "viewer" | "partner";
   text: string;
+  sourceLang?: string | null;
 };
 
 export type FormParticipantContext = {
@@ -94,7 +95,11 @@ export function providerMessages({
     ? ""
     : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, and dates. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
       context
-        .map((entry) => `${entry.speaker}: ${entry.text}`)
+        .map((entry) =>
+          `${entry.speaker}${
+            entry.sourceLang == null ? "" : ` [source=${entry.sourceLang}]`
+          }: ${entry.text}`
+        )
         .join("\n")
     }`;
   return [
@@ -107,6 +112,40 @@ export function providerMessages({
     },
     { role: "user", content: text },
   ];
+}
+
+/// A short message whose source has already been resolved gets one focused
+/// retry. Removing source detection and correction rules from that retry keeps
+/// small complete utterances from being copied as if they were target text.
+export function focusedTranslationRetryMessages({
+  sourceLang,
+  targetLang,
+  interfaceLang,
+  text,
+  formContext,
+}: {
+  sourceLang: string;
+  targetLang: string;
+  interfaceLang: string;
+  text: string;
+  formContext?: FormParticipantContext;
+}): Array<{ role: "system" | "user"; content: string }> | null {
+  if (
+    sourceLang === "auto" || sourceLang === targetLang ||
+    !canRetrySourceClassification(text)
+  ) return null;
+
+  const sourceName = LANG_NAMES[sourceLang] ?? sourceLang;
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  const participants = formContext === undefined
+    ? ""
+    : ` Participants: viewer=${formContext.viewerName}; partner=${formContext.partnerName}; current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}.`;
+  return [{
+    role: "system",
+    content:
+      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
+  }, { role: "user", content: text }];
 }
 
 const TOKEN_RESPONSE_SCHEMA = {
@@ -917,6 +956,18 @@ function scriptCompatibleWithLanguage(text: string, language: string): boolean {
   return letters.every((character) => pattern.test(character));
 }
 
+const SUPPORTED_SOURCE_SCRIPTS =
+  /[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Devanagari}\p{Script=Tamil}]/u;
+
+/// Returns true when authored text contains a letter from a script that none
+/// of Blab's supported languages use. This lets obvious unsupported text keep
+/// its original without depending on probabilistic provider classification.
+export function unsupportedSourceScript(text: string): boolean {
+  return Array.from(text).some((character) =>
+    /\p{L}/u.test(character) && !SUPPORTED_SOURCE_SCRIPTS.test(character)
+  );
+}
+
 function supportedAbbreviationText(text: string): boolean {
   const words = text.match(/[\p{L}\p{M}]+(?:['’-][\p{L}\p{M}]+)*/gu) ?? [];
   if (
@@ -928,6 +979,12 @@ function supportedAbbreviationText(text: string): boolean {
     SUPPORTED_CHAT_ABBREVIATIONS.has(word.toLocaleLowerCase()) ||
     /^[\p{Script=Latin}\p{M}]+(?:['’-][\p{Script=Latin}\p{M}]+)*$/u.test(word)
   );
+}
+
+export function recognizedAbbreviationSourceLanguage(
+  text: string,
+): string | null {
+  return supportedAbbreviationText(text) ? "en" : null;
 }
 
 /// Rejects only provider source labels contradicted by bounded, private
@@ -972,17 +1029,69 @@ export function sourceEvidenceNeedsRetry({
   const sameSenderContext = context.filter((entry) =>
     entry.speaker === formContext.messageAuthor
   );
+  if (
+    sameSenderContext.some((entry) =>
+      entry.sourceLang != null && entry.sourceLang !== targetLang
+    )
+  ) return true;
   return sameSenderContext.some((entry) =>
     !scriptCompatibleWithLanguage(entry.text, targetLang) &&
     scriptCompatibleWithLanguage(sourceText, authorLanguage ?? targetLang)
   );
 }
 
+/// Chooses a source language for the existing second provider attempt when
+/// the first result copied the source or contradicted the bounded evidence.
+/// A short ambiguous utterance uses the author's known language as the final
+/// tie-breaker; otherwise a supported non-target provider label is retained.
+export function sourceEvidenceLanguage({
+  result,
+  sourceText,
+  targetLang,
+  context = [],
+  formContext,
+}: {
+  result: TranslationResult;
+  sourceText: string;
+  targetLang: string;
+  context?: TranslationContextMessage[];
+  formContext?: FormParticipantContext;
+}): string | null {
+  const authorLanguage = formContext?.authorPrimaryKnownLanguage;
+  const contextualLanguage = formContext === undefined ? null : [...context]
+    .reverse()
+    .find((entry: TranslationContextMessage) =>
+      entry.speaker === formContext.messageAuthor &&
+      entry.sourceLang != null &&
+      entry.sourceLang !== targetLang
+    )?.sourceLang ?? null;
+  const abbreviationLanguage = recognizedAbbreviationSourceLanguage(
+    sourceText,
+  );
+  if (abbreviationLanguage !== null) return abbreviationLanguage;
+  if (
+    canRetrySourceClassification(sourceText) &&
+    contextualLanguage != null &&
+    scriptCompatibleWithLanguage(sourceText, contextualLanguage)
+  ) return contextualLanguage;
+  if (
+    canRetrySourceClassification(sourceText) &&
+    authorLanguage != null &&
+    authorLanguage !== targetLang &&
+    scriptCompatibleWithLanguage(sourceText, authorLanguage)
+  ) return authorLanguage;
+
+  return result.sourceLang !== OTHER_SOURCE_LANG &&
+      result.sourceLang !== targetLang
+    ? result.sourceLang
+    : null;
+}
+
 export function sourceClassificationRetryGuidance(
   targetLang: string,
 ): string {
   const targetName = LANG_NAMES[targetLang] ?? targetLang;
-  return ` The previous source-language classification conflicted with the authored text or its bounded evidence. Re-detect the original authored text independently from the target language. For a genuinely ambiguous short utterance, use recent messages from the same sender and then the author's primary known language as a weak final tie-breaker. A meaning-bearing chat abbreviation combined with compatible Latin-script words or names remains supported language. If the source is not truly ${targetName} (${targetLang}), use mode=translation and return the complete ${targetName} translation.`;
+  return ` The previous source-language classification conflicted with the authored text or its bounded evidence. Re-detect the original authored text independently from the target language. Treat the current message as a complete utterance even when it contains only one word, and translate that utterance's semantic meaning rather than copying its spelling. For a genuinely ambiguous short utterance, use recent messages from the same sender and then the author's primary known language as a weak final tie-breaker. A meaning-bearing chat abbreviation combined with compatible Latin-script words or names remains supported language. If the source is not truly ${targetName} (${targetLang}), use mode=translation and return the complete ${targetName} translation.`;
 }
 
 /// A provider sometimes returns the untranslated source as "translation"
@@ -1091,6 +1200,7 @@ export function parseProviderResult(
   text: string,
   targetLang: string,
   interfaceLang: string,
+  resolvedSourceLang?: string,
 ): TranslationResult | null {
   let cleaned = content
     .trim()
@@ -1118,7 +1228,7 @@ export function parseProviderResult(
     raw.translation.trim().length === 0
   ) return null;
 
-  const sourceLang = normalizeSourceLang(raw.sourceLang);
+  const sourceLang = resolvedSourceLang ?? normalizeSourceLang(raw.sourceLang);
   const explanation = typeof raw.explanation === "string" &&
       raw.explanation.trim().length > 0
     ? raw.explanation
