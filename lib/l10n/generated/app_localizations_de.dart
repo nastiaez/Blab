@@ -410,6 +410,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get couldNotLoadChats => 'Chats konnten nicht geladen werden';
 
   @override
+  String get couldNotLoadMessages => 'Nachrichten konnten nicht geladen werden';
+
+  @override
   String get newConnectionSayHi => 'Neue Verbindung · sag Hallo';
 
   @override

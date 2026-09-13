@@ -406,6 +406,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get couldNotLoadChats => 'Не вдалося завантажити чати';
 
   @override
+  String get couldNotLoadMessages => 'Не вдалося завантажити повідомлення';
+
+  @override
   String get newConnectionSayHi => 'Новий контакт · привітайтеся';
 
   @override

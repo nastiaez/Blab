@@ -840,6 +840,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load chats'**
   String get couldNotLoadChats;
 
+  /// No description provided for @couldNotLoadMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load messages'**
+  String get couldNotLoadMessages;
+
   /// No description provided for @newConnectionSayHi.
   ///
   /// In en, this message translates to:

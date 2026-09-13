@@ -234,7 +234,10 @@
 - **Progress (2026-08-28):**
   - [x] Connected Samsung Galaxy S25 verified: the existing chat photo remained visible after network loss, force-stop, and restart; the offline chat kept its approved geometry with no red framework error.
   - [x] The same cached photo opened full-screen while offline.
-  - [ ] Never-downloaded placeholder and reconnect replacement still need an explicit device pass.
+  - [x] Automated recovery hardening (2026-09-12): one corrupt or wrong-type legacy photo value no longer hides cached messages; synced previews remain outside the 20 MiB full-photo LRU; an uncached history failure now shows a localized Retry state and disables sending until recovery.
+  - [x] Full automated verification (2026-09-12): `flutter test` passed 489 checks with 15 environment-gated skips; `flutter analyze` and `git diff --check` are clean.
+  - [x] Android emulator pass (2026-09-13): a never-downloaded photo showed the neutral placeholder offline and recovered automatically after reconnection; an opened original remained available full-screen offline.
+  - [x] Alice/Bob matrix (2026-09-13): cached preview, opened full image, damaged legacy photo, browser account switch, and empty-history service Retry/reconnect all passed with proof screenshots in `docs/qa/2026-09-13-offline-history-photos/`.
 
 ### Step 2.5 — Push notifications  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
 - **Scope:** US-038, FR-29.

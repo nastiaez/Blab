@@ -12,6 +12,7 @@ class ChatComposerInput extends StatelessWidget {
     required this.maxLength,
     required this.attachTooltip,
     required this.onAttach,
+    this.enabled = true,
     this.showAttachment = true,
     this.autofocus = false,
   });
@@ -22,6 +23,7 @@ class ChatComposerInput extends StatelessWidget {
   final int maxLength;
   final String attachTooltip;
   final VoidCallback onAttach;
+  final bool enabled;
   final bool showAttachment;
   final bool autofocus;
 
@@ -42,6 +44,7 @@ class ChatComposerInput extends StatelessWidget {
               key: const ValueKey('composer-message-text-field'),
               controller: controller,
               focusNode: focusNode,
+              enabled: enabled,
               autofocus: autofocus,
               minLines: 1,
               maxLines: 5,
@@ -85,7 +88,7 @@ class ChatComposerInput extends StatelessWidget {
                 color: BlabColors.bubbleInk,
                 size: 20,
               ),
-              onPressed: onAttach,
+              onPressed: enabled ? onAttach : null,
               splashRadius: 20,
             ),
           ],

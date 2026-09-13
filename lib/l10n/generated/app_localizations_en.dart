@@ -405,6 +405,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotLoadChats => 'Couldn\'t load chats';
 
   @override
+  String get couldNotLoadMessages => 'Couldn\'t load messages';
+
+  @override
   String get newConnectionSayHi => 'New connection · say hi';
 
   @override
