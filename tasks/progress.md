@@ -238,6 +238,7 @@
   - [x] Full automated verification (2026-09-12): `flutter test` passed 489 checks with 15 environment-gated skips; `flutter analyze` and `git diff --check` are clean.
   - [x] Android emulator pass (2026-09-13): a never-downloaded photo showed the neutral placeholder offline and recovered automatically after reconnection; an opened original remained available full-screen offline.
   - [x] Alice/Bob matrix (2026-09-13): cached preview, opened full image, damaged legacy photo, browser account switch, and empty-history service Retry/reconnect all passed with proof screenshots in `docs/qa/2026-09-13-offline-history-photos/`.
+  - [x] Captionless-photo correction (2026-09-13): repeated the Android offline, damaged-cache, placeholder/recovery, and service Retry states with empty photo captions; no unsupported-language hint appears on either photo. Alice web still shows the hint only for an actual unsupported Chinese text message.
 
 ### Step 2.5 — Push notifications  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
 - **Scope:** US-038, FR-29.
@@ -933,3 +934,5 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-11 — Replaced unsafe multilingual subject heuristics after final review: German nouns no longer look like people, common English/German direct clauses resolve, Dutch possessive `je` and ambiguous Italian `sono` stay audit-owned, and generic Spanish/Portuguese noun endings no longer claim participant identity. All 28 ownership tests and 31 focused Flutter checks pass; the existing server/UI baseline failures and owner/device gates remain open.
 
 - 2026-09-12 — Completed the approved translation-reliability follow-up: provider calls now have bounded deadlines, reconnect retries exclude permanent failures, privacy and ephemeral chat state are account-isolated, tone changes request fresh translations, and all 11 primary known languages are accepted by server completion. Verified 473 Flutter tests, 80 Deno translation tests, 135 database tests, formatting, diff checks, and clean static analysis. Owner/device acceptance gates remain unchanged.
+
+- 2026-09-13 — Corrected the offline-photo QA fixture after owner review: photo-only messages now use empty captions and create no translation work. Repeated the Android offline/recovery matrix, replaced the misleading screenshots, and kept Step 2.4a open for owner acceptance.

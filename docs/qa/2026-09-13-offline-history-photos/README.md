@@ -6,8 +6,8 @@ Environment: local Supabase, Alice in the Flutter web client, Bob in the Android
 
 ## Local fixtures
 
-- Alice and Bob shared chat with one legacy photo that has no preview metadata.
-- Alice and Bob shared chat with one modern photo whose preview and original are visibly different.
+- Alice and Bob shared chat with one captionless legacy photo that has no preview metadata.
+- Alice and Bob shared chat with one captionless modern photo whose preview and original are visibly different.
 - Alice-only chat with Carol containing `Alice-only cache marker` for the account-isolation check.
 
 ## Matrix
@@ -24,6 +24,7 @@ Environment: local Supabase, Alice in the Flutter web client, Bob in the Android
 ## Notes and limitations
 
 - The photo cache manipulations used only Bob's emulator-local preferences and the local QA backend.
+- Both photo messages use an empty caption and create no translation-preparation job. The screenshot evidence was repeated after removing temporary fixture labels that had been interpreted as captions and produced misleading unsupported-language hints.
 - The account switch was exercised in one browser profile: Alice showed the Carol marker, while Bob showed only Alice.
 - This pass does not claim reinstall/new-device recovery or physical-device coverage. The approved V1 contract keeps those out of scope.
 - Owner acceptance remains separate from this engineering QA record.
