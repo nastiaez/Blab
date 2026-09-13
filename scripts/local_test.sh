@@ -74,6 +74,64 @@ local_key() {
   status_json | jq -er '.PUBLISHABLE_KEY // .ANON_KEY'
 }
 
+configure_local_translation_worker() {
+  local status
+  local service_role_key
+  local project_id
+  local database_container
+  local worker_url='http://kong:8000/functions/v1/prepare-message-jobs'
+
+  status="$(status_json)"
+  service_role_key="$(printf '%s' "$status" | jq -er '.SERVICE_ROLE_KEY')"
+  project_id="$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)"
+  database_container="supabase_db_${project_id}"
+  if [[ -z "$project_id" ]] || ! docker inspect "$database_container" >/dev/null 2>&1; then
+    printf 'Could not resolve the local Supabase database container.\n' >&2
+    return 1
+  fi
+
+  docker exec -i "$database_container" psql -X -v ON_ERROR_STOP=1 \
+    -v worker_url="$worker_url" \
+    -v service_role_key="$service_role_key" \
+    -U postgres -d postgres >/dev/null <<'SQL'
+select vault.update_secret(
+  id,
+  :'worker_url',
+  'blab_translation_worker_url',
+  'Local message preparation worker endpoint'
+)
+from vault.secrets
+where name = 'blab_translation_worker_url';
+
+select vault.create_secret(
+  :'worker_url',
+  'blab_translation_worker_url',
+  'Local message preparation worker endpoint'
+)
+where not exists (
+  select 1 from vault.secrets where name = 'blab_translation_worker_url'
+);
+
+select vault.update_secret(
+  id,
+  :'service_role_key',
+  'blab_worker_service_role_key',
+  'Local service role credential for message preparation'
+)
+from vault.secrets
+where name = 'blab_worker_service_role_key';
+
+select vault.create_secret(
+  :'service_role_key',
+  'blab_worker_service_role_key',
+  'Local service role credential for message preparation'
+)
+where not exists (
+  select 1 from vault.secrets where name = 'blab_worker_service_role_key'
+);
+SQL
+}
+
 run_integration() {
   local status
   local api_url
@@ -459,6 +517,7 @@ reset_local() {
     supabase db reset
   fi
 
+  configure_local_translation_worker
   restore_postgres_version
   trap - EXIT
 }
@@ -485,6 +544,9 @@ case "${1:-help}" in
   functions)
     serve_functions
     ;;
+  worker)
+    configure_local_translation_worker
+    ;;
   integration)
     run_integration
     ;;
@@ -503,6 +565,7 @@ case "${1:-help}" in
       '  scripts/local_test.sh web [copied-invite-url-or-token]' \
       '  scripts/local_test.sh invite <copied-url-or-token>' \
       '  scripts/local_test.sh functions' \
+      '  scripts/local_test.sh worker' \
       '  scripts/local_test.sh integration' \
       '  scripts/local_test.sh translation-limit [set|clear] [alice|bob|carol]' \
       '  scripts/local_test.sh history [message-count]'

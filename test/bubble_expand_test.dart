@@ -587,40 +587,35 @@ void main() {
     container.dispose();
   });
 
-  testWidgets(
-    'incoming unsupported source shows neutral original-visible guidance',
-    (tester) async {
-      final container = _buildContainer(
-        _BubbleExpandChatService(sourceLang: 'other', text: '你好'),
-      );
-      addTearDown(container.dispose);
-      await tester.pumpWidget(_host(container));
-      await _settle(tester);
+  testWidgets('incoming unsupported source shows one concise notice', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      _BubbleExpandChatService(sourceLang: 'other', text: '你好'),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
 
-      expect(
-        find.text(
-          'Blab can’t translate this language yet. Showing the original.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('你好'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('translation-message-retry')),
-        findsNothing,
-      );
-      final hint = tester.widget<Text>(
-        find.text(
-          'Blab can’t translate this language yet. Showing the original.',
-        ),
-      );
-      expect(hint.style?.fontSize, 12);
-      expect(hint.style?.fontWeight, FontWeight.w400);
-      expect(hint.style?.color, const Color(0xFF917869));
-      expect(find.text('Hallo'), findsNothing);
-    },
-  );
+    expect(find.text('Blab doesn’t speak this one yet.'), findsOneWidget);
+    expect(find.text('你好'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('translation-message-retry')),
+      findsNothing,
+    );
+    final hint = tester.widget<Text>(
+      find.text('Blab doesn’t speak this one yet.'),
+    );
+    expect(hint.style?.fontSize, 12);
+    expect(hint.style?.fontWeight, FontWeight.w400);
+    expect(hint.style?.color, const Color(0xFF917869));
+    expect(find.textContaining('Showing the original'), findsNothing);
+    expect(find.textContaining('try German'), findsNothing);
+    expect(find.textContaining('Retry'), findsNothing);
+    expect(find.text('Hallo'), findsNothing);
+  });
 
-  testWidgets('outgoing unsupported source keeps actionable guidance', (
+  testWidgets('outgoing unsupported source shows the same concise notice', (
     tester,
   ) async {
     final container = _buildContainer(
@@ -634,15 +629,15 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    expect(
-      find.text('Blab doesn’t speak this one yet — try German.'),
-      findsOneWidget,
-    );
+    expect(find.text('Blab doesn’t speak this one yet.'), findsOneWidget);
     expect(find.text('你好'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('translation-message-retry')),
       findsNothing,
     );
+    expect(find.textContaining('Showing the original'), findsNothing);
+    expect(find.textContaining('try German'), findsNothing);
+    expect(find.textContaining('Retry'), findsNothing);
   });
 
   testWidgets('no message-adjacent language controls remain', (tester) async {

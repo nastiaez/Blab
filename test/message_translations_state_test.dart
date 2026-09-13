@@ -282,6 +282,55 @@ void main() {
     );
   });
 
+  test('a stored unsupported result replaces a stale client error', () async {
+    var calls = 0;
+    final cached = <String, MessageTranslation>{};
+    final container = _container(
+      chatService: _ControlledCacheChatService(cachedByMessageId: cached),
+      translateFn: (id) async {
+        calls++;
+        throw MessageTranslationFailed('temporary');
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    await notifier.ensure(
+      messageId: 'm1',
+      text: '你好，Bob!',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    expect(calls, 2);
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncError<MessageTranslation>>(),
+    );
+
+    cached['m1'] = const MessageTranslation(
+      translation: '你好，Bob!',
+      interfaceText: '你好，Bob!',
+      interfaceLang: 'en',
+      sourceLang: 'other',
+      tokens: [],
+    );
+    await notifier.ensure(
+      messageId: 'm1',
+      text: '你好，Bob!',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+
+    expect(calls, 2, reason: 'cache repair must not call the provider again');
+    final repaired = container.read(
+      messageTranslationsProvider('chat-1'),
+    )['m1|de|en'];
+    expect(repaired, isA<AsyncData<MessageTranslation>>());
+    expect(repaired!.value!.sourceLang, 'other');
+  });
+
   test('automatic retry recovers a temporary transport failure', () async {
     var calls = 0;
     final container = _container(

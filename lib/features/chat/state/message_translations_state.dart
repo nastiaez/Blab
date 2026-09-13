@@ -625,11 +625,31 @@ class MessageTranslationsNotifier
     if (!containsMeaningBearingText(text)) return;
     final key = translationEntryKey(messageId, targetLang, interfaceLang);
     final previousSource = _sourceTexts[key];
-    if (state.containsKey(key) &&
+    final existing = state[key];
+    if (existing != null &&
         (previousSource == null ||
             translationMeaningfulText(previousSource) ==
                 translationMeaningfulText(text))) {
       _sourceTexts[key] = text;
+      if (existing is AsyncError<MessageTranslation>) {
+        try {
+          final cached = await ref
+              .read(chatServiceProvider)
+              .fetchCachedTranslation(
+                messageId: messageId,
+                targetLang: targetLang,
+                interfaceLang: interfaceLang,
+              );
+          if (!ref.mounted || _sourceTexts[key] != text) return;
+          if (cached != null && state[key] is AsyncError<MessageTranslation>) {
+            final value = _translationFromCache(cached);
+            _recordSourceLang(messageId, value);
+            state = {...state, key: AsyncData(value)};
+          }
+        } catch (_) {
+          // Keep the original retryable error when cache repair is unavailable.
+        }
+      }
       return;
     }
     _retryTimers.remove(key)?.cancel();

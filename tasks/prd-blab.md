@@ -251,7 +251,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Practice long press temporarily reveals the reader's primary-known-language translation below the existing divider; Normal conditionally offers Original for the exact authored text
 - [ ] With learning aids disabled, authored text is shown and no new AI request is made
 - [ ] Expressive stretching, playful capitalization, and chat abbreviations are treated as style rather than mistakes; confidently identified names are transliterated into a different target script without changing their identity, while uncertain name-like text remains authored
-- [ ] If source language is outside Blab's supported language set, keep the exact authored text and show a neutral localized hint (`Blab doesn’t speak this one yet — try [learning language].`) in muted 12 px text; do not show Retry, Listen, Original, or word-description actions
+- [ ] If source language is outside Blab's supported language set, keep the exact authored text and show one neutral localized hint (`Blab doesn’t speak this one yet.`) in muted 12 px text; do not show Retry, Listen, Original, or word-description actions
 - [ ] A failed learning aid keeps the authored text usable and shows localized `Couldn’t translate · Retry` in `#C62828` below the bubble with no standalone icon
 - [ ] Timestamp shown below bubble (no read ticks on incoming)
 - [ ] Date labels such as "Today", "Yesterday", and weekday names sit directly on the chat canvas with no pill fill or background
