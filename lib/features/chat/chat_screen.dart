@@ -1354,30 +1354,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: _ChatMenu(
                     chatId: widget.chatId,
                     onLearningLanguageTap: () async {
-                      final saveError =
-                          context.l10n.couldNotSaveLearningLanguage;
                       _closeMenu();
                       final current = ref.read(
                         learningLanguageProvider(widget.chatId),
                       );
-                      final picked = await showLearningLanguageSheet(
+                      await showLearningLanguageSheet(
                         context,
                         current: current,
+                        onSelected: (language) => ref
+                            .read(
+                              learningLanguageProvider(widget.chatId).notifier,
+                            )
+                            .set(language),
                       );
-                      if (picked != null) {
-                        try {
-                          await ref
-                              .read(
-                                learningLanguageProvider(
-                                  widget.chatId,
-                                ).notifier,
-                              )
-                              .set(picked);
-                        } catch (_) {
-                          if (!mounted) return;
-                          showAppSnack(saveError);
-                        }
-                      }
                       if (mounted && editing != null) {
                         _inputFocus.requestFocus();
                       }

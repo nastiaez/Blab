@@ -344,10 +344,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user mid-chat, I want to change which language I'm currently learning.
 
 **Acceptance Criteria:**
-- [ ] Bottom sheet: "Learning language" heading + scrollable list of 11 languages with flag + checkmark on selected
-- [ ] Selecting language updates chat header label and ··· menu label
-- [ ] "Done" button closes sheet
-- [ ] Backdrop tap also closes sheet
+- [ ] Bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: `Choose a language to practice` heading, helper, 11-name scrollable list, selected-row fill, checkmark, slim scrollbar, and persistent **Done** action
+- [ ] Current saved language is selected on opening; tapping another language previews it only
+- [ ] **Done** commits the visible choice, updates the chat header and ··· menu label, and closes the sheet on success
+- [ ] Backdrop tap and swipe-down close the sheet without changing the saved language; reopening shows the prior saved choice
+- [ ] A save in progress locks the sheet and uses the button-only spinner; a failed save restores the same **Done** action with no separate error or retry UI
 
 ---
 
@@ -410,9 +411,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] After the required language choice, an empty chat shows a simple text container: `No messages here yet…` + `Send any message to start.`; no launch illustration. Hide this container while initial language selection is required so it cannot peek above the open sheet
-- [ ] Required bottom sheet title: `Choose a language to practice`; helper: `You can change it anytime.`; it uses the existing language list
-- [ ] The sheet shows over the chat with no blur and a subtle `#46281C` 8% veil; authored first messages remain visible behind it if they already exist
-- [ ] Required-sheet styling follows the owner’s 2026-09-08 refinement: warm-white `#FFFCF8` surface, 24 px top corners, warm outline/shadow, 22 px bold title, 14 px muted helper, 15 px language rows with generous 56 px minimum tap targets and dividers, and a persistent slim scrollbar
+- [ ] Required bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: title `Choose a language to practice`; helper `You can change it later in Settings.`; 48 px separated language rows; selected-row fill and check; slim scrollbar; and a persistent **Start practicing** action
+- [ ] The sheet shows over the chat with no blur and a `#231208` 30% veil; authored first messages remain visible behind it if they already exist
+- [ ] At the 390 × 844 reference viewport, the sheet is 567 px high, bottom-anchored, uses 16 px top corners with no drop shadow, and covers the empty-state note
+- [ ] On shorter viewports, the sheet reduces by up to 32 px so a language never appears partially above the fixed action
+- [ ] A fresh chat starts with no selection and a disabled **Start practicing** action. Tapping a language previews it; **Start practicing** is the only action that commits it
 - [ ] Tapping outside or swiping down does not close the sheet; composer, messages, and mode switch are inactive until selection
 - [ ] Back leaves for Chats; reopening the new chat shows the required sheet again. Profile and Settings remain reachable outside the chat
 - [ ] Each participant's choice is independent and affects only their own display
@@ -708,9 +711,9 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-17: Reply preview uses only You/name with the approved accent and visible primary message text, opens the keyboard, and threads the same text or photo preview into the sent bubble
 - FR-18: Consecutive outgoing messages group (reduced gap, no repeated timestamp)
 - FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
-- FR-20: Change learning language sheet: 11 languages, checkmark on current, updates header label
+- FR-20: Change learning language uses the shared language-sheet design: 11 named languages, selected-row check, preview-before-commit, and a **Done** action that updates the header label only after success
 - FR-21: Send button disabled-state dims the circle fill to 40% when input is empty while keeping the arrow solid white; input is an auto-growing textarea
-- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet uses no blur and a subtle 8% warm scrim, hides the empty-state container, and must be completed before chat interaction
+- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet uses no blur and a `#231208` 30% scrim, hides and covers the empty-state container, and must be completed before chat interaction
 - FR-23: Translations toggle scoped per chat (phone3 vs phone4 separate state)
 - FR-24: Word popup audio uses on-device TTS only — no external API. When TTS unavailable for the language, speaker icon stays in place but renders disabled (40% opacity, no tap, no tooltip, no text)
 - FR-25: Delivery failure shows `Not sent · Tap to try again`; language-help failure shows `Couldn’t translate · Retry`. Both are `#C62828` text-only rows below the bubble with no standalone icon; pending remains a clock

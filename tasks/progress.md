@@ -183,6 +183,8 @@
   - Expired and used states served from the same endpoint
 
 ### Step 2.3b — Invite-flow redesign `[ ]` ← in progress
+- **Language-sheet spec refresh (2026-09-12):** The owner approved one shared language-picker direction for required new-chat setup and later Settings changes. The required sheet remains non-dismissible; Settings can dismiss and stages a choice until **Done**. Design is captured in `docs/superpowers/specs/2026-09-12-learning-language-sheet-unification-design.md`; implementation is in progress and still awaits owner acceptance.
+- **Compact language-sheet refinement (2026-09-13):** On screens shorter than the 390 × 844 reference, the shared picker reduces by up to 32 px so the fixed action does not sit beside a partial next language. Owner visual review remains pending.
 - **Real installed-link test (2026-09-10):** Default Android browser tap opens the public download page instead of installed Blab; reproduced before and after removing a temporary user link override. Under that explicitly temporary override, existing-pair reuse, signup of a fresh local Bob, independent English/German setup, Back/reopen, two-way messages, cold-start repeat link, claimed/invalid recovery and one-chat-per-pair checks pass. No full installed-link pass claimed. Evidence: `docs/qa/2026-09-10-installed-invite/`. Prior sharing/Copy owner acceptance is unchanged.
 - [x] **Owner-approved sharing/copy acceptance (2026-09-10):** Owner reviewed the exact clipboard contents and explicitly requested this task be marked done. Acceptance covers the narrowed social-app handoff/Copy check, not a claim of WhatsApp or authenticated delivery testing. Browser/emulator connection evidence is retained; final owner review of the remaining invite behavior and verified installed-app/Play-install handoff stay open.
 - **Owner scope change (2026-09-10):** Cancelled Telegram authentication/browser testing and closed the pending browser login at the owner's request. Narrow check only: select Telegram in native sharing and review copied text. Android successfully dispatches ACTION_SEND text/plain to Telegram; signed-out Telegram immediately returns to Blab, which rotates the link. Actual native clipboard pasted into an empty local draft matches `Let’s chat on Blab` plus the full HTTPS invite URL; draft cleared without sending. WhatsApp not installed/tested. Full logged-in composer/delivery acceptance remains open, but no further login is requested.
@@ -580,6 +582,10 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-12 — Began the approved shared language-sheet implementation in the small UI fixes workspace. Owner manual review is still required before any tracker item can be marked complete.
+
+- 2026-09-12 — Added the approved unified learning-language-sheet design. Updated US-022, US-027, FR-20, FR-22, and tech-spec Decision #31 so the required and Settings variants share visual language while retaining their distinct dismissal and commit rules. No implementation or owner test is complete.
+
 - 2026-08-31 — Repaired the newly created chat language-history regression by recording the initial private language boundary on membership creation and recovering a missing boundary before the first switch. Added L-25 for the required owner Alice/Bob browser or device pass; automated database and app checks pass.
 
 - 2026-08-28 — Tightened prepared-package and delivery-job uniqueness to include both language lanes, preventing a primary-known-language change from replacing another viewer variant.
@@ -932,3 +938,5 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-12 — Completed the approved translation-reliability follow-up: provider calls now have bounded deadlines, reconnect retries exclude permanent failures, privacy and ephemeral chat state are account-isolated, tone changes request fresh translations, and all 11 primary known languages are accepted by server completion. Verified 473 Flutter tests, 80 Deno translation tests, 135 database tests, formatting, diff checks, and clean static analysis. Owner/device acceptance gates remain unchanged.
 
 - 2026-09-13 — Repaired and locally accepted the remaining translation edge cases with Alice in the browser and Bob in the Android emulator: `No` resolved to `Nein`; abbreviation-plus-name text translated naturally in German, Hindi, and Ukrainian; completed history stayed fixed across a tone switch; incoming/outgoing unsupported-language guidance used the correct author-aware copy; and Bob-to-Alice translation passed. The local provider's grammatical-form audit blocked a fresh respectful-output screenshot, so owner/device launch gates remain unchanged. Evidence: `docs/qa/2026-09-12-translation-edge-cases/README.md`.
+
+- 2026-09-13 — Shortened the shared language picker by up to 32 px on compact screens so the fixed action ends after a complete language row. Step 2.3b remains in progress pending owner visual acceptance.
