@@ -5,6 +5,7 @@ import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
+import 'package:blab/shared/models/reading_script.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:blab/shared/services/profile_service.dart';
@@ -16,6 +17,7 @@ import 'package:blab/shared/state/connectivity_state.dart';
 import 'package:blab/shared/state/privacy_settings.dart';
 import 'package:blab/shared/state/profile_state.dart';
 import 'package:blab/shared/state/push_notifications_state.dart';
+import 'package:blab/shared/state/reading_script_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,7 +121,22 @@ class _ReplyPreviewChatService implements ChatService {
         mode: 'translation',
         explanation: null,
         confidence: null,
-        tokens: <Map<String, dynamic>>[],
+        tokens: <Map<String, dynamic>>[
+          {
+            'text': 'இன்று',
+            'roman': 'indru',
+            'gloss': 'today',
+            'isContent': true,
+          },
+          {'text': ' ', 'roman': null, 'gloss': null, 'isContent': false},
+          {
+            'text': 'வருகிறாயா',
+            'roman': 'varugiraayaa',
+            'gloss': 'are you coming',
+            'isContent': true,
+          },
+          {'text': '?', 'roman': null, 'gloss': null, 'isContent': false},
+        ],
       );
     }
     if (messageId == reply.id) {
@@ -131,7 +148,10 @@ class _ReplyPreviewChatService implements ChatService {
         mode: 'translation',
         explanation: null,
         confidence: null,
-        tokens: <Map<String, dynamic>>[],
+        tokens: <Map<String, dynamic>>[
+          {'text': 'ஆம்', 'roman': 'aam', 'gloss': 'yes', 'isContent': true},
+          {'text': '.', 'roman': null, 'gloss': null, 'isContent': false},
+        ],
       );
     }
     return null;
@@ -210,6 +230,8 @@ Widget _host(ChatService service, {TranslateMessageFn? translateMessage}) {
       chatServiceProvider.overrideWithValue(service),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue('alice'),
+      fetchReadingScriptProvider.overrideWithValue(() async => 'native'),
+      updateReadingScriptProvider.overrideWithValue((value) async => value),
       isOnlineProvider.overrideWithValue(false),
       typingIndicatorsEnabledProvider.overrideWithValue(false),
       pushNotificationGatewayProvider.overrideWithValue(
@@ -288,6 +310,39 @@ void main() {
     expect(find.text('இன்று வருகிறாயா?'), findsOneWidget);
     expect(liveTranslationCalls, 0);
   });
+
+  testWidgets(
+    'changing Reading script rerenders cached message and reply without AI',
+    (tester) async {
+      final service = _ReplyPreviewChatService();
+      var liveTranslationCalls = 0;
+      await tester.pumpWidget(
+        _host(
+          service,
+          translateMessage: (messageId) async {
+            liveTranslationCalls++;
+            throw MessageTranslationFailed('unexpected_live_translation');
+          },
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ChatScreen)),
+      );
+      await container
+          .read(readingScriptProvider.notifier)
+          .set(ReadingScript.englishLetters);
+      await tester.pumpAndSettle();
+
+      expect(find.text('aam'), findsOneWidget);
+      expect(find.text('indru varugiraayaa?'), findsOneWidget);
+      expect(liveTranslationCalls, 0);
+    },
+  );
 
   testWidgets('translated reply quote does not overflow at mobile width', (
     tester,

@@ -223,7 +223,7 @@ git commit -m "feat: add contextual reading script settings"
 - Modify: `test/message_presentation_test.dart`
 - Modify: `test/chat_screen_primary_known_language_test.dart`
 
-- [ ] **Step 1: Write failing generated-content tests**
+- [x] **Step 1: Write failing generated-content tests**
 
 Cover Practice translations, Normal fallback translations, resolved grammatical alternatives, outgoing correction display, reply preview, authored/Original preservation, native and Romanized authored input, and a provider-call counter that remains unchanged when the preference toggles.
 
@@ -235,7 +235,7 @@ await container.read(readingScriptProvider.notifier).set(ReadingScript.native);
 expect(translator.calls, 1);
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 ```bash
 flutter test test/message_learning_content_test.dart test/inline_correction_text_test.dart test/message_presentation_test.dart test/chat_screen_primary_known_language_test.dart
@@ -243,15 +243,15 @@ flutter test test/message_learning_content_test.dart test/inline_correction_text
 
 Expected: FAIL because message and reply paths ignore Reading script.
 
-- [ ] **Step 3: Route every eligible generated path through the pure helper**
+- [x] **Step 3: Route every eligible generated path through the pure helper**
 
 Add `readingScript` to `MessageLearningContent` and to `resolveMessageDisplayText`/`resolveMessagePresentation`. Before creating `MessageText`, resolve the active form and its matching token set, then call `presentReadingScript`. Pass converted text/tokens to the rich renderer. Extend `InlineCorrectionText` with converted corrected-token metadata so corrected taps keep gloss/native audio. Watch the account preference once per chat bubble/reply and apply it only to generated target-language content; leave authored/Original and Chats-list previews unchanged.
 
-- [ ] **Step 4: Re-run focused tests and verify GREEN**
+- [x] **Step 4: Re-run focused tests and verify GREEN**
 
 Run the Step 2 command. Expected: all generated-content and preservation tests pass with no additional translation call.
 
-- [ ] **Step 5: Commit the message integration**
+- [x] **Step 5: Commit the message integration**
 
 ```bash
 git add lib/features/chat/widgets/message_learning_content.dart lib/features/chat/widgets/inline_correction_text.dart lib/features/chat/chat_screen.dart lib/features/chat/message_presentation.dart test/message_learning_content_test.dart test/inline_correction_text_test.dart test/message_presentation_test.dart test/chat_screen_primary_known_language_test.dart
