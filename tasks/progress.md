@@ -264,14 +264,14 @@
 ---
 
 ### Step 2.7 — Translation in real chats (bilingual-authoring model) `[x]`
-- **Scope (revised 2026-07-18 by L-15):** users may write in any language. On success, each viewer gets a learning-language top lane and interface-language bottom lane; an author who writes in neither selected language keeps the original in the bottom lane. Author mistakes in their learning language use inline correction marks, while recipients see only clean corrected output. Exact source remains authoritative and available in the View original sheet. Turning learning aids off prevents new OpenRouter calls and shows only the original. All 11 learning targets remain available; interface localization is limited to English, Ukrainian, German, and Spanish.
+- **Scope (revised 2026-09-14):** users may write in any language. On success, each viewer gets a Learning Language result for Practice and a Primary Known Language result for Normal/learning explanations; an author who writes in neither selected language retains the exact original through Original. Author mistakes in their Learning Language use inline correction marks, while recipients see only clean corrected output. Turning learning aids off prevents new OpenRouter calls and shows only the original. All 11 learning and known-language targets remain available; Interface Language is limited to English, Ukrainian, German, and Spanish and controls app chrome only.
 - **Done when:**
-  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → an eligible ZDR endpoint for `openai/gpt-4o-mini`); the client supplies only a message ID, and the server derives source, learning target, and interface locale
-  - Successful bubbles show learning output on top and interface output below, deduplicate matching lanes, and preserve an unexpected third-language original for its author
-  - Word popup pulls an interface-language gloss + romanization from the live translation tokens (no bundled dictionary)
+  - Real chats translate via the authenticated Supabase Edge Function `translate-message` (OpenRouter → an eligible ZDR endpoint for `openai/gpt-4o-mini`); the client supplies only a message ID, and the server derives source, Learning Language target, and Primary Known Language target
+  - Successful bubbles show the correct mode result, deduplicate matching output, and preserve an unexpected third-language original for its author
+  - Word popup pulls a Primary Known Language gloss + romanization from the live translation tokens (no bundled dictionary)
   - Failure (offline / 5xx / timeout) → authored text remains usable with muted "Translation unavailable" above it
   - Retryable learning-aid failures show an error icon and isolated Retry action; tapping message padding opens an action sheet that displays the exact original beside a visibility icon without intercepting word-definition taps
-  - Server-verified learning and interface outputs are cached in Postgres by message, learning language, and interface language. Matching senders/receivers reuse translations, corrections, and `none` results; clients cannot write cache rows
+  - Server-verified Learning Language and Primary Known Language outputs are cached in Postgres by message and both learning-aid targets. Matching senders/receivers reuse translations, corrections, and `none` results; clients cannot write cache rows
 - **Progress:**
   - [x] Edge function `translate-message` implemented across all 11 `LANG_NAMES`, romanization guidance for non-Latin scripts (ta/uk/hi), JWT-verified, 2,000-character cap
   - [x] `MessageTranslator` service + `messageTranslationsProvider` per-chat cache landed (Riverpod)
@@ -542,6 +542,20 @@
   - Manual Android device pass covers Normal/Practice, both directions, four interface languages, photo/caption states, failures, editing across navigation, and read-receipt ON/OFF.
 - **Out of scope:** post-launch vertical action list, fancy selected-message animation/scrim, edit history, audio messages, and a separate device-received receipt state.
 
+### Step 2.14 — Language and localization QA `[ ]` ← in progress
+- **Design:** `docs/superpowers/specs/2026-09-14-language-localization-qa-design.md`.
+- **Plan:** `docs/superpowers/plans/2026-09-14-language-localization-qa.md`.
+- **Scope:** every user-facing screen and state in English, German, Spanish, and Ukrainian; all eleven Learning Languages; every Primary Known Language; word descriptions; word and sentence audio; account/language switching; normal and 200% text size.
+- **Language contract:** Interface Language controls interface copy only. Primary Known Language controls Normal-mode translations, word descriptions, and correction explanations. Learning Language controls Practice-mode output plus word and sentence audio.
+- **Done when:**
+  - All eight interface batches complete the screenshot → owner feedback → approved fix → retest cycle, with four to eight real-app screenshots per packet.
+  - All eleven Learning Language packets pass sentence translation, correction behavior, word descriptions, word audio, and sentence audio, or record an owner-accepted device limitation.
+  - Primary Known Language switching refreshes Normal translations, word descriptions, and correction explanations without stale content; Interface Language switching changes interface copy only.
+  - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
+  - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
+  - Approved work is committed and pushed to `feat/localization`.
+- **Current packet:** B01A — Profile overview in all four Interface Languages.
+
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
 - **Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.
@@ -583,6 +597,8 @@ Do not start Step N+1 until Step N is fully `[x]`.
 ---
 
 ## Changelog
+
+- 2026-09-14 — Added Step 2.14 and the approved packet-based localization QA plan. Corrected the source of truth: Interface Language is interface copy only; Primary Known Language owns Normal translations, word descriptions, and correction explanations; Learning Language owns Practice output and word/sentence audio. Started B01A Profile overview review without marking any owner acceptance complete.
 
 - 2026-08-31 — Repaired the newly created chat language-history regression by recording the initial private language boundary on membership creation and recovering a missing boundary before the first switch. Added L-25 for the required owner Alice/Bob browser or device pass; automated database and app checks pass.
 

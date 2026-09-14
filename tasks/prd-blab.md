@@ -91,7 +91,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] English is the first-launch default and fallback; selecting another language updates all localized app chrome
 - [ ] Same sheet accessible from Profile → Interface language
 - [ ] The pre-auth choice persists locally; a signed-in choice persists to that account without leaking across logout/account switches
-- [ ] Switching the interface language immediately re-renders localized word-popup definitions from a cache keyed by both learning and interface language (no app restart, no stale locale)
+- [ ] Switching the interface language immediately re-renders interface copy only; sentence translations, word descriptions, correction explanations, and audio remain unchanged
 
 ---
 
@@ -240,12 +240,12 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Incoming bubbles: `#FFFCF8` with a 1 px `#EBE1DA` outline, left-aligned in both modes
 - [ ] In both modes, bubbles hug short-message content and expand only as needed until the existing maximum width, where longer text wraps
 - [ ] Practice mode shows one collapsed learning-language line; Normal mode shows authored text for known languages and one primary-known-language translation for unknown incoming languages
-- [ ] The interface language controls app chrome, definitions, and explanations only; it is never a message-translation target
-- [ ] If an author makes a clear mistake in their learning language, that author sees the minimal correction inline with replaced text struck through plus a short interface-language explanation
+- [ ] The interface language controls app chrome only; it is never a message-translation, word-description, or learning-explanation target
+- [ ] If an author makes a clear mistake in their learning language, that author sees the minimal correction inline with replaced text struck through plus a short primary-known-language explanation
 - [ ] Recipients never see the author's correction marks or coaching explanation; they see one clean corrected learning-language line
 - [ ] Correct target-language writing remains clean; uncertain author corrections are labeled "Possible correction" and do not invent missing meaning
-- [ ] Sender and receiver reuse the same correction cache variant when their learning and interface languages match
-- [ ] Translation words are tappable and definitions use the selected interface language
+- [ ] Sender and receiver reuse the same correction cache variant when their learning and primary known languages match
+- [ ] Translation words are tappable and definitions use the reader's primary Known Language
 - [ ] Reaction badges overlap the bubble edge nearest the conversation center: right edge for incoming messages and left edge for outgoing messages; every badge uses `#FFFCF8` fill and `#DCD2C8` outline, with a subtle shadow in Practice only
 - [ ] Tapping a learning-language word opens its word description; tapping empty bubble padding does nothing; message actions require long press
 - [ ] Practice long press temporarily reveals the reader's primary-known-language translation below the existing divider; Normal conditionally offers Original for the exact authored text
@@ -701,7 +701,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-10: Change password has current/new/confirm fields with strength bar; success shows toast
 - FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
-- FR-13: Practice mode renders one collapsed learning-language line and temporarily reveals the primary-known-language line on long press; Normal renders authored text for known languages, translates an unknown incoming language once into the reader's primary known language, and conditionally exposes exact authored text through Original. The interface language controls chrome, definitions, and correction explanations only. Author mistakes in their learning language render as minimal inline strike-through corrections; recipients receive clean corrected output without coaching marks. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline text-only Retry action
+- FR-13: Practice mode renders one collapsed learning-language line and temporarily reveals the primary-known-language line on long press; Normal renders authored text for known languages, translates an unknown incoming language once into the reader's primary known language, and conditionally exposes exact authored text through Original. The interface language controls chrome only; the primary Known Language controls word descriptions and correction explanations. Author mistakes in their learning language render as minimal inline strike-through corrections; recipients receive clean corrected output without coaching marks. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline text-only Retry action
 - FR-14: Outgoing status is clock while sending, single gray check when accepted or device-received, and double gray check when read. Read requires both Read receipts toggles ON; otherwise it stays single. Default ON, symmetric, and OFF emits no read event
 - FR-15: Outgoing message actions require long press. Normal uses Reply | Edit | Copy | Original | Delete; Practice uses Reply | Edit | Copy | Listen | Delete. Conditional actions hide when ineligible; Delete confirms, removes for both, and has no tombstone or Undo
 - FR-16: Incoming message actions require long press. Normal uses Reply | Copy | Original | Report; Practice uses Reply | Copy | Listen | Report. Tapping empty bubble padding does nothing
@@ -721,7 +721,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-30: No online / "last seen" feature exists. Chat header shows learning-language subtitle, replaced by "typing…" only when both sides have Typing-indicator toggle ON (US-040)
 - FR-31: Typing indicators + Read receipts are Signal-symmetric toggles in Privacy settings; default ON; OFF path = client never broadcasts the event (server has no record) AND user does not see partner's signal either
 - FR-32: Edit window is 24h and Delete has no time limit; both apply to outgoing messages only. Edit preserves its draft across navigation until Send or ×, marks the message edited, and refreshes language help after any changed letter, number, or punctuation
-- FR-33: Interface-language switch immediately re-renders word definitions on loaded chats from locale-specific cache entries — no restart and no gloss from another interface locale
+- FR-33: Primary Known Language switching immediately refreshes Normal-mode translations, word descriptions, and correction explanations from the matching cache variant. Interface-language switching re-renders interface copy only and never changes those learning-aid results
 - FR-34: Render complete natural grammatical forms: explicit preference, then provisional name suggestion, then feminine fallback. Show one localized `Using [form] forms for [name] · Change` note per participant/chat; Change opens existing Translation preferences and corrects only the annotated message plus future messages. No markers, word-choice containers, or neutral rewrites to avoid ambiguity. Resolve author/recipient ownership before suggesting a form. Resolved words retain normal lookup behavior.
 - FR-35: Grammatical-form memory has only `not set`, `feminine`, and `masculine`. A self-owned form is account-wide; another participant’s choice is a private one-to-one fallback. The first clear authored form is learned silently; once saved, it is authoritative and later opposite authored forms receive the normal visible correction until the user changes the preference in settings. Conversation tone is stored separately per chat
 - FR-36: Message lifecycle follows `docs/superpowers/specs/2026-08-12-translating-state-animation-design.md`: a slow delivered outgoing Practice message receives a glyph-only wave after 350ms, then a measured clear → reshape → land transition; text states never duplicate. Language-help failure quietly retries once for up to 10 seconds, then preserves original text with Retry. Expressive stretching, playful capitalization, and chat abbreviations are not correction mistakes; confidently identified names are transliterated when the target script differs without changing their identity. Unsupported source languages preserve the original with a neutral hint and no Retry or learning actions. Delivery failures remain distinct, and reduced-motion behavior has no decorative motion
@@ -850,7 +850,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 Originally tracked as "Open Questions"; resolved 2026-05-28 in one batch.
 
 - **Multiple simultaneous language exchanges per user?** → **Yes**, per-chat. Each chat owns its `learning_language_code` + `teaching_language_code`; languages can repeat across chats or differ. Profile shows the primary (most active) as a hint. (Affects US-022, chat schema in Phase 2.2.)
-- **Interface-language switch refreshing existing translations?** → **Yes**, immediately for the bottom interface-language lane, word definitions, and correction explanations. The learning-language line stays unchanged; an author's third-language-original exception continues to show the original. The four launch interface locales use separate cache variants. (Updated US-005 by L-15.)
+- **Which preference controls translations and word descriptions?** → **Primary Known Language.** It targets Normal-mode translations, word descriptions, and correction explanations. Interface Language updates app chrome only; Learning Language controls Practice-mode output and word/sentence audio. Switching Interface Language must not change learning-aid content. (Corrected 2026-09-14 after the language-role model changed.)
 - **Invite link single-use or reusable until claimed?** → **Reusable until claimed** (single *successful* claim), with no time expiry so a delayed or offline share is not invalidated. (Updated US-024, US-037, FR-4 on 2026-09-07.)
 - **Exchange card disappearance on first message?** → **200 ms opacity fade-out**, no slide/scale. (Updated US-027.)
 - **Edit-profile Save success toast?** → **Yes**, "Profile updated ✓" toast on return to profile. (Updated US-011.)
