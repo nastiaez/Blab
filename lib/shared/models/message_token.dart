@@ -9,6 +9,7 @@ class MessageToken {
   const MessageToken({
     required this.text,
     this.romanization,
+    this.nativeText,
     this.gloss,
     this.isContent = true,
   });
@@ -19,6 +20,13 @@ class MessageToken {
   /// Latin-script romanization, e.g. `eppadi`. Optional — only present for
   /// scripts the user is unlikely to read (Tamil, Hindi, etc.).
   final String? romanization;
+
+  /// Native-script text retained when [text] is an English-letter
+  /// presentation. Used for pronunciation without changing visible copy.
+  final String? nativeText;
+
+  /// The text the speech engine should pronounce.
+  String get spokenText => nativeText ?? text;
 
   /// Short definition in the viewer's interface language. Optional.
   final String? gloss;
@@ -127,6 +135,7 @@ MessageToken _enrichedToken(
     romanization:
         match.romanization ??
         (_usesLatinScript(visibleToken.text) ? visibleToken.text : null),
+    nativeText: match.nativeText,
     gloss: match.gloss,
     isContent: true,
   );

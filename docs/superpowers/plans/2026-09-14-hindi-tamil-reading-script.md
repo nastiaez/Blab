@@ -104,7 +104,7 @@ git commit -m "feat: persist reading script preference"
 - Modify: `lib/features/chat/widgets/word_popup.dart`
 - Modify: `test/word_popup_test.dart`
 
-- [ ] **Step 1: Write failing presentation and popup tests**
+- [x] **Step 1: Write failing presentation and popup tests**
 
 Test Hindi and Tamil conversion, punctuation/emoji/Latin protected content, non-eligible languages, native mode, incomplete Romanization whole-sentence fallback, popup primary/secondary swap, and native TTS.
 
@@ -125,7 +125,7 @@ expect(result.usedEnglishLetters, isTrue);
 
 For missing Romanization, expect the unchanged native text and `usedEnglishLetters == false`. Tap the Romanized visible word and expect the popup to show it at 22 px, native spelling at 13 px, and `speak:ta:வணக்கம்`.
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 ```bash
 flutter test test/reading_script_presentation_test.dart test/message_token_test.dart test/word_popup_test.dart
@@ -133,7 +133,7 @@ flutter test test/reading_script_presentation_test.dart test/message_token_test.
 
 Expected: FAIL because the presentation helper and native speech field are absent.
 
-- [ ] **Step 3: Implement complete-sentence conversion and native speech retention**
+- [x] **Step 3: Implement complete-sentence conversion and native speech retention**
 
 Add optional `nativeText` to `MessageToken`, defaulting to `text`. Implement:
 
@@ -148,11 +148,11 @@ ReadingScriptPresentation presentReadingScript({
 
 Return unchanged presentation unless language is `hi`/`ta`, preference is English letters, metadata exactly reproduces the native sentence, and every non-Latin content token has non-empty Romanization. Map convertible content tokens to visible Romanization, secondary native text, unchanged gloss, and native `nativeText`; keep non-content and already-Latin protected tokens exact. Update popup audio to speak `token.nativeText`.
 
-- [ ] **Step 4: Re-run focused tests and verify GREEN**
+- [x] **Step 4: Re-run focused tests and verify GREEN**
 
 Run the Step 2 command. Expected: all focused presentation and popup tests pass.
 
-- [ ] **Step 5: Commit the rendering boundary**
+- [x] **Step 5: Commit the rendering boundary**
 
 ```bash
 git add lib/features/chat/reading_script_presentation.dart lib/shared/models/message_token.dart lib/features/chat/widgets/word_popup.dart test/reading_script_presentation_test.dart test/message_token_test.dart test/word_popup_test.dart
