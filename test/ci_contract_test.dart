@@ -93,4 +93,22 @@ void main() {
       isTrue,
     );
   });
+
+  test('local reset restores the translation preparation worker', () {
+    final helper = File('scripts/local_test.sh').readAsStringSync();
+
+    for (final required in [
+      'configure_local_translation_worker()',
+      'blab_translation_worker_url',
+      'blab_worker_service_role_key',
+      'http://kong:8000/functions/v1/prepare-message-jobs',
+      'configure_local_translation_worker\n  restore_postgres_version',
+    ]) {
+      expect(
+        helper,
+        contains(required),
+        reason: 'Local reset is missing worker setup: $required',
+      );
+    }
+  });
 }

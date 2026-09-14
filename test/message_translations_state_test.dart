@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
+import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/shared/data/translation_support.dart';
+import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
@@ -12,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 ProviderContainer _container({
   required TranslateMessageFn translateFn,
-  TranslateMessageFn? forceTranslateFn,
+  SetConversationToneFn? setConversationToneFn,
   ChatService? chatService,
   Duration? lifecycleDeadline,
   Duration? loadingTimeout,
@@ -22,8 +23,8 @@ ProviderContainer _container({
   return ProviderContainer(
     overrides: [
       translateMessageFnProvider.overrideWithValue(translateFn),
-      if (forceTranslateFn != null)
-        forceTranslateMessageFnProvider.overrideWithValue(forceTranslateFn),
+      if (setConversationToneFn != null)
+        setConversationToneFnProvider.overrideWithValue(setConversationToneFn),
       if (chatService != null)
         chatServiceProvider.overrideWithValue(chatService),
       if (lifecycleDeadline != null)
@@ -281,6 +282,55 @@ void main() {
     );
   });
 
+  test('a stored unsupported result replaces a stale client error', () async {
+    var calls = 0;
+    final cached = <String, MessageTranslation>{};
+    final container = _container(
+      chatService: _ControlledCacheChatService(cachedByMessageId: cached),
+      translateFn: (id) async {
+        calls++;
+        throw MessageTranslationFailed('temporary');
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(
+      messageTranslationsProvider('chat-1').notifier,
+    );
+
+    await notifier.ensure(
+      messageId: 'm1',
+      text: '你好，Bob!',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+    expect(calls, 2);
+    expect(
+      container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+      isA<AsyncError<MessageTranslation>>(),
+    );
+
+    cached['m1'] = const MessageTranslation(
+      translation: '你好，Bob!',
+      interfaceText: '你好，Bob!',
+      interfaceLang: 'en',
+      sourceLang: 'other',
+      tokens: [],
+    );
+    await notifier.ensure(
+      messageId: 'm1',
+      text: '你好，Bob!',
+      targetLang: 'de',
+      interfaceLang: 'en',
+    );
+
+    expect(calls, 2, reason: 'cache repair must not call the provider again');
+    final repaired = container.read(
+      messageTranslationsProvider('chat-1'),
+    )['m1|de|en'];
+    expect(repaired, isA<AsyncData<MessageTranslation>>());
+    expect(repaired!.value!.sourceLang, 'other');
+  });
+
   test('automatic retry recovers a temporary transport failure', () async {
     var calls = 0;
     final container = _container(
@@ -366,19 +416,17 @@ void main() {
     }
   });
 
-  test('preference revision requests a fresh translation', () async {
+  test('saving tone keeps a completed translation unchanged', () async {
     var ordinaryCalls = 0;
-    var freshCalls = 0;
     final container = _container(
-      chatService: _ControlledCacheChatService(),
+      chatService: _ControlledCacheChatService(
+        cachedByMessageId: {'m1': _translation('Informal')},
+      ),
       translateFn: (id) async {
         ordinaryCalls++;
-        return _translation('Informal');
+        return _translation('Unexpected live translation');
       },
-      forceTranslateFn: (id) async {
-        freshCalls++;
-        return _translation('Respectful');
-      },
+      setConversationToneFn: (chatId, tone) async {},
     );
     addTearDown(container.dispose);
 
@@ -390,11 +438,21 @@ void main() {
           targetLang: 'de',
           interfaceLang: 'en',
         );
-    expect(ordinaryCalls, 1);
-    expect(freshCalls, 0);
+    expect(ordinaryCalls, 0);
 
-    container.read(grammaticalFormPreferenceRevisionProvider.notifier).bump();
+    await container.read(saveConversationToneProvider)(
+      'chat-1',
+      ConversationTone.respectful,
+    );
     await Future<void>.delayed(Duration.zero);
+    expect(
+      container
+          .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+          .value!
+          .translation,
+      'Informal',
+    );
+
     await container
         .read(messageTranslationsProvider('chat-1').notifier)
         .ensure(
@@ -404,14 +462,13 @@ void main() {
           interfaceLang: 'en',
         );
 
-    expect(ordinaryCalls, 1);
-    expect(freshCalls, 1);
+    expect(ordinaryCalls, 0);
     expect(
       container
           .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
           .value!
           .translation,
-      'Respectful',
+      'Informal',
     );
   });
 

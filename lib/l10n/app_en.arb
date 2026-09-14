@@ -1,8 +1,7 @@
 {
   "@@locale": "en",
   "appName": "Blab",
-  "unsupportedLanguageHint": "Blab doesn’t speak this one yet — try {learningLanguage}.",
-  "@unsupportedLanguageHint": {"placeholders": {"learningLanguage": {"type": "String"}}},
+  "unsupportedLanguageHint": "Blab doesn’t speak this one yet.",
   "back": "Back",
   "apply": "Apply",
   "undo": "Undo",

@@ -111,8 +111,8 @@ abstract class AppLocalizations {
   /// No description provided for @unsupportedLanguageHint.
   ///
   /// In en, this message translates to:
-  /// **'Blab doesn’t speak this one yet — try {learningLanguage}.'**
-  String unsupportedLanguageHint(String learningLanguage);
+  /// **'Blab doesn’t speak this one yet.'**
+  String get unsupportedLanguageHint;
 
   /// No description provided for @back.
   ///

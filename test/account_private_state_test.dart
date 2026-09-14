@@ -1,5 +1,4 @@
 import 'package:blab/features/chat/state/chat_state.dart';
-import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
 import 'package:blab/features/chat/state/message_reads_state.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/shared/models/message.dart';
@@ -60,7 +59,6 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    container.read(grammaticalFormPreferenceRevisionProvider.notifier).bump();
     container.read(messageTranslationsProvider('chat-1'));
     await container
         .read(messageTranslationsProvider('chat-1').notifier)
@@ -85,7 +83,6 @@ void main() {
     expect(container.read(replyingToProvider('chat-1')), isNotNull);
     expect(container.read(editingProvider('chat-2')), isNotNull);
     expect(container.read(chatModeResetSignalProvider('chat-1')), 1);
-    expect(container.read(grammaticalFormPreferenceRevisionProvider), 1);
     expect(container.read(chatPaginationProvider('chat-1')).isLoading, isTrue);
     expect(container.read(messageReadsProvider('chat-1')), {'m1'});
 
@@ -97,7 +94,6 @@ void main() {
     expect(container.read(replyingToProvider('chat-1')), isNull);
     expect(container.read(editingProvider('chat-2')), isNull);
     expect(container.read(chatModeResetSignalProvider('chat-1')), 0);
-    expect(container.read(grammaticalFormPreferenceRevisionProvider), 0);
     expect(container.read(chatPaginationProvider('chat-1')).isLoading, isFalse);
     expect(container.read(messageReadsProvider('chat-1')), isEmpty);
 

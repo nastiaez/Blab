@@ -587,7 +587,7 @@ void main() {
     container.dispose();
   });
 
-  testWidgets('unsupported source shows a neutral hint without retry', (
+  testWidgets('incoming unsupported source shows one concise notice', (
     tester,
   ) async {
     final container = _buildContainer(
@@ -597,21 +597,47 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    expect(
-      find.text('Blab doesn’t speak this one yet — try German.'),
-      findsOneWidget,
-    );
+    expect(find.text('Blab doesn’t speak this one yet.'), findsOneWidget);
+    expect(find.text('你好'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('translation-message-retry')),
       findsNothing,
     );
     final hint = tester.widget<Text>(
-      find.text('Blab doesn’t speak this one yet — try German.'),
+      find.text('Blab doesn’t speak this one yet.'),
     );
     expect(hint.style?.fontSize, 12);
     expect(hint.style?.fontWeight, FontWeight.w400);
     expect(hint.style?.color, const Color(0xFF917869));
+    expect(find.textContaining('Showing the original'), findsNothing);
+    expect(find.textContaining('try German'), findsNothing);
+    expect(find.textContaining('Retry'), findsNothing);
     expect(find.text('Hallo'), findsNothing);
+  });
+
+  testWidgets('outgoing unsupported source shows the same concise notice', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      _BubbleExpandChatService(
+        isOutgoing: true,
+        sourceLang: 'other',
+        text: '你好',
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+
+    expect(find.text('Blab doesn’t speak this one yet.'), findsOneWidget);
+    expect(find.text('你好'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('translation-message-retry')),
+      findsNothing,
+    );
+    expect(find.textContaining('Showing the original'), findsNothing);
+    expect(find.textContaining('try German'), findsNothing);
+    expect(find.textContaining('Retry'), findsNothing);
   });
 
   testWidgets('no message-adjacent language controls remain', (tester) async {
