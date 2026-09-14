@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:blab/features/chat/chat_screen.dart';
 import 'package:blab/features/chat/state/chat_state.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
 import 'package:blab/features/chat/widgets/message_interaction_target.dart';
+import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/models/message_reaction.dart';
@@ -44,6 +47,7 @@ class _BubbleExpandChatService implements ChatService {
     this.sourceLang = 'de',
     this.partnerRead = false,
     this.translationFails = false,
+    bool withPhoto = false,
     MessageStatus status = MessageStatus.delivered,
     DateTime? sentAt,
   }) : message = Message(
@@ -54,6 +58,23 @@ class _BubbleExpandChatService implements ChatService {
          translation: '',
          sentAt: sentAt ?? DateTime.utc(2026, 8, 3, 12),
          status: status,
+         type: withPhoto ? MessageType.image : MessageType.text,
+         attachment: withPhoto
+             ? MessageAttachment(
+                 id: 'photo-attachment',
+                 messageId: isOutgoing
+                     ? 'outgoing-message'
+                     : 'incoming-message',
+                 chatId: 'chat-1',
+                 storageBucket: 'message-media',
+                 storagePath: 'chat-1/photo.png',
+                 mimeType: 'image/png',
+                 byteSize: 68,
+                 localBytes: base64Decode(
+                   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lx1P9QAAAABJRU5ErkJggg==',
+                 ),
+               )
+             : null,
        ),
        _learningText = translatedText ?? text;
 
@@ -638,6 +659,79 @@ void main() {
     expect(find.textContaining('Showing the original'), findsNothing);
     expect(find.textContaining('try German'), findsNothing);
     expect(find.textContaining('Retry'), findsNothing);
+  });
+
+  testWidgets('photo caption uses the same supported translation lane', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      _BubbleExpandChatService(
+        withPhoto: true,
+        sourceLang: 'en',
+        text: 'Please bring the red book',
+        translatedText: 'Bitte bring das rote Buch.',
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    await tester.pump(const Duration(seconds: 3));
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(
+      tester.widget<MessageText>(find.byType(MessageText)).text,
+      'Bitte bring das rote Buch.',
+    );
+    expect(
+      find.byKey(const ValueKey('translation-message-retry')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('unsupported photo caption keeps its text and neutral hint', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      _BubbleExpandChatService(
+        withPhoto: true,
+        sourceLang: 'other',
+        text: '请看这张照片',
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('请看这张照片'), findsOneWidget);
+    expect(find.text('Blab doesn’t speak this one yet.'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('translation-message-retry')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('emoji-only photo caption has no translation warning', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      _BubbleExpandChatService(
+        withPhoto: true,
+        text: '📷 ❤️',
+        translationFails: true,
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text('📷 ❤️'), findsOneWidget);
+    expect(find.textContaining('Blab doesn’t speak'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('translation-message-retry')),
+      findsNothing,
+    );
   });
 
   testWidgets('no message-adjacent language controls remain', (tester) async {

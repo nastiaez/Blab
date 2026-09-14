@@ -4,8 +4,9 @@ Audit baseline: [`../mvp-launch-audit-2026-07-15.md`](../mvp-launch-audit-2026-0
 
 Workflow: [`README.md`](./README.md)
 Active item: `L-17` (`Awaiting manual`), with final physical Android verification
-deferred to the end-of-launch device pass. `L-04` remains externally blocked, so
-no not-started item is currently dependency-ready.
+deferred to the end-of-launch device pass. `L-26` records the newly confirmed
+offline-translation recovery gap and remains queued until the active manual gates
+are resolved or the owner explicitly reprioritizes it.
 
 Tracker coordination: the owner-facing tracker now groups the active local work under
 Current focus, begins with the invite flow, and preserves owner-confirmed task states.
@@ -92,6 +93,7 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 | 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Complete | [`items/L-18.md`](./items/L-18.md) |
 | 24 | L-24 | Follow-up | Repair Android warm invite-link routing; received links must navigate while Blab is already open | L-03, L-04 | Not started | `items/L-24.md` |
 | 25 | L-25 | Follow-up | Preserve each participant's completed learning-language history across a later language change | L-16, L-18 | Awaiting manual | [`items/L-25.md`](./items/L-25.md) |
+| 26 | L-26 | Follow-up | Restore previously completed message and photo-caption translations from the account-scoped device cache after an offline restart | L-13, L-16 | Not started | [`items/L-26.md`](./items/L-26.md) |
 
 ## Release hardening
 
