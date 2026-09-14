@@ -78,6 +78,38 @@ class AppLocalizationsUk extends AppLocalizations {
   String get translationPreferences => 'Налаштування перекладу';
 
   @override
+  String get yourGrammaticalForm => 'Твоя граматична форма';
+
+  @override
+  String partnerGrammaticalForm(String name) {
+    return 'Граматична форма для $name';
+  }
+
+  @override
+  String get conversationTone => 'Тон розмови';
+
+  @override
+  String get grammaticalForm => 'Граматична форма';
+
+  @override
+  String get notSet => 'Не вказано';
+
+  @override
+  String get formFeminine => 'Жіноча';
+
+  @override
+  String get formMasculine => 'Чоловіча';
+
+  @override
+  String get toneInformal => 'Неформальний';
+
+  @override
+  String get toneRespectful => 'Шанобливий';
+
+  @override
+  String get couldNotSavePreference => 'Не вдалося зберегти. Спробуй ще раз.';
+
+  @override
   String get interfaceLanguage => 'Мова інтерфейсу';
 
   @override

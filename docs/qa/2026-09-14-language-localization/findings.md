@@ -124,6 +124,32 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Severity: medium
 - Follow-up: capture the persistent language notifier before leaving the picker. The regression now restores Spanish after Spanish → Ukrainian with no exception. The failed-save regression also confirms the original locale and localized error remain unchanged. Android Undo restored Spanish after Ukrainian, and Spanish remained selected after force-stop and reopen. Owner approved the repaired packet on 2026-09-14.
 
+## Packet B02A — Known Languages and Translation Preferences overview
+
+### B02A-DE-ES-UK-01
+
+- Interface language: German, Spanish, and Ukrainian
+- Screen/state: Known Languages / one selected primary language
+- Client: Bob / Android emulator
+- Expected: the screen title, language names, primary-language affordance, and Apply action follow the Interface Language
+- Observed: the title, primary-language affordance, and Apply action are localized, but all eleven language names remain English
+- Classification: Wrong copy
+- Severity: medium
+- Owner decision: translate all language names into the selected Interface Language; authorized 2026-09-14
+- Follow-up: repaired all eleven names in EN/DE/ES/UK and added matching regression coverage; replacement Android screenshots captured, owner approval pending
+
+### B02A-DE-ES-UK-02
+
+- Interface language: German, Spanish, and Ukrainian
+- Screen/state: Translation Preferences / account-wide form not set
+- Client: Bob / Android emulator
+- Expected: title, row label, and `Not set` value follow the Interface Language
+- Observed: `Translation preferences`, `Your gender form`, and `Not set` remain English in every non-English interface; the layout remains intact
+- Classification: English leak
+- Severity: medium
+- Owner decision: rephrase the English label to `Your grammatical form`, localize the entire flow, use informal Ukrainian (`Твоя граматична форма`), and keep each value close to its arrow in one right-aligned trailing group; authorized 2026-09-14
+- Follow-up: repaired the overview, form and tone pickers, values, and save errors in EN/DE/ES/UK. Long copy uses responsive spacing and stacks when needed. The owner approved the final four-language packet on 2026-09-14
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

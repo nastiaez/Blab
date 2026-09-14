@@ -78,6 +78,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get translationPreferences => 'Translation preferences';
 
   @override
+  String get yourGrammaticalForm => 'Your grammatical form';
+
+  @override
+  String partnerGrammaticalForm(String name) {
+    return '$name\'s grammatical form';
+  }
+
+  @override
+  String get conversationTone => 'Conversation tone';
+
+  @override
+  String get grammaticalForm => 'Grammatical form';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get formFeminine => 'Feminine';
+
+  @override
+  String get formMasculine => 'Masculine';
+
+  @override
+  String get toneInformal => 'Informal';
+
+  @override
+  String get toneRespectful => 'Respectful';
+
+  @override
+  String get couldNotSavePreference => 'Couldn’t save. Try again.';
+
+  @override
   String get interfaceLanguage => 'Interface language';
 
   @override

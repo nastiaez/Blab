@@ -72,6 +72,7 @@ For every batch and all four interface languages:
 - No supported locale displays unintended English copy.
 - Every user-facing error is localized; raw service, account, or network error text is never shown.
 - Copy sounds natural in that language and preserves the same meaning and tone as the approved English source.
+- Ukrainian interface copy addresses the user informally in the singular (`ти` forms).
 - Variables such as names, language names, dates, counts, and email addresses appear in grammatically sensible positions.
 - Text wraps before it clips. Primary actions remain readable and tappable.
 - Navigation titles, rows, dialogs, sheets, banners, toasts, and inline errors remain usable at normal and 200% text size.

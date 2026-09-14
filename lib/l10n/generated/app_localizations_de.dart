@@ -79,6 +79,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get translationPreferences => 'Übersetzungs­einstellungen';
 
   @override
+  String get yourGrammaticalForm => 'Deine grammatische Form';
+
+  @override
+  String partnerGrammaticalForm(String name) {
+    return 'Grammatische Form von $name';
+  }
+
+  @override
+  String get conversationTone => 'Gesprächston';
+
+  @override
+  String get grammaticalForm => 'Grammatische Form';
+
+  @override
+  String get notSet => 'Nicht festgelegt';
+
+  @override
+  String get formFeminine => 'Feminin';
+
+  @override
+  String get formMasculine => 'Maskulin';
+
+  @override
+  String get toneInformal => 'Informell';
+
+  @override
+  String get toneRespectful => 'Respektvoll';
+
+  @override
+  String get couldNotSavePreference =>
+      'Speichern nicht möglich. Versuche es erneut.';
+
+  @override
   String get interfaceLanguage => 'App-Sprache';
 
   @override

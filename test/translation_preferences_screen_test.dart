@@ -90,7 +90,7 @@ void main() {
     expect(title.style?.fontSize, 18);
     expect(title.style?.fontWeight, FontWeight.w400);
 
-    final rowLabel = tester.widget<Text>(find.text('Your gender form'));
+    final rowLabel = tester.widget<Text>(find.text('Your grammatical form'));
     expect(rowLabel.style?.color, const Color(0xFF46281C));
     expect(rowLabel.style?.fontSize, 15);
     expect(rowLabel.style?.fontWeight, FontWeight.w400);

@@ -149,7 +149,7 @@ The prototype's `id`/class names are not API — don't carry them into Dart.
 ## Internationalization
 
 - `flutter_localizations` + ARB files under `lib/l10n/`
-- Launch interface locales = English (`en`), Ukrainian (`uk`), German (`de`), and Spanish (`es`); English is the synchronous default and invalid/missing-value fallback
+- Launch interface locales = English (`en`), Ukrainian (`uk`), German (`de`), and Spanish (`es`); English is the synchronous default and invalid/missing-value fallback. Ukrainian interface copy uses informal singular address (`ти` forms)
 - The guest preference is device-local; signed-in preferences are cached under an account-scoped key and persisted through a self-only profile RPC
 - **Interface Language** controls app chrome only. **Primary Known Language** controls Normal-mode translations, word descriptions, and correction explanations. **Learning Language** controls Practice-mode output plus word and sentence audio. Do not conflate them.
 - Learning-aid cache identity is currently `(message_id, target_lang, interface_lang)`, where the legacy `interface_lang` storage field carries the reader's primary Known Language for message output, word descriptions, and correction explanations. Authored text remains authoritative in `messages.body`; each row stores learning-language output, primary-known-language output, detected source, tokens, and correction analysis. Real Interface Language is not part of learning-aid cache identity and changes app chrome only

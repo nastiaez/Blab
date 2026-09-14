@@ -554,7 +554,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A and B01B approved on 2026-09-14 after repair and real-client retest. B02 Known Languages and Translation Preferences is next.
+- **Current packet:** B01A, B01B, and B02A approved on 2026-09-14 after repair and real-client retest. B02B Known Languages and Translation Preferences selection, save, and error states is next.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -598,6 +598,9 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-14 — Owner approved the final B02A packet in English, German, Spanish, and Ukrainian. The accepted Ukrainian label is `Твоя граматична форма`, and the value plus arrow remain a compact right-aligned group. B02B selection, save, and error states is next.
+- 2026-09-14 — Repaired B02A after owner feedback: all eleven Known Language names now follow Interface Language; Translation Preferences now uses `Your grammatical form`, and its overview, values, form/tone pickers, and save errors are localized in EN/DE/ES/UK. Long labels adapt without crowding. Full Flutter suite: 522 passed, 15 environment-gated skips; static analysis and diff checks are clean. Replacement Android screenshots are captured; owner approval is pending before commit/push.
+- 2026-09-14 — Captured B02A Known Languages and Translation Preferences overview in English, German, Spanish, and Ukrainian. Known-language titles and actions localize, but all eleven language names remain English; Translation Preferences remains entirely English in the three non-English interfaces. Layout stays usable. Owner review is pending before repair and B02B save/error testing.
 - 2026-09-14 — Owner approved B01B after reviewing the repaired target-language Snackbar screenshots. Target-locale confirmations, Undo, and restart persistence are accepted; B02 Known Languages and Translation Preferences is next.
 - 2026-09-14 — B01B confirmation repair: success text, language name, and Undo label resolve from the saved Interface Language rather than the departing screen's stale locale. Fixed Undo's disposed-screen reference discovered by regression testing. All twelve directed switches plus Undo and save-failure cases pass, alongside existing locale/Profile tests (20 total); full Flutter suite: 511 passed, 15 environment-gated skips; static analysis is clean. Android screenshots confirm all four target-language banners; Undo and restart persistence also pass. Owner approval remains pending.
 - 2026-09-14 — Added Step 2.14 and the approved packet-based localization QA plan. Corrected the source of truth: Interface Language is interface copy only; Primary Known Language owns Normal translations, word descriptions, and correction explanations; Learning Language owns Practice output and word/sentence audio. Started B01A Profile overview review without marking any owner acceptance complete.

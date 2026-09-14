@@ -240,6 +240,66 @@ abstract class AppLocalizations {
   /// **'Translation preferences'**
   String get translationPreferences;
 
+  /// No description provided for @yourGrammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Your grammatical form'**
+  String get yourGrammaticalForm;
+
+  /// No description provided for @partnerGrammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s grammatical form'**
+  String partnerGrammaticalForm(String name);
+
+  /// No description provided for @conversationTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation tone'**
+  String get conversationTone;
+
+  /// No description provided for @grammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammatical form'**
+  String get grammaticalForm;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @formFeminine.
+  ///
+  /// In en, this message translates to:
+  /// **'Feminine'**
+  String get formFeminine;
+
+  /// No description provided for @formMasculine.
+  ///
+  /// In en, this message translates to:
+  /// **'Masculine'**
+  String get formMasculine;
+
+  /// No description provided for @toneInformal.
+  ///
+  /// In en, this message translates to:
+  /// **'Informal'**
+  String get toneInformal;
+
+  /// No description provided for @toneRespectful.
+  ///
+  /// In en, this message translates to:
+  /// **'Respectful'**
+  String get toneRespectful;
+
+  /// No description provided for @couldNotSavePreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t save. Try again.'**
+  String get couldNotSavePreference;
+
   /// No description provided for @interfaceLanguage.
   ///
   /// In en, this message translates to:
