@@ -554,7 +554,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A approved on 2026-09-14 after repair and real-client retest; B01B Interface Language switching is next.
+- **Current packet:** B01A and B01B approved on 2026-09-14 after repair and real-client retest. B02 Known Languages and Translation Preferences is next.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -598,6 +598,8 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-14 — Owner approved B01B after reviewing the repaired target-language Snackbar screenshots. Target-locale confirmations, Undo, and restart persistence are accepted; B02 Known Languages and Translation Preferences is next.
+- 2026-09-14 — B01B confirmation repair: success text, language name, and Undo label resolve from the saved Interface Language rather than the departing screen's stale locale. Fixed Undo's disposed-screen reference discovered by regression testing. All twelve directed switches plus Undo and save-failure cases pass, alongside existing locale/Profile tests (20 total); full Flutter suite: 511 passed, 15 environment-gated skips; static analysis is clean. Android screenshots confirm all four target-language banners; Undo and restart persistence also pass. Owner approval remains pending.
 - 2026-09-14 — Added Step 2.14 and the approved packet-based localization QA plan. Corrected the source of truth: Interface Language is interface copy only; Primary Known Language owns Normal translations, word descriptions, and correction explanations; Learning Language owns Practice output and word/sentence audio. Started B01A Profile overview review without marking any owner acceptance complete.
 - 2026-09-14 — Repaired B01A after owner feedback: localized Profile headings, Translation preferences, and all eleven Known Language names; decoupled the legacy empty Known Language fallback from Interface Language; and added 200% row spacing, two-line wrapping, and modest icon scaling. Automated checks and replacement Android screenshots passed, and the owner approved the repaired packet. B01B Interface Language switching is next.
 

@@ -109,8 +109,20 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Observed: the confirmation appeared in the previous language (`Idioma cambiado a Ucraniano`) after the surrounding interface had switched to Ukrainian
 - Classification: Weird
 - Severity: low
-- Owner decision: pending B01B review
-- Follow-up: reproduce systematically in all four directions during B01B before deciding the copy behavior
+- Owner decision: fix authorized 2026-09-14; success confirmation must use the newly selected Interface Language
+- Root cause: the save completes before Flutter rebuilds the screen's locale, so reading the departing screen's localizations returns the previous language
+- Follow-up: confirmation text, interpolated language name, and Undo now use the successfully saved locale directly. Regression tests reproduced the stale confirmation for all twelve directed switches across EN/DE/ES/UK before the fix and pass afterward. Android screenshots confirm the target-locale Snackbar in English, German, Spanish, and Ukrainian: `B01B-EN-01-confirmation.png`, `B01B-DE-01-confirmation.png`, `B01B-ES-01-confirmation.png`, and `B01B-UK-01-confirmation.png`. Owner approved the repaired packet on 2026-09-14.
+
+### B01B-ALL-02
+
+- Interface language: all four supported languages
+- Screen/state: Interface Language / Undo after successful switch
+- Client: automated routed-screen regression
+- Expected: Undo restores the previous Interface Language after the picker closes
+- Observed: Undo accessed the disposed picker's provider reference and threw instead of restoring the language
+- Classification: Broken
+- Severity: medium
+- Follow-up: capture the persistent language notifier before leaving the picker. The regression now restores Spanish after Spanish → Ukrainian with no exception. The failed-save regression also confirms the original locale and localized error remain unchanged. Android Undo restored Spanish after Ukrainian, and Spanish remained selected after force-stop and reopen. Owner approved the repaired packet on 2026-09-14.
 
 ## Finding template
 

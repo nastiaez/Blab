@@ -18,7 +18,7 @@
 | Packet | Scope | Evidence | Owner status |
 |---|---|---|---|
 | B01A | Profile overview in EN/DE/ES/UK, default and 200% text | Before: `screenshots/b01a-profile/`; repaired: `screenshots/b01a-profile-fixed/` | Approved 2026-09-14 |
-| B01B | Interface Language picker, apply, success, failure, persistence | `screenshots/b01b-interface-language/` | Not started |
+| B01B | Interface Language picker, apply, success, failure, persistence | `screenshots/b01b-interface-language/` | Approved 2026-09-14 |
 | B02 | Known Languages and Translation Preferences | `screenshots/b02-known-translation-preferences/` | Not started |
 | B03 | Privacy, Notifications, logout, delete account | `screenshots/b03-privacy-notifications-account/` | Not started |
 | B04 | Edit profile, email, password | `screenshots/b04-account-forms/` | Not started |
