@@ -42,6 +42,16 @@ class _TranslationPreferencesScreenState
   bool _didOpenInitialFormPicker = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.chatId == null) {
+      Future<void>.microtask(
+        () => ref.read(chatListProvider.notifier).refresh(),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chatId = widget.chatId;
     final partnerName = widget.partnerName;

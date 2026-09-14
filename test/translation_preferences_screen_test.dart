@@ -289,6 +289,24 @@ void main() {
     expect(find.text('Reading script'), findsNothing);
   });
 
+  testWidgets(
+    'Profile refreshes a stale chat list before deciding visibility',
+    (tester) async {
+      final rows = [_chatRow('chat-1', 'de')];
+      final container = _preferencesContainer(rows: rows);
+      addTearDown(container.dispose);
+
+      await container.read(chatListProvider.future);
+      rows.single['my_learning'] = 'hi';
+
+      await tester.pumpWidget(_preferencesHost(container));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reading script'), findsOneWidget);
+      expect(find.text('Hindi script'), findsOneWidget);
+    },
+  );
+
   testWidgets('failed Reading script save keeps the prior choice', (
     tester,
   ) async {

@@ -1,11 +1,23 @@
 begin;
 
+-- Device QA intentionally changes the seeded accounts. Keep this contract
+-- independent of whichever option Alice or Bob last selected manually.
+update public.profiles
+set reading_script = 'native'
+where id in (
+  '00000000-0000-4000-8000-00000000000a',
+  '00000000-0000-4000-8000-00000000000b'
+);
+
 select plan(6);
 
 select is(
-  (select reading_script from public.profiles
-   where id = '00000000-0000-4000-8000-00000000000a'),
-  'native',
+  (select column_default
+   from information_schema.columns
+   where table_schema = 'public'
+     and table_name = 'profiles'
+     and column_name = 'reading_script'),
+  '''native''::text',
   'reading script defaults to native'
 );
 

@@ -13,9 +13,9 @@ Current focus, begins with the invite flow, and preserves owner-confirmed task s
 The tracker’s post-launch invite-urgency exploration is deliberately separate from the
 launch rule that an unclaimed link remains valid until successfully claimed.
 
-## Active Hindi/Tamil reading-script work — 2026-09-14
+## Completed Hindi/Tamil reading-script work — 2026-09-14
 
-Owner approved one account-wide `Reading script` choice for Hindi and Tamil, native by default. The existing Translation preferences row and checkmarked choice sheet are reused; eligible cached generated sentences switch immediately, while authored/Original text and native audio remain unchanged. Design is being recorded under Step 2.14; implementation, Alice-browser/Bob-Android evidence, owner confirmation, commit, and push remain open.
+Owner approved the completed account-wide `Reading script` choice for Hindi and Tamil, native by default. The existing Translation preferences row and checkmarked choice sheet are reused in Profile and eligible chats; complete cached generated sentences switch immediately, while authored/Original text and native audio remain unchanged. Alice-browser/Bob-Android and Profile evidence, automated verification, owner confirmation, commit, and the `main` push are complete under Step 2.14.
 
 This is the operational launch queue. Audit IDs remain stable; `L-*` IDs define execution order and may group tightly coupled evidence.
 
