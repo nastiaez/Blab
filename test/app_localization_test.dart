@@ -114,4 +114,63 @@ void main() {
       expect(find.text(entry.value), findsOneWidget);
     }
   });
+
+  testWidgets('Reading script choices are localized in every launch locale', (
+    tester,
+  ) async {
+    const expectations = {
+      'en': [
+        'Reading script',
+        'Hindi script',
+        'Tamil script',
+        'Native scripts',
+        'English letters',
+      ],
+      'de': [
+        'Leseschrift',
+        'Hindi-Schrift',
+        'Tamil-Schrift',
+        'Originalschriften',
+        'Lateinische Buchstaben',
+      ],
+      'es': [
+        'Sistema de lectura',
+        'Escritura hindi',
+        'Escritura tamil',
+        'Escrituras nativas',
+        'Letras latinas',
+      ],
+      'uk': [
+        'Писемність для читання',
+        'Писемність гінді',
+        'Тамільська писемність',
+        'Рідні писемності',
+        'Латинські літери',
+      ],
+    };
+
+    for (final entry in expectations.entries) {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(entry.key),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Builder(
+            builder: (context) => Column(
+              children: [
+                Text(context.l10n.readingScript),
+                Text(context.l10n.hindiScript),
+                Text(context.l10n.tamilScript),
+                Text(context.l10n.nativeScripts),
+                Text(context.l10n.englishLetters),
+              ],
+            ),
+          ),
+        ),
+      );
+      for (final copy in entry.value) {
+        expect(find.text(copy), findsOneWidget);
+      }
+    }
+  });
 }

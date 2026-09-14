@@ -39,5 +39,10 @@
     }
   },
   "usingFeminineFormsForYou": "Жіночі форми для вас",
-  "usingMasculineFormsForYou": "Чоловічі форми для вас"
+  "usingMasculineFormsForYou": "Чоловічі форми для вас",
+  "readingScript": "Писемність для читання",
+  "hindiScript": "Писемність гінді",
+  "tamilScript": "Тамільська писемність",
+  "nativeScripts": "Рідні писемності",
+  "englishLetters": "Латинські літери"
 }

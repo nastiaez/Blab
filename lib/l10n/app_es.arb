@@ -39,5 +39,10 @@
     }
   },
   "usingFeminineFormsForYou": "Formas femeninas para ti",
-  "usingMasculineFormsForYou": "Formas masculinas para ti"
+  "usingMasculineFormsForYou": "Formas masculinas para ti",
+  "readingScript": "Sistema de lectura",
+  "hindiScript": "Escritura hindi",
+  "tamilScript": "Escritura tamil",
+  "nativeScripts": "Escrituras nativas",
+  "englishLetters": "Letras latinas"
 }

@@ -924,4 +924,19 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get usingMasculineFormsForYou => 'Чоловічі форми для вас';
+
+  @override
+  String get readingScript => 'Писемність для читання';
+
+  @override
+  String get hindiScript => 'Писемність гінді';
+
+  @override
+  String get tamilScript => 'Тамільська писемність';
+
+  @override
+  String get nativeScripts => 'Рідні писемності';
+
+  @override
+  String get englishLetters => 'Латинські літери';
 }

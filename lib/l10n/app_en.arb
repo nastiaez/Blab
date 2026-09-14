@@ -153,5 +153,10 @@
     }
   },
   "usingFeminineFormsForYou": "Using feminine forms for you",
-  "usingMasculineFormsForYou": "Using masculine forms for you"
+  "usingMasculineFormsForYou": "Using masculine forms for you",
+  "readingScript": "Reading script",
+  "hindiScript": "Hindi script",
+  "tamilScript": "Tamil script",
+  "nativeScripts": "Native scripts",
+  "englishLetters": "English letters"
 }

@@ -39,5 +39,10 @@
     }
   },
   "usingFeminineFormsForYou": "Weibliche Formen für dich",
-  "usingMasculineFormsForYou": "Männliche Formen für dich"
+  "usingMasculineFormsForYou": "Männliche Formen für dich",
+  "readingScript": "Leseschrift",
+  "hindiScript": "Hindi-Schrift",
+  "tamilScript": "Tamil-Schrift",
+  "nativeScripts": "Originalschriften",
+  "englishLetters": "Lateinische Buchstaben"
 }

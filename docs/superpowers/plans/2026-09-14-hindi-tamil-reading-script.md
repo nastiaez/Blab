@@ -171,7 +171,7 @@ git commit -m "feat: render complete learning sentences in English letters"
 - Regenerate: `lib/l10n/generated/`
 - Modify: `test/app_localization_test.dart`
 
-- [ ] **Step 1: Write failing row, synchronization, and localization tests**
+- [x] **Step 1: Write failing row, synchronization, and localization tests**
 
 Test chat visibility for `hi`/`ta`, absence for `uk`, language-change disappearance, Profile absence/no chats, one-language contextual copy, both-language `Native scripts`, English-letters value, sheet selection, successful save, failed-save rollback, and all four interface locales.
 
@@ -182,7 +182,7 @@ await tester.tap(find.text('Reading script'));
 expect(find.text('English letters'), findsOneWidget);
 ```
 
-- [ ] **Step 2: Run focused tests and verify RED**
+- [x] **Step 2: Run focused tests and verify RED**
 
 ```bash
 flutter test test/translation_preferences_screen_test.dart test/app_localization_test.dart
@@ -190,7 +190,7 @@ flutter test test/translation_preferences_screen_test.dart test/app_localization
 
 Expected: FAIL because the contextual row, choice sheet, and localization getters do not exist.
 
-- [ ] **Step 3: Implement the row with current settings visuals**
+- [x] **Step 3: Implement the row with current settings visuals**
 
 Watch `learningLanguageProvider(chatId)` in chat context and `chatListProvider` in Profile context. Derive zero, one, or both eligible language codes. Insert one `_PreferenceRow(label: context.l10n.readingScript, value: ...)` with the same dividers, arrow, type, spacing, and card as Gender form. Use the existing checkmarked modal-sheet structure; call `readingScriptProvider.notifier.set`, and show the existing save-failure snackbar on error.
 
@@ -200,11 +200,11 @@ Add localized keys for `readingScript`, `hindiScript`, `tamilScript`, `nativeScr
 flutter gen-l10n
 ```
 
-- [ ] **Step 4: Re-run focused tests and verify GREEN**
+- [x] **Step 4: Re-run focused tests and verify GREEN**
 
 Run the Step 2 command. Expected: all row and localization tests pass.
 
-- [ ] **Step 5: Commit the settings flow**
+- [x] **Step 5: Commit the settings flow**
 
 ```bash
 git add lib/features/chat/translation_preferences_screen.dart test/translation_preferences_screen_test.dart lib/l10n test/app_localization_test.dart
