@@ -14,15 +14,13 @@ class KnownLanguages {
   final String primary;
 }
 
-/// Resolves the current user's known languages, falling back to their
-/// interface language when they haven't set any yet.
+/// Resolves the current user's known languages. Legacy accounts without a
+/// saved choice get a stable English fallback; interface language must never
+/// change translation targets.
 final knownLanguagesProvider = FutureProvider<KnownLanguages>((ref) async {
   final profile = await ref.watch(currentProfileProvider.future);
   if (profile.knownLanguages.isEmpty) {
-    return KnownLanguages(
-      codes: [profile.interfaceLanguage],
-      primary: profile.interfaceLanguage,
-    );
+    return const KnownLanguages(codes: ['en'], primary: 'en');
   }
   final primary = profile.primaryKnownLanguage ?? profile.knownLanguages.first;
   return KnownLanguages(codes: profile.knownLanguages, primary: primary);

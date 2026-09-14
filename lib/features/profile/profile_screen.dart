@@ -50,64 +50,32 @@ class ProfileScreen extends ConsumerWidget {
               error: (_, _) => const SizedBox.shrink(),
             ),
             const SizedBox(height: 24),
-            const _ProfileSectionLabel('Account'),
+            _ProfileSectionLabel(context.l10n.account),
             const SizedBox(height: 8),
             _SettingsCard(
               children: [
                 _SettingsRow(
                   iconName: 'language - 20',
                   label: context.l10n.interfaceLanguage,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        lang.nativeName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: BlabColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const BlabIcon(
-                        name: 'nav-arrow-right - 20',
-                        color: BlabColors.textMuted,
-                        size: 20,
-                      ),
-                    ],
-                  ),
+                  trailingLabel: lang.nativeName,
                   onTap: () => context.push('/profile/interface-language'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
                   iconName: 'wrench - 20',
-                  label: 'Translation preferences',
-                  trailing: const BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: BlabColors.textMuted,
-                    size: 20,
-                  ),
+                  label: context.l10n.translationPreferences,
                   onTap: () => context.push('/profile/translation-preferences'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
                   iconName: 'edit-pencil - 20',
                   label: context.l10n.editProfile,
-                  trailing: const BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: BlabColors.textMuted,
-                    size: 20,
-                  ),
                   onTap: () => context.push('/profile/edit'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
                   iconName: 'at-sign - 20',
                   label: context.l10n.changeEmail,
-                  trailing: const BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: BlabColors.textMuted,
-                    size: 20,
-                  ),
                   onTap: () => context.push('/profile/email'),
                 ),
                 if (hasPasswordIdentity) ...[
@@ -115,40 +83,25 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingsRow(
                     iconName: 'lock - 20',
                     label: context.l10n.changePassword,
-                    trailing: const BlabIcon(
-                      name: 'nav-arrow-right - 20',
-                      color: BlabColors.textMuted,
-                      size: 20,
-                    ),
                     onTap: () => context.push('/profile/password'),
                   ),
                 ],
               ],
             ),
             const SizedBox(height: 24),
-            const _ProfileSectionLabel('Settings'),
+            _ProfileSectionLabel(context.l10n.settings),
             const SizedBox(height: 8),
             _SettingsCard(
               children: [
                 _SettingsRow(
                   iconName: 'historic-shield - 20',
                   label: context.l10n.privacy,
-                  trailing: const BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: BlabColors.textMuted,
-                    size: 20,
-                  ),
                   onTap: () => context.push('/profile/privacy'),
                 ),
                 const _RowDivider(),
                 _SettingsRow(
                   iconName: 'bell - 20',
                   label: context.l10n.notifications,
-                  trailing: const BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: BlabColors.textMuted,
-                    size: 20,
-                  ),
                   onTap: () => context.push('/profile/notifications'),
                 ),
               ],
@@ -159,11 +112,6 @@ class ProfileScreen extends ConsumerWidget {
                 _SettingsRow(
                   iconName: 'log-out - 20',
                   label: context.l10n.logOut,
-                  trailing: const BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: BlabColors.textMuted,
-                    size: 20,
-                  ),
                   onTap: () async {
                     final confirmed = await _confirmLogout(context);
                     if (confirmed != true) return;
@@ -184,11 +132,6 @@ class ProfileScreen extends ConsumerWidget {
                   iconName: 'trash - 20',
                   label: context.l10n.deleteAccount,
                   destructive: true,
-                  trailing: BlabIcon(
-                    name: 'nav-arrow-right - 20',
-                    color: Colors.red.shade400,
-                    size: 20,
-                  ),
                   onTap: () => context.push('/profile/delete-account'),
                 ),
               ],
@@ -373,19 +316,21 @@ class _KnownLanguagePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.75;
+    final height = largeText ? 44.0 : 32.0;
     return Container(
-      height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: height,
+      padding: EdgeInsets.symmetric(horizontal: largeText ? 14 : 12),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFCF8),
         border: Border.all(color: const Color(0xFFE1DAD2)),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(height / 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            language.name,
+            localizedLanguageName(context.l10n, language.code),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -393,11 +338,11 @@ class _KnownLanguagePill extends StatelessWidget {
             ),
           ),
           if (primary) ...[
-            const SizedBox(width: 4),
-            const BlabIcon(
+            SizedBox(width: largeText ? 6 : 4),
+            BlabIcon(
               name: 'star - 25',
               color: Color(0xFF46281C),
-              size: 16,
+              size: largeText ? 20 : 16,
             ),
           ],
         ],
@@ -470,18 +415,20 @@ class _SettingsRow extends StatelessWidget {
     required this.iconName,
     required this.label,
     required this.onTap,
-    this.trailing,
+    this.trailingLabel,
     this.destructive = false,
   });
 
   final String iconName;
   final String label;
   final VoidCallback onTap;
-  final Widget? trailing;
+  final String? trailingLabel;
   final bool destructive;
 
   @override
   Widget build(BuildContext context) {
+    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.75;
+    final iconSize = largeText ? 24.0 : 20.0;
     final Color iconColor = destructive
         ? Colors.red.shade400
         : BlabColors.textMuted;
@@ -491,22 +438,63 @@ class _SettingsRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: largeText ? 18 : 16,
+          vertical: largeText ? 18 : 14,
+        ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            BlabIcon(name: iconName, size: 20, color: iconColor),
-            const SizedBox(width: 14),
+            BlabIcon(name: iconName, size: iconSize, color: iconColor),
+            SizedBox(width: largeText ? 18 : 14),
             Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: labelColor,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: labelColor,
+                    ),
+                  ),
+                  if (largeText && trailingLabel != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      trailingLabel!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: BlabColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            ?trailing,
+            if (!largeText && trailingLabel != null) ...[
+              const SizedBox(width: 12),
+              Text(
+                trailingLabel!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: BlabColors.textMuted,
+                ),
+              ),
+            ],
+            SizedBox(width: largeText ? 16 : 8),
+            BlabIcon(
+              name: 'nav-arrow-right - 20',
+              color: iconColor,
+              size: iconSize,
+            ),
           ],
         ),
       ),

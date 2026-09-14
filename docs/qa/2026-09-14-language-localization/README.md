@@ -9,14 +9,15 @@
 ## Clients
 
 - Alice: Chrome, local backend. Exact viewport and session details will be recorded when the language-engine pass begins.
-- Bob: Android emulator, local backend. Exact device, viewport, and text-scale details will be recorded before Packet B01A capture.
+- Bob: `sdk_gphone64_arm64` Android emulator, Android 16 / API 36, 1080×2400 physical viewport, density 420, local backend on 2026-09-14.
+- Packet B01A used system font scales 1.0 and 2.0. Font scale was restored to 1.0 after capture.
 - Credentials are never stored in this record.
 
 ## Review packets
 
 | Packet | Scope | Evidence | Owner status |
 |---|---|---|---|
-| B01A | Profile overview in EN/DE/ES/UK, default and 200% text | `screenshots/b01a-profile/` | In progress |
+| B01A | Profile overview in EN/DE/ES/UK, default and 200% text | Before: `screenshots/b01a-profile/`; repaired: `screenshots/b01a-profile-fixed/` | Approved 2026-09-14 |
 | B01B | Interface Language picker, apply, success, failure, persistence | `screenshots/b01b-interface-language/` | Not started |
 | B02 | Known Languages and Translation Preferences | `screenshots/b02-known-translation-preferences/` | Not started |
 | B03 | Privacy, Notifications, logout, delete account | `screenshots/b03-privacy-notifications-account/` | Not started |
@@ -35,4 +36,3 @@
 - Each packet contains four to eight images.
 - Findings are recorded before repairs; owner feedback defines the repair scope.
 - Changed screenshots are resent after repair. Tracker completion requires explicit owner approval.
-

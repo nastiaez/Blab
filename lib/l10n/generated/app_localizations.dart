@@ -222,6 +222,24 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get profile;
 
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @translationPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation preferences'**
+  String get translationPreferences;
+
   /// No description provided for @interfaceLanguage.
   ///
   /// In en, this message translates to:
@@ -264,6 +282,18 @@ abstract class AppLocalizations {
   /// **'English'**
   String get languageEnglish;
 
+  /// No description provided for @languageDutch.
+  ///
+  /// In en, this message translates to:
+  /// **'Dutch'**
+  String get languageDutch;
+
+  /// No description provided for @languageFrench.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get languageFrench;
+
   /// No description provided for @languageUkrainian.
   ///
   /// In en, this message translates to:
@@ -276,11 +306,41 @@ abstract class AppLocalizations {
   /// **'German'**
   String get languageGerman;
 
+  /// No description provided for @languageHindi.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi'**
+  String get languageHindi;
+
+  /// No description provided for @languageItalian.
+  ///
+  /// In en, this message translates to:
+  /// **'Italian'**
+  String get languageItalian;
+
+  /// No description provided for @languagePortuguese.
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese'**
+  String get languagePortuguese;
+
   /// No description provided for @languageSpanish.
   ///
   /// In en, this message translates to:
   /// **'Spanish'**
   String get languageSpanish;
+
+  /// No description provided for @languageTamil.
+  ///
+  /// In en, this message translates to:
+  /// **'Tamil'**
+  String get languageTamil;
+
+  /// No description provided for @languageTurkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get languageTurkish;
 
   /// No description provided for @authTagline.
   ///

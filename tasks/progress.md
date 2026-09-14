@@ -554,7 +554,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A — Profile overview in all four Interface Languages.
+- **Current packet:** B01A approved on 2026-09-14 after repair and real-client retest; B01B Interface Language switching is next.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -599,6 +599,7 @@ Do not start Step N+1 until Step N is fully `[x]`.
 ## Changelog
 
 - 2026-09-14 — Added Step 2.14 and the approved packet-based localization QA plan. Corrected the source of truth: Interface Language is interface copy only; Primary Known Language owns Normal translations, word descriptions, and correction explanations; Learning Language owns Practice output and word/sentence audio. Started B01A Profile overview review without marking any owner acceptance complete.
+- 2026-09-14 — Repaired B01A after owner feedback: localized Profile headings, Translation preferences, and all eleven Known Language names; decoupled the legacy empty Known Language fallback from Interface Language; and added 200% row spacing, two-line wrapping, and modest icon scaling. Automated checks and replacement Android screenshots passed, and the owner approved the repaired packet. B01B Interface Language switching is next.
 
 - 2026-08-31 — Repaired the newly created chat language-history regression by recording the initial private language boundary on membership creation and recovering a missing boundary before the first switch. Added L-25 for the required owner Alice/Bob browser or device pass; automated database and app checks pass.
 

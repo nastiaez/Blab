@@ -69,6 +69,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get profile => 'Профіль';
 
   @override
+  String get account => 'Обліковий запис';
+
+  @override
+  String get settings => 'Налаштування';
+
+  @override
+  String get translationPreferences => 'Налаштування перекладу';
+
+  @override
   String get interfaceLanguage => 'Мова інтерфейсу';
 
   @override
@@ -94,13 +103,34 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageEnglish => 'Англійська';
 
   @override
+  String get languageDutch => 'Нідерландська';
+
+  @override
+  String get languageFrench => 'Французька';
+
+  @override
   String get languageUkrainian => 'Українська';
 
   @override
   String get languageGerman => 'Німецька';
 
   @override
+  String get languageHindi => 'Гінді';
+
+  @override
+  String get languageItalian => 'Італійська';
+
+  @override
+  String get languagePortuguese => 'Португальська';
+
+  @override
   String get languageSpanish => 'Іспанська';
+
+  @override
+  String get languageTamil => 'Тамільська';
+
+  @override
+  String get languageTurkish => 'Турецька';
 
   @override
   String get authTagline => 'Вивчайте мову, спілкуючись із другом.';

@@ -70,6 +70,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profile => 'Profil';
 
   @override
+  String get account => 'Konto';
+
+  @override
+  String get settings => 'Einstellungen';
+
+  @override
+  String get translationPreferences => 'Übersetzungs­einstellungen';
+
+  @override
   String get interfaceLanguage => 'App-Sprache';
 
   @override
@@ -95,13 +104,34 @@ class AppLocalizationsDe extends AppLocalizations {
   String get languageEnglish => 'Englisch';
 
   @override
+  String get languageDutch => 'Niederländisch';
+
+  @override
+  String get languageFrench => 'Französisch';
+
+  @override
   String get languageUkrainian => 'Ukrainisch';
 
   @override
   String get languageGerman => 'Deutsch';
 
   @override
+  String get languageHindi => 'Hindi';
+
+  @override
+  String get languageItalian => 'Italienisch';
+
+  @override
+  String get languagePortuguese => 'Portugiesisch';
+
+  @override
   String get languageSpanish => 'Spanisch';
+
+  @override
+  String get languageTamil => 'Tamil';
+
+  @override
+  String get languageTurkish => 'Türkisch';
 
   @override
   String get authTagline =>

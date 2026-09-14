@@ -22,6 +22,23 @@ String localizedInterfaceLanguageName(
   };
 }
 
+String localizedLanguageName(AppLocalizations localizations, String code) {
+  return switch (code) {
+    'nl' => localizations.languageDutch,
+    'en' => localizations.languageEnglish,
+    'fr' => localizations.languageFrench,
+    'de' => localizations.languageGerman,
+    'hi' => localizations.languageHindi,
+    'it' => localizations.languageItalian,
+    'pt' => localizations.languagePortuguese,
+    'es' => localizations.languageSpanish,
+    'ta' => localizations.languageTamil,
+    'tr' => localizations.languageTurkish,
+    'uk' => localizations.languageUkrainian,
+    _ => localizations.languageEnglish,
+  };
+}
+
 String localizedAuthMessage(
   AppLocalizations localizations,
   String englishMessage,
