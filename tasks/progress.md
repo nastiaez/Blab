@@ -542,6 +542,17 @@
   - Manual Android device pass covers Normal/Practice, both directions, four interface languages, photo/caption states, failures, editing across navigation, and read-receipt ON/OFF.
 - **Out of scope:** post-launch vertical action list, fancy selected-message animation/scrim, edit history, audio messages, and a separate device-received receipt state.
 
+### Step 2.14 — Hindi and Tamil reading script `[ ]` ← in progress
+- **Design:** `docs/superpowers/specs/2026-09-14-hindi-tamil-reading-script-design.md`.
+- **Scope:** US-050, FR-44. Add one account-wide, native-default Reading script choice for Hindi and Tamil. Reuse the current Translation preferences row and checkmarked bottom sheet in Profile and chat, render complete cached Romanization only for Blab-generated learning text, preserve exact authored/Original text and native audio, and keep the language-selection sheet unchanged.
+- **Done when:**
+  - Profile and eligible chat preferences expose one synchronized Reading script row with the approved contextual copy; it hides outside Hindi/Tamil and restores the saved value when eligible again.
+  - Hindi and Tamil generated sentences, corrections, reply previews, and word descriptions switch both current and eligible past content between native script and English letters without new translation work.
+  - Incomplete Romanization keeps the complete native sentence; punctuation/protected content remains intact and no mixed-script fallback appears.
+  - Native and Romanized authored input remains exact and is never corrected because of the selected reading script; word audio continues to pronounce the native-language word.
+  - Automated preference/rendering regressions, the complete Flutter suite, static analysis, and the Alice-browser/Bob-Android Hindi/Tamil matrix pass.
+  - Final browser and Android screenshots are sent for owner review; owner-facing completion remains unchecked until explicit confirmation.
+
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
 - **Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.
@@ -944,3 +955,5 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-13 — Corrected the offline-photo QA fixture after owner review: photo-only messages now use empty captions and create no translation work. Repeated the Android offline/recovery matrix, replaced the misleading screenshots, and kept Step 2.4a open for owner acceptance.
 
 - 2026-09-14 — Expanded offline-photo QA to captioned photos in both directions. Supported English, German, and Spanish captions followed the normal translation lane; unsupported Chinese retained authored text with the concise neutral hint; emoji-only captions created no warning. Android offline restart preserved the photo and caption but lost the already completed translated view, so account-scoped offline translation recovery remains open as L-26. A local Spanish-to-German Retry also remained provider-limited at the grammatical-form audit. Added focused photo-caption regressions and kept owner launch checks open.
+
+- 2026-09-14 — Added US-050 / FR-44 and Step 2.14 for the approved single account-wide Reading script choice: native by default, Hindi/Tamil only, current settings visuals, cached retroactive rendering, exact authored text, whole-sentence native fallback, and Alice-browser/Bob-Android owner evidence before completion.

@@ -215,6 +215,8 @@ Not yet set up. When added:
 
 32. ✅ **Acknowledged invite setup refresh (2026-09-09, US-027):** Track successful selection revisions while refreshing the chat list. Discard an in-flight snapshot started before a confirmed choice and refetch before replacing list/cache state; a completed choice must not reopen mandatory setup. Acknowledged local state remains visible if the follow-up request fails.
 
+33. ✅ **Hindi/Tamil reading script (2026-09-14, US-050 / FR-44):** Store one account-scoped `native | english_letters` preference with a database default of `native`; the single choice applies to Hindi and Tamil and is hidden for other languages. Reuse the existing Translation preferences row and choice-sheet state, exposing contextual native labels without creating per-chat values. Presentation derives a Romanized sentence only when every content token has usable Romanization, otherwise retaining the complete native sentence. Keep native token text alongside visible text for lookup and TTS. Preference changes rebuild loaded current/history presentation only; they do not create translation work, invalidate prepared packages, or alter translation cache identities. Authored and Original text remain authoritative. See `docs/superpowers/specs/2026-09-14-hindi-tamil-reading-script-design.md`.
+
 ## Open Decisions
 
 Still need a call. Surface them, don't silently choose.
