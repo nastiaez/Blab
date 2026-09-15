@@ -134,4 +134,10 @@ void main() {
       contains('template placeholder'),
     );
   });
+
+  test('local builds keep push notifications disabled', () {
+    expect(SupabaseConfig.pushNotificationsEnabledFor('local'), isFalse);
+    expect(SupabaseConfig.pushNotificationsEnabledFor('staging'), isTrue);
+    expect(SupabaseConfig.pushNotificationsEnabledFor('production'), isTrue);
+  });
 }

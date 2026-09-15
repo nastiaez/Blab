@@ -69,6 +69,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile => 'Profile';
 
   @override
+  String get account => 'Account';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get translationPreferences => 'Translation preferences';
+
+  @override
+  String get yourGrammaticalForm => 'Your grammatical form';
+
+  @override
+  String partnerGrammaticalForm(String name) {
+    return '$name\'s grammatical form';
+  }
+
+  @override
+  String get conversationTone => 'Conversation tone';
+
+  @override
+  String get grammaticalForm => 'Grammatical form';
+
+  @override
+  String get notSet => 'Not set';
+
+  @override
+  String get formFeminine => 'Feminine';
+
+  @override
+  String get formMasculine => 'Masculine';
+
+  @override
+  String get toneInformal => 'Informal';
+
+  @override
+  String get toneRespectful => 'Respectful';
+
+  @override
+  String get couldNotSavePreference => 'Couldn’t save. Try again.';
+
+  @override
   String get interfaceLanguage => 'Interface language';
 
   @override
@@ -85,7 +126,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save the interface language. Try again.';
 
   @override
-  String get knownLanguages => 'Known languages';
+  String get knownLanguages => 'Languages you know';
 
   @override
   String get setPrimaryLanguage => 'Set as primary language';
@@ -94,13 +135,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageEnglish => 'English';
 
   @override
+  String get languageDutch => 'Dutch';
+
+  @override
+  String get languageFrench => 'French';
+
+  @override
   String get languageUkrainian => 'Ukrainian';
 
   @override
   String get languageGerman => 'German';
 
   @override
+  String get languageHindi => 'Hindi';
+
+  @override
+  String get languageItalian => 'Italian';
+
+  @override
+  String get languagePortuguese => 'Portuguese';
+
+  @override
   String get languageSpanish => 'Spanish';
+
+  @override
+  String get languageTamil => 'Tamil';
+
+  @override
+  String get languageTurkish => 'Turkish';
 
   @override
   String get authTagline => 'Learn a language by chatting with a friend.';
@@ -338,6 +400,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotSavePrivacy => 'Couldn\'t save privacy setting.';
 
   @override
+  String get privacyPolicyTitle => 'Privacy Policy';
+
+  @override
   String get termsOfUse => 'Terms of Use';
 
   @override
@@ -376,6 +441,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteForever => 'Delete forever';
+
+  @override
+  String get deleteAccountConfirmationTitle =>
+      'Delete your account permanently?';
+
+  @override
+  String get deleteAccountConfirmationBody => 'This can\'t be undone.';
 
   @override
   String get enterPasswordToConfirm => 'Enter your password to confirm';

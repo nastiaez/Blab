@@ -87,7 +87,7 @@ class PrivacyScreen extends ConsumerWidget {
             _Card(
               children: [
                 _LinkRow(
-                  label: context.l10n.privacyPolicy,
+                  label: context.l10n.privacyPolicyTitle,
                   onTap: () => openExternalUrl(kPrivacyPolicyUrl),
                 ),
                 const _RowDivider(),

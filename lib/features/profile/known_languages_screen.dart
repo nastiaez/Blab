@@ -118,8 +118,11 @@ class _KnownLanguagesScreenState extends ConsumerState<KnownLanguagesScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: languageCardEn(
-                                  kBlabLanguages[i],
+                                child: LanguageCard(
+                                  label: localizedLanguageName(
+                                    localizations,
+                                    kBlabLanguages[i].code,
+                                  ),
                                   selected: selected.contains(
                                     kBlabLanguages[i].code,
                                   ),

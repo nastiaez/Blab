@@ -70,6 +70,48 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profile => 'Profil';
 
   @override
+  String get account => 'Konto';
+
+  @override
+  String get settings => 'Einstellungen';
+
+  @override
+  String get translationPreferences => 'Übersetzungs­einstellungen';
+
+  @override
+  String get yourGrammaticalForm => 'Deine grammatische Form';
+
+  @override
+  String partnerGrammaticalForm(String name) {
+    return 'Grammatische Form von $name';
+  }
+
+  @override
+  String get conversationTone => 'Gesprächston';
+
+  @override
+  String get grammaticalForm => 'Grammatische Form';
+
+  @override
+  String get notSet => 'Nicht festgelegt';
+
+  @override
+  String get formFeminine => 'Feminin';
+
+  @override
+  String get formMasculine => 'Maskulin';
+
+  @override
+  String get toneInformal => 'Informell';
+
+  @override
+  String get toneRespectful => 'Respektvoll';
+
+  @override
+  String get couldNotSavePreference =>
+      'Speichern nicht möglich. Versuche es erneut.';
+
+  @override
   String get interfaceLanguage => 'App-Sprache';
 
   @override
@@ -86,7 +128,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die App-Sprache konnte nicht gespeichert werden. Versuche es erneut.';
 
   @override
-  String get knownLanguages => 'Bekannte Sprachen';
+  String get knownLanguages => 'Sprachen, die du sprichst';
 
   @override
   String get setPrimaryLanguage => 'Als Hauptsprache festlegen';
@@ -95,13 +137,34 @@ class AppLocalizationsDe extends AppLocalizations {
   String get languageEnglish => 'Englisch';
 
   @override
+  String get languageDutch => 'Niederländisch';
+
+  @override
+  String get languageFrench => 'Französisch';
+
+  @override
   String get languageUkrainian => 'Ukrainisch';
 
   @override
   String get languageGerman => 'Deutsch';
 
   @override
+  String get languageHindi => 'Hindi';
+
+  @override
+  String get languageItalian => 'Italienisch';
+
+  @override
+  String get languagePortuguese => 'Portugiesisch';
+
+  @override
   String get languageSpanish => 'Spanisch';
+
+  @override
+  String get languageTamil => 'Tamil';
+
+  @override
+  String get languageTurkish => 'Türkisch';
 
   @override
   String get authTagline =>
@@ -343,6 +406,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Datenschutzeinstellung konnte nicht gespeichert werden.';
 
   @override
+  String get privacyPolicyTitle => 'Datenschutzerklärung';
+
+  @override
   String get termsOfUse => 'Nutzungsbedingungen';
 
   @override
@@ -381,6 +447,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deleteForever => 'Endgültig löschen';
+
+  @override
+  String get deleteAccountConfirmationTitle => 'Konto endgültig löschen?';
+
+  @override
+  String get deleteAccountConfirmationBody =>
+      'Das kann nicht rückgängig gemacht werden.';
 
   @override
   String get enterPasswordToConfirm => 'Gib zur Bestätigung dein Passwort ein';

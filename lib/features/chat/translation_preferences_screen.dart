@@ -53,6 +53,7 @@ class _TranslationPreferencesScreenState
 
   @override
   Widget build(BuildContext context) {
+    final localizations = context.l10n;
     final chatId = widget.chatId;
     final partnerName = widget.partnerName;
     final isProfile = chatId == null;
@@ -153,9 +154,9 @@ class _TranslationPreferencesScreenState
       appBar: AppBar(
         leadingWidth: 48,
         titleSpacing: 0,
-        title: const Text(
-          'Translation preferences',
-          style: TextStyle(
+        title: Text(
+          localizations.translationPreferences,
+          style: const TextStyle(
             color: _preferenceInk,
             fontSize: 18,
             fontWeight: FontWeight.w400,
@@ -184,22 +185,33 @@ class _TranslationPreferencesScreenState
           _PreferenceCard(
             children: [
               _PreferenceRow(
-                label: 'Your gender form',
-                value: ownForm?.label ?? 'Not set',
+                label: localizations.yourGrammaticalForm,
+                value: ownForm == null
+                    ? localizations.notSet
+                    : _localizedGrammaticalForm(localizations, ownForm),
                 onTap: pickOwnForm,
               ),
               if (!isProfile) ...[
                 const Divider(height: 1, color: BlabColors.chatDivider),
                 _PreferenceRow(
-                  label: "${partnerName ?? 'Partner'}'s gender form",
-                  value:
-                      chatPrefs?.asData?.value.partnerForm?.label ?? 'Not set',
+                  label: localizations.partnerGrammaticalForm(
+                    partnerName ?? localizations.partner,
+                  ),
+                  value: chatPrefs?.asData?.value.partnerForm == null
+                      ? localizations.notSet
+                      : _localizedGrammaticalForm(
+                          localizations,
+                          chatPrefs!.asData!.value.partnerForm!,
+                        ),
                   onTap: pickPartnerForm,
                 ),
                 const Divider(height: 1, color: BlabColors.chatDivider),
                 _PreferenceRow(
-                  label: 'Conversation tone',
-                  value: chatPrefs?.asData?.value.tone.label ?? 'Informal',
+                  label: localizations.conversationTone,
+                  value: _localizedConversationTone(
+                    localizations,
+                    chatPrefs?.asData?.value.tone ?? ConversationTone.informal,
+                  ),
                   onTap: () => _pickTone(
                     context,
                     current:
@@ -308,36 +320,91 @@ class _PreferenceRow extends StatelessWidget {
   final String value;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => ListTile(
-    onTap: onTap,
-    title: Text(
-      label,
-      style: const TextStyle(
-        color: _preferenceInk,
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
+  Widget build(BuildContext context) {
+    const labelStyle = TextStyle(
+      color: _preferenceInk,
+      fontSize: 15,
+      fontWeight: FontWeight.w400,
+    );
+    const valueStyle = TextStyle(
+      color: _preferenceMuted,
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+    );
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final textDirection = Directionality.of(context);
+            final textScaler = MediaQuery.textScalerOf(context);
+            final labelPainter = TextPainter(
+              text: TextSpan(text: label, style: labelStyle),
+              textDirection: textDirection,
+              textScaler: textScaler,
+              maxLines: 1,
+            );
+            final valuePainter = TextPainter(
+              text: TextSpan(text: value, style: valueStyle),
+              textDirection: textDirection,
+              textScaler: textScaler,
+              maxLines: 1,
+            );
+            labelPainter.layout();
+            valuePainter.layout();
+
+            const trailingWidth = 20.0;
+            final shouldStack =
+                labelPainter.width + valuePainter.width + trailingWidth + 12 >
+                constraints.maxWidth;
+
+            Widget trailing() => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(value, textAlign: TextAlign.end, style: valueStyle),
+                const BlabIcon(
+                  name: 'nav-arrow-right - 20',
+                  color: _preferenceMuted,
+                  size: 20,
+                ),
+              ],
+            );
+
+            return Row(
+              children: [
+                Expanded(
+                  child: shouldStack
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(label, style: labelStyle),
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: trailing(),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(label, style: labelStyle),
+                            ),
+                            const SizedBox(width: 12),
+                            trailing(),
+                          ],
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
-    ),
-    trailing: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: _preferenceMuted,
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-        const SizedBox(width: 6),
-        const BlabIcon(
-          name: 'nav-arrow-right - 20',
-          color: _preferenceMuted,
-          size: 20,
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }
 
 Future<void> _pickForm(
@@ -345,6 +412,7 @@ Future<void> _pickForm(
   required GrammaticalForm? current,
   required Future<void> Function(GrammaticalForm? value) onSelected,
 }) async {
+  final localizations = context.l10n;
   // Use a non-null sentinel so dismissing the sheet never clears a saved
   // preference accidentally.
   final selected = await showModalBottomSheet<String>(
@@ -353,17 +421,17 @@ Future<void> _pickForm(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const ListTile(title: Text('Grammatical form')),
+          ListTile(title: Text(localizations.grammaticalForm)),
           for (final form in GrammaticalForm.values)
             ListTile(
-              title: Text(form.label),
+              title: Text(_localizedGrammaticalForm(localizations, form)),
               trailing: current == form
                   ? const Icon(Icons.check, color: BlabColors.brand)
                   : null,
               onTap: () => Navigator.pop(context, form.wire),
             ),
           ListTile(
-            title: const Text('Not set'),
+            title: Text(localizations.notSet),
             onTap: () => Navigator.pop(context, 'not_set'),
           ),
         ],
@@ -379,27 +447,44 @@ Future<void> _pickForm(
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save. Try again.')),
+        SnackBar(content: Text(context.l10n.couldNotSavePreference)),
       );
     }
   }
 }
+
+String _localizedGrammaticalForm(
+  AppLocalizations localizations,
+  GrammaticalForm form,
+) => switch (form) {
+  GrammaticalForm.feminine => localizations.formFeminine,
+  GrammaticalForm.masculine => localizations.formMasculine,
+};
+
+String _localizedConversationTone(
+  AppLocalizations localizations,
+  ConversationTone tone,
+) => switch (tone) {
+  ConversationTone.informal => localizations.toneInformal,
+  ConversationTone.respectful => localizations.toneRespectful,
+};
 
 Future<void> _pickTone(
   BuildContext context, {
   required ConversationTone current,
   required Future<void> Function(ConversationTone value) onSelected,
 }) async {
+  final localizations = context.l10n;
   final value = await showModalBottomSheet<ConversationTone>(
     context: context,
     builder: (context) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const ListTile(title: Text('Conversation tone')),
+          ListTile(title: Text(localizations.conversationTone)),
           for (final tone in ConversationTone.values)
             ListTile(
-              title: Text(tone.label),
+              title: Text(_localizedConversationTone(localizations, tone)),
               trailing: current == tone
                   ? const Icon(Icons.check, color: BlabColors.brand)
                   : null,
@@ -409,5 +494,14 @@ Future<void> _pickTone(
       ),
     ),
   );
-  if (value != null && context.mounted) await onSelected(value);
+  if (value == null || !context.mounted) return;
+  try {
+    await onSelected(value);
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.couldNotSavePreference)),
+      );
+    }
+  }
 }

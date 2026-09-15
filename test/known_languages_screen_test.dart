@@ -179,7 +179,7 @@ void main() {
     await tester.tap(find.text('Apply'));
     await tester.pump();
 
-    expect(find.text('Known languages'), findsOneWidget);
+    expect(find.text('Languages you know'), findsOneWidget);
     expect(
       find.text('Could not update your profile. Try again.'),
       findsOneWidget,

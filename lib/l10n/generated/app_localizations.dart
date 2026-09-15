@@ -222,6 +222,84 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get profile;
 
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// No description provided for @translationPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation preferences'**
+  String get translationPreferences;
+
+  /// No description provided for @yourGrammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Your grammatical form'**
+  String get yourGrammaticalForm;
+
+  /// No description provided for @partnerGrammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}\'s grammatical form'**
+  String partnerGrammaticalForm(String name);
+
+  /// No description provided for @conversationTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation tone'**
+  String get conversationTone;
+
+  /// No description provided for @grammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammatical form'**
+  String get grammaticalForm;
+
+  /// No description provided for @notSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get notSet;
+
+  /// No description provided for @formFeminine.
+  ///
+  /// In en, this message translates to:
+  /// **'Feminine'**
+  String get formFeminine;
+
+  /// No description provided for @formMasculine.
+  ///
+  /// In en, this message translates to:
+  /// **'Masculine'**
+  String get formMasculine;
+
+  /// No description provided for @toneInformal.
+  ///
+  /// In en, this message translates to:
+  /// **'Informal'**
+  String get toneInformal;
+
+  /// No description provided for @toneRespectful.
+  ///
+  /// In en, this message translates to:
+  /// **'Respectful'**
+  String get toneRespectful;
+
+  /// No description provided for @couldNotSavePreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t save. Try again.'**
+  String get couldNotSavePreference;
+
   /// No description provided for @interfaceLanguage.
   ///
   /// In en, this message translates to:
@@ -249,7 +327,7 @@ abstract class AppLocalizations {
   /// No description provided for @knownLanguages.
   ///
   /// In en, this message translates to:
-  /// **'Known languages'**
+  /// **'Languages you know'**
   String get knownLanguages;
 
   /// No description provided for @setPrimaryLanguage.
@@ -264,6 +342,18 @@ abstract class AppLocalizations {
   /// **'English'**
   String get languageEnglish;
 
+  /// No description provided for @languageDutch.
+  ///
+  /// In en, this message translates to:
+  /// **'Dutch'**
+  String get languageDutch;
+
+  /// No description provided for @languageFrench.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get languageFrench;
+
   /// No description provided for @languageUkrainian.
   ///
   /// In en, this message translates to:
@@ -276,11 +366,41 @@ abstract class AppLocalizations {
   /// **'German'**
   String get languageGerman;
 
+  /// No description provided for @languageHindi.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi'**
+  String get languageHindi;
+
+  /// No description provided for @languageItalian.
+  ///
+  /// In en, this message translates to:
+  /// **'Italian'**
+  String get languageItalian;
+
+  /// No description provided for @languagePortuguese.
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese'**
+  String get languagePortuguese;
+
   /// No description provided for @languageSpanish.
   ///
   /// In en, this message translates to:
   /// **'Spanish'**
   String get languageSpanish;
+
+  /// No description provided for @languageTamil.
+  ///
+  /// In en, this message translates to:
+  /// **'Tamil'**
+  String get languageTamil;
+
+  /// No description provided for @languageTurkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get languageTurkish;
 
   /// No description provided for @authTagline.
   ///
@@ -720,6 +840,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t save privacy setting.'**
   String get couldNotSavePrivacy;
 
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicyTitle;
+
   /// No description provided for @termsOfUse.
   ///
   /// In en, this message translates to:
@@ -791,6 +917,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete forever'**
   String get deleteForever;
+
+  /// No description provided for @deleteAccountConfirmationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account permanently?'**
+  String get deleteAccountConfirmationTitle;
+
+  /// No description provided for @deleteAccountConfirmationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone.'**
+  String get deleteAccountConfirmationBody;
 
   /// No description provided for @enterPasswordToConfirm.
   ///

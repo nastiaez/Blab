@@ -54,11 +54,13 @@ class NotificationSettingsScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _StatusRow(
-              text: _statusText(context, push.permission),
-              enabled: push.isAuthorized,
-            ),
-            const SizedBox(height: 18),
+            if (push.permission != PushAuthorizationStatus.unavailable) ...[
+              _StatusRow(
+                text: _statusText(context, push.permission),
+                enabled: push.isAuthorized,
+              ),
+              const SizedBox(height: 18),
+            ],
             _Card(
               children: [
                 _ToggleRow(

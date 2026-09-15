@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 
 import '../data/firebase_config.dart';
+import '../data/supabase_config.dart';
 
 enum PushAuthorizationStatus { unavailable, notDetermined, denied, authorized }
 
@@ -61,7 +62,9 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
 
   @override
   bool get isSupported =>
-      BlabFirebaseConfig.isAndroidPlatform && Firebase.apps.isNotEmpty;
+      SupabaseConfig.pushNotificationsEnabled &&
+      BlabFirebaseConfig.isAndroidPlatform &&
+      Firebase.apps.isNotEmpty;
 
   @override
   Future<PushAuthorizationStatus> authorizationStatus() async {

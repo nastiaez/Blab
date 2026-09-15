@@ -6,14 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'falls back to interface language when known_languages is empty',
+    'empty known languages use a stable English fallback, independent of UI',
     () async {
       final container = ProviderContainer(
         overrides: [
           currentProfileProvider.overrideWith(
             (_) async => const UserProfile(
               displayName: 'Alice',
-              interfaceLanguage: 'en',
+              interfaceLanguage: 'de',
               knownLanguages: [],
             ),
           ),

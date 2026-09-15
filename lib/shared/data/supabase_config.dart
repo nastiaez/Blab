@@ -35,6 +35,15 @@ class SupabaseConfig {
     };
   }
 
+  static bool pushNotificationsEnabledFor(String value) =>
+      switch (parseEnvironment(value)) {
+        BlabEnvironment.staging || BlabEnvironment.production => true,
+        BlabEnvironment.local || null => false,
+      };
+
+  static bool get pushNotificationsEnabled =>
+      pushNotificationsEnabledFor(environmentName);
+
   static String? validationError({
     required String environment,
     required String projectRef,

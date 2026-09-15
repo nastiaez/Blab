@@ -69,6 +69,47 @@ class AppLocalizationsUk extends AppLocalizations {
   String get profile => 'Профіль';
 
   @override
+  String get account => 'Обліковий запис';
+
+  @override
+  String get settings => 'Налаштування';
+
+  @override
+  String get translationPreferences => 'Налаштування перекладу';
+
+  @override
+  String get yourGrammaticalForm => 'Твоя граматична форма';
+
+  @override
+  String partnerGrammaticalForm(String name) {
+    return 'Граматична форма для $name';
+  }
+
+  @override
+  String get conversationTone => 'Тон розмови';
+
+  @override
+  String get grammaticalForm => 'Граматична форма';
+
+  @override
+  String get notSet => 'Не вказано';
+
+  @override
+  String get formFeminine => 'Жіноча';
+
+  @override
+  String get formMasculine => 'Чоловіча';
+
+  @override
+  String get toneInformal => 'Неформальний';
+
+  @override
+  String get toneRespectful => 'Шанобливий';
+
+  @override
+  String get couldNotSavePreference => 'Не вдалося зберегти. Спробуй ще раз.';
+
+  @override
   String get interfaceLanguage => 'Мова інтерфейсу';
 
   @override
@@ -85,7 +126,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося зберегти мову інтерфейсу. Спробуйте ще раз.';
 
   @override
-  String get knownLanguages => 'Відомі мови';
+  String get knownLanguages => 'Мови, які ти знаєш';
 
   @override
   String get setPrimaryLanguage => 'Зробити основною мовою';
@@ -94,13 +135,34 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageEnglish => 'Англійська';
 
   @override
+  String get languageDutch => 'Нідерландська';
+
+  @override
+  String get languageFrench => 'Французька';
+
+  @override
   String get languageUkrainian => 'Українська';
 
   @override
   String get languageGerman => 'Німецька';
 
   @override
+  String get languageHindi => 'Гінді';
+
+  @override
+  String get languageItalian => 'Італійська';
+
+  @override
+  String get languagePortuguese => 'Португальська';
+
+  @override
   String get languageSpanish => 'Іспанська';
+
+  @override
+  String get languageTamil => 'Тамільська';
+
+  @override
+  String get languageTurkish => 'Турецька';
 
   @override
   String get authTagline => 'Вивчайте мову, спілкуючись із другом.';
@@ -264,7 +326,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotUpdateProfile =>
-      'Не вдалося оновити профіль. Спробуйте ще раз.';
+      'Не вдалося оновити профіль. Спробуй ще раз.';
 
   @override
   String get couldNotLoadProfile => 'Не вдалося завантажити профіль.';
@@ -326,18 +388,21 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get typingIndicatorsHelp =>
-      'Якщо вимкнути, ви не бачитимете, коли інші друкують, а вони не бачитимуть, коли друкуєте ви.';
+      'Якщо вимкнути, ти не бачитимеш, коли інші друкують, а вони не бачитимуть, коли друкуєш ти.';
 
   @override
   String get readReceipts => 'Сповіщення про прочитання';
 
   @override
   String get readReceiptsHelp =>
-      'Якщо вимкнути, ви не бачитимете сповіщень інших, а вони не бачитимуть ваших.';
+      'Якщо вимкнути, ти не бачитимеш сповіщень інших, а вони не бачитимуть твоїх.';
 
   @override
   String get couldNotSavePrivacy =>
       'Не вдалося зберегти налаштування конфіденційності.';
+
+  @override
+  String get privacyPolicyTitle => 'Політика конфіденційності';
 
   @override
   String get termsOfUse => 'Умови використання';
@@ -362,31 +427,38 @@ class AppLocalizationsUk extends AppLocalizations {
   String get allChatsMessages => 'Усі чати й повідомлення';
 
   @override
-  String get yourProfile => 'Ваш профіль';
+  String get yourProfile => 'Твій профіль';
 
   @override
-  String get yourSettings => 'Ваші налаштування';
+  String get yourSettings => 'Твої налаштування';
 
   @override
   String get confirmWithPassword => 'Підтвердити паролем';
 
   @override
   String typeEmailToConfirm(String email) {
-    return 'Введіть $email для підтвердження';
+    return 'Введи $email для підтвердження';
   }
 
   @override
   String get deleteForever => 'Видалити назавжди';
 
   @override
-  String get enterPasswordToConfirm => 'Введіть пароль для підтвердження';
+  String get deleteAccountConfirmationTitle =>
+      'Видалити обліковий запис назавжди?';
 
   @override
-  String get emailDoesNotMatch => 'Це не збігається з вашою поштою';
+  String get deleteAccountConfirmationBody => 'Цю дію неможливо скасувати.';
+
+  @override
+  String get enterPasswordToConfirm => 'Введи пароль для підтвердження';
+
+  @override
+  String get emailDoesNotMatch => 'Це не збігається з твоєю поштою';
 
   @override
   String get couldNotDeleteAccount =>
-      'Не вдалося видалити обліковий запис. Спробуйте ще раз.';
+      'Не вдалося видалити обліковий запис. Спробуй ще раз.';
 
   @override
   String get newChat => 'Новий чат';
@@ -873,7 +945,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get notificationsNotRequested =>
-      'Відкрийте чат, щоб увімкнути сповіщення';
+      'Відкрий чат, щоб увімкнути сповіщення';
 
   @override
   String get notificationsUnavailable => 'Сповіщення недоступні в цій збірці';
