@@ -97,6 +97,14 @@ void main() {
     expect(find.text('Invite a friend'), findsOneWidget);
   });
 
+  testWidgets('invite helper aligns with the link card', (tester) async {
+    await openOnlineInvite(tester, FakeInvites());
+
+    final card = find.byType(DecoratedBox).first;
+    final helper = find.text('Only one friend can use this link');
+    expect(tester.getTopLeft(helper).dx, tester.getTopLeft(card).dx);
+  });
+
   testWidgets('sharing failure keeps the link and lets the user try again', (
     tester,
   ) async {

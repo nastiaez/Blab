@@ -235,7 +235,11 @@
 - **Progress (2026-08-28):**
   - [x] Connected Samsung Galaxy S25 verified: the existing chat photo remained visible after network loss, force-stop, and restart; the offline chat kept its approved geometry with no red framework error.
   - [x] The same cached photo opened full-screen while offline.
-  - [ ] Never-downloaded placeholder and reconnect replacement still need an explicit device pass.
+  - [x] Automated recovery hardening (2026-09-12): one corrupt or wrong-type legacy photo value no longer hides cached messages; synced previews remain outside the 20 MiB full-photo LRU; an uncached history failure now shows a localized Retry state and disables sending until recovery.
+  - [x] Full automated verification (2026-09-12): `flutter test` passed 489 checks with 15 environment-gated skips; `flutter analyze` and `git diff --check` are clean.
+  - [x] Android emulator pass (2026-09-13): a never-downloaded photo showed the neutral placeholder offline and recovered automatically after reconnection; an opened original remained available full-screen offline.
+  - [x] Alice/Bob matrix (2026-09-13): cached preview, opened full image, damaged legacy photo, browser account switch, and empty-history service Retry/reconnect all passed with proof screenshots in `docs/qa/2026-09-13-offline-history-photos/`.
+  - [x] Captionless-photo correction (2026-09-13): repeated the Android offline, damaged-cache, placeholder/recovery, and service Retry states with empty photo captions; no unsupported-language hint appears on either photo. Alice web still shows the hint only for an actual unsupported Chinese text message.
 
 ### Step 2.5 — Push notifications  `[ ]` — **DEFERRED to v1.1** (2026-06-01 ship-fast decision)
 - **Scope:** US-038, FR-29.
@@ -538,6 +542,17 @@
   - Delete confirmation removes the outgoing message for both people with no tombstone or Undo.
   - Manual Android device pass covers Normal/Practice, both directions, four interface languages, photo/caption states, failures, editing across navigation, and read-receipt ON/OFF.
 - **Out of scope:** post-launch vertical action list, fancy selected-message animation/scrim, edit history, audio messages, and a separate device-received receipt state.
+
+### Step 2.14 — Hindi and Tamil reading script `[x]`
+- **Design:** `docs/superpowers/specs/2026-09-14-hindi-tamil-reading-script-design.md`.
+- **Scope:** US-050, FR-44. Add one account-wide, native-default Reading script choice for Hindi and Tamil. Reuse the current Translation preferences row and checkmarked bottom sheet in Profile and chat, render complete cached Romanization only for Blab-generated learning text, preserve exact authored/Original text and native audio, and keep the language-selection sheet unchanged.
+- **Done when:**
+  - Profile and eligible chat preferences expose one synchronized Reading script row with the approved contextual copy; it hides outside Hindi/Tamil and restores the saved value when eligible again.
+  - Hindi and Tamil generated sentences, corrections, reply previews, and word descriptions switch both current and eligible past content between native script and English letters without new translation work.
+  - Incomplete Romanization keeps the complete native sentence; punctuation/protected content remains intact and no mixed-script fallback appears.
+  - Native and Romanized authored input remains exact and is never corrected because of the selected reading script; word audio continues to pronounce the native-language word.
+  - Automated preference/rendering regressions, the complete Flutter suite, static analysis, and the Alice-browser/Bob-Android Hindi/Tamil matrix pass.
+  - Final browser and Android screenshots are sent for owner review and explicitly approved.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -938,6 +953,20 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 
 - 2026-09-13 — Repaired and locally accepted the remaining translation edge cases with Alice in the browser and Bob in the Android emulator: `No` resolved to `Nein`; abbreviation-plus-name text translated naturally in German, Hindi, and Ukrainian; completed history stayed fixed across a tone switch; incoming/outgoing unsupported-language guidance used the correct author-aware copy; and Bob-to-Alice translation passed. The local provider's grammatical-form audit blocked a fresh respectful-output screenshot, so owner/device launch gates remain unchanged. Evidence: `docs/qa/2026-09-12-translation-edge-cases/README.md`.
 
+- 2026-09-13 — Recovered valid translations from optional grammatical-form audit failures, restored local delivery-worker configuration after resets, replaced stale red failures when unsupported cache results arrive, and standardized unsupported copy to `Blab doesn’t speak this one yet.` Alice browser/Bob Android acceptance proved both reported English questions in German and Chinese-plus-name without Retry. Evidence: `docs/qa/2026-09-13-translation-failure-recovery/README.md`.
+
+- 2026-09-13 — Audited the Chat, Chats, Profile, Known Languages, and Translation preferences refresh with Alice in the browser and Bob in the Android emulator. The requested surfaces, avatar hierarchy, composer, Normal/Practice navigation, reaction/action row, Profile organization, global grammatical-form selector, and per-chat form/tone controls are already built and visually coherent on Android. Two-way Alice/Bob messages persisted and rendered on both clients; 75 focused checks passed, then the full Flutter suite passed 476 tests with 15 integration skips and clean static analysis. No blocking Android visual fix was found. Wide Flutter web remains desktop-stretched but is outside the Android launch target. Emulator Wi-Fi dropped during the pass; re-enabling it restored local Supabase reachability, so this was recorded as test-environment noise rather than an app defect. Owner acceptance checkboxes remain open pending owner confirmation.
+
+- 2026-09-13 — Corrected the offline-photo QA fixture after owner review: photo-only messages now use empty captions and create no translation work. Repeated the Android offline/recovery matrix, replaced the misleading screenshots, and kept Step 2.4a open for owner acceptance.
+
+- 2026-09-14 — Expanded offline-photo QA to captioned photos in both directions. Supported English, German, and Spanish captions followed the normal translation lane; unsupported Chinese retained authored text with the concise neutral hint; emoji-only captions created no warning. Android offline restart preserved the photo and caption but lost the already completed translated view, so account-scoped offline translation recovery remains open as L-26. A local Spanish-to-German Retry also remained provider-limited at the grammatical-form audit. Added focused photo-caption regressions and kept owner launch checks open.
+
+- 2026-09-14 — Added US-050 / FR-44 and Step 2.14 for the approved single account-wide Reading script choice: native by default, Hindi/Tamil only, current settings visuals, cached retroactive rendering, exact authored text, whole-sentence native fallback, and Alice-browser/Bob-Android owner evidence before completion.
+
+- 2026-09-14 — Completed Step 2.14. The shared native/English-letter Reading script preference now appears contextually in Profile and chat, updates complete cached Hindi/Tamil learning text without new AI work, preserves authored text and native audio, and refreshes Profile chat eligibility before rendering. Alice browser, Bob Android, Profile, word-popup, fallback, history, and synchronization evidence passed and the owner approved the screenshots. Final verification passed 520 Flutter checks, 146 database checks, Realtime readiness, and 11 local integration checks; 15 environment-gated Flutter checks and 3 live-provider integration checks remained intentionally skipped.
+
+- 2026-09-14 — Aligned the invite helper with the invite-card edge and set a 16 px gap below the card. Step 2.3b remains in progress pending owner visual acceptance.
+
 - 2026-09-14 — Matched the required first-time picker to the handled Settings picker's `567 / 932` viewport-height proportion, rechecked browser + Android, and received owner visual acceptance. Began a read-only inventory of current action, offline, recovery, and message-level feedback states before any redesign.
 
-- 2026-09-14 — Completed local implementation and Android acceptance for the owner-approved transient-feedback slice: the close icon is gone, language-change Undo remains for 4 seconds, passive confirmations use 2.5 seconds, unrelated taps keep feedback available, navigation dismisses it, and the saved target locale supplies the message and action copy. English, German, Spanish, and Ukrainian each fit the compact one-line Snackbar on the default emulator viewport. Owner screenshot approval is still required before commit/push; the broader feedback/offline redesign is unchanged.
+- 2026-09-14 — Completed local implementation and Android acceptance for the owner-approved transient-feedback slice: the close icon is gone, language-change Undo remains for 4 seconds, passive confirmations use 2.5 seconds, unrelated taps keep feedback available, navigation dismisses it, and the saved target locale supplies the message and action copy. English, German, Spanish, and Ukrainian each fit the compact one-line Snackbar on the default emulator viewport. The owner approved the screenshots on 2026-09-15 and authorized integration to main; the broader feedback/offline redesign is unchanged.

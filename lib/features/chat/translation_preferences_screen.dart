@@ -5,9 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/models/grammatical_form.dart';
+import '../../shared/models/reading_script.dart';
+import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/profile_state.dart';
+import '../../shared/state/reading_script_state.dart';
 import '../../shared/widgets/blab_icon.dart';
+import 'state/chat_state.dart';
 import 'state/grammatical_form_preferences_state.dart';
 
 const _preferenceInk = Color(0xFF46281C);
@@ -37,6 +42,16 @@ class _TranslationPreferencesScreenState
   bool _didOpenInitialFormPicker = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.chatId == null) {
+      Future<void>.microtask(
+        () => ref.read(chatListProvider.notifier).refresh(),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chatId = widget.chatId;
     final partnerName = widget.partnerName;
@@ -50,6 +65,31 @@ class _TranslationPreferencesScreenState
               ? null
               : grammaticalFormFromWire(profile.asData!.value.grammaticalForm)
         : chatPrefs?.asData?.value.ownForm;
+    final eligibleLanguages = isProfile
+        ? ref
+                  .watch(chatListProvider)
+                  .value
+                  ?.map((chat) => chat.learningLanguage.code)
+                  .where((code) => code == 'hi' || code == 'ta')
+                  .toSet() ??
+              const <String>{}
+        : <String>{
+            if (ref.watch(learningLanguageProvider(chatId)).code case 'hi')
+              'hi',
+            if (ref.watch(learningLanguageProvider(chatId)).code case 'ta')
+              'ta',
+          };
+    final showReadingScript = eligibleLanguages.isNotEmpty;
+    final readingScript = showReadingScript
+        ? ref.watch(readingScriptProvider)
+        : ReadingScript.native;
+
+    String nativeScriptLabel() {
+      if (eligibleLanguages.length > 1) return context.l10n.nativeScripts;
+      return eligibleLanguages.single == 'hi'
+          ? context.l10n.hindiScript
+          : context.l10n.tamilScript;
+    }
 
     Future<void> saveOwnForm(GrammaticalForm? value) async {
       await ref.read(formCorrectionProvider.notifier).refreshActiveWindows();
@@ -174,11 +214,70 @@ class _TranslationPreferencesScreenState
                   ),
                 ),
               ],
+              if (showReadingScript) ...[
+                const Divider(height: 1, color: BlabColors.chatDivider),
+                _PreferenceRow(
+                  label: context.l10n.readingScript,
+                  value: readingScript == ReadingScript.englishLetters
+                      ? context.l10n.englishLetters
+                      : nativeScriptLabel(),
+                  onTap: () => _pickReadingScript(
+                    context,
+                    current: readingScript,
+                    nativeLabel: nativeScriptLabel(),
+                    onSelected: (value) =>
+                        ref.read(readingScriptProvider.notifier).set(value),
+                  ),
+                ),
+              ],
             ],
           ),
         ],
       ),
     );
+  }
+}
+
+Future<void> _pickReadingScript(
+  BuildContext context, {
+  required ReadingScript current,
+  required String nativeLabel,
+  required Future<void> Function(ReadingScript value) onSelected,
+}) async {
+  final value = await showModalBottomSheet<ReadingScript>(
+    context: context,
+    builder: (context) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(title: Text(context.l10n.readingScript)),
+          ListTile(
+            title: Text(nativeLabel),
+            trailing: current == ReadingScript.native
+                ? const Icon(Icons.check, color: BlabColors.brand)
+                : null,
+            onTap: () => Navigator.pop(context, ReadingScript.native),
+          ),
+          ListTile(
+            title: Text(context.l10n.englishLetters),
+            trailing: current == ReadingScript.englishLetters
+                ? const Icon(Icons.check, color: BlabColors.brand)
+                : null,
+            onTap: () => Navigator.pop(context, ReadingScript.englishLetters),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (value == null || !context.mounted || value == current) return;
+  try {
+    await onSelected(value);
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn’t save. Try again.')),
+      );
+    }
   }
 }
 

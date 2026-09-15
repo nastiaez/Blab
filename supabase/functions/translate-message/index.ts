@@ -8,7 +8,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  applyConfirmedFormAudit,
   correctionNeedsRetry,
   directSubjectRole,
   focusedTranslationRetryMessages,
@@ -29,6 +28,7 @@ import {
   providerMessages,
   providerResultFailureReason,
   recognizedAbbreviationSourceLanguage,
+  resolveOptionalFormAudit,
   sourceClassificationRetryGuidance,
   sourceEvidenceLanguage,
   sourceEvidenceNeedsRetry,
@@ -535,24 +535,16 @@ Deno.serve(async (req) => {
           interfaceLang,
           formContext!,
         );
-        if (audit === null) {
-          providerFailure = `${credential.provider}_form_audit_unavailable`;
-          break;
+        const auditedCandidate = resolveOptionalFormAudit(
+          candidate,
+          audit,
+          formContext!,
+        );
+        if (auditedCandidate === null) {
+          providerFailure = `${credential.provider}_invalid_form_audit`;
+          continue;
         }
-        if (audit.requiresChoice) {
-          const auditedCandidate = applyConfirmedFormAudit(
-            candidate,
-            audit,
-            formContext!,
-          );
-          if (auditedCandidate === null) {
-            providerFailure = `${credential.provider}_invalid_form_audit`;
-            continue;
-          }
-          candidate = auditedCandidate;
-        } else {
-          candidate.formAlternatives = null;
-        }
+        candidate = auditedCandidate;
       }
       if (candidate.formAlternatives && formContext) {
         candidate.formAlternatives = normalizeFormSubject(

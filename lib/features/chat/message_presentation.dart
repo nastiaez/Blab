@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/data/translation_support.dart';
 import '../../shared/models/chat.dart';
+import '../../shared/models/reading_script.dart';
 import '../../shared/services/message_translator.dart';
+import 'reading_script_presentation.dart';
 
 class MessagePresentation {
   const MessagePresentation({
@@ -29,6 +31,8 @@ String resolveMessageDisplayText({
   required MessageTranslation value,
   required ChatMode mode,
   required List<String> knownLanguageCodes,
+  String targetLanguageCode = '',
+  ReadingScript readingScript = ReadingScript.native,
 }) {
   if (isUnsupportedSourceText(
     sourceLang: value.sourceLang,
@@ -37,12 +41,21 @@ String resolveMessageDisplayText({
     return authoredText;
   }
   if (value.mode == LearningAidMode.none) return authoredText;
+  late final String displayText;
   if (mode == ChatMode.normal) {
-    return knownLanguageCodes.contains(value.sourceLang)
+    displayText = knownLanguageCodes.contains(value.sourceLang)
         ? authoredText
         : value.translation;
+  } else {
+    displayText = value.translation;
   }
-  return value.translation;
+  if (displayText != value.translation) return displayText;
+  return presentReadingScript(
+    text: displayText,
+    tokens: value.tokens,
+    languageCode: targetLanguageCode,
+    readingScript: readingScript,
+  ).text;
 }
 
 MessagePresentation resolveMessagePresentation({
@@ -51,6 +64,8 @@ MessagePresentation resolveMessagePresentation({
   required ChatMode mode,
   required List<String> knownLanguageCodes,
   String? resolvedSourceLang,
+  String targetLanguageCode = '',
+  ReadingScript readingScript = ReadingScript.native,
 }) {
   if (translation case AsyncData<MessageTranslation>(value: final value)) {
     final primaryText = resolveMessageDisplayText(
@@ -58,6 +73,8 @@ MessagePresentation resolveMessagePresentation({
       value: value,
       mode: mode,
       knownLanguageCodes: knownLanguageCodes,
+      targetLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
     );
     final unsupportedSource = isUnsupportedSourceText(
       sourceLang: value.sourceLang,
@@ -76,7 +93,7 @@ MessagePresentation resolveMessagePresentation({
           primaryText != authoredText,
       knownLanguageText: practiceAid ? value.interfaceText : null,
       listenText: practiceAid && primaryText.trim().isNotEmpty
-          ? primaryText
+          ? value.translation
           : null,
       unsupportedSource: unsupportedSource,
     );

@@ -908,6 +908,91 @@ Deno.test("confirmed audit makes feminine translation metadata canonical", () =>
   );
 });
 
+Deno.test("optional form audit preserves a valid base translation when unavailable", () => {
+  const resolveAudit = (contract as unknown as {
+    resolveOptionalFormAudit?: (
+      result: TranslationResult,
+      audit: Record<string, unknown> | null,
+      formContext: FormParticipantContext,
+    ) => TranslationResult | null;
+  }).resolveOptionalFormAudit;
+  assert(
+    typeof resolveAudit === "function",
+    "optional audit resolution must preserve valid base translations",
+  );
+  const result: TranslationResult = {
+    mode: "translation",
+    sourceLang: "en",
+    translation: "Kannst du mir bitte helfen?",
+    interfaceText: "Can you please help me?",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  const formContext: FormParticipantContext = {
+    viewerName: "Alice",
+    partnerName: "Bob",
+    messageAuthor: "viewer",
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal",
+  };
+  assert(
+    resolveAudit!(result, null, formContext)?.translation ===
+      result.translation,
+    "an unavailable audit must keep the base translation",
+  );
+  assert(
+    resolveAudit!(
+      result,
+      {
+        requiresChoice: false,
+        subjectIsViewer: null,
+        before: null,
+        feminine: null,
+        masculine: null,
+        after: null,
+        suggestedForm: null,
+        feminineTokens: null,
+        masculineTokens: null,
+      },
+      formContext,
+    )?.translation === result.translation,
+    "a no-choice audit must keep the base translation",
+  );
+
+  const ukrainianResult: TranslationResult = {
+    ...result,
+    translation: "Ти ходив вчора?",
+    tokens: ukMasculineAuditTokens,
+  };
+  const validAudit = {
+    requiresChoice: true,
+    subjectIsViewer: false,
+    before: "Ти ",
+    feminine: "ходила",
+    masculine: "ходив",
+    after: " вчора?",
+    suggestedForm: "feminine" as const,
+    feminineTokens: ukFeminineAuditTokens,
+    masculineTokens: ukMasculineAuditTokens,
+  };
+  assert(
+    resolveAudit!(ukrainianResult, validAudit, formContext)?.translation ===
+      "Ти ходила вчора?",
+    "a valid required-choice audit must apply its canonical rendering",
+  );
+  assert(
+    resolveAudit!(
+      ukrainianResult,
+      { ...validAudit, feminineTokens: ukMasculineAuditTokens },
+      formContext,
+    ) === null,
+    "a malformed required-choice audit must remain rejected",
+  );
+});
+
 Deno.test("prompt distinguishes author and recipient for Ukrainian questions", () => {
   const prompt = systemPrompt("auto", "uk", "en");
   assert(

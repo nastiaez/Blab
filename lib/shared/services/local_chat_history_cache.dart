@@ -17,56 +17,55 @@ class LocalChatHistoryCache {
 
   final String userId;
 
-  // Keep media useful across restarts without allowing a photo-heavy chat to
-  // grow the app-private cache forever. The index itself is account-scoped and
-  // only stores ids, sizes, and last-access timestamps.
+  // Keep opened full-resolution files useful across restarts without allowing
+  // them to grow the app-private cache forever. Synced previews stay with the
+  // cached chat history and are not part of this account-scoped LRU index.
   static const _maxAttachmentBytes = 20 * 1024 * 1024;
+  static final Map<String, Future<void>> _fullAttachmentQueues = {};
 
-  Future<List<int>?> loadAttachmentBytes(String attachmentId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(
-      cachedAttachmentStorageKey(userId: userId, attachmentId: attachmentId),
-    );
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final bytes = base64Decode(raw);
-      await _touchAttachment(attachmentId, bytes.length);
+  Future<List<int>?> loadAttachmentBytes(String attachmentId) {
+    return _serializeFullAttachmentOperation(() async {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.get(
+        cachedAttachmentStorageKey(userId: userId, attachmentId: attachmentId),
+      );
+      if (raw is! String || raw.isEmpty) return null;
+      late final List<int> bytes;
+      try {
+        bytes = base64Decode(raw);
+      } catch (_) {
+        return null;
+      }
+      try {
+        await _touchAttachment(attachmentId, bytes.length, prefs: prefs);
+      } catch (_) {
+        // Index repair is best-effort when valid photo bytes are already local.
+      }
       return bytes;
-    } catch (_) {
-      return null;
-    }
+    });
   }
 
   Future<List<int>?> loadAttachmentPreviewBytes(String attachmentId) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(
+    final raw = prefs.get(
       cachedAttachmentPreviewStorageKey(
         userId: userId,
         attachmentId: attachmentId,
       ),
     );
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final bytes = base64Decode(raw);
-      await _touchAttachment(
-        'preview:$attachmentId',
-        bytes.length,
-        storageKey: cachedAttachmentPreviewStorageKey,
-      );
-      return bytes;
-    } catch (_) {
-      return null;
-    }
+    return _safeBase64Decode(raw);
   }
 
   Future<void> saveAttachmentBytes(String attachmentId, List<int> bytes) async {
     if (bytes.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      cachedAttachmentStorageKey(userId: userId, attachmentId: attachmentId),
-      base64Encode(bytes),
-    );
-    await _touchAttachment(attachmentId, bytes.length, prefs: prefs);
+    await _serializeFullAttachmentOperation(() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        cachedAttachmentStorageKey(userId: userId, attachmentId: attachmentId),
+        base64Encode(bytes),
+      );
+      await _touchAttachment(attachmentId, bytes.length, prefs: prefs);
+    });
   }
 
   Future<void> saveAttachmentPreviewBytes(
@@ -81,14 +80,6 @@ class LocalChatHistoryCache {
         attachmentId: attachmentId,
       ),
       base64Encode(bytes),
-    );
-    // Preview bytes are the always-on media cache and count toward the same
-    // bounded LRU budget as opened full-resolution files.
-    await _touchAttachment(
-      'preview:$attachmentId',
-      bytes.length,
-      prefs: prefs,
-      storageKey: cachedAttachmentPreviewStorageKey,
     );
   }
 
@@ -173,25 +164,92 @@ class LocalChatHistoryCache {
     String attachmentId,
     int byteSize, {
     SharedPreferences? prefs,
-    String Function({required String userId, required String attachmentId})?
-    storageKey,
   }) async {
     final preferences = prefs ?? await SharedPreferences.getInstance();
-    final raw = preferences.getString(cachedAttachmentIndexStorageKey(userId));
-    final entries = <Map<String, dynamic>>[];
-    if (raw != null) {
+    final raw = preferences.get(cachedAttachmentIndexStorageKey(userId));
+    final indexedEntries = <String, Map<String, dynamic>>{};
+    var hasFullyValidIndex = raw is String;
+    if (raw is String) {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
-          for (final value in decoded.whereType<Map>()) {
-            final row = Map<String, dynamic>.from(value);
-            if (row['id'] is String && row['size'] is num) {
-              entries.add(row);
+          for (final value in decoded) {
+            if (value is! Map) {
+              hasFullyValidIndex = false;
+              continue;
             }
+            final id = value['id'];
+            final size = value['size'];
+            final usedAt = value['usedAt'];
+            if (id is! String ||
+                id.isEmpty ||
+                id.startsWith('preview:') ||
+                size is! num ||
+                !size.isFinite ||
+                size < 0 ||
+                usedAt is! num ||
+                !usedAt.isFinite) {
+              hasFullyValidIndex = false;
+              continue;
+            }
+            final existing = indexedEntries[id];
+            if (existing != null) {
+              hasFullyValidIndex = false;
+              if ((existing['usedAt'] as num) >= usedAt) continue;
+            }
+            indexedEntries[id] = {'id': id, 'size': size, 'usedAt': usedAt};
           }
+        } else {
+          hasFullyValidIndex = false;
         }
       } catch (_) {
+        hasFullyValidIndex = false;
         // A corrupt index is recoverable: the attachment values remain valid.
+      }
+    }
+    final fullStoragePrefix = cachedAttachmentStorageKey(
+      userId: userId,
+      attachmentId: '',
+    );
+    final storageKeyById = <String, String>{};
+    for (final key in preferences.getKeys()) {
+      if (!key.startsWith(fullStoragePrefix)) continue;
+      final id = key.substring(fullStoragePrefix.length);
+      if (id.isEmpty) continue;
+      storageKeyById[id] = key;
+    }
+    final storedIdsMatchIndex =
+        storageKeyById.length == indexedEntries.length &&
+        storageKeyById.keys.every(indexedEntries.containsKey);
+    final entries = <Map<String, dynamic>>[];
+    if (hasFullyValidIndex && storedIdsMatchIndex) {
+      entries.addAll(indexedEntries.values.map(Map<String, dynamic>.from));
+    } else {
+      for (final entry in storageKeyById.entries) {
+        final id = entry.key;
+        if (id == attachmentId) continue;
+        final indexed = hasFullyValidIndex ? indexedEntries[id] : null;
+        if (indexed != null) {
+          entries.add(Map<String, dynamic>.from(indexed));
+          continue;
+        }
+        final stored = preferences.get(entry.value);
+        if (stored is! String || stored.isEmpty) {
+          await preferences.remove(entry.value);
+          continue;
+        }
+        late final int decodedSize;
+        try {
+          decodedSize = base64Decode(stored).length;
+        } catch (_) {
+          await preferences.remove(entry.value);
+          continue;
+        }
+        entries.add({
+          'id': id,
+          'size': decodedSize,
+          'usedAt': indexedEntries[id]?['usedAt'] ?? 0,
+        });
       }
     }
     entries.removeWhere((entry) => entry['id'] == attachmentId);
@@ -200,30 +258,20 @@ class LocalChatHistoryCache {
       'size': byteSize,
       'usedAt': DateTime.now().microsecondsSinceEpoch,
     });
-    entries.sort(
-      (a, b) =>
-          ((a['usedAt'] as num?) ?? 0).compareTo((b['usedAt'] as num?) ?? 0),
-    );
-    var total = entries.fold<int>(
+    entries.sort((a, b) => (a['usedAt'] as num).compareTo(b['usedAt'] as num));
+    var total = entries.fold<num>(
       0,
-      (sum, entry) => sum + ((entry['size'] as num?)?.toInt() ?? 0),
+      (sum, entry) => sum + (entry['size'] as num),
     );
     // A single oversized file is not allowed to punch through the budget. It
     // is evicted as well, leaving the durable Supabase original untouched.
     while (entries.isNotEmpty && total > _maxAttachmentBytes) {
       final evicted = entries.removeAt(0);
-      total -= (evicted['size'] as num?)?.toInt() ?? 0;
+      total -= evicted['size'] as num;
       final id = evicted['id'];
       if (id is String) {
-        final keyBuilder = storageKey ?? cachedAttachmentStorageKey;
-        final actualId = id.startsWith('preview:')
-            ? id.substring('preview:'.length)
-            : id;
-        final actualKeyBuilder = id.startsWith('preview:')
-            ? cachedAttachmentPreviewStorageKey
-            : keyBuilder;
         await preferences.remove(
-          actualKeyBuilder(userId: userId, attachmentId: actualId),
+          cachedAttachmentStorageKey(userId: userId, attachmentId: id),
         );
       }
     }
@@ -231,6 +279,23 @@ class LocalChatHistoryCache {
       cachedAttachmentIndexStorageKey(userId),
       jsonEncode(entries),
     );
+  }
+
+  Future<T> _serializeFullAttachmentOperation<T>(
+    Future<T> Function() operation,
+  ) {
+    final previous = _fullAttachmentQueues[userId] ?? Future<void>.value();
+    final result = previous.then<T>((_) => operation());
+    final barrier = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    _fullAttachmentQueues[userId] = barrier;
+    return result.whenComplete(() {
+      if (identical(_fullAttachmentQueues[userId], barrier)) {
+        _fullAttachmentQueues.remove(userId);
+      }
+    });
   }
 
   Future<List<Message>> loadMessages(String chatId) async {
@@ -369,10 +434,10 @@ class LocalChatHistoryCache {
       final data = Map<String, dynamic>.from(rawAttachment);
       final attachmentId = data['id'] as String?;
       if (attachmentId == null) return null;
-      final rawBytes = prefs.getString(
+      final rawBytes = prefs.get(
         cachedAttachmentStorageKey(userId: userId, attachmentId: attachmentId),
       );
-      final rawPreviewBytes = prefs.getString(
+      final rawPreviewBytes = prefs.get(
         cachedAttachmentPreviewStorageKey(
           userId: userId,
           attachmentId: attachmentId,
@@ -390,10 +455,8 @@ class LocalChatHistoryCache {
         previewMimeType: data['previewMimeType'] as String?,
         previewByteSize: (data['previewByteSize'] as num?)?.toInt(),
         previewUrl: data['previewUrl'] as String?,
-        localBytes: rawBytes == null ? null : base64Decode(rawBytes),
-        previewBytes: rawPreviewBytes == null
-            ? null
-            : base64Decode(rawPreviewBytes),
+        localBytes: _safeBase64Decode(rawBytes),
+        previewBytes: _safeBase64Decode(rawPreviewBytes),
       );
     }
     final rawReply = row['replyTo'];
@@ -430,6 +493,15 @@ class LocalChatHistoryCache {
       replyTo: replyTo,
       isEdited: row['isEdited'] as bool? ?? false,
     );
+  }
+
+  static List<int>? _safeBase64Decode(Object? raw) {
+    if (raw is! String || raw.isEmpty) return null;
+    try {
+      return base64Decode(raw);
+    } catch (_) {
+      return null;
+    }
   }
 }
 

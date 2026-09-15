@@ -12,13 +12,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
-  String get unsupportedIncomingLanguageHint =>
-      'Blab поки не може перекласти цю мову. Показуємо оригінал.';
-
-  @override
-  String unsupportedLanguageHint(String learningLanguage) {
-    return 'Blab поки не знає цієї мови — спробуйте $learningLanguage.';
-  }
+  String get unsupportedLanguageHint => 'Blab поки не розмовляє цією мовою.';
 
   @override
   String get back => 'Назад';
@@ -408,6 +402,9 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotLoadChats => 'Не вдалося завантажити чати';
+
+  @override
+  String get couldNotLoadMessages => 'Не вдалося завантажити повідомлення';
 
   @override
   String get newConnectionSayHi => 'Новий контакт · привітайтеся';
@@ -927,4 +924,19 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get usingMasculineFormsForYou => 'Чоловічі форми для вас';
+
+  @override
+  String get readingScript => 'Писемність для читання';
+
+  @override
+  String get hindiScript => 'Писемність гінді';
+
+  @override
+  String get tamilScript => 'Тамільська писемність';
+
+  @override
+  String get nativeScripts => 'Рідні писемності';
+
+  @override
+  String get englishLetters => 'Латинські літери';
 }

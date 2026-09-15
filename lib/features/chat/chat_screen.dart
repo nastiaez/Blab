@@ -18,6 +18,7 @@ import '../../l10n/l10n.dart';
 import '../../shared/models/chat.dart';
 import '../../shared/models/message.dart';
 import '../../shared/models/message_reaction.dart';
+import '../../shared/models/reading_script.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/services/local_chat_history_cache.dart';
 import '../../shared/state/chat_list_state.dart';
@@ -33,6 +34,7 @@ import '../../shared/services/tts_service.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/push_notifications_state.dart';
+import '../../shared/state/reading_script_state.dart';
 import '../../shared/widgets/blab_icon.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
@@ -654,6 +656,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
+    final historyUnavailable =
+        messagesAsync.value == null && messagesAsync.hasError;
     final pagination = ref.watch(chatPaginationProvider(widget.chatId));
     // Keep the read batcher reactive while this screen is open. Its privacy
     // gate starts fail-closed; watching it here lets queued visibility events
@@ -703,6 +707,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // the meantime (a wrong pair either 404s the cache lookup or trips the
     // client's own interface-language-changed staleness check).
     final chatMode = ref.watch(chatModeProvider(widget.chatId));
+    final readingScript = ref.watch(readingScriptProvider);
     final knownLanguages = ref.watch(knownLanguagesProvider).value;
     final targetLang =
         chat.needsPracticeLanguageSelection || knownLanguages == null
@@ -774,6 +779,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         mode: chatMode,
         knownLanguageCodes: knownLanguages?.codes ?? const <String>[],
         resolvedSourceLang: selectedSourceLang,
+        targetLanguageCode: selectedTargetLang,
+        readingScript: readingScript,
       );
     }
     // Keep the auto-disposed composer alive for this chat while its input is
@@ -1088,6 +1095,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // collapsing to the loading shimmer.
                             final knownMessages = messagesAsync.value;
                             if (knownMessages == null) {
+                              if (messagesAsync.hasError) {
+                                return _ChatHistoryErrorState(
+                                  onRetry: () => ref.invalidate(
+                                    chatMessagesProvider(widget.chatId),
+                                  ),
+                                );
+                              }
                               return const ChatViewSkeleton();
                             }
                             return Builder(
@@ -1306,9 +1320,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           },
                         )
                       : AbsorbPointer(
-                          absorbing: chat.needsPracticeLanguageSelection,
+                          absorbing:
+                              chat.needsPracticeLanguageSelection ||
+                              historyUnavailable,
                           child: Opacity(
-                            opacity: chat.needsPracticeLanguageSelection
+                            opacity:
+                                chat.needsPracticeLanguageSelection ||
+                                    historyUnavailable
                                 ? .45
                                 : 1,
                             child: _InputBar(
@@ -1324,6 +1342,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               maxLength: _maxMessageLength,
                               counterShowAt: _counterShowAt,
                               isPractice: chatMode == ChatMode.practice,
+                              enabled:
+                                  !chat.needsPracticeLanguageSelection &&
+                                  !historyUnavailable,
                               showTopBorder: replyingTo == null,
                               onAttach: () =>
                                   _attachImage(recipientName: chat.partnerName),
@@ -1984,6 +2005,38 @@ class _ChatMenu extends ConsumerWidget {
 }
 
 // ─────────────────────────── messages list ───────────────────────────────────
+
+class _ChatHistoryErrorState extends StatelessWidget {
+  const _ChatHistoryErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.l10n.couldNotLoadMessages,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, color: BlabColors.textMuted),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              key: const ValueKey('chat-history-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.retry),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _MessageList extends ConsumerWidget {
   const _MessageList({
@@ -2739,6 +2792,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final formPreferences = ref.watch(
       grammaticalFormPreferencesProvider(widget.chatId),
     );
+    final readingScript = ref.watch(readingScriptProvider);
 
     final message = widget.message;
     final chatId = widget.chatId;
@@ -2815,6 +2869,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
       mode: mode,
       knownLanguageCodes: knownLanguageCodes,
       resolvedSourceLang: resolvedSourceLang,
+      targetLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
     );
     final canRetryTranslation =
         liveTranslation is AsyncError<MessageTranslation>;
@@ -2955,6 +3011,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
       translation: translation,
       showTranslation: showTranslation,
       learningLanguageCode: languageCode,
+      translationLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
       isOutgoing: isOut,
       popupTopInset: popupTopInset,
       mode: mode,
@@ -3133,6 +3191,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
                             ),
                             mode: mode,
                             knownLanguageCodes: knownLanguageCodes,
+                            targetLanguageCode: replyTargetLanguageCode,
+                            readingScript: readingScript,
                           ),
                           const SizedBox(height: 6),
                         ],
@@ -3253,11 +3313,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
         if (showUnsupportedLanguageHint)
           _UnsupportedLanguageNotice(
             key: const ValueKey('unsupported-language-hint'),
-            text: isOut
-                ? context.l10n.unsupportedLanguageHint(
-                    _languageNameForCode(languageCode),
-                  )
-                : context.l10n.unsupportedIncomingLanguageHint,
+            text: context.l10n.unsupportedLanguageHint,
             alignRight: isOut,
           ),
         if (isFailed) ...[
@@ -3641,6 +3697,7 @@ class _InputBar extends StatelessWidget {
     required this.maxLength,
     required this.counterShowAt,
     required this.isPractice,
+    required this.enabled,
     required this.showTopBorder,
     required this.onAttach,
     required this.onSend,
@@ -3656,6 +3713,7 @@ class _InputBar extends StatelessWidget {
   final int maxLength;
   final int counterShowAt;
   final bool isPractice;
+  final bool enabled;
   final bool showTopBorder;
   final VoidCallback onAttach;
   final VoidCallback onSend;
@@ -3666,7 +3724,7 @@ class _InputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final overLimit = textLength > maxLength;
-    final canSend = hasText && !overLimit;
+    final canSend = enabled && hasText && !overLimit;
     final showCounter = textLength >= counterShowAt;
     final atLimit = textLength >= maxLength;
 
@@ -3695,6 +3753,7 @@ class _InputBar extends StatelessWidget {
                         focusNode: focusNode,
                         hintText: hintText,
                         maxLength: maxLength,
+                        enabled: enabled,
                         autofocus: autofocus,
                         attachTooltip: context.l10n.attach,
                         onAttach: onAttach,
@@ -3746,6 +3805,8 @@ class _QuotedReply extends StatelessWidget {
     required this.translation,
     required this.mode,
     required this.knownLanguageCodes,
+    required this.targetLanguageCode,
+    required this.readingScript,
   });
 
   final Message replyTo;
@@ -3759,6 +3820,8 @@ class _QuotedReply extends StatelessWidget {
   /// Task 9's rewrite didn't reach, fixed here rather than duplicated.
   final ChatMode mode;
   final List<String> knownLanguageCodes;
+  final String targetLanguageCode;
+  final ReadingScript readingScript;
 
   @override
   Widget build(BuildContext context) {
@@ -3781,6 +3844,8 @@ class _QuotedReply extends StatelessWidget {
           value: value,
           mode: mode,
           knownLanguageCodes: knownLanguageCodes,
+          targetLanguageCode: targetLanguageCode,
+          readingScript: readingScript,
         ),
       _ => replyTo.originalText,
     };

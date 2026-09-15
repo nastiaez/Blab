@@ -12,13 +12,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
-  String get unsupportedIncomingLanguageHint =>
-      'Blab kann diese Sprache noch nicht übersetzen. Das Original wird angezeigt.';
-
-  @override
-  String unsupportedLanguageHint(String learningLanguage) {
-    return 'Blab spricht diese Sprache noch nicht — versuch es auf $learningLanguage.';
-  }
+  String get unsupportedLanguageHint =>
+      'Blab spricht diese Sprache noch nicht.';
 
   @override
   String get back => 'Zurück';
@@ -412,6 +407,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get couldNotLoadChats => 'Chats konnten nicht geladen werden';
+
+  @override
+  String get couldNotLoadMessages => 'Nachrichten konnten nicht geladen werden';
 
   @override
   String get newConnectionSayHi => 'Neue Verbindung · sag Hallo';
@@ -937,4 +935,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get usingMasculineFormsForYou => 'Männliche Formen für dich';
+
+  @override
+  String get readingScript => 'Leseschrift';
+
+  @override
+  String get hindiScript => 'Hindi-Schrift';
+
+  @override
+  String get tamilScript => 'Tamil-Schrift';
+
+  @override
+  String get nativeScripts => 'Originalschriften';
+
+  @override
+  String get englishLetters => 'Lateinische Buchstaben';
 }

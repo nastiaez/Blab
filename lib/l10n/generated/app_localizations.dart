@@ -108,17 +108,11 @@ abstract class AppLocalizations {
   /// **'Blab'**
   String get appName;
 
-  /// No description provided for @unsupportedIncomingLanguageHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Blab can’t translate this language yet. Showing the original.'**
-  String get unsupportedIncomingLanguageHint;
-
   /// No description provided for @unsupportedLanguageHint.
   ///
   /// In en, this message translates to:
-  /// **'Blab doesn’t speak this one yet — try {learningLanguage}.'**
-  String unsupportedLanguageHint(String learningLanguage);
+  /// **'Blab doesn’t speak this one yet.'**
+  String get unsupportedLanguageHint;
 
   /// No description provided for @back.
   ///
@@ -845,6 +839,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load chats'**
   String get couldNotLoadChats;
+
+  /// No description provided for @couldNotLoadMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load messages'**
+  String get couldNotLoadMessages;
 
   /// No description provided for @newConnectionSayHi.
   ///
@@ -1733,6 +1733,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Using masculine forms for you'**
   String get usingMasculineFormsForYou;
+
+  /// No description provided for @readingScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading script'**
+  String get readingScript;
+
+  /// No description provided for @hindiScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi script'**
+  String get hindiScript;
+
+  /// No description provided for @tamilScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Tamil script'**
+  String get tamilScript;
+
+  /// No description provided for @nativeScripts.
+  ///
+  /// In en, this message translates to:
+  /// **'Native scripts'**
+  String get nativeScripts;
+
+  /// No description provided for @englishLetters.
+  ///
+  /// In en, this message translates to:
+  /// **'English letters'**
+  String get englishLetters;
 }
 
 class _AppLocalizationsDelegate

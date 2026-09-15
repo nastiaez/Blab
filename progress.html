@@ -1441,6 +1441,7 @@
           { id: 'core-lifecycle-states', type: 'flow', label: 'Complete every message lifecycle branch', detail: 'Incoming, cache hit, edit, delete, photo caption, mode switch, off-screen completion, concurrent sends, and reduced motion.', done: true },
           { id: 'core-language-failure', type: 'bug', label: 'Finish the quiet retry and final Retry state', detail: 'Retry language help once for up to ten seconds, then preserve the readable original; never confuse it with send failure.', done: true },
           { id: 'core-language-history', type: 'bug', label: 'Preserve completed learning-language history', detail: 'Each participant keeps earlier messages in the language that was active when they were completed; only later messages use the newly selected language.' },
+          { id: 'core-offline-translation-cache', type: 'bug', label: 'Keep completed translations after an offline restart', detail: 'Account-scoped history recovery must restore the same translated caption or message that was already visible online, without contacting the server.' },
           { id: 'core-form-cache', type: 'flow', label: 'Finish persisted grammatical-form choices', detail: 'Hydrate saved choices from the shared cache and apply self, partner, and chat-tone ownership correctly.', done: true },
           { id: 'core-form-contradiction', type: 'flow', label: 'Finish authored-form contradiction handling', detail: 'Learn the first clear form silently, treat the saved form as authoritative, and apply the normal visible correction until it is changed in Translation Preferences.', done: true },
           { id: 'core-form-copy', type: 'ux', label: 'Refine Translation preferences', detail: 'Clarify grammatical-form language, simplify hierarchy, fix value styling, spacing, and the Tone row.', done: true },
@@ -1777,11 +1778,11 @@
         area: 'Language choices',
         title: 'Hindi and Tamil: Native script or English letters',
         tasks: [
-          { id: 'script-choice-spec', type: 'flow', label: 'Specify one choice for Hindi and Tamil: Native script or English-letter transliteration — never both in one sentence.' },
-          { id: 'script-choice-build', type: 'flow', label: 'Build the choice into the relevant sentence display and settings flow.' },
-          { id: 'script-choice-verify', type: 'check', label: 'Test the chosen display across Hindi and Tamil conversations.' },
-          { id: 'script-choice-commit', type: 'flow', label: 'Commit the script-choice work.' },
-          { id: 'script-choice-push', type: 'release', label: 'Push the script-choice work to GitHub.' }
+          { id: 'script-choice-spec', type: 'flow', label: 'Specify one account-wide Reading script choice for Hindi and Tamil: native script by default or English letters — never both in one sentence.', done: true },
+          { id: 'script-choice-build', type: 'flow', label: 'Build the choice into the relevant sentence display and settings flow.', done: true },
+          { id: 'script-choice-verify', type: 'check', label: 'Test the chosen display across Hindi and Tamil conversations.', done: true },
+          { id: 'script-choice-commit', type: 'flow', label: 'Commit the script-choice work.', done: true },
+          { id: 'script-choice-push', type: 'release', label: 'Push the script-choice work to GitHub.', done: true }
         ]
       },
       {

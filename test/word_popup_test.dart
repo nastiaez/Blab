@@ -467,4 +467,47 @@ void main() {
     expect(tts.events, ['stop']);
     expect(find.text('Hello'), findsNothing);
   });
+
+  testWidgets('English-letter word popup retains native hierarchy and speech', (
+    tester,
+  ) async {
+    final tts = _RecordingTtsService();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [ttsServiceProvider.overrideWithValue(tts)],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: MessageText(
+                text: 'vanakkam',
+                tokens: [
+                  MessageToken(
+                    text: 'vanakkam',
+                    romanization: 'வணக்கம்',
+                    nativeText: 'வணக்கம்',
+                    gloss: 'hello',
+                  ),
+                ],
+                languageCode: 'ta',
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('vanakkam'));
+    await tester.pumpAndSettle();
+
+    final primary = tester.widgetList<Text>(find.text('vanakkam')).last;
+    final secondary = tester.widget<Text>(find.text('வணக்கம்'));
+    expect(primary.style?.fontSize, 22);
+    expect(secondary.style?.fontSize, 13);
+
+    tts.events.clear();
+    await tester.tap(find.byType(InkWell).last);
+    await tester.pump();
+    expect(tts.events, ['speak:ta:வணக்கம்']);
+  });
 }

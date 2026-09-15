@@ -876,6 +876,17 @@ export function applyConfirmedFormAudit(
     : { ...candidate, formAlternatives: alternatives };
 }
 
+export function resolveOptionalFormAudit(
+  result: TranslationResult,
+  audit: FormAuditResult | null,
+  formContext: FormParticipantContext,
+): TranslationResult | null {
+  if (audit === null || !audit.requiresChoice) {
+    return { ...result, formAlternatives: null };
+  }
+  return applyConfirmedFormAudit(result, audit, formContext);
+}
+
 export function formAuditSystemPrompt(
   sourceLang: string,
   targetLang: string,

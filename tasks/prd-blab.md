@@ -252,7 +252,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Practice long press temporarily reveals the reader's primary-known-language translation below the existing divider; Normal conditionally offers Original for the exact authored text
 - [ ] With learning aids disabled, authored text is shown and no new AI request is made
 - [ ] Expressive stretching, playful capitalization, and chat abbreviations are treated as style rather than mistakes; confidently identified names are transliterated into a different target script without changing their identity, while uncertain name-like text remains authored
-- [ ] If source language is outside Blab's supported language set, keep the exact authored text and show a neutral localized hint (`Blab doesn’t speak this one yet — try [learning language].`) in muted 12 px text; do not show Retry, Listen, Original, or word-description actions
+- [ ] If source language is outside Blab's supported language set, keep the exact authored text and show one neutral localized hint (`Blab doesn’t speak this one yet.`) in muted 12 px text; do not show Retry, Listen, Original, or word-description actions
 - [ ] A failed learning aid keeps the authored text usable and shows localized `Couldn’t translate · Retry` in `#C62828` below the bubble with no standalone icon
 - [ ] Timestamp shown below bubble (no read ticks on incoming)
 - [ ] Date labels such as "Today", "Yesterday", and weekday names sit directly on the chat canvas with no pill fill or background
@@ -691,6 +691,23 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
+### US-050: Choose the reading script for Hindi and Tamil
+**Description:** As a Hindi or Tamil learner, I want Blab-generated learning text in native script or English letters, so I can learn the language without being forced to learn its writing system first.
+
+**Acceptance Criteria:**
+- [ ] One account-wide `Reading script` choice applies to both Hindi and Tamil; native script is the default and Ukrainian has no script choice
+- [ ] Chat → Translation preferences shows one contextual row only for a Hindi or Tamil chat: `Hindi script` / `Tamil script` or `English letters`; Profile shows one row only while at least one eligible conversation exists
+- [ ] Both entry points use the existing preference-row and checkmarked bottom-sheet pattern, edit the same value, and remain synchronized
+- [ ] The redesigned language-selection sheet remains unchanged; changing a chat away from Hindi/Tamil hides the row without clearing the saved choice
+- [ ] The choice changes only Blab-generated Practice text, corrections, Normal fallback translations, matching reply previews, and word-description hierarchy; authored messages and Original remain exact
+- [ ] Switching the choice immediately re-renders eligible past messages from cached native text and Romanization without new translation or correction work
+- [ ] English letters render only when the full sentence has usable Romanization metadata; otherwise the whole sentence stays in native script with no mixed-script fallback
+- [ ] Native mode makes the native word primary in word descriptions; English-letters mode makes Romanization primary; native spelling, meaning, and native-language audio remain available
+- [ ] Valid native-script or Romanized authored text is never corrected solely because it differs from the reading preference
+- [ ] The complete Hindi/Tamil, both-direction Alice-browser/Bob-Android journey passes and final screenshots are retained for owner review
+
+---
+
 ## Functional Requirements
 
 - FR-1: Auth supports sign up, login, SSO (Apple/Google), forgot password — all as tab-toggle on one screen
@@ -736,6 +753,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-41: Chat-photo originals remain in private Supabase Storage, synced previews persist on-device, opened full files use a bounded cache, and an unavailable offline preview renders the approved neutral placeholder without framework error UI
 - FR-42: Invite handoff preserves the most recently opened valid invite through standard email auth and app return. Claim happens only once a signed-in recipient is known; existing pairs reuse their chat and no one can self-claim. The static web page is generic and never validates or claims a token
 - FR-43: First-time Practice and Normal guidance is a once-per-account, non-modal mode-switch tip using the approved copy and warm-orange treatment
+- FR-44: Hindi and Tamil share one account-wide `Reading script` preference (`native` default or `english_letters`). It is exposed as one contextual Translation preferences row only when relevant, re-renders eligible cached Blab-generated sentences and word-description hierarchy immediately, falls back to the whole native sentence when Romanization is incomplete, preserves authored/Original text and native TTS, and never creates a script-only correction
 
 ---
 
