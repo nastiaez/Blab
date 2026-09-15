@@ -92,6 +92,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Same sheet accessible from Profile → Interface language
 - [ ] The pre-auth choice persists locally; a signed-in choice persists to that account without leaking across logout/account switches
 - [ ] Switching the interface language immediately re-renders localized word-popup definitions from a cache keyed by both learning and interface language (no app restart, no stale locale)
+- [ ] A successful signed-in change returns to Profile and shows a target-locale `Switched to [language] · Undo` Snackbar for 4 seconds, with no close icon; navigation dismisses it, while an unrelated tap does not
 
 ---
 
@@ -413,8 +414,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] After the required language choice, an empty chat shows a simple text container: `No messages here yet…` + `Send any message to start.`; no launch illustration. Hide this container while initial language selection is required so it cannot peek above the open sheet
 - [ ] Required bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: title `Choose a language to practice`; helper `You can change it later in Settings.`; 48 px separated language rows; selected-row fill and check; slim scrollbar; and a persistent **Start practicing** action
 - [ ] The sheet shows over the chat with no blur and a `#231208` 30% veil; authored first messages remain visible behind it if they already exist
-- [ ] At the 390 × 844 reference viewport, the sheet is 567 px high, bottom-anchored, uses 16 px top corners with no drop shadow, and covers the empty-state note
-- [ ] On shorter viewports, the sheet reduces by up to 32 px so a language never appears partially above the fixed action
+- [ ] At the 430 × 932 reference viewport, the required and Settings variants are both 567 px high; other viewports use the same `567 / 932` height proportion, capped at 567 logical px plus the bottom safe area
+- [ ] The sheet is bottom-anchored, uses 16 px top corners with no drop shadow, covers the empty-state note, and keeps the language list as its only scrolling region
 - [ ] A fresh chat starts with no selection and a disabled **Start practicing** action. Tapping a language previews it; **Start practicing** is the only action that commits it
 - [ ] Tapping outside or swiping down does not close the sheet; composer, messages, and mode switch are inactive until selection
 - [ ] Back leaves for Chats; reopening the new chat shows the required sheet again. Profile and Settings remain reachable outside the chat
@@ -694,7 +695,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 - FR-1: Auth supports sign up, login, SSO (Apple/Google), forgot password — all as tab-toggle on one screen
 - FR-2: Password field has show/hide toggle, strength meter visible during sign up only
-- FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth
+- FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth. A successful signed-in change uses target-locale feedback with one Undo action, no close icon, a 4-second normal timeout, and navigation dismissal
 - FR-4: Invite creation never asks for a language or contacts access. A link is valid until one successful claim, with no time expiry; each exposed link is unique and a fresh link is prepared after Copy or a selected share target
 - FR-5: `Send invite` opens the device native share sheet with the standard Copy affordance and return behaviour; no custom share sheet or success page is used
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge, and `Ready to chat · Say hi` for an unmessaged new connection until that participant selects a practice language
@@ -711,9 +712,9 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-17: Reply preview uses only You/name with the approved accent and visible primary message text, opens the keyboard, and threads the same text or photo preview into the sent bubble
 - FR-18: Consecutive outgoing messages group (reduced gap, no repeated timestamp)
 - FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
-- FR-20: Change learning language uses the shared language-sheet design: 11 named languages, selected-row check, preview-before-commit, and a **Done** action that updates the header label only after success
+- FR-20: Change learning language uses the shared language-sheet design and height: 11 named languages, selected-row check, preview-before-commit, and a **Done** action that updates the header label only after success
 - FR-21: Send button disabled-state dims the circle fill to 40% when input is empty while keeping the arrow solid white; input is an auto-growing textarea
-- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet uses no blur and a `#231208` 30% scrim, hides and covers the empty-state container, and must be completed before chat interaction
+- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet matches the handled Settings sheet's `567 / 932` viewport-height proportion, uses no blur and a `#231208` 30% scrim, hides and covers the empty-state container, and must be completed before chat interaction
 - FR-23: Translations toggle scoped per chat (phone3 vs phone4 separate state)
 - FR-24: Word popup audio uses on-device TTS only — no external API. When TTS unavailable for the language, speaker icon stays in place but renders disabled (40% opacity, no tap, no tooltip, no text)
 - FR-25: Delivery failure shows `Not sent · Tap to try again`; language-help failure shows `Couldn’t translate · Retry`. Both are `#C62828` text-only rows below the bubble with no standalone icon; pending remains a clock

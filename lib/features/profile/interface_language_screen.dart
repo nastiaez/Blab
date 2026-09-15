@@ -36,26 +36,25 @@ class _InterfaceLanguageScreenState
 
     Future<void> apply() async {
       final previous = current;
+      final languageNotifier = ref.read(interfaceLanguageProvider.notifier);
       try {
-        await ref.read(interfaceLanguageProvider.notifier).set(selection);
+        await languageNotifier.set(selection);
       } catch (_) {
         if (!context.mounted) return;
         showAppSnack(context.l10n.couldNotSaveLanguage);
         return;
       }
       if (!context.mounted) return;
+      final savedLanguage = ref.read(interfaceLanguageProvider);
+      final feedback = interfaceLanguageChangeFeedback(savedLanguage.code);
       context.pop();
       showAppSnack(
-        context.l10n.switchedToLanguage(
-          localizedInterfaceLanguageName(context.l10n, selection.code),
-        ),
+        feedback.message,
         action: SnackBarAction(
-          label: context.l10n.undo,
+          label: feedback.actionLabel,
           textColor: BlabColors.brand,
           onPressed: () {
-            unawaited(
-              ref.read(interfaceLanguageProvider.notifier).set(previous),
-            );
+            unawaited(languageNotifier.set(previous));
           },
         ),
       );

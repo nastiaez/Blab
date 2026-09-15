@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('compact required sheet hides the next language behind its action', (
+  testWidgets('compact required sheet matches the handled sheet height ratio', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 773);
@@ -35,7 +35,12 @@ void main() {
           matching: find.byType(Material),
         )
         .first;
-    expect(tester.getRect(sheet).top, closeTo(285, 1));
+    final sheetRect = tester.getRect(sheet);
+    const handledSheetHeightRatio = 567 / 932;
+    expect(
+      sheetRect.height / tester.view.physicalSize.height,
+      closeTo(handledSheetHeightRatio, 0.002),
+    );
   });
 
   testWidgets('system Back exits required setup without trapping the chat', (

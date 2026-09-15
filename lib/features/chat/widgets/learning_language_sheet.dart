@@ -6,6 +6,8 @@ import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/widgets/blab_icon.dart';
 
+const _sheetHeightRatio = 567 / 932;
+
 /// US-027 / FR-22.
 Future<BlabLanguage?> showRequiredPracticeLanguageSheet(
   BuildContext context, {
@@ -101,8 +103,7 @@ class _LearningLanguageSheet extends StatefulWidget {
   final Future<void> Function(BlabLanguage language)? onSelected;
 
   @override
-  State<_LearningLanguageSheet> createState() =>
-      _LearningLanguageSheetState();
+  State<_LearningLanguageSheet> createState() => _LearningLanguageSheetState();
 }
 
 class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
@@ -143,13 +144,10 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
     const selectedFill = Color(0xFFF7EFE5);
     const radius = BorderRadius.vertical(top: Radius.circular(16));
     final viewportHeight = MediaQuery.sizeOf(context).height;
-    final compactReduction = (844 - viewportHeight)
-        .clamp(0.0, 32.0)
-        .toDouble();
     final sheetHeight = math.min(
-      viewportHeight * 0.672,
+      viewportHeight * _sheetHeightRatio,
       567 + MediaQuery.paddingOf(context).bottom,
-    ) - compactReduction;
+    );
 
     return Material(
       color: surface,
@@ -184,7 +182,9 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: outline,
-                              borderRadius: BorderRadius.all(Radius.circular(2)),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(2),
+                              ),
                             ),
                           ),
                         ),

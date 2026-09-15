@@ -69,6 +69,7 @@ Stream<dynamic>? _authStreamOrNull() {
 
 final GoRouter blabRouter = GoRouter(
   initialLocation: '/chats',
+  observers: [appSnackRouteObserver],
   redirect: (context, state) {
     final loc = state.matchedLocation;
     // Custom-scheme deep links land here as `blab://auth/...` because

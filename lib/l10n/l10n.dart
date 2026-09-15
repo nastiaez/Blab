@@ -22,6 +22,18 @@ String localizedInterfaceLanguageName(
   };
 }
 
+({String message, String actionLabel}) interfaceLanguageChangeFeedback(
+  String languageCode,
+) {
+  final localizations = lookupAppLocalizations(Locale(languageCode));
+  return (
+    message: localizations.switchedToLanguage(
+      localizedInterfaceLanguageName(localizations, languageCode),
+    ),
+    actionLabel: localizations.undo,
+  );
+}
+
 String localizedAuthMessage(
   AppLocalizations localizations,
   String englishMessage,

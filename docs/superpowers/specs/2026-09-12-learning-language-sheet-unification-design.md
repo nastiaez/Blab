@@ -1,6 +1,6 @@
 # Learning-language sheet unification — design spec
 
-**Status:** Approved design direction — implementation in progress; owner review pending
+**Status:** Approved and visually accepted on browser + Android emulator (2026-09-14)
 **Scope:** The required first-time practice-language choice in a new chat and the later in-chat change-language sheet.
 **Supersedes:** The required-sheet visual-refinement subsection in `2026-09-07-invite-flow-redesign-design.md` and the conflicting language-sheet details in US-022, US-027, FR-20, FR-22, and tech-spec Decision #31.
 
@@ -32,8 +32,8 @@ This is a bottom-anchored warm-white sheet on top of the chat. It is a flat surf
 
 | Element | Decision |
 | --- | --- |
-| Reference viewport | 390 × 844 logical px |
-| Sheet height | 567 logical px at the reference viewport (about 67% of viewport height), including the bottom safe area. On shorter viewports, reduce the sheet by up to 32 px so the action starts after a complete visible row rather than beside a partial next language. The language list is the only scrolling region. |
+| Reference viewport | 430 × 932 logical px |
+| Sheet height | Both variants use the handled Settings sheet as the reference: `567 / 932` of the viewport height, capped at 567 logical px plus the bottom safe area. The language list is the only scrolling region. |
 | Surface | Keep the existing warm-white sheet surface and warm outline; remove the drop shadow. |
 | Top corners | 16 px radius. |
 | Background dim | `#231208` at 30% opacity, with no blur. It covers the full chat behind the sheet. |
@@ -71,7 +71,7 @@ You can change it later in Settings.
 - Back leaves the chat for Chats; reopening the chat presents the required sheet again.
 - The chat’s composer, messages, and mode switch remain inactive behind it.
 - A new chat begins with no selected language. **Start practicing** uses the disabled treatment until a row is selected.
-- The empty-chat copy remains hidden while the required choice is open. The 567 px sheet also visually covers its usual position.
+- The empty-chat copy remains hidden while the required choice is open. The shared proportional height also visually covers its usual position.
 - Choosing a language updates only the row’s local selected state. Tapping **Start practicing** commits the choice. On success, the sheet closes and the first-time Practice tip may appear under its existing rules.
 - If saving fails, show no error copy. Restore the selected state and the normal **Start practicing** button so the same action can be tried again.
 
@@ -110,7 +110,7 @@ You can change it later in Settings.
 
 ## Acceptance checklist
 
-- [ ] On a 390 × 844 reference screen, the bottom sheet is about 567 px tall and obscures the empty-chat text behind it; on a shorter screen it ends cleanly after a whole visible language row.
+- [x] At the 430 × 932 reference viewport, both variants are 567 px tall; other viewports use the same `567 / 932` height proportion, capped at 567 logical px plus the bottom safe area.
 - [ ] Both entry points use the same surface, dim layer, typography, row design, selected state, scrollbar placement, and primary-button design.
 - [ ] The required sheet has no drag handle, cannot be dismissed by backdrop tap or swipe, and starts with a disabled **Start practicing** action.
 - [ ] The Settings sheet has the approved handle, may be dismissed by backdrop tap or swipe, and opens with the saved language selected.
