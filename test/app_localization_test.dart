@@ -42,6 +42,36 @@ void main() {
     });
   });
 
+  test('auth copy uses natural Spanish and informal Ukrainian', () {
+    final spanish = lookupAppLocalizations(const Locale('es'));
+    expect(spanish.orUseEmail, 'o usa tu correo electrónico');
+
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+    expect(ukrainian.authTagline, 'Вивчай мову, спілкуючись із другом.');
+    expect(
+      ukrainian.signUpToChat('Alice'),
+      'Зареєструйся, щоб спілкуватися з Alice.',
+    );
+    expect(ukrainian.logInToChat('Alice'), 'Увійди, щоб спілкуватися з Alice.');
+    expect(ukrainian.firstNameHint, 'Твоє ім’я');
+    expect(ukrainian.forgotPassword, 'Не пам’ятаєш пароль?');
+    expect(ukrainian.alreadyHaveAccount, 'Уже маєш обліковий запис? Увійди');
+    expect(ukrainian.newToBlab, 'Вперше в Blab? Зареєструйся');
+    expect(ukrainian.orUseEmail, 'або скористайся поштою');
+    expect(ukrainian.byContinuing, 'Продовжуючи, ти погоджуєшся з нашими ');
+    expect(
+      ukrainian.ageConfirmation,
+      ' та підтверджуєш, що тобі щонайменше 13 років.',
+    );
+    expect(ukrainian.enterEmail, 'Введи електронну пошту');
+    expect(ukrainian.enterValidEmail, 'Введи дійсну адресу електронної пошти');
+    expect(
+      ukrainian.confirmEmailInbox,
+      'Перевір вхідні, щоб підтвердити пошту',
+    );
+    expect(ukrainian.somethingWentWrong, 'Сталася помилка. Спробуй ще раз.');
+  });
+
   testWidgets('composer uses the generic localized message placeholder', (
     tester,
   ) async {

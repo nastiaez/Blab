@@ -28,7 +28,8 @@
 | B03C | Privacy preference save/failure states and physical-device Notifications verification | `screenshots/b03-privacy-notifications-account/` | Privacy persistence approved; physical-device Notifications verification pending |
 | B04A | Edit Profile and Change Email forms in EN/DE/ES/UK | `screenshots/b04-account-forms/` | Approved 2026-09-15 |
 | B04B | Change Password form and localized validation states in EN/DE/ES/UK | `screenshots/b04-account-forms/` | Approved 2026-09-15 |
-| B05 | Signup, login, password recovery | `screenshots/b05-auth/` | Not started |
+| B05A | Signup and login in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
+| B05B | Password recovery request, email confirmation, and new-password states | `screenshots/b05-auth/` | Not started |
 | B06 | Chats list and invite flow | `screenshots/b06-chats-invite/` | Not started |
 | B07 | Chat controls, menus, and message states | `screenshots/b07-chat/` | Not started |
 | B08 | Shared system and accessibility states | `screenshots/b08-system-accessibility/` | Not started |

@@ -215,7 +215,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newToBlab => '¿Eres nuevo en Blab? Regístrate';
 
   @override
-  String get orUseEmail => 'o usa el correo';
+  String get orUseEmail => 'o usa tu correo electrónico';
 
   @override
   String get continueWithGoogle => 'Continuar con Google';

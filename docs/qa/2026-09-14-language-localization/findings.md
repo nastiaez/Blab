@@ -174,6 +174,44 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-15
 - Follow-up: none
 
+## Packet B05A — Signup and login
+
+### B05A-EN-DE-01
+
+- Interface language: English and German
+- Screen/state: signup and login forms
+- Client: Bob / Android emulator
+- Expected: natural localized copy with all controls and legal text visible
+- Observed: both interfaces are natural and consistent; all content fits without clipping or overlap
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: none
+
+### B05A-ES-01
+
+- Interface language: Spanish
+- Screen/state: signup and login forms
+- Client: Bob / Android emulator
+- Expected: natural localized copy with consistent voice
+- Observed: the initial forms used the less idiomatic `o usa el correo`; the repaired login and signup use `o usa tu correo electrónico` and fit cleanly
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: changed the separator to `o usa tu correo electrónico`; verified on login and signup at the Android review size
+
+### B05A-UK-01
+
+- Interface language: Ukrainian
+- Screen/state: signup and login forms
+- Client: Bob / Android emulator
+- Expected: Blab's approved informal singular voice throughout
+- Observed: the initial forms used formal plural wording; the repaired auth, invite-auth, validation, and failure copy uses Blab's informal singular voice and fits cleanly
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: converted the visible auth, invite-auth, validation, and failure copy to Blab's informal singular voice; verified the repaired login and signup layouts on Android
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

@@ -165,23 +165,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageTurkish => 'Турецька';
 
   @override
-  String get authTagline => 'Вивчайте мову, спілкуючись із другом.';
+  String get authTagline => 'Вивчай мову, спілкуючись із другом.';
 
   @override
   String signUpToChat(String name) {
-    return 'Зареєструйтеся, щоб спілкуватися з $name.';
+    return 'Зареєструйся, щоб спілкуватися з $name.';
   }
 
   @override
   String logInToChat(String name) {
-    return 'Увійдіть, щоб спілкуватися з $name.';
+    return 'Увійди, щоб спілкуватися з $name.';
   }
 
   @override
   String get name => 'Ім\'я';
 
   @override
-  String get firstNameHint => 'Ваше ім\'я';
+  String get firstNameHint => 'Твоє ім’я';
 
   @override
   String get email => 'Електронна пошта';
@@ -193,7 +193,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get password => 'Пароль';
 
   @override
-  String get forgotPassword => 'Забули пароль?';
+  String get forgotPassword => 'Не пам’ятаєш пароль?';
 
   @override
   String get forgotYourPassword => 'Не пам’ятаєш пароль?';
@@ -208,13 +208,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get signUp => 'Зареєструватися';
 
   @override
-  String get alreadyHaveAccount => 'Уже маєте обліковий запис? Увійдіть';
+  String get alreadyHaveAccount => 'Уже маєш обліковий запис? Увійди';
 
   @override
-  String get newToBlab => 'Вперше в Blab? Зареєструйтеся';
+  String get newToBlab => 'Вперше в Blab? Зареєструйся';
 
   @override
-  String get orUseEmail => 'або скористайтеся поштою';
+  String get orUseEmail => 'або скористайся поштою';
 
   @override
   String get continueWithGoogle => 'Продовжити з Google';
@@ -223,7 +223,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get continueWithApple => 'Продовжити з Apple';
 
   @override
-  String get byContinuing => 'Продовжуючи, ви погоджуєтеся з нашими ';
+  String get byContinuing => 'Продовжуючи, ти погоджуєшся з нашими ';
 
   @override
   String get terms => 'Умовами';
@@ -236,13 +236,13 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get ageConfirmation =>
-      ' та підтверджуєте, що вам щонайменше 13 років.';
+      ' та підтверджуєш, що тобі щонайменше 13 років.';
 
   @override
-  String get enterEmail => 'Введіть електронну пошту';
+  String get enterEmail => 'Введи електронну пошту';
 
   @override
-  String get enterValidEmail => 'Введіть дійсну адресу електронної пошти';
+  String get enterValidEmail => 'Введи дійсну адресу електронної пошти';
 
   @override
   String get emailResetLink => 'Надіслати посилання';
@@ -877,10 +877,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get accountAlreadyExists => 'Обліковий запис із цією поштою вже існує';
 
   @override
-  String get confirmEmailInbox => 'Перевірте вхідні, щоб підтвердити пошту';
+  String get confirmEmailInbox => 'Перевір вхідні, щоб підтвердити пошту';
 
   @override
-  String get somethingWentWrong => 'Сталася помилка. Спробуйте ще раз.';
+  String get somethingWentWrong => 'Сталася помилка. Спробуй ще раз.';
 
   @override
   String get currentPasswordIncorrect => 'Поточний пароль неправильний';
