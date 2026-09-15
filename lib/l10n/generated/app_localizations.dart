@@ -840,6 +840,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t save privacy setting.'**
   String get couldNotSavePrivacy;
 
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicyTitle;
+
   /// No description provided for @termsOfUse.
   ///
   /// In en, this message translates to:

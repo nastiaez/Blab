@@ -2,16 +2,53 @@ import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
 import 'package:blab/features/chat/translation_preferences_screen.dart';
 import 'package:blab/features/profile/known_languages_screen.dart';
+import 'package:blab/features/profile/notification_settings_screen.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/services/grammatical_form_preferences_service.dart';
 import 'package:blab/shared/services/profile_service.dart';
+import 'package:blab/shared/services/push_notification_gateway.dart';
 import 'package:blab/shared/state/known_languages_state.dart';
 import 'package:blab/shared/state/profile_state.dart';
+import 'package:blab/shared/state/push_notifications_state.dart';
 import 'package:blab/shared/widgets/blab_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _UnavailablePushGateway implements PushNotificationGateway {
+  const _UnavailablePushGateway();
+
+  @override
+  bool get isSupported => false;
+
+  @override
+  Future<PushAuthorizationStatus> authorizationStatus() async =>
+      PushAuthorizationStatus.unavailable;
+
+  @override
+  Future<PushAuthorizationStatus> requestPermission() async =>
+      PushAuthorizationStatus.unavailable;
+
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Stream<String> get onTokenRefresh => const Stream.empty();
+
+  @override
+  Future<void> deleteToken() async {}
+
+  @override
+  Future<PushOpenEvent?> initialOpenEvent() async => null;
+
+  @override
+  Stream<PushOpenEvent> get onOpenEvent => const Stream.empty();
+
+  @override
+  Future<void> openSystemSettings() async {}
+}
 
 Future<void> _pumpLocalized(
   WidgetTester tester, {
@@ -197,6 +234,53 @@ void main() {
 
     expect(chevronRect.left - valueRect.right, lessThanOrEqualTo(2));
     expect(rowRect.right - chevronRect.right, lessThanOrEqualTo(20));
+  });
+
+  testWidgets('unavailable notification settings omit the build warning', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          pushNotificationGatewayProvider.overrideWithValue(
+            const _UnavailablePushGateway(),
+          ),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          theme: blabTheme,
+          home: const NotificationSettingsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text("Notifications aren't available in this build"),
+      findsNothing,
+    );
+    expect(find.text('Show message previews'), findsOneWidget);
+  });
+
+  test('Ukrainian Privacy and notification copy uses informal address', () {
+    final localizations = lookupAppLocalizations(const Locale('uk'));
+
+    expect(
+      localizations.typingIndicatorsHelp,
+      'Якщо вимкнути, ти не бачитимеш, коли інші друкують, а вони не бачитимуть, коли друкуєш ти.',
+    );
+    expect(
+      localizations.readReceiptsHelp,
+      'Якщо вимкнути, ти не бачитимеш сповіщень інших, а вони не бачитимуть твоїх.',
+    );
+    expect(localizations.privacyPolicyTitle, 'Політика конфіденційності');
+    expect(
+      localizations.notificationsNotRequested,
+      'Відкрий чат, щоб увімкнути сповіщення',
+    );
   });
 
   testWidgets(

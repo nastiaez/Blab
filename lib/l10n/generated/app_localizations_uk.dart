@@ -388,18 +388,21 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get typingIndicatorsHelp =>
-      'Якщо вимкнути, ви не бачитимете, коли інші друкують, а вони не бачитимуть, коли друкуєте ви.';
+      'Якщо вимкнути, ти не бачитимеш, коли інші друкують, а вони не бачитимуть, коли друкуєш ти.';
 
   @override
   String get readReceipts => 'Сповіщення про прочитання';
 
   @override
   String get readReceiptsHelp =>
-      'Якщо вимкнути, ви не бачитимете сповіщень інших, а вони не бачитимуть ваших.';
+      'Якщо вимкнути, ти не бачитимеш сповіщень інших, а вони не бачитимуть твоїх.';
 
   @override
   String get couldNotSavePrivacy =>
       'Не вдалося зберегти налаштування конфіденційності.';
+
+  @override
+  String get privacyPolicyTitle => 'Політика конфіденційності';
 
   @override
   String get termsOfUse => 'Умови використання';
@@ -917,7 +920,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get notificationsNotRequested =>
-      'Відкрийте чат, щоб увімкнути сповіщення';
+      'Відкрий чат, щоб увімкнути сповіщення';
 
   @override
   String get notificationsUnavailable => 'Сповіщення недоступні в цій збірці';

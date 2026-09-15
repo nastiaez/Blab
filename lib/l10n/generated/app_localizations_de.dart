@@ -406,6 +406,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Datenschutzeinstellung konnte nicht gespeichert werden.';
 
   @override
+  String get privacyPolicyTitle => 'Datenschutzerklärung';
+
+  @override
   String get termsOfUse => 'Nutzungsbedingungen';
 
   @override

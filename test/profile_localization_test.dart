@@ -1,24 +1,65 @@
+import 'dart:async';
+
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/profile/profile_screen.dart';
 import 'package:blab/l10n/l10n.dart';
+import 'package:blab/shared/services/push_notification_gateway.dart';
 import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/known_languages_state.dart';
 import 'package:blab/shared/state/profile_state.dart';
+import 'package:blab/shared/state/push_notifications_state.dart';
 import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/widgets/blab_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class _PushGateway implements PushNotificationGateway {
+  const _PushGateway({required this.isSupported});
+
+  @override
+  final bool isSupported;
+
+  @override
+  Future<PushAuthorizationStatus> authorizationStatus() async => isSupported
+      ? PushAuthorizationStatus.denied
+      : PushAuthorizationStatus.unavailable;
+
+  @override
+  Future<PushAuthorizationStatus> requestPermission() async =>
+      PushAuthorizationStatus.denied;
+
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Stream<String> get onTokenRefresh => const Stream.empty();
+
+  @override
+  Future<void> deleteToken() async {}
+
+  @override
+  Future<PushOpenEvent?> initialOpenEvent() async => null;
+
+  @override
+  Stream<PushOpenEvent> get onOpenEvent => const Stream.empty();
+
+  @override
+  Future<void> openSystemSettings() async {}
+}
 
 Future<void> _pumpProfile(
   WidgetTester tester, {
   required Locale locale,
   double textScale = 1,
+  bool pushSupported = false,
   KnownLanguages knownLanguages = const KnownLanguages(
     codes: ['nl'],
     primary: 'nl',
   ),
 }) async {
+  SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -31,6 +72,9 @@ Future<void> _pumpProfile(
           ),
         ),
         knownLanguagesProvider.overrideWith((_) async => knownLanguages),
+        pushNotificationGatewayProvider.overrideWithValue(
+          _PushGateway(isSupported: pushSupported),
+        ),
       ],
       child: MaterialApp(
         locale: locale,
@@ -105,5 +149,22 @@ void main() {
       localizations.couldNotUpdateProfile,
       'Не вдалося оновити профіль. Спробуй ще раз.',
     );
+  });
+
+  testWidgets('Profile hides Notifications when push is unavailable', (
+    tester,
+  ) async {
+    await _pumpProfile(tester, locale: const Locale('en'));
+
+    expect(find.text('Privacy'), findsOneWidget);
+    expect(find.text('Notifications'), findsNothing);
+  });
+
+  testWidgets('Profile shows Notifications when push is supported', (
+    tester,
+  ) async {
+    await _pumpProfile(tester, locale: const Locale('en'), pushSupported: true);
+
+    expect(find.text('Notifications'), findsOneWidget);
   });
 }

@@ -129,6 +129,7 @@
   "readReceipts": "Read receipts",
   "readReceiptsHelp": "If turned off, you won't see read receipts from others, and they won't see yours.",
   "couldNotSavePrivacy": "Couldn't save privacy setting.",
+  "privacyPolicyTitle": "Privacy Policy",
   "termsOfUse": "Terms of Use",
   "logOut": "Log out",
   "logOutQuestion": "Log out?",

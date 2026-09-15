@@ -403,6 +403,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo guardar la configuración de privacidad.';
 
   @override
+  String get privacyPolicyTitle => 'Política de privacidad';
+
+  @override
   String get termsOfUse => 'Términos de uso';
 
   @override

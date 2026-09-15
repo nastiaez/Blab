@@ -400,6 +400,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldNotSavePrivacy => 'Couldn\'t save privacy setting.';
 
   @override
+  String get privacyPolicyTitle => 'Privacy Policy';
+
+  @override
   String get termsOfUse => 'Terms of Use';
 
   @override

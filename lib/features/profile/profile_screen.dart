@@ -23,6 +23,7 @@ class ProfileScreen extends ConsumerWidget {
     final profile = ref.watch(currentProfileProvider);
     final hasPasswordIdentity = ref.watch(hasPasswordIdentityProvider);
     final knownLanguages = ref.watch(knownLanguagesProvider);
+    final pushNotifications = ref.watch(pushNotificationsProvider);
     final emailLocal = session?.user.email?.split('@').first;
     final displayName =
         profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
@@ -98,12 +99,14 @@ class ProfileScreen extends ConsumerWidget {
                   label: context.l10n.privacy,
                   onTap: () => context.push('/profile/privacy'),
                 ),
-                const _RowDivider(),
-                _SettingsRow(
-                  iconName: 'bell - 20',
-                  label: context.l10n.notifications,
-                  onTap: () => context.push('/profile/notifications'),
-                ),
+                if (pushNotifications.isSupported) ...[
+                  const _RowDivider(),
+                  _SettingsRow(
+                    iconName: 'bell - 20',
+                    label: context.l10n.notifications,
+                    onTap: () => context.push('/profile/notifications'),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 24),
