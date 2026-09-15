@@ -87,11 +87,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     required String next,
   }) {
     if (next.isEmpty) return context.l10n.enterNewPassword;
-    if (next.length < 6) return context.l10n.passwordMinLength;
-    if (next == current) return context.l10n.chooseDifferentPassword;
-    if (estimatePasswordStrength(next).index < PasswordStrength.fair.index) {
-      return context.l10n.chooseStrongerPassword;
+    if (!meetsPasswordRequirement(next)) {
+      return context.l10n.passwordMinLength;
     }
+    if (next == current) return context.l10n.chooseDifferentPassword;
     return null;
   }
 
@@ -205,7 +204,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 },
                 textInputAction: TextInputAction.next,
               ),
-              PasswordStrengthBar(password: _next.text),
+              PasswordGuidance(password: _next.text),
               const SizedBox(height: 16),
               PasswordField(
                 controller: _confirm,

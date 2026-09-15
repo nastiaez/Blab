@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:blab/app/router.dart';
 import 'package:blab/app/theme.dart';
+import 'package:blab/features/auth/reset_password_screen.dart';
 import 'package:blab/features/auth/widgets/password_strength.dart';
 import 'package:blab/main.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
@@ -42,6 +43,37 @@ void main() {
     expect(estimatePasswordStrength('Abcdefgh'), PasswordStrength.fair);
     expect(estimatePasswordStrength('Abcdefg1'), PasswordStrength.fair);
     expect(estimatePasswordStrength('Abcdef1!23'), PasswordStrength.strong);
+  });
+
+  test(
+    'password acceptance depends only on the visible six-character rule',
+    () {
+      expect(meetsPasswordRequirement('abcde'), isFalse);
+      expect(meetsPasswordRequirement('abcdef'), isTrue);
+      expect(estimatePasswordStrength('abcdef'), PasswordStrength.weak);
+    },
+  );
+
+  testWidgets('reset password puts the minimum rule beside the field', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: ResetPasswordScreen())),
+    );
+
+    expect(find.text('At least 6 characters'), findsOneWidget);
+    expect(find.textContaining("Pick something you'll remember"), findsNothing);
+
+    final fieldBottom = tester.getRect(find.byType(TextField).first).bottom;
+    final hintTop = tester.getRect(find.text('At least 6 characters')).top;
+    expect(hintTop - fieldBottom, closeTo(6, 0.01));
+
+    await tester.enterText(find.byType(TextField).first, 'abcdef');
+    await tester.pump();
+    expect(find.text('At least 6 characters'), findsNothing);
+    expect(find.text('Weak'), findsOneWidget);
+    final strengthTop = tester.getRect(find.text('Weak')).top;
+    expect(strengthTop - fieldBottom, closeTo(6, 0.01));
   });
 
   test('revoked refresh-token failures are recognized for local recovery', () {

@@ -167,4 +167,32 @@ void main() {
     await _submitEmailAuth(tester, signUp: false);
     expect(find.text('chats'), findsOneWidget);
   });
+
+  testWidgets('signup explains and enforces the visible minimum length', (
+    tester,
+  ) async {
+    final router = _authRouter();
+    addTearDown(router.dispose);
+    var authCalls = 0;
+    await _pumpRouter(
+      tester,
+      router,
+      emailAuth: (_) async => authCalls++,
+      socialAuth: (_) async {},
+      inviteClaim: (_) async => throw StateError('must not claim'),
+    );
+
+    expect(find.text('At least 6 characters'), findsOneWidget);
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'Recipient');
+    await tester.enterText(fields.at(1), 'recipient@blab.test');
+    await tester.enterText(fields.at(2), 'abcde');
+    final submit = find.text('Join Blab');
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+
+    expect(find.text('Use at least 6 characters'), findsOneWidget);
+    expect(authCalls, 0);
+  });
 }

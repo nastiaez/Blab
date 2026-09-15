@@ -238,6 +238,46 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-15
 - Follow-up: changed the confirmation to `Перевір пошту` and `Ми надіслали посилання для скидання пароля на адресу {email}`; removed the forced address line break and replaced the emoji across every locale
 
+## Packet B05B2 — New-password form and validation
+
+### B05B2-EN-DE-ES-01
+
+- Interface language: English, German, and Spanish
+- Screen/state: new-password form and empty-submit validation
+- Client: Bob / Android emulator
+- Expected: natural recovery copy with usable password fields, validation, and action label
+- Observed: the original helper mixed filler with the only password rule; the repaired form removes that paragraph and places the concise localized minimum beside the password field
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: `At least 6 characters` and its localized equivalents now appear beside the field; the strength meter replaces the hint after typing begins, using the same compact six-pixel slot so the form does not jump
+
+### B05B2-UK-01
+
+- Interface language: Ukrainian
+- Screen/state: new-password form and empty-submit validation
+- Client: Bob / Android emulator
+- Expected: Blab's approved informal singular voice throughout
+- Observed: the original heading/helper used formal plural `Установіть`, `Виберіть`, `запам'ятаєте`, and `Використайте`; the repaired heading uses informal `Установи`, removes the filler helper, and shows `Щонайменше 6 символів` beside the field
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: replacement Android screen fits without clipping or overlap
+
+## Packet B05C — Password-rule consistency
+
+### B05C-ALL-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: signup, password reset, and change-password default/typed states
+- Client: Bob / Android emulator plus local Supabase
+- Expected: users see the real password rule before submitting; password strength is guidance rather than an undisclosed requirement
+- Observed: every flow now shows a concise localized six-character hint beside the relevant field; typing swaps the hint for the existing strength meter; passwords under six receive an action-oriented error; six-character passwords are no longer rejected solely for a weak strength score
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: focused regressions cover signup validation, change-password acceptance, hint-to-strength behavior, localized copy, and identical six-pixel guidance alignment before and after typing. Local Supabase accepted a disposable six-character lowercase password, matching `minimum_password_length = 6`; the disposable account was removed.
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

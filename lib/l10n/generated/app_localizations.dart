@@ -582,12 +582,6 @@ abstract class AppLocalizations {
   /// **'Set a new password'**
   String get setNewPassword;
 
-  /// No description provided for @newPasswordHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick something you\'ll remember. Use at least 6 characters.'**
-  String get newPasswordHelp;
-
   /// No description provided for @newPassword.
   ///
   /// In en, this message translates to:
@@ -642,17 +636,17 @@ abstract class AppLocalizations {
   /// **'Strong'**
   String get passwordStrong;
 
+  /// No description provided for @passwordMinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 6 characters'**
+  String get passwordMinHint;
+
   /// No description provided for @passwordMinLength.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 6 characters'**
+  /// **'Use at least 6 characters'**
   String get passwordMinLength;
-
-  /// No description provided for @chooseStrongerPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a stronger password'**
-  String get chooseStrongerPassword;
 
   /// No description provided for @passwordsDoNotMatch.
   ///

@@ -30,7 +30,8 @@
 | B04B | Change Password form and localized validation states in EN/DE/ES/UK | `screenshots/b04-account-forms/` | Approved 2026-09-15 |
 | B05A | Signup and login in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
 | B05B1 | Password recovery request and email confirmation in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
-| B05B2 | New-password form and validation states in EN/DE/ES/UK | `screenshots/b05-auth/` | Not started |
+| B05B2 | New-password form and validation states in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
+| B05C | Six-character password guidance across signup, reset, and change-password | `screenshots/b05-auth/` | Approved 2026-09-15 |
 | B06 | Chats list and invite flow | `screenshots/b06-chats-invite/` | Not started |
 | B07 | Chat controls, menus, and message states | `screenshots/b07-chat/` | Not started |
 | B08 | Shared system and accessibility states | `screenshots/b08-system-accessibility/` | Not started |

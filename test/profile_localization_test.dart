@@ -172,14 +172,8 @@ void main() {
       'Ми надіслали посилання для підтвердження на\n'
       'bob@example.com. Натисни його, щоб завершити зміну.',
     );
-    expect(
-      localizations.enterNewEmail,
-      'Введи нову адресу електронної пошти',
-    );
-    expect(
-      localizations.emailAlreadyUsed,
-      'Це вже твоя електронна пошта',
-    );
+    expect(localizations.enterNewEmail, 'Введи нову адресу електронної пошти');
+    expect(localizations.emailAlreadyUsed, 'Це вже твоя електронна пошта');
   });
 
   test('Ukrainian password flow uses natural informal copy', () {
@@ -190,7 +184,6 @@ void main() {
     expect(localizations.enterNewPassword, 'Введи новий пароль');
     expect(localizations.confirmNewPassword, 'Підтверди новий пароль');
     expect(localizations.confirmPassword, 'Підтверди новий пароль');
-    expect(localizations.chooseStrongerPassword, 'Вибери надійніший пароль');
     expect(localizations.chooseDifferentPassword, 'Вибери інший пароль');
     expect(
       localizations.signInAgain,

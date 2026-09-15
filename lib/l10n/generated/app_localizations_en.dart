@@ -261,10 +261,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setNewPassword => 'Set a new password';
 
   @override
-  String get newPasswordHelp =>
-      'Pick something you\'ll remember. Use at least 6 characters.';
-
-  @override
   String get newPassword => 'New password';
 
   @override
@@ -292,10 +288,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordStrong => 'Strong';
 
   @override
-  String get passwordMinLength => 'Password must be at least 6 characters';
+  String get passwordMinHint => 'At least 6 characters';
 
   @override
-  String get chooseStrongerPassword => 'Choose a stronger password';
+  String get passwordMinLength => 'Use at least 6 characters';
 
   @override
   String get passwordsDoNotMatch => 'Passwords don\'t match';

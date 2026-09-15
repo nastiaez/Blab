@@ -77,21 +77,42 @@ void main() {
     expect(ukrainian.somethingWentWrong, 'Сталася помилка. Спробуй ще раз.');
   });
 
-  test('password reset confirmation keeps the email attached in every locale', () {
-    for (final locale in AppLocalizations.supportedLocales) {
-      final localizations = lookupAppLocalizations(locale);
-      final message = localizations.resetLinkSent('bob@blab.test');
-      expect(
-        message,
-        isNot(contains('\n')),
-        reason: '${locale.languageCode} must wrap naturally',
-      );
-      expect(
-        message,
-        contains('\u00a0bob@blab.test'),
-        reason: '${locale.languageCode} must not orphan the email address',
-      );
+  test(
+    'password reset confirmation keeps the email attached in every locale',
+    () {
+      for (final locale in AppLocalizations.supportedLocales) {
+        final localizations = lookupAppLocalizations(locale);
+        final message = localizations.resetLinkSent('bob@blab.test');
+        expect(
+          message,
+          isNot(contains('\n')),
+          reason: '${locale.languageCode} must wrap naturally',
+        );
+        expect(
+          message,
+          contains('\u00a0bob@blab.test'),
+          reason: '${locale.languageCode} must not orphan the email address',
+        );
+      }
+    },
+  );
+
+  test('password minimum copy is concise and localized', () {
+    const expectations = {
+      'en': ('At least 6 characters', 'Use at least 6 characters'),
+      'de': ('Mindestens 6 Zeichen', 'Verwende mindestens 6 Zeichen'),
+      'es': ('Al menos 6 caracteres', 'Usa al menos 6 caracteres'),
+      'uk': ('Щонайменше 6 символів', 'Використай щонайменше 6 символів'),
+    };
+
+    for (final entry in expectations.entries) {
+      final localizations = lookupAppLocalizations(Locale(entry.key));
+      expect(localizations.passwordMinHint, entry.value.$1);
+      expect(localizations.passwordMinLength, entry.value.$2);
     }
+
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+    expect(ukrainian.setNewPassword, 'Установи новий пароль');
   });
 
   testWidgets('composer uses the generic localized message placeholder', (

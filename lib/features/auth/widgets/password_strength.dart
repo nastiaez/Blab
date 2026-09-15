@@ -4,6 +4,11 @@ import '../../../l10n/l10n.dart';
 
 enum PasswordStrength { empty, weak, fair, strong }
 
+const minimumPasswordLength = 6;
+
+bool meetsPasswordRequirement(String password) =>
+    password.length >= minimumPasswordLength;
+
 PasswordStrength estimatePasswordStrength(String pw) {
   if (pw.isEmpty) return PasswordStrength.empty;
   int score = 0;
@@ -18,7 +23,28 @@ PasswordStrength estimatePasswordStrength(String pw) {
   return PasswordStrength.strong;
 }
 
-/// Strength bar shown only during sign up (FR-2).
+/// Shows the password rule before typing and advisory strength afterward.
+class PasswordGuidance extends StatelessWidget {
+  const PasswordGuidance({super.key, required this.password});
+
+  final String password;
+
+  @override
+  Widget build(BuildContext context) {
+    if (password.isNotEmpty) {
+      return PasswordStrengthBar(password: password);
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Text(
+        context.l10n.passwordMinHint,
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+      ),
+    );
+  }
+}
+
+/// Advisory strength bar shown after the user starts typing (FR-2).
 class PasswordStrengthBar extends StatelessWidget {
   const PasswordStrengthBar({super.key, required this.password});
 
@@ -51,7 +77,7 @@ class PasswordStrengthBar extends StatelessWidget {
     };
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
           for (int i = 0; i < 3; i++) ...[

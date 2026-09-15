@@ -259,11 +259,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get backToLogin => 'Назад до входу';
 
   @override
-  String get setNewPassword => 'Установіть новий пароль';
-
-  @override
-  String get newPasswordHelp =>
-      'Виберіть пароль, який запам\'ятаєте. Використайте щонайменше 6 символів.';
+  String get setNewPassword => 'Установи новий пароль';
 
   @override
   String get newPassword => 'Новий пароль';
@@ -293,10 +289,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get passwordStrong => 'Надійний';
 
   @override
-  String get passwordMinLength => 'Пароль має містити щонайменше 6 символів';
+  String get passwordMinHint => 'Щонайменше 6 символів';
 
   @override
-  String get chooseStrongerPassword => 'Вибери надійніший пароль';
+  String get passwordMinLength => 'Використай щонайменше 6 символів';
 
   @override
   String get passwordsDoNotMatch => 'Паролі не збігаються';
