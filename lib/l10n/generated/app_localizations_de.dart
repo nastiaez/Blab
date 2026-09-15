@@ -449,6 +449,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get deleteForever => 'Endgültig löschen';
 
   @override
+  String get deleteAccountConfirmationTitle => 'Konto endgültig löschen?';
+
+  @override
+  String get deleteAccountConfirmationBody =>
+      'Das kann nicht rückgängig gemacht werden.';
+
+  @override
   String get enterPasswordToConfirm => 'Gib zur Bestätigung dein Passwort ein';
 
   @override

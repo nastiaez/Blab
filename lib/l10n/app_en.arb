@@ -143,6 +143,8 @@
   "typeEmailToConfirm": "Type {email} to confirm",
   "@typeEmailToConfirm": {"placeholders": {"email": {"type": "String"}}},
   "deleteForever": "Delete forever",
+  "deleteAccountConfirmationTitle": "Delete your account permanently?",
+  "deleteAccountConfirmationBody": "This can't be undone.",
   "enterPasswordToConfirm": "Enter your password to confirm",
   "emailDoesNotMatch": "That doesn't match your email",
   "couldNotDeleteAccount": "Couldn't delete your account. Try again.",

@@ -157,14 +157,6 @@ Future<bool?> _confirmLogout(BuildContext context) {
         context.l10n.logOutQuestion,
         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
       ),
-      content: Text(
-        context.l10n.logOutHelp,
-        style: const TextStyle(
-          fontSize: 14,
-          color: BlabColors.textMuted,
-          height: 1.4,
-        ),
-      ),
       actionsPadding: const EdgeInsets.only(right: 8, bottom: 8),
       actions: [
         TextButton(

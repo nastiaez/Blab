@@ -443,6 +443,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteForever => 'Delete forever';
 
   @override
+  String get deleteAccountConfirmationTitle =>
+      'Delete your account permanently?';
+
+  @override
+  String get deleteAccountConfirmationBody => 'This can\'t be undone.';
+
+  @override
   String get enterPasswordToConfirm => 'Enter your password to confirm';
 
   @override

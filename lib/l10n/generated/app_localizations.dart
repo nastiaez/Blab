@@ -918,6 +918,18 @@ abstract class AppLocalizations {
   /// **'Delete forever'**
   String get deleteForever;
 
+  /// No description provided for @deleteAccountConfirmationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account permanently?'**
+  String get deleteAccountConfirmationTitle;
+
+  /// No description provided for @deleteAccountConfirmationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone.'**
+  String get deleteAccountConfirmationBody;
+
   /// No description provided for @enterPasswordToConfirm.
   ///
   /// In en, this message translates to:

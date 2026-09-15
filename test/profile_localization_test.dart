@@ -167,4 +167,25 @@ void main() {
 
     expect(find.text('Notifications'), findsOneWidget);
   });
+
+  testWidgets('Log out confirmation contains only the decision', (
+    tester,
+  ) async {
+    await _pumpProfile(tester, locale: const Locale('en'));
+
+    final logOut = find.text('Log out');
+    await tester.ensureVisible(logOut);
+    await tester.tap(logOut);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Log out?'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Log out'), findsNWidgets(2));
+    expect(
+      find.text(
+        "You'll need your email and password (or Google) to sign back in.",
+      ),
+      findsNothing,
+    );
+  });
 }

@@ -12,8 +12,6 @@ import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/privacy_settings.dart';
 import '../chat/state/pending_sends_state.dart';
-import '../auth/widgets/blab_text_field.dart';
-import '../auth/widgets/password_field.dart';
 
 /// PRD US-035. Full-screen Delete-account page.
 ///
@@ -32,35 +30,12 @@ class DeleteAccountScreen extends ConsumerStatefulWidget {
 }
 
 class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
-  final _password = TextEditingController();
-  final _emailConfirm = TextEditingController();
   String? _err;
   bool _busy = false;
-
-  @override
-  void dispose() {
-    _password.dispose();
-    _emailConfirm.dispose();
-    super.dispose();
-  }
 
   Future<void> _delete() async {
     HapticFeedback.heavyImpact();
     final auth = ref.read(supabaseAuthServiceProvider);
-    final usePassword = auth.hasPasswordIdentity;
-
-    if (usePassword) {
-      if (_password.text.isEmpty) {
-        setState(() => _err = context.l10n.enterPasswordToConfirm);
-        return;
-      }
-    } else {
-      final currentEmail = auth.currentUser?.email?.trim().toLowerCase() ?? '';
-      if (_emailConfirm.text.trim().toLowerCase() != currentEmail) {
-        setState(() => _err = context.l10n.emailDoesNotMatch);
-        return;
-      }
-    }
 
     setState(() {
       _busy = true;
@@ -69,7 +44,6 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
     try {
       await auth.deleteAccount(
-        password: usePassword ? _password.text : null,
         clearLocalData: const LocalAccountDataStore().clear,
       );
       ref.invalidate(typingIndicatorsProvider);
@@ -97,12 +71,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     }
   }
 
+  Future<void> _confirmAndDelete() async {
+    final confirmed = await _confirmDeleteAccount(context);
+    if (confirmed == true && mounted) await _delete();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(supabaseAuthServiceProvider);
-    final usePassword = auth.hasPasswordIdentity;
-    final email = auth.currentUser?.email ?? '';
-
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
       appBar: AppBar(
@@ -153,28 +128,20 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 ],
               ),
               const SizedBox(height: 22),
-              if (usePassword)
-                PasswordField(
-                  controller: _password,
-                  label: context.l10n.confirmWithPassword,
-                  errorText: _err,
-                  autofocus: true,
-                  onChanged: (_) {
-                    if (_err != null) setState(() => _err = null);
-                  },
-                )
-              else
-                BlabTextField(
-                  controller: _emailConfirm,
-                  label: context.l10n.typeEmailToConfirm(email),
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _err,
-                  autofocus: true,
-                  onChanged: (_) {
-                    if (_err != null) setState(() => _err = null);
-                  },
+              if (_err != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Text(
+                    _err!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red.shade700,
+                      height: 1.35,
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 16),
+              ],
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -185,7 +152,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: _busy ? null : _delete,
+                  onPressed: _busy ? null : _confirmAndDelete,
                   child: _busy
                       ? const SizedBox(
                           width: 22,
@@ -227,6 +194,53 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       ),
     );
   }
+}
+
+Future<bool?> _confirmDeleteAccount(BuildContext context) {
+  return showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        context.l10n.deleteAccountConfirmationTitle,
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+      ),
+      content: Text(
+        context.l10n.deleteAccountConfirmationBody,
+        style: const TextStyle(
+          fontSize: 14,
+          color: BlabColors.textMuted,
+          height: 1.4,
+        ),
+      ),
+      actionsPadding: const EdgeInsets.only(right: 8, bottom: 8),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(
+            context.l10n.cancel,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: BlabColors.textPrimary,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(
+            context.l10n.deleteForever,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.red.shade600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _Card extends StatelessWidget {

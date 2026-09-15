@@ -427,31 +427,38 @@ class AppLocalizationsUk extends AppLocalizations {
   String get allChatsMessages => 'Усі чати й повідомлення';
 
   @override
-  String get yourProfile => 'Ваш профіль';
+  String get yourProfile => 'Твій профіль';
 
   @override
-  String get yourSettings => 'Ваші налаштування';
+  String get yourSettings => 'Твої налаштування';
 
   @override
   String get confirmWithPassword => 'Підтвердити паролем';
 
   @override
   String typeEmailToConfirm(String email) {
-    return 'Введіть $email для підтвердження';
+    return 'Введи $email для підтвердження';
   }
 
   @override
   String get deleteForever => 'Видалити назавжди';
 
   @override
-  String get enterPasswordToConfirm => 'Введіть пароль для підтвердження';
+  String get deleteAccountConfirmationTitle =>
+      'Видалити обліковий запис назавжди?';
 
   @override
-  String get emailDoesNotMatch => 'Це не збігається з вашою поштою';
+  String get deleteAccountConfirmationBody => 'Цю дію неможливо скасувати.';
+
+  @override
+  String get enterPasswordToConfirm => 'Введи пароль для підтвердження';
+
+  @override
+  String get emailDoesNotMatch => 'Це не збігається з твоєю поштою';
 
   @override
   String get couldNotDeleteAccount =>
-      'Не вдалося видалити обліковий запис. Спробуйте ще раз.';
+      'Не вдалося видалити обліковий запис. Спробуй ще раз.';
 
   @override
   String get newChat => 'Новий чат';

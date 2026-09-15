@@ -446,6 +446,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deleteForever => 'Eliminar para siempre';
 
   @override
+  String get deleteAccountConfirmationTitle =>
+      '¿Eliminar tu cuenta para siempre?';
+
+  @override
+  String get deleteAccountConfirmationBody =>
+      'Esta acción no se puede deshacer.';
+
+  @override
   String get enterPasswordToConfirm => 'Introduce tu contraseña para confirmar';
 
   @override
