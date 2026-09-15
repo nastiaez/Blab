@@ -151,6 +151,37 @@ void main() {
     );
   });
 
+  test('Ukrainian account forms use natural informal copy', () {
+    final localizations = lookupAppLocalizations(const Locale('uk'));
+
+    expect(localizations.displayName, 'Ім’я в профілі');
+    expect(localizations.yourName, 'Твоє ім’я');
+    expect(localizations.enterDisplayName, 'Введи ім’я в профілі');
+    expect(
+      localizations.displayNameTooLong,
+      'Ім’я в профілі має містити не більше 50 символів',
+    );
+    expect(
+      localizations.displayNameUnsupported,
+      'Ім’я в профілі містить непідтримувані символи',
+    );
+    expect(localizations.emailHint, 'name@example.com');
+    expect(localizations.checkYourInbox, 'Перевір вхідні');
+    expect(
+      localizations.emailConfirmationSent('bob@example.com'),
+      'Ми надіслали посилання для підтвердження на\n'
+      'bob@example.com. Натисни його, щоб завершити зміну.',
+    );
+    expect(
+      localizations.enterNewEmail,
+      'Введи нову адресу електронної пошти',
+    );
+    expect(
+      localizations.emailAlreadyUsed,
+      'Це вже твоя електронна пошта',
+    );
+  });
+
   testWidgets('Profile hides Notifications when push is unavailable', (
     tester,
   ) async {

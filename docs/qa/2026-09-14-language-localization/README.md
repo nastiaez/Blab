@@ -25,8 +25,9 @@
 | B02D | Known Languages successful-save and offline save-error states in EN/DE/ES/UK | `screenshots/b02-known-translation-preferences/` | Approved 2026-09-15 |
 | B03A | Privacy and Notifications overview in EN/DE/ES/UK, plus unsupported-local-build handling | `screenshots/b03-privacy-notifications-account/` | Approved 2026-09-15 |
 | B03B | Minimal logout and credential-free, two-step delete-account confirmations in EN/DE/ES/UK | `screenshots/b03-privacy-notifications-account/` | Approved 2026-09-15 |
-| B03C | Privacy preference save/failure states and physical-device Notifications verification | `screenshots/b03-privacy-notifications-account/` | Not started |
-| B04 | Edit profile, email, password | `screenshots/b04-account-forms/` | Not started |
+| B03C | Privacy preference save/failure states and physical-device Notifications verification | `screenshots/b03-privacy-notifications-account/` | Privacy persistence approved; physical-device Notifications verification pending |
+| B04A | Edit Profile and Change Email forms in EN/DE/ES/UK | `screenshots/b04-account-forms/` | Approved 2026-09-15 |
+| B04B | Change Password form and account-form validation states | `screenshots/b04-account-forms/` | Not started |
 | B05 | Signup, login, password recovery | `screenshots/b05-auth/` | Not started |
 | B06 | Chats list and invite flow | `screenshots/b06-chats-invite/` | Not started |
 | B07 | Chat controls, menus, and message states | `screenshots/b07-chat/` | Not started |

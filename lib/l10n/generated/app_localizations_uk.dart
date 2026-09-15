@@ -187,7 +187,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get email => 'Електронна пошта';
 
   @override
-  String get emailHint => 'ви@example.com';
+  String get emailHint => 'name@example.com';
 
   @override
   String get password => 'Пароль';
@@ -302,24 +302,24 @@ class AppLocalizationsUk extends AppLocalizations {
   String get passwordsDoNotMatch => 'Паролі не збігаються';
 
   @override
-  String get enterDisplayName => 'Введіть відображуване ім\'я';
+  String get enterDisplayName => 'Введи ім’я в профілі';
 
   @override
   String get displayNameTooLong =>
-      'Відображуване ім\'я має містити не більше 50 символів';
+      'Ім’я в профілі має містити не більше 50 символів';
 
   @override
   String get displayNameUnsupported =>
-      'Відображуване ім\'я містить непідтримувані символи';
+      'Ім’я в профілі містить непідтримувані символи';
 
   @override
   String get editProfile => 'Редагувати профіль';
 
   @override
-  String get displayName => 'Відображуване ім\'я';
+  String get displayName => 'Ім’я в профілі';
 
   @override
-  String get yourName => 'Ваше ім\'я';
+  String get yourName => 'Твоє ім’я';
 
   @override
   String get profileUpdated => 'Профіль оновлено ✓';
@@ -345,18 +345,18 @@ class AppLocalizationsUk extends AppLocalizations {
       'Ми надішлемо посилання для підтвердження. Стара пошта залишатиметься активною до підтвердження.';
 
   @override
-  String get checkYourInbox => 'Перевірте вхідні';
+  String get checkYourInbox => 'Перевір вхідні';
 
   @override
   String emailConfirmationSent(String email) {
-    return 'Ми надіслали посилання для підтвердження на\n$email. Натисніть його, щоб завершити зміну.';
+    return 'Ми надіслали посилання для підтвердження на\n$email. Натисни його, щоб завершити зміну.';
   }
 
   @override
-  String get enterNewEmail => 'Введіть нову адресу електронної пошти';
+  String get enterNewEmail => 'Введи нову адресу електронної пошти';
 
   @override
-  String get emailAlreadyUsed => 'Це вже ваша електронна пошта';
+  String get emailAlreadyUsed => 'Це вже твоя електронна пошта';
 
   @override
   String get changePassword => 'Змінити пароль';
