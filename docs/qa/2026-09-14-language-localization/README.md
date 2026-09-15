@@ -20,7 +20,8 @@
 | B01A | Profile overview in EN/DE/ES/UK, default and 200% text | Before: `screenshots/b01a-profile/`; repaired: `screenshots/b01a-profile-fixed/` | Approved 2026-09-14 |
 | B01B | Interface Language picker, apply, success, failure, persistence | `screenshots/b01b-interface-language/` | Approved 2026-09-14 |
 | B02A | Known Languages and Translation Preferences overview in EN/DE/ES/UK | `screenshots/b02-known-translation-preferences/` | Approved 2026-09-14 |
-| B02B | Known Languages and Translation Preferences selection, save, and error states | `screenshots/b02-known-translation-preferences/` | Not started |
+| B02B | Known Languages and Translation Preferences selection sheets in EN/DE/ES/UK | `screenshots/b02-known-translation-preferences/` | Approved 2026-09-15 |
+| B02C | Known Languages and Translation Preferences save and error states | `screenshots/b02-known-translation-preferences/` | In progress |
 | B03 | Privacy, Notifications, logout, delete account | `screenshots/b03-privacy-notifications-account/` | Not started |
 | B04 | Edit profile, email, password | `screenshots/b04-account-forms/` | Not started |
 | B05 | Signup, login, password recovery | `screenshots/b05-auth/` | Not started |

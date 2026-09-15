@@ -150,6 +150,30 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: rephrase the English label to `Your grammatical form`, localize the entire flow, use informal Ukrainian (`Твоя граматична форма`), and keep each value close to its arrow in one right-aligned trailing group; authorized 2026-09-14
 - Follow-up: repaired the overview, form and tone pickers, values, and save errors in EN/DE/ES/UK. Long copy uses responsive spacing and stacks when needed. The owner approved the final four-language packet on 2026-09-14
 
+### B02B-EN-DE-ES-UK-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: Known Languages / selection screen with three selected languages and English primary
+- Client: Bob / Android emulator
+- Expected: title, all eleven language names, primary-language affordance, and Apply action follow the Interface Language without clipping
+- Observed: all four interfaces are localized, every control remains visible, and the longest German and Ukrainian names fit without overlap
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: none
+
+### B02B-EN-DE-ES-UK-02
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: Translation Preferences / grammatical-form selection sheet
+- Client: Bob / Android emulator
+- Expected: title, feminine, masculine, and unset choices follow the Interface Language and remain readable over the scrim
+- Observed: all four sheets are localized and the controls remain fully visible without clipping or crowding
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
