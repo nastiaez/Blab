@@ -186,6 +186,7 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
     required this.learningLanguageCode,
     required this.explanation,
     required this.popupTopInset,
+    this.correctedTokens = const [],
   });
 
   final String originalText;
@@ -203,6 +204,10 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
   /// Minimum top-Y either popup is allowed to occupy (global coords). Used
   /// to keep popups from drawing over the chat header. BUG-009.
   final double popupTopInset;
+
+  /// Metadata for the generated correction as currently presented. This
+  /// keeps English-letter corrections linked to native spelling and audio.
+  final List<MessageToken> correctedTokens;
 
   @override
   ConsumerState<InlineCorrectionText> createState() =>
@@ -249,7 +254,7 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     );
   }
 
-  void _onCorrectedTap(int index, String word) {
+  void _onCorrectedTap(int index, MessageToken token) {
     final ctx = _keys[index]?.currentContext;
     if (ctx == null) return;
     final box = ctx.findRenderObject() as RenderBox?;
@@ -257,7 +262,7 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     final tts = ref.read(ttsServiceProvider);
     showWordPopup(
       context,
-      token: MessageToken(text: word, isContent: true),
+      token: token,
       wordTopLeft: box.localToGlobal(Offset.zero),
       wordSize: box.size,
       languageCode: widget.learningLanguageCode,
@@ -274,12 +279,17 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     required String text,
     required bool struck,
     required TextStyle style,
+    MessageToken? popupToken,
   }) {
     final index = _nextKeyIndex++;
     final key = _keys.putIfAbsent(index, () => GlobalKey());
     final recognizer = TapGestureRecognizer()
-      ..onTap = () =>
-          struck ? _onStruckTap(index) : _onCorrectedTap(index, text);
+      ..onTap = () => struck
+          ? _onStruckTap(index)
+          : _onCorrectedTap(
+              index,
+              popupToken ?? MessageToken(text: text, isContent: true),
+            );
     _recognizers.add(recognizer);
 
     return WidgetSpan(
@@ -315,6 +325,13 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       widget.originalText,
       widget.correctedText,
     );
+    MessageToken metadataFor(String word) {
+      for (final token in widget.correctedTokens) {
+        if (token.isContent && token.text == word) return token;
+      }
+      return MessageToken(text: word, isContent: true);
+    }
+
     final spans = <InlineSpan>[];
     for (final segment in segments) {
       if (segment.struck) {
@@ -354,6 +371,7 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
             text: token.text,
             struck: false,
             style: segment.corrected ? correctedStyle : widget.style,
+            popupToken: metadataFor(token.text),
           ),
         );
       }

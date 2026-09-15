@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../shared/data/translation_support.dart';
 import '../../../shared/models/chat.dart';
+import '../../../shared/models/message_token.dart';
+import '../../../shared/models/reading_script.dart';
 import '../../../shared/services/message_translator.dart';
+import '../reading_script_presentation.dart';
 import 'inline_correction_text.dart';
 import 'message_text.dart';
 import 'grammatical_form_chooser.dart';
@@ -58,6 +61,8 @@ class MessageLearningContent extends StatelessWidget {
     this.activeFormChoiceIndex = 0,
     this.showFormExplanation = false,
     this.formExplanation,
+    this.readingScript = ReadingScript.native,
+    this.translationLanguageCode,
   });
 
   final String authoredText;
@@ -76,6 +81,11 @@ class MessageLearningContent extends StatelessWidget {
   final int activeFormChoiceIndex;
   final bool showFormExplanation;
   final String? formExplanation;
+  final ReadingScript readingScript;
+
+  /// The actual generated-text target. In Practice this equals
+  /// [learningLanguageCode]; in Normal it can be the primary known language.
+  final String? translationLanguageCode;
 
   /// FR-23: practice targets the learning language; normal targets the
   /// reader's known languages, with the source-language bypass below.
@@ -120,6 +130,33 @@ class MessageLearningContent extends StatelessWidget {
           : BlabColors.textMuted,
     );
     final result = translation;
+    final generatedLanguageCode =
+        translationLanguageCode ?? learningLanguageCode;
+
+    ReadingScriptPresentation presentGenerated(
+      String text,
+      List<MessageToken> tokens,
+    ) => presentReadingScript(
+      text: text,
+      tokens: tokens,
+      languageCode: generatedLanguageCode,
+      readingScript: readingScript,
+    );
+
+    Widget generatedMessageText(
+      String text,
+      List<MessageToken> tokens,
+      TextStyle style,
+    ) {
+      final presentation = presentGenerated(text, tokens);
+      return MessageText(
+        text: presentation.text,
+        tokens: presentation.tokens,
+        languageCode: generatedLanguageCode,
+        popupTopInset: popupTopInset,
+        style: style,
+      );
+    }
 
     if (!showTranslation || result == null) {
       return Text(authoredText, style: primaryStyle);
@@ -149,16 +186,14 @@ class MessageLearningContent extends StatelessWidget {
       if (formChoices.isNotEmpty &&
           (onFormSelected != null || resolvedForm != null)) {
         if (resolvedForm != null) {
-          return MessageText(
-            text: formChoices.first.resolved(resolvedForm!),
-            tokens: formChoices.first.tokensFor(resolvedForm!).isNotEmpty
+          return generatedMessageText(
+            formChoices.first.resolved(resolvedForm!),
+            formChoices.first.tokensFor(resolvedForm!).isNotEmpty
                 ? formChoices.first.tokensFor(resolvedForm!)
                 : resolvedForm == GrammaticalForm.feminine
                 ? value.tokens
                 : const [],
-            languageCode: learningLanguageCode,
-            popupTopInset: popupTopInset,
-            style: primaryStyle,
+            primaryStyle,
           );
         }
         return GrammaticalFormAlternativesText(
@@ -179,15 +214,24 @@ class MessageLearningContent extends StatelessWidget {
           value: value,
           mode: mode,
           knownLanguageCodes: knownLanguageCodes,
+          targetLanguageCode: generatedLanguageCode,
+          readingScript: readingScript,
         );
+        final displayWidget = displayText == authoredText
+            ? Text(displayText, style: primaryStyle)
+            : generatedMessageText(
+                value.translation,
+                value.tokens,
+                primaryStyle,
+              );
         if (!showOriginal || displayText == authoredText) {
-          return Text(displayText, style: primaryStyle);
+          return displayWidget;
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(displayText, style: primaryStyle),
+            displayWidget,
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Container(
@@ -242,16 +286,14 @@ class MessageLearningContent extends StatelessWidget {
         formChoices.isNotEmpty &&
             (onFormSelected != null || resolvedForm != null)
         ? resolvedForm != null
-              ? MessageText(
-                  text: formChoices.first.resolved(resolvedForm!),
-                  tokens: formChoices.first.tokensFor(resolvedForm!).isNotEmpty
+              ? generatedMessageText(
+                  formChoices.first.resolved(resolvedForm!),
+                  formChoices.first.tokensFor(resolvedForm!).isNotEmpty
                       ? formChoices.first.tokensFor(resolvedForm!)
                       : resolvedForm == GrammaticalForm.feminine
                       ? value.tokens
                       : const [],
-                  languageCode: learningLanguageCode,
-                  popupTopInset: popupTopInset,
-                  style: primaryStyle,
+                  primaryStyle,
                 )
               : GrammaticalFormAlternativesText(
                   alternatives: formChoices.first,
@@ -261,21 +303,19 @@ class MessageLearningContent extends StatelessWidget {
                   activeIndex: activeFormChoiceIndex,
                 )
         : authorCorrection
-        ? InlineCorrectionText(
-            originalText: authoredText,
-            correctedText: value.translation,
-            learningLanguageCode: learningLanguageCode,
-            explanation: value.explanation,
-            popupTopInset: popupTopInset,
-            style: primaryStyle,
-          )
-        : MessageText(
-            text: value.translation,
-            tokens: value.tokens,
-            languageCode: learningLanguageCode,
-            popupTopInset: popupTopInset,
-            style: primaryStyle,
-          );
+        ? (() {
+            final corrected = presentGenerated(value.translation, value.tokens);
+            return InlineCorrectionText(
+              originalText: authoredText,
+              correctedText: corrected.text,
+              correctedTokens: corrected.tokens,
+              learningLanguageCode: generatedLanguageCode,
+              explanation: value.explanation,
+              popupTopInset: popupTopInset,
+              style: primaryStyle,
+            );
+          })()
+        : generatedMessageText(value.translation, value.tokens, primaryStyle);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

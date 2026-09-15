@@ -49,4 +49,21 @@ void main() {
     expect(content.first.gloss, 'The man');
     expect(content.last.gloss, 'well-liked');
   });
+
+  test('native speech text survives visible-token enrichment', () {
+    final tokens = messageTokensForText(
+      'vanakkam',
+      metadata: const [
+        MessageToken(
+          text: 'vanakkam',
+          romanization: 'வணக்கம்',
+          nativeText: 'வணக்கம்',
+          gloss: 'hello',
+        ),
+      ],
+    );
+
+    expect(tokens.single.nativeText, 'வணக்கம்');
+    expect(tokens.single.spokenText, 'வணக்கம்');
+  });
 }

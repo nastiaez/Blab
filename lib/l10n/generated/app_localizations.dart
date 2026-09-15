@@ -1871,6 +1871,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Using masculine forms for you'**
   String get usingMasculineFormsForYou;
+
+  /// No description provided for @readingScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading script'**
+  String get readingScript;
+
+  /// No description provided for @hindiScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Hindi script'**
+  String get hindiScript;
+
+  /// No description provided for @tamilScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Tamil script'**
+  String get tamilScript;
+
+  /// No description provided for @nativeScripts.
+  ///
+  /// In en, this message translates to:
+  /// **'Native scripts'**
+  String get nativeScripts;
+
+  /// No description provided for @englishLetters.
+  ///
+  /// In en, this message translates to:
+  /// **'English letters'**
+  String get englishLetters;
 }
 
 class _AppLocalizationsDelegate

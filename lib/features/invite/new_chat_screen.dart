@@ -93,7 +93,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                 children: [
                   _InviteCard(link: link, loading: invite.loading),
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(18, 12, 18, 0),
+                    padding: EdgeInsets.only(top: 16),
                     child: Text(
                       'Only one friend can use this link',
                       style: TextStyle(color: Color(0xFF917869), fontSize: 13),

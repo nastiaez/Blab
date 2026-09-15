@@ -1,4 +1,5 @@
 import 'package:blab/shared/services/profile_service.dart';
+import 'package:blab/shared/models/reading_script.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -24,5 +25,16 @@ void main() {
 
     expect(profile.knownLanguages, isEmpty);
     expect(profile.primaryKnownLanguage, isNull);
+    expect(profile.readingScript, ReadingScript.native);
+  });
+
+  test('UserProfile.fromRow maps the saved reading script', () {
+    final profile = UserProfile.fromRow({
+      'display_name': 'Nastia',
+      'interface_language': 'en',
+      'reading_script': 'english_letters',
+    });
+
+    expect(profile.readingScript, ReadingScript.englishLetters);
   });
 }

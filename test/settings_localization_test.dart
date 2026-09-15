@@ -5,9 +5,12 @@ import 'package:blab/features/profile/known_languages_screen.dart';
 import 'package:blab/features/profile/notification_settings_screen.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/grammatical_form.dart';
+import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/grammatical_form_preferences_service.dart';
 import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/services/push_notification_gateway.dart';
+import 'package:blab/shared/state/auth_state.dart';
+import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/known_languages_state.dart';
 import 'package:blab/shared/state/profile_state.dart';
 import 'package:blab/shared/state/push_notifications_state.dart';
@@ -16,6 +19,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _EmptyChatService implements ChatService {
+  @override
+  Future<List<Map<String, dynamic>>> fetchChatList() async => const [];
+
+  @override
+  Future<List<String>> fetchPreparationMessageIds(
+    String chatId, {
+    int limit = 50,
+  }) async => const [];
+
+  @override
+  Stream<List<Map<String, dynamic>>> watchMyMemberships() =>
+      const Stream.empty();
+
+  @override
+  Stream<void> watchChatListMessageChanges() => const Stream.empty();
+
+  @override
+  Stream<void> watchChatListTranslationChanges() => const Stream.empty();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _UnavailablePushGateway implements PushNotificationGateway {
   const _UnavailablePushGateway();
@@ -58,6 +85,8 @@ Future<void> _pumpLocalized(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        authSessionProvider.overrideWith((_) => const Stream.empty()),
+        chatServiceProvider.overrideWithValue(_EmptyChatService()),
         knownLanguagesProvider.overrideWith(
           (_) async => const KnownLanguages(codes: ['en'], primary: 'en'),
         ),

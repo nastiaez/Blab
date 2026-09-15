@@ -95,11 +95,11 @@ final ThemeData blabTheme = ThemeData(
     surface: BlabColors.phoneSurface,
   ),
   scaffoldBackgroundColor: BlabColors.appBackground,
-  // Every snackbar floats above the bottom (so it can't sit on the message
-  // input) and carries a close (×) button so users can dismiss it early.
+  // Transient feedback floats above bottom controls and dismisses by timeout,
+  // swipe, action, or navigation. Close icons are reserved for persistent UI.
   snackBarTheme: const SnackBarThemeData(
     behavior: SnackBarBehavior.floating,
-    showCloseIcon: true,
+    showCloseIcon: false,
   ),
   // Force white text + white-tint press overlay on ALL FilledButtons.
   // Without this, M3 may compute onPrimary = dark (brand orange fails WCAG

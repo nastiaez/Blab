@@ -6,6 +6,37 @@ import 'package:flutter/material.dart';
 final GlobalKey<ScaffoldMessengerState> appMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
+const passiveAppSnackDuration = Duration(milliseconds: 2500);
+const actionableAppSnackDuration = Duration(seconds: 4);
+
+final NavigatorObserver appSnackRouteObserver = _AppSnackRouteObserver();
+
+void dismissAppSnack() {
+  appMessengerKey.currentState?.hideCurrentSnackBar();
+}
+
+class _AppSnackRouteObserver extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    dismissAppSnack();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    dismissAppSnack();
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    dismissAppSnack();
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    dismissAppSnack();
+  }
+}
+
 void showAppSnack(
   String message, {
   SnackBarAction? action,
@@ -13,19 +44,16 @@ void showAppSnack(
 }) {
   final m = appMessengerKey.currentState;
   if (m == null) return;
-  m.hideCurrentSnackBar();
+  dismissAppSnack();
   m.showSnackBar(
     SnackBar(
       content: Text(message),
       action: action,
-      // Floating + close (×) button come from the global snackBarTheme.
-      // Plain confirmations clear quickly; ones with an action (e.g. Undo)
-      // linger a little longer so the action stays tappable.
       duration:
           duration ??
           (action != null
-              ? const Duration(seconds: 4)
-              : const Duration(milliseconds: 2200)),
+              ? actionableAppSnackDuration
+              : passiveAppSnackDuration),
     ),
   );
 }

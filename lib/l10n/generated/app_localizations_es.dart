@@ -1002,4 +1002,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get usingMasculineFormsForYou => 'Formas masculinas para ti';
+
+  @override
+  String get readingScript => 'Sistema de lectura';
+
+  @override
+  String get hindiScript => 'Escritura hindi';
+
+  @override
+  String get tamilScript => 'Escritura tamil';
+
+  @override
+  String get nativeScripts => 'Escrituras nativas';
+
+  @override
+  String get englishLetters => 'Letras latinas';
 }

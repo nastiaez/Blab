@@ -1,5 +1,7 @@
 import 'package:blab/features/chat/message_presentation.dart';
 import 'package:blab/shared/models/chat.dart';
+import 'package:blab/shared/models/message_token.dart';
+import 'package:blab/shared/models/reading_script.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,12 +11,13 @@ MessageTranslation _translation({
   String interfaceText = 'Hello',
   String sourceLang = 'en',
   LearningAidMode mode = LearningAidMode.translation,
+  List<MessageToken> tokens = const [],
 }) => MessageTranslation(
   translation: translation,
   interfaceText: interfaceText,
   interfaceLang: 'en',
   sourceLang: sourceLang,
-  tokens: const [],
+  tokens: tokens,
   mode: mode,
 );
 
@@ -96,5 +99,50 @@ void main() {
     expect(result.primaryText, 'Привіііііт!');
     expect(result.unsupportedSource, isFalse);
     expect(result.listenText, 'Привіііііт!');
+  });
+
+  test('presentation applies English letters only to generated Hindi text', () {
+    final result = resolveMessagePresentation(
+      authoredText: 'Hello',
+      translation: AsyncData(
+        _translation(
+          translation: 'नमस्ते',
+          tokens: const [
+            MessageToken(
+              text: 'नमस्ते',
+              romanization: 'namaste',
+              gloss: 'hello',
+            ),
+          ],
+        ),
+      ),
+      mode: ChatMode.practice,
+      knownLanguageCodes: const ['en'],
+      targetLanguageCode: 'hi',
+      readingScript: ReadingScript.englishLetters,
+    );
+
+    expect(result.primaryText, 'namaste');
+    expect(result.originalText, 'Hello');
+    expect(result.listenText, 'नमस्ते');
+  });
+
+  test('aid mode none preserves authored native script', () {
+    final result = resolveMessagePresentation(
+      authoredText: 'नमस्ते',
+      translation: AsyncData(
+        _translation(
+          translation: 'namaste',
+          sourceLang: 'hi',
+          mode: LearningAidMode.none,
+        ),
+      ),
+      mode: ChatMode.practice,
+      knownLanguageCodes: const ['en'],
+      targetLanguageCode: 'hi',
+      readingScript: ReadingScript.englishLetters,
+    );
+
+    expect(result.primaryText, 'नमस्ते');
   });
 }

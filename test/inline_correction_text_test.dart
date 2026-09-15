@@ -1,4 +1,5 @@
 import 'package:blab/features/chat/widgets/inline_correction_text.dart';
+import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/tts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,7 @@ void main() {
     required String originalText,
     required String correctedText,
     String? explanation = explanationText,
+    List<MessageToken> correctedTokens = const [],
   }) {
     return ProviderScope(
       overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
@@ -39,6 +41,7 @@ void main() {
             learningLanguageCode: 'en',
             explanation: explanation,
             popupTopInset: 0,
+            correctedTokens: correctedTokens,
             style: const TextStyle(fontSize: 16, color: Colors.black),
           ),
         ),
@@ -212,5 +215,29 @@ void main() {
     await tester.tap(find.text('d'));
     await tester.pumpAndSettle();
     expect(find.text('d'), findsNWidgets(2));
+  });
+
+  testWidgets('romanized correction popup keeps native word as reference', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      harness(
+        originalText: 'வணகம',
+        correctedText: 'vanakkam',
+        correctedTokens: const [
+          MessageToken(
+            text: 'vanakkam',
+            romanization: 'வணக்கம்',
+            nativeText: 'வணக்கம்',
+            gloss: 'hello',
+          ),
+        ],
+      ),
+    );
+
+    await tester.tap(find.text('vanakkam'));
+    await tester.pumpAndSettle();
+    expect(find.text('வணக்கம்'), findsOneWidget);
+    expect(find.text('hello'), findsOneWidget);
   });
 }

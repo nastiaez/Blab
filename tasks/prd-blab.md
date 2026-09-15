@@ -92,6 +92,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Same sheet accessible from Profile → Interface language
 - [ ] The pre-auth choice persists locally; a signed-in choice persists to that account without leaking across logout/account switches
 - [ ] Switching the interface language immediately re-renders interface copy only; sentence translations, word descriptions, correction explanations, and audio remain unchanged
+- [ ] A successful signed-in change returns to Profile and shows a target-locale `Switched to [language] · Undo` Snackbar for 4 seconds, with no close icon; navigation dismisses it, while an unrelated tap does not
 
 ---
 
@@ -344,10 +345,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user mid-chat, I want to change which language I'm currently learning.
 
 **Acceptance Criteria:**
-- [ ] Bottom sheet: "Learning language" heading + scrollable list of 11 languages with flag + checkmark on selected
-- [ ] Selecting language updates chat header label and ··· menu label
-- [ ] "Done" button closes sheet
-- [ ] Backdrop tap also closes sheet
+- [ ] Bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: `Choose a language to practice` heading, helper, 11-name scrollable list, selected-row fill, checkmark, slim scrollbar, and persistent **Done** action
+- [ ] Current saved language is selected on opening; tapping another language previews it only
+- [ ] **Done** commits the visible choice, updates the chat header and ··· menu label, and closes the sheet on success
+- [ ] Backdrop tap and swipe-down close the sheet without changing the saved language; reopening shows the prior saved choice
+- [ ] A save in progress locks the sheet and uses the button-only spinner; a failed save restores the same **Done** action with no separate error or retry UI
 
 ---
 
@@ -410,9 +412,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] After the required language choice, an empty chat shows a simple text container: `No messages here yet…` + `Send any message to start.`; no launch illustration. Hide this container while initial language selection is required so it cannot peek above the open sheet
-- [ ] Required bottom sheet title: `Choose a language to practice`; helper: `You can change it anytime.`; it uses the existing language list
-- [ ] The sheet shows over the chat with no blur and a subtle `#46281C` 8% veil; authored first messages remain visible behind it if they already exist
-- [ ] Required-sheet styling follows the owner’s 2026-09-08 refinement: warm-white `#FFFCF8` surface, 24 px top corners, warm outline/shadow, 22 px bold title, 14 px muted helper, 15 px language rows with generous 56 px minimum tap targets and dividers, and a persistent slim scrollbar
+- [ ] Required bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: title `Choose a language to practice`; helper `You can change it later in Settings.`; 48 px separated language rows; selected-row fill and check; slim scrollbar; and a persistent **Start practicing** action
+- [ ] The sheet shows over the chat with no blur and a `#231208` 30% veil; authored first messages remain visible behind it if they already exist
+- [ ] At the 430 × 932 reference viewport, the required and Settings variants are both 567 px high; other viewports use the same `567 / 932` height proportion, capped at 567 logical px plus the bottom safe area
+- [ ] The sheet is bottom-anchored, uses 16 px top corners with no drop shadow, covers the empty-state note, and keeps the language list as its only scrolling region
+- [ ] A fresh chat starts with no selection and a disabled **Start practicing** action. Tapping a language previews it; **Start practicing** is the only action that commits it
 - [ ] Tapping outside or swiping down does not close the sheet; composer, messages, and mode switch are inactive until selection
 - [ ] Back leaves for Chats; reopening the new chat shows the required sheet again. Profile and Settings remain reachable outside the chat
 - [ ] Each participant's choice is independent and affects only their own display
@@ -687,11 +691,28 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
+### US-050: Choose the reading script for Hindi and Tamil
+**Description:** As a Hindi or Tamil learner, I want Blab-generated learning text in native script or English letters, so I can learn the language without being forced to learn its writing system first.
+
+**Acceptance Criteria:**
+- [ ] One account-wide `Reading script` choice applies to both Hindi and Tamil; native script is the default and Ukrainian has no script choice
+- [ ] Chat → Translation preferences shows one contextual row only for a Hindi or Tamil chat: `Hindi script` / `Tamil script` or `English letters`; Profile shows one row only while at least one eligible conversation exists
+- [ ] Both entry points use the existing preference-row and checkmarked bottom-sheet pattern, edit the same value, and remain synchronized
+- [ ] The redesigned language-selection sheet remains unchanged; changing a chat away from Hindi/Tamil hides the row without clearing the saved choice
+- [ ] The choice changes only Blab-generated Practice text, corrections, Normal fallback translations, matching reply previews, and word-description hierarchy; authored messages and Original remain exact
+- [ ] Switching the choice immediately re-renders eligible past messages from cached native text and Romanization without new translation or correction work
+- [ ] English letters render only when the full sentence has usable Romanization metadata; otherwise the whole sentence stays in native script with no mixed-script fallback
+- [ ] Native mode makes the native word primary in word descriptions; English-letters mode makes Romanization primary; native spelling, meaning, and native-language audio remain available
+- [ ] Valid native-script or Romanized authored text is never corrected solely because it differs from the reading preference
+- [ ] The complete Hindi/Tamil, both-direction Alice-browser/Bob-Android journey passes and final screenshots are retained for owner review
+
+---
+
 ## Functional Requirements
 
 - FR-1: Auth supports sign up, login, SSO (Apple/Google), forgot password — all as tab-toggle on one screen
 - FR-2: Password field has show/hide toggle, strength meter visible during sign up only
-- FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth
+- FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth. A successful signed-in change uses target-locale feedback with one Undo action, no close icon, a 4-second normal timeout, and navigation dismissal
 - FR-4: Invite creation never asks for a language or contacts access. A link is valid until one successful claim, with no time expiry; each exposed link is unique and a fresh link is prepared after Copy or a selected share target
 - FR-5: `Send invite` opens the device native share sheet with the standard Copy affordance and return behaviour; no custom share sheet or success page is used
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge, and `Ready to chat · Say hi` for an unmessaged new connection until that participant selects a practice language
@@ -708,9 +729,9 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-17: Reply preview uses only You/name with the approved accent and visible primary message text, opens the keyboard, and threads the same text or photo preview into the sent bubble
 - FR-18: Consecutive outgoing messages group (reduced gap, no repeated timestamp)
 - FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
-- FR-20: Change learning language sheet: 11 languages, checkmark on current, updates header label
+- FR-20: Change learning language uses the shared language-sheet design and height: 11 named languages, selected-row check, preview-before-commit, and a **Done** action that updates the header label only after success
 - FR-21: Send button disabled-state dims the circle fill to 40% when input is empty while keeping the arrow solid white; input is an auto-growing textarea
-- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet uses no blur and a subtle 8% warm scrim, hides the empty-state container, and must be completed before chat interaction
+- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet matches the handled Settings sheet's `567 / 932` viewport-height proportion, uses no blur and a `#231208` 30% scrim, hides and covers the empty-state container, and must be completed before chat interaction
 - FR-23: Translations toggle scoped per chat (phone3 vs phone4 separate state)
 - FR-24: Word popup audio uses on-device TTS only — no external API. When TTS unavailable for the language, speaker icon stays in place but renders disabled (40% opacity, no tap, no tooltip, no text)
 - FR-25: Delivery failure shows `Not sent · Tap to try again`; language-help failure shows `Couldn’t translate · Retry`. Both are `#C62828` text-only rows below the bubble with no standalone icon; pending remains a clock
@@ -732,6 +753,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-41: Chat-photo originals remain in private Supabase Storage, synced previews persist on-device, opened full files use a bounded cache, and an unavailable offline preview renders the approved neutral placeholder without framework error UI
 - FR-42: Invite handoff preserves the most recently opened valid invite through standard email auth and app return. Claim happens only once a signed-in recipient is known; existing pairs reuse their chat and no one can self-claim. The static web page is generic and never validates or claims a token
 - FR-43: First-time Practice and Normal guidance is a once-per-account, non-modal mode-switch tip using the approved copy and warm-orange treatment
+- FR-44: Hindi and Tamil share one account-wide `Reading script` preference (`native` default or `english_letters`). It is exposed as one contextual Translation preferences row only when relevant, re-renders eligible cached Blab-generated sentences and word-description hierarchy immediately, falls back to the whole native sentence when Romanization is incomplete, preserves authored/Original text and native TTS, and never creates a script-only correction
 
 ---
 

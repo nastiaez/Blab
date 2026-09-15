@@ -180,7 +180,7 @@ class _WordPopupOverlayState extends State<_WordPopupOverlay> {
 
   Future<void> _onSpeak() async {
     if (_ttsAvailable != true) return;
-    await widget.tts.speak(widget.token.text, widget.languageCode);
+    await widget.tts.speak(widget.token.spokenText, widget.languageCode);
   }
 
   @override

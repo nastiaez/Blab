@@ -992,4 +992,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usingMasculineFormsForYou => 'Using masculine forms for you';
+
+  @override
+  String get readingScript => 'Reading script';
+
+  @override
+  String get hindiScript => 'Hindi script';
+
+  @override
+  String get tamilScript => 'Tamil script';
+
+  @override
+  String get nativeScripts => 'Native scripts';
+
+  @override
+  String get englishLetters => 'English letters';
 }

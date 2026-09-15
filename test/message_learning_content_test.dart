@@ -4,6 +4,7 @@ import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/models/message_token.dart';
+import 'package:blab/shared/models/reading_script.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,6 +51,8 @@ void main() {
     VoidCallback? onRetry,
     GrammaticalForm? resolvedForm,
     GrammaticalFormAlternatives? formAlternativesOverride,
+    ReadingScript readingScript = ReadingScript.native,
+    String? translationLanguageCode,
   }) {
     return MaterialApp(
       home: Scaffold(
@@ -65,6 +68,8 @@ void main() {
           onRetry: onRetry,
           resolvedForm: resolvedForm,
           formAlternativesOverride: formAlternativesOverride,
+          readingScript: readingScript,
+          translationLanguageCode: translationLanguageCode,
           mode: mode,
           knownLanguageCodes: knownLanguageCodes,
           resolvedSourceLang: resolvedSourceLang,
@@ -97,6 +102,171 @@ void main() {
 
     expect(find.text('你好'), findsOneWidget);
     expect(find.text('Hallo'), findsNothing);
+  });
+
+  testWidgets(
+    'practice Hindi can render complete generated text in English letters',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          const AsyncData(
+            MessageTranslation(
+              translation: 'आप कैसे हैं?',
+              interfaceText: 'How are you?',
+              interfaceLang: 'en',
+              sourceLang: 'en',
+              tokens: [
+                MessageToken(text: 'आप', romanization: 'aap', gloss: 'you'),
+                MessageToken(text: ' ', isContent: false),
+                MessageToken(text: 'कैसे', romanization: 'kaise', gloss: 'how'),
+                MessageToken(text: ' ', isContent: false),
+                MessageToken(text: 'हैं', romanization: 'hain', gloss: 'are'),
+                MessageToken(text: '?', isContent: false),
+              ],
+            ),
+          ),
+          learningCode: 'hi',
+          translationLanguageCode: 'hi',
+          readingScript: ReadingScript.englishLetters,
+          expanded: false,
+        ),
+      );
+
+      expect(find.text('aap'), findsOneWidget);
+      expect(find.text('kaise'), findsOneWidget);
+      expect(find.text('hain'), findsOneWidget);
+      expect(find.text('आप'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'normal Hindi fallback uses English letters but preserves authored original',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          const AsyncData(
+            MessageTranslation(
+              translation: 'नमस्ते',
+              interfaceText: 'Hello',
+              interfaceLang: 'hi',
+              sourceLang: 'es',
+              tokens: [
+                MessageToken(
+                  text: 'नमस्ते',
+                  romanization: 'namaste',
+                  gloss: 'hello',
+                ),
+              ],
+            ),
+          ),
+          authoredText: 'Hola',
+          mode: ChatMode.normal,
+          knownLanguageCodes: const ['hi'],
+          translationLanguageCode: 'hi',
+          readingScript: ReadingScript.englishLetters,
+          expanded: false,
+        ),
+      );
+
+      expect(find.text('namaste'), findsOneWidget);
+      expect(find.text('Hola'), findsNothing);
+    },
+  );
+
+  testWidgets('script choice never rewrites exact authored text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        null,
+        authoredText: 'नमस्ते',
+        showTranslation: false,
+        learningCode: 'hi',
+        translationLanguageCode: 'hi',
+        readingScript: ReadingScript.englishLetters,
+        expanded: false,
+      ),
+    );
+
+    expect(find.text('नमस्ते'), findsOneWidget);
+    expect(find.text('namaste'), findsNothing);
+  });
+
+  testWidgets('resolved Hindi form uses its matching English-letter metadata', (
+    tester,
+  ) async {
+    const alternatives = GrammaticalFormAlternatives(
+      before: '',
+      feminine: 'मैं गई',
+      masculine: 'मैं गया',
+      after: '।',
+      subjectName: 'Alice',
+      subjectIsViewer: true,
+      masculineTokens: [
+        MessageToken(text: 'मैं', romanization: 'main', gloss: 'I'),
+        MessageToken(text: ' ', isContent: false),
+        MessageToken(text: 'गया', romanization: 'gaya', gloss: 'went'),
+        MessageToken(text: '।', isContent: false),
+      ],
+    );
+    await tester.pumpWidget(
+      host(
+        const AsyncData(
+          MessageTranslation(
+            translation: 'मैं गई।',
+            interfaceText: 'I went.',
+            interfaceLang: 'en',
+            sourceLang: 'en',
+            tokens: [],
+            formAlternatives: alternatives,
+          ),
+        ),
+        learningCode: 'hi',
+        translationLanguageCode: 'hi',
+        readingScript: ReadingScript.englishLetters,
+        resolvedForm: GrammaticalForm.masculine,
+        expanded: false,
+      ),
+    );
+
+    expect(find.text('main'), findsOneWidget);
+    expect(find.text('gaya'), findsOneWidget);
+    expect(find.text('गया'), findsNothing);
+  });
+
+  testWidgets('genuine Tamil correction can use English-letter display', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const AsyncData(
+          MessageTranslation(
+            translation: 'வணக்கம்',
+            interfaceText: 'Hello',
+            interfaceLang: 'en',
+            sourceLang: 'ta',
+            mode: LearningAidMode.correction,
+            tokens: [
+              MessageToken(
+                text: 'வணக்கம்',
+                romanization: 'vanakkam',
+                gloss: 'hello',
+              ),
+            ],
+          ),
+        ),
+        authoredText: 'வணகம',
+        isOutgoing: true,
+        learningCode: 'ta',
+        translationLanguageCode: 'ta',
+        readingScript: ReadingScript.englishLetters,
+        expanded: false,
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('inline-correction')), findsOneWidget);
+    expect(find.text('vanakkam'), findsOneWidget);
+    expect(find.text('வணகம'), findsOneWidget);
   });
 
   testWidgets('stylized source still shows its translated learning line', (

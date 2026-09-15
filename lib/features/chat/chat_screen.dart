@@ -18,6 +18,7 @@ import '../../l10n/l10n.dart';
 import '../../shared/models/chat.dart';
 import '../../shared/models/message.dart';
 import '../../shared/models/message_reaction.dart';
+import '../../shared/models/reading_script.dart';
 import '../../shared/services/chat_service.dart';
 import '../../shared/services/local_chat_history_cache.dart';
 import '../../shared/state/chat_list_state.dart';
@@ -33,6 +34,7 @@ import '../../shared/services/tts_service.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/push_notifications_state.dart';
+import '../../shared/state/reading_script_state.dart';
 import '../../shared/widgets/blab_icon.dart';
 import 'state/chat_state.dart';
 import 'state/message_reads_state.dart';
@@ -705,6 +707,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // the meantime (a wrong pair either 404s the cache lookup or trips the
     // client's own interface-language-changed staleness check).
     final chatMode = ref.watch(chatModeProvider(widget.chatId));
+    final readingScript = ref.watch(readingScriptProvider);
     final knownLanguages = ref.watch(knownLanguagesProvider).value;
     final targetLang =
         chat.needsPracticeLanguageSelection || knownLanguages == null
@@ -776,6 +779,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         mode: chatMode,
         knownLanguageCodes: knownLanguages?.codes ?? const <String>[],
         resolvedSourceLang: selectedSourceLang,
+        targetLanguageCode: selectedTargetLang,
+        readingScript: readingScript,
       );
     }
     // Keep the auto-disposed composer alive for this chat while its input is
@@ -1370,30 +1375,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: _ChatMenu(
                     chatId: widget.chatId,
                     onLearningLanguageTap: () async {
-                      final saveError =
-                          context.l10n.couldNotSaveLearningLanguage;
                       _closeMenu();
                       final current = ref.read(
                         learningLanguageProvider(widget.chatId),
                       );
-                      final picked = await showLearningLanguageSheet(
+                      await showLearningLanguageSheet(
                         context,
                         current: current,
+                        onSelected: (language) => ref
+                            .read(
+                              learningLanguageProvider(widget.chatId).notifier,
+                            )
+                            .set(language),
                       );
-                      if (picked != null) {
-                        try {
-                          await ref
-                              .read(
-                                learningLanguageProvider(
-                                  widget.chatId,
-                                ).notifier,
-                              )
-                              .set(picked);
-                        } catch (_) {
-                          if (!mounted) return;
-                          showAppSnack(saveError);
-                        }
-                      }
                       if (mounted && editing != null) {
                         _inputFocus.requestFocus();
                       }
@@ -2798,6 +2792,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final formPreferences = ref.watch(
       grammaticalFormPreferencesProvider(widget.chatId),
     );
+    final readingScript = ref.watch(readingScriptProvider);
 
     final message = widget.message;
     final chatId = widget.chatId;
@@ -2874,6 +2869,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
       mode: mode,
       knownLanguageCodes: knownLanguageCodes,
       resolvedSourceLang: resolvedSourceLang,
+      targetLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
     );
     final canRetryTranslation =
         liveTranslation is AsyncError<MessageTranslation>;
@@ -3014,6 +3011,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
       translation: translation,
       showTranslation: showTranslation,
       learningLanguageCode: languageCode,
+      translationLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
       isOutgoing: isOut,
       popupTopInset: popupTopInset,
       mode: mode,
@@ -3192,6 +3191,8 @@ class _BubbleState extends ConsumerState<_Bubble> {
                             ),
                             mode: mode,
                             knownLanguageCodes: knownLanguageCodes,
+                            targetLanguageCode: replyTargetLanguageCode,
+                            readingScript: readingScript,
                           ),
                           const SizedBox(height: 6),
                         ],
@@ -3804,6 +3805,8 @@ class _QuotedReply extends StatelessWidget {
     required this.translation,
     required this.mode,
     required this.knownLanguageCodes,
+    required this.targetLanguageCode,
+    required this.readingScript,
   });
 
   final Message replyTo;
@@ -3817,6 +3820,8 @@ class _QuotedReply extends StatelessWidget {
   /// Task 9's rewrite didn't reach, fixed here rather than duplicated.
   final ChatMode mode;
   final List<String> knownLanguageCodes;
+  final String targetLanguageCode;
+  final ReadingScript readingScript;
 
   @override
   Widget build(BuildContext context) {
@@ -3839,6 +3844,8 @@ class _QuotedReply extends StatelessWidget {
           value: value,
           mode: mode,
           knownLanguageCodes: knownLanguageCodes,
+          targetLanguageCode: targetLanguageCode,
+          readingScript: readingScript,
         ),
       _ => replyTo.originalText,
     };

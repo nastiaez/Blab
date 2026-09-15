@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/reading_script.dart';
+
 class UserProfile {
   const UserProfile({
     required this.displayName,
@@ -7,6 +9,7 @@ class UserProfile {
     this.knownLanguages = const [],
     this.primaryKnownLanguage,
     this.grammaticalForm,
+    this.readingScript = ReadingScript.native,
   });
 
   factory UserProfile.fromRow(Map<String, dynamic> row) {
@@ -20,6 +23,7 @@ class UserProfile {
           const [],
       primaryKnownLanguage: row['primary_known_language'] as String?,
       grammaticalForm: row['grammatical_form'] as String?,
+      readingScript: readingScriptFromWire(row['reading_script'] as String?),
     );
   }
 
@@ -28,6 +32,7 @@ class UserProfile {
   final List<String> knownLanguages;
   final String? primaryKnownLanguage;
   final String? grammaticalForm;
+  final ReadingScript readingScript;
 }
 
 class ProfileService {
@@ -46,7 +51,7 @@ class ProfileService {
         .from('profiles')
         .select(
           'display_name,interface_language,known_languages,'
-          'primary_known_language,grammatical_form',
+          'primary_known_language,grammatical_form,reading_script',
         )
         .eq('id', _uid)
         .single();
@@ -82,6 +87,29 @@ class ProfileService {
       throw StateError('invalid_profile_response');
     }
     return value;
+  }
+
+  Future<String> fetchReadingScript() async {
+    final row = await _client
+        .from('profiles')
+        .select('reading_script')
+        .eq('id', _uid)
+        .single();
+    return row['reading_script'] as String;
+  }
+
+  Future<String> updateReadingScript(String value) async {
+    final row = await _client
+        .from('profiles')
+        .update({'reading_script': value})
+        .eq('id', _uid)
+        .select('reading_script')
+        .single();
+    final saved = row['reading_script'];
+    if (saved is! String || saved.isEmpty) {
+      throw StateError('invalid_profile_response');
+    }
+    return saved;
   }
 
   Future<void> setKnownLanguages({
