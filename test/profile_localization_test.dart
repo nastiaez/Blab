@@ -78,4 +78,32 @@ void main() {
     expect(privacyIcon.size, 24);
     expect(tester.takeException(), isNull);
   });
+
+  test('Known Languages headings use direct personal copy', () {
+    expect(
+      lookupAppLocalizations(const Locale('en')).knownLanguages,
+      'Languages you know',
+    );
+    expect(
+      lookupAppLocalizations(const Locale('de')).knownLanguages,
+      'Sprachen, die du sprichst',
+    );
+    expect(
+      lookupAppLocalizations(const Locale('es')).knownLanguages,
+      'Idiomas que hablas',
+    );
+    expect(
+      lookupAppLocalizations(const Locale('uk')).knownLanguages,
+      'Мови, які ти знаєш',
+    );
+  });
+
+  test('Ukrainian profile error uses informal copy', () {
+    final localizations = lookupAppLocalizations(const Locale('uk'));
+
+    expect(
+      localizations.couldNotUpdateProfile,
+      'Не вдалося оновити профіль. Спробуй ще раз.',
+    );
+  });
 }

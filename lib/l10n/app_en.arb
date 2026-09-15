@@ -39,7 +39,7 @@
   "switchedToLanguage": "Switched to {language}",
   "@switchedToLanguage": {"placeholders": {"language": {"type": "String"}}},
   "couldNotSaveLanguage": "Could not save the interface language. Try again.",
-  "knownLanguages": "Known languages",
+  "knownLanguages": "Languages you know",
   "setPrimaryLanguage": "Set as primary language",
   "languageEnglish": "English",
   "languageDutch": "Dutch",

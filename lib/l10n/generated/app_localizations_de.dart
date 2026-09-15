@@ -128,7 +128,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die App-Sprache konnte nicht gespeichert werden. Versuche es erneut.';
 
   @override
-  String get knownLanguages => 'Bekannte Sprachen';
+  String get knownLanguages => 'Sprachen, die du sprichst';
 
   @override
   String get setPrimaryLanguage => 'Als Hauptsprache festlegen';

@@ -327,7 +327,7 @@ abstract class AppLocalizations {
   /// No description provided for @knownLanguages.
   ///
   /// In en, this message translates to:
-  /// **'Known languages'**
+  /// **'Languages you know'**
   String get knownLanguages;
 
   /// No description provided for @setPrimaryLanguage.

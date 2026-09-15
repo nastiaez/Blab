@@ -126,7 +126,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося зберегти мову інтерфейсу. Спробуйте ще раз.';
 
   @override
-  String get knownLanguages => 'Відомі мови';
+  String get knownLanguages => 'Мови, які ти знаєш';
 
   @override
   String get setPrimaryLanguage => 'Зробити основною мовою';
@@ -326,7 +326,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotUpdateProfile =>
-      'Не вдалося оновити профіль. Спробуйте ще раз.';
+      'Не вдалося оновити профіль. Спробуй ще раз.';
 
   @override
   String get couldNotLoadProfile => 'Не вдалося завантажити профіль.';
