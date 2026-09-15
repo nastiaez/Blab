@@ -389,22 +389,23 @@
   - [ ] **Nastia's to-dos:** fill the operator legal name in `web/privacy.html` (then redeploy); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
 
 ### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[ ]` ← in progress
-- **Scope:** Play requires social/messaging apps to provide a way to report objectionable content and block another user. Add: report a message / report a person, and block a person so they can no longer contact you. Reports route to a store + the contact email; blocking hides the partner and prevents new messages.
+- **Scope:** Play requires social/messaging apps to provide a way to report objectionable content and block another user. Keep message and person reporting. Block requires confirmation, freezes sending in both directions, and keeps the readable chat visible as the V1 recovery surface with an in-place Unblock action. Reports route to the moderation store; no separate blocked-people settings screen is added in V1.
 - **Why:** missing report/block is a common Play rejection for social apps; also required by the child-safety (CSAE) standards. Decision 2026-06-09: build before submission.
 - **Done when:**
-  - From a chat / message long-press: Report (with a reason) and Block actions exist
-  - Blocking a person stops their messages reaching you and removes them from the active chat surface; can be undone
+  - Incoming-message long-press and the partner profile expose Report with a reason; the partner profile exposes Block
+  - Blocking requires confirmation, stops sending in both directions, and replaces the visible chat composer with Unblock
   - Reports are recorded (server) and acknowledged in the UI
   - `flutter analyze` clean, `flutter test` green
 - **Progress (2026-06-09):**
   - [x] Migration `20260609000001_reports_blocks.sql`: `blocks` + `reports` tables with RLS (you manage only your own); message-insert RLS now denies a blocked user from posting into a shared chat (via `SECURITY DEFINER` helper `is_blocked_in_chat`, mirroring `is_chat_member` to avoid recursion); `blocks` added to realtime.
   - [x] `ChatService`: `reportContent`, `blockUser`/`unblockUser`, `fetchBlockedIds`, `watchBlockedIds`. `Chat` gained `partnerId` (mapped from the chat-list view).
-  - [x] State: realtime `blockedUserIdsProvider`; `visibleChatsProvider` filters blocked partners out of the chat list (pure `filterBlockedChats` helper, unit-tested); chats screen renders the filtered list.
-  - [x] UI: Report row on incoming messages (long-press) → reason sheet → recorded + "we'll review" snack; partner profile sheet gained a Safety section with Report + Block/Unblock; blocking leaves the chat (back to list), unblock restores it.
+  - [x] State foundation: realtime `blockedUserIdsProvider`; immediate-send surfaces can exclude blocked partners.
+  - [x] UI foundation: incoming-message long-press exposes Report; the partner profile Safety section exposes Report + Block/Unblock.
   - [x] Migration **applied to remote** (`supabase db push`, 2026-06-09) — `blocks` + `reports` + the updated message-insert policy are live.
   - [x] Gesture regression locked (`test/word_gesture_test.dart`): a quick tap on a learning-language word opens the word popup (not the menu); a held press opens the action sheet (incl. Report) and not the popup. Adding Report didn't change the bubble's tap/long-press routing.
   - [x] `flutter analyze` clean; `flutter test` 62/62 green (`test/report_block_test.dart` + `test/word_gesture_test.dart`); debug APK builds.
-  - [ ] **Device verification owed** (Nastia): report a message + a person; block someone and confirm their chat disappears + they can't message you; unblock and confirm it returns.
+  - [ ] **2026-09-15 approved redesign in progress:** report acknowledgements use the passive-success pill; Block uses the concise localized confirmation; the chat stays visible and readable with `You blocked Name · Unblock`; invite reuse preserves the block; a database migration freezes sending for both participants.
+  - [ ] **Device verification owed** (Nastia): report a message + a person; Cancel and confirm Block; verify the persistent Unblock state, both-direction send denial, unblock recovery, and blocked-pair invite reuse in all four interface languages.
 
 ### Step 3.6 — Closed testing run (Play policy gate) `[ ]`
 - **Scope:** Play now requires solo dev accounts to run a closed test with **≥12 testers for ≥14 continuous days** before production. Lock down tester list early.
@@ -970,3 +971,12 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-14 — Matched the required first-time picker to the handled Settings picker's `567 / 932` viewport-height proportion, rechecked browser + Android, and received owner visual acceptance. Began a read-only inventory of current action, offline, recovery, and message-level feedback states before any redesign.
 
 - 2026-09-14 — Completed local implementation and Android acceptance for the owner-approved transient-feedback slice: the close icon is gone, language-change Undo remains for 4 seconds, passive confirmations use 2.5 seconds, unrelated taps keep feedback available, navigation dismisses it, and the saved target locale supplies the message and action copy. English, German, Spanish, and Ukrainian each fit the compact one-line Snackbar on the default emulator viewport. The owner approved the screenshots on 2026-09-15 and authorized integration to main; the broader feedback/offline redesign is unchanged.
+
+- 2026-09-15 — Owner approved removing redundant success feedback from Edit Profile and Known Languages: both explicit Save/Apply flows return with their updated values visible, while failures stay where the action happened. Local implementation removes the hidden success Snackbars and makes route-triggered Snackbar dismissal safe during Navigator rebuilds without dismissing newer destination feedback. Focused checks, device screenshots, and owner acceptance pass.
+
+- 2026-09-15 — Owner approved the Password updated feedback direction and the final Android screenshot: a compact light acknowledgement pill, new leading 20 px check-circle asset, localized copy without the trailing textual checkmark, no close icon, and a 2.5-second timeout. Both change-password and recovery-password success routes use the shared destination-safe presenter; all four locale strings, 538 Flutter checks, static analysis, Android rendering, and test-account password restoration pass.
+
+- 2026-09-15 — Owner approved reusing the passive-success pill for Email changed, then corrected its destination from Chats to Profile. Confirmed same-account address changes now open Profile before showing the localized icon-first 2.5-second pill; direct callback-route visits remain silent, and browser-resume and auth-event paths deduplicate through the updated baseline. Focused checks, static analysis, 545 Flutter tests, and the clean Android confirmation flow pass; the test account email was restored. Final owner screenshot approval remains pending.
+
+- 2026-09-15 — Owner approved removing the obsolete Invite sent feedback. The unreachable legacy share sheet, its dedicated share-target helpers and tests, and the inaccurate `inviteSent` copy were deleted across all four locale catalogs. The surviving Android native-share flow still returns quietly after opening Messages. Formatting, static analysis, 536 Flutter checks with 15 environment-gated skips, repository search, diff checks, debug APK compilation, and Android evidence pass; owner screenshot review remains pending.
+- 2026-09-15 — Replaced the hidden blocked-chat design with the owner-approved V1 recovery flow: message and person reporting stay accessible, Block requires concise Telegram-style confirmation, the conversation remains visible with `You blocked Name · Unblock`, immediate-send pickers still exclude blocked partners, invite reuse preserves the block, and the database helper now freezes sending in either direction. Android verified the dialog in English, German, Spanish, and Ukrainian; the blocked chat remains in Chats; message reporting stays reachable by long press; and Unblock restores the composer. Final verification passed 541 Flutter tests with 15 environment-gated skips, 155 database tests, static analysis, log inspection, and diff checks. QA reports, blocks, and Bob's interface language were restored; owner screenshot approval remains pending.

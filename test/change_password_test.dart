@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 GoRouter _router() => GoRouter(
   initialLocation: '/profile/password',
+  observers: [appSnackRouteObserver],
   routes: [
     GoRoute(
       path: '/profile/password',
@@ -108,7 +109,8 @@ void main() {
     expect(current, 'OldPass123!');
     expect(next, 'NewPass456!');
     expect(find.text('profile destination'), findsOneWidget);
-    expect(find.text('Password updated ✓'), findsOneWidget);
+    expect(find.text('Password updated'), findsOneWidget);
+    expect(find.byKey(const Key('app-success-icon')), findsOneWidget);
   });
 
   testWidgets('wrong current password remains inline without success', (
@@ -127,7 +129,7 @@ void main() {
 
     expect(find.text('Current password is incorrect'), findsOneWidget);
     expect(find.text('Change password'), findsOneWidget);
-    expect(find.text('Password updated ✓'), findsNothing);
+    expect(find.text('Password updated'), findsNothing);
   });
 
   testWidgets('busy state blocks duplicate submission and back navigation', (
@@ -160,7 +162,7 @@ void main() {
       find.text('Could not update your password. Try again.'),
       findsOneWidget,
     );
-    expect(find.text('Password updated ✓'), findsNothing);
+    expect(find.text('Password updated'), findsNothing);
   });
 
   testWidgets('Google-only direct route has no password form', (tester) async {

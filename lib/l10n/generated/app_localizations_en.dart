@@ -212,7 +212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveNewPassword => 'Save new password';
 
   @override
-  String get passwordUpdated => 'Password updated ✓';
+  String get passwordUpdated => 'Password updated';
 
   @override
   String get showPassword => 'Show password';
@@ -556,9 +556,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get change => 'Change';
 
   @override
-  String get inviteSent => 'Invite sent ✓';
-
-  @override
   String get couldNotCreateInvite => 'Couldn\'t create invite. Try again.';
 
   @override
@@ -738,6 +735,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String blockPerson(Object name) {
     return 'Block $name';
+  }
+
+  @override
+  String blockPersonQuestion(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String blockPersonConfirmation(String name) {
+    return 'Do you want to block $name from messaging you on Blab?';
+  }
+
+  @override
+  String get block => 'Block';
+
+  @override
+  String get unblock => 'Unblock';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'You blocked $name';
   }
 
   @override

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/profile_service.dart';
@@ -70,7 +69,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final saved = await ref.read(updateDisplayNameActionProvider)(next);
       if (!mounted) return;
       _initialName = saved;
-      showAppSnack(context.l10n.profileUpdated);
       context.go('/profile');
     } catch (_) {
       if (!mounted) return;

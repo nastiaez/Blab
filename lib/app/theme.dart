@@ -22,6 +22,8 @@ class BlabColors {
   static const Color chatCanvas = Color(0xFFFAF7F2);
   static const Color chatSurface = Color(0xFFFFFCF8);
   static const Color chatDivider = Color(0xFFE1DAD2);
+  static const Color warmInk = Color(0xFF46281C);
+  static const Color warmMuted = Color(0xFF917869);
   static const Color bubbleIncomingSurface = Color(0xFFFFFCF8);
   static const Color bubbleIncomingOutline = Color(0xFFEBE1DA);
   static const Color bubbleOutgoingNormal = Color(0xFFD7C8BE);
@@ -49,6 +51,8 @@ class BlabColors {
 
   // Error / destructive state — cooler deep red, WCAG-AA on cream + white.
   static const Color error = Color(0xFFC62828);
+  static const Color errorWarm = Color(0xFFD95245);
+  static const Color errorSoft = Color(0xFFFFF6F4);
 
   // Disabled state for buttons / interactive surfaces.
   static const Color disabledSurface = Color(0xFFE4DCCC); // = divider

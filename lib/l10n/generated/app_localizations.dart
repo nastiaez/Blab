@@ -489,7 +489,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Password updated ✓'**
+  /// **'Password updated'**
   String get passwordUpdated;
 
   /// No description provided for @showPassword.
@@ -1128,12 +1128,6 @@ abstract class AppLocalizations {
   /// **'Change'**
   String get change;
 
-  /// No description provided for @inviteSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Invite sent ✓'**
-  String get inviteSent;
-
   /// No description provided for @couldNotCreateInvite.
   ///
   /// In en, this message translates to:
@@ -1427,6 +1421,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Block {name}'**
   String blockPerson(Object name);
+
+  /// No description provided for @blockPersonQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String blockPersonQuestion(String name);
+
+  /// No description provided for @blockPersonConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to block {name} from messaging you on Blab?'**
+  String blockPersonConfirmation(String name);
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblock;
+
+  /// No description provided for @youBlockedPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked {name}'**
+  String youBlockedPerson(String name);
 
   /// No description provided for @unblockPerson.
   ///

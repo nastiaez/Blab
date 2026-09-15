@@ -101,25 +101,28 @@ void main() {
     expect(calls, 0);
   });
 
-  testWidgets('successful save trims, navigates, and confirms', (tester) async {
-    String? submitted;
-    await _pumpEditProfile(
-      tester,
-      action: (name) async {
-        submitted = name;
-        return name;
-      },
-    );
+  testWidgets(
+    'successful save trims and navigates without redundant feedback',
+    (tester) async {
+      String? submitted;
+      await _pumpEditProfile(
+        tester,
+        action: (name) async {
+          submitted = name;
+          return name;
+        },
+      );
 
-    await tester.enterText(find.byType(TextField), '  Alice Renamed  ');
-    await tester.pump();
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '  Alice Renamed  ');
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
 
-    expect(submitted, 'Alice Renamed');
-    expect(find.text('profile destination'), findsOneWidget);
-    expect(find.text('Profile updated ✓'), findsOneWidget);
-  });
+      expect(submitted, 'Alice Renamed');
+      expect(find.text('profile destination'), findsOneWidget);
+      expect(find.text('Profile updated ✓'), findsNothing);
+    },
+  );
 
   testWidgets('pending save blocks duplicates and keeps failures inline', (
     tester,

@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'app/app_messenger.dart';
+import 'app/email_change_feedback.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 import 'features/chat/state/chat_state.dart';
@@ -110,8 +111,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       // deep link and exchanges it for a recovery session. We listen
       // for the resulting `passwordRecovery` event and route to the
       // reset screen. We also reset the email-change baseline on
-      // sign-in/sign-out so switching accounts doesn't trip the
-      // "Email changed ✓" snack.
+      // sign-in/sign-out so switching accounts cannot look like an email
+      // change. A same-account email difference is announced only on auth
+      // events that can follow confirmation, never the initial update request.
       _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((s) {
         if (s.event == AuthChangeEvent.passwordRecovery) {
           blabRouter.go('/auth/reset');
@@ -128,8 +130,10 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
             ref.invalidate(messageTranslationsProvider);
             if (mounted) setState(() {});
           }
-          _knownEmail = u?.email;
-          _knownUserId = u?.id;
+          _recordKnownUser(
+            u,
+            announceEmailChange: s.event != AuthChangeEvent.signedOut,
+          );
           if (s.event == AuthChangeEvent.signedIn &&
               ref.read(pendingSharedImageProvider) != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -143,6 +147,26 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     }
     _initInviteDeepLinks();
     _initAndroidShareIntents();
+  }
+
+  bool _recordKnownUser(User? user, {required bool announceEmailChange}) {
+    final userId = user?.id;
+    final email = user?.email;
+    final changed = isSameAccountEmailChange(
+      previousUserId: _knownUserId,
+      previousEmail: _knownEmail,
+      currentUserId: userId,
+      currentEmail: email,
+    );
+    _knownEmail = email;
+    _knownUserId = userId;
+    if (!announceEmailChange || !changed) return changed;
+
+    final context = appMessengerKey.currentContext;
+    showAppSuccessSnackAfterNavigation(
+      context?.l10n.emailChanged ?? 'Email changed',
+    );
+    return changed;
   }
 
   void _handleAuthStreamError(Object error, StackTrace stackTrace) {
@@ -315,19 +339,14 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     } finally {
       _checkingUserOnResume = false;
     }
-    final now = user?.email;
-    final id = user?.id;
-    // Only fire the snack when the SAME user's email actually changed
-    // (i.e. they completed the change-email confirmation flow), not when
-    // they switched accounts.
-    final sameUser = id != null && id == _knownUserId;
-    if (sameUser && now != null && _knownEmail != null && now != _knownEmail) {
-      _knownEmail = now;
-      showAppSnack('Email changed ✓');
-    } else {
-      _knownEmail = now;
-      _knownUserId = id;
-    }
+    final changed = _recordKnownUser(user, announceEmailChange: false);
+    if (!changed) return;
+
+    blabRouter.go(confirmedEmailChangeDestination(signedIn: true));
+    final context = appMessengerKey.currentContext;
+    showAppSuccessSnackAfterNavigation(
+      context?.l10n.emailChanged ?? 'Email changed',
+    );
   }
 
   @override

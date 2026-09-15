@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
 import '../../../shared/state/chat_list_state.dart';
+import 'block_confirmation_dialog.dart';
 import 'report_sheet.dart';
 
 /// Result of the partner profile sheet. `blocked` tells the caller to leave
@@ -17,6 +18,7 @@ enum PartnerProfileResult { blocked }
 Future<PartnerProfileResult?> showPartnerProfileSheet(
   BuildContext context, {
   required Chat chat,
+  double successSnackBottomClearance = 0,
 }) {
   return showModalBottomSheet<PartnerProfileResult>(
     context: context,
@@ -25,13 +27,17 @@ Future<PartnerProfileResult?> showPartnerProfileSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => _Body(chat: chat),
+    builder: (ctx) => _Body(
+      chat: chat,
+      successSnackBottomClearance: successSnackBottomClearance,
+    ),
   );
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.chat});
+  const _Body({required this.chat, required this.successSnackBottomClearance});
   final Chat chat;
+  final double successSnackBottomClearance;
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +127,10 @@ class _Body extends StatelessWidget {
             ),
             if (chat.partnerId != null) ...[
               const SizedBox(height: 22),
-              _SafetyActions(chat: chat),
+              _SafetyActions(
+                chat: chat,
+                successSnackBottomClearance: successSnackBottomClearance,
+              ),
             ],
           ],
         ),
@@ -179,8 +188,12 @@ class _Section extends StatelessWidget {
 }
 
 class _SafetyActions extends ConsumerWidget {
-  const _SafetyActions({required this.chat});
+  const _SafetyActions({
+    required this.chat,
+    required this.successSnackBottomClearance,
+  });
   final Chat chat;
+  final double successSnackBottomClearance;
 
   Future<void> _report(BuildContext context, WidgetRef ref) async {
     final success = context.l10n.thanksReport;
@@ -198,21 +211,28 @@ class _SafetyActions extends ConsumerWidget {
             reportedUserId: chat.partnerId,
             chatId: chat.id,
           );
-      showAppSnack(success);
+      if (context.mounted) Navigator.of(context).pop();
+      showAppSuccessSnackAfterNavigation(
+        success,
+        bottomClearance: successSnackBottomClearance,
+      );
     } catch (_) {
       showAppSnack(failure);
     }
   }
 
   Future<void> _block(BuildContext context, WidgetRef ref) async {
-    final success = context.l10n.personBlocked(chat.partnerName);
     final failure = context.l10n.couldNotBlock;
+    final confirmed = await showBlockConfirmation(
+      context,
+      personName: chat.partnerName,
+    );
+    if (!confirmed || !context.mounted) return;
     try {
       await ref.read(chatServiceProvider).blockUser(chat.partnerId!);
       if (context.mounted) {
         Navigator.of(context).pop(PartnerProfileResult.blocked);
       }
-      showAppSnack(success);
     } catch (_) {
       showAppSnack(failure);
     }
@@ -223,7 +243,11 @@ class _SafetyActions extends ConsumerWidget {
     final failure = context.l10n.couldNotUnblock;
     try {
       await ref.read(chatServiceProvider).unblockUser(chat.partnerId!);
-      showAppSnack(success);
+      if (context.mounted) Navigator.of(context).pop();
+      showAppSuccessSnackAfterNavigation(
+        success,
+        bottomClearance: successSnackBottomClearance,
+      );
     } catch (_) {
       showAppSnack(failure);
     }

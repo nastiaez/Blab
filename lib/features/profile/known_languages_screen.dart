@@ -64,7 +64,6 @@ class _KnownLanguagesScreenState extends ConsumerState<KnownLanguagesScreen> {
       ref.invalidate(currentProfileProvider);
       if (!mounted) return;
       context.pop();
-      showAppSnack(context.l10n.profileUpdated);
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);

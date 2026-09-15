@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +16,15 @@ Widget _localizedText({Locale? locale}) {
 }
 
 void main() {
+  test('obsolete invite-sent feedback is absent from every catalog', () {
+    for (final locale in const ['en', 'de', 'es', 'uk']) {
+      final catalog =
+          jsonDecode(File('lib/l10n/app_$locale.arb').readAsStringSync())
+              as Map<String, dynamic>;
+      expect(catalog, isNot(contains('inviteSent')), reason: locale);
+    }
+  });
+
   testWidgets('English is the app-localization default', (tester) async {
     await tester.pumpWidget(_localizedText());
     expect(find.text('No chats yet'), findsOneWidget);
@@ -41,6 +53,15 @@ void main() {
       'es',
     });
   });
+
+  test(
+    'Ukrainian hate-speech reason avoids the ambiguous formal label',
+    () async {
+      final uk = await AppLocalizations.delegate.load(const Locale('uk'));
+      expect(uk.reportHate, 'Ненависницькі висловлювання');
+      expect(uk.reportHate, isNot('Мова ворожнечі'));
+    },
+  );
 
   testWidgets('composer uses the generic localized message placeholder', (
     tester,

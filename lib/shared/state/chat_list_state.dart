@@ -263,18 +263,17 @@ final blockedUserIdsProvider = StreamProvider<Set<String>>((ref) {
   }
 });
 
-/// Drop chats whose partner the user has blocked. Pure so it can be unit
-/// tested without provider/stream timing. Chats with no partner id (mocks)
-/// always pass. Step 3.6a.
-List<Chat> filterBlockedChats(List<Chat> chats, Set<String> blocked) => chats
+/// Drop chats whose partner the user has blocked from surfaces that can send
+/// immediately, such as the Android share-photo picker. The primary Chats
+/// screen intentionally renders [chatListProvider] directly so a blocked
+/// conversation remains available as its recovery surface.
+List<Chat> filterShareableChats(List<Chat> chats, Set<String> blocked) => chats
     .where((c) => c.partnerId == null || !blocked.contains(c.partnerId))
     .toList();
 
-/// The chat list with blocked partners filtered out. Screens render this
-/// instead of [chatListProvider] so blocking a person removes their chat
-/// from the list immediately (and it returns on unblock). Step 3.6a.
-final visibleChatsProvider = Provider<AsyncValue<List<Chat>>>((ref) {
+/// Chats that are safe to present as immediate send targets.
+final shareableChatsProvider = Provider<AsyncValue<List<Chat>>>((ref) {
   final chats = ref.watch(chatListProvider);
   final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
-  return chats.whenData((list) => filterBlockedChats(list, blocked));
+  return chats.whenData((list) => filterShareableChats(list, blocked));
 });

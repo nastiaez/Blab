@@ -1,4 +1,8 @@
+import 'package:blab/features/chats/chats_screen.dart';
+import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:blab/features/chat/widgets/report_sheet.dart';
 import 'package:blab/shared/data/languages.dart';
@@ -23,18 +27,27 @@ Chat _chat(String id, String partnerId) => Chat(
   unreadCount: 0,
 );
 
+class _FixedChatList extends ChatListNotifier {
+  _FixedChatList(this.chats);
+
+  final List<Chat> chats;
+
+  @override
+  Future<List<Chat>> build() async => chats;
+}
+
 void main() {
-  test('filterBlockedChats hides chats whose partner is blocked', () {
+  test('share targets exclude chats whose partner is blocked', () {
     final chats = [_chat('a', 'u1'), _chat('b', 'u2')];
-    expect(filterBlockedChats(chats, {'u2'}).map((c) => c.id), ['a']);
+    expect(filterShareableChats(chats, {'u2'}).map((c) => c.id), ['a']);
   });
 
-  test('filterBlockedChats with an empty set shows all chats', () {
+  test('share targets include all chats when nobody is blocked', () {
     final chats = [_chat('a', 'u1'), _chat('b', 'u2')];
-    expect(filterBlockedChats(chats, const {}).map((c) => c.id), ['a', 'b']);
+    expect(filterShareableChats(chats, const {}).map((c) => c.id), ['a', 'b']);
   });
 
-  test('filterBlockedChats keeps chats that have no partner id', () {
+  test('share targets keep mock chats that have no partner id', () {
     final mock = Chat(
       id: 'm',
       partnerName: 'M',
@@ -48,7 +61,28 @@ void main() {
       timestamp: DateTime.parse('2026-06-09T00:00:00Z'),
       unreadCount: 0,
     );
-    expect(filterBlockedChats([mock], {'x'}).map((c) => c.id), ['m']);
+    expect(filterShareableChats([mock], {'x'}).map((c) => c.id), ['m']);
+  });
+
+  testWidgets('blocked conversations remain visible in Chats', (tester) async {
+    final chats = [_chat('a', 'u1'), _chat('b', 'u2')];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          chatListProvider.overrideWith(() => _FixedChatList(chats)),
+          blockedUserIdsProvider.overrideWith((_) => Stream.value({'u2'})),
+        ],
+        child: const MaterialApp(
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: ChatsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pa'), findsOneWidget);
+    expect(find.text('Pb'), findsOneWidget);
   });
 
   test('report reasons map to stable wire values', () {

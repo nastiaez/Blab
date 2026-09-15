@@ -213,7 +213,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get saveNewPassword => 'Зберегти новий пароль';
 
   @override
-  String get passwordUpdated => 'Пароль оновлено ✓';
+  String get passwordUpdated => 'Пароль оновлено';
 
   @override
   String get showPassword => 'Показати пароль';
@@ -558,9 +558,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get change => 'Змінити';
 
   @override
-  String get inviteSent => 'Запрошення надіслано ✓';
-
-  @override
   String get couldNotCreateInvite =>
       'Не вдалося створити запрошення. Спробуйте ще раз.';
 
@@ -744,6 +741,27 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String blockPersonQuestion(String name) {
+    return 'Заблокувати $name?';
+  }
+
+  @override
+  String blockPersonConfirmation(String name) {
+    return 'Заблокувати повідомлення від $name у Blab?';
+  }
+
+  @override
+  String get block => 'Заблокувати';
+
+  @override
+  String get unblock => 'Розблокувати';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'Ви заблокували $name';
+  }
+
+  @override
   String unblockPerson(Object name) {
     return 'Розблокувати $name';
   }
@@ -771,7 +789,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get reportHarassment => 'Домагання або цькування';
 
   @override
-  String get reportHate => 'Мова ворожнечі';
+  String get reportHate => 'Ненависницькі висловлювання';
 
   @override
   String get reportSexual => 'Сексуальний або неприйнятний вміст';

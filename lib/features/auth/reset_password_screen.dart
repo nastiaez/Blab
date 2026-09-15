@@ -60,8 +60,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     try {
       await auth.updatePassword(pw);
       if (!mounted) return;
-      showAppSnack(context.l10n.passwordUpdated);
       context.go('/chats');
+      showAppSuccessSnackAfterNavigation(context.l10n.passwordUpdated);
     } catch (e) {
       if (!mounted) return;
       setState(() {

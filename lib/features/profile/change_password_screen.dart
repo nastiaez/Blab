@@ -63,8 +63,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         newPassword: next,
       );
       if (!mounted) return;
-      showAppSnack(context.l10n.passwordUpdated);
       context.go('/profile');
+      showAppSuccessSnackAfterNavigation(context.l10n.passwordUpdated);
     } catch (error) {
       if (!mounted) return;
       final message = localizedAuthMessage(

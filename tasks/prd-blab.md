@@ -169,7 +169,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Nav: back (‹) | "Edit profile" title | "Save" (top right)
 - [ ] Static initial avatar is shown without photo actions or upload affordances
 - [ ] "DISPLAY NAME" label above bordered text input pre-filled with current name
-- [ ] Tapping "Save" in nav returns to profile + shows a "Profile updated ✓" toast (matches the toast pattern from Change password)
+- [ ] Tapping "Save" in nav waits for the server, then returns to Profile with the saved display name immediately visible and no redundant success toast
+- [ ] A failed save stays on Edit profile and shows the error beside the form
 
 ---
 
@@ -179,7 +180,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Acceptance Criteria:**
 - [ ] Fields: Current password, New password (with strength bar), Confirm new password
 - [ ] All password fields have show/hide toggle
-- [ ] "Save" button submits; returns to profile with toast "Password updated ✓"
+- [ ] "Save" button submits; returns to Profile with a compact light confirmation containing a leading check-circle and localized "Password updated" copy; no trailing checkmark or close icon
 - [ ] "Forgot your password?" link at bottom opens forgot-password flow
 
 ---
@@ -197,7 +198,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Helper text under the field: "We'll send a confirmation link to the new address. Your email only changes after you tap it. Old email keeps working until then."
 - [ ] Brand-purple "Send confirmation" CTA, spinner while in flight
 - [ ] On success the screen swaps to a "Check your inbox" confirmation (📬 + new address + Done)
-- [ ] Tapping the link in the new inbox opens Blab and shows a "Email changed ✓" toast
+- [ ] Tapping the link in the new inbox opens Profile and shows a compact light confirmation with a leading check-circle and localized "Email changed" copy; no trailing checkmark or close icon
+- [ ] The confirmation appears only after the signed-in account's email truly changes; opening the callback route alone shows no success feedback
 - [ ] Old email continues to log in until the link in the new inbox is tapped
 - [ ] Works for both password-auth and Google-auth accounts
 
@@ -718,8 +720,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge, and `Ready to chat · Say hi` for an unmessaged new connection until that participant selects a practice language
 - FR-7: Empty state shown when no chats exist
 - FR-8: Profile settings in a single card: Interface language | Edit profile | Change email | Change password | Log out. Log out triggers a confirm dialog before signing out
-- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to profile + shows "Profile updated ✓" only after the server succeeds
-- FR-10: Change password has current/new/confirm fields with strength bar; success shows toast
+- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to Profile only after the server succeeds, with the updated name immediately visible and no redundant success toast; failure stays inline on Edit profile. Applying Known Languages follows the same no-success-toast rule because the updated language chips are immediately visible on return
+- FR-10: Change password has current/new/confirm fields with strength bar; success returns to the destination with a compact light confirmation, leading check-circle, localized text, no close icon, and a 2.5-second timeout
 - FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
 - FR-13: Practice mode renders one collapsed learning-language line and temporarily reveals the primary-known-language line on long press; Normal renders authored text for known languages, translates an unknown incoming language once into the reader's primary known language, and conditionally exposes exact authored text through Original. The interface language controls chrome, definitions, and correction explanations only. Author mistakes in their learning language render as minimal inline strike-through corrections; recipients receive clean corrected output without coaching marks. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline text-only Retry action
@@ -836,7 +838,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 - No language matching algorithm / discovery feed
 - No in-app payments or subscription
 - No notifications settings screen
-- No blocking or reporting
+- No blocked-people settings directory in V1; recovery stays inside the visible blocked chat
 
 ---
 
@@ -875,7 +877,9 @@ Originally tracked as "Open Questions"; resolved 2026-05-28 in one batch.
 - **Interface-language switch refreshing existing translations?** → **Yes**, immediately for the bottom interface-language lane, word definitions, and correction explanations. The learning-language line stays unchanged; an author's third-language-original exception continues to show the original. The four launch interface locales use separate cache variants. (Updated US-005 by L-15.)
 - **Invite link single-use or reusable until claimed?** → **Reusable until claimed** (single *successful* claim), with no time expiry so a delayed or offline share is not invalidated. (Updated US-024, US-037, FR-4 on 2026-09-07.)
 - **Exchange card disappearance on first message?** → **200 ms opacity fade-out**, no slide/scale. (Updated US-027.)
-- **Edit-profile Save success toast?** → **Yes**, "Profile updated ✓" toast on return to profile. (Updated US-011.)
+- **Edit-profile Save success toast?** → **No.** The explicit Save action and immediately visible updated value provide sufficient confirmation; failures remain where the action happened. Known Languages uses the same rule. (Revised 2026-09-15; updated US-011 / FR-9.)
+- **Password-success feedback?** → **Yes, but quiet.** Password changes are not visually evident on the destination, so show a compact light pill with a leading check-circle and localized message for 2.5 seconds. Do not add a trailing `✓` or close icon; swipe and normal transient-feedback dismissal still apply. (Approved 2026-09-15; updated US-012 / FR-10.)
+- **Report and Block flow?** → **Keep both message and person reporting, plus Block.** Report success uses the shared passive-success pill. Block first requires the concise localized `Block Name?` confirmation. A blocked conversation remains visible and readable, its composer becomes `You blocked Name · Unblock`, and neither participant can send until the blocker unblocks. Reopening an invite reuses that same blocked conversation without silently unblocking. No separate blocked-people settings screen or Block Snackbar is needed in V1. (Approved 2026-09-15; Step 3.6a.)
 - **Log-out confirm dialog?** → **Yes** (Signal-style). "Log out?" with Cancel + Log out before actually signing out. (Updated US-010.)
 - **TTS — on-device good enough or recorded fallback?** → **V1: on-device only.** Disabled state for unavailable languages = icon dimmed in place (40% opacity, no tap, no tooltip, no text). Cloud TTS or recorded human audio re-evaluated in V2 once we have real usage data on which languages matter most. (Updated US-018, US-029.)
 - **Chat history across reinstalls — server-side or device-local?** → **V1: ciphertext on server, key on device, no key recovery.** Reinstall = lose history. Surface clearly in onboarding copy. V2 may add an optional passphrase-wrapped key backup. (See § Privacy posture #7.)
