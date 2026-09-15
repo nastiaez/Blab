@@ -37,70 +37,76 @@ Future<ReportReason?> showReportReasonSheet(
 }) {
   return showModalBottomSheet<ReportReason>(
     context: context,
+    isScrollControlled: true,
     backgroundColor: Colors.white,
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+    ),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (sheetCtx) => SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: BlabColors.divider,
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: BlabColors.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            for (final reason in ReportReason.values)
-              InkWell(
-                onTap: () => Navigator.of(sheetCtx).pop(reason),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          localizedReportReason(context, reason),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: BlabColors.textPrimary,
+              const SizedBox(height: 8),
+              for (final reason in ReportReason.values)
+                InkWell(
+                  onTap: () => Navigator.of(sheetCtx).pop(reason),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            localizedReportReason(context, reason),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: BlabColors.textPrimary,
+                            ),
                           ),
                         ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right,
-                        color: BlabColors.textMuted,
-                        size: 20,
-                      ),
-                    ],
+                        const Icon(
+                          Icons.chevron_right,
+                          color: BlabColors.textMuted,
+                          size: 20,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

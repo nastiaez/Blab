@@ -94,4 +94,49 @@ void main() {
       expect(r.label, isNotEmpty);
     }
   });
+
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets('person report sheet is complete in ${locale.languageCode}', (
+      tester,
+    ) async {
+      ReportReason? selectedReason;
+      final localizations = lookupAppLocalizations(locale);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async {
+                  selectedReason = await showReportReasonSheet(
+                    context,
+                    title: localizations.reportPerson('Alice'),
+                  );
+                },
+                child: const Text('Open report'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open report'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(localizations.reportPerson('Alice')), findsOneWidget);
+      expect(find.text(localizations.reportSpam), findsOneWidget);
+      expect(find.text(localizations.reportHarassment), findsOneWidget);
+      expect(find.text(localizations.reportHate), findsOneWidget);
+      expect(find.text(localizations.reportSexual), findsOneWidget);
+      expect(find.text(localizations.reportChildSafety), findsOneWidget);
+      expect(find.text(localizations.reportOther), findsOneWidget);
+
+      await tester.tap(find.text(localizations.reportOther));
+      await tester.pumpAndSettle();
+      expect(selectedReason, ReportReason.other);
+    });
+  }
 }

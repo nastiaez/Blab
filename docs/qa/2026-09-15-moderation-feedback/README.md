@@ -4,6 +4,7 @@
 
 - Incoming-message long press still exposes `Report`.
 - Message and person reports persist the expected reason and show the shared passive-success pill.
+- The shared six-reason picker scrolls when vertical space is limited, so every reason remains reachable on shorter screens.
 - Block requires the approved localized confirmation and does not show redundant transient feedback.
 - The confirmation uses Blab's warm card, brown text hierarchy, neutral Cancel action, and soft-red Block action.
 - A blocked chat remains visible in Chats and reopens with readable history.
@@ -16,19 +17,19 @@
 
 ## Locale evidence
 
-The Block confirmation was checked at the default Android viewport in English, German, Spanish, and Ukrainian. All copy and actions remain readable without clipping or overflow. The final warm-card visual was captured in Ukrainian.
+The Block confirmation and complete six-reason person-report sheet were checked at the default Android viewport in English, German, Spanish, and Ukrainian. All copy, reasons, and actions remain readable without clipping or overflow. The final warm-card visual and a successful person-report acknowledgement were captured in Ukrainian.
 
 ## Verification
 
 - `flutter analyze`: no issues.
-- `flutter test`: 545 passed, 15 environment-gated skips.
+- `flutter test`: 590 passed, 15 environment-gated skips.
 - `supabase test db`: 14 files, 155 tests passed.
 - `git diff --check`: clean.
 - Android log inspection after chat/profile navigation: no Flutter, Riverpod, or fatal exceptions.
 
 ## Cleanup
 
-Bob's interface language was restored to Ukrainian. QA-created reports and Alice/Bob block rows were removed.
+Bob's interface language was restored to Ukrainian. The QA-created person report was verified in Supabase and removed; Alice/Bob block rows remain absent.
 
 ## UI review
 
