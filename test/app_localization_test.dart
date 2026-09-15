@@ -65,11 +65,33 @@ void main() {
     );
     expect(ukrainian.enterEmail, 'Введи електронну пошту');
     expect(ukrainian.enterValidEmail, 'Введи дійсну адресу електронної пошти');
+    expect(ukrainian.checkYourEmail, 'Перевір пошту');
+    expect(
+      ukrainian.resetLinkSent('bob@blab.test'),
+      'Ми надіслали посилання для скидання пароля на адресу\u00a0bob@blab.test',
+    );
     expect(
       ukrainian.confirmEmailInbox,
       'Перевір вхідні, щоб підтвердити пошту',
     );
     expect(ukrainian.somethingWentWrong, 'Сталася помилка. Спробуй ще раз.');
+  });
+
+  test('password reset confirmation keeps the email attached in every locale', () {
+    for (final locale in AppLocalizations.supportedLocales) {
+      final localizations = lookupAppLocalizations(locale);
+      final message = localizations.resetLinkSent('bob@blab.test');
+      expect(
+        message,
+        isNot(contains('\n')),
+        reason: '${locale.languageCode} must wrap naturally',
+      );
+      expect(
+        message,
+        contains('\u00a0bob@blab.test'),
+        reason: '${locale.languageCode} must not orphan the email address',
+      );
+    }
   });
 
   testWidgets('composer uses the generic localized message placeholder', (

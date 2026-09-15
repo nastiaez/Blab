@@ -252,7 +252,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String resetLinkSent(String email) {
-    return 'Enviamos un enlace para restablecer la contraseña a\n$email';
+    return 'Enviamos un enlace para restablecer la contraseña a $email';
   }
 
   @override

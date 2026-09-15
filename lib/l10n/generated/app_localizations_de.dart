@@ -255,7 +255,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String resetLinkSent(String email) {
-    return 'Wir haben einen Link zum Zurücksetzen an\n$email gesendet';
+    return 'Wir haben einen Link zum Zurücksetzen an $email gesendet';
   }
 
   @override

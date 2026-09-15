@@ -81,7 +81,7 @@
   "enterValidEmail": "Enter a valid email address",
   "emailResetLink": "Email me a reset link",
   "checkYourEmail": "Check your email",
-  "resetLinkSent": "We sent a reset link to\n{email}",
+  "resetLinkSent": "We sent a reset link to\u00a0{email}",
   "@resetLinkSent": {"placeholders": {"email": {"type": "String"}}},
   "backToLogin": "Back to log in",
   "setNewPassword": "Set a new password",

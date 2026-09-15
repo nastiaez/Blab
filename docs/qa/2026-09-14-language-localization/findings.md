@@ -212,6 +212,32 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-15
 - Follow-up: converted the visible auth, invite-auth, validation, and failure copy to Blab's informal singular voice; verified the repaired login and signup layouts on Android
 
+## Packet B05B1 — Password recovery request and email confirmation
+
+### B05B1-EN-DE-ES-01
+
+- Interface language: English, German, and Spanish
+- Screen/state: password-reset request and email-sent confirmation
+- Client: Bob / Android emulator
+- Expected: natural, actionable recovery copy with the submitted address visible on confirmation
+- Observed: all three flows are natural and consistent; the real local reset request reaches confirmation, the submitted address stays attached to its preceding preposition during wrapping, and the supplied mailbox illustration fits without clipping or overlap
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: removed the forced line break, prevented orphaned email addresses, and replaced the emoji with the supplied mailbox illustration across all four locales
+
+### B05B1-UK-01
+
+- Interface language: Ukrainian
+- Screen/state: password-reset request and email-sent confirmation
+- Client: Bob / Android emulator
+- Expected: Blab's approved informal singular voice throughout
+- Observed: the request screen is informal and uses the neutral email example; the repaired confirmation uses `Перевір пошту`, natural `на адресу`, keeps the address attached during wrapping, and displays the supplied mailbox illustration without clipping or overlap
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-15
+- Follow-up: changed the confirmation to `Перевір пошту` and `Ми надіслали посилання для скидання пароля на адресу {email}`; removed the forced address line break and replaced the emoji across every locale
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

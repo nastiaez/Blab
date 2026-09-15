@@ -248,11 +248,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get emailResetLink => 'Надіслати посилання';
 
   @override
-  String get checkYourEmail => 'Перевірте пошту';
+  String get checkYourEmail => 'Перевір пошту';
 
   @override
   String resetLinkSent(String email) {
-    return 'Ми надіслали посилання для скидання пароля на\n$email';
+    return 'Ми надіслали посилання для скидання пароля на адресу $email';
   }
 
   @override

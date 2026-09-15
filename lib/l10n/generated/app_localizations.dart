@@ -567,7 +567,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetLinkSent.
   ///
   /// In en, this message translates to:
-  /// **'We sent a reset link to\n{email}'**
+  /// **'We sent a reset link to {email}'**
   String resetLinkSent(String email);
 
   /// No description provided for @backToLogin.
