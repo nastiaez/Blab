@@ -566,7 +566,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A through B04A are approved after real-client review; supported-build Notifications delivery/tap remains blocked until a physical Android device is connected. B04B Change Password and its localized validation states is next.
+- **Current packet:** B01A through B04B are approved after real-client review; supported-build Notifications delivery/tap remains blocked until a physical Android device is connected. B05 signup, login, and password recovery is next.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -610,6 +610,9 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-15 — Owner approved the repaired B04B Change Password and empty-form validation screens. The accepted Ukrainian flow uses Blab's informal voice throughout. B05 signup, login, and password recovery is next.
+- 2026-09-15 — Repaired B04B after owner approval. Ukrainian Change Password now uses informal `Введи`, `Підтверди`, `Вибери`, `Увійди`, and `Спробуй`, plus the natural recovery link `Не пам’ятаєш пароль?`. The localization regression failed against the old catalog and passed after regeneration. Full Flutter suite: 575 passed with 15 environment-gated skips; static analysis and diff checks are clean. The installed local Android APK fingerprint matches the verified build, and two replacement screens are captured for final owner approval.
+- 2026-09-15 — Captured B04B Change Password and empty-form validation in EN/DE/ES/UK. English, German, and Spanish copy is natural and all layouts fit. Ukrainian still uses formal `Введіть`, `Підтвердьте`, `Виберіть`, and `Спробуйте`; `Забули пароль?` is also inconsistent with Blab's informal voice. Recommended informal verbs plus `Не пам’ятаєш пароль?`; no repair made before owner review.
 - 2026-09-15 — Owner approved the repaired B04A Edit Profile and Change Email screens. English, German, and Spanish remain unchanged; the accepted Ukrainian copy uses natural informal wording and a neutral email placeholder. B04B Change Password and its localized validation states is next.
 - 2026-09-15 — Repaired B04A after owner feedback. Ukrainian Edit Profile now uses `Ім’я в профілі`; Change Email uses neutral `name@example.com`; related validation and confirmation copy uses informal `Введи`, `Перевір`, `Натисни`, and `твоя`. A focused regression failed against the old catalog, then passed after regeneration. Full Flutter suite: 574 passed with 15 environment-gated skips; static analysis and diff checks are clean. The installed local Android APK fingerprint matches the verified build, and two replacement screens are captured for owner approval.
 - 2026-09-15 — Captured B04A Edit Profile and Change Email forms in EN/DE/ES/UK. English, German, and Spanish copy reads naturally and all layouts fit. Ukrainian uses the awkward calque `Відображуване ім'я`, the inconsistent placeholder `ви@example.com`, and formal validation/confirmation verbs behind the forms; owner review is pending before any repair. A shared-emulator APK replacement briefly showed stale mixed localization and an unsupported Notifications row; reinstalling and fingerprinting the exact verified local APK restored the correct current behavior, so no product regression was logged.

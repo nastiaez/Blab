@@ -196,7 +196,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get forgotPassword => 'Забули пароль?';
 
   @override
-  String get forgotYourPassword => 'Забули пароль?';
+  String get forgotYourPassword => 'Не пам’ятаєш пароль?';
 
   @override
   String get joinBlab => 'Приєднатися до Blab';
@@ -269,7 +269,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get newPassword => 'Новий пароль';
 
   @override
-  String get confirmNewPassword => 'Підтвердьте новий пароль';
+  String get confirmNewPassword => 'Підтверди новий пароль';
 
   @override
   String get saveNewPassword => 'Зберегти новий пароль';
@@ -296,7 +296,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get passwordMinLength => 'Пароль має містити щонайменше 6 символів';
 
   @override
-  String get chooseStrongerPassword => 'Виберіть надійніший пароль';
+  String get chooseStrongerPassword => 'Вибери надійніший пароль';
 
   @override
   String get passwordsDoNotMatch => 'Паролі не збігаються';
@@ -365,16 +365,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get currentPassword => 'Поточний пароль';
 
   @override
-  String get enterCurrentPassword => 'Введіть поточний пароль';
+  String get enterCurrentPassword => 'Введи поточний пароль';
 
   @override
-  String get enterNewPassword => 'Введіть новий пароль';
+  String get enterNewPassword => 'Введи новий пароль';
 
   @override
-  String get confirmPassword => 'Підтвердьте новий пароль';
+  String get confirmPassword => 'Підтверди новий пароль';
 
   @override
-  String get chooseDifferentPassword => 'Виберіть інший пароль';
+  String get chooseDifferentPassword => 'Вибери інший пароль';
 
   @override
   String get passwordSignInUnavailable =>
@@ -886,14 +886,14 @@ class AppLocalizationsUk extends AppLocalizations {
   String get currentPasswordIncorrect => 'Поточний пароль неправильний';
 
   @override
-  String get signInAgain => 'Увійдіть знову, перш ніж змінювати пароль';
+  String get signInAgain => 'Увійди знову, перш ніж змінювати пароль';
 
   @override
-  String get tooManyAttempts => 'Забагато спроб. Спробуйте пізніше.';
+  String get tooManyAttempts => 'Забагато спроб. Спробуй пізніше.';
 
   @override
   String get couldNotUpdatePassword =>
-      'Не вдалося оновити пароль. Спробуйте ще раз.';
+      'Не вдалося оновити пароль. Спробуй ще раз.';
 
   @override
   String get emailChanged => 'Пошту змінено';

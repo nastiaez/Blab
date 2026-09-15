@@ -182,6 +182,27 @@ void main() {
     );
   });
 
+  test('Ukrainian password flow uses natural informal copy', () {
+    final localizations = lookupAppLocalizations(const Locale('uk'));
+
+    expect(localizations.forgotYourPassword, 'Не пам’ятаєш пароль?');
+    expect(localizations.enterCurrentPassword, 'Введи поточний пароль');
+    expect(localizations.enterNewPassword, 'Введи новий пароль');
+    expect(localizations.confirmNewPassword, 'Підтверди новий пароль');
+    expect(localizations.confirmPassword, 'Підтверди новий пароль');
+    expect(localizations.chooseStrongerPassword, 'Вибери надійніший пароль');
+    expect(localizations.chooseDifferentPassword, 'Вибери інший пароль');
+    expect(
+      localizations.signInAgain,
+      'Увійди знову, перш ніж змінювати пароль',
+    );
+    expect(localizations.tooManyAttempts, 'Забагато спроб. Спробуй пізніше.');
+    expect(
+      localizations.couldNotUpdatePassword,
+      'Не вдалося оновити пароль. Спробуй ще раз.',
+    );
+  });
+
   testWidgets('Profile hides Notifications when push is unavailable', (
     tester,
   ) async {
