@@ -463,7 +463,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noChatsYet => 'Чатів ще немає';
 
   @override
-  String get inviteFriendStart => 'Запросіть друга й почніть спілкуватися.';
+  String get inviteFriendStart => 'Запроси друга й почни спілкуватися.';
 
   @override
   String get inviteFriend => 'Запросити друга';
@@ -475,7 +475,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get couldNotLoadMessages => 'Не вдалося завантажити повідомлення';
 
   @override
-  String get newConnectionSayHi => 'Новий контакт · привітайтеся';
+  String get newConnectionSayHi => 'Новий контакт · привітайся';
 
   @override
   String get typing => 'друкує...';
@@ -485,6 +485,21 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get noConnection => 'Немає з’єднання';
+
+  @override
+  String relativeMinutes(int count) {
+    return '$count хв';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return '$count год';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return '$count дн';
+  }
 
   @override
   String get learningLanguage => 'Мова вивчення';
@@ -597,17 +612,17 @@ class AppLocalizationsUk extends AppLocalizations {
   String get sendInvite => 'Надіслати запрошення';
 
   @override
-  String get pickLanguage => 'Виберіть мову';
+  String get pickLanguage => 'Вибери мову';
 
   @override
   String get pickLanguageHelp =>
-      'Ми перекладатимемо всі повідомлення цією мовою. Її можна змінити будь-коли.';
+      'Ми перекладатимемо всі повідомлення цією мовою. Ти можеш змінити її будь-коли.';
 
   @override
   String get continueAction => 'Продовжити';
 
   @override
-  String get sendLinkHelp => 'Надішліть посилання, щоб почати спілкування.';
+  String get sendLinkHelp => 'Надішли посилання, щоб почати спілкування.';
 
   @override
   String get onePersonInvite =>
@@ -630,7 +645,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotCreateInvite =>
-      'Не вдалося створити запрошення. Спробуйте ще раз.';
+      'Не вдалося створити запрошення. Спробуй ще раз.';
 
   @override
   String get shareInviteLink => 'Поділитися посиланням';
@@ -645,15 +660,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get copyLink => 'Копіювати посилання';
 
   @override
-  String get pasteInChat => 'Тепер вставте його в чат';
+  String get pasteInChat => 'Тепер встав його в чат';
 
   @override
   String practicingLanguage(Object language) {
-    return 'Ви практикуєте $language.';
+    return 'Ти практикуєш $language.';
   }
 
   @override
-  String get shareYourInvite => 'Поділіться посиланням на запрошення.';
+  String get shareYourInvite => 'Поділися посиланням на запрошення.';
 
   @override
   String validUntil(Object date) {
@@ -665,7 +680,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String askForFreshLink(Object name) {
-    return 'Попросіть $name надіслати нове посилання';
+    return 'Попроси $name надіслати нове посилання';
   }
 
   @override
@@ -675,7 +690,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get inviteNotFound => 'Не вдалося знайти це запрошення.';
 
   @override
-  String get checkInviteLink => 'Перевірте посилання або попросіть нове.';
+  String get checkInviteLink => 'Перевір посилання або попроси нове.';
 
   @override
   String get sayHello => 'Привітатися';
@@ -712,6 +727,50 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get newLabel => 'Нове';
+
+  @override
+  String get inviteCardTitle => 'Спілкуймося в Blab';
+
+  @override
+  String get inviteLinkUnavailable => 'Посилання на запрошення недоступне';
+
+  @override
+  String get openingShareSheet => 'Відкриваємо варіанти поширення…';
+
+  @override
+  String get couldNotOpenSharing =>
+      'Не вдалося відкрити меню поширення. Спробуй ще раз.';
+
+  @override
+  String get openingInvite => 'Відкриваємо запрошення';
+
+  @override
+  String get couldNotOpenInvite => 'Не вдалося відкрити запрошення.';
+
+  @override
+  String get tryAgainToContinue => 'Спробуй ще раз, щоб продовжити.';
+
+  @override
+  String get askFriendForNewLink =>
+      'Попроси того, хто тебе запросив, надіслати нове посилання.';
+
+  @override
+  String inviteShareMessage(String link) {
+    return 'Спілкуймося в Blab: $link';
+  }
+
+  @override
+  String get inviteShareBlurb => 'Спілкуймося в Blab.';
+
+  @override
+  String get inviteEmailSubject => 'Спілкуймося в Blab';
+
+  @override
+  String get inviteSelfClaim => 'Не можна скористатися власним запрошенням.';
+
+  @override
+  String get inviteInvalidLanguage =>
+      'Вибери підтримувану мову й спробуй ще раз.';
 
   @override
   String get invitedYouToChat => 'запрошує вас до чату';
@@ -861,7 +920,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get inviteClaimFailed =>
-      'Не вдалося прийняти запрошення. Спробуйте ще раз.';
+      'Не вдалося прийняти запрошення. Спробуй ще раз.';
 
   @override
   String get appleSignInSoon => 'Вхід через Apple незабаром буде доступний';

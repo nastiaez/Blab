@@ -489,6 +489,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noConnection => 'Sin conexión';
 
   @override
+  String relativeMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return '$count d';
+  }
+
+  @override
   String get learningLanguage => 'Idioma de aprendizaje';
 
   @override
@@ -714,6 +729,49 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get newLabel => 'Nuevo';
+
+  @override
+  String get inviteCardTitle => 'Hablemos en Blab';
+
+  @override
+  String get inviteLinkUnavailable => 'Enlace de invitación no disponible';
+
+  @override
+  String get openingShareSheet => 'Abriendo opciones para compartir…';
+
+  @override
+  String get couldNotOpenSharing =>
+      'No se pudo abrir el menú para compartir. Inténtalo de nuevo.';
+
+  @override
+  String get openingInvite => 'Abriendo invitación';
+
+  @override
+  String get couldNotOpenInvite => 'No se pudo abrir la invitación.';
+
+  @override
+  String get tryAgainToContinue => 'Inténtalo de nuevo para continuar.';
+
+  @override
+  String get askFriendForNewLink => 'Pide un enlace nuevo a quien te invitó.';
+
+  @override
+  String inviteShareMessage(String link) {
+    return 'Hablemos en Blab: $link';
+  }
+
+  @override
+  String get inviteShareBlurb => 'Hablemos en Blab.';
+
+  @override
+  String get inviteEmailSubject => 'Chatea conmigo en Blab';
+
+  @override
+  String get inviteSelfClaim => 'No puedes usar tu propia invitación.';
+
+  @override
+  String get inviteInvalidLanguage =>
+      'Elige un idioma compatible e inténtalo de nuevo.';
 
   @override
   String get invitedYouToChat => 'te invitó a chatear';

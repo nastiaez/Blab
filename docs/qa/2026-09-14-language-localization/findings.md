@@ -278,6 +278,32 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-15
 - Follow-up: focused regressions cover signup validation, change-password acceptance, hint-to-strength behavior, localized copy, and identical six-pixel guidance alignment before and after typing. Local Supabase accepted a disposable six-character lowercase password, matching `minimum_password_length = 6`; the disposable account was removed.
 
+## Packet B06 — Chats list and invite flow
+
+### B06-CHATS-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: populated Chats list plus new-connection preview states
+- Client: Bob / Android emulator
+- Expected: interface-owned navigation, timestamps, and connection prompts follow the selected Interface Language
+- Observed: repaired relative-time output now follows the selected language (`1 T.` / `1 d` / `1 дн` in the reviewed states), and the new-connection preview uses the localization catalog. All four layouts fit; user-authored message content remains unchanged.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-16
+- Follow-up: focused regressions cover localized relative time and new-connection copy; final DE/ES/UK Android screenshots are in `screenshots/b06-chats-invite-fixed/`
+
+### B06-INVITE-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: invite creation plus loading, failure, share, and recipient-resolution states
+- Client: Bob / Android emulator plus source audit of conditional states
+- Expected: the complete invite journey follows the selected Interface Language while product names and the invite URL remain unchanged
+- Observed: repaired creator, loading, failure, retry, native-share, email-subject, recipient-resolution, and fallback states now use the four-locale catalog. German, Spanish, and Ukrainian creator screens fit without clipping; English remains unchanged.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-16
+- Follow-up: automated coverage locks every conditional invite state and share payload; final DE/ES/UK Android screenshots are in `screenshots/b06-chats-invite-fixed/`
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

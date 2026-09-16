@@ -96,14 +96,17 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
   ];
 
   Future<void> _onTap(_Target target) async {
+    final localizations = context.l10n;
     bool ok;
     if (target == _Target.more) {
-      ok = await widget.shareText(inviteShareText(widget.inviteLink));
+      ok = await widget.shareText(
+        inviteShareText(widget.inviteLink, localizations),
+      );
     } else {
       final uri = switch (target) {
-        _Target.whatsApp => whatsAppShareUri(widget.inviteLink),
-        _Target.telegram => telegramShareUri(widget.inviteLink),
-        _Target.email => emailShareUri(widget.inviteLink),
+        _Target.whatsApp => whatsAppShareUri(widget.inviteLink, localizations),
+        _Target.telegram => telegramShareUri(widget.inviteLink, localizations),
+        _Target.email => emailShareUri(widget.inviteLink, localizations),
         _Target.more => throw StateError('unreachable'),
       };
       try {
@@ -114,7 +117,9 @@ class _ShareSheetBodyState extends State<_ShareSheetBody> {
       // App not installed / no handler → fall back to the native chooser
       // so the user can still send the link somewhere.
       if (!ok) {
-        ok = await widget.shareText(inviteShareText(widget.inviteLink));
+        ok = await widget.shareText(
+          inviteShareText(widget.inviteLink, localizations),
+        );
       }
     }
     if (!mounted) return;

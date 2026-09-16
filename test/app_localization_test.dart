@@ -115,6 +115,35 @@ void main() {
     expect(ukrainian.setNewPassword, 'Установи новий пароль');
   });
 
+  test('Ukrainian chat and invite copy uses informal singular voice', () {
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+    expect(ukrainian.chats, 'Чати');
+    expect(ukrainian.inviteFriendStart, 'Запроси друга й почни спілкуватися.');
+    expect(ukrainian.newConnectionSayHi, 'Новий контакт · привітайся');
+    expect(
+      ukrainian.couldNotCreateInvite,
+      'Не вдалося створити запрошення. Спробуй ще раз.',
+    );
+    expect(ukrainian.checkInviteLink, 'Перевір посилання або попроси нове.');
+    expect(
+      ukrainian.inviteClaimFailed,
+      'Не вдалося прийняти запрошення. Спробуй ще раз.',
+    );
+  });
+
+  test('chat-list relative time uses compact locale-specific units', () {
+    const expectations = {'en': '1d', 'de': '1 T.', 'es': '1 d', 'uk': '1 дн'};
+
+    for (final entry in expectations.entries) {
+      final localizations = lookupAppLocalizations(Locale(entry.key));
+      expect(localizations.relativeDays(1), entry.value);
+    }
+
+    final english = lookupAppLocalizations(const Locale('en'));
+    expect(english.sendInvite, 'Send invite');
+    expect(english.onePersonInvite, 'Only one friend can use this link');
+  });
+
   testWidgets('composer uses the generic localized message placeholder', (
     tester,
   ) async {

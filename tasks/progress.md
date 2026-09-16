@@ -566,7 +566,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A through B05C are approved after real-client review; supported-build Notifications delivery/tap remains blocked until a physical Android device is connected. B06 Chats list and invite flow is next.
+- **Current packet:** B01A through B06 are approved after real-client review; supported-build Notifications delivery/tap remains blocked until a physical Android device is connected. B07 chat controls, menus, and message states is next.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -610,6 +610,8 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-16 — Owner approved B06 Chats and invite localization. Relative time and the new-connection preview follow Interface Language; invite creation, loading, failure, retry, native share/email copy, recipient resolution, and fallback states use the EN/DE/ES/UK catalog. Ukrainian keeps `Чати` and uses informal singular copy. The full Flutter suite passes 589 checks with 15 environment-gated skips, static analysis is clean, and the installed Android APK matches the verified build. Final DE/ES/UK review screenshots fit without clipping.
+- 2026-09-15 — Captured B06 Chats list and invite creation in EN/DE/ES/UK on the verified Android build. Localized Chats/Profile labels fit, but relative timestamps remain English-style and the new-connection preview is hardcoded English. The invite creator remains fully English in DE/ES/UK; source audit confirms its loading/failure/retry, share payload, recipient-resolution, and fallback states are hardcoded too. No repair made before owner review.
 - 2026-09-15 — Owner approved B05B2/B05C in all four Interface Languages. Added one visible password rule across signup, reset, and change-password: concise localized `At least 6 characters` guidance beside the relevant field, replaced by the strength meter after typing begins; short-password errors are action-oriented, the reset filler paragraph is removed, and weak strength is no longer a hidden rejection rule. Ukrainian reset heading is informal `Установи новий пароль`. After visual feedback, the hint and strength states were aligned in the same compact six-pixel slot beneath the field; the layout regression failed at the old 18-pixel gap and passes after the repair. The full Flutter suite passes 583 checks with 15 environment-gated skips, static analysis is clean, and local Supabase accepted then deleted a disposable six-character lowercase-password account.
 - 2026-09-15 — Captured B05B2 new-password form and empty-submit validation in EN/DE/ES/UK on the verified Android build. English, German, and Spanish are natural and all layouts fit. Ukrainian still uses formal plural `Установіть`, `Виберіть`, `запам'ятаєте`, and `Використайте` in the heading/helper; recommended informal singular equivalents. No repair made before owner review.
 - 2026-09-15 — Owner approved the revised B05B1 password-recovery request and confirmation flow in EN/DE/ES/UK, including attached email wrapping and the supplied pixel mailbox illustration. B05B2 new-password states are next.

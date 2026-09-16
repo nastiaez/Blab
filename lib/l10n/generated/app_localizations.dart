@@ -1002,6 +1002,24 @@ abstract class AppLocalizations {
   /// **'No connection'**
   String get noConnection;
 
+  /// No description provided for @relativeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String relativeMinutes(int count);
+
+  /// No description provided for @relativeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String relativeHours(int count);
+
+  /// No description provided for @relativeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String relativeDays(int count);
+
   /// No description provided for @learningLanguage.
   ///
   /// In en, this message translates to:
@@ -1203,7 +1221,7 @@ abstract class AppLocalizations {
   /// No description provided for @sendInvite.
   ///
   /// In en, this message translates to:
-  /// **'Send the invite'**
+  /// **'Send invite'**
   String get sendInvite;
 
   /// No description provided for @pickLanguage.
@@ -1233,7 +1251,7 @@ abstract class AppLocalizations {
   /// No description provided for @onePersonInvite.
   ///
   /// In en, this message translates to:
-  /// **'Only one person can use this link.'**
+  /// **'Only one friend can use this link'**
   String get onePersonInvite;
 
   /// No description provided for @validFor48Hours.
@@ -1323,7 +1341,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteAlreadyClaimed.
   ///
   /// In en, this message translates to:
-  /// **'This invite was already claimed'**
+  /// **'This invite has already been claimed'**
   String get inviteAlreadyClaimed;
 
   /// No description provided for @askForFreshLink.
@@ -1415,6 +1433,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New'**
   String get newLabel;
+
+  /// No description provided for @inviteCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s chat on Blab'**
+  String get inviteCardTitle;
+
+  /// No description provided for @inviteLinkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link unavailable'**
+  String get inviteLinkUnavailable;
+
+  /// No description provided for @openingShareSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening sharing…'**
+  String get openingShareSheet;
+
+  /// No description provided for @couldNotOpenSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open sharing. Try again.'**
+  String get couldNotOpenSharing;
+
+  /// No description provided for @openingInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening invite'**
+  String get openingInvite;
+
+  /// No description provided for @couldNotOpenInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the invite.'**
+  String get couldNotOpenInvite;
+
+  /// No description provided for @tryAgainToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again to continue.'**
+  String get tryAgainToContinue;
+
+  /// No description provided for @askFriendForNewLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your friend for a new link.'**
+  String get askFriendForNewLink;
+
+  /// No description provided for @inviteShareMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s chat on Blab: {link}'**
+  String inviteShareMessage(String link);
+
+  /// No description provided for @inviteShareBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s chat on Blab.'**
+  String get inviteShareBlurb;
+
+  /// No description provided for @inviteEmailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with me on Blab'**
+  String get inviteEmailSubject;
+
+  /// No description provided for @inviteSelfClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t use your own invite.'**
+  String get inviteSelfClaim;
+
+  /// No description provided for @inviteInvalidLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a supported language and try again.'**
+  String get inviteInvalidLanguage;
 
   /// No description provided for @invitedYouToChat.
   ///

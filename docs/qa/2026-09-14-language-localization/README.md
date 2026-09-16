@@ -32,7 +32,7 @@
 | B05B1 | Password recovery request and email confirmation in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
 | B05B2 | New-password form and validation states in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
 | B05C | Six-character password guidance across signup, reset, and change-password | `screenshots/b05-auth/` | Approved 2026-09-15 |
-| B06 | Chats list and invite flow | `screenshots/b06-chats-invite/` | Not started |
+| B06 | Chats list and invite flow | `screenshots/b06-chats-invite/`, `screenshots/b06-chats-invite-fixed/` | Approved 2026-09-16 |
 | B07 | Chat controls, menus, and message states | `screenshots/b07-chat/` | Not started |
 | B08 | Shared system and accessibility states | `screenshots/b08-system-accessibility/` | Not started |
 | L01-L11 | One packet for each Learning Language | `screenshots/l*/` | Not started |

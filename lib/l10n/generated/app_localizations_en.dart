@@ -486,6 +486,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noConnection => 'No connection';
 
   @override
+  String relativeMinutes(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return '${count}d';
+  }
+
+  @override
   String get learningLanguage => 'Learning language';
 
   @override
@@ -593,7 +608,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportMessage => 'Report message';
 
   @override
-  String get sendInvite => 'Send the invite';
+  String get sendInvite => 'Send invite';
 
   @override
   String get pickLanguage => 'Pick a language';
@@ -609,7 +624,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendLinkHelp => 'Send the link to start chatting.';
 
   @override
-  String get onePersonInvite => 'Only one person can use this link.';
+  String get onePersonInvite => 'Only one friend can use this link';
 
   @override
   String get validFor48Hours => 'Valid for 48 hours.';
@@ -658,7 +673,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get inviteAlreadyClaimed => 'This invite was already claimed';
+  String get inviteAlreadyClaimed => 'This invite has already been claimed';
 
   @override
   String askForFreshLink(Object name) {
@@ -709,6 +724,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newLabel => 'New';
+
+  @override
+  String get inviteCardTitle => 'Let\'s chat on Blab';
+
+  @override
+  String get inviteLinkUnavailable => 'Invite link unavailable';
+
+  @override
+  String get openingShareSheet => 'Opening sharing…';
+
+  @override
+  String get couldNotOpenSharing => 'Couldn\'t open sharing. Try again.';
+
+  @override
+  String get openingInvite => 'Opening invite';
+
+  @override
+  String get couldNotOpenInvite => 'Couldn\'t open the invite.';
+
+  @override
+  String get tryAgainToContinue => 'Try again to continue.';
+
+  @override
+  String get askFriendForNewLink => 'Ask your friend for a new link.';
+
+  @override
+  String inviteShareMessage(String link) {
+    return 'Let\'s chat on Blab: $link';
+  }
+
+  @override
+  String get inviteShareBlurb => 'Let\'s chat on Blab.';
+
+  @override
+  String get inviteEmailSubject => 'Chat with me on Blab';
+
+  @override
+  String get inviteSelfClaim => 'You can\'t use your own invite.';
+
+  @override
+  String get inviteInvalidLanguage =>
+      'Choose a supported language and try again.';
 
   @override
   String get invitedYouToChat => 'invited you to chat';

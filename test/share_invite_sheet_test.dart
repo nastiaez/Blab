@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/features/invite/widgets/share_invite_sheet.dart';
 import 'package:blab/features/invite/widgets/share_targets.dart';
+import 'package:blab/l10n/generated/app_localizations.dart';
 
 const _link = 'https://blab-gray.vercel.app/i/abc123';
 
@@ -86,7 +87,10 @@ void main() {
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
 
-    expect(shared, inviteShareText(_link));
+    expect(
+      shared,
+      inviteShareText(_link, lookupAppLocalizations(const Locale('en'))),
+    );
     expect(find.text('Invite sent ✓'), findsOneWidget);
   });
 

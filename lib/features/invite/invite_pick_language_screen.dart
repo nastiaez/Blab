@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
+
 /// Retained only so older incoming routes fail gracefully during the rollout.
 /// New invite links never navigate here; language is picked inside the chat.
 class InvitePickLanguageScreen extends StatelessWidget {
@@ -14,5 +16,5 @@ class InvitePickLanguageScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Opening invite')));
+      Scaffold(body: Center(child: Text(context.l10n.openingInvite)));
 }

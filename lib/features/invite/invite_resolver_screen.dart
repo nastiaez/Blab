@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../l10n/l10n.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/connectivity_state.dart';
@@ -201,21 +202,21 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
     });
     final offline = ref.watch(onlineProvider).value == false;
     if (_error is _InviteUsed || _isUsedError(_error)) {
-      return const _InviteState(
-        title: 'This invite has already been claimed',
-        body: 'Ask your friend for a new link.',
+      return _InviteState(
+        title: context.l10n.inviteAlreadyClaimed,
+        body: context.l10n.askFriendForNewLink,
       );
     }
     if (_error is _InviteNotFound || _isNotFoundError(_error)) {
-      return const _InviteState(
-        title: 'We couldn’t find that invite.',
-        body: 'Check the link is correct, or ask for a new one.',
+      return _InviteState(
+        title: context.l10n.inviteNotFound,
+        body: context.l10n.checkInviteLink,
       );
     }
     if (_error != null && !offline) {
       return _InviteState(
-        title: 'Couldn’t open the invite.',
-        body: 'Try again to continue.',
+        title: context.l10n.couldNotOpenInvite,
+        body: context.l10n.tryAgainToContinue,
         onRetry: _resolve,
       );
     }
@@ -248,19 +249,19 @@ class _OpeningInvite extends StatelessWidget {
             child: Center(
               child: !showLoading
                   ? const SizedBox.shrink()
-                  : const Column(
+                  : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Opening invite',
-                          style: TextStyle(
+                          context.l10n.openingInvite,
+                          style: const TextStyle(
                             color: Color(0xFF46281C),
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(height: 16),
-                        _InviteDots(),
+                        const SizedBox(height: 16),
+                        const _InviteDots(),
                       ],
                     ),
             ),
@@ -383,7 +384,7 @@ class _InviteState extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             if (onRetry != null) ...[
-              FilledButton(onPressed: onRetry, child: const Text('Try again')),
+              FilledButton(onPressed: onRetry, child: Text(context.l10n.retry)),
               const SizedBox(height: 12),
             ],
             SizedBox(
@@ -395,7 +396,7 @@ class _InviteState extends StatelessWidget {
                   foregroundColor: const Color(0xFF46281C),
                 ),
                 onPressed: () => context.go('/chats'),
-                child: const Text('Go to chats'),
+                child: Text(context.l10n.goToChats),
               ),
             ),
           ],

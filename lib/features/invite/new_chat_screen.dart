@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'invite_share_service.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../shared/data/invite_host.dart';
 import 'prepared_invite_state.dart';
 import '../../shared/state/connectivity_state.dart';
@@ -43,7 +44,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     });
     try {
       final link = 'https://$kInviteHost/i/$token';
-      final exposed = await shareInviteText('Let’s chat on Blab\n$link');
+      final exposed = await shareInviteText(
+        context.l10n.inviteShareMessage(link),
+      );
       // A link is never invalidated by sharing. Prepare another one in the
       // background for the next invite while keeping this page in place.
       if (mounted && exposed) {
@@ -73,9 +76,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
         backgroundColor: const Color(0xFFFAF7F2),
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
-          'Invite a friend',
-          style: TextStyle(
+        title: Text(
+          context.l10n.inviteFriend,
+          style: const TextStyle(
             color: Color(0xFF46281C),
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -92,21 +95,24 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _InviteCard(link: link, loading: invite.loading),
-                  const Padding(
-                    padding: EdgeInsets.only(top: 16),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
                     child: Text(
-                      'Only one friend can use this link',
-                      style: TextStyle(color: Color(0xFF917869), fontSize: 13),
+                      context.l10n.onePersonInvite,
+                      style: const TextStyle(
+                        color: Color(0xFF917869),
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   if (online && invite.failed) ...[
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Couldn’t prepare a new invite.',
-                            style: TextStyle(
+                            context.l10n.couldNotCreateInvite,
+                            style: const TextStyle(
                               color: Color(0xFF917869),
                               fontSize: 13,
                             ),
@@ -116,17 +122,17 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                           onPressed: () => ref
                               .read(preparedInviteProvider.notifier)
                               .prepare(),
-                          child: const Text('Try again'),
+                          child: Text(context.l10n.retry),
                         ),
                       ],
                     ),
                   ],
                   if (_shareFailed)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
                       child: Text(
-                        'Couldn’t open sharing. Try again.',
-                        style: TextStyle(
+                        context.l10n.couldNotOpenSharing,
+                        style: const TextStyle(
                           color: Color(0xFF917869),
                           fontSize: 13,
                         ),
@@ -147,7 +153,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                       ),
                       onPressed: enabled ? _sendInvite : null,
                       child: Text(
-                        _sharing ? 'Opening share sheet…' : 'Send invite',
+                        _sharing
+                            ? context.l10n.openingShareSheet
+                            : context.l10n.sendInvite,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -183,9 +191,9 @@ class _InviteCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Let’s chat on Blab',
-            style: TextStyle(
+          Text(
+            context.l10n.inviteCardTitle,
+            style: const TextStyle(
               color: Color(0xFF46281C),
               fontSize: 17,
               fontWeight: FontWeight.w700,
@@ -194,8 +202,8 @@ class _InviteCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             loading
-                ? 'Preparing your link…'
-                : link ?? 'Invite link unavailable',
+                ? context.l10n.creatingLink
+                : link ?? context.l10n.inviteLinkUnavailable,
             style: const TextStyle(color: Color(0xFF917869), fontSize: 15),
           ),
         ],

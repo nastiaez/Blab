@@ -1,4 +1,6 @@
 import 'package:blab/features/invite/invite_continuation.dart';
+import 'package:blab/l10n/generated/app_localizations.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,5 +107,25 @@ void main() {
     final unknown = inviteClaimFailureFor(Exception('offline'));
     expect(unknown, InviteClaimFailure.unknown);
     expect(isTerminalInviteClaimFailure(unknown), isFalse);
+  });
+
+  test('invite claim failures use the selected interface language', () {
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+
+    expect(
+      localizedInviteClaimMessage(
+        ukrainian,
+        InviteClaimFailure.alreadyClaimed,
+      ),
+      'Це запрошення вже прийнято',
+    );
+    expect(
+      localizedInviteClaimMessage(ukrainian, InviteClaimFailure.selfClaim),
+      'Не можна скористатися власним запрошенням.',
+    );
+    expect(
+      localizedInviteClaimMessage(ukrainian, InviteClaimFailure.unknown),
+      'Не вдалося прийняти запрошення. Спробуй ще раз.',
+    );
   });
 }
