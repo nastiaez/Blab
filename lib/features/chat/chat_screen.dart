@@ -67,7 +67,7 @@ import 'widgets/grammatical_form_note.dart';
 import '../../shared/state/profile_state.dart';
 import 'widgets/message_reaction_bar.dart';
 import 'widgets/mode_toggle.dart';
-import 'widgets/partner_profile_sheet.dart';
+import 'partner_profile_page.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
 import 'widgets/translating_message_content.dart';
@@ -1059,12 +1059,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         _closeSelection();
                         return;
                       }
-                      final result = await showPartnerProfileSheet(
-                        context,
-                        chat: chat,
-                        successSnackBottomClearance: _activeBottomSurfaceHeight,
-                      );
-                      if (result == PartnerProfileResult.blocked) {
+                      await showPartnerProfilePage(context, chat: chat);
+                      if (!context.mounted) return;
+                      final blockedIds =
+                          ref.read(blockedUserIdsProvider).value ??
+                          const <String>{};
+                      if (blockedIds.contains(chat.partnerId)) {
                         ref
                             .read(replyingToProvider(widget.chatId).notifier)
                             .clear();
@@ -1072,7 +1072,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             .read(editingProvider(widget.chatId).notifier)
                             .clear();
                         _inputFocus.unfocus();
-                      } else if (context.mounted && editing != null) {
+                      } else if (editing != null) {
                         _inputFocus.requestFocus();
                       }
                     },

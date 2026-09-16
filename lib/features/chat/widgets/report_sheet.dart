@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 
-/// Reasons a user can pick when reporting a message or a person. The
+/// Reasons a user can pick when reporting a message. The
 /// `wire` value is what's stored in the `reports.reason` column. Step 3.6a.
 enum ReportReason {
   spam('spam', 'Spam or scam'),

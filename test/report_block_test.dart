@@ -96,7 +96,7 @@ void main() {
   });
 
   for (final locale in AppLocalizations.supportedLocales) {
-    testWidgets('person report sheet is complete in ${locale.languageCode}', (
+    testWidgets('message report sheet is complete in ${locale.languageCode}', (
       tester,
     ) async {
       ReportReason? selectedReason;
@@ -113,7 +113,7 @@ void main() {
                 onPressed: () async {
                   selectedReason = await showReportReasonSheet(
                     context,
-                    title: localizations.reportPerson('Alice'),
+                    title: localizations.reportMessage,
                   );
                 },
                 child: const Text('Open report'),
@@ -126,7 +126,7 @@ void main() {
       await tester.tap(find.text('Open report'));
       await tester.pumpAndSettle();
 
-      expect(find.text(localizations.reportPerson('Alice')), findsOneWidget);
+      expect(find.text(localizations.reportMessage), findsOneWidget);
       expect(find.text(localizations.reportSpam), findsOneWidget);
       expect(find.text(localizations.reportHarassment), findsOneWidget);
       expect(find.text(localizations.reportHate), findsOneWidget);
