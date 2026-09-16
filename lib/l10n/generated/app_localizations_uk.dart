@@ -598,6 +598,38 @@ class AppLocalizationsUk extends AppLocalizations {
   String get reportMessage => 'Поскаржитися на повідомлення';
 
   @override
+  String reportPersonSpamQuestion(String name) {
+    return 'Поскаржитися на спам від $name?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Blab отримає сповіщення, що $name може надсилати спам. Повідомлення з цього чату не буде додано.';
+  }
+
+  @override
+  String get submitSpamReport => 'Поскаржитися на спам';
+
+  @override
+  String get reportAndBlock => 'Поскаржитися й заблокувати';
+
+  @override
+  String get reportSubmitted => 'Скаргу надіслано';
+
+  @override
+  String get couldNotReportOrBlock =>
+      'Не вдалося поскаржитися й заблокувати. Спробуйте ще раз.';
+
+  @override
+  String get reportSucceededBlockFailed =>
+      'Скаргу надіслано. Не вдалося заблокувати.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name заблоковано. Не вдалося надіслати скаргу.';
+  }
+
+  @override
   String get sendInvite => 'Надіслати запрошення';
 
   @override

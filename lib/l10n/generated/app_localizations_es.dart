@@ -602,6 +602,38 @@ class AppLocalizationsEs extends AppLocalizations {
   String get reportMessage => 'Denunciar mensaje';
 
   @override
+  String reportPersonSpamQuestion(String name) {
+    return '¿Denunciar a $name por spam?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Se informará a Blab de que $name podría estar enviando spam. Los mensajes de este chat no se incluirán.';
+  }
+
+  @override
+  String get submitSpamReport => 'Denunciar spam';
+
+  @override
+  String get reportAndBlock => 'Denunciar y bloquear';
+
+  @override
+  String get reportSubmitted => 'Denuncia enviada';
+
+  @override
+  String get couldNotReportOrBlock =>
+      'No se pudo denunciar ni bloquear. Inténtalo de nuevo.';
+
+  @override
+  String get reportSucceededBlockFailed =>
+      'Denuncia enviada. No se pudo bloquear.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name bloqueado. No se pudo enviar la denuncia.';
+  }
+
+  @override
   String get sendInvite => 'Enviar invitación';
 
   @override

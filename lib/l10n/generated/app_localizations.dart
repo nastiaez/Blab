@@ -1206,6 +1206,54 @@ abstract class AppLocalizations {
   /// **'Report message'**
   String get reportMessage;
 
+  /// No description provided for @reportPersonSpamQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name} for spam?'**
+  String reportPersonSpamQuestion(String name);
+
+  /// No description provided for @reportPersonSpamBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Blab will be notified that {name} may be sending spam. Messages from this chat won\'t be included.'**
+  String reportPersonSpamBody(String name);
+
+  /// No description provided for @submitSpamReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report spam'**
+  String get submitSpamReport;
+
+  /// No description provided for @reportAndBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Report and block'**
+  String get reportAndBlock;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted'**
+  String get reportSubmitted;
+
+  /// No description provided for @couldNotReportOrBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t report or block. Try again.'**
+  String get couldNotReportOrBlock;
+
+  /// No description provided for @reportSucceededBlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted. Couldn\'t block.'**
+  String get reportSucceededBlockFailed;
+
+  /// No description provided for @blockSucceededReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} blocked. Couldn\'t submit report.'**
+  String blockSucceededReportFailed(String name);
+
   /// No description provided for @sendInvite.
   ///
   /// In en, this message translates to:

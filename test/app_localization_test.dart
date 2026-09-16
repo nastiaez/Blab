@@ -63,6 +63,21 @@ void main() {
     },
   );
 
+  test('partner spam reporting copy exists in every launch locale', () async {
+    for (final locale in const ['en', 'de', 'es', 'uk']) {
+      final l10n = await AppLocalizations.delegate.load(Locale(locale));
+
+      expect(l10n.reportPersonSpamQuestion('Alice'), isNotEmpty);
+      expect(l10n.reportPersonSpamBody('Alice'), isNotEmpty);
+      expect(l10n.submitSpamReport, isNotEmpty);
+      expect(l10n.reportAndBlock, isNotEmpty);
+      expect(l10n.reportSubmitted, isNotEmpty);
+      expect(l10n.couldNotReportOrBlock, isNotEmpty);
+      expect(l10n.reportSucceededBlockFailed, isNotEmpty);
+      expect(l10n.blockSucceededReportFailed('Alice'), isNotEmpty);
+    }
+  });
+
   testWidgets('composer uses the generic localized message placeholder', (
     tester,
   ) async {
