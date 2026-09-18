@@ -34,7 +34,7 @@ void main() {
 
     expect(find.text('Block Alice?'), findsOneWidget);
     expect(
-      find.text('Do you want to block Alice from messaging you on Blab?'),
+      find.text('Neither of you will be able to send messages in this chat.'),
       findsOneWidget,
     );
     expect(find.text('Cancel'), findsOneWidget);
@@ -42,7 +42,7 @@ void main() {
     expect(find.textContaining('unblock anytime'), findsNothing);
   });
 
-  testWidgets('block confirmation uses Blab card and soft-error colors', (
+  testWidgets('block confirmation matches the compact report dialog', (
     tester,
   ) async {
     await pumpLauncher(tester);
@@ -54,37 +54,42 @@ void main() {
 
     final title = tester.widget<Text>(find.text('Block Alice?'));
     final body = tester.widget<Text>(
-      find.text('Do you want to block Alice from messaging you on Blab?'),
+      find.text('Neither of you will be able to send messages in this chat.'),
     );
     expect(title.style?.color, const Color(0xFF46281C));
     expect(body.style?.color, const Color(0xFF917869));
+    expect(title.textAlign, TextAlign.start);
+    expect(body.textAlign, TextAlign.start);
+    expect(find.byType(OutlinedButton), findsNothing);
+    expect(find.byType(FilledButton), findsNothing);
 
-    final cancel = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Cancel'),
+    final cancel = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Cancel'),
     );
-    final block = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Block'),
+    final block = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Block'),
     );
     expect(
       cancel.style?.foregroundColor?.resolve(const <WidgetState>{}),
       const Color(0xFF46281C),
     );
     expect(
-      cancel.style?.side?.resolve(const <WidgetState>{})?.color,
-      const Color(0xFFE1DAD2),
-    );
-    expect(
       block.style?.foregroundColor?.resolve(const <WidgetState>{}),
-      const Color(0xFFD95245),
+      const Color(0xFF46281C),
     );
-    expect(
-      block.style?.backgroundColor?.resolve(const <WidgetState>{}),
-      const Color(0xFFFFF6F4),
+
+    final actionRowFinder = find.ancestor(
+      of: find.widgetWithText(TextButton, 'Cancel'),
+      matching: find.byType(Row),
     );
-    expect(
-      block.style?.side?.resolve(const <WidgetState>{})?.color,
-      const Color(0xFFE1DAD2),
-    );
+    expect(actionRowFinder, findsOneWidget);
+    final actionRow = tester.widget<Row>(actionRowFinder);
+    expect(actionRow.mainAxisAlignment, MainAxisAlignment.end);
+
+    final cancelCenter = tester.getCenter(find.text('Cancel'));
+    final blockCenter = tester.getCenter(find.text('Block'));
+    expect(cancelCenter.dx, lessThan(blockCenter.dx));
+    expect(cancelCenter.dy, blockCenter.dy);
   });
 
   testWidgets('Cancel returns false and Block returns true', (tester) async {
@@ -104,10 +109,30 @@ void main() {
     tester,
   ) async {
     const expectations = {
-      'en': ['Block Alice?', 'Cancel', 'Block'],
-      'de': ['Alice blockieren?', 'Abbrechen', 'Blockieren'],
-      'es': ['¿Bloquear a Alice?', 'Cancelar', 'Bloquear'],
-      'uk': ['Заблокувати Alice?', 'Скасувати', 'Заблокувати'],
+      'en': [
+        'Block Alice?',
+        'Neither of you will be able to send messages in this chat.',
+        'Cancel',
+        'Block',
+      ],
+      'de': [
+        'Alice blockieren?',
+        'Ihr könnt euch in diesem Chat keine Nachrichten senden.',
+        'Abbrechen',
+        'Blockieren',
+      ],
+      'es': [
+        '¿Bloquear a Alice?',
+        'No podréis enviaros mensajes en este chat.',
+        'Cancelar',
+        'Bloquear',
+      ],
+      'uk': [
+        'Заблокувати Alice?',
+        'Ви не зможете надсилати одне одному повідомлення в цьому чаті.',
+        'Скасувати',
+        'Заблокувати',
+      ],
     };
 
     for (final entry in expectations.entries) {
@@ -116,7 +141,7 @@ void main() {
         expect(find.text(copy), findsOneWidget);
       }
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byType(OutlinedButton));
+      await tester.tap(find.text(entry.value[2]));
       await tester.pumpAndSettle();
     }
   });

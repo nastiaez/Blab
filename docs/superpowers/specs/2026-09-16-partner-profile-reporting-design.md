@@ -37,7 +37,7 @@ Tapping `Report {name}` opens one centered Blab-style dialog over the profile pa
 
 English reference copy:
 
-- Title: `Report {name} for spam?`
+- Title: `Report spam?`
 - Body: `Blab will be notified that {name} may be sending spam. Messages from this chat won't be included.`
 - Actions:
   - `Report spam`
@@ -45,6 +45,8 @@ English reference copy:
   - `Cancel`
 
 Nothing is submitted until the user chooses one of the two report actions. `Cancel`, the Android back action, and tapping outside the dialog dismiss it without changes.
+
+The dialog follows Signal's compact text-first hierarchy inside Blab's warm visual system: title and body are left-aligned; the three actions are borderless text rows aligned to the right; every action uses the same warm-brown text color. The action labels carry their meaning without relying on color. The card keeps Blab's warm surface, rounded corners, and subtle outer stroke. It must not use centered marketing-style copy or full-width pill buttons.
 
 `Report spam` submits a person report with:
 
@@ -70,7 +72,7 @@ The existing database validation and moderation record shape remain unchanged.
 
 ## Blocking and unblocking
 
-- Tapping `Block {name}` opens the existing Blab-style centered Block confirmation.
+- Tapping `Block {name}` opens a compact confirmation that uses the same warm card, left-aligned title/body, right-aligned borderless text actions, and single warm-brown action color as the person-report dialog.
 - A successful block keeps the profile page open and changes the row to `Unblock {name}`. No additional block success pill is needed because the persistent state change is visible.
 - Tapping `Unblock {name}` performs the existing unblock action. On success, the row changes back to Block and the existing localized unblock success pill appears.
 - Failures keep the profile page open and show the existing localized failure feedback.

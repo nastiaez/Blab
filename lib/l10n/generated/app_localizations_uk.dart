@@ -9,6 +9,9 @@ class AppLocalizationsUk extends AppLocalizations {
   AppLocalizationsUk([String locale = 'uk']) : super(locale);
 
   @override
+  String get reportSpamQuestion => 'Поскаржитися на спам?';
+
+  @override
   String get appName => 'Blab';
 
   @override
@@ -850,9 +853,8 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String blockPersonConfirmation(String name) {
-    return 'Заблокувати повідомлення від $name у Blab?';
-  }
+  String get blockPersonConfirmation =>
+      'Ви не зможете надсилати одне одному повідомлення в цьому чаті.';
 
   @override
   String get block => 'Заблокувати';

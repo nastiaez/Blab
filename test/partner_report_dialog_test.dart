@@ -56,11 +56,24 @@ void main() {
         ),
       );
 
-      expect(find.text(l10n.reportPersonSpamQuestion('Alice')), findsOneWidget);
+      expect(find.text(l10n.reportSpamQuestion), findsOneWidget);
       expect(find.text(l10n.reportPersonSpamBody('Alice')), findsOneWidget);
       expect(find.text(l10n.submitSpamReport), findsOneWidget);
       expect(find.text(l10n.reportAndBlock), findsOneWidget);
       expect(find.text(l10n.cancel), findsOneWidget);
+      for (final label in [
+        l10n.submitSpamReport,
+        l10n.reportAndBlock,
+        l10n.cancel,
+      ]) {
+        final action = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, label),
+        );
+        expect(
+          action.style?.foregroundColor?.resolve(const <WidgetState>{}),
+          BlabColors.warmInk,
+        );
+      }
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.text(l10n.cancel));
@@ -86,7 +99,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(submissions, 0);
-    expect(find.text('Report Alice for spam?'), findsNothing);
+    expect(find.text('Report spam?'), findsNothing);
   });
 
   testWidgets('Report spam submits without requesting block', (tester) async {
@@ -107,7 +120,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(blockRequested, isFalse);
-    expect(find.text('Report Alice for spam?'), findsNothing);
+    expect(find.text('Report spam?'), findsNothing);
   });
 
   testWidgets('Report and block requests both operations', (tester) async {
@@ -128,7 +141,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(blockRequested, isTrue);
-    expect(find.text('Report Alice for spam?'), findsNothing);
+    expect(find.text('Report spam?'), findsNothing);
   });
 
   testWidgets('submission disables every action until it resolves', (
@@ -152,7 +165,7 @@ void main() {
     await tester.pump();
 
     expect(submissions, 1);
-    expect(find.text('Report Alice for spam?'), findsOneWidget);
+    expect(find.text('Report spam?'), findsOneWidget);
 
     pending.complete(
       const PartnerReportResult(
@@ -179,7 +192,7 @@ void main() {
     await tester.tap(find.text('Report and block'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Report Alice for spam?'), findsOneWidget);
+    expect(find.text('Report spam?'), findsOneWidget);
     expect(find.text("Couldn't report or block. Try again."), findsOneWidget);
     expect(find.text('Report and block'), findsOneWidget);
   });

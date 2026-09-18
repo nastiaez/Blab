@@ -90,18 +90,18 @@ class _PartnerReportDialogState extends State<_PartnerReportDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  context.l10n.reportPersonSpamQuestion(widget.personName),
-                  textAlign: TextAlign.center,
+                  context.l10n.reportSpamQuestion,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: BlabColors.warmInk,
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   context.l10n.reportPersonSpamBody(widget.personName),
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.start,
                   style: const TextStyle(
                     color: BlabColors.warmMuted,
                     fontSize: 15,
@@ -120,7 +120,7 @@ class _PartnerReportDialogState extends State<_PartnerReportDialog> {
                       padding: const EdgeInsets.all(12),
                       child: Text(
                         error,
-                        textAlign: TextAlign.center,
+                        textAlign: TextAlign.start,
                         style: const TextStyle(
                           color: BlabColors.errorWarm,
                           fontSize: 14,
@@ -130,47 +130,43 @@ class _PartnerReportDialogState extends State<_PartnerReportDialog> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
-                OutlinedButton(
+                const SizedBox(height: 16),
+                TextButton(
                   onPressed: _submitting ? null : () => _submit(block: false),
-                  style: OutlinedButton.styleFrom(
+                  style: TextButton.styleFrom(
                     foregroundColor: BlabColors.warmInk,
-                    backgroundColor: BlabColors.chatSurface,
                     minimumSize: const Size.fromHeight(48),
-                    side: const BorderSide(color: BlabColors.chatDivider),
-                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.centerRight,
                   ),
                   child: _ActionLabel(
                     label: context.l10n.submitSpamReport,
                     loading: _submitting && !_submittingBlock,
                   ),
                 ),
-                const SizedBox(height: 10),
-                FilledButton(
+                TextButton(
                   onPressed: _submitting ? null : () => _submit(block: true),
-                  style: FilledButton.styleFrom(
-                    foregroundColor: BlabColors.errorWarm,
-                    backgroundColor: BlabColors.errorSoft,
+                  style: TextButton.styleFrom(
+                    foregroundColor: BlabColors.warmInk,
                     disabledForegroundColor: BlabColors.disabledOnSurface,
-                    disabledBackgroundColor: BlabColors.disabledSurface,
                     minimumSize: const Size.fromHeight(48),
-                    side: const BorderSide(color: BlabColors.chatDivider),
-                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.centerRight,
                   ),
                   child: _ActionLabel(
                     label: context.l10n.reportAndBlock,
                     loading: _submitting && _submittingBlock,
                   ),
                 ),
-                const SizedBox(height: 6),
                 TextButton(
                   onPressed: _submitting
                       ? null
                       : () => Navigator.of(context).pop(),
                   style: TextButton.styleFrom(
-                    foregroundColor: BlabColors.warmMuted,
+                    foregroundColor: BlabColors.warmInk,
                     minimumSize: const Size.fromHeight(48),
-                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.centerRight,
                   ),
                   child: Text(context.l10n.cancel),
                 ),
@@ -192,7 +188,7 @@ class _ActionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (loading) ...[
@@ -202,7 +198,7 @@ class _ActionLabel extends StatelessWidget {
           ),
           const SizedBox(width: 8),
         ],
-        Flexible(child: Text(label, textAlign: TextAlign.center)),
+        Flexible(child: Text(label, textAlign: TextAlign.end)),
       ],
     );
   }

@@ -102,6 +102,12 @@ abstract class AppLocalizations {
     Locale('es'),
   ];
 
+  /// No description provided for @reportSpamQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Report spam?'**
+  String get reportSpamQuestion;
+
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
@@ -1617,8 +1623,8 @@ abstract class AppLocalizations {
   /// No description provided for @blockPersonConfirmation.
   ///
   /// In en, this message translates to:
-  /// **'Do you want to block {name} from messaging you on Blab?'**
-  String blockPersonConfirmation(String name);
+  /// **'Neither of you will be able to send messages in this chat.'**
+  String get blockPersonConfirmation;
 
   /// No description provided for @block.
   ///

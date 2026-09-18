@@ -9,6 +9,9 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get reportSpamQuestion => '¿Denunciar spam?';
+
+  @override
   String get appName => 'Blab';
 
   @override
@@ -853,9 +856,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String blockPersonConfirmation(String name) {
-    return '¿Quieres impedir que $name te envíe mensajes en Blab?';
-  }
+  String get blockPersonConfirmation =>
+      'No podréis enviaros mensajes en este chat.';
 
   @override
   String get block => 'Bloquear';

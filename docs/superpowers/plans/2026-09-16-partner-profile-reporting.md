@@ -147,7 +147,7 @@ Future<void> _submit({required bool block}) async {
 }
 ```
 
-Use the existing Blab dialog palette (`chatSurface`, `chatDivider`, `warmInk`, `warmMuted`, `errorSoft`, `errorWarm`), a maximum width of 360, scrollable content for large text, and three full-width 48 px pill buttons ordered Report spam, Report and block, Cancel.
+Use the existing Blab dialog palette (`chatSurface`, `chatDivider`, `warmInk`, `warmMuted`), a maximum width of 360, and scrollable content for large text. Keep the title and body left-aligned. Render Report spam, Report and block, and Cancel as borderless text actions with at least 48 px tap targets and right-aligned labels. All three actions use `warmInk`.
 
 - [ ] **Step 4: Run and pass the dialog tests**
 
@@ -447,3 +447,31 @@ Delete created QA reports and blocks, restore the test account locale/state, and
 git add docs/qa/2026-09-16-partner-profile-reporting lib test
 git commit -m "test: verify partner profile reporting"
 ```
+
+### Task 7: Unify the report and block confirmation styling
+
+**Files:**
+- Modify: `lib/features/chat/widgets/partner_report_dialog.dart`
+- Modify: `lib/features/chat/widgets/block_confirmation_dialog.dart`
+- Test: `test/partner_report_dialog_test.dart`
+- Test: `test/block_confirmation_dialog_test.dart`
+
+- [ ] **Step 1: Write failing visual-contract tests**
+
+Assert that every report action resolves to `BlabColors.warmInk`. For the block dialog, assert left-aligned title/body, no `OutlinedButton` or `FilledButton`, a right-aligned horizontal action row with Cancel on the left and Block on the right, and the same `warmInk` foreground on both actions.
+
+- [ ] **Step 2: Run the focused tests and confirm the old styling fails**
+
+Run: `flutter test test/partner_report_dialog_test.dart test/block_confirmation_dialog_test.dart`
+
+Expected: FAIL because Report and block is red and the Block dialog still uses centered copy with pill buttons.
+
+- [ ] **Step 3: Apply the shared compact visual language**
+
+Keep both dialog behaviors unchanged. Use left-aligned title/body and `BlabColors.warmInk` for every action. The report dialog keeps its vertical right-aligned text actions; the two Block actions share one right-aligned row with Cancel before Block. Preserve 48 px tap heights, the warm card, 28 px radius, and `chatDivider` outer stroke.
+
+- [ ] **Step 4: Run focused and full verification**
+
+Run: `flutter test test/partner_report_dialog_test.dart test/block_confirmation_dialog_test.dart && flutter analyze && flutter test`
+
+Expected: all focused and full tests pass with no analyzer findings.

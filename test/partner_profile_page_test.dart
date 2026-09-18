@@ -206,9 +206,25 @@ void main() {
 
     await _openReport(tester, const Locale('en'));
 
-    expect(find.text('Report Alice for spam?'), findsOneWidget);
+    expect(find.text('Report spam?'), findsOneWidget);
+    expect(find.text('Report Alice for spam?'), findsNothing);
     expect(find.text('Harassment or bullying'), findsNothing);
     expect(find.text('Hate speech'), findsNothing);
+
+    final title = tester.widget<Text>(find.text('Report spam?'));
+    final body = tester.widget<Text>(
+      find.text(
+        "Blab will be notified that Alice may be sending spam. "
+        "Messages from this chat won't be included.",
+      ),
+    );
+    expect(title.textAlign, TextAlign.start);
+    expect(body.textAlign, TextAlign.start);
+    expect(find.byType(OutlinedButton), findsNothing);
+    expect(find.byType(FilledButton), findsNothing);
+    expect(find.widgetWithText(TextButton, 'Report spam'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Report and block'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Cancel'), findsOneWidget);
   });
 
   testWidgets('Report spam stores a user report without a message id', (
@@ -299,7 +315,7 @@ void main() {
     await tester.tap(find.text('Report and block'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Report Alice for spam?'), findsOneWidget);
+    expect(find.text('Report spam?'), findsOneWidget);
     expect(find.text("Couldn't report or block. Try again."), findsOneWidget);
   });
 }

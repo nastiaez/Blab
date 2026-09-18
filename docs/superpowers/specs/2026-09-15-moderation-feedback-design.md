@@ -18,7 +18,7 @@ Keep Blab's required report and block controls calm, reversible, and easy to rec
 ### Block
 
 - Tapping Block first opens a confirmation dialog.
-- The localized English pattern is: title `Block Name?`; body `Do you want to block Name from messaging you on Blab?`; actions `Cancel` and `Block`.
+- The localized English pattern is: title `Block Name?`; body `Neither of you will be able to send messages in this chat.`; actions `Cancel` and `Block` together in one right-aligned row.
 - The confirmation does not add secondary information about later unblocking.
 - Confirming Block closes the dialog and partner profile sheet but keeps the conversation visible.
 - The changed composer state is the confirmation; no additional Block Snackbar appears.

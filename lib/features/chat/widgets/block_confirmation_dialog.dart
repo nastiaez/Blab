@@ -16,66 +16,53 @@ Future<bool> showBlockConfirmation(
             side: BorderSide(color: BlabColors.chatDivider),
           ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: Padding(
+            constraints: const BoxConstraints(maxWidth: 360, maxHeight: 640),
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     context.l10n.blockPersonQuestion(personName),
-                    textAlign: TextAlign.center,
+                    textAlign: TextAlign.start,
                     style: const TextStyle(
                       color: BlabColors.warmInk,
                       fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
-                    context.l10n.blockPersonConfirmation(personName),
-                    textAlign: TextAlign.center,
+                    context.l10n.blockPersonConfirmation,
+                    textAlign: TextAlign.start,
                     style: const TextStyle(
                       color: BlabColors.warmMuted,
                       fontSize: 15,
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              Navigator.of(dialogContext).pop(false),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: BlabColors.warmInk,
-                            backgroundColor: BlabColors.chatSurface,
-                            minimumSize: const Size.fromHeight(48),
-                            side: const BorderSide(
-                              color: BlabColors.chatDivider,
-                            ),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(context.l10n.cancel),
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        style: TextButton.styleFrom(
+                          foregroundColor: BlabColors.warmInk,
+                          minimumSize: const Size(0, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
                         ),
+                        child: Text(context.l10n.cancel),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: () =>
-                              Navigator.of(dialogContext).pop(true),
-                          style: FilledButton.styleFrom(
-                            foregroundColor: BlabColors.errorWarm,
-                            backgroundColor: BlabColors.errorSoft,
-                            minimumSize: const Size.fromHeight(48),
-                            side: const BorderSide(
-                              color: BlabColors.chatDivider,
-                            ),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(context.l10n.block),
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: BlabColors.warmInk,
+                          minimumSize: const Size(0, 48),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
                         ),
+                        child: Text(context.l10n.block),
                       ),
                     ],
                   ),

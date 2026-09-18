@@ -2,14 +2,14 @@
 
 ## Android visual matrix
 
-| Locale | Full profile page | Person spam dialog | Result |
-| --- | --- | --- | --- |
-| English | `profile-en.png` | `report-dialog-en.png` | Pass |
-| German | `profile-de.png` | `report-dialog-de.png` | Pass |
-| Spanish | `profile-es.png` | `report-dialog-es.png` | Pass |
-| Ukrainian | `profile-uk.png` | `report-dialog-uk.png` | Pass |
+| Locale | Full profile page | Person spam dialog | Block dialog | Result |
+| --- | --- | --- | --- | --- |
+| English | `profile-en.png` | `report-dialog-en.png` | `block-dialog-en.png` | Pass |
+| German | `profile-de.png` | `report-dialog-de.png` | `block-dialog-de.png` | Pass |
+| Spanish | `profile-es.png` | `report-dialog-es.png` | `block-dialog-es.png` | Pass |
+| Ukrainian | `profile-uk.png` | `report-dialog-uk.png` | `block-dialog-uk.png` | Pass |
 
-All four dialogs fit the default Android viewport without clipping. Person reporting has no reason picker and does not include chat messages. Message reporting remains a separate six-reason bottom sheet.
+Both confirmation dialogs fit the default Android viewport in all four locales without clipping. They share the same warm card, subtle stroke, left-aligned title and explanation, compact right-aligned text actions, and one warm-brown action color. The Block explanation states the concrete consequence without mentioning unblocking, and its Cancel and Block actions share one right-aligned row. The person-report dialog uses the short localized “Report spam?” heading. Person reporting has no reason picker and does not include chat messages. Message reporting remains a separate six-reason bottom sheet.
 
 ## Storage and recovery proof
 
