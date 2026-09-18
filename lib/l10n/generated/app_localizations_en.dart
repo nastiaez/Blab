@@ -501,6 +501,84 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get chooseLanguageToPractice => 'Choose a language to practice';
+
+  @override
+  String get chooseLanguageToPracticeHelp =>
+      'You can change it later in Settings.';
+
+  @override
+  String get startPracticing => 'Start practicing';
+
+  @override
+  String newMessages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new messages',
+      one: '1 new message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nowLearning(String language) {
+    return 'Now learning $language';
+  }
+
+  @override
+  String get practiceModeTipTitle => 'Practice mode';
+
+  @override
+  String get normalModeTipTitle => 'Normal mode';
+
+  @override
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage) {
+    return 'Messages appear in $practiceLanguage. Blab helps correct mistakes and translates from $knownLanguage. Switch to Normal to see the original.';
+  }
+
+  @override
+  String get normalModeTipBody =>
+      'Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.';
+
+  @override
+  String get editKnownLanguages => 'Edit known languages';
+
+  @override
+  String get noMessagesYet => 'No messages here yet…';
+
+  @override
+  String get sendMessageToStart => 'Send any message to start.';
+
+  @override
+  String get couldNotOpenPhotos => 'Could not open photos. Try again.';
+
+  @override
+  String get camera => 'Camera';
+
+  @override
+  String get addCaption => 'Add a caption…';
+
+  @override
+  String get chooseGrammaticalForm => 'Choose grammatical form';
+
+  @override
+  String get chooseYourGenderedForm => 'Choose your gendered form';
+
+  @override
+  String choosePersonsGenderedForm(String name) {
+    return 'Choose $name\'s gendered form';
+  }
+
+  @override
+  String reactWith(String emoji) {
+    return 'React with $emoji';
+  }
+
+  @override
+  String get moreReactions => 'More reactions';
+
+  @override
   String get learningLanguage => 'Learning language';
 
   @override
@@ -1060,4 +1138,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get englishLetters => 'English letters';
+
+  @override
+  String learningTimelineMarker(String languageCode) {
+    String _temp0 = intl.Intl.selectLogic(languageCode, {
+      'nl': 'Now learning Dutch',
+      'en': 'Now learning English',
+      'fr': 'Now learning French',
+      'de': 'Now learning German',
+      'hi': 'Now learning Hindi',
+      'it': 'Now learning Italian',
+      'pt': 'Now learning Portuguese',
+      'es': 'Now learning Spanish',
+      'ta': 'Now learning Tamil',
+      'tr': 'Now learning Turkish',
+      'uk': 'Now learning Ukrainian',
+      'other': 'Now learning English',
+    });
+    return '$_temp0';
+  }
 }

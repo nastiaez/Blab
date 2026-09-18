@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/chat.dart';
 
 /// US-027.
@@ -31,16 +32,19 @@ class FirstMessageEmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'No messages here yet…',
+              Text(
+                context.l10n.noMessagesYet,
                 textAlign: TextAlign.center,
                 style: lineStyle,
               ),
               const SizedBox(height: 14),
-              const Text(
-                'Send any message to start.',
+              Text(
+                context.l10n.sendMessageToStart,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: BlabColors.textMuted),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: BlabColors.textMuted,
+                ),
               ),
             ],
           ),

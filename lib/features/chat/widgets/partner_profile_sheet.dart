@@ -81,7 +81,7 @@ class _Body extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '${context.l10n.learningLanguage}: ${chat.partnerLearningLanguage.name} ${chat.partnerLearningLanguage.flag}',
+              '${context.l10n.learningLanguage}: ${localizedLanguageName(context.l10n, chat.partnerLearningLanguage.code)} ${chat.partnerLearningLanguage.flag}',
               style: const TextStyle(fontSize: 13, color: BlabColors.textMuted),
             ),
             const SizedBox(height: 28),
@@ -91,7 +91,10 @@ class _Body extends StatelessWidget {
                 _LangRow(
                   flag: chat.partnerNativeLanguage.flag,
                   text: context.l10n.speaksNatively(
-                    chat.partnerNativeLanguage.name,
+                    localizedLanguageName(
+                      context.l10n,
+                      chat.partnerNativeLanguage.code,
+                    ),
                   ),
                   emphasis: '',
                   trailing: '',
@@ -99,7 +102,10 @@ class _Body extends StatelessWidget {
                 _LangRow(
                   flag: chat.partnerLearningLanguage.flag,
                   text: context.l10n.learningWithYou(
-                    chat.partnerLearningLanguage.name,
+                    localizedLanguageName(
+                      context.l10n,
+                      chat.partnerLearningLanguage.code,
+                    ),
                   ),
                   emphasis: '',
                   trailing: '',

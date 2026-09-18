@@ -11,6 +11,9 @@ import '../../../shared/widgets/blab_icon.dart';
 import '../state/chat_state.dart';
 import 'word_popup.dart';
 
+const double kNormalModeToggleWidth = 129;
+const double kPracticeModeToggleWidth = 184;
+
 class ModeToggle extends ConsumerWidget {
   const ModeToggle({
     super.key,
@@ -27,7 +30,7 @@ class ModeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(chatModeProvider(chatId));
     final practice = mode == ChatMode.practice;
-    final width = practice ? 135.0 : 129.0;
+    final width = practice ? kPracticeModeToggleWidth : kNormalModeToggleWidth;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -60,7 +63,7 @@ class ModeToggle extends ConsumerWidget {
                   label: context.l10n.practiceMode,
                   iconName: 'flash - 16',
                   selected: practice,
-                  width: practice ? 89 : 36,
+                  width: practice ? 136 : 36,
                   onTap: () => _toggle(context, ref),
                 ),
               ],

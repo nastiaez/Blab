@@ -174,7 +174,7 @@ void main() {
       'en': 'Say hi',
       'de': 'Sag Hallo',
       'es': 'Saluda',
-      'uk': 'Привітайтеся',
+      'uk': 'Привітайся',
     };
 
     for (final entry in expectations.entries) {
@@ -197,7 +197,7 @@ void main() {
       'en': "You're learning English with Alice",
       'de': 'Du lernst English mit Alice',
       'es': 'Estás aprendiendo English con Alice',
-      'uk': 'Ви вивчаєте English з Alice',
+      'uk': 'Ти вивчаєш English з Alice',
     };
 
     for (final entry in expectations.entries) {

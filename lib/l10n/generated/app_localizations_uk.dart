@@ -502,11 +502,91 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
+  String get chooseLanguageToPractice => 'Вибери мову для практики';
+
+  @override
+  String get chooseLanguageToPracticeHelp =>
+      'Її можна змінити пізніше в налаштуваннях.';
+
+  @override
+  String get startPracticing => 'Почати практику';
+
+  @override
+  String newMessages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count нового повідомлення',
+      many: '$count нових повідомлень',
+      few: '$count нові повідомлення',
+      one: '1 нове повідомлення',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nowLearning(String language) {
+    return 'Тепер вивчаєш: $language';
+  }
+
+  @override
+  String get practiceModeTipTitle => 'Режим практики';
+
+  @override
+  String get normalModeTipTitle => 'Звичайний режим';
+
+  @override
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage) {
+    return 'Повідомлення відображаються мовою $practiceLanguage. Blab допомагає виправляти помилки й перекладає з мови $knownLanguage. Перемкнися на звичайний режим, щоб побачити оригінал.';
+  }
+
+  @override
+  String get normalModeTipBody =>
+      'Повідомлення мовами, які ти знаєш, залишаються без змін. Інші перекладаються. Натисни й утримуй, щоб побачити оригінал.';
+
+  @override
+  String get editKnownLanguages => 'Змінити відомі мови';
+
+  @override
+  String get noMessagesYet => 'Повідомлень поки немає…';
+
+  @override
+  String get sendMessageToStart => 'Надішли повідомлення, щоб почати.';
+
+  @override
+  String get couldNotOpenPhotos => 'Не вдалося відкрити фото. Спробуй ще раз.';
+
+  @override
+  String get camera => 'Камера';
+
+  @override
+  String get addCaption => 'Додай підпис…';
+
+  @override
+  String get chooseGrammaticalForm => 'Вибери граматичну форму';
+
+  @override
+  String get chooseYourGenderedForm => 'Вибери свою форму за родом';
+
+  @override
+  String choosePersonsGenderedForm(String name) {
+    return 'Вибери форму за родом для $name';
+  }
+
+  @override
+  String reactWith(String emoji) {
+    return 'Відреагувати $emoji';
+  }
+
+  @override
+  String get moreReactions => 'Інші реакції';
+
+  @override
   String get learningLanguage => 'Мова вивчення';
 
   @override
   String get learningLanguageHelp =>
-      'Виберіть мову, яку хочете вивчати в цьому чаті. Її можна змінити будь-коли.';
+      'Вибери мову, яку хочеш вивчати в цьому чаті. Її можна змінити будь-коли.';
 
   @override
   String get chatMenu => 'Меню чату';
@@ -519,7 +599,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String practiceComposerHint(String learningLanguage, String knownLanguage) {
-    return 'Пишіть: $learningLanguage або $knownLanguage';
+    return 'Пиши: $learningLanguage або $knownLanguage';
   }
 
   @override
@@ -559,7 +639,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get read => 'Прочитано';
 
   @override
-  String get failedToSend => 'Не надіслано · Натисніть, щоб повторити';
+  String get failedToSend => 'Не надіслано · Натисни, щоб повторити';
 
   @override
   String get attach => 'Прикріпити';
@@ -568,7 +648,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get message => 'Повідомлення';
 
   @override
-  String get sayHi => 'Привітайтеся';
+  String get sayHi => 'Привітайся';
 
   @override
   String replyingTo(Object name) {
@@ -592,18 +672,18 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String deleteMessageBody(String name) {
-    return 'Ви впевнені, що хочете видалити це повідомлення? Його також буде видалено для $name.';
+    return 'Це повідомлення також буде видалено для $name.';
   }
 
   @override
   String get thanksReport => 'Дякуємо — ми це перевіримо.';
 
   @override
-  String get couldNotReport => 'Не вдалося надіслати скаргу. Спробуйте ще раз.';
+  String get couldNotReport => 'Не вдалося надіслати скаргу. Спробуй ще раз.';
 
   @override
   String get couldNotSaveLearningLanguage =>
-      'Не вдалося зберегти мову. Спробуйте ще раз.';
+      'Не вдалося зберегти мову. Спробуй ще раз.';
 
   @override
   String get reportMessage => 'Поскаржитися на повідомлення';
@@ -704,7 +784,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aFriend => 'Друг';
 
   @override
-  String get you => 'Ви';
+  String get you => 'Ти';
 
   @override
   String get partner => 'Співрозмовник';
@@ -714,7 +794,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotEditMessage =>
-      'Не вдалося відредагувати повідомлення. Спробуйте ще раз.';
+      'Не вдалося відредагувати повідомлення. Спробуй ще раз.';
 
   @override
   String get today => 'Сьогодні';
@@ -773,7 +853,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Вибери підтримувану мову й спробуй ще раз.';
 
   @override
-  String get invitedYouToChat => 'запрошує вас до чату';
+  String get invitedYouToChat => 'запрошує тебе до чату';
 
   @override
   String joinPerson(Object name) {
@@ -784,25 +864,24 @@ class AppLocalizationsUk extends AppLocalizations {
   String get inviteExpired => 'Термін дії запрошення минув';
 
   @override
-  String get alreadyConnected =>
-      'Ви вже на зв\'язку. Відкрийте чат, щоб почати.';
+  String get alreadyConnected => 'Ви вже спілкуєтеся. Відкрий чат, щоб почати.';
 
   @override
   String get openChat => 'Відкрити чат';
 
   @override
-  String get yourInviteExpired => 'Термін дії вашого запрошення минув.';
+  String get yourInviteExpired => 'Термін дії твого запрошення минув.';
 
   @override
   String get inviteExpiredHelp =>
-      'Ніхто не приєднався протягом 48 годин. Надішліть нове посилання.';
+      'Ніхто не приєднався протягом 48 годин. Надішли нове посилання.';
 
   @override
   String get sendNewInvite => 'Надіслати нове запрошення';
 
   @override
   String youLearnLanguage(Object language) {
-    return 'Ви вивчаєте $language';
+    return 'Ти вивчаєш $language';
   }
 
   @override
@@ -812,11 +891,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String youAreLearningLanguageWithPerson(Object language, Object name) {
-    return 'Ви вивчаєте $language з $name';
+    return 'Ти вивчаєш $language з $name';
   }
 
   @override
-  String get sendAnyMessage => 'Надішліть повідомлення, щоб почати.';
+  String get sendAnyMessage => 'Надішли повідомлення, щоб почати.';
 
   @override
   String get languages => 'Мови';
@@ -828,7 +907,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String learningWithYou(Object language) {
-    return 'Вивчає $language разом із вами';
+    return 'Вивчає $language разом із тобою';
   }
 
   @override
@@ -886,10 +965,10 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get couldNotBlock => 'Не вдалося заблокувати. Спробуйте ще раз.';
+  String get couldNotBlock => 'Не вдалося заблокувати. Спробуй ще раз.';
 
   @override
-  String get couldNotUnblock => 'Не вдалося розблокувати. Спробуйте ще раз.';
+  String get couldNotUnblock => 'Не вдалося розблокувати. Спробуй ще раз.';
 
   @override
   String get reportSpam => 'Спам або шахрайство';
@@ -1006,7 +1085,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get photoAccessNeededBody =>
-      'Дозвольте доступ до фото, щоб надіслати одне в чаті.';
+      'Дозволь доступ до фото, щоб надіслати одне в чаті.';
 
   @override
   String get openSettings => 'Відкрити налаштування';
@@ -1034,7 +1113,7 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get tapToRemove => 'Натисніть, щоб прибрати';
+  String get tapToRemove => 'Натисни, щоб прибрати';
 
   @override
   String usingFeminineForms(String person) {
@@ -1047,10 +1126,10 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get usingFeminineFormsForYou => 'Жіночі форми для вас';
+  String get usingFeminineFormsForYou => 'Жіночі форми для тебе';
 
   @override
-  String get usingMasculineFormsForYou => 'Чоловічі форми для вас';
+  String get usingMasculineFormsForYou => 'Чоловічі форми для тебе';
 
   @override
   String get readingScript => 'Писемність для читання';
@@ -1066,4 +1145,23 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get englishLetters => 'Латинські літери';
+
+  @override
+  String learningTimelineMarker(String languageCode) {
+    String _temp0 = intl.Intl.selectLogic(languageCode, {
+      'nl': 'Тепер вивчаєш нідерландську.',
+      'en': 'Тепер вивчаєш англійську.',
+      'fr': 'Тепер вивчаєш французьку.',
+      'de': 'Тепер вивчаєш німецьку.',
+      'hi': 'Тепер вивчаєш гінді.',
+      'it': 'Тепер вивчаєш італійську.',
+      'pt': 'Тепер вивчаєш португальську.',
+      'es': 'Тепер вивчаєш іспанську.',
+      'ta': 'Тепер вивчаєш тамільську.',
+      'tr': 'Тепер вивчаєш турецьку.',
+      'uk': 'Тепер вивчаєш українську.',
+      'other': 'Тепер вивчаєш англійську.',
+    });
+    return '$_temp0';
+  }
 }

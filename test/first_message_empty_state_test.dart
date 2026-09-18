@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:blab/features/chat/widgets/first_message_empty_state.dart';
 import 'package:blab/features/invite/widgets/exchange_card.dart';
+import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/chat.dart';
 
@@ -26,6 +27,30 @@ Chat _chat({bool needsPracticeLanguageSelection = false}) => Chat(
 );
 
 void main() {
+  testWidgets('empty chat guidance follows Interface Language', (tester) async {
+    const expectations = {
+      'de': (
+        'Noch keine Nachrichten…',
+        'Sende eine Nachricht, um zu beginnen.',
+      ),
+      'es': ('Todavía no hay mensajes…', 'Envía un mensaje para empezar.'),
+      'uk': ('Повідомлень поки немає…', 'Надішли повідомлення, щоб почати.'),
+    };
+
+    for (final entry in expectations.entries) {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(entry.key),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(body: FirstMessageEmptyState(chat: _chat())),
+        ),
+      );
+      expect(find.text(entry.value.$1), findsOneWidget);
+      expect(find.text(entry.value.$2), findsOneWidget);
+    }
+  });
+
   testWidgets('first-message prompt waits until required language is chosen', (
     tester,
   ) async {

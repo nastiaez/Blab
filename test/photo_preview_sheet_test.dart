@@ -42,7 +42,7 @@ void main() {
     expect(find.byKey(const ValueKey('photo-preview-close')), findsOneWidget);
     expect(find.byKey(const ValueKey('photo-preview-image')), findsOneWidget);
     expect(find.byKey(const ValueKey('photo-preview-caption')), findsOneWidget);
-    expect(find.text('Add a caption...'), findsOneWidget);
+    expect(find.text('Add a caption…'), findsOneWidget);
     expect(find.text('Pallavi Sen'), findsOneWidget);
     expect(find.byKey(const ValueKey('photo-preview-send')), findsOneWidget);
 

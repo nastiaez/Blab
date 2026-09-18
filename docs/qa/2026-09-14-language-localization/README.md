@@ -33,7 +33,8 @@
 | B05B2 | New-password form and validation states in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
 | B05C | Six-character password guidance across signup, reset, and change-password | `screenshots/b05-auth/` | Approved 2026-09-15 |
 | B06 | Chats list and invite flow | `screenshots/b06-chats-invite/`, `screenshots/b06-chats-invite-fixed/` | Approved 2026-09-16 |
-| B07 | Chat controls, menus, and message states | `screenshots/b07-chat/` | Not started |
+| B07A | Chat header, language menu, composer, learning-language sheet, and hidden chat states | Before: `screenshots/b07-chat-controls/`; repaired: `screenshots/b07-chat-controls-fixed/` | Approved 2026-09-18 |
+| B07B | Reply, edit, delete, report, reaction, photo, delivery, and translation states | `screenshots/b07-chat-controls/` | Not started |
 | B08 | Shared system and accessibility states | `screenshots/b08-system-accessibility/` | Not started |
 | L01-L11 | One packet for each Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |

@@ -287,7 +287,7 @@ Future<void> _pickReadingScript(
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn’t save. Try again.')),
+        SnackBar(content: Text(context.l10n.couldNotSavePreference)),
       );
     }
   }

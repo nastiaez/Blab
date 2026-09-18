@@ -304,6 +304,44 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-16
 - Follow-up: automated coverage locks every conditional invite state and share payload; final DE/ES/UK Android screenshots are in `screenshots/b06-chats-invite-fixed/`
 
+## Packet B07A — Chat header, language controls, and composer
+
+### B07A-CHAT-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: populated Practice-mode chat with an unread message and language-history markers
+- Client: Bob / Android emulator plus source audit of conditional states
+- Expected: every interface-owned label follows Interface Language while authored messages remain unchanged
+- Observed: repaired unread dividers, learning-history markers, composer language names, and mode guidance now follow Interface Language. Ukrainian uses natural accusative learning-marker sentences such as `Тепер вивчаєш українську.`, with all eleven supported language forms covered by the widget regression. The remaining Ukrainian copy is informal singular, the Practice control fits, and the compact composer hint remains fully visible at the Android review size.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-18
+- Follow-up: final DE/ES/UK Android evidence plus the corrected Ukrainian marker proof are in `screenshots/b07-chat-controls-fixed/`; English behavior is unchanged
+
+### B07A-MENU-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: overflow menu and learning-language selection sheet
+- Client: Bob / Android emulator plus source audit of required-language and failure states
+- Expected: menu rows, selected values, sheet heading/helper, language names, and actions follow Interface Language
+- Observed: repaired menu rows, selected values, sheet heading/helper, actions, save failure, and all displayed language names now use the four-locale catalog in both optional and required selection flows. German, Spanish, and Ukrainian Android layouts fit without clipping.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-18
+- Follow-up: automated coverage locks the menu, optional sheet, required sheet, save error, and localized language names; final Android evidence is in `screenshots/b07-chat-controls-fixed/`
+
+### B07A-ERRORS-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: hidden chat failures and conditional states, including history loading, message/photo sending, translation/checking, edit/delete/report, partner block/unblock, preference save, gallery permission, and empty chat
+- Client: source audit against every chat-owned user-facing branch and the EN/DE/ES/UK catalogs
+- Expected: every user-facing failure and recovery action uses the selected Interface Language and Blab's approved voice
+- Observed: every audited history, delivery, translation/checking, edit/delete/report, block/unblock, preference-save, photo, permission, empty-chat, mode-tip, grammatical-form, reaction, and accessibility branch now resolves through the four-locale catalog. Ukrainian failure and recovery copy uses informal singular throughout. A source/catalog regression fails if these branches return to hardcoded English or formal Ukrainian.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-18
+- Follow-up: continue with B07B message actions and delivery/translation states
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

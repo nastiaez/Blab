@@ -1,10 +1,12 @@
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/features/chat/widgets/mode_toggle.dart';
 import 'package:blab/features/chat/state/chat_state.dart';
+import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/tts_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -24,6 +26,35 @@ class _FakeTtsService implements TtsService {
 }
 
 void main() {
+  testWidgets('Ukrainian Practice label fits without ellipsis', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          chatModeProvider(
+            'chat-1',
+          ).overrideWith(() => _FakeChatModeNotifier()),
+        ],
+        child: const MaterialApp(
+          locale: Locale('uk'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(body: ModeToggle(chatId: 'chat-1')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.text('Практика'),
+    );
+    expect(paragraph.didExceedMaxLines, isFalse);
+  });
+
   testWidgets('tapping the toggle switches mode and calls set()', (
     tester,
   ) async {

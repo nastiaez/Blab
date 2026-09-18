@@ -507,6 +507,86 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get chooseLanguageToPractice => 'Wähle eine Sprache zum Üben';
+
+  @override
+  String get chooseLanguageToPracticeHelp =>
+      'Du kannst sie später in den Einstellungen ändern.';
+
+  @override
+  String get startPracticing => 'Übung starten';
+
+  @override
+  String newMessages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count neue Nachrichten',
+      one: '1 neue Nachricht',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nowLearning(String language) {
+    return 'Jetzt lernst du $language';
+  }
+
+  @override
+  String get practiceModeTipTitle => 'Übungsmodus';
+
+  @override
+  String get normalModeTipTitle => 'Normalmodus';
+
+  @override
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage) {
+    return 'Nachrichten erscheinen auf $practiceLanguage. Blab hilft bei Korrekturen und übersetzt aus $knownLanguage. Wechsle zu Normal, um das Original zu sehen.';
+  }
+
+  @override
+  String get normalModeTipBody =>
+      'Nachrichten in Sprachen, die du kennst, bleiben unverändert. Andere werden für dich übersetzt. Halte sie gedrückt, um das Original zu sehen.';
+
+  @override
+  String get editKnownLanguages => 'Bekannte Sprachen bearbeiten';
+
+  @override
+  String get noMessagesYet => 'Noch keine Nachrichten…';
+
+  @override
+  String get sendMessageToStart => 'Sende eine Nachricht, um zu beginnen.';
+
+  @override
+  String get couldNotOpenPhotos =>
+      'Fotos konnten nicht geöffnet werden. Versuche es erneut.';
+
+  @override
+  String get camera => 'Kamera';
+
+  @override
+  String get addCaption => 'Bildunterschrift hinzufügen…';
+
+  @override
+  String get chooseGrammaticalForm => 'Grammatische Form wählen';
+
+  @override
+  String get chooseYourGenderedForm =>
+      'Wähle deine geschlechtsspezifische Form';
+
+  @override
+  String choosePersonsGenderedForm(String name) {
+    return 'Wähle die geschlechtsspezifische Form von $name';
+  }
+
+  @override
+  String reactWith(String emoji) {
+    return 'Mit $emoji reagieren';
+  }
+
+  @override
+  String get moreReactions => 'Weitere Reaktionen';
+
+  @override
   String get learningLanguage => 'Lernsprache';
 
   @override
@@ -1077,4 +1157,23 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get englishLetters => 'Lateinische Buchstaben';
+
+  @override
+  String learningTimelineMarker(String languageCode) {
+    String _temp0 = intl.Intl.selectLogic(languageCode, {
+      'nl': 'Jetzt lernst du Niederländisch',
+      'en': 'Jetzt lernst du Englisch',
+      'fr': 'Jetzt lernst du Französisch',
+      'de': 'Jetzt lernst du Deutsch',
+      'hi': 'Jetzt lernst du Hindi',
+      'it': 'Jetzt lernst du Italienisch',
+      'pt': 'Jetzt lernst du Portugiesisch',
+      'es': 'Jetzt lernst du Spanisch',
+      'ta': 'Jetzt lernst du Tamil',
+      'tr': 'Jetzt lernst du Türkisch',
+      'uk': 'Jetzt lernst du Ukrainisch',
+      'other': 'Jetzt lernst du Englisch',
+    });
+    return '$_temp0';
+  }
 }

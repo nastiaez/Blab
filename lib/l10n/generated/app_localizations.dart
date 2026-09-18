@@ -1020,6 +1020,126 @@ abstract class AppLocalizations {
   /// **'{count}d'**
   String relativeDays(int count);
 
+  /// No description provided for @chooseLanguageToPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a language to practice'**
+  String get chooseLanguageToPractice;
+
+  /// No description provided for @chooseLanguageToPracticeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change it later in Settings.'**
+  String get chooseLanguageToPracticeHelp;
+
+  /// No description provided for @startPracticing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start practicing'**
+  String get startPracticing;
+
+  /// No description provided for @newMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 new message} other{{count} new messages}}'**
+  String newMessages(int count);
+
+  /// No description provided for @nowLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Now learning {language}'**
+  String nowLearning(String language);
+
+  /// No description provided for @practiceModeTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice mode'**
+  String get practiceModeTipTitle;
+
+  /// No description provided for @normalModeTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal mode'**
+  String get normalModeTipTitle;
+
+  /// No description provided for @practiceModeTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages appear in {practiceLanguage}. Blab helps correct mistakes and translates from {knownLanguage}. Switch to Normal to see the original.'**
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage);
+
+  /// No description provided for @normalModeTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.'**
+  String get normalModeTipBody;
+
+  /// No description provided for @editKnownLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit known languages'**
+  String get editKnownLanguages;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages here yet…'**
+  String get noMessagesYet;
+
+  /// No description provided for @sendMessageToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Send any message to start.'**
+  String get sendMessageToStart;
+
+  /// No description provided for @couldNotOpenPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open photos. Try again.'**
+  String get couldNotOpenPhotos;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @addCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a caption…'**
+  String get addCaption;
+
+  /// No description provided for @chooseGrammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose grammatical form'**
+  String get chooseGrammaticalForm;
+
+  /// No description provided for @chooseYourGenderedForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your gendered form'**
+  String get chooseYourGenderedForm;
+
+  /// No description provided for @choosePersonsGenderedForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose {name}\'s gendered form'**
+  String choosePersonsGenderedForm(String name);
+
+  /// No description provided for @reactWith.
+  ///
+  /// In en, this message translates to:
+  /// **'React with {emoji}'**
+  String reactWith(String emoji);
+
+  /// No description provided for @moreReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'More reactions'**
+  String get moreReactions;
+
   /// No description provided for @learningLanguage.
   ///
   /// In en, this message translates to:
@@ -1991,6 +2111,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'English letters'**
   String get englishLetters;
+
+  /// No description provided for @learningTimelineMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning English}}'**
+  String learningTimelineMarker(String languageCode);
 }
 
 class _AppLocalizationsDelegate

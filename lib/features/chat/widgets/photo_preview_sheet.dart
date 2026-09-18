@@ -112,7 +112,7 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                                 Icons.add_photo_alternate_outlined,
                                 color: Colors.white,
                               ),
-                              hintText: 'Add a caption...',
+                              hintText: context.l10n.addCaption,
                               hintStyle: const TextStyle(color: Colors.white),
                               filled: true,
                               fillColor: const Color(0xFF121A20),
