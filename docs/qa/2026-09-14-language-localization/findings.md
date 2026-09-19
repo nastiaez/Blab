@@ -356,6 +356,80 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-19
 - Follow-up: eight real-device screenshots are in `screenshots/b07-message-states/`; no product repair was required. Continue with B08 shared system and accessibility states.
 
+## Packet B08 — Shared system and accessibility states
+
+### B08-A11Y-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: empty Chats at Android system font scale 2.0
+- Client: Bob / Android emulator
+- Expected: the empty-state action and bottom navigation remain readable, complete, and operable at 200% text size
+- Observed: before repair, the fixed-width, fixed-height invite action clipped in every locale and the bottom navigation compressed its icon/label rhythm. After repair, the action grows to two lines where needed and the icon/label spacing remains readable in all four locales at 200%.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-19
+- Follow-up: responsive minimum height and 200% icon/label spacing are locked by widget regressions; repaired device evidence is in `screenshots/b08-system-accessibility/`
+
+### B08-A11Y-02
+
+- Interface language: German, with the same transparent AppBar pattern shared by the recovery flow
+- Screen/state: reset-password form at normal and 200% text sizes
+- Client: Bob / Android emulator
+- Expected: Android status-bar time and icons remain legible against Blab's cream background
+- Observed: before repair, the transparent AppBar allowed white status-bar content on the cream surface. After repair, reset-password and email-confirmation AppBars explicitly request dark Android status content; the German form and long action still fit at 200%.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-19
+- Follow-up: system-overlay regressions cover both transparent recovery AppBars; repaired device evidence is in `screenshots/b08-system-accessibility/`
+
+### B08-A11Y-03
+
+- Interface language: German, with the same semantics structure shared by every locale
+- Screen/state: offline banner with TalkBack enabled
+- Client: Bob / Android emulator plus Android accessibility tree and source audit
+- Expected: the live-region change announces the localized offline message once
+- Observed: before repair, the banner exposed both its wrapper label and child text. After repair, it retains one localized live-region label; the banner remains visible and readable at 200%, and the surrounding focus order remains correct.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-19
+- Follow-up: the semantics regression asserts one label and a retained live-region flag
+
+### B08-A11Y-04
+
+- Interface language: all locales
+- Screen/state: Chats floating New Chat action
+- Client: Android source/layout audit
+- Expected: interactive controls meet Android's 48 dp minimum touch target
+- Observed: the initial source audit measured the 44 dp visual circle, but the rendered Material control already expands its semantic/tappable target to at least 48 × 48 dp. No product defect exists.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-19; no repair required
+- Follow-up: a widget regression now locks the rendered New Chat target at 48 dp minimum without enlarging the visible circle
+
+### B08-NORMAL-01
+
+- Interface language: English
+- Screen/state: Normal chat baseline plus long-press actions for outgoing and incoming translated messages
+- Client: Bob / Android emulator on one disposable Alice/Bob local-backend fixture
+- Expected: Normal shows the Primary Known Language by default, Read remains visible, Original reveals authored text on demand, and role-specific message actions fit
+- Observed: the conversation shows only the English translation by default. Outgoing long-press offers Reply, Edit, Copy, Original, and Delete; incoming long-press offers Reply, Copy, Original, and Report. Original reveals the authored Spanish inline. All controls fit at the device viewport.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-19
+- Follow-up: device evidence is in `screenshots/b08-system-accessibility/`; existing action-row coverage locks roles, localization, Normal/Original behavior, and 200% fit
+
+### B08-NORMAL-02
+
+- Interface language: Spanish and Ukrainian
+- Screen/state: Normal chat after cold reopen, plus the outgoing five-action row
+- Client: Bob / Android emulator on one disposable Alice/Bob local-backend fixture
+- Expected: English-authored messages translate into the selected Primary Known Language, long message/action copy fits, and the active mode pill shows its full localized label without consuming unnecessary header space
+- Observed: Spanish and Ukrainian translations survive a cold reopen, and both locales' message bubbles and five-action rows fit. Spanish required no repair. Ukrainian initially truncated `Звичайний`; the first fixed-width repair was rejected as too wide. The revised control retains the original 129 dp minimum and lets only the active Ukrainian segment hug its icon, full label, and 8 dp side padding. The installed APK exactly matches the reviewed SHA-256 `31511577006a6db44db7910943b0669aa30d52cb78bce4d2cf28594637cf3842`.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-19
+- Follow-up: approved revised evidence is `normal-es-uk/B08-UK-16-normal-hugged.png` and `normal-es-uk/B08-UK-17-outgoing-actions-hugged.png`
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

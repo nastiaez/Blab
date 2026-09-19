@@ -48,6 +48,7 @@ class _Bar extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       label: context.l10n.noConnection,
+      excludeSemantics: true,
       child: Container(
         width: double.infinity,
         height: OfflineBanner.bannerHeight,

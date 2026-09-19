@@ -35,7 +35,7 @@
 | B06 | Chats list and invite flow | `screenshots/b06-chats-invite/`, `screenshots/b06-chats-invite-fixed/` | Approved 2026-09-16 |
 | B07A | Chat header, language menu, composer, learning-language sheet, and hidden chat states | Before: `screenshots/b07-chat-controls/`; repaired: `screenshots/b07-chat-controls-fixed/` | Approved 2026-09-18 |
 | B07B | Reply, edit, delete, report, reaction, photo, delivery, and translation states | `screenshots/b07-message-states/` | Approved 2026-09-19 |
-| B08 | Shared system and accessibility states | `screenshots/b08-system-accessibility/` | Not started |
+| B08 | Shared system and accessibility states, plus Normal-mode message actions | `screenshots/b08-system-accessibility/` | Approved 2026-09-19, including the compact Ukrainian Normal-pill revision |
 | L01-L11 | One packet for each Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 

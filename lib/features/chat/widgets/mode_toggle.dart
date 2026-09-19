@@ -30,19 +30,27 @@ class ModeToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(chatModeProvider(chatId));
     final practice = mode == ChatMode.practice;
-    final width = practice ? kPracticeModeToggleWidth : kNormalModeToggleWidth;
+    final hugNormalLabel =
+        !practice && Localizations.localeOf(context).languageCode == 'uk';
+    final minimumWidth = practice
+        ? kPracticeModeToggleWidth
+        : kNormalModeToggleWidth;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _toggle(context, ref),
-      child: SizedBox(
-        width: width,
-        height: 44,
-        child: Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: minimumWidth,
+          minHeight: 44,
+          maxHeight: 44,
+        ),
+        child: Align(
+          alignment: Alignment.centerLeft,
           child: Container(
             key: const ValueKey('mode-toggle'),
-            width: width,
             height: 34,
+            constraints: BoxConstraints(minWidth: minimumWidth),
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
               border: Border.all(color: BlabColors.chatDivider),
@@ -55,7 +63,8 @@ class ModeToggle extends ConsumerWidget {
                   label: context.l10n.normalMode,
                   iconName: 'chat-bubble-empty - 16',
                   selected: !practice,
-                  width: !practice ? 83 : 36,
+                  minimumWidth: !practice ? 83 : 36,
+                  hugContent: hugNormalLabel,
                   onTap: () => _toggle(context, ref),
                 ),
                 const SizedBox(width: 2),
@@ -63,7 +72,8 @@ class ModeToggle extends ConsumerWidget {
                   label: context.l10n.practiceMode,
                   iconName: 'flash - 16',
                   selected: practice,
-                  width: practice ? 136 : 36,
+                  minimumWidth: practice ? 136 : 36,
+                  hugContent: false,
                   onTap: () => _toggle(context, ref),
                 ),
               ],
@@ -92,18 +102,80 @@ class _Segment extends StatelessWidget {
     required this.label,
     required this.iconName,
     required this.selected,
-    required this.width,
+    required this.minimumWidth,
+    required this.hugContent,
     required this.onTap,
   });
 
   final String label;
   final String iconName;
   final bool selected;
-  final double width;
+  final double minimumWidth;
+  final bool hugContent;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final segment = SizedBox(
+      height: 44,
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 28,
+              constraints: BoxConstraints(minWidth: minimumWidth),
+              padding: selected
+                  ? const EdgeInsets.symmetric(horizontal: 8)
+                  : EdgeInsets.zero,
+              decoration: BoxDecoration(
+                color: selected
+                    ? (iconName == 'flash - 16'
+                          ? BlabColors.bubbleOutgoingPractice
+                          : const Color(0xFFCDC0B6))
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: selected && iconName == 'flash - 16'
+                    ? [
+                        const BoxShadow(
+                          color: Color(0x1A231208),
+                          offset: Offset(0, 2),
+                          blurRadius: 6,
+                          spreadRadius: -2,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ExcludeSemantics(
+                    child: BlabIcon(
+                      name: iconName,
+                      color: selected
+                          ? BlabColors.bubbleInk
+                          : const Color(0xFF8C735F),
+                      size: 16,
+                    ),
+                  ),
+                  if (selected) ...[
+                    const SizedBox(width: 4),
+                    if (hugContent)
+                      _SegmentLabel(label: label)
+                    else
+                      Flexible(child: _SegmentLabel(label: label)),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
     return Semantics(
       label: label,
       button: true,
@@ -111,74 +183,31 @@ class _Segment extends StatelessWidget {
       onTap: onTap,
       child: SizedBox(
         key: ValueKey('mode-toggle-segment-$iconName'),
-        width: width,
-        height: 44,
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                width: width,
-                height: 28,
-                padding: selected
-                    ? const EdgeInsets.symmetric(horizontal: 8)
-                    : EdgeInsets.zero,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? (iconName == 'flash - 16'
-                            ? BlabColors.bubbleOutgoingPractice
-                            : const Color(0xFFCDC0B6))
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: selected && iconName == 'flash - 16'
-                      ? [
-                          const BoxShadow(
-                            color: Color(0x1A231208),
-                            offset: Offset(0, 2),
-                            blurRadius: 6,
-                            spreadRadius: -2,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ExcludeSemantics(
-                      child: BlabIcon(
-                        name: iconName,
-                        color: selected
-                            ? BlabColors.bubbleInk
-                            : const Color(0xFF8C735F),
-                        size: 16,
-                      ),
-                    ),
-                    if (selected) ...[
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: ExcludeSemantics(
-                          child: Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              height: 1,
-                              fontWeight: FontWeight.w600,
-                              color: BlabColors.bubbleInk,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
+        width: hugContent ? null : minimumWidth,
+        child: segment,
+      ),
+    );
+  }
+}
+
+class _SegmentLabel extends StatelessWidget {
+  const _SegmentLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: Text(
+        label,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 12,
+          height: 1,
+          fontWeight: FontWeight.w600,
+          color: BlabColors.bubbleInk,
         ),
       ),
     );

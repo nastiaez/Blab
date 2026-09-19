@@ -26,6 +26,64 @@ class _FakeTtsService implements TtsService {
 }
 
 void main() {
+  testWidgets('Ukrainian Normal label fits without ellipsis', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          chatModeProvider(
+            'chat-1',
+          ).overrideWith(() => _FakeNormalChatModeNotifier()),
+        ],
+        child: const MaterialApp(
+          locale: Locale('uk'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(body: ModeToggle(chatId: 'chat-1')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find.text('Звичайний'),
+    );
+    expect(
+      paragraph.didExceedMaxLines,
+      isFalse,
+      reason:
+          'available=${paragraph.size.width}, '
+          'needed=${paragraph.getMaxIntrinsicWidth(double.infinity)}',
+    );
+
+    final segmentWidth = tester
+        .getSize(
+          find.byKey(
+            const ValueKey('mode-toggle-segment-chat-bubble-empty - 16'),
+          ),
+        )
+        .width;
+    final expectedContentWidth =
+        paragraph.getMaxIntrinsicWidth(double.infinity) +
+        16 + // icon
+        4 + // icon/label gap
+        16; // 8 dp padding on each side
+    expect(
+      segmentWidth,
+      closeTo(expectedContentWidth, 0.1),
+      reason: 'The active segment should hug its icon and label content.',
+    );
+
+    final toggleWidth = tester
+        .getSize(find.byKey(const ValueKey('mode-toggle')))
+        .width;
+    expect(toggleWidth, greaterThanOrEqualTo(kNormalModeToggleWidth));
+  });
+
   testWidgets('Ukrainian Practice label fits without ellipsis', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -216,4 +274,12 @@ class _FakeChatModeNotifier extends ChatModeNotifier {
     setCalls.add(mode);
     state = mode;
   }
+}
+
+class _FakeNormalChatModeNotifier extends ChatModeNotifier {
+  _FakeNormalChatModeNotifier() : super('chat-1');
+  @override
+  ChatMode build() => ChatMode.normal;
+  @override
+  Future<void> set(ChatMode mode) async => state = mode;
 }
