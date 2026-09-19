@@ -342,6 +342,20 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-18
 - Follow-up: continue with B07B message actions and delivery/translation states
 
+## Packet B07B — Message actions and delivery/translation states
+
+### B07B-MESSAGES-01
+
+- Interface language: English, German, Spanish, and Ukrainian
+- Screen/state: outgoing and incoming message actions, quick reactions and reaction details, reply/edit presentation, read receipt, translation failure/retry, photo gallery/preview, and delete confirmation
+- Client: Bob / Android emulator on one disposable Alice/Bob local-backend fixture
+- Expected: every app-owned label follows Interface Language, authored German messages remain unchanged, role-specific actions remain correct, and long labels fit without clipping
+- Observed: Reply/Edit/Copy/Delete and incoming Reply/Copy/Report actions localize and fit; quick-reaction accessibility labels, reaction details, Read, edited/reply presentation, translation failure/retry, Spanish gallery/preview, and Ukrainian delete confirmation all follow Interface Language. The Android media-permission dialog follows the device OS language by platform design; the app-owned gallery and preview return to the selected Blab language.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-19
+- Follow-up: eight real-device screenshots are in `screenshots/b07-message-states/`; no product repair was required. Continue with B08 shared system and accessibility states.
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
