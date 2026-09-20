@@ -90,6 +90,32 @@ Deno.test("rejects a same-language correction that drops caption content", () =>
   );
 });
 
+Deno.test("accepts a complete Dutch correction with one changed word", () => {
+  const base = {
+    mode: "correction" as const,
+    sourceLang: "nl",
+    interfaceText: "I am going to the station tomorrow.",
+    explanation: "Use ga with ik.",
+    confidence: "high" as const,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    !correctionNeedsRetry({
+      ...base,
+      translation: "Ik ga morgen naar het station.",
+    }, "Ik gaat morgen naar het station."),
+    "one corrected word must not hide the unchanged remainder",
+  );
+  assert(
+    !correctionNeedsRetry({
+      ...base,
+      translation: "Wij zijn morgen bij het station.",
+    }, "Wij is morgen bij het station."),
+    "a complete inflection correction should pass",
+  );
+});
+
 Deno.test("accepts only a message UUID", () => {
   const accepted = validateRequest({
     messageId: "10000000-0000-4000-8000-000000000001",
@@ -2026,6 +2052,77 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
       "capitalization, noun capitalization, apostrophes, commas, terminal punctuation, or spacing",
     ),
     "mechanical fixes stay silent",
+  );
+});
+
+Deno.test("Dutch prompt requires standard closed compounds", () => {
+  const prompt = systemPrompt("auto", "nl", "en");
+  assert(
+    prompt.includes("standard Dutch compounds as one word"),
+    "Dutch output should guard common compound spacing",
+  );
+  assert(
+    prompt.includes("morgenochtend"),
+    "the observed tomorrow-morning compound should be explicit",
+  );
+});
+
+Deno.test("Dutch output normalizes tomorrow morning as a closed compound", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Ik kom morgen ochtend naar de bloemenmarkt.",
+      interfaceText: "I am coming to the flower market tomorrow morning.",
+      explanation: null,
+      confidence: null,
+      formAlternatives: null,
+      tokens: [
+        { text: "Ik", gloss: "I", roman: "Ik", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "kom", gloss: "come", roman: "kom", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "morgen",
+          gloss: "tomorrow",
+          roman: "morgen",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "ochtend",
+          gloss: "morning",
+          roman: "ochtend",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "naar", gloss: "to", roman: "naar", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "de", gloss: "the", roman: "de", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "bloemenmarkt",
+          gloss: "flower market",
+          roman: "bloemenmarkt",
+          isContent: true,
+        },
+        { text: ".", gloss: null, roman: null, isContent: false },
+      ],
+    }),
+    "I am coming to the flower market tomorrow morning.",
+    "nl",
+    "en",
+  );
+
+  assert(result !== null, "Dutch translation remains usable");
+  assert(
+    result!.translation === "Ik kom morgenochtend naar de bloemenmarkt.",
+    "Dutch compound is normalized",
+  );
+  assert(
+    result!.tokens.map((token) => (token as { text: string }).text).join("") ===
+      result!.translation,
+    "word metadata follows the normalized translation",
   );
 });
 

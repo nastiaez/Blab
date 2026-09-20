@@ -430,6 +430,75 @@ Repaired evidence uses the same six names with `-fixed` appended under
 - Owner decision: approved 2026-09-19
 - Follow-up: approved revised evidence is `normal-es-uk/B08-UK-16-normal-hugged.png` and `normal-es-uk/B08-UK-17-outgoing-actions-hugged.png`
 
+## Packet L01 — Dutch language engine
+
+### Evidence
+
+- `L01-01-alice-web.png`: Alice web client after the real two-direction exchange.
+- `L01-02-bob-android-translation-correction.png`: Bob Android client with translated English messages, unchanged correct Dutch, and the failed correction/retry state.
+- `L01-03-word-popup.png`: Dutch word help for `bloemenmarkt`.
+- `L01-04-sentence-actions.png`: translated sentence with Original reveal plus the Listen action.
+- `L01-R1-android-practice-compact-correction.png`: repaired Android Practice state with the compact content-hugging control, successful correction, and persisted `morgenochtend` translations in both directions.
+- `L01-R2-android-word-popup.png`: repaired Dutch word popup without redundant Latin-script romanization.
+
+The disposable local chat is `71000000-0000-4000-8000-000000000001`. The repaired Android APK matched the local debug build exactly at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L01-NL-01
+
+- Interface language: English
+- Learning language: Dutch
+- Primary known language: English
+- Screen/state: Practice chat / English-authored message translated to Dutch on both clients
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: the same natural Dutch translation reaches both participants and survives a cold reopen
+- Observed: both prepared packages resolved in one attempt and the translation persisted, but `I would like to visit the flower market tomorrow morning.` became `Ik zou morgen ochtend de bloemenmarkt willen bezoeken.` Dutch requires the compound `morgenochtend`.
+- Classification: Wrong copy
+- Severity: medium
+- Owner decision: repaired result approved 2026-09-20
+- Follow-up: repaired and regression-tested; the real English-to-Dutch messages now persist `morgenochtend` in one preparation attempt on both clients
+
+### L01-NL-02
+
+- Interface language: English
+- Learning language: Dutch
+- Primary known language: English
+- Screen/state: Practice chat / correct Dutch plus intentionally incorrect Dutch
+- Client: Bob / Android emulator, Alice / Chrome, local preparation worker, and direct Retry
+- Expected: correct Dutch remains unchanged; incorrect Dutch is corrected with an English explanation; Retry recovers or returns a stable visible failure
+- Observed: `Ik ga morgenochtend naar de markt.` correctly resolved with aid mode `none` and the English interface text `I am going to the market tomorrow morning.` Both `Ik gaat morgen naar het station.` and `Wij is morgen bij het station.` failed for both viewers after four attempts. The provider repeatedly returned `openrouter_incomplete_correction`; the visible Retry made a fresh request and failed for the same reason.
+- Classification: Broken
+- Severity: high
+- Owner decision: repaired result approved 2026-09-20
+- Follow-up: repaired and regression-tested; `Wij is morgen bij het station.` now resolves on the first preparation attempt to `Wij zijn morgen bij het station.` with its English explanation
+
+### L01-NL-03
+
+- Interface language: English
+- Learning language: Dutch
+- Primary known language: English
+- Screen/state: word help for `bloemenmarkt`
+- Client: Bob / Android emulator
+- Expected: the popup shows the Dutch word, an English description, and pronunciation help only when a distinct reading aid is useful
+- Observed: the description `flower market` is correct, but the popup repeats `bloemenmarkt` as a gray romanization even though Dutch already uses the selected native Latin script.
+- Classification: Weird
+- Severity: low
+- Owner decision: repaired result approved 2026-09-20
+- Follow-up: repaired and regression-tested; romanization is suppressed per selected word only when its normalized text duplicates the displayed word, independent of language, while distinct reading aids remain visible
+
+### L01-NL-04
+
+- Interface language: English
+- Learning language: Dutch
+- Primary known language: English
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Dutch with a Dutch voice and remain reachable without clipping
+- Observed: word and sentence playback both dispatched `nl-NL` / `nld-NLD` through the installed Dutch voice; the utterances started successfully. The word popup, translated/original sentence, reactions, and four-action incoming row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

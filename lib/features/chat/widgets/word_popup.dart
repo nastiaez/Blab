@@ -439,8 +439,12 @@ class _PopupCardState extends State<_PopupCard> {
   @override
   Widget build(BuildContext context) {
     final token = widget.token;
+    final writtenWord = token.text.trim().toLowerCase();
+    final romanization = token.romanization?.trim();
     final hasRomanization =
-        token.romanization != null && token.romanization!.isNotEmpty;
+        romanization != null &&
+        romanization.isNotEmpty &&
+        romanization.toLowerCase() != writtenWord;
     final hasGloss = token.gloss != null && token.gloss!.isNotEmpty;
     final unknown = widget.ttsAvailable == null;
     final disabled = widget.ttsAvailable == false;
@@ -484,7 +488,7 @@ class _PopupCardState extends State<_PopupCard> {
         if (hasRomanization) ...[
           const SizedBox(height: 2),
           Text(
-            token.romanization!,
+            romanization,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,

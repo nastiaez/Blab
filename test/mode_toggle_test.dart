@@ -111,6 +111,26 @@ void main() {
       find.text('Практика'),
     );
     expect(paragraph.didExceedMaxLines, isFalse);
+
+    final segmentWidth = tester
+        .getSize(find.byKey(const ValueKey('mode-toggle-segment-flash - 16')))
+        .width;
+    final expectedContentWidth =
+        paragraph.getMaxIntrinsicWidth(double.infinity) +
+        16 + // icon
+        4 + // icon/label gap
+        16; // 8 dp padding on each side
+    expect(
+      segmentWidth,
+      closeTo(expectedContentWidth, 0.1),
+      reason: 'Practice should hug its icon and full label content.',
+    );
+
+    final toggleWidth = tester
+        .getSize(find.byKey(const ValueKey('mode-toggle')))
+        .width;
+    expect(toggleWidth, greaterThanOrEqualTo(kPracticeModeToggleWidth));
+    expect(toggleWidth, lessThan(184));
   });
 
   testWidgets('tapping the toggle switches mode and calls set()', (

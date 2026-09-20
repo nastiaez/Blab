@@ -12,7 +12,7 @@ import '../state/chat_state.dart';
 import 'word_popup.dart';
 
 const double kNormalModeToggleWidth = 129;
-const double kPracticeModeToggleWidth = 184;
+const double kPracticeModeToggleWidth = 129;
 
 class ModeToggle extends ConsumerWidget {
   const ModeToggle({
@@ -32,9 +32,7 @@ class ModeToggle extends ConsumerWidget {
     final practice = mode == ChatMode.practice;
     final hugNormalLabel =
         !practice && Localizations.localeOf(context).languageCode == 'uk';
-    final minimumWidth = practice
-        ? kPracticeModeToggleWidth
-        : kNormalModeToggleWidth;
+    final minimumWidth = kNormalModeToggleWidth;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -72,8 +70,8 @@ class ModeToggle extends ConsumerWidget {
                   label: context.l10n.practiceMode,
                   iconName: 'flash - 16',
                   selected: practice,
-                  minimumWidth: practice ? 136 : 36,
-                  hugContent: false,
+                  minimumWidth: 36,
+                  hugContent: practice,
                   onTap: () => _toggle(context, ref),
                 ),
               ],
