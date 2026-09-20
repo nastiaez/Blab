@@ -9,6 +9,7 @@ import '../../shared/data/invite_host.dart';
 import 'prepared_invite_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
+import 'invite_error_actions.dart';
 
 /// A single-purpose invite screen. Links create a connection only; practice
 /// language is chosen privately when the resulting chat is opened.
@@ -64,6 +65,10 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     final online = ref.watch(isOnlineProvider);
     final invite = ref.watch(preparedInviteProvider);
     final link = invite.token == null ? null : '$kInviteHost/i/${invite.token}';
+    final createFailure = splitInviteRecoveryMessage(
+      context.l10n.couldNotCreateInvite,
+      context.l10n.retry,
+    );
     final enabled =
         online &&
         !invite.loading &&
@@ -95,34 +100,37 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _InviteCard(link: link, loading: invite.loading),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(
-                      context.l10n.onePersonInvite,
-                      style: const TextStyle(
-                        color: Color(0xFF917869),
-                        fontSize: 13,
+                  if (!invite.failed)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Text(
+                        context.l10n.onePersonInvite,
+                        style: const TextStyle(
+                          color: Color(0xFF917869),
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
                   if (online && invite.failed) ...[
-                    const SizedBox(height: 12),
-                    Row(
+                    const SizedBox(height: 8),
+                    Wrap(
+                      key: const ValueKey('invite-create-recovery'),
+                      spacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Expanded(
-                          child: Text(
-                            context.l10n.couldNotCreateInvite,
-                            style: const TextStyle(
-                              color: Color(0xFF917869),
-                              fontSize: 13,
-                            ),
+                        Text(
+                          createFailure.message,
+                          style: const TextStyle(
+                            color: Color(0xFF917869),
+                            fontSize: 13,
                           ),
                         ),
-                        TextButton(
+                        InviteTextAction(
+                          label: createFailure.action,
+                          edgeAligned: true,
                           onPressed: () => ref
                               .read(preparedInviteProvider.notifier)
                               .prepare(),
-                          child: Text(context.l10n.retry),
                         ),
                       ],
                     ),
@@ -139,30 +147,31 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                       ),
                     ),
                   const Spacer(),
-                  SizedBox(
-                    height: 52,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFF88C5A),
-                        disabledBackgroundColor: BlabColors.disabledSurface,
-                        foregroundColor: const Color(0xFF46281C),
-                        disabledForegroundColor: BlabColors.disabledOnSurface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                  if (!invite.failed)
+                    SizedBox(
+                      height: 52,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFF88C5A),
+                          disabledBackgroundColor: BlabColors.disabledSurface,
+                          foregroundColor: const Color(0xFF46281C),
+                          disabledForegroundColor: BlabColors.disabledOnSurface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                      ),
-                      onPressed: enabled ? _sendInvite : null,
-                      child: Text(
-                        _sharing
-                            ? context.l10n.openingShareSheet
-                            : context.l10n.sendInvite,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                        onPressed: enabled ? _sendInvite : null,
+                        child: Text(
+                          _sharing
+                              ? context.l10n.openingShareSheet
+                              : context.l10n.sendInvite,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -182,6 +191,7 @@ class _InviteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: const ValueKey('invite-card'),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,

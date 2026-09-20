@@ -11,6 +11,7 @@ import '../../shared/state/auth_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import 'invite_continuation.dart';
+import 'invite_error_actions.dart';
 import 'invite_install_referrer.dart';
 
 /// Resolves an app link. A browser or store page never claims an invite;
@@ -216,7 +217,6 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
     if (_error != null && !offline) {
       return _InviteState(
         title: context.l10n.couldNotOpenInvite,
-        body: context.l10n.tryAgainToContinue,
         onRetry: _resolve,
       );
     }
@@ -349,58 +349,66 @@ class _Dots extends StatelessWidget {
 }
 
 class _InviteState extends StatelessWidget {
-  const _InviteState({required this.title, required this.body, this.onRetry});
+  const _InviteState({required this.title, this.body, this.onRetry});
   final VoidCallback? onRetry;
   final String title;
-  final String body;
+  final String? body;
 
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFFFAF7F2),
     body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF46281C),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            right: 8,
+            child: InviteCloseAction(
+              tooltip: context.l10n.dismiss,
+              onPressed: () => context.go('/chats'),
+            ),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF46281C),
+                    ),
+                  ),
+                  if (body case final body?) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      body,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: Color(0xFF917869),
+                      ),
+                    ),
+                  ],
+                  if (onRetry case final retry?) ...[
+                    Transform.translate(
+                      offset: const Offset(0, -4),
+                      child: InviteTextAction(
+                        label: context.l10n.retry,
+                        onPressed: retry,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.4,
-                color: Color(0xFF917869),
-              ),
-            ),
-            const SizedBox(height: 28),
-            if (onRetry != null) ...[
-              FilledButton(onPressed: onRetry, child: Text(context.l10n.retry)),
-              const SizedBox(height: 12),
-            ],
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF88C5A),
-                  foregroundColor: const Color(0xFF46281C),
-                ),
-                onPressed: () => context.go('/chats'),
-                child: Text(context.l10n.goToChats),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
