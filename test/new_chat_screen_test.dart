@@ -70,19 +70,32 @@ void main() {
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
     expect(sharedText, "Let's chat on Blab: https://loveblab.com/i/token1");
-    expect(find.text("Couldn't create invite. Try again."), findsOneWidget);
+    final error = find.text("Couldn't create invite.");
+    final retry = find.widgetWithText(TextButton, 'Try again.');
+    expect(error, findsOneWidget);
+    expect(retry, findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Only one friend can use this link'), findsNothing);
+    expect(find.text('Send invite'), findsNothing);
+    final card = find.byKey(const ValueKey('invite-card'));
+    final recovery = find.byKey(const ValueKey('invite-create-recovery'));
+    expect(card, findsOneWidget);
+    expect(recovery, findsOneWidget);
     expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-      isNull,
+      tester.getTopLeft(recovery).dy - tester.getBottomLeft(card).dy,
+      inInclusiveRange(0, 16),
     );
-    await tester.tap(find.text('Retry'));
+    expect(find.descendant(of: recovery, matching: error), findsOneWidget);
+    expect(find.descendant(of: recovery, matching: retry), findsOneWidget);
+    expect(
+      (tester.getCenter(error).dy - tester.getCenter(retry).dy).abs(),
+      lessThan(8),
+    );
+    await tester.tap(find.text('Try again.'));
     await tester.pumpAndSettle();
     expect(find.text('loveblab.com/i/token3'), findsOneWidget);
     expect(find.text("Couldn't create invite. Try again."), findsNothing);
-    expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-      isNotNull,
-    );
+    expect(find.text('Send invite'), findsOneWidget);
   });
 
   testWidgets('dismissing native sharing preserves the current link', (
@@ -122,6 +135,40 @@ void main() {
     expect(find.text('Invite a friend'), findsNothing);
     expect(find.text('Let’s chat on Blab'), findsNothing);
   });
+
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets(
+      'failed invite retry stays attached in ${locale.languageCode}',
+      (tester) async {
+        await openOnlineInvite(
+          tester,
+          FakeInvites(failOnCalls: {1}),
+          locale: locale,
+        );
+
+        final l10n = lookupAppLocalizations(locale);
+        final separator = l10n.couldNotCreateInvite.indexOf('. ');
+        expect(separator, greaterThan(0));
+        final error = find.text(
+          l10n.couldNotCreateInvite.substring(0, separator + 1),
+        );
+        final retry = find.widgetWithText(
+          TextButton,
+          l10n.couldNotCreateInvite.substring(separator + 2),
+        );
+        expect(error, findsOneWidget);
+        expect(retry, findsOneWidget);
+        expect(find.text(l10n.retry), findsNothing);
+        expect(find.text(l10n.onePersonInvite), findsNothing);
+        expect(find.text(l10n.sendInvite), findsNothing);
+        final recovery = find.byKey(const ValueKey('invite-create-recovery'));
+        expect(recovery, findsOneWidget);
+        expect(find.descendant(of: recovery, matching: error), findsOneWidget);
+        expect(find.descendant(of: recovery, matching: retry), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('sharing failure keeps the link and lets the user try again', (
     tester,
