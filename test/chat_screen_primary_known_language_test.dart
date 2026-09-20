@@ -970,54 +970,51 @@ void main() {
     container.dispose();
   });
 
-  testWidgets(
-    'Ukrainian learning markers use natural accusative sentences',
-    (tester) async {
-      const expectations = {
-        'nl': 'Тепер вивчаєш нідерландську.',
-        'en': 'Тепер вивчаєш англійську.',
-        'fr': 'Тепер вивчаєш французьку.',
-        'de': 'Тепер вивчаєш німецьку.',
-        'hi': 'Тепер вивчаєш гінді.',
-        'it': 'Тепер вивчаєш італійську.',
-        'pt': 'Тепер вивчаєш португальську.',
-        'es': 'Тепер вивчаєш іспанську.',
-        'ta': 'Тепер вивчаєш тамільську.',
-        'tr': 'Тепер вивчаєш турецьку.',
-        'uk': 'Тепер вивчаєш українську.',
-      };
+  testWidgets('Ukrainian learning markers use natural accusative sentences', (
+    tester,
+  ) async {
+    const expectations = {
+      'nl': 'Тепер вивчаєш нідерландську.',
+      'en': 'Тепер вивчаєш англійську.',
+      'fr': 'Тепер вивчаєш французьку.',
+      'de': 'Тепер вивчаєш німецьку.',
+      'hi': 'Тепер вивчаєш гінді.',
+      'it': 'Тепер вивчаєш італійську.',
+      'pt': 'Тепер вивчаєш португальську.',
+      'es': 'Тепер вивчаєш іспанську.',
+      'ta': 'Тепер вивчаєш тамільську.',
+      'tr': 'Тепер вивчаєш турецьку.',
+      'uk': 'Тепер вивчаєш українську.',
+    };
 
-      for (final entry in expectations.entries) {
-        final sentAt = DateTime.now().subtract(const Duration(days: 1));
-        final container = _containerForHeader(
-          _PrimaryKnownLanguageChatService(
-            learningLanguageCode: entry.key,
-            messageIsOutgoing: true,
-            messageSentAt: sentAt,
-            previousMessageSentAt: sentAt.subtract(const Duration(days: 1)),
-          ),
-          languageTimeline: [
-            {
-              'revision': 2,
-              'learning_language': entry.key,
-              'created_at': sentAt
-                  .subtract(const Duration(minutes: 1))
-                  .toIso8601String(),
-            },
-          ],
-        );
-        await tester.pumpWidget(
-          _host(container, locale: const Locale('uk')),
-        );
-        await _settle(tester);
+    for (final entry in expectations.entries) {
+      final sentAt = DateTime.now().subtract(const Duration(days: 1));
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          learningLanguageCode: entry.key,
+          messageIsOutgoing: true,
+          messageSentAt: sentAt,
+          previousMessageSentAt: sentAt.subtract(const Duration(days: 1)),
+        ),
+        languageTimeline: [
+          {
+            'revision': 2,
+            'learning_language': entry.key,
+            'created_at': sentAt
+                .subtract(const Duration(minutes: 1))
+                .toIso8601String(),
+          },
+        ],
+      );
+      await tester.pumpWidget(_host(container, locale: const Locale('uk')));
+      await _settle(tester);
 
-        expect(find.text(entry.value), findsOneWidget);
+      expect(find.text(entry.value), findsOneWidget);
 
-        await tester.pumpWidget(const SizedBox.shrink());
-        container.dispose();
-      }
-    },
-  );
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+    }
+  });
 
   testWidgets(
     'practice history keeps the completed language from its saved era',

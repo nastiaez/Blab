@@ -113,10 +113,7 @@ void main() {
     final ukrainian = lookupAppLocalizations(const Locale('uk'));
 
     expect(
-      localizedInviteClaimMessage(
-        ukrainian,
-        InviteClaimFailure.alreadyClaimed,
-      ),
+      localizedInviteClaimMessage(ukrainian, InviteClaimFailure.alreadyClaimed),
       'Це запрошення вже прийнято',
     );
     expect(
