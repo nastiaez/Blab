@@ -499,6 +499,74 @@ The disposable local chat is `71000000-0000-4000-8000-000000000001`. The repaire
 - Owner decision: approved 2026-09-20
 - Follow-up: none
 
+## Packet L02 — English language engine
+
+### Evidence
+
+- `L02-EN-01-alice-web.png`: Alice's English Practice results, including her inline correction and Bob's clean received messages.
+- `L02-EN-02-bob-android-correction.png`: Bob's English Practice results, including his inline correction and Alice's clean received messages.
+- `L02-EN-03-bob-word-help.png`: English word help for `bookstore` with the German description and no duplicate romanization.
+- `L02-EN-04-bob-sentence-audio.png`: translated sentence with the German source revealed and the English Listen action.
+- `L02-EN-review.jpg`: two-by-two review composite of the four evidence states.
+
+The disposable local chat is `72000000-0000-4000-8000-000000000002`. The Android APK matched the published L01 debug build exactly at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L02-EN-01
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: Practice chat / German-authored message translated to English in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural English while the authored German remains available as the source
+- Observed: `Wir treffen uns morgen nach der Arbeit.` became `We will meet tomorrow after work.` and `Wir besuchen morgen die Buchhandlung.` became `We are visiting the bookstore tomorrow.`. Alice and Bob both received the clean English result; the Android action state reveals the German source. Every preparation job completed ready on its first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L02-EN-02
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: Practice chat / correct English plus intentionally incorrect English in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: correct English remains unchanged; incorrect English is corrected for the author with a German explanation; the recipient receives only clean English
+- Observed: `I am meeting a friend after work.` remained unchanged. `She go to the bookstore every Saturday.` became `She goes to the bookstore every Saturday.` with the German explanation `Das Verb "go" muss in der dritten Person Singular konjugiert werden.`. `They is waiting near the station.` became `They are waiting near the station.` with the German explanation `"They is" sollte "They are" sein.`. Authors see the inline correction; recipients see clean English.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L02-EN-03
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: word help for `bookstore`
+- Client: Bob / Android emulator
+- Expected: the popup shows the English word, its German description, and no redundant romanization
+- Observed: the popup shows `bookstore` and `Buchhandlung`; identical Latin-script romanization is suppressed by the language-independent per-word rule.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L02-EN-04
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize English with the English voice and remain reachable without clipping
+- Observed: the word speaker and sentence Listen action are reachable; sentence playback created a Google TTS audio track and the language mapping resolves English to `en-US`. The popup and four-action incoming row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
