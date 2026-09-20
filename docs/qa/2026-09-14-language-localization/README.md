@@ -38,7 +38,8 @@
 | B08 | Shared system and accessibility states, plus Normal-mode message actions | `screenshots/b08-system-accessibility/` | Approved 2026-09-19, including the compact Ukrainian Normal-pill revision |
 | L01 | Dutch translation, correction, word help, and audio | `screenshots/l01-dutch/` | Approved 2026-09-20 |
 | L02 | English translation, correction, German word help, and English audio | `screenshots/l02-english/` | Approved 2026-09-20 |
-| L03-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
+| L03 | French translation, correction, German word help, and French audio | `screenshots/l03-french/` | Approved 2026-09-20 after word-help repair |
+| L04-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 
 ## Evidence rules

@@ -2055,6 +2055,48 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
   );
 });
 
+Deno.test("standard prompt contains no English token example for German word help", () => {
+  const prompt = systemPrompt("auto", "fr", "de", {
+    viewerName: "Bob",
+    partnerName: "Alice",
+    messageAuthor: "viewer",
+    viewerForm: null,
+    partnerForm: null,
+    tone: "informal",
+  });
+  assert(
+    prompt.includes("short German gloss"),
+    "the prompt names German as the token-gloss language",
+  );
+  for (
+    const englishGloss of [
+      '"gloss":"what"',
+      '"gloss":"you"',
+      '"gloss":"did"',
+      '"gloss":"yesterday"',
+    ]
+  ) {
+    assert(
+      !prompt.includes(englishGloss),
+      `the German prompt must not demonstrate ${englishGloss}`,
+    );
+  }
+});
+
+Deno.test("focused retry explicitly requires German token glosses", () => {
+  const messages = focusedTranslationRetryMessages({
+    sourceLang: "en",
+    targetLang: "fr",
+    interfaceLang: "de",
+    text: "Visit the bookstore",
+  });
+  assert(messages !== null, "the focused retry is available");
+  assert(
+    messages![0].content.includes("short German gloss"),
+    "the focused retry names German as the token-gloss language",
+  );
+});
+
 Deno.test("Dutch prompt requires standard closed compounds", () => {
   const prompt = systemPrompt("auto", "nl", "en");
   assert(

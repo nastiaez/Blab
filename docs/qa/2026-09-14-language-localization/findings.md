@@ -567,6 +567,74 @@ The disposable local chat is `72000000-0000-4000-8000-000000000002`. The Android
 - Owner decision: approved 2026-09-20
 - Follow-up: none
 
+## Packet L03 — French language engine
+
+### Evidence
+
+- `L03-FR-01-alice-web.png`: Alice's French Practice results, including her inline correction and Bob's clean received messages.
+- `L03-FR-02-bob-android-correction.png`: Bob's French Practice results, including his inline correction and Alice's clean received messages.
+- `L03-FR-03-bob-word-help.png`: repaired French word help for `librairie`, showing the German description `Buchhandlung`.
+- `L03-FR-04-bob-sentence-audio.png`: translated sentence with the German source revealed and the French Listen action.
+- `L03-FR-review.jpg`: two-by-two review composite of the four evidence states.
+
+The disposable local chat is `73000000-0000-4000-8000-000000000003`. The Android APK matched the locally reviewed L03 debug build exactly at SHA-256 `9f5e46da5bf9d98324b1e98ba54893b2187b3efcf0402da5fd3205ae4fbb1be2`.
+
+### L03-FR-01
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: Practice chat / German-authored message translated to French in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural French while the authored German remains available as the source
+- Observed: `Wir treffen uns morgen im Park.` became `Nous nous rencontrons demain au parc.` and `Wir wollen morgen die Buchhandlung besuchen.` became `Nous voulons visiter la librairie demain.`. Alice and Bob both received the clean French result; the Android action state reveals the German source. Every preparation job completed ready on its first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L03-FR-02
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: Practice chat / correct French plus intentionally incorrect French in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: correct French remains unchanged; incorrect French is corrected for the author with a German explanation; the recipient receives only clean French
+- Observed: `Je rencontre une amie après le travail.` remained unchanged. `Elle vont au marché chaque samedi.` became `Elle va au marché chaque samedi.` with the German explanation `Das Verb "vont" sollte in der dritten Person Singular "va" sein.`. `Ils est pres de la gare.` became `Ils sont près de la gare.` with the German explanation `"est" sollte "sont" sein, da das Subjekt plural ist.`. Authors see the inline correction; recipients see clean French.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L03-FR-03
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: word help for `librairie`
+- Client: Bob / Android emulator and persisted preparation package
+- Expected: the popup shows the French word, its German description, and no redundant romanization
+- Observed: the original run stored English token descriptions because the provider instructions requested German but included an English-only token example. The shared prompt now requires the Primary Known Language throughout and contains no English gloss example. An exact real-provider rerun stored German descriptions for every French content token, including `librairie` → `Buchhandlung`, for both participants; the Android popup renders that repaired value and continues to suppress duplicate Latin-script romanization.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L03-FR-04
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize French with the French voice and remain reachable without clipping
+- Observed: word and sentence playback both dispatched `fr-FR` / `fra-FRA` through the installed French voice; both utterances started successfully. The popup and five-action outgoing row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
