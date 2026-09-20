@@ -102,12 +102,6 @@ abstract class AppLocalizations {
     Locale('es'),
   ];
 
-  /// No description provided for @reportSpamQuestion.
-  ///
-  /// In en, this message translates to:
-  /// **'Report spam?'**
-  String get reportSpamQuestion;
-
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
@@ -573,7 +567,7 @@ abstract class AppLocalizations {
   /// No description provided for @resetLinkSent.
   ///
   /// In en, this message translates to:
-  /// **'We sent a reset link to\n{email}'**
+  /// **'We sent a reset link to {email}'**
   String resetLinkSent(String email);
 
   /// No description provided for @backToLogin.
@@ -587,12 +581,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set a new password'**
   String get setNewPassword;
-
-  /// No description provided for @newPasswordHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick something you\'ll remember. Use at least 6 characters.'**
-  String get newPasswordHelp;
 
   /// No description provided for @newPassword.
   ///
@@ -648,17 +636,17 @@ abstract class AppLocalizations {
   /// **'Strong'**
   String get passwordStrong;
 
+  /// No description provided for @passwordMinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 6 characters'**
+  String get passwordMinHint;
+
   /// No description provided for @passwordMinLength.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 6 characters'**
+  /// **'Use at least 6 characters'**
   String get passwordMinLength;
-
-  /// No description provided for @chooseStrongerPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a stronger password'**
-  String get chooseStrongerPassword;
 
   /// No description provided for @passwordsDoNotMatch.
   ///
@@ -1014,6 +1002,144 @@ abstract class AppLocalizations {
   /// **'No connection'**
   String get noConnection;
 
+  /// No description provided for @relativeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String relativeMinutes(int count);
+
+  /// No description provided for @relativeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String relativeHours(int count);
+
+  /// No description provided for @relativeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String relativeDays(int count);
+
+  /// No description provided for @chooseLanguageToPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a language to practice'**
+  String get chooseLanguageToPractice;
+
+  /// No description provided for @chooseLanguageToPracticeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change it later in Settings.'**
+  String get chooseLanguageToPracticeHelp;
+
+  /// No description provided for @startPracticing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start practicing'**
+  String get startPracticing;
+
+  /// No description provided for @newMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 new message} other{{count} new messages}}'**
+  String newMessages(int count);
+
+  /// No description provided for @nowLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Now learning {language}'**
+  String nowLearning(String language);
+
+  /// No description provided for @practiceModeTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice mode'**
+  String get practiceModeTipTitle;
+
+  /// No description provided for @normalModeTipTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal mode'**
+  String get normalModeTipTitle;
+
+  /// No description provided for @practiceModeTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages appear in {practiceLanguage}. Blab helps correct mistakes and translates from {knownLanguage}. Switch to Normal to see the original.'**
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage);
+
+  /// No description provided for @normalModeTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.'**
+  String get normalModeTipBody;
+
+  /// No description provided for @editKnownLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit known languages'**
+  String get editKnownLanguages;
+
+  /// No description provided for @noMessagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages here yet…'**
+  String get noMessagesYet;
+
+  /// No description provided for @sendMessageToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Send any message to start.'**
+  String get sendMessageToStart;
+
+  /// No description provided for @couldNotOpenPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open photos. Try again.'**
+  String get couldNotOpenPhotos;
+
+  /// No description provided for @camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get camera;
+
+  /// No description provided for @addCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a caption…'**
+  String get addCaption;
+
+  /// No description provided for @chooseGrammaticalForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose grammatical form'**
+  String get chooseGrammaticalForm;
+
+  /// No description provided for @chooseYourGenderedForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your gendered form'**
+  String get chooseYourGenderedForm;
+
+  /// No description provided for @choosePersonsGenderedForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose {name}\'s gendered form'**
+  String choosePersonsGenderedForm(String name);
+
+  /// No description provided for @reactWith.
+  ///
+  /// In en, this message translates to:
+  /// **'React with {emoji}'**
+  String reactWith(String emoji);
+
+  /// No description provided for @moreReactions.
+  ///
+  /// In en, this message translates to:
+  /// **'More reactions'**
+  String get moreReactions;
+
   /// No description provided for @learningLanguage.
   ///
   /// In en, this message translates to:
@@ -1212,58 +1338,10 @@ abstract class AppLocalizations {
   /// **'Report message'**
   String get reportMessage;
 
-  /// No description provided for @reportPersonSpamQuestion.
-  ///
-  /// In en, this message translates to:
-  /// **'Report {name} for spam?'**
-  String reportPersonSpamQuestion(String name);
-
-  /// No description provided for @reportPersonSpamBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Blab will be notified that {name} may be sending spam. Messages from this chat won\'t be included.'**
-  String reportPersonSpamBody(String name);
-
-  /// No description provided for @submitSpamReport.
-  ///
-  /// In en, this message translates to:
-  /// **'Report spam'**
-  String get submitSpamReport;
-
-  /// No description provided for @reportAndBlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Report and block'**
-  String get reportAndBlock;
-
-  /// No description provided for @reportSubmitted.
-  ///
-  /// In en, this message translates to:
-  /// **'Report submitted'**
-  String get reportSubmitted;
-
-  /// No description provided for @couldNotReportOrBlock.
-  ///
-  /// In en, this message translates to:
-  /// **'Couldn\'t report or block. Try again.'**
-  String get couldNotReportOrBlock;
-
-  /// No description provided for @reportSucceededBlockFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Report submitted. Couldn\'t block.'**
-  String get reportSucceededBlockFailed;
-
-  /// No description provided for @blockSucceededReportFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} blocked. Couldn\'t submit report.'**
-  String blockSucceededReportFailed(String name);
-
   /// No description provided for @sendInvite.
   ///
   /// In en, this message translates to:
-  /// **'Send the invite'**
+  /// **'Send invite'**
   String get sendInvite;
 
   /// No description provided for @pickLanguage.
@@ -1293,7 +1371,7 @@ abstract class AppLocalizations {
   /// No description provided for @onePersonInvite.
   ///
   /// In en, this message translates to:
-  /// **'Only one person can use this link.'**
+  /// **'Only one friend can use this link'**
   String get onePersonInvite;
 
   /// No description provided for @validFor48Hours.
@@ -1377,7 +1455,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteAlreadyClaimed.
   ///
   /// In en, this message translates to:
-  /// **'This invite was already claimed'**
+  /// **'This invite has already been claimed'**
   String get inviteAlreadyClaimed;
 
   /// No description provided for @askForFreshLink.
@@ -1469,6 +1547,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New'**
   String get newLabel;
+
+  /// No description provided for @inviteCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s chat on Blab'**
+  String get inviteCardTitle;
+
+  /// No description provided for @inviteLinkUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link unavailable'**
+  String get inviteLinkUnavailable;
+
+  /// No description provided for @openingShareSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening sharing…'**
+  String get openingShareSheet;
+
+  /// No description provided for @couldNotOpenSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open sharing. Try again.'**
+  String get couldNotOpenSharing;
+
+  /// No description provided for @openingInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening invite'**
+  String get openingInvite;
+
+  /// No description provided for @couldNotOpenInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the invite.'**
+  String get couldNotOpenInvite;
+
+  /// No description provided for @tryAgainToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again to continue.'**
+  String get tryAgainToContinue;
+
+  /// No description provided for @askFriendForNewLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your friend for a new link.'**
+  String get askFriendForNewLink;
+
+  /// No description provided for @inviteShareMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s chat on Blab: {link}'**
+  String inviteShareMessage(String link);
+
+  /// No description provided for @inviteShareBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s chat on Blab.'**
+  String get inviteShareBlurb;
+
+  /// No description provided for @inviteEmailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with me on Blab'**
+  String get inviteEmailSubject;
+
+  /// No description provided for @inviteSelfClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t use your own invite.'**
+  String get inviteSelfClaim;
+
+  /// No description provided for @inviteInvalidLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a supported language and try again.'**
+  String get inviteInvalidLanguage;
 
   /// No description provided for @invitedYouToChat.
   ///
@@ -1613,36 +1769,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Block {name}'**
   String blockPerson(Object name);
-
-  /// No description provided for @blockPersonQuestion.
-  ///
-  /// In en, this message translates to:
-  /// **'Block {name}?'**
-  String blockPersonQuestion(String name);
-
-  /// No description provided for @blockPersonConfirmation.
-  ///
-  /// In en, this message translates to:
-  /// **'Neither of you will be able to send messages in this chat.'**
-  String get blockPersonConfirmation;
-
-  /// No description provided for @block.
-  ///
-  /// In en, this message translates to:
-  /// **'Block'**
-  String get block;
-
-  /// No description provided for @unblock.
-  ///
-  /// In en, this message translates to:
-  /// **'Unblock'**
-  String get unblock;
-
-  /// No description provided for @youBlockedPerson.
-  ///
-  /// In en, this message translates to:
-  /// **'You blocked {name}'**
-  String youBlockedPerson(String name);
 
   /// No description provided for @unblockPerson.
   ///
@@ -1979,6 +2105,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'English letters'**
   String get englishLetters;
+
+  /// No description provided for @learningTimelineMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning English}}'**
+  String learningTimelineMarker(String languageCode);
+
+  /// No description provided for @reportSpamQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Report spam?'**
+  String get reportSpamQuestion;
+
+  /// No description provided for @reportPersonSpamQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name} for spam?'**
+  String reportPersonSpamQuestion(String name);
+
+  /// No description provided for @reportPersonSpamBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Blab will be notified that {name} may be sending spam. Messages from this chat won\'t be included.'**
+  String reportPersonSpamBody(String name);
+
+  /// No description provided for @submitSpamReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report spam'**
+  String get submitSpamReport;
+
+  /// No description provided for @reportAndBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Report and block'**
+  String get reportAndBlock;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted'**
+  String get reportSubmitted;
+
+  /// No description provided for @couldNotReportOrBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t report or block. Try again.'**
+  String get couldNotReportOrBlock;
+
+  /// No description provided for @reportSucceededBlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted. Couldn\'t block.'**
+  String get reportSucceededBlockFailed;
+
+  /// No description provided for @blockSucceededReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} blocked. Couldn\'t submit report.'**
+  String blockSucceededReportFailed(String name);
+
+  /// No description provided for @blockPersonQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String blockPersonQuestion(String name);
+
+  /// No description provided for @blockPersonConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Neither of you will be able to send messages in this chat.'**
+  String get blockPersonConfirmation;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblock;
+
+  /// No description provided for @youBlockedPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked {name}'**
+  String youBlockedPerson(String name);
 }
 
 class _AppLocalizationsDelegate

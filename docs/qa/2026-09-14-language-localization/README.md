@@ -25,13 +25,19 @@
 | B02D | Known Languages successful-save and offline save-error states in EN/DE/ES/UK | `screenshots/b02-known-translation-preferences/` | Approved 2026-09-15 |
 | B03A | Privacy and Notifications overview in EN/DE/ES/UK, plus unsupported-local-build handling | `screenshots/b03-privacy-notifications-account/` | Approved 2026-09-15 |
 | B03B | Minimal logout and credential-free, two-step delete-account confirmations in EN/DE/ES/UK | `screenshots/b03-privacy-notifications-account/` | Approved 2026-09-15 |
-| B03C | Privacy preference save/failure states and physical-device Notifications verification | `screenshots/b03-privacy-notifications-account/` | Not started |
-| B04 | Edit profile, email, password | `screenshots/b04-account-forms/` | Not started |
-| B05 | Signup, login, password recovery | `screenshots/b05-auth/` | Not started |
-| B06 | Chats list and invite flow | `screenshots/b06-chats-invite/` | Not started |
-| B07 | Chat controls, menus, and message states | `screenshots/b07-chat/` | Not started |
-| B08 | Shared system and accessibility states | `screenshots/b08-system-accessibility/` | Not started |
-| L01-L11 | One packet for each Learning Language | `screenshots/l*/` | Not started |
+| B03C | Privacy preference save/failure states and physical-device Notifications verification | `screenshots/b03-privacy-notifications-account/` | Privacy persistence approved; physical-device Notifications verification pending |
+| B04A | Edit Profile and Change Email forms in EN/DE/ES/UK | `screenshots/b04-account-forms/` | Approved 2026-09-15 |
+| B04B | Change Password form and localized validation states in EN/DE/ES/UK | `screenshots/b04-account-forms/` | Approved 2026-09-15 |
+| B05A | Signup and login in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
+| B05B1 | Password recovery request and email confirmation in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
+| B05B2 | New-password form and validation states in EN/DE/ES/UK | `screenshots/b05-auth/` | Approved 2026-09-15 |
+| B05C | Six-character password guidance across signup, reset, and change-password | `screenshots/b05-auth/` | Approved 2026-09-15 |
+| B06 | Chats list and invite flow | `screenshots/b06-chats-invite/`, `screenshots/b06-chats-invite-fixed/` | Approved 2026-09-16 |
+| B07A | Chat header, language menu, composer, learning-language sheet, and hidden chat states | Before: `screenshots/b07-chat-controls/`; repaired: `screenshots/b07-chat-controls-fixed/` | Approved 2026-09-18 |
+| B07B | Reply, edit, delete, report, reaction, photo, delivery, and translation states | `screenshots/b07-message-states/` | Approved 2026-09-19 |
+| B08 | Shared system and accessibility states, plus Normal-mode message actions | `screenshots/b08-system-accessibility/` | Approved 2026-09-19, including the compact Ukrainian Normal-pill revision |
+| L01 | Dutch translation, correction, word help, and audio | `screenshots/l01-dutch/` | Approved 2026-09-20 |
+| L02-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 
 ## Evidence rules

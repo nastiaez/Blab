@@ -1,11 +1,64 @@
 import 'dart:async';
 
 import 'package:blab/features/chat/widgets/learning_language_sheet.dart';
+import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('sheet localizes its guidance, action and language names', (
+    tester,
+  ) async {
+    const expectations = {
+      'de': (
+        'Wähle eine Sprache zum Üben',
+        'Du kannst sie später in den Einstellungen ändern.',
+        'Deutsch',
+        'Fertig',
+      ),
+      'uk': (
+        'Вибери мову для практики',
+        'Її можна змінити пізніше в налаштуваннях.',
+        'Німецька',
+        'Готово',
+      ),
+    };
+
+    for (final entry in expectations.entries) {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(entry.key),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showLearningLanguageSheet(
+                  context,
+                  current: kBlabLanguages.firstWhere(
+                    (language) => language.code == 'de',
+                  ),
+                ),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(entry.value.$1), findsOneWidget);
+      expect(find.text(entry.value.$2), findsOneWidget);
+      expect(find.text(entry.value.$3), findsOneWidget);
+      expect(find.text(entry.value.$4), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+    }
+  });
+
   testWidgets('compact required sheet matches the handled sheet height ratio', (
     tester,
   ) async {
@@ -138,7 +191,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(completed, isFalse);
     expect(find.text('Choose a language to practice'), findsOneWidget);
-    expect(find.textContaining("Couldn't save"), findsNothing);
+    expect(find.text("Couldn't save language. Try again."), findsOneWidget);
     await tester.tap(find.text('Start practicing'));
     await tester.pumpAndSettle();
     expect(completed, isTrue);

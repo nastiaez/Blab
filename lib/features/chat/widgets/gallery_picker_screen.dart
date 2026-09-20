@@ -300,9 +300,9 @@ class _PermissionDenied extends StatelessWidget {
                 Icons.photo_camera_outlined,
                 color: Colors.white70,
               ),
-              label: const Text(
-                'Camera',
-                style: TextStyle(color: Colors.white70),
+              label: Text(
+                context.l10n.camera,
+                style: const TextStyle(color: Colors.white70),
               ),
             ),
           ],

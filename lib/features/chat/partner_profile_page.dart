@@ -204,13 +204,19 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
                 _LanguageRow(
                   flag: chat.partnerNativeLanguage.flag,
                   label: context.l10n.speaksNatively(
-                    chat.partnerNativeLanguage.name,
+                    localizedLanguageName(
+                      context.l10n,
+                      chat.partnerNativeLanguage.code,
+                    ),
                   ),
                 ),
                 _LanguageRow(
                   flag: chat.partnerLearningLanguage.flag,
                   label: context.l10n.learningWithYou(
-                    chat.partnerLearningLanguage.name,
+                    localizedLanguageName(
+                      context.l10n,
+                      chat.partnerLearningLanguage.code,
+                    ),
                   ),
                 ),
               ],
@@ -303,7 +309,7 @@ class _IdentityHeader extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           '${context.l10n.learningLanguage}: '
-          '${chat.partnerLearningLanguage.name} '
+          '${localizedLanguageName(context.l10n, chat.partnerLearningLanguage.code)} '
           '${chat.partnerLearningLanguage.flag}',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 14, color: BlabColors.warmMuted),

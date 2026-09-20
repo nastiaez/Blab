@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/grammatical_form.dart';
 import '../../../shared/services/message_translator.dart';
 
@@ -27,7 +28,7 @@ class GrammaticalFormMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: 'Choose grammatical form',
+    label: context.l10n.chooseGrammaticalForm,
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
@@ -164,7 +165,7 @@ class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn’t save. Try again.")),
+          SnackBar(content: Text(context.l10n.couldNotSavePreference)),
         );
       }
     } finally {
@@ -203,7 +204,11 @@ class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
             ),
           ),
         Text(
-          'Choose ${widget.alternatives.subjectIsViewer ? 'your' : '${widget.alternatives.subjectName}\'s'} gendered form',
+          widget.alternatives.subjectIsViewer
+              ? context.l10n.chooseYourGenderedForm
+              : context.l10n.choosePersonsGenderedForm(
+                  widget.alternatives.subjectName,
+                ),
           style: const TextStyle(fontSize: 12, color: _chooserMuted),
         ),
         const SizedBox(height: 8),

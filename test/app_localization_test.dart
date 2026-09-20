@@ -78,6 +78,108 @@ void main() {
     }
   });
 
+  test('auth copy uses natural Spanish and informal Ukrainian', () {
+    final spanish = lookupAppLocalizations(const Locale('es'));
+    expect(spanish.orUseEmail, 'o usa tu correo electrónico');
+
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+    expect(ukrainian.authTagline, 'Вивчай мову, спілкуючись із другом.');
+    expect(
+      ukrainian.signUpToChat('Alice'),
+      'Зареєструйся, щоб спілкуватися з Alice.',
+    );
+    expect(ukrainian.logInToChat('Alice'), 'Увійди, щоб спілкуватися з Alice.');
+    expect(ukrainian.firstNameHint, 'Твоє ім’я');
+    expect(ukrainian.forgotPassword, 'Не пам’ятаєш пароль?');
+    expect(ukrainian.alreadyHaveAccount, 'Уже маєш обліковий запис? Увійди');
+    expect(ukrainian.newToBlab, 'Вперше в Blab? Зареєструйся');
+    expect(ukrainian.orUseEmail, 'або скористайся поштою');
+    expect(ukrainian.byContinuing, 'Продовжуючи, ти погоджуєшся з нашими ');
+    expect(
+      ukrainian.ageConfirmation,
+      ' та підтверджуєш, що тобі щонайменше 13 років.',
+    );
+    expect(ukrainian.enterEmail, 'Введи електронну пошту');
+    expect(ukrainian.enterValidEmail, 'Введи дійсну адресу електронної пошти');
+    expect(ukrainian.checkYourEmail, 'Перевір пошту');
+    expect(
+      ukrainian.resetLinkSent('bob@blab.test'),
+      'Ми надіслали посилання для скидання пароля на адресу\u00a0bob@blab.test',
+    );
+    expect(
+      ukrainian.confirmEmailInbox,
+      'Перевір вхідні, щоб підтвердити пошту',
+    );
+    expect(ukrainian.somethingWentWrong, 'Сталася помилка. Спробуй ще раз.');
+  });
+
+  test(
+    'password reset confirmation keeps the email attached in every locale',
+    () {
+      for (final locale in AppLocalizations.supportedLocales) {
+        final localizations = lookupAppLocalizations(locale);
+        final message = localizations.resetLinkSent('bob@blab.test');
+        expect(
+          message,
+          isNot(contains('\n')),
+          reason: '${locale.languageCode} must wrap naturally',
+        );
+        expect(
+          message,
+          contains('\u00a0bob@blab.test'),
+          reason: '${locale.languageCode} must not orphan the email address',
+        );
+      }
+    },
+  );
+
+  test('password minimum copy is concise and localized', () {
+    const expectations = {
+      'en': ('At least 6 characters', 'Use at least 6 characters'),
+      'de': ('Mindestens 6 Zeichen', 'Verwende mindestens 6 Zeichen'),
+      'es': ('Al menos 6 caracteres', 'Usa al menos 6 caracteres'),
+      'uk': ('Щонайменше 6 символів', 'Використай щонайменше 6 символів'),
+    };
+
+    for (final entry in expectations.entries) {
+      final localizations = lookupAppLocalizations(Locale(entry.key));
+      expect(localizations.passwordMinHint, entry.value.$1);
+      expect(localizations.passwordMinLength, entry.value.$2);
+    }
+
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+    expect(ukrainian.setNewPassword, 'Установи новий пароль');
+  });
+
+  test('Ukrainian chat and invite copy uses informal singular voice', () {
+    final ukrainian = lookupAppLocalizations(const Locale('uk'));
+    expect(ukrainian.chats, 'Чати');
+    expect(ukrainian.inviteFriendStart, 'Запроси друга й почни спілкуватися.');
+    expect(ukrainian.newConnectionSayHi, 'Новий контакт · привітайся');
+    expect(
+      ukrainian.couldNotCreateInvite,
+      'Не вдалося створити запрошення. Спробуй ще раз.',
+    );
+    expect(ukrainian.checkInviteLink, 'Перевір посилання або попроси нове.');
+    expect(
+      ukrainian.inviteClaimFailed,
+      'Не вдалося прийняти запрошення. Спробуй ще раз.',
+    );
+  });
+
+  test('chat-list relative time uses compact locale-specific units', () {
+    const expectations = {'en': '1d', 'de': '1 T.', 'es': '1 d', 'uk': '1 дн'};
+
+    for (final entry in expectations.entries) {
+      final localizations = lookupAppLocalizations(Locale(entry.key));
+      expect(localizations.relativeDays(1), entry.value);
+    }
+
+    final english = lookupAppLocalizations(const Locale('en'));
+    expect(english.sendInvite, 'Send invite');
+    expect(english.onePersonInvite, 'Only one friend can use this link');
+  });
+
   testWidgets('composer uses the generic localized message placeholder', (
     tester,
   ) async {
@@ -108,7 +210,7 @@ void main() {
       'en': 'Say hi',
       'de': 'Sag Hallo',
       'es': 'Saluda',
-      'uk': 'Привітайтеся',
+      'uk': 'Привітайся',
     };
 
     for (final entry in expectations.entries) {
@@ -131,7 +233,7 @@ void main() {
       'en': "You're learning English with Alice",
       'de': 'Du lernst English mit Alice',
       'es': 'Estás aprendiendo English con Alice',
-      'uk': 'Ви вивчаєте English з Alice',
+      'uk': 'Ти вивчаєш English з Alice',
     };
 
     for (final entry in expectations.entries) {

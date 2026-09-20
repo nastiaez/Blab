@@ -113,6 +113,30 @@ void main() {
     expect(find.byKey(const Key('app-success-icon')), findsOneWidget);
   });
 
+  testWidgets('six-character password is accepted even when strength is weak', (
+    tester,
+  ) async {
+    String? next;
+    await _pumpChangePassword(
+      tester,
+      action: ({required currentPassword, required newPassword}) async {
+        next = newPassword;
+      },
+    );
+
+    expect(find.text('At least 6 characters'), findsOneWidget);
+
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'OldPass123!');
+    await tester.enterText(fields.at(1), 'abcdef');
+    await tester.enterText(fields.at(2), 'abcdef');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(next, 'abcdef');
+    expect(find.text('Choose a stronger password'), findsNothing);
+  });
+
   testWidgets('wrong current password remains inline without success', (
     tester,
   ) async {

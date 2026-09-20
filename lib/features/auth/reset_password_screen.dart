@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -39,13 +40,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Future<void> _save() async {
     final pw = _password.text;
     final cf = _confirm.text;
-    final strength = estimatePasswordStrength(pw);
-    if (pw.length < 6) {
+    if (!meetsPasswordRequirement(pw)) {
       setState(() => _err = context.l10n.passwordMinLength);
-      return;
-    }
-    if (strength == PasswordStrength.weak) {
-      setState(() => _err = context.l10n.chooseStrongerPassword);
       return;
     }
     if (pw != cf) {
@@ -82,6 +78,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: BlabColors.textPrimary,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -96,14 +97,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                context.l10n.newPasswordHelp,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: BlabColors.textMuted,
-                ),
-              ),
               const SizedBox(height: 28),
               PasswordField(
                 controller: _password,
@@ -114,8 +107,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   setState(() {});
                 },
               ),
-              const SizedBox(height: 10),
-              PasswordStrengthBar(password: _password.text),
+              PasswordGuidance(password: _password.text),
               const SizedBox(height: 16),
               PasswordField(
                 controller: _confirm,

@@ -24,6 +24,7 @@ class ChatListTile extends ConsumerWidget {
     // unread incoming message until this participant chooses a language.
     final hasUnread =
         chat.unreadCount > 0 || chat.needsPracticeLanguageSelection;
+    final timestamp = relativeTime(chat.timestamp, context.l10n);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -55,9 +56,7 @@ class ChatListTile extends ConsumerWidget {
                       const SizedBox(width: 8),
                       if (hasActualMessage)
                         Text(
-                          relativeTime(chat.timestamp) == 'Now'
-                              ? context.l10n.now
-                              : relativeTime(chat.timestamp),
+                          timestamp,
                           style: const TextStyle(
                             fontSize: 12,
                             color: BlabColors.textMuted,
@@ -72,7 +71,7 @@ class ChatListTile extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           !hasActualMessage
-                              ? 'Ready to chat · Say hi'
+                              ? context.l10n.newConnectionSayHi
                               : partnerTyping
                               ? context.l10n.typing
                               : chat.lastMessage,

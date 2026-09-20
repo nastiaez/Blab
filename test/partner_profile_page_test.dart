@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/partner_profile_page.dart';
-import 'package:blab/l10n/generated/app_localizations.dart';
+import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -173,6 +173,21 @@ void main() {
       expect(find.byType(Scaffold), findsOneWidget);
       expect(find.byType(AppBar), findsOneWidget);
       expect(find.text('Alice'), findsOneWidget);
+      expect(
+        find.text(
+          '${l10n.learningLanguage}: '
+          '${localizedLanguageName(l10n, 'uk')} 🇺🇦',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(l10n.speaksNatively(localizedLanguageName(l10n, 'en'))),
+        findsOneWidget,
+      );
+      expect(
+        find.text(l10n.learningWithYou(localizedLanguageName(l10n, 'uk'))),
+        findsOneWidget,
+      );
       expect(find.text(l10n.reportPerson('Alice')), findsOneWidget);
       expect(find.text(l10n.blockPerson('Alice')), findsOneWidget);
       expect(find.byType(DraggableScrollableSheet), findsNothing);

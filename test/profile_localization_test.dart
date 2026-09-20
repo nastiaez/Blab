@@ -151,6 +151,51 @@ void main() {
     );
   });
 
+  test('Ukrainian account forms use natural informal copy', () {
+    final localizations = lookupAppLocalizations(const Locale('uk'));
+
+    expect(localizations.displayName, 'Ім’я в профілі');
+    expect(localizations.yourName, 'Твоє ім’я');
+    expect(localizations.enterDisplayName, 'Введи ім’я в профілі');
+    expect(
+      localizations.displayNameTooLong,
+      'Ім’я в профілі має містити не більше 50 символів',
+    );
+    expect(
+      localizations.displayNameUnsupported,
+      'Ім’я в профілі містить непідтримувані символи',
+    );
+    expect(localizations.emailHint, 'name@example.com');
+    expect(localizations.checkYourInbox, 'Перевір вхідні');
+    expect(
+      localizations.emailConfirmationSent('bob@example.com'),
+      'Ми надіслали посилання для підтвердження на\n'
+      'bob@example.com. Натисни його, щоб завершити зміну.',
+    );
+    expect(localizations.enterNewEmail, 'Введи нову адресу електронної пошти');
+    expect(localizations.emailAlreadyUsed, 'Це вже твоя електронна пошта');
+  });
+
+  test('Ukrainian password flow uses natural informal copy', () {
+    final localizations = lookupAppLocalizations(const Locale('uk'));
+
+    expect(localizations.forgotYourPassword, 'Не пам’ятаєш пароль?');
+    expect(localizations.enterCurrentPassword, 'Введи поточний пароль');
+    expect(localizations.enterNewPassword, 'Введи новий пароль');
+    expect(localizations.confirmNewPassword, 'Підтверди новий пароль');
+    expect(localizations.confirmPassword, 'Підтверди новий пароль');
+    expect(localizations.chooseDifferentPassword, 'Вибери інший пароль');
+    expect(
+      localizations.signInAgain,
+      'Увійди знову, перш ніж змінювати пароль',
+    );
+    expect(localizations.tooManyAttempts, 'Забагато спроб. Спробуй пізніше.');
+    expect(
+      localizations.couldNotUpdatePassword,
+      'Не вдалося оновити пароль. Спробуй ще раз.',
+    );
+  });
+
   testWidgets('Profile hides Notifications when push is unavailable', (
     tester,
   ) async {

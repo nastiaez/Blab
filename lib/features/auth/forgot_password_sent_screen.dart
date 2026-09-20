@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
@@ -21,6 +22,11 @@ class ForgotPasswordSentScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: BlabColors.textPrimary,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
       ),
       backgroundColor: BlabColors.appBackground,
       body: SafeArea(
@@ -30,10 +36,13 @@ class ForgotPasswordSentScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                '📬',
-                style: TextStyle(fontSize: 56),
-                textAlign: TextAlign.center,
+              Image.asset(
+                'assets/icons/email-mailbox.png',
+                width: 96,
+                height: 96,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.none,
+                excludeFromSemantics: true,
               ),
               const SizedBox(height: 16),
               Text(

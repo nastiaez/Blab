@@ -30,8 +30,9 @@ void main() {
 
   Future<void> openOnlineInvite(
     WidgetTester tester,
-    FakeInvites service,
-  ) async {
+    FakeInvites service, {
+    Locale locale = const Locale('en'),
+  }) async {
     addTearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, null);
@@ -43,10 +44,11 @@ void main() {
           chatServiceProvider.overrideWithValue(service),
           onlineProvider.overrideWith((ref) => Stream.value(true)),
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
+          locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: NewChatScreen(),
+          home: const NewChatScreen(),
         ),
       ),
     );
@@ -67,16 +69,16 @@ void main() {
         });
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
-    expect(sharedText, 'Let’s chat on Blab\nhttps://loveblab.com/i/token1');
-    expect(find.text('Couldn’t prepare a new invite.'), findsOneWidget);
+    expect(sharedText, "Let's chat on Blab: https://loveblab.com/i/token1");
+    expect(find.text("Couldn't create invite. Try again."), findsOneWidget);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNull,
     );
-    await tester.tap(find.text('Try again'));
+    await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     expect(find.text('loveblab.com/i/token3'), findsOneWidget);
-    expect(find.text('Couldn’t prepare a new invite.'), findsNothing);
+    expect(find.text("Couldn't create invite. Try again."), findsNothing);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNotNull,
@@ -105,6 +107,22 @@ void main() {
     expect(tester.getTopLeft(helper).dx, tester.getTopLeft(card).dx);
   });
 
+  testWidgets('invite creator localizes the complete visible flow', (
+    tester,
+  ) async {
+    await openOnlineInvite(tester, FakeInvites(), locale: const Locale('uk'));
+
+    expect(find.text('Запросити друга'), findsOneWidget);
+    expect(find.text('Спілкуймося в Blab'), findsOneWidget);
+    expect(
+      find.text('Це посилання може використати лише одна людина.'),
+      findsOneWidget,
+    );
+    expect(find.text('Надіслати запрошення'), findsOneWidget);
+    expect(find.text('Invite a friend'), findsNothing);
+    expect(find.text('Let’s chat on Blab'), findsNothing);
+  });
+
   testWidgets('sharing failure keeps the link and lets the user try again', (
     tester,
   ) async {
@@ -118,12 +136,12 @@ void main() {
         });
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
-    expect(find.text('Couldn’t open sharing. Try again.'), findsOneWidget);
+    expect(find.text("Couldn't open sharing. Try again."), findsOneWidget);
     expect(find.text('loveblab.com/i/token1'), findsOneWidget);
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
     expect(attempts, 2);
-    expect(find.text('Couldn’t open sharing. Try again.'), findsNothing);
+    expect(find.text("Couldn't open sharing. Try again."), findsNothing);
     expect(find.text('loveblab.com/i/token2'), findsOneWidget);
   });
 
@@ -152,6 +170,6 @@ void main() {
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNull,
     );
-    expect(find.text('Couldn’t prepare a new invite.'), findsNothing);
+    expect(find.text("Couldn't create invite. Try again."), findsNothing);
   });
 }

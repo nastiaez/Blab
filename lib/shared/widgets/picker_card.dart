@@ -198,8 +198,9 @@ class _BrandButtonState extends State<BrandButton>
         scale: _scale,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 100),
-          height: 52,
           width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 52),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(14),
@@ -216,6 +217,7 @@ class _BrandButtonState extends State<BrandButton>
                   )
                 : Text(
                     widget.label,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,

@@ -9,9 +9,6 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
-  String get reportSpamQuestion => 'Spam melden?';
-
-  @override
   String get appName => 'Blab';
 
   @override
@@ -258,7 +255,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String resetLinkSent(String email) {
-    return 'Wir haben einen Link zum Zurücksetzen an\n$email gesendet';
+    return 'Wir haben einen Link zum Zurücksetzen an $email gesendet';
   }
 
   @override
@@ -266,10 +263,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get setNewPassword => 'Neues Passwort festlegen';
-
-  @override
-  String get newPasswordHelp =>
-      'Wähle ein Passwort, das du dir merkst. Verwende mindestens 6 Zeichen.';
 
   @override
   String get newPassword => 'Neues Passwort';
@@ -299,11 +292,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get passwordStrong => 'Stark';
 
   @override
-  String get passwordMinLength =>
-      'Das Passwort muss mindestens 6 Zeichen lang sein';
+  String get passwordMinHint => 'Mindestens 6 Zeichen';
 
   @override
-  String get chooseStrongerPassword => 'Wähle ein stärkeres Passwort';
+  String get passwordMinLength => 'Verwende mindestens 6 Zeichen';
 
   @override
   String get passwordsDoNotMatch => 'Die Passwörter stimmen nicht überein';
@@ -500,6 +492,101 @@ class AppLocalizationsDe extends AppLocalizations {
   String get noConnection => 'Keine Verbindung';
 
   @override
+  String relativeMinutes(int count) {
+    return '$count Min.';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return '$count Std.';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return '$count T.';
+  }
+
+  @override
+  String get chooseLanguageToPractice => 'Wähle eine Sprache zum Üben';
+
+  @override
+  String get chooseLanguageToPracticeHelp =>
+      'Du kannst sie später in den Einstellungen ändern.';
+
+  @override
+  String get startPracticing => 'Übung starten';
+
+  @override
+  String newMessages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count neue Nachrichten',
+      one: '1 neue Nachricht',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nowLearning(String language) {
+    return 'Jetzt lernst du $language';
+  }
+
+  @override
+  String get practiceModeTipTitle => 'Übungsmodus';
+
+  @override
+  String get normalModeTipTitle => 'Normalmodus';
+
+  @override
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage) {
+    return 'Nachrichten erscheinen auf $practiceLanguage. Blab hilft bei Korrekturen und übersetzt aus $knownLanguage. Wechsle zu Normal, um das Original zu sehen.';
+  }
+
+  @override
+  String get normalModeTipBody =>
+      'Nachrichten in Sprachen, die du kennst, bleiben unverändert. Andere werden für dich übersetzt. Halte sie gedrückt, um das Original zu sehen.';
+
+  @override
+  String get editKnownLanguages => 'Bekannte Sprachen bearbeiten';
+
+  @override
+  String get noMessagesYet => 'Noch keine Nachrichten…';
+
+  @override
+  String get sendMessageToStart => 'Sende eine Nachricht, um zu beginnen.';
+
+  @override
+  String get couldNotOpenPhotos =>
+      'Fotos konnten nicht geöffnet werden. Versuche es erneut.';
+
+  @override
+  String get camera => 'Kamera';
+
+  @override
+  String get addCaption => 'Bildunterschrift hinzufügen…';
+
+  @override
+  String get chooseGrammaticalForm => 'Grammatische Form wählen';
+
+  @override
+  String get chooseYourGenderedForm =>
+      'Wähle deine geschlechtsspezifische Form';
+
+  @override
+  String choosePersonsGenderedForm(String name) {
+    return 'Wähle die geschlechtsspezifische Form von $name';
+  }
+
+  @override
+  String reactWith(String emoji) {
+    return 'Mit $emoji reagieren';
+  }
+
+  @override
+  String get moreReactions => 'Weitere Reaktionen';
+
+  @override
   String get learningLanguage => 'Lernsprache';
 
   @override
@@ -607,38 +694,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get reportMessage => 'Nachricht melden';
-
-  @override
-  String reportPersonSpamQuestion(String name) {
-    return '$name wegen Spam melden?';
-  }
-
-  @override
-  String reportPersonSpamBody(String name) {
-    return 'Blab wird darüber informiert, dass $name möglicherweise Spam sendet. Nachrichten aus diesem Chat werden nicht übermittelt.';
-  }
-
-  @override
-  String get submitSpamReport => 'Spam melden';
-
-  @override
-  String get reportAndBlock => 'Melden und blockieren';
-
-  @override
-  String get reportSubmitted => 'Meldung gesendet';
-
-  @override
-  String get couldNotReportOrBlock =>
-      'Melden und Blockieren fehlgeschlagen. Versuche es erneut.';
-
-  @override
-  String get reportSucceededBlockFailed =>
-      'Meldung gesendet. Blockieren fehlgeschlagen.';
-
-  @override
-  String blockSucceededReportFailed(String name) {
-    return '$name blockiert. Meldung konnte nicht gesendet werden.';
-  }
 
   @override
   String get sendInvite => 'Einladung senden';
@@ -757,6 +812,50 @@ class AppLocalizationsDe extends AppLocalizations {
   String get newLabel => 'Neu';
 
   @override
+  String get inviteCardTitle => 'Lass uns auf Blab chatten';
+
+  @override
+  String get inviteLinkUnavailable => 'Einladungslink nicht verfügbar';
+
+  @override
+  String get openingShareSheet => 'Teilen wird geöffnet…';
+
+  @override
+  String get couldNotOpenSharing =>
+      'Teilen konnte nicht geöffnet werden. Versuche es erneut.';
+
+  @override
+  String get openingInvite => 'Einladung wird geöffnet';
+
+  @override
+  String get couldNotOpenInvite => 'Einladung konnte nicht geöffnet werden.';
+
+  @override
+  String get tryAgainToContinue => 'Versuche es erneut, um fortzufahren.';
+
+  @override
+  String get askFriendForNewLink => 'Bitte um einen neuen Link.';
+
+  @override
+  String inviteShareMessage(String link) {
+    return 'Lass uns auf Blab chatten: $link';
+  }
+
+  @override
+  String get inviteShareBlurb => 'Lass uns auf Blab chatten.';
+
+  @override
+  String get inviteEmailSubject => 'Chatte mit mir auf Blab';
+
+  @override
+  String get inviteSelfClaim =>
+      'Du kannst deine eigene Einladung nicht verwenden.';
+
+  @override
+  String get inviteInvalidLanguage =>
+      'Wähle eine unterstützte Sprache und versuche es erneut.';
+
+  @override
   String get invitedYouToChat => 'hat dich zum Chat eingeladen';
 
   @override
@@ -852,26 +951,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String blockPerson(Object name) {
     return '$name blockieren';
-  }
-
-  @override
-  String blockPersonQuestion(String name) {
-    return '$name blockieren?';
-  }
-
-  @override
-  String get blockPersonConfirmation =>
-      'Ihr könnt euch in diesem Chat keine Nachrichten senden.';
-
-  @override
-  String get block => 'Blockieren';
-
-  @override
-  String get unblock => 'Blockierung aufheben';
-
-  @override
-  String youBlockedPerson(String name) {
-    return 'Du hast $name blockiert';
   }
 
   @override
@@ -1075,4 +1154,78 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get englishLetters => 'Lateinische Buchstaben';
+
+  @override
+  String learningTimelineMarker(String languageCode) {
+    String _temp0 = intl.Intl.selectLogic(languageCode, {
+      'nl': 'Jetzt lernst du Niederländisch',
+      'en': 'Jetzt lernst du Englisch',
+      'fr': 'Jetzt lernst du Französisch',
+      'de': 'Jetzt lernst du Deutsch',
+      'hi': 'Jetzt lernst du Hindi',
+      'it': 'Jetzt lernst du Italienisch',
+      'pt': 'Jetzt lernst du Portugiesisch',
+      'es': 'Jetzt lernst du Spanisch',
+      'ta': 'Jetzt lernst du Tamil',
+      'tr': 'Jetzt lernst du Türkisch',
+      'uk': 'Jetzt lernst du Ukrainisch',
+      'other': 'Jetzt lernst du Englisch',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get reportSpamQuestion => 'Spam melden?';
+
+  @override
+  String reportPersonSpamQuestion(String name) {
+    return '$name wegen Spam melden?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Blab wird darüber informiert, dass $name möglicherweise Spam sendet. Nachrichten aus diesem Chat werden nicht übermittelt.';
+  }
+
+  @override
+  String get submitSpamReport => 'Spam melden';
+
+  @override
+  String get reportAndBlock => 'Melden und blockieren';
+
+  @override
+  String get reportSubmitted => 'Meldung gesendet';
+
+  @override
+  String get couldNotReportOrBlock =>
+      'Melden und Blockieren fehlgeschlagen. Versuche es erneut.';
+
+  @override
+  String get reportSucceededBlockFailed =>
+      'Meldung gesendet. Blockieren fehlgeschlagen.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name blockiert. Meldung konnte nicht gesendet werden.';
+  }
+
+  @override
+  String blockPersonQuestion(String name) {
+    return '$name blockieren?';
+  }
+
+  @override
+  String get blockPersonConfirmation =>
+      'Ihr könnt euch in diesem Chat keine Nachrichten senden.';
+
+  @override
+  String get block => 'Blockieren';
+
+  @override
+  String get unblock => 'Blockierung aufheben';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'Du hast $name blockiert';
+  }
 }

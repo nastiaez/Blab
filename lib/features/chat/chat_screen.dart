@@ -27,7 +27,6 @@ import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import '../../shared/data/translation_support.dart';
-import '../../shared/data/languages.dart';
 import '../../shared/data/local_storage_keys.dart';
 import '../../shared/services/message_translator.dart';
 import '../../shared/services/tts_service.dart';
@@ -390,7 +389,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       image = await ref.read(chatImagePickerProvider).pick(context);
     } catch (_) {
       if (!mounted) return;
-      showAppSnack('Could not open photos. Try again.');
+      showAppSnack(context.l10n.couldNotOpenPhotos);
       return;
     }
     if (image == null || !mounted) return;
@@ -991,8 +990,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final practiceHint = chatMode == ChatMode.practice
         ? context.l10n.practiceComposerHint(
-            learningLang.name,
-            _languageNameForCode(knownLanguages?.primary),
+            localizedLanguageName(context.l10n, learningLang.code),
+            localizedLanguageName(
+              context.l10n,
+              knownLanguages?.primary ?? 'en',
+            ),
           )
         : null;
     final activePresentation =
@@ -1459,9 +1461,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onTapOutside: (_) => setState(() => _visibleModeTip = null),
                     child: _ModeTipCard(
                       tip: _visibleModeTip!,
-                      practiceLanguage: learningLang.name,
-                      primaryKnownLanguage: _languageNameForCode(
-                        knownLanguages?.primary,
+                      practiceLanguage: localizedLanguageName(
+                        context.l10n,
+                        learningLang.code,
+                      ),
+                      primaryKnownLanguage: localizedLanguageName(
+                        context.l10n,
+                        knownLanguages?.primary ?? 'en',
                       ),
                       onDismiss: () => setState(() => _visibleModeTip = null),
                       onEditKnownLanguages: () {
@@ -1812,10 +1818,15 @@ class _ModeTipCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final practice = tip == _ModeTip.practice;
-    final title = practice ? 'Practice mode' : 'Normal mode';
+    final title = practice
+        ? context.l10n.practiceModeTipTitle
+        : context.l10n.normalModeTipTitle;
     final body = practice
-        ? 'Messages appear in $practiceLanguage. Blab helps correct mistakes and translates from $primaryKnownLanguage. Switch to Normal to see the original.'
-        : 'Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.';
+        ? context.l10n.practiceModeTipBody(
+            practiceLanguage,
+            primaryKnownLanguage,
+          )
+        : context.l10n.normalModeTipBody;
     return Material(
       color: Colors.transparent,
       child: Stack(
@@ -1880,9 +1891,9 @@ class _ModeTipCard extends StatelessWidget {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       foregroundColor: const Color(0xFF46281C),
                     ),
-                    child: const Text(
-                      'Edit known languages',
-                      style: TextStyle(
+                    child: Text(
+                      context.l10n.editKnownLanguages,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1894,7 +1905,10 @@ class _ModeTipCard extends StatelessWidget {
           ),
           Positioned(
             top: -6,
-            right: (practice ? 135 : 129) / 2 + 26,
+            right:
+                (practice ? kPracticeModeToggleWidth : kNormalModeToggleWidth) /
+                    2 +
+                26,
             child: const IgnorePointer(
               child: CustomPaint(
                 key: ValueKey('mode-tip-pointer'),
@@ -1987,7 +2001,10 @@ class _ChatMenu extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              learningLang.name,
+                              localizedLanguageName(
+                                context.l10n,
+                                learningLang.code,
+                              ),
                               softWrap: false,
                               overflow: TextOverflow.visible,
                               style: const TextStyle(
@@ -2023,17 +2040,17 @@ class _ChatMenu extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text(
-                          'Translation preferences',
-                          style: TextStyle(
+                          context.l10n.translationPreferences,
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w400,
                             color: BlabColors.sendButton,
                           ),
                         ),
-                        SizedBox(width: 16),
-                        BlabIcon(
+                        const SizedBox(width: 16),
+                        const BlabIcon(
                           name: 'nav-arrow-right - 20',
                           color: Color(0xFF917869),
                           size: 20,
@@ -2358,14 +2375,6 @@ class _MessageList extends ConsumerWidget {
 String _capitaliseName(String name) =>
     name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
 
-String _languageNameForCode(String? code) {
-  if (code == null) return 'your language';
-  for (final language in kBlabLanguages) {
-    if (language.code == code) return language.name;
-  }
-  return 'your language';
-}
-
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -2411,7 +2420,7 @@ class _LanguageTimelineMarker extends StatelessWidget {
       padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
       child: Center(
         child: Text(
-          'Now learning ${_languageNameForCode(languageCode)}',
+          context.l10n.learningTimelineMarker(languageCode),
           style: const TextStyle(
             color: Color(0xFF8C735F),
             fontSize: 12,
@@ -2480,7 +2489,7 @@ class _UnreadDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = count == 1 ? '1 new message' : '$count new messages';
+    final label = context.l10n.newMessages(count);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(

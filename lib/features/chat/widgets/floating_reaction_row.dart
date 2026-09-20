@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/blab_icon.dart';
 import '../message_actions.dart' show kQuickMessageReactions;
 
@@ -88,7 +89,7 @@ class _EmojiButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Semantics(
-        label: 'React with $emoji',
+        label: context.l10n.reactWith(emoji),
         button: true,
         selected: selected,
         child: Container(
@@ -124,7 +125,7 @@ class _MoreButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Semantics(
-        label: 'More reactions',
+        label: context.l10n.moreReactions,
         button: true,
         child: Container(
           width: _buttonSize,

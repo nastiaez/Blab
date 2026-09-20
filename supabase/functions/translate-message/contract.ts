@@ -1160,18 +1160,28 @@ export function correctionNeedsRetry(
   const similar = (a: string, b: string) =>
     a === b || distance(a, b) <= Math.max(1, Math.floor(a.length * 0.4));
 
-  let cursor = 0;
-  let matched = 0;
-  for (const sourceWord of sourceWords) {
-    while (
-      cursor < correctedWords.length &&
-      !similar(sourceWord, correctedWords[cursor])
-    ) cursor++;
-    if (cursor < correctedWords.length) {
-      matched++;
-      cursor++;
+  const matches = Array.from(
+    { length: sourceWords.length + 1 },
+    () => Array(correctedWords.length + 1).fill(0),
+  );
+  for (let sourceIndex = 1; sourceIndex <= sourceWords.length; sourceIndex++) {
+    for (
+      let correctedIndex = 1;
+      correctedIndex <= correctedWords.length;
+      correctedIndex++
+    ) {
+      matches[sourceIndex][correctedIndex] = similar(
+          sourceWords[sourceIndex - 1],
+          correctedWords[correctedIndex - 1],
+        )
+        ? matches[sourceIndex - 1][correctedIndex - 1] + 1
+        : Math.max(
+          matches[sourceIndex - 1][correctedIndex],
+          matches[sourceIndex][correctedIndex - 1],
+        );
     }
   }
+  const matched = matches[sourceWords.length][correctedWords.length];
   return matched < Math.max(1, sourceWords.length - 1);
 }
 
@@ -1262,6 +1272,10 @@ export function parseProviderResult(
     tokens: Array.isArray(raw.tokens) ? raw.tokens : [],
     formAlternatives: parseFormAlternatives(raw.formAlternatives),
   };
+  result.translation = normalizeTargetOrthography(
+    result.translation,
+    targetLang,
+  );
   const sourceMatchesTarget = result.sourceLang === targetLang;
   if (!sourceMatchesTarget) {
     result.mode = "translation";
@@ -1455,6 +1469,17 @@ function normalizeProviderLineBreaks(
   return value.replace(/\s*[\r\n]+\s*/g, " ");
 }
 
+function normalizeTargetOrthography(value: string, targetLang: string): string {
+  if (targetLang !== "nl") return value;
+  return value.replace(
+    /\bmorgen\s+ochtend\b/giu,
+    (match) =>
+      match[0] === match[0].toLocaleUpperCase()
+        ? "Morgenochtend"
+        : "morgenochtend",
+  );
+}
+
 export function providerResultFailureReason(content: string): string {
   let cleaned = content
     .trim()
@@ -1546,6 +1571,9 @@ export function systemPrompt(
     : `The input language is ${LANG_NAMES[sourceLang]} (${sourceLang}).`;
   const romanGuidance =
     `For each content token include "roman", a Latin-script transliteration. For a Latin-script target word, repeat the written word when no script conversion is needed.`;
+  const targetLanguageGuidance = targetLang === "nl"
+    ? " Write standard Dutch compounds as one word; for example, use morgenochtend, never morgen ochtend."
+    : "";
 
   const formInstruction = formContext === undefined
     ? "No participant grammatical-form data is available."
@@ -1579,6 +1607,7 @@ Return strict JSON only:
 
 Rules:
 - Preserve meaning and tone. Keep URLs, @mentions, hashtags, code, numbers, and emoji unchanged, and preserve names' identity rather than translating their meaning; transliterate a confidently identified name when the target script differs. Move protected content with the surrounding sentence when the target language needs a different natural word order.
+- Produce natural, standard ${targetName} spelling and word formation.${targetLanguageGuidance}
 - Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
 - A likely personal name is not an unsupported language. Keep its identity, and when the target script differs, transliterate it rather than translating its meaning. Use conversation context and the supplied participant names when available; do not infer a name from capitalization alone.
 - Treat meaning-bearing chat abbreviations such as brb and ttyl as language: translate their meaning when the target language has a natural equivalent; otherwise preserve them.

@@ -9,9 +9,6 @@ class AppLocalizationsUk extends AppLocalizations {
   AppLocalizationsUk([String locale = 'uk']) : super(locale);
 
   @override
-  String get reportSpamQuestion => 'Поскаржитися на спам?';
-
-  @override
   String get appName => 'Blab';
 
   @override
@@ -168,38 +165,38 @@ class AppLocalizationsUk extends AppLocalizations {
   String get languageTurkish => 'Турецька';
 
   @override
-  String get authTagline => 'Вивчайте мову, спілкуючись із другом.';
+  String get authTagline => 'Вивчай мову, спілкуючись із другом.';
 
   @override
   String signUpToChat(String name) {
-    return 'Зареєструйтеся, щоб спілкуватися з $name.';
+    return 'Зареєструйся, щоб спілкуватися з $name.';
   }
 
   @override
   String logInToChat(String name) {
-    return 'Увійдіть, щоб спілкуватися з $name.';
+    return 'Увійди, щоб спілкуватися з $name.';
   }
 
   @override
   String get name => 'Ім\'я';
 
   @override
-  String get firstNameHint => 'Ваше ім\'я';
+  String get firstNameHint => 'Твоє ім’я';
 
   @override
   String get email => 'Електронна пошта';
 
   @override
-  String get emailHint => 'ви@example.com';
+  String get emailHint => 'name@example.com';
 
   @override
   String get password => 'Пароль';
 
   @override
-  String get forgotPassword => 'Забули пароль?';
+  String get forgotPassword => 'Не пам’ятаєш пароль?';
 
   @override
-  String get forgotYourPassword => 'Забули пароль?';
+  String get forgotYourPassword => 'Не пам’ятаєш пароль?';
 
   @override
   String get joinBlab => 'Приєднатися до Blab';
@@ -211,13 +208,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String get signUp => 'Зареєструватися';
 
   @override
-  String get alreadyHaveAccount => 'Уже маєте обліковий запис? Увійдіть';
+  String get alreadyHaveAccount => 'Уже маєш обліковий запис? Увійди';
 
   @override
-  String get newToBlab => 'Вперше в Blab? Зареєструйтеся';
+  String get newToBlab => 'Вперше в Blab? Зареєструйся';
 
   @override
-  String get orUseEmail => 'або скористайтеся поштою';
+  String get orUseEmail => 'або скористайся поштою';
 
   @override
   String get continueWithGoogle => 'Продовжити з Google';
@@ -226,7 +223,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get continueWithApple => 'Продовжити з Apple';
 
   @override
-  String get byContinuing => 'Продовжуючи, ви погоджуєтеся з нашими ';
+  String get byContinuing => 'Продовжуючи, ти погоджуєшся з нашими ';
 
   @override
   String get terms => 'Умовами';
@@ -239,40 +236,36 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get ageConfirmation =>
-      ' та підтверджуєте, що вам щонайменше 13 років.';
+      ' та підтверджуєш, що тобі щонайменше 13 років.';
 
   @override
-  String get enterEmail => 'Введіть електронну пошту';
+  String get enterEmail => 'Введи електронну пошту';
 
   @override
-  String get enterValidEmail => 'Введіть дійсну адресу електронної пошти';
+  String get enterValidEmail => 'Введи дійсну адресу електронної пошти';
 
   @override
   String get emailResetLink => 'Надіслати посилання';
 
   @override
-  String get checkYourEmail => 'Перевірте пошту';
+  String get checkYourEmail => 'Перевір пошту';
 
   @override
   String resetLinkSent(String email) {
-    return 'Ми надіслали посилання для скидання пароля на\n$email';
+    return 'Ми надіслали посилання для скидання пароля на адресу $email';
   }
 
   @override
   String get backToLogin => 'Назад до входу';
 
   @override
-  String get setNewPassword => 'Установіть новий пароль';
-
-  @override
-  String get newPasswordHelp =>
-      'Виберіть пароль, який запам\'ятаєте. Використайте щонайменше 6 символів.';
+  String get setNewPassword => 'Установи новий пароль';
 
   @override
   String get newPassword => 'Новий пароль';
 
   @override
-  String get confirmNewPassword => 'Підтвердьте новий пароль';
+  String get confirmNewPassword => 'Підтверди новий пароль';
 
   @override
   String get saveNewPassword => 'Зберегти новий пароль';
@@ -296,33 +289,33 @@ class AppLocalizationsUk extends AppLocalizations {
   String get passwordStrong => 'Надійний';
 
   @override
-  String get passwordMinLength => 'Пароль має містити щонайменше 6 символів';
+  String get passwordMinHint => 'Щонайменше 6 символів';
 
   @override
-  String get chooseStrongerPassword => 'Виберіть надійніший пароль';
+  String get passwordMinLength => 'Використай щонайменше 6 символів';
 
   @override
   String get passwordsDoNotMatch => 'Паролі не збігаються';
 
   @override
-  String get enterDisplayName => 'Введіть відображуване ім\'я';
+  String get enterDisplayName => 'Введи ім’я в профілі';
 
   @override
   String get displayNameTooLong =>
-      'Відображуване ім\'я має містити не більше 50 символів';
+      'Ім’я в профілі має містити не більше 50 символів';
 
   @override
   String get displayNameUnsupported =>
-      'Відображуване ім\'я містить непідтримувані символи';
+      'Ім’я в профілі містить непідтримувані символи';
 
   @override
   String get editProfile => 'Редагувати профіль';
 
   @override
-  String get displayName => 'Відображуване ім\'я';
+  String get displayName => 'Ім’я в профілі';
 
   @override
-  String get yourName => 'Ваше ім\'я';
+  String get yourName => 'Твоє ім’я';
 
   @override
   String get profileUpdated => 'Профіль оновлено ✓';
@@ -348,18 +341,18 @@ class AppLocalizationsUk extends AppLocalizations {
       'Ми надішлемо посилання для підтвердження. Стара пошта залишатиметься активною до підтвердження.';
 
   @override
-  String get checkYourInbox => 'Перевірте вхідні';
+  String get checkYourInbox => 'Перевір вхідні';
 
   @override
   String emailConfirmationSent(String email) {
-    return 'Ми надіслали посилання для підтвердження на\n$email. Натисніть його, щоб завершити зміну.';
+    return 'Ми надіслали посилання для підтвердження на\n$email. Натисни його, щоб завершити зміну.';
   }
 
   @override
-  String get enterNewEmail => 'Введіть нову адресу електронної пошти';
+  String get enterNewEmail => 'Введи нову адресу електронної пошти';
 
   @override
-  String get emailAlreadyUsed => 'Це вже ваша електронна пошта';
+  String get emailAlreadyUsed => 'Це вже твоя електронна пошта';
 
   @override
   String get changePassword => 'Змінити пароль';
@@ -368,16 +361,16 @@ class AppLocalizationsUk extends AppLocalizations {
   String get currentPassword => 'Поточний пароль';
 
   @override
-  String get enterCurrentPassword => 'Введіть поточний пароль';
+  String get enterCurrentPassword => 'Введи поточний пароль';
 
   @override
-  String get enterNewPassword => 'Введіть новий пароль';
+  String get enterNewPassword => 'Введи новий пароль';
 
   @override
-  String get confirmPassword => 'Підтвердьте новий пароль';
+  String get confirmPassword => 'Підтверди новий пароль';
 
   @override
-  String get chooseDifferentPassword => 'Виберіть інший пароль';
+  String get chooseDifferentPassword => 'Вибери інший пароль';
 
   @override
   String get passwordSignInUnavailable =>
@@ -470,7 +463,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noChatsYet => 'Чатів ще немає';
 
   @override
-  String get inviteFriendStart => 'Запросіть друга й почніть спілкуватися.';
+  String get inviteFriendStart => 'Запроси друга й почни спілкуватися.';
 
   @override
   String get inviteFriend => 'Запросити друга';
@@ -482,7 +475,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get couldNotLoadMessages => 'Не вдалося завантажити повідомлення';
 
   @override
-  String get newConnectionSayHi => 'Новий контакт · привітайтеся';
+  String get newConnectionSayHi => 'Новий контакт · привітайся';
 
   @override
   String get typing => 'друкує...';
@@ -494,11 +487,106 @@ class AppLocalizationsUk extends AppLocalizations {
   String get noConnection => 'Немає з’єднання';
 
   @override
+  String relativeMinutes(int count) {
+    return '$count хв';
+  }
+
+  @override
+  String relativeHours(int count) {
+    return '$count год';
+  }
+
+  @override
+  String relativeDays(int count) {
+    return '$count дн';
+  }
+
+  @override
+  String get chooseLanguageToPractice => 'Вибери мову для практики';
+
+  @override
+  String get chooseLanguageToPracticeHelp =>
+      'Її можна змінити пізніше в налаштуваннях.';
+
+  @override
+  String get startPracticing => 'Почати практику';
+
+  @override
+  String newMessages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count нового повідомлення',
+      many: '$count нових повідомлень',
+      few: '$count нові повідомлення',
+      one: '1 нове повідомлення',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String nowLearning(String language) {
+    return 'Тепер вивчаєш: $language';
+  }
+
+  @override
+  String get practiceModeTipTitle => 'Режим практики';
+
+  @override
+  String get normalModeTipTitle => 'Звичайний режим';
+
+  @override
+  String practiceModeTipBody(String practiceLanguage, String knownLanguage) {
+    return 'Повідомлення відображаються мовою $practiceLanguage. Blab допомагає виправляти помилки й перекладає з мови $knownLanguage. Перемкнися на звичайний режим, щоб побачити оригінал.';
+  }
+
+  @override
+  String get normalModeTipBody =>
+      'Повідомлення мовами, які ти знаєш, залишаються без змін. Інші перекладаються. Натисни й утримуй, щоб побачити оригінал.';
+
+  @override
+  String get editKnownLanguages => 'Змінити відомі мови';
+
+  @override
+  String get noMessagesYet => 'Повідомлень поки немає…';
+
+  @override
+  String get sendMessageToStart => 'Надішли повідомлення, щоб почати.';
+
+  @override
+  String get couldNotOpenPhotos => 'Не вдалося відкрити фото. Спробуй ще раз.';
+
+  @override
+  String get camera => 'Камера';
+
+  @override
+  String get addCaption => 'Додай підпис…';
+
+  @override
+  String get chooseGrammaticalForm => 'Вибери граматичну форму';
+
+  @override
+  String get chooseYourGenderedForm => 'Вибери свою форму за родом';
+
+  @override
+  String choosePersonsGenderedForm(String name) {
+    return 'Вибери форму за родом для $name';
+  }
+
+  @override
+  String reactWith(String emoji) {
+    return 'Відреагувати $emoji';
+  }
+
+  @override
+  String get moreReactions => 'Інші реакції';
+
+  @override
   String get learningLanguage => 'Мова вивчення';
 
   @override
   String get learningLanguageHelp =>
-      'Виберіть мову, яку хочете вивчати в цьому чаті. Її можна змінити будь-коли.';
+      'Вибери мову, яку хочеш вивчати в цьому чаті. Її можна змінити будь-коли.';
 
   @override
   String get chatMenu => 'Меню чату';
@@ -511,7 +599,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String practiceComposerHint(String learningLanguage, String knownLanguage) {
-    return 'Пишіть: $learningLanguage або $knownLanguage';
+    return 'Пиши: $learningLanguage або $knownLanguage';
   }
 
   @override
@@ -551,7 +639,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get read => 'Прочитано';
 
   @override
-  String get failedToSend => 'Не надіслано · Натисніть, щоб повторити';
+  String get failedToSend => 'Не надіслано · Натисни, щоб повторити';
 
   @override
   String get attach => 'Прикріпити';
@@ -560,7 +648,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get message => 'Повідомлення';
 
   @override
-  String get sayHi => 'Привітайтеся';
+  String get sayHi => 'Привітайся';
 
   @override
   String replyingTo(Object name) {
@@ -584,69 +672,37 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String deleteMessageBody(String name) {
-    return 'Ви впевнені, що хочете видалити це повідомлення? Його також буде видалено для $name.';
+    return 'Це повідомлення також буде видалено для $name.';
   }
 
   @override
   String get thanksReport => 'Дякуємо — ми це перевіримо.';
 
   @override
-  String get couldNotReport => 'Не вдалося надіслати скаргу. Спробуйте ще раз.';
+  String get couldNotReport => 'Не вдалося надіслати скаргу. Спробуй ще раз.';
 
   @override
   String get couldNotSaveLearningLanguage =>
-      'Не вдалося зберегти мову. Спробуйте ще раз.';
+      'Не вдалося зберегти мову. Спробуй ще раз.';
 
   @override
   String get reportMessage => 'Поскаржитися на повідомлення';
 
   @override
-  String reportPersonSpamQuestion(String name) {
-    return 'Поскаржитися на спам від $name?';
-  }
-
-  @override
-  String reportPersonSpamBody(String name) {
-    return 'Blab отримає сповіщення, що $name може надсилати спам. Повідомлення з цього чату не буде додано.';
-  }
-
-  @override
-  String get submitSpamReport => 'Поскаржитися на спам';
-
-  @override
-  String get reportAndBlock => 'Поскаржитися й заблокувати';
-
-  @override
-  String get reportSubmitted => 'Скаргу надіслано';
-
-  @override
-  String get couldNotReportOrBlock =>
-      'Не вдалося поскаржитися й заблокувати. Спробуйте ще раз.';
-
-  @override
-  String get reportSucceededBlockFailed =>
-      'Скаргу надіслано. Не вдалося заблокувати.';
-
-  @override
-  String blockSucceededReportFailed(String name) {
-    return '$name заблоковано. Не вдалося надіслати скаргу.';
-  }
-
-  @override
   String get sendInvite => 'Надіслати запрошення';
 
   @override
-  String get pickLanguage => 'Виберіть мову';
+  String get pickLanguage => 'Вибери мову';
 
   @override
   String get pickLanguageHelp =>
-      'Ми перекладатимемо всі повідомлення цією мовою. Її можна змінити будь-коли.';
+      'Ми перекладатимемо всі повідомлення цією мовою. Ти можеш змінити її будь-коли.';
 
   @override
   String get continueAction => 'Продовжити';
 
   @override
-  String get sendLinkHelp => 'Надішліть посилання, щоб почати спілкування.';
+  String get sendLinkHelp => 'Надішли посилання, щоб почати спілкування.';
 
   @override
   String get onePersonInvite =>
@@ -666,7 +722,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotCreateInvite =>
-      'Не вдалося створити запрошення. Спробуйте ще раз.';
+      'Не вдалося створити запрошення. Спробуй ще раз.';
 
   @override
   String get shareInviteLink => 'Поділитися посиланням';
@@ -681,15 +737,15 @@ class AppLocalizationsUk extends AppLocalizations {
   String get copyLink => 'Копіювати посилання';
 
   @override
-  String get pasteInChat => 'Тепер вставте його в чат';
+  String get pasteInChat => 'Тепер встав його в чат';
 
   @override
   String practicingLanguage(Object language) {
-    return 'Ви практикуєте $language.';
+    return 'Ти практикуєш $language.';
   }
 
   @override
-  String get shareYourInvite => 'Поділіться посиланням на запрошення.';
+  String get shareYourInvite => 'Поділися посиланням на запрошення.';
 
   @override
   String validUntil(Object date) {
@@ -701,7 +757,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String askForFreshLink(Object name) {
-    return 'Попросіть $name надіслати нове посилання';
+    return 'Попроси $name надіслати нове посилання';
   }
 
   @override
@@ -711,7 +767,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get inviteNotFound => 'Не вдалося знайти це запрошення.';
 
   @override
-  String get checkInviteLink => 'Перевірте посилання або попросіть нове.';
+  String get checkInviteLink => 'Перевір посилання або попроси нове.';
 
   @override
   String get sayHello => 'Привітатися';
@@ -725,7 +781,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get aFriend => 'Друг';
 
   @override
-  String get you => 'Ви';
+  String get you => 'Ти';
 
   @override
   String get partner => 'Співрозмовник';
@@ -735,7 +791,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get couldNotEditMessage =>
-      'Не вдалося відредагувати повідомлення. Спробуйте ще раз.';
+      'Не вдалося відредагувати повідомлення. Спробуй ще раз.';
 
   @override
   String get today => 'Сьогодні';
@@ -750,7 +806,51 @@ class AppLocalizationsUk extends AppLocalizations {
   String get newLabel => 'Нове';
 
   @override
-  String get invitedYouToChat => 'запрошує вас до чату';
+  String get inviteCardTitle => 'Спілкуймося в Blab';
+
+  @override
+  String get inviteLinkUnavailable => 'Посилання на запрошення недоступне';
+
+  @override
+  String get openingShareSheet => 'Відкриваємо варіанти поширення…';
+
+  @override
+  String get couldNotOpenSharing =>
+      'Не вдалося відкрити меню поширення. Спробуй ще раз.';
+
+  @override
+  String get openingInvite => 'Відкриваємо запрошення';
+
+  @override
+  String get couldNotOpenInvite => 'Не вдалося відкрити запрошення.';
+
+  @override
+  String get tryAgainToContinue => 'Спробуй ще раз, щоб продовжити.';
+
+  @override
+  String get askFriendForNewLink =>
+      'Попроси того, хто тебе запросив, надіслати нове посилання.';
+
+  @override
+  String inviteShareMessage(String link) {
+    return 'Спілкуймося в Blab: $link';
+  }
+
+  @override
+  String get inviteShareBlurb => 'Спілкуймося в Blab.';
+
+  @override
+  String get inviteEmailSubject => 'Спілкуймося в Blab';
+
+  @override
+  String get inviteSelfClaim => 'Не можна скористатися власним запрошенням.';
+
+  @override
+  String get inviteInvalidLanguage =>
+      'Вибери підтримувану мову й спробуй ще раз.';
+
+  @override
+  String get invitedYouToChat => 'запрошує тебе до чату';
 
   @override
   String joinPerson(Object name) {
@@ -761,25 +861,24 @@ class AppLocalizationsUk extends AppLocalizations {
   String get inviteExpired => 'Термін дії запрошення минув';
 
   @override
-  String get alreadyConnected =>
-      'Ви вже на зв\'язку. Відкрийте чат, щоб почати.';
+  String get alreadyConnected => 'Ви вже спілкуєтеся. Відкрий чат, щоб почати.';
 
   @override
   String get openChat => 'Відкрити чат';
 
   @override
-  String get yourInviteExpired => 'Термін дії вашого запрошення минув.';
+  String get yourInviteExpired => 'Термін дії твого запрошення минув.';
 
   @override
   String get inviteExpiredHelp =>
-      'Ніхто не приєднався протягом 48 годин. Надішліть нове посилання.';
+      'Ніхто не приєднався протягом 48 годин. Надішли нове посилання.';
 
   @override
   String get sendNewInvite => 'Надіслати нове запрошення';
 
   @override
   String youLearnLanguage(Object language) {
-    return 'Ви вивчаєте $language';
+    return 'Ти вивчаєш $language';
   }
 
   @override
@@ -789,11 +888,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String youAreLearningLanguageWithPerson(Object language, Object name) {
-    return 'Ви вивчаєте $language з $name';
+    return 'Ти вивчаєш $language з $name';
   }
 
   @override
-  String get sendAnyMessage => 'Надішліть повідомлення, щоб почати.';
+  String get sendAnyMessage => 'Надішли повідомлення, щоб почати.';
 
   @override
   String get languages => 'Мови';
@@ -805,7 +904,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String learningWithYou(Object language) {
-    return 'Вивчає $language разом із вами';
+    return 'Вивчає $language разом із тобою';
   }
 
   @override
@@ -848,26 +947,6 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String blockPersonQuestion(String name) {
-    return 'Заблокувати $name?';
-  }
-
-  @override
-  String get blockPersonConfirmation =>
-      'Ви не зможете надсилати одне одному повідомлення в цьому чаті.';
-
-  @override
-  String get block => 'Заблокувати';
-
-  @override
-  String get unblock => 'Розблокувати';
-
-  @override
-  String youBlockedPerson(String name) {
-    return 'Ви заблокували $name';
-  }
-
-  @override
   String unblockPerson(Object name) {
     return 'Розблокувати $name';
   }
@@ -883,10 +962,10 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get couldNotBlock => 'Не вдалося заблокувати. Спробуйте ще раз.';
+  String get couldNotBlock => 'Не вдалося заблокувати. Спробуй ще раз.';
 
   @override
-  String get couldNotUnblock => 'Не вдалося розблокувати. Спробуйте ще раз.';
+  String get couldNotUnblock => 'Не вдалося розблокувати. Спробуй ще раз.';
 
   @override
   String get reportSpam => 'Спам або шахрайство';
@@ -917,7 +996,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get inviteClaimFailed =>
-      'Не вдалося прийняти запрошення. Спробуйте ще раз.';
+      'Не вдалося прийняти запрошення. Спробуй ще раз.';
 
   @override
   String get appleSignInSoon => 'Вхід через Apple незабаром буде доступний';
@@ -929,23 +1008,23 @@ class AppLocalizationsUk extends AppLocalizations {
   String get accountAlreadyExists => 'Обліковий запис із цією поштою вже існує';
 
   @override
-  String get confirmEmailInbox => 'Перевірте вхідні, щоб підтвердити пошту';
+  String get confirmEmailInbox => 'Перевір вхідні, щоб підтвердити пошту';
 
   @override
-  String get somethingWentWrong => 'Сталася помилка. Спробуйте ще раз.';
+  String get somethingWentWrong => 'Сталася помилка. Спробуй ще раз.';
 
   @override
   String get currentPasswordIncorrect => 'Поточний пароль неправильний';
 
   @override
-  String get signInAgain => 'Увійдіть знову, перш ніж змінювати пароль';
+  String get signInAgain => 'Увійди знову, перш ніж змінювати пароль';
 
   @override
-  String get tooManyAttempts => 'Забагато спроб. Спробуйте пізніше.';
+  String get tooManyAttempts => 'Забагато спроб. Спробуй пізніше.';
 
   @override
   String get couldNotUpdatePassword =>
-      'Не вдалося оновити пароль. Спробуйте ще раз.';
+      'Не вдалося оновити пароль. Спробуй ще раз.';
 
   @override
   String get emailChanged => 'Пошту змінено';
@@ -1003,7 +1082,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get photoAccessNeededBody =>
-      'Дозвольте доступ до фото, щоб надіслати одне в чаті.';
+      'Дозволь доступ до фото, щоб надіслати одне в чаті.';
 
   @override
   String get openSettings => 'Відкрити налаштування';
@@ -1031,7 +1110,7 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get tapToRemove => 'Натисніть, щоб прибрати';
+  String get tapToRemove => 'Натисни, щоб прибрати';
 
   @override
   String usingFeminineForms(String person) {
@@ -1044,10 +1123,10 @@ class AppLocalizationsUk extends AppLocalizations {
   }
 
   @override
-  String get usingFeminineFormsForYou => 'Жіночі форми для вас';
+  String get usingFeminineFormsForYou => 'Жіночі форми для тебе';
 
   @override
-  String get usingMasculineFormsForYou => 'Чоловічі форми для вас';
+  String get usingMasculineFormsForYou => 'Чоловічі форми для тебе';
 
   @override
   String get readingScript => 'Писемність для читання';
@@ -1063,4 +1142,78 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get englishLetters => 'Латинські літери';
+
+  @override
+  String learningTimelineMarker(String languageCode) {
+    String _temp0 = intl.Intl.selectLogic(languageCode, {
+      'nl': 'Тепер вивчаєш нідерландську.',
+      'en': 'Тепер вивчаєш англійську.',
+      'fr': 'Тепер вивчаєш французьку.',
+      'de': 'Тепер вивчаєш німецьку.',
+      'hi': 'Тепер вивчаєш гінді.',
+      'it': 'Тепер вивчаєш італійську.',
+      'pt': 'Тепер вивчаєш португальську.',
+      'es': 'Тепер вивчаєш іспанську.',
+      'ta': 'Тепер вивчаєш тамільську.',
+      'tr': 'Тепер вивчаєш турецьку.',
+      'uk': 'Тепер вивчаєш українську.',
+      'other': 'Тепер вивчаєш англійську.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get reportSpamQuestion => 'Поскаржитися на спам?';
+
+  @override
+  String reportPersonSpamQuestion(String name) {
+    return 'Поскаржитися на спам від $name?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Blab отримає сповіщення, що $name може надсилати спам. Повідомлення з цього чату не буде додано.';
+  }
+
+  @override
+  String get submitSpamReport => 'Поскаржитися на спам';
+
+  @override
+  String get reportAndBlock => 'Поскаржитися й заблокувати';
+
+  @override
+  String get reportSubmitted => 'Скаргу надіслано';
+
+  @override
+  String get couldNotReportOrBlock =>
+      'Не вдалося поскаржитися й заблокувати. Спробуйте ще раз.';
+
+  @override
+  String get reportSucceededBlockFailed =>
+      'Скаргу надіслано. Не вдалося заблокувати.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name заблоковано. Не вдалося надіслати скаргу.';
+  }
+
+  @override
+  String blockPersonQuestion(String name) {
+    return 'Заблокувати $name?';
+  }
+
+  @override
+  String get blockPersonConfirmation =>
+      'Ви не зможете надсилати одне одному повідомлення в цьому чаті.';
+
+  @override
+  String get block => 'Заблокувати';
+
+  @override
+  String get unblock => 'Розблокувати';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'Ви заблокували $name';
+  }
 }

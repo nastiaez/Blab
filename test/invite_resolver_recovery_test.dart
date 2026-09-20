@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:blab/features/invite/invite_continuation.dart';
 import 'package:blab/features/invite/invite_resolver_screen.dart';
+import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
@@ -48,6 +49,7 @@ Future<GoRouter> _mount(
   String? userId,
   InviteClaimAction? claim,
   Stream<bool>? online,
+  Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
     initialLocation: '/i/first',
@@ -85,7 +87,12 @@ Future<GoRouter> _mount(
           claim ?? (_) async => 'new-chat',
         ),
       ],
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pump();
@@ -121,7 +128,17 @@ void main() {
   testWidgets('unknown lookup settles into invalid state', (tester) async {
     await _mount(tester, lookup: (_) async => null);
     await tester.pump(const Duration(seconds: 2));
-    expect(find.text('We couldn’t find that invite.'), findsOneWidget);
+    expect(find.text("We couldn't find that invite."), findsOneWidget);
+  });
+
+  testWidgets('recipient failure states follow the app locale', (tester) async {
+    await _mount(tester, lookup: (_) async => null, locale: const Locale('uk'));
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('Не вдалося знайти це запрошення.'), findsOneWidget);
+    expect(find.text('Перевір посилання або попроси нове.'), findsOneWidget);
+    expect(find.text('До чатів'), findsOneWidget);
+    expect(find.text("We couldn't find that invite."), findsNothing);
   });
 
   testWidgets(
@@ -152,8 +169,8 @@ void main() {
         },
       );
       expect(await loadPendingInvite(), 'first');
-      expect(find.text('Try again'), findsOneWidget);
-      await tester.tap(find.text('Try again'));
+      expect(find.text('Retry'), findsOneWidget);
+      await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text('chat:recovered'), findsOneWidget);
       expect(await loadPendingInvite(), isNull);
@@ -233,7 +250,7 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString('invite_install_candidate', 'older-install');
     await _mount(tester, lookup: (_) async => null);
-    expect(find.text('We couldn’t find that invite.'), findsOneWidget);
+    expect(find.text("We couldn't find that invite."), findsOneWidget);
     expect(preferences.getString('invite_install_candidate'), 'older-install');
   });
 

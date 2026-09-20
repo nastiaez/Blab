@@ -26,7 +26,7 @@ class _RequiredPracticeLanguageRoute
        super(
          builder: (_) => _LearningLanguageSheet(
            requiredChoice: true,
-           actionLabel: 'Start practicing',
+           actionLabel: context.l10n.startPracticing,
            onSelected: onSelected,
          ),
          capturedThemes: InheritedTheme.capture(
@@ -131,7 +131,12 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
       await widget.onSelected?.call(selected);
       if (mounted) Navigator.of(context).pop(selected);
     } catch (_) {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.couldNotSaveLearningLanguage)),
+        );
+      }
     }
   }
 
@@ -191,9 +196,9 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    const Text(
-                      'Choose a language to practice',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.chooseLanguageToPractice,
+                      style: const TextStyle(
                         fontSize: 18,
                         height: 1.2,
                         fontWeight: FontWeight.w700,
@@ -201,9 +206,9 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'You can change it later in Settings.',
-                      style: TextStyle(
+                    Text(
+                      context.l10n.chooseLanguageToPracticeHelp,
+                      style: const TextStyle(
                         fontSize: 14,
                         height: 1.3,
                         fontWeight: FontWeight.w400,
@@ -257,7 +262,10 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          language.name,
+                                          localizedLanguageName(
+                                            context.l10n,
+                                            language.code,
+                                          ),
                                           style: TextStyle(
                                             fontSize: 15,
                                             height: 1.2,

@@ -94,13 +94,12 @@ String localizedInviteClaimMessage(
   AppLocalizations localizations,
   InviteClaimFailure failure,
 ) => switch (failure) {
-  InviteClaimFailure.expired => 'This invite is no longer available.',
-  InviteClaimFailure.alreadyClaimed => 'This invite has already been claimed',
-  InviteClaimFailure.notFound => "We couldn’t find that invite.",
-  InviteClaimFailure.selfClaim => "You can’t use your own invite.",
-  InviteClaimFailure.invalidLanguage =>
-    'Choose a supported language and try again.',
-  InviteClaimFailure.unknown => 'Couldn’t accept the invite. Try again.',
+  InviteClaimFailure.expired => localizations.inviteClaimExpired,
+  InviteClaimFailure.alreadyClaimed => localizations.inviteAlreadyClaimed,
+  InviteClaimFailure.notFound => localizations.inviteNotFound,
+  InviteClaimFailure.selfClaim => localizations.inviteSelfClaim,
+  InviteClaimFailure.invalidLanguage => localizations.inviteInvalidLanguage,
+  InviteClaimFailure.unknown => localizations.inviteClaimFailed,
 };
 
 typedef InviteClaimAction = Future<String> Function(InviteContinuation);

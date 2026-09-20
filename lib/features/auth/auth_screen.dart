@@ -191,6 +191,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           : (_isValidEmail(_email.text) ? null : context.l10n.enterValidEmail);
       _pwErr = _password.text.isEmpty
           ? context.l10n.enterPasswordToConfirm
+          : (_mode == AuthMode.signUp &&
+                !meetsPasswordRequirement(_password.text))
+          ? context.l10n.passwordMinLength
           : null;
       _formErr = null;
     });
@@ -395,8 +398,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ),
                           ),
                         ),
-                      if (isSignUp)
-                        PasswordStrengthBar(password: _password.text),
+                      if (isSignUp) PasswordGuidance(password: _password.text),
                       if (_formErr != null) ...[
                         const SizedBox(height: 10),
                         _InlineError(message: _formErr!),

@@ -146,6 +146,40 @@ void main() {
     expect(find.text('world'), findsOneWidget);
   });
 
+  testWidgets('word popup hides romanization identical to a Latin word', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: MessageText(
+                text: 'bloemenmarkt',
+                tokens: [
+                  MessageToken(
+                    text: 'bloemenmarkt',
+                    romanization: 'bloemenmarkt',
+                    gloss: 'flower market',
+                  ),
+                ],
+                languageCode: 'nl',
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('bloemenmarkt'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('bloemenmarkt'), findsNWidgets(2));
+    expect(find.text('flower market'), findsOneWidget);
+  });
+
   testWidgets('word popup uses the approved left-aligned hierarchy', (
     tester,
   ) async {
