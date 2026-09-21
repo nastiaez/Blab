@@ -39,7 +39,8 @@ Do not introduce `#D4694A`, `#BB573B`, or `#EFEBE2` in product UI.
 
 ## Controls
 
-- Brand-filled controls use `#F88C5A` with dark warm ink, never white text.
+- Brand-filled controls use `#F88C5A` with `#46281C` warm ink for text,
+  icons, and loading indicators; never use white foregrounds on the brand fill.
 - Active tabs, switches, checkmarks, focus borders, links, progress, and selected controls use the brand color.
 - Disabled controls use neutral disabled surface and ink colors, not faded orange.
 - Unread badges use brand fill with dark bubble ink.

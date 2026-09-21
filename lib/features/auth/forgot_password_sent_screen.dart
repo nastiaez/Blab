@@ -48,8 +48,9 @@ class ForgotPasswordSentScreen extends StatelessWidget {
               Text(
                 context.l10n.checkYourEmail,
                 style: const TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
+                  color: BlabColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),

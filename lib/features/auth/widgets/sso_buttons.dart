@@ -9,12 +9,13 @@ import '../../../l10n/l10n.dart';
 /// Apple + Google SSO buttons. PRD US-003.
 ///
 /// Apple is hidden on Android (ship-fast v1 — Apple SSO deferred to Phase 3
-/// alongside the iOS build). Both buttons use the same neutral white chip so
+/// alongside the iOS build). Both buttons use the same warm neutral surface so
 /// neither one outweighs the other visually.
 class SsoButtons extends StatelessWidget {
-  const SsoButtons({super.key, required this.onPressed});
+  const SsoButtons({super.key, required this.onPressed, this.enabled = true});
 
   final ValueChanged<String> onPressed;
+  final bool enabled;
 
   bool get _showApple => !kIsWeb && Platform.isIOS;
 
@@ -24,15 +25,15 @@ class SsoButtons extends StatelessWidget {
       children: [
         _SsoButton(
           label: context.l10n.continueWithGoogle,
-          iconWidget: const _GoogleGlyph(),
-          onPressed: () => onPressed('google'),
+          iconWidget: _GoogleGlyph(enabled: enabled),
+          onPressed: enabled ? () => onPressed('google') : null,
         ),
         if (_showApple) ...[
           const SizedBox(height: 10),
           _SsoButton(
             label: context.l10n.continueWithApple,
             icon: Icons.apple,
-            onPressed: () => onPressed('apple'),
+            onPressed: enabled ? () => onPressed('apple') : null,
           ),
         ],
       ],
@@ -51,7 +52,7 @@ class _SsoButton extends StatelessWidget {
   final String label;
   final IconData? icon;
   final Widget? iconWidget;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -60,20 +61,36 @@ class _SsoButton extends StatelessWidget {
       height: 52,
       child: OutlinedButton.icon(
         onPressed: onPressed,
-        icon: iconWidget ?? Icon(icon, size: 22, color: BlabColors.textPrimary),
+        icon:
+            iconWidget ??
+            Icon(
+              icon,
+              size: 22,
+              color: onPressed == null
+                  ? BlabColors.disabledOnSurface
+                  : BlabColors.textPrimary,
+            ),
         label: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: BlabColors.textPrimary,
+            color: onPressed == null
+                ? BlabColors.disabledOnSurface
+                : BlabColors.textPrimary,
           ),
         ),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: BlabColors.phoneSurface,
-          side: const BorderSide(color: BlabColors.divider),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? BlabColors.selectedTint
+                : BlabColors.chatSurface,
+          ),
+          side: const WidgetStatePropertyAll(
+            BorderSide(color: BlabColors.chatDivider),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
       ),
@@ -83,16 +100,18 @@ class _SsoButton extends StatelessWidget {
 
 /// Simple "G" glyph in Google's blue. Avoids bundling brand assets.
 class _GoogleGlyph extends StatelessWidget {
-  const _GoogleGlyph();
+  const _GoogleGlyph({required this.enabled});
+
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
+    return Text(
       'G',
       style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w900,
-        color: Color(0xFF4285F4),
+        color: enabled ? const Color(0xFF4285F4) : BlabColors.disabledOnSurface,
       ),
     );
   }

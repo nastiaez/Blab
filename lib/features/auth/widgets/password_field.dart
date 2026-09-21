@@ -14,6 +14,7 @@ class PasswordField extends StatefulWidget {
     this.onChanged,
     this.textInputAction,
     this.autofocus = false,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -22,6 +23,7 @@ class PasswordField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
   final bool autofocus;
+  final bool enabled;
 
   @override
   State<PasswordField> createState() => _PasswordFieldState();
@@ -40,13 +42,18 @@ class _PasswordFieldState extends State<PasswordField> {
       onChanged: widget.onChanged,
       textInputAction: widget.textInputAction,
       autofocus: widget.autofocus,
+      enabled: widget.enabled,
       suffix: IconButton(
         icon: Icon(
           _hidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          color: _hidden ? Colors.grey.shade500 : BlabColors.brand,
+          color: !widget.enabled
+              ? BlabColors.disabledOnSurface
+              : (_hidden ? BlabColors.warmMuted : BlabColors.brand),
           size: 20,
         ),
-        onPressed: () => setState(() => _hidden = !_hidden),
+        onPressed: widget.enabled
+            ? () => setState(() => _hidden = !_hidden)
+            : null,
         tooltip: _hidden
             ? context.l10n.showPassword
             : context.l10n.hidePassword,

@@ -93,8 +93,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               Text(
                 context.l10n.setNewPassword,
                 style: const TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
+                  color: BlabColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 28),
@@ -102,6 +103,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 controller: _password,
                 label: context.l10n.newPassword,
                 errorText: _err,
+                enabled: !_busy,
                 onChanged: (_) {
                   if (_err != null) setState(() => _err = null);
                   setState(() {});
@@ -112,6 +114,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               PasswordField(
                 controller: _confirm,
                 label: context.l10n.confirmNewPassword,
+                enabled: !_busy,
                 onChanged: (_) {
                   if (_err != null) setState(() => _err = null);
                 },
