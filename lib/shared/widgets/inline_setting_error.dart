@@ -32,7 +32,7 @@ class InlineSettingError extends StatelessWidget {
             child: Text(
               text,
               style: const TextStyle(
-                color: BlabColors.errorWarm,
+                color: BlabColors.error,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
