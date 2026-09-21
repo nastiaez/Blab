@@ -37,7 +37,12 @@
 | B07B | Reply, edit, delete, report, reaction, photo, delivery, and translation states | `screenshots/b07-message-states/` | Approved 2026-09-19 |
 | B08 | Shared system and accessibility states, plus Normal-mode message actions | `screenshots/b08-system-accessibility/` | Approved 2026-09-19, including the compact Ukrainian Normal-pill revision |
 | L01 | Dutch translation, correction, word help, and audio | `screenshots/l01-dutch/` | Approved 2026-09-20 |
-| L02-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
+| L02 | English translation, correction, German word help, and English audio | `screenshots/l02-english/` | Approved 2026-09-20 |
+| L03 | French translation, correction, German word help, and French audio | `screenshots/l03-french/` | Approved 2026-09-20 after word-help repair |
+| L04 | German translation, correction, French word help, and German audio | `screenshots/l04-german/` | Approved 2026-09-21 |
+| L05 | Hindi translation, correction, French word help, and Hindi audio | `screenshots/l05-hindi/` | Approved 2026-09-21 after correction, word-help, and tense repair |
+| L06 | Spanish translation, correction, French word help, and Spanish audio | `screenshots/l06-spanish/` | Approved 2026-09-21 |
+| L07-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 
 ## Evidence rules
