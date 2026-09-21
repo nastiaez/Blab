@@ -772,6 +772,73 @@ The disposable local chat is `00000000-0000-4000-8000-00000000f240`. The origina
 - Owner decision: approved 2026-09-21 after repair
 - Follow-up: none
 
+## Packet L06 — Spanish language engine
+
+### Evidence
+
+- `L06-ES-01-alice-chat.png`: Alice's real web chat showing French-to-Spanish translation, correct Spanish unchanged, the inline agreement correction, and Bob's return message.
+- `L06-ES-02-bob-chat.png`: Bob's Android chat showing the same four messages in the reverse client direction.
+- `L06-ES-03-bob-word-help.png`: `librería` popup with French `librairie`; identical Latin-script romanization remains suppressed.
+- `L06-ES-04-bob-sentence-audio.png`: Bob's outgoing Spanish sentence with its French source and the Spanish Listen action.
+
+The disposable local chat is `00000000-0000-4000-8000-00000000f250`. Android evidence was captured from the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L06-ES-01
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Spanish in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural Spanish while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `Nos encontramos mañana en el parque.` and Bob's `Nous voulons visiter la librairie demain.` becomes `Queremos visitar la librería mañana.` for both viewers. All four prepared packages are ready; the two fresh provider jobs completed on the first attempt and the repeated language-pair result reused the valid cache.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L06-ES-02
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: Practice chat / correct Spanish plus intentionally incorrect Spanish
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `Hoy hace muy buen tiempo.` remains unchanged; plural-agreement mistake `Los niños está cerca de la estación.` is corrected to `Los niños están cerca de la estación.`, with a French explanation for the author and clean Spanish for the recipient
+- Observed: the correct sentence remains unchanged. The mistake becomes `Los niños están cerca de la estación.`, with the French explanation `Le verbe 'está' doit être au pluriel 'están' pour s'accorder avec 'niños'.` Both viewers' jobs completed ready on the first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L06-ES-03
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: word help for `librería`
+- Client: Bob / Android emulator
+- Expected: the popup shows the Spanish word and French meaning `librairie`, without redundant duplicate romanization
+- Observed: the popup shows `librería → librairie`; the redundant identical Latin-script reading is correctly hidden.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L06-ES-04
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Spanish with the Spanish voice and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `es-ES` / `spa-ESP`, and both utterances started successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

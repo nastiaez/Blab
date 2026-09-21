@@ -41,7 +41,8 @@
 | L03 | French translation, correction, German word help, and French audio | `screenshots/l03-french/` | Approved 2026-09-20 after word-help repair |
 | L04 | German translation, correction, French word help, and German audio | `screenshots/l04-german/` | Approved 2026-09-21 |
 | L05 | Hindi translation, correction, French word help, and Hindi audio | `screenshots/l05-hindi/` | Approved 2026-09-21 after correction, word-help, and tense repair |
-| L06-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
+| L06 | Spanish translation, correction, French word help, and Spanish audio | `screenshots/l06-spanish/` | Approved 2026-09-21 |
+| L07-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 
 ## Evidence rules
