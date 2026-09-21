@@ -12,11 +12,14 @@ import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/profile_state.dart';
 import '../../shared/state/reading_script_state.dart';
 import '../../shared/widgets/blab_icon.dart';
+import '../../shared/widgets/inline_setting_error.dart';
 import 'state/chat_state.dart';
 import 'state/grammatical_form_preferences_state.dart';
 
 const _preferenceInk = Color(0xFF46281C);
 const _preferenceMuted = Color(0xFF917869);
+
+enum _PreferenceFailure { ownForm, partnerForm, tone, readingScript }
 
 /// US-042 / FR-35. Own form is account-wide; partner form and tone are scoped
 /// to this membership row only.
@@ -40,6 +43,42 @@ class TranslationPreferencesScreen extends ConsumerStatefulWidget {
 class _TranslationPreferencesScreenState
     extends ConsumerState<TranslationPreferencesScreen> {
   bool _didOpenInitialFormPicker = false;
+  _PreferenceFailure? _failedPreference;
+  Future<void> Function()? _failedSave;
+  bool _isSavingPreference = false;
+
+  Future<void> _savePreference(
+    _PreferenceFailure preference,
+    Future<void> Function() save,
+  ) async {
+    if (_isSavingPreference) return;
+    setState(() => _isSavingPreference = true);
+    try {
+      await save();
+      if (mounted) {
+        setState(() {
+          _failedPreference = null;
+          _failedSave = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _failedPreference = preference;
+          _failedSave = save;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isSavingPreference = false);
+    }
+  }
+
+  void _retryFailedPreference() {
+    final preference = _failedPreference;
+    final save = _failedSave;
+    if (preference == null || save == null || _isSavingPreference) return;
+    _savePreference(preference, save);
+  }
 
   @override
   void initState() {
@@ -125,13 +164,20 @@ class _TranslationPreferencesScreenState
       ref.invalidate(grammaticalFormPreferencesProvider(chatId));
     }
 
-    Future<void> pickOwnForm() =>
-        _pickForm(context, current: ownForm, onSelected: saveOwnForm);
+    Future<void> pickOwnForm() => _pickForm(
+      context,
+      current: ownForm,
+      onSelected: (value) =>
+          _savePreference(_PreferenceFailure.ownForm, () => saveOwnForm(value)),
+    );
 
     Future<void> pickPartnerForm() => _pickForm(
       context,
       current: chatPrefs?.asData?.value.partnerForm,
-      onSelected: savePartnerForm,
+      onSelected: (value) => _savePreference(
+        _PreferenceFailure.partnerForm,
+        () => savePartnerForm(value),
+      ),
     );
 
     final initialSubjectIsViewer = widget.initialSubjectIsViewer;
@@ -182,64 +228,83 @@ class _TranslationPreferencesScreenState
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
         children: [
-          _PreferenceCard(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _PreferenceRow(
-                label: localizations.yourGrammaticalForm,
-                value: ownForm == null
-                    ? localizations.notSet
-                    : _localizedGrammaticalForm(localizations, ownForm),
-                onTap: pickOwnForm,
-              ),
-              if (!isProfile) ...[
-                const Divider(height: 1, color: BlabColors.chatDivider),
-                _PreferenceRow(
-                  label: localizations.partnerGrammaticalForm(
-                    partnerName ?? localizations.partner,
+              _PreferenceCard(
+                key: const Key('translation-preferences-card'),
+                children: [
+                  _PreferenceRow(
+                    label: localizations.yourGrammaticalForm,
+                    value: ownForm == null
+                        ? localizations.notSet
+                        : _localizedGrammaticalForm(localizations, ownForm),
+                    onTap: pickOwnForm,
                   ),
-                  value: chatPrefs?.asData?.value.partnerForm == null
-                      ? localizations.notSet
-                      : _localizedGrammaticalForm(
-                          localizations,
-                          chatPrefs!.asData!.value.partnerForm!,
-                        ),
-                  onTap: pickPartnerForm,
-                ),
-                const Divider(height: 1, color: BlabColors.chatDivider),
-                _PreferenceRow(
-                  label: localizations.conversationTone,
-                  value: _localizedConversationTone(
-                    localizations,
-                    chatPrefs?.asData?.value.tone ?? ConversationTone.informal,
-                  ),
-                  onTap: () => _pickTone(
-                    context,
-                    current:
+                  if (!isProfile) ...[
+                    const Divider(height: 1, color: BlabColors.chatDivider),
+                    _PreferenceRow(
+                      label: localizations.partnerGrammaticalForm(
+                        partnerName ?? localizations.partner,
+                      ),
+                      value: chatPrefs?.asData?.value.partnerForm == null
+                          ? localizations.notSet
+                          : _localizedGrammaticalForm(
+                              localizations,
+                              chatPrefs!.asData!.value.partnerForm!,
+                            ),
+                      onTap: pickPartnerForm,
+                    ),
+                    const Divider(height: 1, color: BlabColors.chatDivider),
+                    _PreferenceRow(
+                      label: localizations.conversationTone,
+                      value: _localizedConversationTone(
+                        localizations,
                         chatPrefs?.asData?.value.tone ??
-                        ConversationTone.informal,
-                    onSelected: (value) async {
-                      await ref.read(saveConversationToneProvider)(
-                        chatId,
-                        value,
-                      );
-                    },
-                  ),
-                ),
-              ],
-              if (showReadingScript) ...[
-                const Divider(height: 1, color: BlabColors.chatDivider),
-                _PreferenceRow(
-                  label: context.l10n.readingScript,
-                  value: readingScript == ReadingScript.englishLetters
-                      ? context.l10n.englishLetters
-                      : nativeScriptLabel(),
-                  onTap: () => _pickReadingScript(
-                    context,
-                    current: readingScript,
-                    nativeLabel: nativeScriptLabel(),
-                    onSelected: (value) =>
-                        ref.read(readingScriptProvider.notifier).set(value),
-                  ),
+                            ConversationTone.informal,
+                      ),
+                      onTap: () => _pickTone(
+                        context,
+                        current:
+                            chatPrefs?.asData?.value.tone ??
+                            ConversationTone.informal,
+                        onSelected: (value) => _savePreference(
+                          _PreferenceFailure.tone,
+                          () => ref.read(saveConversationToneProvider)(
+                            chatId,
+                            value,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (showReadingScript) ...[
+                    const Divider(height: 1, color: BlabColors.chatDivider),
+                    _PreferenceRow(
+                      label: context.l10n.readingScript,
+                      value: readingScript == ReadingScript.englishLetters
+                          ? context.l10n.englishLetters
+                          : nativeScriptLabel(),
+                      onTap: () => _pickReadingScript(
+                        context,
+                        current: readingScript,
+                        nativeLabel: nativeScriptLabel(),
+                        onSelected: (value) => _savePreference(
+                          _PreferenceFailure.readingScript,
+                          () => ref
+                              .read(readingScriptProvider.notifier)
+                              .set(value),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (_failedPreference != null) ...[
+                const SizedBox(height: 8),
+                InlineSettingError(
+                  text: localizations.couldNotSavePreference,
+                  onRetry: _isSavingPreference ? null : _retryFailedPreference,
                 ),
               ],
             ],
@@ -282,19 +347,11 @@ Future<void> _pickReadingScript(
     ),
   );
   if (value == null || !context.mounted || value == current) return;
-  try {
-    await onSelected(value);
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.couldNotSavePreference)),
-      );
-    }
-  }
+  await onSelected(value);
 }
 
 class _PreferenceCard extends StatelessWidget {
-  const _PreferenceCard({required this.children});
+  const _PreferenceCard({super.key, required this.children});
   final List<Widget> children;
   @override
   Widget build(BuildContext context) => Container(
@@ -440,17 +497,9 @@ Future<void> _pickForm(
   );
   if (!context.mounted) return;
   if (selected == null) return;
-  try {
-    await onSelected(
-      selected == 'not_set' ? null : grammaticalFormFromWire(selected),
-    );
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.couldNotSavePreference)),
-      );
-    }
-  }
+  await onSelected(
+    selected == 'not_set' ? null : grammaticalFormFromWire(selected),
+  );
 }
 
 String _localizedGrammaticalForm(
@@ -495,13 +544,5 @@ Future<void> _pickTone(
     ),
   );
   if (value == null || !context.mounted) return;
-  try {
-    await onSelected(value);
-  } catch (_) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.couldNotSavePreference)),
-      );
-    }
-  }
+  await onSelected(value);
 }

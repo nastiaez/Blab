@@ -85,6 +85,31 @@ void main() {
     );
   });
 
+  test('failed privacy persistence restores the last saved value', () async {
+    SharedPreferences.setMockInitialValues({});
+    final container = ProviderContainer(
+      overrides: [
+        privacySettingWriterProvider.overrideWithValue((_, _) async {
+          throw StateError('storage unavailable');
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    expect(
+      (await _waitUntilLoaded(container, typingIndicatorsProvider)).enabled,
+      isTrue,
+    );
+
+    await expectLater(
+      container.read(typingIndicatorsProvider.notifier).set(false),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(container.read(typingIndicatorsProvider).enabled, isTrue);
+    expect(container.read(typingIndicatorsEnabledProvider), isTrue);
+  });
+
   test(
     'privacy choices fail closed and stay isolated across accounts',
     () async {
