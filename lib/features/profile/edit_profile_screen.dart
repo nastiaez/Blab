@@ -205,10 +205,16 @@ class _ProfileLoadError extends StatelessWidget {
           children: [
             Text(
               context.l10n.couldNotLoadProfile,
-              style: const TextStyle(color: BlabColors.textPrimary),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, color: BlabColors.textMuted),
             ),
-            const SizedBox(height: 12),
-            TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              key: const ValueKey('profile-load-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.retry),
+            ),
           ],
         ),
       ),
