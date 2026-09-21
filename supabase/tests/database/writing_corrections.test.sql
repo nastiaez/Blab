@@ -37,7 +37,8 @@ select ok(
 );
 
 update public.profiles
-set interface_language = 'en'
+set interface_language = 'en',
+    primary_known_language = 'en'
 where id in (
   '00000000-0000-4000-8000-00000000000a',
   '00000000-0000-4000-8000-00000000000c'
@@ -126,7 +127,7 @@ select ok(
     'medium',
     '[{"text":"Machst du","gloss":"do you","isContent":true},{"text":" ...?","isContent":false}]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   'a recipient request can complete a shared correction'
 );
@@ -245,7 +246,7 @@ select ok(
     null,
     '[]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   'correct writing stores a shared none result'
 );
