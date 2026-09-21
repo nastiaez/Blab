@@ -122,7 +122,7 @@ class _PartnerReportDialogState extends State<_PartnerReportDialog> {
                         error,
                         textAlign: TextAlign.start,
                         style: const TextStyle(
-                          color: BlabColors.errorWarm,
+                          color: BlabColors.error,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),

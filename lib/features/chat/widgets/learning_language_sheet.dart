@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/widgets/blab_icon.dart';
@@ -300,7 +301,7 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                   height: 50,
                   child: FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFF88C5A),
+                      backgroundColor: BlabColors.brand,
                       disabledBackgroundColor: const Color(0xFFE1DAD2),
                       disabledForegroundColor: muted,
                       shape: RoundedRectangleBorder(

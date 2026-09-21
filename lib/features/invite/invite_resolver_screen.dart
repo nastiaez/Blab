@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/auth_state.dart';
@@ -240,7 +241,7 @@ class _OpeningInvite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFFFAF7F2),
+    backgroundColor: BlabColors.chatCanvas,
     body: SafeArea(
       child: Column(
         children: [
@@ -255,7 +256,7 @@ class _OpeningInvite extends StatelessWidget {
                         Text(
                           context.l10n.openingInvite,
                           style: const TextStyle(
-                            color: Color(0xFF46281C),
+                            color: BlabColors.warmInk,
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
@@ -337,7 +338,7 @@ class _Dots extends StatelessWidget {
             height: 16,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Color(0xFFF88C5A),
+                color: BlabColors.brand,
                 shape: BoxShape.circle,
               ),
             ),
@@ -356,7 +357,7 @@ class _InviteState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFFFAF7F2),
+    backgroundColor: BlabColors.chatCanvas,
     body: SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -369,7 +370,7 @@ class _InviteState extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF46281C),
+                color: BlabColors.warmInk,
               ),
             ),
             const SizedBox(height: 8),
@@ -379,7 +380,7 @@ class _InviteState extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 height: 1.4,
-                color: Color(0xFF917869),
+                color: BlabColors.error,
               ),
             ),
             const SizedBox(height: 28),
@@ -392,8 +393,8 @@ class _InviteState extends StatelessWidget {
               height: 52,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFF88C5A),
-                  foregroundColor: const Color(0xFF46281C),
+                  backgroundColor: BlabColors.brand,
+                  foregroundColor: BlabColors.warmInk,
                 ),
                 onPressed: () => context.go('/chats'),
                 child: Text(context.l10n.goToChats),

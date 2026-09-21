@@ -226,6 +226,13 @@ void main() {
     expect(find.text('Log out?'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Log out'), findsNWidgets(2));
+    final confirmLogOut = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Log out'),
+      ),
+    );
+    expect(confirmLogOut.style!.color, BlabColors.error);
     expect(
       find.text(
         "You'll need your email and password (or Google) to sign back in.",

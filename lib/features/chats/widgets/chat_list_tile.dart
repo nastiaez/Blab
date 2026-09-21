@@ -156,7 +156,7 @@ class _UnreadBadge extends StatelessWidget {
       child: Text(
         '$count',
         style: const TextStyle(
-          color: Colors.white,
+          color: BlabColors.bubbleInk,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),

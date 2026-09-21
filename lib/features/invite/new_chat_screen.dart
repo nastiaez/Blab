@@ -71,15 +71,15 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
         !invite.failed &&
         link != null;
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F2),
+      backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF7F2),
+        backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
           context.l10n.inviteFriend,
           style: const TextStyle(
-            color: Color(0xFF46281C),
+            color: BlabColors.warmInk,
             fontSize: 17,
             fontWeight: FontWeight.w700,
           ),
@@ -100,7 +100,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     child: Text(
                       context.l10n.onePersonInvite,
                       style: const TextStyle(
-                        color: Color(0xFF917869),
+                        color: BlabColors.warmMuted,
                         fontSize: 13,
                       ),
                     ),
@@ -113,7 +113,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                           child: Text(
                             context.l10n.couldNotCreateInvite,
                             style: const TextStyle(
-                              color: Color(0xFF917869),
+                              color: BlabColors.error,
                               fontSize: 13,
                             ),
                           ),
@@ -133,7 +133,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                       child: Text(
                         context.l10n.couldNotOpenSharing,
                         style: const TextStyle(
-                          color: Color(0xFF917869),
+                          color: BlabColors.error,
                           fontSize: 13,
                         ),
                       ),
@@ -143,9 +143,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     height: 52,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFF88C5A),
+                        backgroundColor: BlabColors.brand,
                         disabledBackgroundColor: BlabColors.disabledSurface,
-                        foregroundColor: const Color(0xFF46281C),
+                        foregroundColor: BlabColors.warmInk,
                         disabledForegroundColor: BlabColors.disabledOnSurface,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -184,9 +184,9 @@ class _InviteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: BlabColors.chatSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9DED5)),
+        border: Border.all(color: BlabColors.chatDivider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +194,7 @@ class _InviteCard extends StatelessWidget {
           Text(
             context.l10n.inviteCardTitle,
             style: const TextStyle(
-              color: Color(0xFF46281C),
+              color: BlabColors.warmInk,
               fontSize: 17,
               fontWeight: FontWeight.w700,
             ),
@@ -204,7 +204,7 @@ class _InviteCard extends StatelessWidget {
             loading
                 ? context.l10n.creatingLink
                 : link ?? context.l10n.inviteLinkUnavailable,
-            style: const TextStyle(color: Color(0xFF917869), fontSize: 15),
+            style: const TextStyle(color: BlabColors.warmMuted, fontSize: 15),
           ),
         ],
       ),

@@ -212,7 +212,9 @@ class _BrandButtonState extends State<BrandButton>
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        BlabColors.warmInk,
+                      ),
                     ),
                   )
                 : Text(
@@ -222,7 +224,7 @@ class _BrandButtonState extends State<BrandButton>
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: _enabled
-                          ? Colors.white
+                          ? BlabColors.warmInk
                           : BlabColors.disabledOnSurface,
                     ),
                   ),

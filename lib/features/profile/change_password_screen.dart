@@ -217,7 +217,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 const SizedBox(height: 10),
                 Text(
                   _formErr!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  style: const TextStyle(color: BlabColors.error, fontSize: 13),
                 ),
               ],
               const SizedBox(height: 24),

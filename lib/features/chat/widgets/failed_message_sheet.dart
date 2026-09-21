@@ -92,9 +92,7 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive
-        ? const Color(0xFFEF4444)
-        : BlabColors.textPrimary;
+    final color = destructive ? BlabColors.error : BlabColors.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(

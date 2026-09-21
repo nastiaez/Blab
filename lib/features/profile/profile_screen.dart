@@ -29,9 +29,9 @@ class ProfileScreen extends ConsumerWidget {
         profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F2),
+      backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF7F2),
+        backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
@@ -151,7 +151,7 @@ Future<bool?> _confirmLogout(BuildContext context) {
   return showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: BlabColors.chatSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         context.l10n.logOutQuestion,
@@ -177,7 +177,7 @@ Future<bool?> _confirmLogout(BuildContext context) {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: BlabColors.brand,
+              color: BlabColors.error,
             ),
           ),
         ),
@@ -425,10 +425,10 @@ class _SettingsRow extends StatelessWidget {
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.75;
     final iconSize = largeText ? 24.0 : 20.0;
     final Color iconColor = destructive
-        ? Colors.red.shade400
+        ? BlabColors.error
         : BlabColors.textMuted;
     final Color labelColor = destructive
-        ? Colors.red.shade400
+        ? BlabColors.error
         : const Color(0xFF46281C);
     return InkWell(
       onTap: onTap,
@@ -519,7 +519,7 @@ class _BottomTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F2),
+        color: BlabColors.chatCanvas,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
       child: SafeArea(

@@ -135,7 +135,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                     _err!,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.red.shade700,
+                      color: BlabColors.error,
                       height: 1.35,
                     ),
                   ),
@@ -147,7 +147,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 height: 52,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red.shade500,
+                    backgroundColor: BlabColors.error,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -234,7 +234,7 @@ Future<bool?> _confirmDeleteAccount(BuildContext context) {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Colors.red.shade600,
+              color: BlabColors.error,
             ),
           ),
         ),
@@ -251,9 +251,9 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: BlabColors.chatSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: BlabColors.chatDivider),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -270,7 +270,7 @@ class _RowDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 50),
-      child: Container(height: 1, color: Colors.grey.shade100),
+      child: Container(height: 1, color: BlabColors.chatDivider),
     );
   }
 }
@@ -285,11 +285,7 @@ class _DeleteRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Icon(
-            Icons.warning_amber_outlined,
-            size: 20,
-            color: Colors.red.shade500,
-          ),
+          Icon(Icons.warning_amber_outlined, size: 20, color: BlabColors.error),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
