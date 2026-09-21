@@ -1043,6 +1043,74 @@ The disposable local chat was `00000000-0000-4000-8000-00000000f290`. Android ev
 - Owner decision: approved 2026-09-21
 - Follow-up: none
 
+## Packet L10 — Turkish language engine
+
+### Evidence
+
+- `L10-TR-01-alice-chat.png`: Alice's real web chat showing French-to-Turkish translation, correct Turkish unchanged, the person-agreement correction, and Bob's return message.
+- `L10-TR-02-bob-chat.png`: Bob's Android chat showing the same four prepared messages in the reverse client direction.
+- `L10-TR-03-word-help.png`: Turkish word popup with French `la librairie` and no redundant Latin-script reading.
+- `L10-TR-04-sentence-audio.png`: Turkish sentence with its French source and the Turkish Listen action.
+- `L10-TR-review.jpg`: the four approved review frames in one owner-facing packet.
+
+The disposable local chat was `00000000-0000-4000-8000-00000000f2a0`. All eight viewer packages completed successfully, and the 108-test language-engine suite passed.
+
+### L10-TR-01
+
+- Interface language: English
+- Learning language: Turkish
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Turkish in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive the same natural Turkish while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `Yarın parkta buluşuyoruz.` and Bob's `Nous voulons visiter la librairie demain.` becomes `Yarın kütüphaneyi ziyaret etmek istiyoruz.` for both viewers.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L10-TR-02
+
+- Interface language: English
+- Learning language: Turkish
+- Primary known language: French
+- Screen/state: Practice chat / correct Turkish plus intentionally incorrect Turkish
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `Bugün hava çok güzel.` remains unchanged; the person-agreement mistake `Ben her gün işe gidiyorsun.` is corrected to `Ben her gün işe gidiyorum.`, with a French explanation for the author and clean Turkish for the recipient
+- Observed: the correct sentence remains unchanged. The mistake becomes `Ben her gün işe gidiyorum.`, with the French explanation that second-person `gidiyorsun` must become first-person `gidiyorum`.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L10-TR-03
+
+- Interface language: English
+- Learning language: Turkish
+- Primary known language: French
+- Screen/state: word help for `kütüphaneyi`
+- Client: Bob / Android emulator
+- Expected: the Turkish word shows its French meaning and hides a Latin-script reading that merely duplicates the displayed word
+- Observed: the popup shows `kütüphaneyi → la librairie`, with no redundant romanization line.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L10-TR-04
+
+- Interface language: English
+- Learning language: Turkish
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Turkish and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `tr-TR` / `tur-TUR`, and both utterances completed successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
