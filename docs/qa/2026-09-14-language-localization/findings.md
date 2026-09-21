@@ -907,6 +907,74 @@ The disposable local chat was `00000000-0000-4000-8000-00000000f260`. Android ev
 - Owner decision: approved 2026-09-21
 - Follow-up: none
 
+## Packet L08 — Portuguese language engine
+
+### Evidence
+
+- `L08-PT-01-alice-chat.png`: Alice's real web chat showing French-to-Portuguese translation, correct Portuguese unchanged, the inline agreement correction, and Bob's return message.
+- `L08-PT-02-bob-chat.png`: Bob's Android chat showing the same four messages in the reverse client direction.
+- `L08-PT-03-repaired-word-help.png`: repaired `parque` popup with French `parc`; identical Latin-script romanization remains suppressed.
+- `L08-PT-04-sentence-audio.png`: Bob's outgoing Portuguese sentence with its French source and the Portuguese Listen action.
+- `L08-PT-repaired-review.jpg`: the four approved repair-review frames in one owner-facing packet.
+
+The initial disposable fixture exposed `parque → parque` while `livraria → librairie` was correct. The repaired evidence uses fresh disposable chat `00000000-0000-4000-8000-00000000f280`, avoiding stale client state from the removed fixture. Android evidence was captured from the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L08-PT-01
+
+- Interface language: English
+- Learning language: Portuguese
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Portuguese in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive the same natural European Portuguese while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `Nós nos encontramos amanhã no parque.` and Bob's `Nous voulons visiter la librairie demain.` becomes `Nós queremos visitar a livraria amanhã.` for both viewers. All eight viewer jobs completed ready on the first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L08-PT-02
+
+- Interface language: English
+- Learning language: Portuguese
+- Primary known language: French
+- Screen/state: Practice chat / correct Portuguese plus intentionally incorrect Portuguese
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `Hoje está um dia muito bonito.` remains unchanged; plural-agreement mistake `As crianças está perto da estação.` is corrected to `As crianças estão perto da estação.`, with a French explanation for the author and clean Portuguese for the recipient
+- Observed: the correct sentence remains unchanged. The mistake becomes `As crianças estão perto da estação.`, with its explanation in French.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L08-PT-03
+
+- Interface language: English
+- Learning language: Portuguese
+- Primary known language: French
+- Screen/state: repaired word help for `parque` and regression word help for `livraria`
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: copied Portuguese token metadata is replaced without rewriting the accepted sentence; `parque` shows French `parc`, `livraria` remains French `librairie`, and redundant Latin-script romanization is hidden
+- Observed: the repaired popup shows `parque → parc` for both users, `livraria → librairie` remains correct, and no duplicate romanization is shown. The repair regenerated only suspicious word metadata.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L08-PT-04
+
+- Interface language: English
+- Learning language: Portuguese
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize European Portuguese and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched Portuguese `pt-PT`, and both utterances completed successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

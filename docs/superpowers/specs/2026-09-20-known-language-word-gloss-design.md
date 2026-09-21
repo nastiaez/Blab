@@ -29,3 +29,33 @@ If the exact provider rerun still returns English word meanings, add one focused
 - Romanization remains per word and is hidden when identical to the displayed word.
 - Existing language-pair cache separation remains unchanged.
 - A valid sentence is not rejected solely because optional token metadata is malformed.
+
+## Fallback activation — 2026-09-21
+
+L08 Portuguese proved that prompt wording alone is insufficient. The provider
+returned a correct Portuguese sentence and French sentence lane, but copied
+every Portuguese token into its own `gloss`. The existing validator accepted
+those values because they were non-empty and structurally valid.
+
+Three repair approaches were considered:
+
+1. Retry the whole translation. This is simple, but can change an already
+   correct sentence and repeats the expensive part of the request.
+2. Repair only the token metadata. This preserves the accepted sentence and
+   correction result while making one small extra request only for a clearly
+   suspicious result.
+3. Maintain language-specific word mappings. This would grow into a brittle
+   dictionary and is rejected.
+
+Use option 2. When Learning Language and Primary Known Language differ, treat
+multi-word metadata as suspicious only when every content-token gloss is a
+normalized copy of that token or its romanization. A focused metadata request
+must reproduce the accepted sentence exactly, use one content token per word,
+put every meaning in the Primary Known Language, and retain required
+romanization. If that focused repair cannot produce a valid token sequence,
+do not save the suspicious metadata; let the normal provider retry/failure
+path handle the job.
+
+Because previously cached packages may contain structurally valid copied
+glosses, advance the translation cache contract and regenerate them under the
+stronger validator.

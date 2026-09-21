@@ -267,6 +267,26 @@ export const INTERFACE_RESPONSE_FORMAT = {
   },
 } as const;
 
+export const WORD_METADATA_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_word_metadata_repair",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        tokens: {
+          type: "array",
+          minItems: 1,
+          items: TOKEN_RESPONSE_SCHEMA,
+        },
+      },
+      required: ["tokens"],
+    },
+  },
+} as const;
+
 export const CORRECTION_AUDIT_RESPONSE_FORMAT = {
   type: "json_schema",
   json_schema: {
@@ -1258,6 +1278,48 @@ export function wordMetadataNeedsRetry(result: TranslationResult): boolean {
   );
 }
 
+function normalizedWordMetadataValue(value: string): string {
+  return value.normalize("NFKC").trim().toLocaleLowerCase().replace(
+    /[’‘]/g,
+    "'",
+  );
+}
+
+/// A structurally valid provider response can still contain no translation at
+/// all in its word-help lane. Require strong evidence before spending a repair
+/// call: different learning/known languages, at least two content words, and
+/// every gloss copied from the displayed word or its pronunciation field.
+export function wordGlossMetadataNeedsRepair(
+  result: TranslationResult,
+  targetLang: string,
+  interfaceLang: string,
+): boolean {
+  if (targetLang === interfaceLang) return false;
+  const contentTokens = result.tokens.flatMap((raw) => {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+      return [];
+    }
+    const token = raw as Record<string, unknown>;
+    return token.isContent === true && typeof token.text === "string" &&
+        typeof token.gloss === "string"
+      ? [{
+        text: token.text,
+        gloss: token.gloss,
+        roman: typeof token.roman === "string" ? token.roman : null,
+      }]
+      : [];
+  });
+  if (contentTokens.length < 2) return false;
+  return contentTokens.every((token) => {
+    const gloss = normalizedWordMetadataValue(token.gloss);
+    const text = normalizedWordMetadataValue(token.text);
+    const roman = token.roman === null
+      ? null
+      : normalizedWordMetadataValue(token.roman);
+    return gloss === text || roman !== null && gloss === roman;
+  });
+}
+
 /// Hindi `कल` can mean yesterday or tomorrow. A focused review uses the
 /// source sentence to ensure a one-time future event did not drift into the
 /// habitual present, while ordinary Hindi translations remain single-pass.
@@ -1793,4 +1855,44 @@ export function interfaceRepairSystemPrompt(
   return `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation.
 ${GENDER_ADDRESS_RULES}
 Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`;
+}
+
+export function wordMetadataRepairSystemPrompt(
+  targetLang: string,
+  interfaceLang: string,
+): string {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  return `Create word-help metadata for one already accepted ${targetName} (${targetLang}) sentence. The sentence is immutable: you must not translate, rewrite, or correct it.
+
+Return strict JSON only: {"tokens":[{"text":"<exact segment of the accepted sentence>","gloss":"<1-3 word ${interfaceName} meaning>","roman":"<Latin-script pronunciation>","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false}]}.
+
+Rules:
+- Concatenating every tokens[].text must reproduce the accepted sentence exactly.
+- Use one content token per word or non-whitespace term, never a phrase or full sentence.
+- Every content-token gloss must be a short meaning in ${interfaceName} (${interfaceLang}); never copy the ${targetName} word merely because it already uses Latin script.
+- For a Latin-script word, roman repeats the written word. For a non-Latin word, roman is its Latin-script transliteration.
+- Whitespace, punctuation, and emoji use isContent=false with gloss and roman set to null.`;
+}
+
+export function parseWordMetadataRepairResult(
+  content: string,
+  expectedText: string,
+): TranslationToken[] | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  return validatedCompleteTokens(
+    (raw as Record<string, unknown>).tokens,
+    expectedText,
+  );
 }

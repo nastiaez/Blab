@@ -282,6 +282,7 @@
   - [x] Device verification (Nastia, confirmed 2026-06-09): non-Tamil translation + DB-cache cold reopen both checked working on a prior live test. Step 2.7 fully closed.
   - [x] L-13 security controls (2026-07-17, provider policy revised 2026-07-21): message-ID-only authorization, active-member checks, durable per-account quotas, server-only source-versioned cache writes, ZDR/data-collection-denied routing across eligible endpoints, and retirement of the unused public portfolio translator.
   - [x] L-15 writing correction extension (2026-07-18): provider modes `translation|correction|none`, author-only inline correction marks, recipient-clean corrected output, localized author explanations, shared authorized cache/RLS, and dual learning/interface output lanes.
+  - [x] L08 Portuguese word-help repair (2026-09-21): preserved the accepted sentence while replacing copied Learning Language token glosses with Primary Known Language meanings; invalidated stale packages and repeated the Alice/Bob device proof. Owner approved the repaired packet.
 
 ### Step 2.8 — Grammatical-form preferences `[ ]` ← in progress
 - **Automatic-form simplification started (2026-09-11):** Owner approved full sentences, name suggestions with feminine fallback, one `Using … forms for … · Change` note per person/chat, and existing Translation preferences navigation. Supersedes required markers/chooser and next-message expiry. Includes correct participant attribution; implementation underway.
@@ -609,6 +610,10 @@ Do not start Step N+1 until Step N is fully `[x]`.
 ---
 
 ## Changelog
+
+- 2026-09-21 — Owner approved the repaired L08 Portuguese packet after both real clients showed `parque` → French `parc`, retained `livraria` → `librairie`, preserved the accepted Portuguese sentences and correction, and dispatched Portuguese word/sentence audio. Closed Step 2.7 again; the reusable repair remains language-agnostic and duplicate Latin-script romanization stays hidden.
+
+- 2026-09-21 — L08 Portuguese translation, correction, and audio passed on Alice browser/Bob Android, but one prepared sentence stored every Portuguese token as its own French meaning (`parque` → `parque`) while a second sentence correctly stored `livraria` → `librairie`. Owner approved a general repair. Reopened Step 2.7 for a targeted Primary Known Language metadata repair and cache refresh; no Portuguese dictionary or accepted-sentence rewrite is allowed.
 
 - 2026-09-16 — Expanded B07A after owner feedback to audit every chat-owned error and conditional state. Catalog-backed history, send/retry, translation/checking, edit/report, block/unblock, gallery-permission, and no-photo messages exist in EN/DE/ES/UK, but three failure branches still hardcode English: photo-picker launch plus grammatical-form and reading-script saves. Ukrainian B07 send/delete/report/edit/language-save/block/photo-permission copy still uses formal plural. Mode tips, empty-chat copy, camera/caption labels, and accessibility labels are also hardcoded English. No repair made before owner confirmation of the expanded scope.
 - 2026-09-16 — Captured B07A on one stable real-client fixture in EN/DE/ES/UK. Header mode and date labels localize, but the unread divider and private language-history markers remain English; language names remain English in the composer and menu; `Translation preferences` remains hardcoded; the learning-language sheet heading, helper, and all language names remain English outside English. Ukrainian guidance and several source-audited B07 errors still use formal plural. No repair made before owner review.
