@@ -704,6 +704,7 @@ class MessageTranslationsNotifier
         } catch (error, stack) {
           lastError = error;
           lastStack = stack;
+          if (error is TimeoutException) break;
         }
       }
       if (lastError is TimeoutException || lastError == null) {
