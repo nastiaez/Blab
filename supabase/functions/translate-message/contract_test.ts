@@ -170,6 +170,72 @@ Deno.test("focused correction audit catches a clear agreement error", () => {
   );
 });
 
+Deno.test("stale correction tokens preserve the valid correction for metadata repair", () => {
+  const parseCandidate = (contract as unknown as {
+    parseCorrectionAuditCandidate?: (
+      content: string,
+      sourceText: string,
+    ) => {
+      hasError: boolean;
+      correctedText: string | null;
+      tokens: unknown[] | null;
+    } | null;
+  }).parseCorrectionAuditCandidate;
+  assert(
+    typeof parseCandidate === "function",
+    "semantic correction candidate parser must exist",
+  );
+  const content = JSON.stringify({
+    hasError: true,
+    correctedText: "குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறார்கள்.",
+    explanation: "Le sujet pluriel exige le verbe pluriel « இருக்கிறார்கள் ».",
+    confidence: "high",
+    tokens: [
+      {
+        text: "குழந்தைகள்",
+        gloss: "enfants",
+        roman: "kuzhandaigal",
+        isContent: true,
+      },
+      {
+        text: "நிலையத்திற்கு",
+        gloss: "à la gare",
+        roman: "nilaiyaththirku",
+        isContent: true,
+      },
+      {
+        text: "அருகில்",
+        gloss: "près de",
+        roman: "arugil",
+        isContent: true,
+      },
+      {
+        text: "இருக்கிறது",
+        gloss: "est",
+        roman: "irukkirathu",
+        isContent: true,
+      },
+      { text: ".", gloss: null, roman: null, isContent: false },
+    ],
+  });
+  const sourceText = "குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறது.";
+  const candidate = parseCandidate!(content, sourceText);
+  assert(candidate?.hasError === true, "the clear correction is retained");
+  assert(
+    candidate?.correctedText ===
+      "குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறார்கள்.",
+    "the corrected plural sentence is retained",
+  );
+  assert(
+    candidate?.tokens === null,
+    "only the stale token metadata is marked for repair",
+  );
+  assert(
+    parseCorrectionAuditResult(content, sourceText) === null,
+    "the strict complete-result parser still rejects mismatched tokens",
+  );
+});
+
 Deno.test("focused correction audit contract is generic and localized", () => {
   assert(
     CORRECTION_AUDIT_RESPONSE_FORMAT.json_schema.strict,

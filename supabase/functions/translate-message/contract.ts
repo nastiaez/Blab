@@ -475,6 +475,16 @@ export type CorrectionAuditResult =
     tokens: TranslationToken[];
   };
 
+export type CorrectionAuditCandidate =
+  | Extract<CorrectionAuditResult, { hasError: false }>
+  | {
+    hasError: true;
+    correctedText: string;
+    explanation: string;
+    confidence: CorrectionConfidence;
+    tokens: TranslationToken[] | null;
+  };
+
 type DirectSubjectRule = {
   sourceLang: string;
   authorStart: RegExp;
@@ -780,10 +790,10 @@ function validatedCompleteTokens(
   return reproduced === expectedText ? tokens : null;
 }
 
-export function parseCorrectionAuditResult(
+export function parseCorrectionAuditCandidate(
   content: string,
   sourceText: string,
-): CorrectionAuditResult | null {
+): CorrectionAuditCandidate | null {
   const firstBrace = content.indexOf("{");
   const lastBrace = content.lastIndexOf("}");
   if (firstBrace < 0 || lastBrace <= firstBrace) return null;
@@ -821,7 +831,6 @@ export function parseCorrectionAuditResult(
   ) return null;
   const correctedText = value.correctedText.trim();
   const tokens = validatedCompleteTokens(value.tokens, correctedText);
-  if (tokens === null) return null;
   return {
     hasError: true,
     correctedText,
@@ -829,6 +838,17 @@ export function parseCorrectionAuditResult(
     confidence: value.confidence as CorrectionConfidence,
     tokens,
   };
+}
+
+export function parseCorrectionAuditResult(
+  content: string,
+  sourceText: string,
+): CorrectionAuditResult | null {
+  const candidate = parseCorrectionAuditCandidate(content, sourceText);
+  if (candidate === null || candidate.hasError && candidate.tokens === null) {
+    return null;
+  }
+  return candidate as CorrectionAuditResult;
 }
 
 export function parseFormAuditResult(content: string): FormAuditResult | null {

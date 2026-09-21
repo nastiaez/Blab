@@ -975,6 +975,74 @@ The initial disposable fixture exposed `parque → parque` while `livraria → l
 - Owner decision: approved 2026-09-21
 - Follow-up: none
 
+## Packet L09 — Tamil language engine
+
+### Evidence
+
+- `L09-TA-01-alice-chat.png`: Alice's real web chat showing French-to-Tamil translation, correct Tamil unchanged, the repaired plural correction, and Bob's return message.
+- `L09-TA-02-bob-chat.png`: Bob's Android chat showing the same four messages in the reverse client direction.
+- `L09-TA-03-repaired-word-help.png`: repaired plural verb popup with French `sont` and romanization `irukkiṟārkaḷ`.
+- `L09-TA-04-sentence-audio.png`: corrected Tamil sentence with its French explanation and the Tamil Listen action.
+- `L09-TA-repaired-review.jpg`: the four approved repair-review frames in one owner-facing packet.
+
+The disposable local chat was `00000000-0000-4000-8000-00000000f290`. Android evidence was captured from the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L09-TA-01
+
+- Interface language: English
+- Learning language: Tamil
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Tamil in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive the same natural Tamil while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `நாம் நாளை பூங்காவில் சந்திக்கிறோம்.` and Bob's `Nous voulons visiter la bibliothèque demain.` becomes `நாம் நாளை நூலகத்தை பார்வையிட விரும்புகிறோம்.` for both viewers. The six unaffected viewer jobs completed successfully before repair; the two repaired correction jobs then completed ready on their first regenerated attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L09-TA-02
+
+- Interface language: English
+- Learning language: Tamil
+- Primary known language: French
+- Screen/state: Practice chat / correct Tamil plus intentionally incorrect Tamil
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `இன்று வானிலை மிகவும் நன்றாக இருக்கிறது.` remains unchanged; the plural-agreement mistake `குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறது.` is corrected to `குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறார்கள்.`, with a French explanation for the author and clean Tamil for the recipient
+- Observed: the correct sentence remains unchanged. Before repair, the provider returned the correct plural sentence but stale singular token metadata, so Blab's strict validator rejected both correction packages and the clients showed `Couldn't translate`. After the approved generic metadata recovery, the valid corrected sentence is preserved while only its mismatched word metadata is regenerated; both users receive the plural correction with no error.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none; the recovery is language-independent and still rejects any result whose repaired tokens do not reproduce the corrected sentence
+
+### L09-TA-03
+
+- Interface language: English
+- Learning language: Tamil
+- Primary known language: French
+- Screen/state: word help for `பூங்காவில்` and repaired `இருக்கிறார்கள்`
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: Tamil word help includes useful Latin-script romanization and French meanings
+- Observed: `பூங்காவில்` shows `poongavil → au parc`. The repaired correction popup shows `இருக்கிறார்கள்`, romanization `irukkiṟārkaḷ`, and French `sont`, matching the visible plural sentence.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none
+
+### L09-TA-04
+
+- Interface language: English
+- Learning language: Tamil
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Tamil and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `ta-IN` / `tam-IND`, and both utterances completed successfully. The popup and four-action incoming row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

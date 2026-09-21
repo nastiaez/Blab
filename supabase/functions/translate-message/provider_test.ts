@@ -22,6 +22,15 @@ Deno.test("focused audits use their matching strict response schemas", async () 
     "same-language review must use the correction schema",
   );
   assert(
+    correctionBlock.includes("parseCorrectionAuditCandidate"),
+    "same-language review must preserve valid correction semantics",
+  );
+  assert(
+    correctionBlock.includes("candidate.tokens !== null") &&
+      correctionBlock.includes("repairWordMetadata("),
+    "same-language review must repair only stale correction metadata",
+  );
+  assert(
     futureBlock.includes("TRANSLATION_RESPONSE_FORMAT"),
     "Hindi future rewrite must use the full translation schema",
   );

@@ -44,7 +44,8 @@
 | L06 | Spanish translation, correction, French word help, and Spanish audio | `screenshots/l06-spanish/` | Approved 2026-09-21 |
 | L07 | Italian translation, correction, French word help, and Italian audio | `screenshots/l07-italian/` | Approved 2026-09-21 |
 | L08 | Portuguese translation, correction, French word help, and Portuguese audio | `screenshots/l08-portuguese/` | Approved 2026-09-21 after word-help repair |
-| L09-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
+| L09 | Tamil translation, correction, French word help, romanization, and Tamil audio | `screenshots/l09-tamil/` | Approved 2026-09-21 after correction-metadata repair |
+| L10-L11 | One packet for each remaining Learning Language | `screenshots/l*/` | Not started |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 
 ## Evidence rules
