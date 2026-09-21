@@ -839,6 +839,74 @@ The disposable local chat is `00000000-0000-4000-8000-00000000f250`. Android evi
 - Owner decision: approved 2026-09-21
 - Follow-up: none
 
+## Packet L07 — Italian language engine
+
+### Evidence
+
+- `L07-IT-01-alice-chat.png`: Alice's real web chat showing French-to-Italian translation, correct Italian unchanged, the inline agreement correction, and Bob's return message.
+- `L07-IT-02-bob-chat.png`: Bob's Android chat showing the same four messages in the reverse client direction.
+- `L07-IT-03-bob-word-help.png`: `libreria` popup with French `librairie`; identical Latin-script romanization remains suppressed.
+- `L07-IT-04-bob-sentence-audio.png`: Bob's outgoing Italian sentence with its French source and the Italian Listen action.
+- `L07-IT-review.jpg`: the four approved review frames in one owner-facing packet.
+
+The disposable local chat was `00000000-0000-4000-8000-00000000f260`. Android evidence was captured from the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L07-IT-01
+
+- Interface language: English
+- Learning language: Italian
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Italian in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive the same natural Italian while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `Ci vediamo domani al parco.` and Bob's `Nous voulons visiter la librairie demain.` becomes `Vogliamo visitare la libreria domani.` for both viewers. All eight viewer jobs completed ready on the first attempt. The temporary alternate wording seen on Alice was caused by the QA setup changing her mode behind an already-open client; reopening Practice loaded the authoritative stored package and confirmed viewer symmetry.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L07-IT-02
+
+- Interface language: English
+- Learning language: Italian
+- Primary known language: French
+- Screen/state: Practice chat / correct Italian plus intentionally incorrect Italian
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `Oggi fa molto bel tempo.` remains unchanged; plural-agreement mistake `I bambini è vicino alla stazione.` is corrected to `I bambini sono vicino alla stazione.`, with a French explanation for the author and clean Italian for the recipient
+- Observed: the correct sentence remains unchanged. The mistake becomes `I bambini sono vicino alla stazione.`, with the French explanation `Le verbe 'è' doit être remplacé par 'sono' pour l'accord avec le sujet pluriel 'bambini'.`
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L07-IT-03
+
+- Interface language: English
+- Learning language: Italian
+- Primary known language: French
+- Screen/state: word help for `libreria`
+- Client: Bob / Android emulator
+- Expected: the popup shows the Italian word and French meaning `librairie`, without redundant duplicate romanization
+- Observed: the popup shows `libreria → librairie`; the redundant identical Latin-script reading is correctly hidden.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L07-IT-04
+
+- Interface language: English
+- Learning language: Italian
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Italian with the Italian voice and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `it-IT` / `ita-ITA`, and both utterances started successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
