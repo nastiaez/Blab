@@ -210,7 +210,7 @@
   - Both users enter the same new chat state, select their own practice language in the mandatory sheet with its subtle warm veil, and see the approved once-only mode tips
   - Browser/emulator evidence covers same-pair reuse without duplicate chats or language reset. Owner accepted social-app handoff and Copy on 2026-09-10 in place of the exhaustive share-target test; logged-in Telegram/WhatsApp delivery was not verified. Final verified installed-app and Play-install journeys remain required.
 
-### Step 2.4 — Send-failure + offline queue  `[ ]` ← in progress
+### Step 2.4 — Send-failure + offline queue  `[x]`
 - **Scope:** US-030, US-031.
 - **Done when:**
   - Force-airplane-mode → send → bubble shows clock → exit airplane → bubble flips to delivered
@@ -222,7 +222,7 @@
   - [x] Queue already persists to disk (`pending_sends:<chatId>`), so an interrupted/failed send survives an app kill and goes out (or shows ⚠) on reopen.
   - [x] Wired the previously-dead dev-menu "failed-send" switch into the send path so the ⚠ + retry flow can be forced on a real device without a genuine outage.
   - [x] `flutter analyze` clean; `flutter test` 39/39 green incl. new `test/send_failure_test.dart` (online send → delivered, offline → stays queued, server-error → failed, forced dev-failure → failed, no-op flush while offline, and offline-enqueue → restart → reconnect-flush → delivered).
-  - [ ] **Device verification owed** (Nastia's machine): airplane-mode send shows the clock then auto-delivers on reconnect; a forced 5xx shows ⚠ + retry; a force-stop with a queued send goes out on reopen.
+  - [x] **Android emulator verification (2026-09-21):** an offline send showed the clock, stayed visible after force-stop and offline reopen with no cached history, then auto-delivered after reconnect. A forced server failure showed `Not sent · Tap to try again`, its retry succeeded, and repeated recovery created no duplicate message.
 
 ### Step 2.4a — Offline chat photos `[ ]` ← in progress
 - **Found 2026-08-28 (Samsung S25 offline review).** Originals are present in private Supabase Storage, but the chat retains only a temporary signed link and an in-memory image. Going offline after eviction/restart therefore shows the framework's red broken-image state even though the stored file still exists.
@@ -1050,3 +1050,4 @@ Append one line per non-trivial edit to this file (step added, scope changed, bl
 - 2026-09-19 — Owner approved the L01 Dutch repairs and asked Practice to match Normal's compact content-hugging mode control. Focused regressions now cover natural Dutch closed compounds, complete one-word corrections, suppression of duplicate Latin romanization, and a 129 dp Practice minimum that grows only around its active label. Full verification and real-client evidence remain pending.
 - 2026-09-19 — Completed the repaired L01 Dutch verification. A cold Android reopen shows the compact content-hugging Practice control, first-attempt `Wij is` → `Wij zijn` correction, and persisted `morgenochtend` translations in both directions; the `bloemenmarkt` popup no longer repeats identical romanization. Final verification passed 603 Flutter checks with 15 environment-only skips, 94 Deno translation checks, clean static analysis, and a clean diff check. The installed APK exactly matched SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`. Repaired owner evidence is pending approval.
 - 2026-09-20 — Owner approved Packet L01 and the language-independent per-word romanization rule: identical normalized reading text is hidden, while any distinct reading aid remains visible. Primary Known Language routing for non-English word descriptions and explanations remains assigned to the later K-series device matrix. Publishing the exact approved Dutch packet after disposable-fixture cleanup and a fresh gate.
+- 2026-09-21 — Completed Step 2.4 on Android. Persisted pending bubbles now remain visible after force-stop and offline reopen even when a new chat has no cached server history; the empty local state still shows the existing load error and Retry. The same message auto-delivered once after reconnect, translation recovered, the forced server-failure retry path passed, and temporary QA data was removed.

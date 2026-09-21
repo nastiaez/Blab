@@ -1129,7 +1129,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // keep showing the last-known messages rather than
                             // collapsing to the loading shimmer.
                             final knownMessages = messagesAsync.value;
-                            if (knownMessages == null) {
+                            final pending = ref.watch(
+                              pendingSendsProvider(widget.chatId),
+                            );
+                            if (knownMessages == null && pending.isEmpty) {
                               if (messagesAsync.hasError) {
                                 return _ChatHistoryErrorState(
                                   onRetry: () => ref.invalidate(
@@ -1141,10 +1144,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             }
                             return Builder(
                               builder: (context) {
-                                final messages = knownMessages;
-                                final pending = ref.watch(
-                                  pendingSendsProvider(widget.chatId),
-                                );
+                                final messages =
+                                    knownMessages ?? const <Message>[];
                                 // In-place upgrade: after the server confirms
                                 // a send, the pending bubble carries the server's
                                 // id + timestamp. As soon as the realtime stream
