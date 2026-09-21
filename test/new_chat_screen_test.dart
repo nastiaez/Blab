@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/invite/new_chat_screen.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -120,6 +121,31 @@ void main() {
     expect(tester.getTopLeft(helper).dx, tester.getTopLeft(card).dx);
   });
 
+  testWidgets('invite card and CTA use the approved warm palette', (
+    tester,
+  ) async {
+    await openOnlineInvite(tester, FakeInvites());
+
+    final title = find.text("Let's chat on Blab");
+    final card = tester.widget<Container>(
+      find.ancestor(of: title, matching: find.byType(Container)).first,
+    );
+    final decoration = card.decoration! as BoxDecoration;
+    final border = decoration.border! as Border;
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+
+    expect(decoration.color, BlabColors.chatSurface);
+    expect(border.top.color, BlabColors.chatDivider);
+    expect(
+      button.style!.backgroundColor!.resolve(<WidgetState>{}),
+      BlabColors.brand,
+    );
+    expect(
+      button.style!.foregroundColor!.resolve(<WidgetState>{}),
+      BlabColors.warmInk,
+    );
+  });
+
   testWidgets('invite creator localizes the complete visible flow', (
     tester,
   ) async {
@@ -184,6 +210,13 @@ void main() {
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't open sharing. Try again."), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(find.text("Couldn't open sharing. Try again."))
+          .style!
+          .color,
+      BlabColors.error,
+    );
     expect(find.text('loveblab.com/i/token1'), findsOneWidget);
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
@@ -213,6 +246,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.calls, 0);
     expect(find.text('No connection'), findsOneWidget);
+    final offlineText = tester.widget<Text>(find.text('No connection'));
+    final offlineBar = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.text('No connection'),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    expect(offlineBar.color, BlabColors.brandSoft);
+    expect(offlineText.style!.color, BlabColors.error);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNull,

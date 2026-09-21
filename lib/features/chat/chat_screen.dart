@@ -1837,7 +1837,7 @@ class _ModeTipCard extends StatelessWidget {
             width: 280,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF88C5A),
+              color: BlabColors.brand,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(
@@ -1934,7 +1934,7 @@ class _ModeTipPointerPainter extends CustomPainter {
       ..lineTo(size.width / 2, 0)
       ..lineTo(size.width, size.height)
       ..close();
-    canvas.drawPath(pointer, Paint()..color = const Color(0xFFF88C5A));
+    canvas.drawPath(pointer, Paint()..color = BlabColors.brand);
   }
 
   @override
@@ -3427,7 +3427,7 @@ class _MessageStatusNotice extends StatelessWidget {
               fontSize: 12,
               height: 1.25,
               fontWeight: FontWeight.w500,
-              color: Color(0xFFC62828),
+              color: BlabColors.error,
             ),
           ),
         ),
@@ -3838,7 +3838,7 @@ class _InputBar extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: atLimit
-                            ? const Color(0xFFEF4444)
+                            ? BlabColors.error
                             : BlabColors.textMuted,
                       ),
                     ),

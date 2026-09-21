@@ -410,7 +410,7 @@ class _SafetyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? BlabColors.errorWarm : BlabColors.warmInk;
+    final color = destructive ? BlabColors.error : BlabColors.warmInk;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),

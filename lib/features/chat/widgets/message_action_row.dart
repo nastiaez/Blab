@@ -134,9 +134,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = item.destructive
-        ? const Color(0xFFEF4444)
-        : BlabColors.bubbleInk;
+    final color = item.destructive ? BlabColors.error : BlabColors.bubbleInk;
     return InkWell(
       key: ValueKey('message-action-${item.action.name}'),
       borderRadius: BorderRadius.circular(12),

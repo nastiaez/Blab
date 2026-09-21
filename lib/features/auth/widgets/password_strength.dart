@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 
 enum PasswordStrength { empty, weak, fair, strong }
@@ -64,7 +65,7 @@ class PasswordStrengthBar extends StatelessWidget {
       PasswordStrength.strong => 3,
     };
     final Color color = switch (s) {
-      PasswordStrength.weak => Colors.red.shade400,
+      PasswordStrength.weak => BlabColors.error,
       PasswordStrength.fair => Colors.orange.shade400,
       PasswordStrength.strong => Colors.green.shade500,
       _ => Colors.grey.shade300,

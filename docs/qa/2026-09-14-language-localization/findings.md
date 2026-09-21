@@ -499,6 +499,346 @@ The disposable local chat is `71000000-0000-4000-8000-000000000001`. The repaire
 - Owner decision: approved 2026-09-20
 - Follow-up: none
 
+## Packet L02 — English language engine
+
+### Evidence
+
+- `L02-EN-01-alice-web.png`: Alice's English Practice results, including her inline correction and Bob's clean received messages.
+- `L02-EN-02-bob-android-correction.png`: Bob's English Practice results, including his inline correction and Alice's clean received messages.
+- `L02-EN-03-bob-word-help.png`: English word help for `bookstore` with the German description and no duplicate romanization.
+- `L02-EN-04-bob-sentence-audio.png`: translated sentence with the German source revealed and the English Listen action.
+- `L02-EN-review.jpg`: two-by-two review composite of the four evidence states.
+
+The disposable local chat is `72000000-0000-4000-8000-000000000002`. The Android APK matched the published L01 debug build exactly at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L02-EN-01
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: Practice chat / German-authored message translated to English in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural English while the authored German remains available as the source
+- Observed: `Wir treffen uns morgen nach der Arbeit.` became `We will meet tomorrow after work.` and `Wir besuchen morgen die Buchhandlung.` became `We are visiting the bookstore tomorrow.`. Alice and Bob both received the clean English result; the Android action state reveals the German source. Every preparation job completed ready on its first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L02-EN-02
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: Practice chat / correct English plus intentionally incorrect English in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: correct English remains unchanged; incorrect English is corrected for the author with a German explanation; the recipient receives only clean English
+- Observed: `I am meeting a friend after work.` remained unchanged. `She go to the bookstore every Saturday.` became `She goes to the bookstore every Saturday.` with the German explanation `Das Verb "go" muss in der dritten Person Singular konjugiert werden.`. `They is waiting near the station.` became `They are waiting near the station.` with the German explanation `"They is" sollte "They are" sein.`. Authors see the inline correction; recipients see clean English.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L02-EN-03
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: word help for `bookstore`
+- Client: Bob / Android emulator
+- Expected: the popup shows the English word, its German description, and no redundant romanization
+- Observed: the popup shows `bookstore` and `Buchhandlung`; identical Latin-script romanization is suppressed by the language-independent per-word rule.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L02-EN-04
+
+- Interface language: English
+- Learning language: English
+- Primary known language: German
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize English with the English voice and remain reachable without clipping
+- Observed: the word speaker and sentence Listen action are reachable; sentence playback created a Google TTS audio track and the language mapping resolves English to `en-US`. The popup and four-action incoming row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+## Packet L03 — French language engine
+
+### Evidence
+
+- `L03-FR-01-alice-web.png`: Alice's French Practice results, including her inline correction and Bob's clean received messages.
+- `L03-FR-02-bob-android-correction.png`: Bob's French Practice results, including his inline correction and Alice's clean received messages.
+- `L03-FR-03-bob-word-help.png`: repaired French word help for `librairie`, showing the German description `Buchhandlung`.
+- `L03-FR-04-bob-sentence-audio.png`: translated sentence with the German source revealed and the French Listen action.
+- `L03-FR-review.jpg`: two-by-two review composite of the four evidence states.
+
+The disposable local chat is `73000000-0000-4000-8000-000000000003`. The Android APK matched the locally reviewed L03 debug build exactly at SHA-256 `9f5e46da5bf9d98324b1e98ba54893b2187b3efcf0402da5fd3205ae4fbb1be2`.
+
+### L03-FR-01
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: Practice chat / German-authored message translated to French in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural French while the authored German remains available as the source
+- Observed: `Wir treffen uns morgen im Park.` became `Nous nous rencontrons demain au parc.` and `Wir wollen morgen die Buchhandlung besuchen.` became `Nous voulons visiter la librairie demain.`. Alice and Bob both received the clean French result; the Android action state reveals the German source. Every preparation job completed ready on its first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L03-FR-02
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: Practice chat / correct French plus intentionally incorrect French in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: correct French remains unchanged; incorrect French is corrected for the author with a German explanation; the recipient receives only clean French
+- Observed: `Je rencontre une amie après le travail.` remained unchanged. `Elle vont au marché chaque samedi.` became `Elle va au marché chaque samedi.` with the German explanation `Das Verb "vont" sollte in der dritten Person Singular "va" sein.`. `Ils est pres de la gare.` became `Ils sont près de la gare.` with the German explanation `"est" sollte "sont" sein, da das Subjekt plural ist.`. Authors see the inline correction; recipients see clean French.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L03-FR-03
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: word help for `librairie`
+- Client: Bob / Android emulator and persisted preparation package
+- Expected: the popup shows the French word, its German description, and no redundant romanization
+- Observed: the original run stored English token descriptions because the provider instructions requested German but included an English-only token example. The shared prompt now requires the Primary Known Language throughout and contains no English gloss example. An exact real-provider rerun stored German descriptions for every French content token, including `librairie` → `Buchhandlung`, for both participants; the Android popup renders that repaired value and continues to suppress duplicate Latin-script romanization.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+### L03-FR-04
+
+- Interface language: English
+- Learning language: French
+- Primary known language: German
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize French with the French voice and remain reachable without clipping
+- Observed: word and sentence playback both dispatched `fr-FR` / `fra-FRA` through the installed French voice; both utterances started successfully. The popup and five-action outgoing row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-20
+- Follow-up: none
+
+## Packet L04 — German language engine
+
+### Evidence
+
+- `L04-DE-01-alice-web.png`: Alice's German Practice results, including her inline correction and Bob's clean received messages.
+- `L04-DE-02-bob-android-correction.png`: Bob's German Practice results, including his inline correction and Alice's clean received messages.
+- `L04-DE-03-bob-word-help.png`: German word help for `Buchhandlung` with the French description `librairie` and no duplicate romanization.
+- `L04-DE-04-bob-sentence-audio.png`: translated sentence with the French source revealed and the German Listen action.
+- `L04-DE-review.jpg`: two-by-two review composite of the four evidence states.
+
+The disposable local chat is `74000000-0000-4000-8000-000000000004`. The installed Android APK matched the reviewed feature build exactly at SHA-256 `9f5e46da5bf9d98324b1e98ba54893b2187b3efcf0402da5fd3205ae4fbb1be2`.
+
+### L04-DE-01
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: Practice chat / French-authored message translated to German in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural German while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` became `Wir treffen uns morgen im Park.` and `Nous voulons visiter la librairie demain.` became `Wir wollen morgen die Buchhandlung besuchen.`. Alice and Bob both received the clean German result; the Android action state reveals the French source. Every preparation job completed ready on its first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L04-DE-02
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: Practice chat / correct German plus intentionally incorrect German in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: correct German remains unchanged; incorrect German is corrected for the author with a French explanation; the recipient receives only clean German
+- Observed: `Ich treffe nach der Arbeit eine Freundin.` remained unchanged. `Ich gehe jeden Tag zum Arbeit.` became `Ich gehe jeden Tag zur Arbeit.` with the French explanation `Il faut utiliser "zur" au lieu de "zum" avec "Arbeit".`. `Die Kinder ist nahe am Bahnhof.` became `Die Kinder sind nahe am Bahnhof.` with the French explanation `Le verbe 'sind' doit être utilisé avec le sujet pluriel 'Die Kinder'.`. Authors see the inline correction; recipients see clean German.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L04-DE-03
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: word help for `Buchhandlung`
+- Client: Bob / Android emulator
+- Expected: the popup shows the German word, its French description, and no redundant romanization
+- Observed: the popup shows `Buchhandlung` and `librairie`; identical Latin-script romanization is suppressed by the language-independent per-word rule.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L04-DE-04
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize German with the German voice and remain reachable without clipping
+- Observed: the word speaker and sentence Listen action are reachable; sentence playback created a Google TTS audio track and the language mapping resolves German to `de-DE`. The popup and five-action outgoing row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+## Packet L05 — Hindi language engine
+
+### Evidence
+
+- `L05-HI-01-bob-chat.png`: Bob's Android chat showing Alice's translated and authored Hindi plus Bob's French-to-Hindi return message.
+- `L05-HI-02-bob-word-help.png`: `पुस्तकालय` popup with the missing French meaning and romanization.
+- `L05-HI-03-bob-sentence-audio.png`: outgoing Hindi sentence with its French source and the Hindi Listen action.
+- `L05-HI-04-repaired-chat.png`: repaired chat showing plural `हैं`, one-time future `मिलेंगे`, and complete Hindi output in both directions.
+- `L05-HI-05-repaired-word-help.png`: repaired `पुस्तकालय` popup with `pustakalay` and French `bibliothèque`.
+- `L05-HI-06-repaired-correction-actions.png`: repaired corrected sentence with its French learning subtitle and Hindi Listen action.
+
+The disposable local chat is `00000000-0000-4000-8000-00000000f240`. The original defect capture used feature-build SHA-256 `7fcf4dba371da9a26304e6c2cc1a18fc95d7d870549e4fdfebfae34482b98720`. The repaired Android evidence was recaptured after installing the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L05-HI-01
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Hindi in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural Hindi while the authored French remains available as the source
+- Observed: before repair, `Nous nous retrouvons demain au parc.` became the understandable but habitual `हम कल पार्क में मिलते हैं।`. After the approved generic temporal repair it becomes the natural one-time future `हम कल पार्क में मिलेंगे।`; `Nous voulons visiter la bibliotheque demain.` remains `हम कल पुस्तकालय जाना चाहते हैं।`. Both viewers' final jobs completed ready on the first attempt. A live negative control also preserved the past correctly: `Nous nous sommes retrouvés hier au parc.` became `हम कल पार्क में मिले थे।`, proving the shared `कल` marker is not forced into future tense.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none
+
+### L05-HI-02
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: Practice chat / correct Hindi plus intentionally incorrect Hindi
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `आज मौसम बहुत अच्छा है।` remains unchanged; plural-agreement mistake `बच्चे स्टेशन के पास है।` is corrected to `बच्चे स्टेशन के पास हैं।`, with a French explanation for the author and clean Hindi for the recipient
+- Observed: before repair, the clearly incorrect plural sentence was accepted unchanged. After the approved generic correction audit, the correct sentence still remains unchanged while the mistake becomes `बच्चे स्टेशन के पास हैं।`, with the French explanation `Le verbe doit être au pluriel pour s'accorder avec le sujet.` and complete word metadata for both viewers.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none; the repair audits agreement generically and contains no sentence-specific correction
+
+### L05-HI-03
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: word help for `पुस्तकालय`
+- Client: Bob / Android emulator
+- Expected: the popup shows the Hindi word, a useful romanization, and the French meaning `bibliothèque`
+- Observed: before repair, the popup showed only `पुस्तकालय` and its speaker because an empty token list was saved. After the approved non-Latin metadata contract repair, the popup shows `पुस्तकालय`, romanization `pustakalay`, and French `bibliothèque`.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none; non-Latin results with empty token metadata are rejected before storage
+
+### L05-HI-04
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Hindi with the Hindi voice and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `hi-IN` / `hin-IND`, and both utterances started successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none
+
+## Packet L06 — Spanish language engine
+
+### Evidence
+
+- `L06-ES-01-alice-chat.png`: Alice's real web chat showing French-to-Spanish translation, correct Spanish unchanged, the inline agreement correction, and Bob's return message.
+- `L06-ES-02-bob-chat.png`: Bob's Android chat showing the same four messages in the reverse client direction.
+- `L06-ES-03-bob-word-help.png`: `librería` popup with French `librairie`; identical Latin-script romanization remains suppressed.
+- `L06-ES-04-bob-sentence-audio.png`: Bob's outgoing Spanish sentence with its French source and the Spanish Listen action.
+
+The disposable local chat is `00000000-0000-4000-8000-00000000f250`. Android evidence was captured from the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L06-ES-01
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Spanish in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural Spanish while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `Nos encontramos mañana en el parque.` and Bob's `Nous voulons visiter la librairie demain.` becomes `Queremos visitar la librería mañana.` for both viewers. All four prepared packages are ready; the two fresh provider jobs completed on the first attempt and the repeated language-pair result reused the valid cache.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L06-ES-02
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: Practice chat / correct Spanish plus intentionally incorrect Spanish
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `Hoy hace muy buen tiempo.` remains unchanged; plural-agreement mistake `Los niños está cerca de la estación.` is corrected to `Los niños están cerca de la estación.`, with a French explanation for the author and clean Spanish for the recipient
+- Observed: the correct sentence remains unchanged. The mistake becomes `Los niños están cerca de la estación.`, with the French explanation `Le verbe 'está' doit être au pluriel 'están' pour s'accorder avec 'niños'.` Both viewers' jobs completed ready on the first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L06-ES-03
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: word help for `librería`
+- Client: Bob / Android emulator
+- Expected: the popup shows the Spanish word and French meaning `librairie`, without redundant duplicate romanization
+- Observed: the popup shows `librería → librairie`; the redundant identical Latin-script reading is correctly hidden.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L06-ES-04
+
+- Interface language: English
+- Learning language: Spanish
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Spanish with the Spanish voice and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `es-ES` / `spa-ESP`, and both utterances started successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

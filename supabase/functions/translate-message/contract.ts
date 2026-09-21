@@ -144,7 +144,7 @@ export function focusedTranslationRetryMessages({
   return [{
     role: "system",
     content:
-      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
+      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
   }, { role: "user", content: text }];
 }
 
@@ -263,6 +263,39 @@ export const INTERFACE_RESPONSE_FORMAT = {
         interfaceText: { type: "string", minLength: 1 },
       },
       required: ["interfaceText"],
+    },
+  },
+} as const;
+
+export const CORRECTION_AUDIT_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_correction_audit",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        hasError: { type: "boolean" },
+        correctedText: { type: ["string", "null"] },
+        explanation: { type: ["string", "null"] },
+        confidence: {
+          type: ["string", "null"],
+          enum: ["low", "medium", "high", null],
+        },
+        tokens: {
+          type: ["array", "null"],
+          minItems: 1,
+          items: TOKEN_RESPONSE_SCHEMA,
+        },
+      },
+      required: [
+        "hasError",
+        "correctedText",
+        "explanation",
+        "confidence",
+        "tokens",
+      ],
     },
   },
 } as const;
@@ -405,6 +438,22 @@ export type TranslationToken = {
   roman: string | null;
   isContent: boolean;
 };
+
+export type CorrectionAuditResult =
+  | {
+    hasError: false;
+    correctedText: null;
+    explanation: null;
+    confidence: null;
+    tokens: null;
+  }
+  | {
+    hasError: true;
+    correctedText: string;
+    explanation: string;
+    confidence: CorrectionConfidence;
+    tokens: TranslationToken[];
+  };
 
 type DirectSubjectRule = {
   sourceLang: string;
@@ -711,6 +760,57 @@ function validatedCompleteTokens(
   return reproduced === expectedText ? tokens : null;
 }
 
+export function parseCorrectionAuditResult(
+  content: string,
+  sourceText: string,
+): CorrectionAuditResult | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const value = raw as Record<string, unknown>;
+  if (typeof value.hasError !== "boolean") return null;
+  if (!value.hasError) {
+    return value.correctedText === null && value.explanation === null &&
+        value.confidence === null && value.tokens === null
+      ? {
+        hasError: false,
+        correctedText: null,
+        explanation: null,
+        confidence: null,
+        tokens: null,
+      }
+      : null;
+  }
+  if (
+    typeof value.correctedText !== "string" ||
+    value.correctedText.trim().length === 0 ||
+    value.correctedText.trim() === sourceText.trim() ||
+    typeof value.explanation !== "string" ||
+    value.explanation.trim().length === 0 ||
+    typeof value.confidence !== "string" ||
+    !CORRECTION_CONFIDENCE.has(value.confidence)
+  ) return null;
+  const correctedText = value.correctedText.trim();
+  const tokens = validatedCompleteTokens(value.tokens, correctedText);
+  if (tokens === null) return null;
+  return {
+    hasError: true,
+    correctedText,
+    explanation: value.explanation.trim(),
+    confidence: value.confidence as CorrectionConfidence,
+    tokens,
+  };
+}
+
 export function parseFormAuditResult(content: string): FormAuditResult | null {
   const firstBrace = content.indexOf("{");
   const lastBrace = content.lastIndexOf("}");
@@ -885,6 +985,28 @@ export function resolveOptionalFormAudit(
     return { ...result, formAlternatives: null };
   }
   return applyConfirmedFormAudit(result, audit, formContext);
+}
+
+export function correctionAuditSystemPrompt(
+  targetLang: string,
+  interfaceLang: string,
+): string {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  return `Review one complete learner-written sentence in ${targetName} (${targetLang}).
+Identify only clear grammar, spelling, inflection, agreement, word-order, missing/extra-word, or wrong-word errors. Do not change acceptable wording, dialect, slang, tone, punctuation, capitalization, or style. Before returning hasError=false, compare every subject with every verb and auxiliary for person, number, gender, and honorific agreement.
+When there is a clear error, make the smallest correction that preserves the complete meaning, explain it in ${interfaceName} (${interfaceLang}), and provide complete per-word metadata for the corrected ${targetName} sentence. Every content token needs a short 1-3 word ${interfaceName} gloss; every non-Latin content token also needs Latin-script romanization. When there is no clear error, all fields except hasError must be null.
+Return strict JSON only: {"hasError":<boolean>,"correctedText":<string or null>,"explanation":<string or null>,"confidence":<low, medium, high, or null>,"tokens":<complete token array or null>}`;
+}
+
+export function hindiFutureAuditSystemPrompt(
+  sourceLang: string,
+  interfaceLang: string,
+): string {
+  const sourceName = LANG_NAMES[sourceLang] ?? sourceLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  return `Review one ${sourceName} (${sourceLang}) source sentence and its candidate Hindi (hi) translation. Use the source to decide whether the time reference is past, future, or habitual; Hindi कल may mean yesterday or tomorrow.
+When the source describes a one-time future event, rewrite any habitual present Hindi candidate with an overt future verb form while preserving the complete meaning and tone. When the source is past or habitual, or the candidate already expresses the correct natural tense, keep the candidate unchanged. Return mode=translation, sourceLang=${sourceLang}, the resulting Hindi sentence in translation, and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Set explanation and confidence to null and formAlternatives to null; a separate agreement review handles participant forms. Tokens must reproduce the resulting Hindi sentence exactly, with one content token per word, a short 1-3 word gloss written only in ${interfaceName}, and Latin-script romanization for every content token. Never default token glosses to English when ${interfaceName} is another language.`;
 }
 
 export function formAuditSystemPrompt(
@@ -1123,6 +1245,28 @@ export function translationNeedsRetry(
     result.sourceLang !== targetLang &&
     result.translation.trim().toLocaleLowerCase() ===
       sourceText.trim().toLocaleLowerCase();
+}
+
+/// Non-Latin learning text needs complete token metadata because the popup's
+/// transliteration and known-language gloss are essential reading aids there.
+/// parseProviderResult already discards the whole token list when any token is
+/// incomplete, so an empty list is the bounded signal for one provider retry.
+export function wordMetadataNeedsRetry(result: TranslationResult): boolean {
+  if (result.tokens.length > 0) return false;
+  return Array.from(result.translation).some((character) =>
+    /\p{L}/u.test(character) && !/\p{Script=Latin}/u.test(character)
+  );
+}
+
+/// Hindi `कल` can mean yesterday or tomorrow. A focused review uses the
+/// source sentence to ensure a one-time future event did not drift into the
+/// habitual present, while ordinary Hindi translations remain single-pass.
+export function hindiFutureNeedsAudit(
+  result: TranslationResult,
+  targetLang: string,
+): boolean {
+  return targetLang === "hi" && result.mode === "translation" &&
+    /कल/u.test(result.translation);
 }
 
 /// Same-language corrections must preserve the complete authored message.
@@ -1573,6 +1717,8 @@ export function systemPrompt(
     `For each content token include "roman", a Latin-script transliteration. For a Latin-script target word, repeat the written word when no script conversion is needed.`;
   const targetLanguageGuidance = targetLang === "nl"
     ? " Write standard Dutch compounds as one word; for example, use morgenochtend, never morgen ochtend."
+    : targetLang === "hi"
+    ? " For a one-time future event with an explicit future marker such as tomorrow, use an overt future verb form in Hindi rather than habitual present."
     : "";
 
   const formInstruction = formContext === undefined
@@ -1617,14 +1763,16 @@ Rules:
 - First detect sourceLang, then choose exactly one mode.
 - If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
 - mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then carefully check the complete input for real learning mistakes: grammar, spelling, inflection, agreement, word order, missing/extra words, or wrong-word errors. Even one wrong word or misspelled word is enough for mode=correction. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
+- Before returning mode=none, compare every subject with every verb and auxiliary for person, number, gender, and honorific agreement. A mismatch is a real correction even when the meaning remains understandable.
 - Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
 - Never create correction marks for capitalization, noun capitalization, apostrophes, commas, terminal punctuation, or spacing. Apply those mechanical fixes silently in translation/interfaceText when needed.
 - mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
 - For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.
 - For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
 - For mode=translation, explanation/confidence are null.
+- When the source contains an explicit future time marker, preserve that future meaning with the natural target-language tense or construction; do not default to habitual present unless that is genuinely idiomatic in ${targetName}.
 - Set formAlternatives to null unless the target sentence genuinely requires a feminine/masculine choice for the viewer or partner. When it is required, set translation to the feminine rendering, and concatenate before + feminine + after to reproduce translation exactly. feminine and masculine must be complete, natural alternatives for the same shortest understandable affected fragment; include every linked agreement change together. feminineTokens and masculineTokens must each reproduce their complete resolved sentence exactly, including the shared before/after text, and follow the same per-word metadata rules as tokens. subjectIsViewer identifies the affected participant and subjectName is their display name. Set suggestedForm from their name, or feminine if unclear. Never encode a saved preference in this shared translation; it never changes the identity of the affected participant.
-- This is a required output rule, not a suggestion to make wording neutral. For example, ONLY when the viewer authored English "What did you do yesterday?", Ukrainian MUST return translation="Що ти робила вчора?" and formAlternatives={"before":"Що ти ","feminine":"робила","masculine":"робив","after":" вчора?","subjectName":"<partner name>","subjectIsViewer":false,"suggestedForm":"feminine","feminineTokens":[{"text":"Що","gloss":"what","roman":"Shcho","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false},{"text":"ти","gloss":"you","roman":"ty","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false},{"text":"робила","gloss":"did","roman":"robyla","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false},{"text":"вчора","gloss":"yesterday","roman":"vchora","isContent":true},{"text":"?","gloss":null,"roman":null,"isContent":false}],"masculineTokens":[{"text":"Що","gloss":"what","roman":"Shcho","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false},{"text":"ти","gloss":"you","roman":"ty","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false},{"text":"робив","gloss":"did","roman":"robyv","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false},{"text":"вчора","gloss":"yesterday","roman":"vchora","isContent":true},{"text":"?","gloss":null,"roman":null,"isContent":false}]}. When the partner authored that same question, subjectIsViewer MUST instead be true and subjectName MUST be the viewer’s name. Apply the same rule to the natural feminine/masculine fragment in every supported target language; French/Hindi may need a multi-word fragment.
+- This is a required output rule, not a suggestion to make wording neutral. For example, ONLY when the viewer authored English "What did you do yesterday?", Ukrainian MUST return translation="Що ти робила вчора?" and split formAlternatives into before="Що ти ", feminine="робила", masculine="робив", and after=" вчора?", with the partner as the affected subject. When the partner authored that same question, subjectIsViewer MUST instead be true and subjectName MUST be the viewer’s name. Apply the same rule to the natural feminine/masculine fragment in every supported target language; French/Hindi may need a multi-word fragment. Both complete token arrays must follow the general token rules below, including short ${interfaceName} glosses; never copy example glosses from another language.
 - "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction or when a translated source has clear grammar, spelling, inflection, agreement, word order, missing/extra word, or wrong-word errors.
 - mode=none applies only to correction of the ${targetName} learning line. When ${interfaceName} is a different language, interfaceText must still translate the complete message into ${interfaceName}; do not copy the ${targetName} text into interfaceText.
 - If sourceLang is ${interfaceLang} and differs from ${targetLang}, "interfaceText" stays in ${interfaceName}; preserve the trimmed input when it is already correct, but fix clear language mistakes so the main chat shows clean communication.

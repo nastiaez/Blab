@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
 import 'package:blab/features/chats/widgets/chat_list_tile.dart';
@@ -77,6 +78,27 @@ void main() {
 
     expect(find.text('typing...'), findsNothing);
     expect(find.text('Last message'), findsOneWidget);
+  });
+
+  testWidgets('unread badge uses the approved brand fill and dark ink', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        partnerTyping: false,
+        chat: _chat(withLastMessageId: true, unreadCount: 3),
+      ),
+    );
+    await tester.pump();
+
+    final badgeText = tester.widget<Text>(find.text('3'));
+    final badge = tester.widget<Container>(
+      find.ancestor(of: find.text('3'), matching: find.byType(Container)).first,
+    );
+    final decoration = badge.decoration! as BoxDecoration;
+
+    expect(decoration.color, BlabColors.brand);
+    expect(badgeText.style!.color, BlabColors.bubbleInk);
   });
 
   testWidgets(

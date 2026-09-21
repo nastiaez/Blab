@@ -1626,7 +1626,7 @@ class _TokenSwatches extends StatelessWidget {
             ),
           ],
           const Text(
-            'Chat accent rule: use #F88C5A for Practice surfaces and mode state; the legacy #D4694A brand token is not used as the chat accent.',
+            'Accent rule: use the shared brand token for Practice surfaces, active controls, and selected states.',
             style: TextStyle(
               color: BlabColors.textMuted,
               fontSize: 11,
