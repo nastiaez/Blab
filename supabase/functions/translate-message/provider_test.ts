@@ -40,6 +40,39 @@ Deno.test("focused audits use their matching strict response schemas", async () 
   );
 });
 
+Deno.test("cross-language results receive a semantic audit before form and storage", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const functionStart = source.indexOf(
+    "async function auditTranslationSemantics",
+  );
+  const functionEnd = source.indexOf(
+    "async function auditSameLanguageCorrection",
+  );
+  const auditBlock = source.slice(functionStart, functionEnd);
+  assert(functionStart >= 0, "the semantic audit function exists");
+  assert(
+    auditBlock.includes("SEMANTIC_AUDIT_RESPONSE_FORMAT") &&
+      auditBlock.includes("semanticTranslationAuditSystemPrompt("),
+    "the audit uses its narrow two-meaning response contract",
+  );
+  assert(
+    auditBlock.includes("parseSemanticAuditResult(") &&
+      auditBlock.includes("repairWordMetadata("),
+    "only an explicit meaning mismatch can replace the sentence and metadata",
+  );
+
+  const callIndex = source.indexOf("await auditTranslationSemantics(");
+  const formIndex = source.indexOf("const needsFormAudit");
+  const storageIndex = source.indexOf("const completion = isWorker");
+  assert(callIndex >= 0, "cross-language candidates invoke the audit");
+  assert(
+    callIndex < formIndex && callIndex < storageIndex,
+    "meaning is audited before grammatical-form processing and storage",
+  );
+});
+
 Deno.test("copied glosses use a focused metadata repair", async () => {
   const source = await Deno.readTextFile(
     new URL("./index.ts", import.meta.url),

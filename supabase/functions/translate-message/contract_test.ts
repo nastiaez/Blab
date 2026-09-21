@@ -18,11 +18,14 @@ import {
   parseCorrectionAuditResult,
   parseFormAuditResult,
   parseProviderResult,
+  parseSemanticAuditResult,
   parseWordMetadataRepairResult,
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
   recognizedAbbreviationSourceLanguage,
+  SEMANTIC_AUDIT_RESPONSE_FORMAT,
+  semanticTranslationAuditSystemPrompt,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
@@ -426,6 +429,11 @@ Deno.test("focused short retry isolates semantic translation from source detecti
     "chat abbreviations must become an idiomatic target-language expression",
   );
   assert(
+    system.includes("false friends") &&
+      system.includes("back-translate"),
+    "the focused retry must reject similar-looking words with different meanings",
+  );
+  assert(
     messages![1].content === "No",
     "the authored message is the only user input",
   );
@@ -437,6 +445,90 @@ Deno.test("focused short retry isolates semantic translation from source detecti
       text: "This message is deliberately longer than the bounded retry limit",
     }) === null,
     "long messages stay on the ordinary provider path",
+  );
+});
+
+Deno.test("semantic translation audit independently checks source meaning", () => {
+  const prompt = semanticTranslationAuditSystemPrompt("fr", "uk", "fr");
+  assert(prompt.includes("French (fr)"), "the source language is pinned");
+  assert(prompt.includes("Ukrainian (uk)"), "the target language is pinned");
+  assert(
+    prompt.includes("sourceMeaning") && prompt.includes("candidateMeaning"),
+    "the audit must expose both independently rendered meanings",
+  );
+  assert(
+    prompt.includes("false friends") && prompt.includes("back-translate"),
+    "the audit explicitly checks semantic drift",
+  );
+  assert(
+    prompt.includes("do not rewrite") && prompt.includes("meanings differ"),
+    "correct candidate wording remains stable",
+  );
+  for (const word of ["librairie", "бібліотеку", "книгарню"]) {
+    assert(!prompt.includes(word), `the audit does not hardcode ${word}`);
+  }
+});
+
+Deno.test("semantic audit parser accepts only internally consistent verdicts", () => {
+  assert(
+    SEMANTIC_AUDIT_RESPONSE_FORMAT.json_schema.name ===
+      "blab_semantic_translation_audit",
+    "the semantic audit has its own strict schema",
+  );
+  const preserved = parseSemanticAuditResult(
+    JSON.stringify({
+      sourceMeaning: "Nous voulons visiter la librairie demain.",
+      candidateMeaning: "Nous voulons visiter la librairie demain.",
+      preservesMeaning: true,
+      correctedTranslation: null,
+    }),
+    "Ми хочемо відвідати книгарню завтра.",
+  );
+  assert(
+    preserved?.preservesMeaning === true &&
+      preserved.correctedTranslation === null,
+    "an equivalent candidate remains immutable",
+  );
+
+  const corrected = parseSemanticAuditResult(
+    JSON.stringify({
+      sourceMeaning: "Nous voulons visiter la librairie demain.",
+      candidateMeaning: "Nous voulons visiter la bibliothèque demain.",
+      preservesMeaning: false,
+      correctedTranslation: "Ми хочемо відвідати книгарню завтра.",
+    }),
+    "Ми хочемо відвідати бібліотеку завтра.",
+  );
+  assert(
+    corrected?.preservesMeaning === false &&
+      corrected.correctedTranslation ===
+        "Ми хочемо відвідати книгарню завтра.",
+    "a meaning mismatch carries one corrected target sentence",
+  );
+
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify({
+        sourceMeaning: "source",
+        candidateMeaning: "different",
+        preservesMeaning: false,
+        correctedTranslation: null,
+      }),
+      "candidate",
+    ) === null,
+    "a mismatch without a correction is rejected",
+  );
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify({
+        sourceMeaning: "source",
+        candidateMeaning: "different",
+        preservesMeaning: false,
+        correctedTranslation: "candidate",
+      }),
+      "candidate",
+    ) === null,
+    "a mismatch cannot claim the unchanged candidate as its correction",
   );
 });
 
@@ -2376,6 +2468,10 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
   assert(
     prompt.includes("likely personal name is not an unsupported language"),
     "names are transliterated instead of treated as unsupported",
+  );
+  assert(
+    prompt.includes("false friends") && prompt.includes("back-translate"),
+    "the standard prompt must verify semantic fidelity instead of trusting spelling similarity",
   );
   assert(
     prompt.includes(

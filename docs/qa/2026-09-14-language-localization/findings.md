@@ -1111,6 +1111,81 @@ The disposable local chat was `00000000-0000-4000-8000-00000000f2a0`. All eight 
 - Owner decision: approved 2026-09-21
 - Follow-up: none
 
+## Packet L11 — Ukrainian language engine
+
+### Evidence
+
+- `L11-UK-01-alice-chat.png`: Alice's real web chat showing French-to-Ukrainian translation, correct Ukrainian unchanged, the subject-verb correction, and Bob's repaired return message.
+- `L11-UK-02-bob-chat.png`: Bob's Android chat showing the same four prepared messages in the reverse client direction.
+- `L11-UK-03-repaired-word-help.png`: repaired Ukrainian word popup with romanization `knyharnyu` and French `librairie`.
+- `L11-UK-04-sentence-audio.png`: repaired Ukrainian sentence with its French source and the Ukrainian Listen action.
+- `L11-UK-repaired-review.jpg`: the four approved repair frames in one owner-facing packet.
+
+The disposable local chat was `00000000-0000-4000-8000-00000000f2c0`. All eight viewer packages completed successfully; one required a second preparation attempt. The 112-test language-engine suite passed.
+
+### L11-UK-01
+
+- Interface language: English
+- Learning language: Ukrainian
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Ukrainian in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive the same natural Ukrainian while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` becomes `Ми зустрінемося завтра в парку.`. The original false-friend result translated French `librairie` as Ukrainian `бібліотеку` (library). After the general semantic-fidelity repair, Bob's `Nous voulons visiter la librairie demain.` becomes `Ми хочемо відвідати книгарню завтра.` (bookstore) for both viewers.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L11-UK-02
+
+- Interface language: English
+- Learning language: Ukrainian
+- Primary known language: French
+- Screen/state: Practice chat / correct Ukrainian plus intentionally incorrect Ukrainian
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `Сьогодні дуже гарна погода.` remains unchanged; the singular agreement mistake `Діти знаходиться біля станції.` is corrected to `Діти знаходяться біля станції.`, with a French explanation for the author and clean Ukrainian for the recipient
+- Observed: the correct sentence remains unchanged, and both prepared views use the corrected plural verb `знаходяться`.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L11-UK-03
+
+- Interface language: English
+- Learning language: Ukrainian
+- Primary known language: French
+- Screen/state: repaired word help for `книгарню`
+- Client: Bob / Android emulator
+- Expected: the Ukrainian word shows a useful Latin romanization and the French meaning `librairie`
+- Observed: the popup shows `книгарню / knyharnyu / librairie`. The previous internally consistent but semantically wrong `бібліотеку / biblioteku / librairie` package is no longer accepted.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L11-UK-04
+
+- Interface language: English
+- Learning language: Ukrainian
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Ukrainian and remain reachable without clipping
+- Observed: both controls remain reachable after the repair. Word and sentence playback use the `uk-UA` route, and the five-action outgoing row fits at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L11 semantic-fidelity repair
+
+- Root cause: the provider selected the wrong sense of the French false friend `librairie`, while the previous validators only proved that the translated sentence and its token metadata agreed structurally.
+- Repair: every cross-language candidate receives a narrow semantic audit that independently renders the source meaning and candidate meaning in the Primary Known Language. A matching candidate is preserved exactly. A genuine mismatch may return one corrected target sentence, after which only that sentence's word metadata is regenerated.
+- Scope: language-independent; no French/Ukrainian dictionary, no sentence-specific replacement, and no relaxation of the existing structural validators.
+- Verification: 603 app checks passed, 15 environment-only checks skipped, 112 language-engine checks passed, static analysis and both formatters were clean, Android built successfully, and the installed APK SHA-256 matched the reviewed artifact exactly at `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

@@ -46,7 +46,7 @@
 | L08 | Portuguese translation, correction, French word help, and Portuguese audio | `screenshots/l08-portuguese/` | Approved 2026-09-21 after word-help repair |
 | L09 | Tamil translation, correction, French word help, romanization, and Tamil audio | `screenshots/l09-tamil/` | Approved 2026-09-21 after correction-metadata repair |
 | L10 | Turkish translation, correction, French word help, and Turkish audio | `screenshots/l10-turkish/` | Approved 2026-09-21 |
-| L11 | Ukrainian translation, correction, French word help, romanization, and Ukrainian audio | `screenshots/l11-ukrainian/` | Not started |
+| L11 | Ukrainian translation, correction, French word help, romanization, and Ukrainian audio | `screenshots/l11-ukrainian/` | Approved 2026-09-21 after semantic-fidelity repair |
 | K01+ | Primary Known Language routing and switching | `screenshots/k*/` | Not started |
 
 ## Evidence rules
