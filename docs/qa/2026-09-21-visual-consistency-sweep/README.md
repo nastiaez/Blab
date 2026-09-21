@@ -1,7 +1,7 @@
 # Visual consistency sweep QA
 
-Date: 2026-09-21  
-Account: Alice  
+Date: 2026-09-21
+Account: Alice
 Viewport: 432 x 932 (Flutter web)
 
 ## Verified screens
