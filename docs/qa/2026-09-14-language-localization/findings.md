@@ -635,6 +635,74 @@ The disposable local chat is `73000000-0000-4000-8000-000000000003`. The Android
 - Owner decision: approved 2026-09-20
 - Follow-up: none
 
+## Packet L04 — German language engine
+
+### Evidence
+
+- `L04-DE-01-alice-web.png`: Alice's German Practice results, including her inline correction and Bob's clean received messages.
+- `L04-DE-02-bob-android-correction.png`: Bob's German Practice results, including his inline correction and Alice's clean received messages.
+- `L04-DE-03-bob-word-help.png`: German word help for `Buchhandlung` with the French description `librairie` and no duplicate romanization.
+- `L04-DE-04-bob-sentence-audio.png`: translated sentence with the French source revealed and the German Listen action.
+- `L04-DE-review.jpg`: two-by-two review composite of the four evidence states.
+
+The disposable local chat is `74000000-0000-4000-8000-000000000004`. The installed Android APK matched the reviewed feature build exactly at SHA-256 `9f5e46da5bf9d98324b1e98ba54893b2187b3efcf0402da5fd3205ae4fbb1be2`.
+
+### L04-DE-01
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: Practice chat / French-authored message translated to German in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural German while the authored French remains available as the source
+- Observed: `Nous nous retrouvons demain au parc.` became `Wir treffen uns morgen im Park.` and `Nous voulons visiter la librairie demain.` became `Wir wollen morgen die Buchhandlung besuchen.`. Alice and Bob both received the clean German result; the Android action state reveals the French source. Every preparation job completed ready on its first attempt.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L04-DE-02
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: Practice chat / correct German plus intentionally incorrect German in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: correct German remains unchanged; incorrect German is corrected for the author with a French explanation; the recipient receives only clean German
+- Observed: `Ich treffe nach der Arbeit eine Freundin.` remained unchanged. `Ich gehe jeden Tag zum Arbeit.` became `Ich gehe jeden Tag zur Arbeit.` with the French explanation `Il faut utiliser "zur" au lieu de "zum" avec "Arbeit".`. `Die Kinder ist nahe am Bahnhof.` became `Die Kinder sind nahe am Bahnhof.` with the French explanation `Le verbe 'sind' doit être utilisé avec le sujet pluriel 'Die Kinder'.`. Authors see the inline correction; recipients see clean German.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L04-DE-03
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: word help for `Buchhandlung`
+- Client: Bob / Android emulator
+- Expected: the popup shows the German word, its French description, and no redundant romanization
+- Observed: the popup shows `Buchhandlung` and `librairie`; identical Latin-script romanization is suppressed by the language-independent per-word rule.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
+### L04-DE-04
+
+- Interface language: English
+- Learning language: German
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize German with the German voice and remain reachable without clipping
+- Observed: the word speaker and sentence Listen action are reachable; sentence playback created a Google TTS audio track and the language mapping resolves German to `de-DE`. The popup and five-action outgoing row fit at the Android review size.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER
