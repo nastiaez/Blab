@@ -8,6 +8,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
+  CORRECTION_AUDIT_RESPONSE_FORMAT,
+  correctionAuditSystemPrompt,
   correctionNeedsRetry,
   directSubjectRole,
   focusedTranslationRetryMessages,
@@ -15,12 +17,15 @@ import {
   formAuditSystemPrompt,
   type FormParticipantContext,
   genderedAmbiguityNeedsRetry,
+  hindiFutureAuditSystemPrompt,
+  hindiFutureNeedsAudit,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
   LANG_NAMES,
   missingFormAlternativesNeedsAudit,
   normalizeFormSubject,
+  parseCorrectionAuditResult,
   parseFormAuditResult,
   parseProviderResult,
   type ProviderCredential,
@@ -37,6 +42,7 @@ import {
   translationNeedsRetry,
   unsupportedSourceScript,
   validateRequest,
+  wordMetadataNeedsRetry,
 } from "./contract.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
 import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
@@ -50,7 +56,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
-const CACHE_CONTRACT_VERSION = "automatic-forms-v2";
+const CACHE_CONTRACT_VERSION = "complete-language-aids-v3";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -110,6 +116,95 @@ async function repairInterfaceText(
   } catch {
     return null;
   }
+}
+
+async function auditSameLanguageCorrection(
+  credential: ProviderCredential,
+  text: string,
+  targetLang: string,
+  interfaceLang: string,
+) {
+  let response: Response;
+  try {
+    response = await fetchChatCompletion(credential, {
+      temperature: 0,
+      max_completion_tokens: 4000,
+      response_format: CORRECTION_AUDIT_RESPONSE_FORMAT,
+      messages: [
+        {
+          role: "system",
+          content: correctionAuditSystemPrompt(targetLang, interfaceLang),
+        },
+        { role: "user", content: text },
+      ],
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  return typeof content === "string"
+    ? parseCorrectionAuditResult(content, text)
+    : null;
+}
+
+async function auditHindiFutureTranslation(
+  credential: ProviderCredential,
+  sourceText: string,
+  candidateTranslation: string,
+  sourceLang: string,
+  interfaceLang: string,
+) {
+  let response: Response;
+  try {
+    response = await fetchChatCompletion(credential, {
+      temperature: 0,
+      max_completion_tokens: 12000,
+      response_format: TRANSLATION_RESPONSE_FORMAT,
+      messages: [
+        {
+          role: "system",
+          content: hindiFutureAuditSystemPrompt(sourceLang, interfaceLang),
+        },
+        {
+          role: "user",
+          content:
+            `Source message:\n${sourceText}\n\nCandidate Hindi translation:\n${candidateTranslation}`,
+        },
+      ],
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") return null;
+  const revised = parseProviderResult(
+    content,
+    sourceText,
+    "hi",
+    interfaceLang,
+    sourceLang,
+  );
+  return revised !== null && revised.mode === "translation" ? revised : null;
 }
 
 async function auditGrammaticalForm(
@@ -518,6 +613,53 @@ Deno.serve(async (req) => {
         });
         continue;
       }
+      if (candidate.mode === "none" && candidate.sourceLang === targetLang) {
+        const correctionAudit = await auditSameLanguageCorrection(
+          credential,
+          text,
+          targetLang,
+          interfaceLang,
+        );
+        if (correctionAudit === null) {
+          providerFailure = `${credential.provider}_correction_audit`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        if (correctionAudit.hasError) {
+          candidate = {
+            ...candidate,
+            mode: "correction",
+            translation: correctionAudit.correctedText,
+            explanation: correctionAudit.explanation,
+            confidence: correctionAudit.confidence,
+            tokens: correctionAudit.tokens,
+            formAlternatives: null,
+          };
+        }
+      }
+      if (hindiFutureNeedsAudit(candidate, targetLang)) {
+        const futureAudit = await auditHindiFutureTranslation(
+          credential,
+          text,
+          candidate.translation,
+          candidate.sourceLang,
+          interfaceLang,
+        );
+        if (futureAudit === null) {
+          providerFailure = `${credential.provider}_hindi_future_audit`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        candidate = { ...futureAudit, formAlternatives: null };
+      }
       const needsFormAudit = formContext !== undefined &&
         missingFormAlternativesNeedsAudit(
           candidate,
@@ -594,6 +736,15 @@ Deno.serve(async (req) => {
         providerFailure = previousSourceClassificationConflict
           ? `${credential.provider}_source_misclassified`
           : `${credential.provider}_untranslated`;
+        console.error("translation provider attempt failed", {
+          provider: credential.provider,
+          model: credential.model,
+          reason: providerFailure,
+        });
+        continue;
+      }
+      if (wordMetadataNeedsRetry(candidate)) {
+        providerFailure = `${credential.provider}_incomplete_word_metadata`;
         console.error("translation provider attempt failed", {
           provider: credential.provider,
           model: credential.model,

@@ -5,6 +5,32 @@ function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
 }
 
+Deno.test("focused audits use their matching strict response schemas", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const correctionBlock = source.slice(
+    source.indexOf("async function auditSameLanguageCorrection"),
+    source.indexOf("async function auditHindiFutureTranslation"),
+  );
+  const futureBlock = source.slice(
+    source.indexOf("async function auditHindiFutureTranslation"),
+    source.indexOf("async function auditGrammaticalForm"),
+  );
+  assert(
+    correctionBlock.includes("CORRECTION_AUDIT_RESPONSE_FORMAT"),
+    "same-language review must use the correction schema",
+  );
+  assert(
+    futureBlock.includes("TRANSLATION_RESPONSE_FORMAT"),
+    "Hindi future rewrite must use the full translation schema",
+  );
+  assert(
+    !futureBlock.includes("revised.translation !== candidateTranslation"),
+    "the temporal audit must accept unchanged past or already-correct Hindi",
+  );
+});
+
 Deno.test("provider fetch aborts and reports a controlled timeout", async () => {
   const started = Date.now();
   try {

@@ -1,16 +1,21 @@
 import {
   characterCount,
+  CORRECTION_AUDIT_RESPONSE_FORMAT,
+  correctionAuditSystemPrompt,
   correctionNeedsRetry,
   focusedTranslationRetryMessages,
   FORM_AUDIT_RESPONSE_FORMAT,
   formAuditSystemPrompt,
   type FormParticipantContext,
   genderedAmbiguityNeedsRetry,
+  hindiFutureAuditSystemPrompt,
+  hindiFutureNeedsAudit,
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
+  parseCorrectionAuditResult,
   parseFormAuditResult,
   parseProviderResult,
   providerCredentials,
@@ -24,6 +29,7 @@ import {
   type TranslationResult,
   unsupportedSourceScript,
   validateRequest,
+  wordMetadataNeedsRetry,
 } from "./contract.ts";
 import * as contract from "./contract.ts";
 
@@ -113,6 +119,67 @@ Deno.test("accepts a complete Dutch correction with one changed word", () => {
       translation: "Wij zijn morgen bij het station.",
     }, "Wij is morgen bij het station."),
     "a complete inflection correction should pass",
+  );
+});
+
+Deno.test("focused correction audit catches a clear agreement error", () => {
+  const audit = parseCorrectionAuditResult(
+    JSON.stringify({
+      hasError: true,
+      correctedText: "बच्चे स्टेशन के पास हैं।",
+      explanation: "Le sujet pluriel « बच्चे » exige l’auxiliaire pluriel « हैं ».",
+      confidence: "high",
+      tokens: [
+        {
+          text: "बच्चे",
+          gloss: "enfants",
+          roman: "bacche",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "स्टेशन",
+          gloss: "gare",
+          roman: "station",
+          isContent: true,
+        },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "के", gloss: "de", roman: "ke", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "पास", gloss: "près", roman: "paas", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "हैं", gloss: "sont", roman: "hain", isContent: true },
+        { text: "।", gloss: null, roman: null, isContent: false },
+      ],
+    }),
+    "बच्चे स्टेशन के पास है।",
+  );
+  assert(audit?.hasError === true, "the agreement error is retained");
+  assert(
+    audit?.correctedText === "बच्चे स्टेशन के पास हैं।",
+    "the audit returns the minimal correction",
+  );
+  assert(
+    (audit?.tokens ?? []).length === 10,
+    "the correction keeps word metadata",
+  );
+});
+
+Deno.test("focused correction audit contract is generic and localized", () => {
+  assert(
+    CORRECTION_AUDIT_RESPONSE_FORMAT.json_schema.strict,
+    "correction audit schema is strict",
+  );
+  const prompt = correctionAuditSystemPrompt("hi", "fr");
+  assert(prompt.includes("Hindi"), "prompt names the learning language");
+  assert(prompt.includes("French"), "prompt localizes the explanation");
+  assert(
+    prompt.includes("subject with every verb and auxiliary"),
+    "prompt explicitly checks agreement",
+  );
+  assert(
+    !prompt.includes("बच्चे स्टेशन"),
+    "prompt does not hardcode the reported sentence",
   );
 });
 
@@ -1524,6 +1591,46 @@ Deno.test("provider keeps a usable translation when optional word metadata is mi
   );
 });
 
+Deno.test("non-Latin learning text requires complete word metadata", () => {
+  const withoutTokens = {
+    mode: "translation" as const,
+    sourceLang: "fr",
+    translation: "हम कल पुस्तकालय जाना चाहते हैं।",
+    interfaceText: "Nous voulons aller à la bibliothèque demain.",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    wordMetadataNeedsRetry(withoutTokens),
+    "Hindi words without glosses and romanization must be retried",
+  );
+
+  const complete = {
+    ...withoutTokens,
+    translation: "पुस्तकालय",
+    tokens: [
+      {
+        text: "पुस्तकालय",
+        gloss: "bibliothèque",
+        roman: "pustakalay",
+        isContent: true,
+      },
+    ],
+  };
+  assert(
+    !wordMetadataNeedsRetry(complete),
+    "valid non-Latin word metadata must not be retried",
+  );
+
+  const emojiOnly = { ...withoutTokens, translation: "👍" };
+  assert(
+    !wordMetadataNeedsRetry(emojiOnly),
+    "emoji-only messages do not need word metadata",
+  );
+});
+
 Deno.test("provider retries only when a cross-language result copies the source", () => {
   const copied = {
     mode: "translation" as const,
@@ -2018,6 +2125,14 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
     "small real mistakes should still become corrections",
   );
   assert(
+    prompt.includes("subject with every verb and auxiliary"),
+    "mode=none requires an explicit agreement check",
+  );
+  assert(
+    prompt.includes("explicit future time marker"),
+    "future time markers require natural target-language tense",
+  );
+  assert(
     prompt.includes("Do not correct capitalization, punctuation"),
     "chat style is not over-corrected",
   );
@@ -2106,6 +2221,67 @@ Deno.test("Dutch prompt requires standard closed compounds", () => {
   assert(
     prompt.includes("morgenochtend"),
     "the observed tomorrow-morning compound should be explicit",
+  );
+});
+
+Deno.test("Hindi prompt prefers a true future construction for one-time events", () => {
+  const prompt = systemPrompt("auto", "hi", "fr");
+  assert(
+    prompt.includes("one-time future event"),
+    "Hindi future events receive explicit tense guidance",
+  );
+  assert(
+    prompt.includes("habitual present"),
+    "Hindi output must not default to habitual present",
+  );
+  assert(
+    prompt.includes("overt future verb form"),
+    "Hindi one-time events require an explicit future verb form",
+  );
+});
+
+Deno.test("Hindi temporal translations receive a focused future audit", () => {
+  const candidate = {
+    mode: "translation" as const,
+    sourceLang: "fr",
+    translation: "हम कल पार्क में मिलते हैं।",
+    interfaceText: "Nous nous retrouvons demain au parc.",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    hindiFutureNeedsAudit(candidate, "hi"),
+    "Hindi text with the temporal marker receives the focused audit",
+  );
+  assert(
+    !hindiFutureNeedsAudit(candidate, "ta"),
+    "the Hindi audit does not run for another learning language",
+  );
+  assert(
+    !hindiFutureNeedsAudit({ ...candidate, translation: "हम यहाँ हैं।" }, "hi"),
+    "ordinary Hindi translations stay on the single-pass path",
+  );
+
+  const prompt = hindiFutureAuditSystemPrompt("fr", "fr");
+  assert(
+    prompt.includes("past, future, or habitual"),
+    "audit must disambiguate Hindi's shared yesterday/tomorrow marker",
+  );
+  assert(prompt.includes("one-time future"), "audit checks future meaning");
+  assert(prompt.includes("habitual present"), "audit names the failure mode");
+  assert(
+    prompt.includes("keep the candidate unchanged"),
+    "past and already-correct candidates must survive the audit",
+  );
+  assert(
+    prompt.includes("Never default token glosses to English"),
+    "audit keeps word help in the selected known language",
+  );
+  assert(
+    !prompt.includes("हम कल पार्क"),
+    "audit does not hardcode the reported sentence",
   );
 });
 

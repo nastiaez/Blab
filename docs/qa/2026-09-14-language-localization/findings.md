@@ -703,6 +703,75 @@ The disposable local chat is `74000000-0000-4000-8000-000000000004`. The install
 - Owner decision: approved 2026-09-21
 - Follow-up: none
 
+## Packet L05 — Hindi language engine
+
+### Evidence
+
+- `L05-HI-01-bob-chat.png`: Bob's Android chat showing Alice's translated and authored Hindi plus Bob's French-to-Hindi return message.
+- `L05-HI-02-bob-word-help.png`: `पुस्तकालय` popup with the missing French meaning and romanization.
+- `L05-HI-03-bob-sentence-audio.png`: outgoing Hindi sentence with its French source and the Hindi Listen action.
+- `L05-HI-04-repaired-chat.png`: repaired chat showing plural `हैं`, one-time future `मिलेंगे`, and complete Hindi output in both directions.
+- `L05-HI-05-repaired-word-help.png`: repaired `पुस्तकालय` popup with `pustakalay` and French `bibliothèque`.
+- `L05-HI-06-repaired-correction-actions.png`: repaired corrected sentence with its French learning subtitle and Hindi Listen action.
+
+The disposable local chat is `00000000-0000-4000-8000-00000000f240`. The original defect capture used feature-build SHA-256 `7fcf4dba371da9a26304e6c2cc1a18fc95d7d870549e4fdfebfae34482b98720`. The repaired Android evidence was recaptured after installing the exact verified APK at SHA-256 `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
+### L05-HI-01
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: Practice chat / French-authored messages translated to Hindi in both directions
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: both participants receive natural Hindi while the authored French remains available as the source
+- Observed: before repair, `Nous nous retrouvons demain au parc.` became the understandable but habitual `हम कल पार्क में मिलते हैं।`. After the approved generic temporal repair it becomes the natural one-time future `हम कल पार्क में मिलेंगे।`; `Nous voulons visiter la bibliotheque demain.` remains `हम कल पुस्तकालय जाना चाहते हैं।`. Both viewers' final jobs completed ready on the first attempt. A live negative control also preserved the past correctly: `Nous nous sommes retrouvés hier au parc.` became `हम कल पार्क में मिले थे।`, proving the shared `कल` marker is not forced into future tense.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none
+
+### L05-HI-02
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: Practice chat / correct Hindi plus intentionally incorrect Hindi
+- Client: Alice / Chrome and Bob / Android emulator
+- Expected: `आज मौसम बहुत अच्छा है।` remains unchanged; plural-agreement mistake `बच्चे स्टेशन के पास है।` is corrected to `बच्चे स्टेशन के पास हैं।`, with a French explanation for the author and clean Hindi for the recipient
+- Observed: before repair, the clearly incorrect plural sentence was accepted unchanged. After the approved generic correction audit, the correct sentence still remains unchanged while the mistake becomes `बच्चे स्टेशन के पास हैं।`, with the French explanation `Le verbe doit être au pluriel pour s'accorder avec le sujet.` and complete word metadata for both viewers.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none; the repair audits agreement generically and contains no sentence-specific correction
+
+### L05-HI-03
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: word help for `पुस्तकालय`
+- Client: Bob / Android emulator
+- Expected: the popup shows the Hindi word, a useful romanization, and the French meaning `bibliothèque`
+- Observed: before repair, the popup showed only `पुस्तकालय` and its speaker because an empty token list was saved. After the approved non-Latin metadata contract repair, the popup shows `पुस्तकालय`, romanization `pustakalay`, and French `bibliothèque`.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none; non-Latin results with empty token metadata are rejected before storage
+
+### L05-HI-04
+
+- Interface language: English
+- Learning language: Hindi
+- Primary known language: French
+- Screen/state: word speaker and sentence Listen action
+- Client: Bob / Android emulator with Google TTS
+- Expected: both controls synthesize Hindi with the Hindi voice and remain reachable without clipping
+- Observed: both controls are reachable. Word and sentence playback dispatched `hi-IN` / `hin-IND`, and both utterances started successfully.
+- Classification: Pass
+- Severity: none
+- Owner decision: approved 2026-09-21 after repair
+- Follow-up: none
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

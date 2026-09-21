@@ -7,6 +7,10 @@ const migrationUrl = new URL(
   import.meta.url,
 );
 const edgeFunctionUrl = new URL("./index.ts", import.meta.url);
+const languageAidsMigrationUrl = new URL(
+  "../../migrations/20260921000001_complete_language_aids_cache.sql",
+  import.meta.url,
+);
 
 Deno.test("automatic-form migration invalidates every legacy cache variant", async () => {
   const sql = (await Deno.readTextFile(migrationUrl))
@@ -98,7 +102,7 @@ Deno.test("automatic-form migration rejects every legacy completion contract", a
   const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
   assert(
     edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "automatic-forms-v2";',
+      'const CACHE_CONTRACT_VERSION = "complete-language-aids-v3";',
     ),
     "the edge function must declare the database completion contract",
   );
@@ -107,6 +111,40 @@ Deno.test("automatic-form migration rejects every legacy completion contract", a
       /p_cache_contract_version: CACHE_CONTRACT_VERSION/g,
     )?.length === 2,
     "foreground and worker RPC calls must both send the current contract",
+  );
+});
+
+Deno.test("complete-language-aids migration advances and invalidates the cache", async () => {
+  const sql = (await Deno.readTextFile(languageAidsMigrationUrl))
+    .replace(/--.*$/gm, "")
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim()
+    .toLowerCase();
+
+  assert(
+    sql.match(/p_cache_contract_version <> 'complete-language-aids-v3'/g)
+      ?.length === 2,
+    "both completion paths must require the new language-aids contract",
+  );
+  assert(
+    sql.includes("delete from public.message_prepared_packages;"),
+    "prepared packages from the previous prompt must be invalidated",
+  );
+  assert(
+    sql.includes("delete from public.message_translations;"),
+    "shared translations from the previous prompt must be invalidated",
+  );
+  assert(
+    sql.includes("delete from public.message_preparation_jobs"),
+    "ready and in-flight jobs must be replaced before cache deletion",
+  );
+  assert(
+    sql.includes(
+      "check (cache_contract_version = 'complete-language-aids-v3')",
+    ),
+    "stored translations must identify the new contract",
   );
 });
 
