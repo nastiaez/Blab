@@ -61,7 +61,7 @@ insert into public.message_translations (
   'en',
   'translation',
   'I am speaking English',
-  'automatic-forms-v2'
+  'complete-language-aids-v3'
 );
 
 select set_config(
