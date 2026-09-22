@@ -115,6 +115,23 @@ void main() {
     );
   });
 
+  test('app_links exclusively owns Android invite deep-link delivery', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+
+    expect(
+      manifest,
+      matches(
+        RegExp(
+          r'<meta-data\s+'
+          r'android:name="flutter_deeplinking_enabled"\s+'
+          r'android:value="false"\s*/>',
+        ),
+      ),
+    );
+  });
+
   test(
     'Android push permission, channel, and settings bridge stay configured',
     () {

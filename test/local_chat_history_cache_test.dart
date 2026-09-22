@@ -1,12 +1,16 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:blab/shared/data/local_storage_keys.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/services/local_chat_history_cache.dart';
+
+String _sourceVersion(String source) =>
+    sha256.convert(utf8.encode(source.trim())).toString();
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -48,6 +52,88 @@ void main() {
     );
     expect(restored.single.attachment?.localBytes, [1, 2, 3]);
     expect(await LocalChatHistoryCache('bob').loadMessages('chat-1'), isEmpty);
+  });
+
+  test('stores prepared translations with their local source text', () async {
+    final cache = LocalChatHistoryCache('alice');
+    await cache.savePreparedTranslations(
+      'chat-1',
+      [
+        {
+          'message_id': 'm1',
+          'learning_language': 'de',
+          'primary_known_language': 'en',
+          'language_revision': 1,
+          'source_version': _sourceVersion('Hello'),
+          'status': 'ready',
+          'translation_text': 'Hallo',
+          'interface_text': 'Hello',
+        },
+      ],
+      sourceTexts: const {'m1': 'Hello'},
+    );
+
+    final restored = await cache.loadPreparedTranslations('chat-1');
+    expect(restored, hasLength(1));
+    expect(restored.single['source_text'], 'Hello');
+    expect(
+      await LocalChatHistoryCache('bob').loadPreparedTranslations('chat-1'),
+      isEmpty,
+    );
+  });
+
+  test(
+    'does not cache a prepared translation for edited source text',
+    () async {
+      final cache = LocalChatHistoryCache('alice');
+      await cache.savePreparedTranslations(
+        'chat-1',
+        [
+          {
+            'message_id': 'm1',
+            'learning_language': 'de',
+            'primary_known_language': 'en',
+            'language_revision': 1,
+            'source_version': _sourceVersion('Original text'),
+            'status': 'ready',
+            'translation_text': 'Ursprünglicher Text',
+            'interface_text': 'Original text',
+          },
+        ],
+        sourceTexts: const {'m1': 'Edited text'},
+      );
+
+      expect(await cache.loadPreparedTranslations('chat-1'), isEmpty);
+    },
+  );
+
+  test('prepared translation recovery stays within fifty messages', () async {
+    final cache = LocalChatHistoryCache('alice');
+    final rows = List.generate(
+      51,
+      (index) => {
+        'message_id': 'm$index',
+        'learning_language': 'de',
+        'primary_known_language': 'en',
+        'language_revision': 1,
+        'source_version': _sourceVersion('Message $index'),
+        'status': 'ready',
+        'translation_text': 'Übersetzung $index',
+        'interface_text': 'Message $index',
+      },
+    );
+    await cache.savePreparedTranslations(
+      'chat-1',
+      rows,
+      sourceTexts: {
+        for (var index = 0; index < 51; index++) 'm$index': 'Message $index',
+      },
+    );
+
+    final restored = await cache.loadPreparedTranslations('chat-1');
+    expect(restored.map((row) => row['message_id']), hasLength(50));
+    expect(restored.map((row) => row['message_id']), isNot(contains('m0')));
+    expect(restored.map((row) => row['message_id']), contains('m50'));
   });
 
   test('touching a cached attachment updates its LRU index', () async {

@@ -16,6 +16,7 @@ class LocalAccountDataStore {
           key.startsWith(kPendingSendsKeyPrefix) ||
           key.startsWith(kCachedChatsKeyPrefix) ||
           key.startsWith(kCachedMessagesKeyPrefix) ||
+          key.startsWith(kCachedPreparedTranslationsKeyPrefix) ||
           key.startsWith(kCachedAttachmentKeyPrefix) ||
           key.startsWith(kCachedAttachmentPreviewKeyPrefix) ||
           key.startsWith(kCachedAttachmentIndexKeyPrefix) ||

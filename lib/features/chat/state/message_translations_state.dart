@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/message_token.dart';
 import '../../../shared/services/chat_service.dart';
+import '../../../shared/services/local_chat_history_cache.dart';
 import '../../../shared/services/message_translator.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/auth_state.dart';
@@ -507,6 +508,38 @@ class MessageTranslationsNotifier
       _sourceTexts[translationEntryKey(entry.key, targetLang, interfaceLang)] =
           entry.value;
     }
+    final userId = ref.read(currentUserIdProvider);
+    if (userId != null) {
+      try {
+        final localRows = await LocalChatHistoryCache(
+          userId,
+        ).loadPreparedTranslations(chatId);
+        final localById = <String, MessageTranslation>{};
+        for (final row in localRows) {
+          final id = row['message_id'];
+          if (id is! String ||
+              row['status'] != 'ready' ||
+              row['primary_known_language'] != interfaceLang ||
+              (packageLearningLanguage != null &&
+                  row['learning_language'] != packageLearningLanguage) ||
+              (packageLanguageRevision != null &&
+                  (row['language_revision'] as num?)?.toInt() !=
+                      packageLanguageRevision) ||
+              row['source_text'] != sourceTexts[id] ||
+              !messageIds.contains(id) ||
+              localById.containsKey(id)) {
+            continue;
+          }
+          localById[id] = _translationFromPreparedPackage(
+            row,
+            targetLang: targetLang,
+          );
+        }
+        hydrateFromDb(localById, targetLang, interfaceLang);
+      } catch (_) {
+        // Device recovery is best-effort; the server remains authoritative.
+      }
+    }
     try {
       final byId = <String, MessageTranslation>{};
       // Delivery-time packages are the authoritative fast path. They contain
@@ -520,6 +553,13 @@ class MessageTranslationsNotifier
           chatId: chatId,
           messageIds: messageIds,
         );
+        if (userId != null && prepared.isNotEmpty) {
+          await LocalChatHistoryCache(userId).savePreparedTranslations(
+            chatId,
+            prepared,
+            sourceTexts: sourceTexts,
+          );
+        }
       } catch (_) {
         // Older test doubles and pre-migration environments do not expose
         // the package table yet; retain the legacy cache path below.
@@ -547,7 +587,7 @@ class MessageTranslationsNotifier
       for (final entry in rows.entries) {
         byId.putIfAbsent(entry.key, () => _translationFromCache(entry.value));
       }
-      hydrateFromDb(byId, targetLang, interfaceLang);
+      hydrateFromDb(byId, targetLang, interfaceLang, replaceExisting: true);
       if (retryMisses) {
         // Delivery already owns one preparation queue per viewer. This page
         // prefetch only hydrates persisted work; launching provider calls for

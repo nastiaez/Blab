@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
@@ -7,9 +8,11 @@ import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
+import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 ProviderContainer _container({
   required TranslateMessageFn translateFn,
@@ -19,6 +22,7 @@ ProviderContainer _container({
   Duration? loadingTimeout,
   Duration? lateCacheRecoveryDelay,
   Duration? autoRetryCooldown,
+  String? userId,
 }) {
   return ProviderContainer(
     overrides: [
@@ -41,6 +45,7 @@ ProviderContainer _container({
         translationAutoRetryCooldownProvider.overrideWithValue(
           autoRetryCooldown,
         ),
+      if (userId != null) currentUserIdProvider.overrideWithValue(userId),
     ],
   );
 }
@@ -218,6 +223,25 @@ class _RealtimeTranslationChatService implements ChatService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _OfflineTranslationChatService implements ChatService {
+  @override
+  Future<List<Map<String, dynamic>>> fetchPreparedPackages({
+    required String chatId,
+    required List<String> messageIds,
+  }) async => throw StateError('offline');
+
+  @override
+  Future<Map<String, CachedMessageTranslation>>
+  fetchCachedTranslationsForMessages({
+    required List<String> messageIds,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => throw StateError('offline');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 MessageTranslation _translation(String text) => MessageTranslation(
   translation: text,
   interfaceText: text,
@@ -227,6 +251,8 @@ MessageTranslation _translation(String text) => MessageTranslation(
 );
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   test('one quiet retry resolves without exposing the first failure', () async {
     var calls = 0;
     final container = _container(
@@ -613,6 +639,176 @@ void main() {
 
     expect(chatService.requestedIds, ['m51', 'm52']);
     expect(liveCalls, 0);
+  });
+
+  test(
+    'offline restart restores completed text and caption translations',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'cached_prepared_translations:alice:chat-1': jsonEncode([
+          {
+            'message_id': 'text-message',
+            'chat_id': 'chat-1',
+            'viewer_id': 'alice',
+            'learning_language': 'de',
+            'primary_known_language': 'en',
+            'language_revision': 1,
+            'source_version': 'text-source-version',
+            'source_text': 'Hello',
+            'status': 'ready',
+            'translation_text': 'Hallo',
+            'interface_text': 'Hello',
+            'source_lang': 'en',
+            'aid_mode': 'translation',
+            'tokens': <Map<String, dynamic>>[],
+          },
+          {
+            'message_id': 'caption-message',
+            'chat_id': 'chat-1',
+            'viewer_id': 'alice',
+            'learning_language': 'de',
+            'primary_known_language': 'en',
+            'language_revision': 1,
+            'source_version': 'caption-source-version',
+            'source_text': 'A quiet park',
+            'status': 'ready',
+            'translation_text': 'Ein ruhiger Park',
+            'interface_text': 'A quiet park',
+            'source_lang': 'en',
+            'aid_mode': 'translation',
+            'tokens': <Map<String, dynamic>>[],
+          },
+        ]),
+      });
+      var liveCalls = 0;
+      final container = _container(
+        userId: 'alice',
+        chatService: _OfflineTranslationChatService(),
+        translateFn: (id) async {
+          liveCalls++;
+          throw MessageTranslationFailed('offline');
+        },
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .prefetchFromDb(
+            ['text-message', 'caption-message'],
+            'de',
+            'en',
+            packageLearningLanguage: 'de',
+            packageLanguageRevision: 1,
+            sourceTexts: const {
+              'text-message': 'Hello',
+              'caption-message': 'A quiet park',
+            },
+          );
+
+      final state = container.read(messageTranslationsProvider('chat-1'));
+      expect(state['text-message|de|en']?.value?.translation, 'Hallo');
+      expect(
+        state['caption-message|de|en']?.value?.translation,
+        'Ein ruhiger Park',
+      );
+      expect(liveCalls, 0);
+    },
+  );
+
+  test(
+    'offline cache rejects edited text and a different language era',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'cached_prepared_translations:alice:chat-1': jsonEncode([
+          {
+            'message_id': 'm1',
+            'chat_id': 'chat-1',
+            'viewer_id': 'alice',
+            'learning_language': 'de',
+            'primary_known_language': 'en',
+            'language_revision': 1,
+            'source_version': 'old-source-version',
+            'source_text': 'Original text',
+            'status': 'ready',
+            'translation_text': 'Alter Text',
+            'interface_text': 'Original text',
+            'source_lang': 'en',
+            'aid_mode': 'translation',
+            'tokens': <Map<String, dynamic>>[],
+          },
+        ]),
+      });
+      final container = _container(
+        userId: 'alice',
+        chatService: _OfflineTranslationChatService(),
+        translateFn: (id) async => throw MessageTranslationFailed('offline'),
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+
+      await notifier.prefetchFromDb(
+        ['m1'],
+        'de',
+        'en',
+        packageLearningLanguage: 'de',
+        packageLanguageRevision: 1,
+        sourceTexts: const {'m1': 'Edited text'},
+      );
+      await notifier.prefetchFromDb(
+        ['m1'],
+        'de',
+        'en',
+        packageLearningLanguage: 'de',
+        packageLanguageRevision: 2,
+        sourceTexts: const {'m1': 'Original text'},
+      );
+
+      expect(container.read(messageTranslationsProvider('chat-1')), isEmpty);
+    },
+  );
+
+  test('offline translation cache is isolated by account', () async {
+    SharedPreferences.setMockInitialValues({
+      'cached_prepared_translations:alice:chat-1': jsonEncode([
+        {
+          'message_id': 'm1',
+          'chat_id': 'chat-1',
+          'viewer_id': 'alice',
+          'learning_language': 'de',
+          'primary_known_language': 'en',
+          'language_revision': 1,
+          'source_version': 'source-version',
+          'source_text': 'Hello',
+          'status': 'ready',
+          'translation_text': 'Hallo',
+          'interface_text': 'Hello',
+          'source_lang': 'en',
+          'aid_mode': 'translation',
+          'tokens': <Map<String, dynamic>>[],
+        },
+      ]),
+    });
+    final container = _container(
+      userId: 'bob',
+      chatService: _OfflineTranslationChatService(),
+      translateFn: (id) async => throw MessageTranslationFailed('offline'),
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .prefetchFromDb(
+          ['m1'],
+          'de',
+          'en',
+          packageLearningLanguage: 'de',
+          packageLanguageRevision: 1,
+          sourceTexts: const {'m1': 'Hello'},
+        );
+
+    expect(container.read(messageTranslationsProvider('chat-1')), isEmpty);
   });
 
   test(

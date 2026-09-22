@@ -1,10 +1,15 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
+
+@visibleForTesting
+bool shouldShowAppleSignIn({
+  required bool isWeb,
+  required TargetPlatform platform,
+}) => !isWeb && platform == TargetPlatform.iOS;
 
 /// Apple + Google SSO buttons. PRD US-003.
 ///
@@ -16,7 +21,8 @@ class SsoButtons extends StatelessWidget {
 
   final ValueChanged<String> onPressed;
 
-  bool get _showApple => !kIsWeb && Platform.isIOS;
+  bool get _showApple =>
+      shouldShowAppleSignIn(isWeb: kIsWeb, platform: defaultTargetPlatform);
 
   @override
   Widget build(BuildContext context) {

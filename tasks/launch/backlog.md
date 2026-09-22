@@ -95,9 +95,9 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 | 16 | L-16 | P1-13 | Add message-history pagination, page-aware translation hydration, and correct reconnect/offline behavior | L-09, L-13 | Complete | [`items/L-16.md`](./items/L-16.md) |
 | 17 | L-17 | P1-06 | Approve and implement notifications, or explicitly constrain the launch | L-00 | Awaiting manual | [`items/L-17.md`](./items/L-17.md) |
 | 18 | L-18 | P1-12 | Separate environments and verify deployed Supabase/OpenRouter state | L-13 | Complete | [`items/L-18.md`](./items/L-18.md) |
-| 24 | L-24 | Follow-up | Repair Android warm invite-link routing; received links must navigate while Blab is already open | L-03, L-04 | Not started | `items/L-24.md` |
+| 24 | L-24 | Follow-up | Repair Android warm invite-link routing; received links must navigate while Blab is already open | L-03, L-04 | In progress | [`items/L-24.md`](./items/L-24.md) |
 | 25 | L-25 | Follow-up | Preserve each participant's completed learning-language history across a later language change | L-16, L-18 | Awaiting manual | [`items/L-25.md`](./items/L-25.md) |
-| 26 | L-26 | Follow-up | Restore previously completed message and photo-caption translations from the account-scoped device cache after an offline restart | L-13, L-16 | Not started | [`items/L-26.md`](./items/L-26.md) |
+| 26 | L-26 | Follow-up | Restore previously completed message and photo-caption translations from the account-scoped device cache after an offline restart | L-13, L-16 | In progress | [`items/L-26.md`](./items/L-26.md) |
 
 ## Release hardening
 

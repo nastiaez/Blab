@@ -4,6 +4,8 @@ const String kPendingSendsKeyPrefix = 'pending_sends:';
 const String kCachedChatsKeyPrefix = 'cached_chats:';
 const String kCachedMessagesKeyPrefix = 'cached_messages:';
 const String kCachedLanguageTimelineKeyPrefix = 'cached_language_timeline:';
+const String kCachedPreparedTranslationsKeyPrefix =
+    'cached_prepared_translations:';
 const String kCachedAttachmentKeyPrefix = 'cached_attachment:';
 const String kCachedAttachmentPreviewKeyPrefix = 'cached_attachment_preview:';
 const String kCachedAttachmentIndexKeyPrefix = 'cached_attachment_index:';
@@ -48,6 +50,11 @@ String cachedLanguageTimelineStorageKey({
   required String userId,
   required String chatId,
 }) => '$kCachedLanguageTimelineKeyPrefix$userId:$chatId';
+
+String cachedPreparedTranslationsStorageKey({
+  required String userId,
+  required String chatId,
+}) => '$kCachedPreparedTranslationsKeyPrefix$userId:$chatId';
 
 String cachedAttachmentStorageKey({
   required String userId,
