@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
@@ -9,6 +10,7 @@ import '../../shared/state/chat_list_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../chat/state/chat_state.dart';
 import '../chat/widgets/photo_preview_sheet.dart';
+import '../chats/widgets/chat_list_tile.dart';
 import 'android_share_intent_service.dart';
 
 class ShareImageScreen extends ConsumerWidget {
@@ -20,17 +22,20 @@ class ShareImageScreen extends ConsumerWidget {
     final chatsAsync = ref.watch(shareableChatsProvider);
     if (image == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: BlabColors.appBackground,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: BlabColors.appBackground,
           elevation: 0,
-          foregroundColor: BlabColors.textPrimary,
-          title: const Text('Share photo'),
+          foregroundColor: BlabColors.warmInk,
+          title: const Text(
+            'Share photo',
+            style: TextStyle(color: BlabColors.warmInk),
+          ),
         ),
         body: const Center(
           child: Text(
             'No photo selected',
-            style: TextStyle(color: BlabColors.textMuted),
+            style: TextStyle(color: BlabColors.warmMuted),
           ),
         ),
       );
@@ -39,7 +44,7 @@ class ShareImageScreen extends ConsumerWidget {
     final chats = chatsAsync.value;
     if (chats == null) {
       return const Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: BlabColors.appBackground,
         body: SafeArea(
           child: Column(
             children: [
@@ -52,11 +57,20 @@ class ShareImageScreen extends ConsumerWidget {
     }
 
     return ShareImageChatPicker(
-      image: image,
       chats: chats,
       onChatSelected: (chat) => _sendToChat(context, ref, image, chat),
+      onBack: () => _cancelShare(context, ref),
       header: const OfflineBanner(),
     );
+  }
+
+  Future<void> _cancelShare(BuildContext context, WidgetRef ref) async {
+    ref.read(pendingSharedImageProvider.notifier).clear();
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    await SystemNavigator.pop(animated: true);
   }
 
   Future<void> _sendToChat(
@@ -86,173 +100,67 @@ class ShareImageScreen extends ConsumerWidget {
 class ShareImageChatPicker extends StatelessWidget {
   const ShareImageChatPicker({
     super.key,
-    required this.image,
     required this.chats,
     required this.onChatSelected,
+    required this.onBack,
     this.header,
   });
 
-  final AndroidSharedImage image;
   final List<Chat> chats;
   final ValueChanged<Chat> onChatSelected;
+  final VoidCallback onBack;
   final Widget? header;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: BlabColors.textPrimary,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          color: BlabColors.textPrimary,
+          onPressed: onBack,
+        ),
         title: const Text(
-          'Share photo',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          'Select chat',
+          style: TextStyle(
+            color: BlabColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
             ?header,
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: Row(
-                children: [
-                  _SharedImageThumbnail(image: image),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Choose a chat',
-                      style: TextStyle(
-                        color: BlabColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: Colors.grey.shade100),
             Expanded(
               child: chats.isEmpty
                   ? const Center(
                       child: Text(
                         'No chats yet',
-                        style: TextStyle(color: BlabColors.textMuted),
+                        style: TextStyle(color: BlabColors.warmMuted),
                       ),
                     )
                   : ListView.separated(
                       itemCount: chats.length,
-                      separatorBuilder: (context, index) =>
-                          Divider(height: 1, color: Colors.grey.shade100),
+                      separatorBuilder: (context, index) => const Divider(
+                        height: 1,
+                        indent: 76,
+                        color: BlabColors.chatDivider,
+                      ),
                       itemBuilder: (context, index) {
                         final chat = chats[index];
-                        return _ShareChatRow(
+                        return ChatListTile(
                           chat: chat,
                           onTap: () => onChatSelected(chat),
                         );
                       },
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SharedImageThumbnail extends StatelessWidget {
-  const _SharedImageThumbnail({required this.image});
-
-  final AndroidSharedImage image;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        key: const ValueKey('shared-image-thumbnail'),
-        width: 56,
-        height: 56,
-        child: Image.memory(
-          image.bytes,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: BlabColors.phoneSurface,
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.image_outlined,
-                color: BlabColors.textMuted,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _ShareChatRow extends StatelessWidget {
-  const _ShareChatRow({required this.chat, required this.onTap});
-
-  final Chat chat;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: BlabColors.avatarColorFor(chat.partnerName),
-              child: Text(
-                chat.partnerInitial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    chat.partnerName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: BlabColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tap to choose',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: BlabColors.textMuted,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              color: BlabColors.textMuted,
-              size: 22,
             ),
           ],
         ),

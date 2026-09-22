@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/auth/auth_screen.dart';
 import 'package:blab/features/auth/widgets/blab_text_field.dart';
+import 'package:blab/features/auth/widgets/language_picker_sheet.dart';
 import 'package:blab/features/auth/widgets/sso_buttons.dart';
 import 'package:blab/l10n/l10n.dart';
+import 'package:blab/shared/data/languages.dart';
+import 'package:blab/shared/widgets/picker_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +20,43 @@ Widget _localized(Widget child) => MaterialApp(
 );
 
 void main() {
+  testWidgets('auth language picker uses the approved warm list treatment', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _localized(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showLanguagePickerSheet(
+              context,
+              current: interfaceLanguageForCode('en'),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    final sheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
+    final englishRow = tester.widget<LanguageCard>(
+      find.widgetWithText(LanguageCard, 'English'),
+    );
+    final title = tester.widget<Text>(find.text('Interface language'));
+    final helper = tester.widget<Text>(
+      find.text(
+        'Pick the language for menus, buttons, and other system text across the app.',
+      ),
+    );
+
+    expect(sheet.backgroundColor, BlabColors.chatSurface);
+    expect(englishRow.selected, isTrue);
+    expect(title.style?.color, BlabColors.warmInk);
+    expect(helper.style?.color, BlabColors.warmMuted);
+  });
+
   testWidgets('auth fields use the shared warm surface and control radius', (
     tester,
   ) async {

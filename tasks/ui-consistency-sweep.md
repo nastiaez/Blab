@@ -39,12 +39,14 @@ integration passed. Owner screenshot approval received.
 
 ## Packet 5B: Media, secondary sheets, and remaining system states — in progress
 
-- [ ] Review Gallery, photo preview, and Share image.
-- [ ] Review learning-language and translation-preference sheets.
-- [ ] Review the Auth language picker and remaining success/loading/disabled states.
-- [ ] Review Chats loading, error, and offline states not already covered.
-- [ ] Review Invite loading, preparation, and share errors not already covered.
-- [ ] Run the same regression, QA, screenshot, approval, and merge gate.
+- [x] Review Gallery, photo preview, and Share image.
+- [x] Review learning-language and translation-preference sheets.
+- [x] Review the Auth language picker and remaining success/loading/disabled states.
+- [x] Review Chats loading, error, and offline states not already covered.
+- [x] Review Invite loading, preparation, and share errors not already covered.
+- [x] Run focused regressions, full QA, static checks, UI review, and production build.
+- [x] Send the real-app screenshot set and receive owner approval.
+- [ ] Commit, push, merge, confirm remote CI, and mark this packet complete.
 
 ## Packet 6: Final full-screen consistency review
 

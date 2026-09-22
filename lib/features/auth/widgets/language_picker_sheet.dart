@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
+import '../../../shared/widgets/picker_card.dart';
 
 /// Interface-language bottom sheet. PRD US-005, FR-3.
 ///
 /// Selected language pinned at the top, helper line under the title, opaque
-/// white pinned header stacked over the scrolling list so nothing bleeds.
+/// warm pinned header stacked over the scrolling list so nothing bleeds.
 /// Auto-saves on tap — no Done button needed.
 Future<BlabLanguage?> showLanguagePickerSheet(
   BuildContext context, {
@@ -20,7 +21,8 @@ Future<BlabLanguage?> showLanguagePickerSheet(
 
   return showModalBottomSheet<BlabLanguage>(
     context: context,
-    backgroundColor: Colors.white,
+    backgroundColor: BlabColors.chatSurface,
+    barrierColor: const Color(0x4D231208),
     isDismissible: true,
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
@@ -60,45 +62,33 @@ class _SheetBody extends StatelessWidget {
             padding: const EdgeInsets.only(top: headerHeight),
             child: Scrollbar(
               thumbVisibility: true,
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 itemCount: ordered.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (ctx, i) {
                   final lang = ordered[i];
                   final selected = lang.code == current.code;
-                  return ListTile(
-                    tileColor: selected ? BlabColors.selectedTint : null,
-                    leading: Text(
-                      lang.flag,
-                      style: const TextStyle(fontSize: 24),
+                  return LanguageCard(
+                    label: localizedInterfaceLanguageName(
+                      localizations,
+                      lang.code,
                     ),
-                    title: Text(
-                      localizedInterfaceLanguageName(localizations, lang.code),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w400,
-                        color: BlabColors.textPrimary,
-                      ),
-                    ),
-                    trailing: selected
-                        ? const Icon(Icons.check, color: BlabColors.brand)
-                        : null,
+                    selected: selected,
                     onTap: () => Navigator.of(ctx).pop(lang),
                   );
                 },
               ),
             ),
           ),
-          // LAYER 2 — opaque white pinned header on top.
+          // LAYER 2 — opaque warm pinned header on top.
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: BlabColors.chatSurface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
@@ -122,7 +112,7 @@ class _SheetBody extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: BlabColors.textPrimary,
+                      color: BlabColors.warmInk,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -130,7 +120,7 @@ class _SheetBody extends StatelessWidget {
                     localizations.interfaceLanguageHelp,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: BlabColors.textMuted,
+                      color: BlabColors.warmMuted,
                       height: 1.35,
                     ),
                   ),
@@ -150,7 +140,10 @@ class _SheetBody extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.white.withValues(alpha: 0), Colors.white],
+                    colors: [
+                      BlabColors.chatSurface.withValues(alpha: 0),
+                      BlabColors.chatSurface,
+                    ],
                   ),
                 ),
               ),
