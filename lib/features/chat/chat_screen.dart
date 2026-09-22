@@ -454,19 +454,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: BlabColors.chatSurface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(28)),
-          side: BorderSide(color: Color(0xFFE7D7D0)),
+          side: BorderSide(color: BlabColors.chatDivider),
         ),
-        title: Text(context.l10n.deleteMessageQuestion),
-        content: Text(context.l10n.deleteMessageBody(chat.partnerName)),
+        title: Text(
+          context.l10n.deleteMessageQuestion,
+          style: const TextStyle(color: BlabColors.warmInk),
+        ),
+        content: Text(
+          context.l10n.deleteMessageBody(chat.partnerName),
+          style: const TextStyle(color: BlabColors.warmMuted),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
               context.l10n.cancel,
-              style: const TextStyle(color: BlabColors.textMuted),
+              style: const TextStyle(color: BlabColors.warmInk),
             ),
           ),
           TextButton(

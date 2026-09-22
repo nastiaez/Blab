@@ -32,7 +32,7 @@ Future<void> showReactionDetailsSheet(
 
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: Colors.white,
+    backgroundColor: BlabColors.chatSurface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -49,7 +49,7 @@ Future<void> showReactionDetailsSheet(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE4DCCC),
+                  color: BlabColors.chatDivider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -59,7 +59,7 @@ Future<void> showReactionDetailsSheet(
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: BlabColors.textPrimary,
+                  color: BlabColors.warmInk,
                 ),
               ),
               const SizedBox(height: 8),
@@ -104,13 +104,13 @@ class _ReactorRow extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 16,
-            backgroundColor: BlabColors.brand.withValues(alpha: 0.15),
+            backgroundColor: BlabColors.avatarColorFor(reactor.name),
             child: Text(
-              reactor.name.isNotEmpty ? reactor.name[0].toUpperCase() : '?',
+              BlabColors.avatarInitialsFor(reactor.name),
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: BlabColors.brand,
+                color: Colors.white,
               ),
             ),
           ),
@@ -123,7 +123,7 @@ class _ReactorRow extends StatelessWidget {
                   reactor.name,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: BlabColors.textPrimary,
+                    color: BlabColors.warmInk,
                   ),
                 ),
                 if (onTapToRemove != null)
@@ -131,7 +131,7 @@ class _ReactorRow extends StatelessWidget {
                     context.l10n.tapToRemove,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: BlabColors.textMuted,
+                      color: BlabColors.warmMuted,
                     ),
                   ),
               ],

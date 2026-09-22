@@ -38,7 +38,7 @@ Future<ReportReason?> showReportReasonSheet(
   return showModalBottomSheet<ReportReason>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: BlabColors.chatSurface,
     constraints: BoxConstraints(
       maxHeight: MediaQuery.sizeOf(context).height * 0.9,
     ),
@@ -58,7 +58,7 @@ Future<ReportReason?> showReportReasonSheet(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: BlabColors.divider,
+                  color: BlabColors.chatDivider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -72,6 +72,7 @@ Future<ReportReason?> showReportReasonSheet(
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
+                      color: BlabColors.warmInk,
                     ),
                   ),
                 ),
@@ -92,13 +93,13 @@ Future<ReportReason?> showReportReasonSheet(
                             localizedReportReason(context, reason),
                             style: const TextStyle(
                               fontSize: 16,
-                              color: BlabColors.textPrimary,
+                              color: BlabColors.warmInk,
                             ),
                           ),
                         ),
                         const Icon(
                           Icons.chevron_right,
-                          color: BlabColors.textMuted,
+                          color: BlabColors.warmMuted,
                           size: 20,
                         ),
                       ],

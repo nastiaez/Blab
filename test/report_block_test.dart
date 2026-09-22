@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/chats/chats_screen.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,6 +94,37 @@ void main() {
       expect(r.wire, isNotEmpty);
       expect(r.label, isNotEmpty);
     }
+  });
+
+  testWidgets('message report sheet uses the approved warm hierarchy', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: blabTheme,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () =>
+                  showReportReasonSheet(context, title: 'Report message'),
+              child: const Text('Open report'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open report'));
+    await tester.pumpAndSettle();
+
+    final sheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
+    final title = tester.widget<Text>(find.text('Report message'));
+    final reason = tester.widget<Text>(find.text('Spam or scam'));
+    expect(sheet.backgroundColor, BlabColors.chatSurface);
+    expect(title.style?.color, BlabColors.warmInk);
+    expect(reason.style?.color, BlabColors.warmInk);
   });
 
   for (final locale in AppLocalizations.supportedLocales) {

@@ -15,7 +15,7 @@ Future<void> showFailedMessageSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: Colors.white,
+    backgroundColor: BlabColors.chatSurface,
     barrierColor: Colors.black.withValues(alpha: 0.32),
     isScrollControlled: false,
     shape: const RoundedRectangleBorder(
@@ -34,7 +34,7 @@ Future<void> showFailedMessageSheet(
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: BlabColors.divider,
+                  color: BlabColors.chatDivider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -47,7 +47,7 @@ Future<void> showFailedMessageSheet(
                     context.l10n.messageFailed,
                     style: const TextStyle(
                       fontSize: 13,
-                      color: BlabColors.textMuted,
+                      color: BlabColors.warmMuted,
                     ),
                   ),
                 ),
@@ -92,7 +92,7 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destructive ? BlabColors.error : BlabColors.textPrimary;
+    final color = destructive ? BlabColors.error : BlabColors.warmInk;
     return InkWell(
       onTap: onTap,
       child: Padding(

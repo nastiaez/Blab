@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/chat_screen.dart';
 import 'package:blab/features/chat/state/chat_state.dart';
 import 'package:blab/features/chat/state/message_translations_state.dart';
@@ -905,6 +906,20 @@ void main() {
       ),
       findsOneWidget,
     );
+    final dialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
+    final shape = dialog.shape! as RoundedRectangleBorder;
+    final title = tester.widget<Text>(find.text('Delete message?'));
+    final body = tester.widget<Text>(
+      find.text(
+        'Are you sure you want to delete this message? It will also be deleted for Bob.',
+      ),
+    );
+    final cancel = tester.widget<Text>(find.text('Cancel'));
+    expect(dialog.backgroundColor, BlabColors.chatSurface);
+    expect(shape.side.color, BlabColors.chatDivider);
+    expect(title.style?.color, BlabColors.warmInk);
+    expect(body.style?.color, BlabColors.warmMuted);
+    expect(cancel.style?.color, BlabColors.warmInk);
     await tester.tap(find.widgetWithText(TextButton, 'Delete'));
     await tester.pumpAndSettle();
 
