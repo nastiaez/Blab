@@ -187,7 +187,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     context.l10n.forgotYourPassword,
                     style: const TextStyle(
                       color: BlabColors.brand,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       fontSize: 13,
                     ),
                   ),

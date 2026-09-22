@@ -63,6 +63,18 @@ Future<void> _enterValidPasswords(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('recovery link uses the regular settings-link weight', (
+    tester,
+  ) async {
+    await _pumpChangePassword(
+      tester,
+      action: ({required currentPassword, required newPassword}) async {},
+    );
+
+    final link = tester.widget<Text>(find.text('Forgot your password?'));
+    expect(link.style?.fontWeight, FontWeight.w400);
+  });
+
   testWidgets('invalid or unchanged input never invokes Auth', (tester) async {
     var calls = 0;
     await _pumpChangePassword(

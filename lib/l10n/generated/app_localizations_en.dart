@@ -126,7 +126,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save the interface language. Try again.';
 
   @override
-  String get knownLanguages => 'Languages you know';
+  String get knownLanguages => 'Languages you understand';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Select every language you can read without translation. In Normal mode, messages in these languages stay as written.';
+
+  @override
+  String get translationLanguage => 'Translation language';
+
+  @override
+  String get translationLanguageHelp =>
+      'Choose the language you understand best. Blab uses it for translations and explanations.';
+
+  @override
+  String get addLanguage => 'Add language';
 
   @override
   String get setPrimaryLanguage => 'Set as primary language';

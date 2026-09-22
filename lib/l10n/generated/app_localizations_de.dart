@@ -128,7 +128,21 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die App-Sprache konnte nicht gespeichert werden. Versuche es erneut.';
 
   @override
-  String get knownLanguages => 'Sprachen, die du sprichst';
+  String get knownLanguages => 'Sprachen, die du verstehst';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Wähle alle Sprachen aus, die du ohne Übersetzung lesen kannst. Im Normalmodus bleiben Nachrichten in diesen Sprachen unverändert.';
+
+  @override
+  String get translationLanguage => 'Übersetzungssprache';
+
+  @override
+  String get translationLanguageHelp =>
+      'Wähle die Sprache, die du am besten verstehst. Blab verwendet sie für Übersetzungen und Erklärungen.';
+
+  @override
+  String get addLanguage => 'Sprache hinzufügen';
 
   @override
   String get setPrimaryLanguage => 'Als Hauptsprache festlegen';

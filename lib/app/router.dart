@@ -28,6 +28,7 @@ import '../features/profile/known_languages_screen.dart';
 import '../features/profile/privacy_screen.dart';
 import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/profile/translation_language_screen.dart';
 import '../features/share/share_image_screen.dart';
 import 'dev_menu.dart';
 
@@ -255,6 +256,10 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/profile/known-languages',
       builder: (context, state) => const KnownLanguagesScreen(),
+    ),
+    GoRoute(
+      path: '/profile/translation-language',
+      builder: (context, state) => const TranslationLanguageScreen(),
     ),
     GoRoute(
       path: '/profile/delete-account',

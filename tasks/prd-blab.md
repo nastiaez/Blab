@@ -157,6 +157,9 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] "Edit profile" navigates to Edit Profile screen
 - [ ] "Change email" navigates to Change Email screen (US-039)
 - [ ] "Change password" navigates to Change Password screen
+- [ ] `Languages you understand (N)` keeps selected languages visible as compact chips with a separate add action and no unexplained primary-language star
+- [ ] A `Translation language` row below the chips shows the current language and opens a matching single-select editor; selecting a new language also adds it to Languages you understand
+- [ ] Both language editors use the shared warm selected-row/check pattern, localized explanatory copy, inactive unchanged Save, Back-to-discard, and in-place save failure recovery
 - [ ] Tapping "Log out" first opens a confirm dialog (title: "Log out?", buttons: Cancel + Log out); only on confirm does it sign out and return to auth screen with all fields reset
 - [ ] Learning language is shown only within its chat because it is a per-chat setting
 
@@ -720,7 +723,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge, and `Ready to chat · Say hi` for an unmessaged new connection until that participant selects a practice language
 - FR-7: Empty state shown when no chats exist
 - FR-8: Profile settings in a single card: Interface language | Edit profile | Change email | Change password | Log out. Log out triggers a confirm dialog before signing out
-- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to Profile only after the server succeeds, with the updated name immediately visible and no redundant success toast; failure stays inline on Edit profile. Applying Known Languages follows the same no-success-toast rule because the updated language chips are immediately visible on return
+- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to Profile only after the server succeeds, with the updated name immediately visible and no redundant success toast; failure stays inline on Edit profile. Saving Languages you understand or Translation language follows the same no-success-toast rule because the updated chips and Translation language row are immediately visible on return. Translation language is always included among understood languages
 - FR-10: Change password has current/new/confirm fields with strength bar; success returns to the destination with a compact light confirmation, leading check-circle, localized text, no close icon, and a 2.5-second timeout
 - FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside

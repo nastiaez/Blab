@@ -126,7 +126,21 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося зберегти мову інтерфейсу. Спробуйте ще раз.';
 
   @override
-  String get knownLanguages => 'Мови, які ти знаєш';
+  String get knownLanguages => 'Мови, які ти розумієш';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Вибери всі мови, які можеш читати без перекладу. У звичайному режимі повідомлення цими мовами залишаються без змін.';
+
+  @override
+  String get translationLanguage => 'Мова перекладу';
+
+  @override
+  String get translationLanguageHelp =>
+      'Вибери мову, яку розумієш найкраще. Blab використовує її для перекладів і пояснень.';
+
+  @override
+  String get addLanguage => 'Додати мову';
 
   @override
   String get setPrimaryLanguage => 'Зробити основною мовою';

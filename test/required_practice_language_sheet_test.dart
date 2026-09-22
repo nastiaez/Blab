@@ -277,9 +277,37 @@ void main() {
     await tester.tap(find.text('French'));
     await tester.pump();
     expect(attempts, 1);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    final progress = tester.widget<CircularProgressIndicator>(
+      find.byType(CircularProgressIndicator),
+    );
+    expect(
+      progress.color ?? progress.valueColor?.value,
+      const Color(0xFF46281C),
+    );
     save.complete();
     await tester.pumpAndSettle();
     expect(find.text('Choose a language to practice'), findsNothing);
+  });
+
+  testWidgets('orange practice action uses dark warm ink', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showRequiredPracticeLanguageSheet(context),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('English'));
+    await tester.pumpAndSettle();
+
+    final label = tester.widget<Text>(find.text('Start practicing'));
+    expect(label.style?.color, const Color(0xFF46281C));
   });
 }

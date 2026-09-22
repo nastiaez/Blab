@@ -188,9 +188,9 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: BlabColors.chatSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: BlabColors.chatDivider),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -259,7 +259,7 @@ class _RowDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 16),
-      child: Divider(height: 1, color: Colors.grey.shade100),
+      child: Divider(height: 1, color: BlabColors.chatDivider),
     );
   }
 }

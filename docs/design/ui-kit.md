@@ -14,7 +14,8 @@ This is the living visual reference for Blab. Update it whenever a visual rule i
 | Warm ink | `#46281C` | Headings, controls, and text on brand fills |
 | Bubble ink | `#231208` | High-contrast text on message and badge fills |
 | Warm muted | `#917869` | Secondary text on warm surfaces |
-| Selection tint | `#FAF1EC` | Selected rows and quiet highlights |
+| Selection tint | `#FAF1EC` | Focused inputs and quiet highlights |
+| Language selection tint | `#F7EFE5` | Selected language rows |
 | Error / destructive | `#C62828` | Errors, destructive actions, and warning confirmations |
 | Soft warning surface | `#F3DAD0` | Offline and recoverable warning banners |
 
@@ -28,6 +29,7 @@ Do not introduce `#D4694A`, `#BB573B`, or `#EFEBE2` in product UI.
 - Use an 8 px spacing rhythm. Prefer 8, 12, 16, 20, 24, and 32 px gaps.
 - Use 16 px card corners and 14 px control corners.
 - Primary actions are 52 px high. Small circular actions are at least 44 px.
+- Language pickers use flat 48 px rows without outlines. Selected rows use the language selection tint, bold text, and a trailing check.
 
 ## Type hierarchy
 
@@ -42,6 +44,7 @@ Do not introduce `#D4694A`, `#BB573B`, or `#EFEBE2` in product UI.
 - Brand-filled controls use `#F88C5A` with `#46281C` warm ink for text,
   icons, and loading indicators; never use white foregrounds on the brand fill.
 - Active tabs, switches, checkmarks, focus borders, links, progress, and selected controls use the brand color.
+- Multi-select language rows keep the trailing check and place the 44 px primary-language star immediately before it.
 - Disabled controls use neutral disabled surface and ink colors, not faded orange.
 - Unread badges use brand fill with dark bubble ink.
 - Focus borders use the brand color at reduced opacity.

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
@@ -9,8 +8,9 @@ import '../../shared/data/languages.dart';
 import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/profile_state.dart';
 import '../../shared/widgets/picker_card.dart';
+import 'widgets/language_settings_scaffold.dart';
 
-/// Multi-select known-languages picker with one primary language.
+/// Multi-select editor for the languages the signed-in user understands.
 class KnownLanguagesScreen extends ConsumerStatefulWidget {
   const KnownLanguagesScreen({super.key});
 
@@ -44,12 +44,7 @@ class _KnownLanguagesScreenState extends ConsumerState<KnownLanguagesScreen> {
     });
   }
 
-  void _setPrimary(String code) {
-    if (!_selected!.contains(code)) return;
-    setState(() => _primary = code);
-  }
-
-  Future<void> _apply() async {
+  Future<void> _save() async {
     final selected = _selected;
     final primary = _primary;
     if (selected == null || primary == null || selected.isEmpty) return;
@@ -63,7 +58,7 @@ class _KnownLanguagesScreenState extends ConsumerState<KnownLanguagesScreen> {
           );
       ref.invalidate(currentProfileProvider);
       if (!mounted) return;
-      context.pop();
+      Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -76,92 +71,48 @@ class _KnownLanguagesScreenState extends ConsumerState<KnownLanguagesScreen> {
     final asyncCurrent = ref.watch(knownLanguagesProvider);
     final localizations = context.l10n;
 
-    return Scaffold(
-      backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
+    return asyncCurrent.when(
+      data: (current) {
+        _seedIfNeeded(current);
+        final selected = _selected!;
+        final hasSelectionChange =
+            selected.length != current.codes.length ||
+            current.codes.any((code) => !selected.contains(code));
+        final resolvedPrimary = selected.contains(_primary)
+            ? _primary
+            : selected.isEmpty
+            ? null
+            : selected.first;
+        final hasChange =
+            hasSelectionChange || resolvedPrimary != current.primary;
+
+        return LanguageSettingsScaffold(
+          title: localizations.knownLanguages,
+          description: localizations.knownLanguagesHelp,
+          onSave: selected.isNotEmpty && hasChange && !_saving ? _save : null,
+          saving: _saving,
+          children: [
+            for (var i = 0; i < kBlabLanguages.length; i++) ...[
+              if (i > 0) const SizedBox(height: 8),
+              LanguageCard(
+                label: localizedLanguageName(
+                  localizations,
+                  kBlabLanguages[i].code,
+                ),
+                selected: selected.contains(kBlabLanguages[i].code),
+                onTap: () => _toggle(kBlabLanguages[i].code),
+              ),
+            ],
+          ],
+        );
+      },
+      loading: () => const Scaffold(
         backgroundColor: BlabColors.appBackground,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          tooltip: localizations.back,
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          color: BlabColors.textPrimary,
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          localizations.knownLanguages,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
-          ),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       ),
-      body: asyncCurrent.when(
-        data: (current) {
-          _seedIfNeeded(current);
-          final selected = _selected!;
-          final canApply = selected.isNotEmpty && _primary != null && !_saving;
-          return SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < kBlabLanguages.length; i++) ...[
-                          if (i > 0) const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: LanguageCard(
-                                  label: localizedLanguageName(
-                                    localizations,
-                                    kBlabLanguages[i].code,
-                                  ),
-                                  selected: selected.contains(
-                                    kBlabLanguages[i].code,
-                                  ),
-                                  onTap: () => _toggle(kBlabLanguages[i].code),
-                                ),
-                              ),
-                              if (selected.contains(kBlabLanguages[i].code))
-                                IconButton(
-                                  icon: Icon(
-                                    _primary == kBlabLanguages[i].code
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: BlabColors.brand,
-                                  ),
-                                  tooltip: localizations.setPrimaryLanguage,
-                                  onPressed: () =>
-                                      _setPrimary(kBlabLanguages[i].code),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-                  child: BrandButton(
-                    label: localizations.apply,
-                    onPressed: canApply ? _apply : null,
-                    loading: _saving,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => Center(child: Text(localizations.somethingWentWrong)),
+      error: (_, _) => Scaffold(
+        backgroundColor: BlabColors.appBackground,
+        body: Center(child: Text(localizations.somethingWentWrong)),
       ),
     );
   }

@@ -59,6 +59,7 @@ class BlabColors {
 
   // Selected row tint (used by language picker, etc.)
   static const Color selectedTint = Color(0xFFFAF1EC);
+  static const Color languageSelectionTint = Color(0xFFF7EFE5);
 
   // Avatar palette — deterministic warm, earthy swatches.
   static const List<Color> avatarPalette = [

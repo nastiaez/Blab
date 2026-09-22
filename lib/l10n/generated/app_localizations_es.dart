@@ -127,7 +127,21 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo guardar el idioma de la interfaz. Inténtalo de nuevo.';
 
   @override
-  String get knownLanguages => 'Idiomas que hablas';
+  String get knownLanguages => 'Idiomas que entiendes';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Selecciona todos los idiomas que puedes leer sin traducción. En el modo Normal, los mensajes en estos idiomas se muestran tal como están.';
+
+  @override
+  String get translationLanguage => 'Idioma de traducción';
+
+  @override
+  String get translationLanguageHelp =>
+      'Elige el idioma que mejor entiendas. Blab lo usa para traducciones y explicaciones.';
+
+  @override
+  String get addLanguage => 'Añadir idioma';
 
   @override
   String get setPrimaryLanguage => 'Establecer como idioma principal';

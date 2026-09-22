@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:blab/app/theme.dart';
+import 'package:blab/shared/widgets/blab_icon.dart';
 import 'package:blab/shared/widgets/picker_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -78,5 +79,64 @@ void main() {
       find.byType(CircularProgressIndicator),
     );
     expect(progress.valueColor!.value, BlabColors.warmInk);
+  });
+
+  testWidgets('language cards match the approved flat picker rows', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: blabTheme,
+        home: Scaffold(
+          body: Column(
+            children: [
+              LanguageCard(
+                key: const Key('selected-language'),
+                label: 'English',
+                selected: true,
+                onTap: () {},
+              ),
+              LanguageCard(
+                key: const Key('unselected-language'),
+                label: 'Deutsch',
+                selected: false,
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final selected = find.byKey(const Key('selected-language'));
+    final unselected = find.byKey(const Key('unselected-language'));
+    final selectedMaterial = tester.widget<Material>(
+      find.descendant(of: selected, matching: find.byType(Material)).first,
+    );
+    final unselectedMaterial = tester.widget<Material>(
+      find.descendant(of: unselected, matching: find.byType(Material)).first,
+    );
+
+    expect(tester.getSize(selected).height, 48);
+    expect(tester.getSize(unselected).height, 48);
+    expect(selectedMaterial.color, const Color(0xFFF7EFE5));
+    expect(selectedMaterial.borderRadius, BorderRadius.circular(12));
+    expect(unselectedMaterial.color, Colors.transparent);
+    expect(
+      tester.widget<Text>(find.text('English')).style!.fontWeight,
+      FontWeight.w700,
+    );
+    expect(
+      tester.widget<Text>(find.text('Deutsch')).style!.fontWeight,
+      FontWeight.w400,
+    );
+    expect(
+      find.descendant(of: selected, matching: find.byType(BlabIcon)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: unselected, matching: find.byType(BlabIcon)),
+      findsNothing,
+    );
   });
 }

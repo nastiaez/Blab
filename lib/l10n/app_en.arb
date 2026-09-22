@@ -51,7 +51,11 @@
     }
   },
   "couldNotSaveLanguage": "Could not save the interface language. Try again.",
-  "knownLanguages": "Languages you know",
+  "knownLanguages": "Languages you understand",
+  "knownLanguagesHelp": "Select every language you can read without translation. In Normal mode, messages in these languages stay as written.",
+  "translationLanguage": "Translation language",
+  "translationLanguageHelp": "Choose the language you understand best. Blab uses it for translations and explanations.",
+  "addLanguage": "Add language",
   "setPrimaryLanguage": "Set as primary language",
   "languageEnglish": "English",
   "languageDutch": "Dutch",

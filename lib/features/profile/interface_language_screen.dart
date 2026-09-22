@@ -107,7 +107,7 @@ class _InterfaceLanguageScreenState
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
               child: BrandButton(
-                label: localizations.apply,
+                label: localizations.save,
                 onPressed: hasChange ? apply : null,
               ),
             ),

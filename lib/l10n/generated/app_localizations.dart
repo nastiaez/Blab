@@ -327,8 +327,32 @@ abstract class AppLocalizations {
   /// No description provided for @knownLanguages.
   ///
   /// In en, this message translates to:
-  /// **'Languages you know'**
+  /// **'Languages you understand'**
   String get knownLanguages;
+
+  /// No description provided for @knownLanguagesHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select every language you can read without translation. In Normal mode, messages in these languages stay as written.'**
+  String get knownLanguagesHelp;
+
+  /// No description provided for @translationLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation language'**
+  String get translationLanguage;
+
+  /// No description provided for @translationLanguageHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the language you understand best. Blab uses it for translations and explanations.'**
+  String get translationLanguageHelp;
+
+  /// No description provided for @addLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add language'**
+  String get addLanguage;
 
   /// No description provided for @setPrimaryLanguage.
   ///
