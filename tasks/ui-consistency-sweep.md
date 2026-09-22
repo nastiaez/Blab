@@ -18,8 +18,9 @@ Durable source of truth for the `codex/ui-consistency-sweep` branch and the Blab
 - [x] Chats and Invite primary screens
 - [x] Authentication screens (`40b69e9`)
 - [x] Account, Settings, and Profile language settings (`5b34eba`)
+- [x] Chat actions and failure states (`5448a96`)
 
-## Packet 5A: Chat actions and failure states — approved
+## Packet 5A: Chat actions and failure states — complete
 
 - [x] Capture current failed, pending, and retry message states.
 - [x] Review reply, edit, delete, report, block, reaction, and emoji actions/sheets.
@@ -30,12 +31,13 @@ Durable source of truth for the `codex/ui-consistency-sweep` branch and the Blab
 - [x] Run focused tests, full QA, static checks, UI detector, and production build.
 - [x] Send one real-app screenshot review set.
 - [x] Owner approved the real-app screenshot set.
-- [ ] Commit, push, merge, and mark this packet complete.
+- [x] Commit, push, merge, and mark this packet complete.
 
 Review gate: 691 tests passed, 15 skipped; analysis, formatting, UI detector,
-and production web build passed. Owner screenshot approval received.
+production web build, GitHub Quality, Android release compile, and local Supabase
+integration passed. Owner screenshot approval received.
 
-## Packet 5B: Media, secondary sheets, and remaining system states
+## Packet 5B: Media, secondary sheets, and remaining system states — in progress
 
 - [ ] Review Gallery, photo preview, and Share image.
 - [ ] Review learning-language and translation-preference sheets.
