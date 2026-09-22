@@ -19,13 +19,17 @@ import {
   parseFormAuditResult,
   parseProviderResult,
   parseSemanticAuditResult,
+  parseSourceMeaningAnchorResult,
   parseWordMetadataRepairResult,
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
   recognizedAbbreviationSourceLanguage,
+  resolveSemanticAuditConsensus,
   SEMANTIC_AUDIT_RESPONSE_FORMAT,
   semanticTranslationAuditSystemPrompt,
+  SOURCE_MEANING_RESPONSE_FORMAT,
+  sourceMeaningAnchorSystemPrompt,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
@@ -469,6 +473,60 @@ Deno.test("semantic translation audit independently checks source meaning", () =
   }
 });
 
+Deno.test("source meaning is anchored before any candidate is visible", () => {
+  const prompt = sourceMeaningAnchorSystemPrompt();
+  assert(
+    SOURCE_MEANING_RESPONSE_FORMAT.json_schema.name ===
+      "blab_source_meaning_anchor",
+    "the candidate-blind source anchor has its own strict schema",
+  );
+  assert(
+    prompt.includes("authored chat message") &&
+      prompt.includes("plain English") &&
+      prompt.includes("before any candidate exists"),
+    "the source anchor resolves the authored meaning independently",
+  );
+  assert(
+    prompt.includes("choose the exact English sense") &&
+      prompt.includes("similar-looking word") &&
+      prompt.includes("never add likely activities"),
+    "ambiguous words are disambiguated without expanding the authored message",
+  );
+  assert(
+    !prompt.includes("Candidate translation:"),
+    "the source anchor cannot be biased by a candidate",
+  );
+
+  assert(
+    parseSourceMeaningAnchorResult(
+      JSON.stringify({
+        sourceMeaning: "We want to visit the shop that sells books tomorrow.",
+      }),
+    ) === "We want to visit the shop that sells books tomorrow.",
+    "a complete source meaning is accepted",
+  );
+  assert(
+    parseSourceMeaningAnchorResult(
+      JSON.stringify({ sourceMeaning: "   " }),
+    ) === null,
+    "an empty source meaning is rejected",
+  );
+});
+
+Deno.test("semantic translation audit uses one stable internal meaning language", () => {
+  const prompt = semanticTranslationAuditSystemPrompt("en", "es", "hi");
+  assert(
+    prompt.includes("source meaning in English (en)") &&
+      prompt.includes("back-translate the candidate into English"),
+    "semantic comparison stays in English instead of the user's help language",
+  );
+  assert(
+    !prompt.includes("rendered in Hindi") &&
+      !prompt.includes("candidate into Hindi"),
+    "Hindi remains user-facing metadata and cannot distort the internal audit",
+  );
+});
+
 Deno.test("semantic audit parser accepts only internally consistent verdicts", () => {
   assert(
     SEMANTIC_AUDIT_RESPONSE_FORMAT.json_schema.name ===
@@ -488,6 +546,19 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
     preserved?.preservesMeaning === true &&
       preserved.correctedTranslation === null,
     "an equivalent candidate remains immutable",
+  );
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify({
+        sourceMeaning: "We want to visit the library tomorrow.",
+        candidateMeaning: "We want to visit the library tomorrow.",
+        preservesMeaning: true,
+        correctedTranslation: null,
+      }),
+      "Ми хочемо відвідати бібліотеку завтра.",
+      "We want to visit the shop that sells books tomorrow.",
+    ) === null,
+    "an audit cannot rewrite the candidate-blind source anchor",
   );
 
   const corrected = parseSemanticAuditResult(
@@ -529,6 +600,68 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
       "candidate",
     ) === null,
     "a mismatch cannot claim the unchanged candidate as its correction",
+  );
+});
+
+Deno.test("semantic audit consensus retries contradictions and requires agreement", () => {
+  const preserved = {
+    sourceMeaning: "We want to visit the bookstore tomorrow.",
+    candidateMeaning: "We want to visit the bookstore tomorrow.",
+    preservesMeaning: true as const,
+    correctedTranslation: null,
+  };
+  const repaired = {
+    sourceMeaning: "We want to visit the bookstore tomorrow.",
+    candidateMeaning: "We want to visit the library tomorrow.",
+    preservesMeaning: false as const,
+    correctedTranslation: "Queremos visitar la librería mañana.",
+  };
+
+  assert(
+    resolveSemanticAuditConsensus([preserved]) === null,
+    "one optimistic audit cannot approve a translation by itself",
+  );
+  assert(
+    resolveSemanticAuditConsensus([preserved, preserved])?.preservesMeaning ===
+      true,
+    "two independent approvals may preserve the candidate",
+  );
+  assert(
+    resolveSemanticAuditConsensus([preserved, repaired]) === null,
+    "a split verdict requires a tie-breaking review",
+  );
+  const corrected = resolveSemanticAuditConsensus([
+    preserved,
+    repaired,
+    repaired,
+  ]);
+  assert(
+    corrected?.preservesMeaning === false &&
+      corrected.correctedTranslation ===
+        "Queremos visitar la librería mañana.",
+    "two matching repairs override one false approval",
+  );
+});
+
+Deno.test("semantic audit consensus rejects competing corrections", () => {
+  const first = {
+    sourceMeaning: "We want to visit the bookstore tomorrow.",
+    candidateMeaning: "We want to visit the library tomorrow.",
+    preservesMeaning: false as const,
+    correctedTranslation: "Queremos visitar la librería mañana.",
+  };
+  const second = {
+    ...first,
+    correctedTranslation: "Mañana queremos ir a una librería.",
+  };
+  assert(
+    resolveSemanticAuditConsensus([first, second, second])
+      ?.correctedTranslation === second.correctedTranslation,
+    "only a correction supported by two audits may be saved",
+  );
+  assert(
+    resolveSemanticAuditConsensus([first, second]) === null,
+    "one-off competing rewrites remain unresolved",
   );
 });
 
@@ -1881,8 +2014,79 @@ Deno.test("copied multi-word glosses require a focused metadata repair", () => {
   );
 });
 
+Deno.test("source-language glosses are repaired when known language differs", () => {
+  const englishGlosses: TranslationResult = {
+    mode: "translation",
+    sourceLang: "en",
+    translation: "Wir wollen morgen die Buchhandlung besuchen.",
+    interfaceText: "Queremos visitar la librería mañana.",
+    explanation: null,
+    confidence: null,
+    formAlternatives: null,
+    tokens: [
+      { text: "Wir", gloss: "We", roman: "Wir", isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "wollen", gloss: "want", roman: "wollen", isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "morgen",
+        gloss: "tomorrow",
+        roman: "morgen",
+        isContent: true,
+      },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "die", gloss: "the", roman: "die", isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "Buchhandlung",
+        gloss: "bookstore",
+        roman: "Buchhandlung",
+        isContent: true,
+      },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "besuchen",
+        gloss: "visit",
+        roman: "besuchen",
+        isContent: true,
+      },
+      { text: ".", gloss: null, roman: null, isContent: false },
+    ],
+  };
+  const source = "We want to visit the bookstore tomorrow.";
+  assert(
+    wordGlossMetadataNeedsRepair(englishGlosses, "de", "es", source),
+    "English source words cannot masquerade as Spanish word help",
+  );
+
+  const spanishGlosses = {
+    ...englishGlosses,
+    tokens: englishGlosses.tokens.map((raw) => {
+      const token = raw as TranslationToken;
+      if (!token.isContent) return token;
+      const spanishByGerman: Record<string, string> = {
+        Wir: "nosotros",
+        wollen: "queremos",
+        morgen: "mañana",
+        die: "la",
+        Buchhandlung: "librería",
+        besuchen: "visitar",
+      };
+      return { ...token, gloss: spanishByGerman[token.text] };
+    }),
+  };
+  assert(
+    !wordGlossMetadataNeedsRepair(spanishGlosses, "de", "es", source),
+    "valid Spanish word help remains unchanged",
+  );
+});
+
 Deno.test("focused word metadata repair preserves the accepted sentence", () => {
-  const prompt = wordMetadataRepairSystemPrompt("pt", "fr");
+  const prompt = wordMetadataRepairSystemPrompt(
+    "pt",
+    "fr",
+    "Nous allons au parc.",
+  );
   assert(
     prompt.includes("Portuguese (pt)"),
     "the repair names the learning language",
@@ -1894,6 +2098,11 @@ Deno.test("focused word metadata repair preserves the accepted sentence", () => 
   assert(
     prompt.includes("must not translate, rewrite, or correct"),
     "the accepted sentence is immutable during metadata repair",
+  );
+  assert(
+    prompt.includes("agree with this accepted Known Language sentence") &&
+      !prompt.includes("Nous allons au parc."),
+    "word meanings are anchored to the independently accepted Known Language sentence",
   );
   assert(
     WORD_METADATA_RESPONSE_FORMAT.json_schema.strict,

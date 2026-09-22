@@ -1186,6 +1186,40 @@ The disposable local chat was `00000000-0000-4000-8000-00000000f2c0`. All eight 
 - Scope: language-independent; no French/Ukrainian dictionary, no sentence-specific replacement, and no relaxation of the existing structural validators.
 - Verification: 603 app checks passed, 15 environment-only checks skipped, 112 language-engine checks passed, static analysis and both formatters were clean, Android built successfully, and the installed APK SHA-256 matched the reviewed artifact exactly at `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
 
+## Packet K01 — Primary Known Language routing and live switching
+
+### Evidence
+
+- `K01-01-alice-normal-german.png`: Alice's real web client in Normal mode, independently routed to German `Buchhandlung`.
+- `K01-02-alice-practice-german-gloss.png`: Alice's Practice-mode Spanish `librería` popup with German `Buchhandlung`.
+- `K01-03-bob-normal-ukrainian.png`: Bob's Android client in Normal mode, independently routed to Ukrainian `книгарня`.
+- `K01-04-bob-practice-ukrainian-gloss.png`: Bob's Practice-mode Spanish `librería` popup with Ukrainian `книгарня`.
+- `K01-review.png`: the four final isolation frames in one owner-facing packet.
+
+The disposable live chat was `00000000-0000-4000-8000-00000000f410`. A separate German-learning control message proved Spanish as the Primary Known Language and was removed after its result was recorded; the final one-message Alice/Bob review fixture was removed after approval.
+
+### K01 matrix
+
+- Learning-language route: Spanish for Dutch, English, French, German, Hindi, Italian, Portuguese, Tamil, Turkish, and Ukrainian Primary Known Languages; German for the independent Spanish Primary Known Language control.
+- Source: French `Nous voulons visiter la librairie demain.` (`librairie` = bookstore).
+- Expected: Practice remains in the selected Learning Language; Normal mode and every word gloss use the selected Primary Known Language; Interface Language does not change either route.
+- Observed: all 11 supported Primary Known Languages preserve the bookstore meaning: Dutch `boekhandel`, English `bookstore`, French `librairie`, German `Buchhandlung`, Hindi `किताबों की दुकान`, Italian `libreria`, Portuguese `livraria`, Spanish `librería`, Tamil `புத்தகக் கடை`, Turkish `kitapçı`, and Ukrainian `книгарня`.
+- Classification: Pass after repair
+- Severity: none
+- Owner decision: approved 2026-09-22
+- Follow-up: none
+
+### K01 semantic-review repair
+
+- Initial Hindi failure: the base translation correctly used a book shop, but one semantic review mislabeled it as a library and proposed the unchanged sentence as its correction. Blab safely withheld the result.
+- Initial Turkish failure: Practice and its Turkish word gloss drifted from bookstore to library while Normal mode preserved bookstore.
+- Consensus repair: up to three independent reviews run against one candidate, two agreeing reviews are required, contradictory reviews are retried without regenerating the sentence, and a rejected candidate cannot be "corrected" to identical text.
+- Independent-review repair: the semantic checks and word-metadata regeneration use a separately configured stronger review model, while the existing translation model remains unchanged.
+- Literal-anchor repair: the source anchor chooses the exact sense before seeing a candidate but may not invent likely activities, intentions, explanations, contrasts, or consequences. This removed the intermediate overcorrection that expanded "visit the bookstore" into browsing or buying books.
+- Known Language consistency: the accepted Known Language sentence is audited independently and every Practice word gloss is regenerated against that accepted sentence, preventing sentence/popup disagreement.
+- Scope: language-independent; no bookstore dictionary, Hindi/Turkish/Ukrainian special case, or sentence-specific replacement.
+- Verification: the exact real provider matrix passed all 11 routes; Alice and Bob remained isolated to German and Ukrainian respectively; 603 app checks passed, 15 environment-only checks skipped, 123 language-engine checks passed, static analysis and both formatters were clean, Android built successfully, and the installed APK SHA-256 matched the reviewed artifact exactly at `a973a6018186dfb725a662ccb8575e974899113f504ac865ef3918f3a82718d7`.
+
 ## Finding template
 
 ### PACKET-LOCALE-NUMBER

@@ -269,6 +269,22 @@ export const INTERFACE_RESPONSE_FORMAT = {
   },
 } as const;
 
+export const SOURCE_MEANING_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_source_meaning_anchor",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        sourceMeaning: { type: "string", minLength: 1 },
+      },
+      required: ["sourceMeaning"],
+    },
+  },
+} as const;
+
 export const SEMANTIC_AUDIT_RESPONSE_FORMAT = {
   type: "json_schema",
   json_schema: {
@@ -1339,6 +1355,7 @@ export function wordGlossMetadataNeedsRepair(
   result: TranslationResult,
   targetLang: string,
   interfaceLang: string,
+  sourceText?: string,
 ): boolean {
   if (targetLang === interfaceLang) return false;
   const contentTokens = result.tokens.flatMap((raw) => {
@@ -1356,13 +1373,30 @@ export function wordGlossMetadataNeedsRepair(
       : [];
   });
   if (contentTokens.length < 2) return false;
-  return contentTokens.every((token) => {
+  const copiedFromTarget = contentTokens.every((token) => {
     const gloss = normalizedWordMetadataValue(token.gloss);
     const text = normalizedWordMetadataValue(token.text);
     const roman = token.roman === null
       ? null
       : normalizedWordMetadataValue(token.roman);
     return gloss === text || roman !== null && gloss === roman;
+  });
+  if (copiedFromTarget) return true;
+  if (sourceText === undefined || result.sourceLang === interfaceLang) {
+    return false;
+  }
+  const sourceWords = new Set(
+    sourceText.normalize("NFKC").toLocaleLowerCase().match(
+      /[\p{L}\p{M}\p{N}'’]+/gu,
+    ) ?? [],
+  );
+  if (sourceWords.size < 3) return false;
+  return contentTokens.every((token) => {
+    const glossWords = token.gloss.normalize("NFKC").toLocaleLowerCase().match(
+      /[\p{L}\p{M}\p{N}'’]+/gu,
+    ) ?? [];
+    return glossWords.length > 0 &&
+      glossWords.every((word) => sourceWords.has(word));
   });
 }
 
@@ -1904,19 +1938,47 @@ ${GENDER_ADDRESS_RULES}
 Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`;
 }
 
+export function sourceMeaningAnchorSystemPrompt(): string {
+  return `Resolve the complete semantic meaning of one authored chat message before any candidate exists.
+
+Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
+
+Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. Do not assume a target language or a later translation; neither is provided.`;
+}
+
+export function parseSourceMeaningAnchorResult(content: string): string | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const sourceMeaning = (raw as Record<string, unknown>).sourceMeaning;
+  return typeof sourceMeaning === "string" && sourceMeaning.trim().length > 0
+    ? sourceMeaning.trim()
+    : null;
+}
+
 export function semanticTranslationAuditSystemPrompt(
   sourceLang: string,
   targetLang: string,
-  interfaceLang: string,
+  _interfaceLang: string,
 ): string {
   const sourceName = LANG_NAMES[sourceLang] ?? sourceLang;
   const targetName = LANG_NAMES[targetLang] ?? targetLang;
-  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  const auditLang = "en";
+  const auditName = LANG_NAMES[auditLang];
   return `Audit one candidate translation from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}) for semantic fidelity.
 
-Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${interfaceName}>","candidateMeaning":"<complete candidate independently back-translated into ${interfaceName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
+Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
 
-First render the complete source meaning in ${interfaceName} (${interfaceLang}) as sourceMeaning. Separately back-translate the candidate into ${interfaceName} as candidateMeaning without copying wording from sourceMeaning. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
+The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated from the authored message before the candidate existed. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
 
 Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.`;
 }
@@ -1936,6 +1998,7 @@ export type SemanticAuditResult = {
 export function parseSemanticAuditResult(
   content: string,
   candidateTranslation: string,
+  trustedSourceMeaning?: string,
 ): SemanticAuditResult | null {
   const firstBrace = content.indexOf("{");
   const lastBrace = content.lastIndexOf("}");
@@ -1958,6 +2021,10 @@ export function parseSemanticAuditResult(
     typeof value.preservesMeaning !== "boolean" ||
     value.correctedTranslation !== null &&
       typeof value.correctedTranslation !== "string"
+  ) return null;
+  if (
+    trustedSourceMeaning !== undefined &&
+    value.sourceMeaning.trim() !== trustedSourceMeaning.trim()
   ) return null;
   if (value.preservesMeaning) {
     if (value.correctedTranslation !== null) return null;
@@ -1984,9 +2051,33 @@ export function parseSemanticAuditResult(
   };
 }
 
+export function resolveSemanticAuditConsensus(
+  audits: SemanticAuditResult[],
+): SemanticAuditResult | null {
+  if (audits.length < 2) return null;
+
+  const preserved = audits.filter((audit) => audit.preservesMeaning);
+  if (preserved.length >= 2) return preserved[0];
+
+  const corrections = new Map<string, SemanticAuditResult[]>();
+  for (const audit of audits) {
+    if (audit.preservesMeaning) continue;
+    const key = audit.correctedTranslation.normalize("NFKC").trim()
+      .toLocaleLowerCase();
+    const matching = corrections.get(key) ?? [];
+    matching.push(audit);
+    corrections.set(key, matching);
+  }
+  for (const matching of corrections.values()) {
+    if (matching.length >= 2) return matching[0];
+  }
+  return null;
+}
+
 export function wordMetadataRepairSystemPrompt(
   targetLang: string,
   interfaceLang: string,
+  acceptedInterfaceText?: string,
 ): string {
   const targetName = LANG_NAMES[targetLang] ?? targetLang;
   const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
@@ -1998,6 +2089,11 @@ Rules:
 - Concatenating every tokens[].text must reproduce the accepted sentence exactly.
 - Use one content token per word or non-whitespace term, never a phrase or full sentence.
 - Every content-token gloss must be a short meaning in ${interfaceName} (${interfaceLang}); never copy the ${targetName} word merely because it already uses Latin script.
+${
+    acceptedInterfaceText === undefined
+      ? ""
+      : "- The user also supplies an independently accepted Known Language sentence. Every gloss must agree with this accepted Known Language sentence in context; never substitute a related but different concept."
+  }
 - For a Latin-script word, roman repeats the written word. For a non-Latin word, roman is its Latin-script transliteration.
 - Whitespace, punctuation, and emoji use isContent=false with gloss and roman set to null.`;
 }

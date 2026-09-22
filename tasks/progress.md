@@ -555,7 +555,7 @@
   - Automated preference/rendering regressions, the complete Flutter suite, static analysis, and the Alice-browser/Bob-Android Hindi/Tamil matrix pass.
   - Final browser and Android screenshots are sent for owner review and explicitly approved.
 
-### Step 2.15 — Language and localization QA `[ ]` ← in progress
+### Step 2.15 — Language and localization QA `[x]`
 - **Design:** `docs/superpowers/specs/2026-09-14-language-localization-qa-design.md`.
 - **Plan:** `docs/superpowers/plans/2026-09-14-language-localization-qa.md`.
 - **Scope:** every user-facing screen and state in English, German, Spanish, and Ukrainian; all eleven Learning Languages; every Primary Known Language; word descriptions; word and sentence audio; account/language switching; normal and 200% text size.
@@ -567,7 +567,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A through B08 and L01-L03 are approved after real-client review. Publishing L03 before L04 German begins. Supported-build Notifications delivery/tap remains blocked until a physical Android device is connected.
+- **Completion:** B01A through B08, all eleven Learning Language packets, and K01 Primary Known Language switching are approved after real-client review. Alice and Bob passed the final isolated German/Ukrainian routing proof; the complete automated gate and installed-build fingerprint match passed on 2026-09-22. Supported-build Notifications delivery/tap remains a separate physical-device gate.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -610,6 +610,8 @@ Do not start Step N+1 until Step N is fully `[x]`.
 ---
 
 ## Changelog
+
+- 2026-09-22 — Owner approved the final K01 Primary Known Language matrix and Alice/Bob isolation proof. All eleven Known Languages preserve the exact bookstore meaning, Practice remains in the Learning Language, Interface Language does not alter translation routing, and German/Ukrainian account preferences stay isolated. Final verification passed 603 Flutter checks with 15 environment-only skips, 123 language-engine checks, static analysis, formatting, Android packaging, and an exact installed/build SHA-256 match. Completed Step 2.15 and removed only the disposable K01 fixture.
 
 - 2026-09-21 — Owner approved the repaired L08 Portuguese packet after both real clients showed `parque` → French `parc`, retained `livraria` → `librairie`, preserved the accepted Portuguese sentences and correction, and dispatched Portuguese word/sentence audio. Closed Step 2.7 again; the reusable repair remains language-agnostic and duplicate Latin-script romanization stays hidden.
 
