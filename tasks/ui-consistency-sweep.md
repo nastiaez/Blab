@@ -55,8 +55,16 @@ integration passed. Owner screenshot approval received.
 
 ## Packet 6: Final full-screen consistency review
 
-- [ ] Review every production route with Alice and Bob.
-- [ ] Review long German and Ukrainian copy.
-- [ ] Review at 200% text scaling.
-- [ ] Fix only confirmed visual inconsistencies.
-- [ ] Run final QA, screenshot review, approval, and merge.
+- [x] Review every non-onboarding production route with Alice and Bob.
+- [x] Review long German and Ukrainian copy.
+- [x] Review at 200% text scaling.
+- [x] Record the two Auth findings and defer them to the later onboarding/Auth UI review by owner request.
+- [x] Confirm no production fix is required for the remaining reviewed pages.
+- [ ] Verify Notifications permission states on a physical Android device. ← blocked: no physical device connected
+- [x] Run final QA: 694 passed, 15 skipped; formatting, analysis, shell checks, diff validation, and production web build passed.
+- [x] Receive owner approval for the final non-Auth screenshot review set.
+- [ ] Commit, push, merge, confirm remote CI, and close the sweep.
+
+Scale quality bar: default through moderate scaling must remain visually polished;
+Android's maximum 200% font setting is an accessibility stress test and must
+remain usable without overlap, clipping, or blocked actions.
