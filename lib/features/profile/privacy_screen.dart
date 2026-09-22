@@ -8,26 +8,64 @@ import '../../shared/data/legal_links.dart';
 import '../../shared/state/privacy_settings.dart';
 import '../../shared/util/open_url.dart';
 import '../../shared/widgets/blab_switch.dart';
+import '../../shared/widgets/inline_setting_error.dart';
 
 /// PRD US-040 + US-041. Signal-symmetric privacy controls.
-class PrivacyScreen extends ConsumerWidget {
+class PrivacyScreen extends ConsumerStatefulWidget {
   const PrivacyScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PrivacyScreen> createState() => _PrivacyScreenState();
+}
+
+enum _PrivacySetting { typingIndicators, readReceipts }
+
+class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
+  final Set<_PrivacySetting> _saving = {};
+  _PrivacySetting? _failedSetting;
+  bool? _failedValue;
+
+  Future<void> _saveSetting(_PrivacySetting setting, bool value) async {
+    if (_saving.isNotEmpty) return;
+    setState(() {
+      _saving.add(setting);
+    });
+    try {
+      switch (setting) {
+        case _PrivacySetting.typingIndicators:
+          await ref.read(typingIndicatorsProvider.notifier).set(value);
+        case _PrivacySetting.readReceipts:
+          await ref.read(readReceiptsProvider.notifier).set(value);
+      }
+      if (mounted) {
+        setState(() {
+          _failedSetting = null;
+          _failedValue = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _failedSetting = setting;
+          _failedValue = value;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _saving.remove(setting));
+    }
+  }
+
+  void _retryFailedSetting() {
+    final setting = _failedSetting;
+    final value = _failedValue;
+    if (setting == null || value == null || _saving.isNotEmpty) return;
+    _saveSetting(setting, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final typing = ref.watch(typingIndicatorsProvider);
     final read = ref.watch(readReceiptsProvider);
-
-    Future<void> saveSetting(Future<void> Function() save) async {
-      try {
-        await save();
-      } catch (_) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.couldNotSavePrivacy)),
-        );
-      }
-    }
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
@@ -57,17 +95,14 @@ class PrivacyScreen extends ConsumerWidget {
           children: [
             const SizedBox(height: 8),
             _Card(
+              key: const Key('privacy-settings-card'),
               children: [
                 _ToggleRow(
                   label: context.l10n.typingIndicators,
                   caption: context.l10n.typingIndicatorsHelp,
                   value: typing.enabled,
-                  onChanged: typing.isLoaded
-                      ? (v) => saveSetting(
-                          () => ref
-                              .read(typingIndicatorsProvider.notifier)
-                              .set(v),
-                        )
+                  onChanged: typing.isLoaded && _saving.isEmpty
+                      ? (v) => _saveSetting(_PrivacySetting.typingIndicators, v)
                       : null,
                 ),
                 const _RowDivider(),
@@ -75,16 +110,22 @@ class PrivacyScreen extends ConsumerWidget {
                   label: context.l10n.readReceipts,
                   caption: context.l10n.readReceiptsHelp,
                   value: read.enabled,
-                  onChanged: read.isLoaded
-                      ? (v) => saveSetting(
-                          () => ref.read(readReceiptsProvider.notifier).set(v),
-                        )
+                  onChanged: read.isLoaded && _saving.isEmpty
+                      ? (v) => _saveSetting(_PrivacySetting.readReceipts, v)
                       : null,
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            if (_failedSetting != null) ...[
+              const SizedBox(height: 8),
+              InlineSettingError(
+                text: context.l10n.couldNotSavePreference,
+                onRetry: _saving.isEmpty ? _retryFailedSetting : null,
+              ),
+            ],
+            if (_failedSetting == null) const SizedBox(height: 18),
             _Card(
+              key: const Key('privacy-links-card'),
               children: [
                 _LinkRow(
                   label: context.l10n.privacyPolicyTitle,
@@ -140,16 +181,16 @@ class _LinkRow extends StatelessWidget {
 }
 
 class _Card extends StatelessWidget {
-  const _Card({required this.children});
+  const _Card({super.key, required this.children});
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: BlabColors.chatSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: BlabColors.chatDivider),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -218,7 +259,7 @@ class _RowDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 16),
-      child: Divider(height: 1, color: Colors.grey.shade100),
+      child: Divider(height: 1, color: BlabColors.chatDivider),
     );
   }
 }

@@ -4,6 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/local_storage_keys.dart';
 import 'auth_state.dart';
 
+typedef PrivacySettingWriter = Future<bool> Function(String key, bool value);
+
+final privacySettingWriterProvider = Provider<PrivacySettingWriter>((ref) {
+  return (key, value) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.setBool(key, value);
+  };
+});
+
 /// A privacy choice is not allowed to transmit until persistence has loaded.
 /// This avoids briefly using the default-ON behavior when the saved value is
 /// OFF during a cold start.
@@ -50,9 +59,18 @@ class TypingIndicatorsNotifier extends Notifier<PrivacySettingState> {
   Future<void> set(bool value) async {
     if (!state.isLoaded) return;
     final userId = _userId;
+    final previous = state;
     state = PrivacySettingState.ready(value);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(privacyTypingIndicatorsStorageKey(userId), value);
+    try {
+      final saved = await ref.read(privacySettingWriterProvider)(
+        privacyTypingIndicatorsStorageKey(userId),
+        value,
+      );
+      if (!saved) throw StateError('privacy_setting_not_saved');
+    } catch (_) {
+      if (ref.mounted && userId == _userId) state = previous;
+      rethrow;
+    }
   }
 }
 
@@ -85,9 +103,18 @@ class ReadReceiptsNotifier extends Notifier<PrivacySettingState> {
   Future<void> set(bool value) async {
     if (!state.isLoaded) return;
     final userId = _userId;
+    final previous = state;
     state = PrivacySettingState.ready(value);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(privacyReadReceiptsStorageKey(userId), value);
+    try {
+      final saved = await ref.read(privacySettingWriterProvider)(
+        privacyReadReceiptsStorageKey(userId),
+        value,
+      );
+      if (!saved) throw StateError('privacy_setting_not_saved');
+    } catch (_) {
+      if (ref.mounted && userId == _userId) state = previous;
+      rethrow;
+    }
   }
 }
 

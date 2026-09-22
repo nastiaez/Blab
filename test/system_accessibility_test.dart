@@ -13,6 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+class _EmptyChatList extends ChatListNotifier {
+  @override
+  Future<List<Chat>> build() async => const <Chat>[];
+}
+
 Future<void> _pumpChats(
   WidgetTester tester, {
   required Locale locale,
@@ -26,7 +31,7 @@ Future<void> _pumpChats(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        visibleChatsProvider.overrideWithValue(const AsyncValue.data(<Chat>[])),
+        chatListProvider.overrideWith(_EmptyChatList.new),
         onlineProvider.overrideWith((_) => Stream.value(true)),
       ],
       child: MaterialApp(

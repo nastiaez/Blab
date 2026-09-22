@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:blab/features/chat/chat_screen.dart';
 import 'package:blab/features/chat/state/chat_state.dart';
@@ -7,6 +8,7 @@ import 'package:blab/features/chat/state/pending_sends_state.dart';
 import 'package:blab/features/chat/state/typing_state.dart';
 import 'package:blab/features/chat/state/unread_chat_state.dart';
 import 'package:blab/l10n/l10n.dart';
+import 'package:blab/shared/data/local_storage_keys.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/local_chat_history_cache.dart';
@@ -313,6 +315,47 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       container.dispose();
       await tester.pump(const Duration(milliseconds: 300));
+    },
+  );
+
+  testWidgets(
+    'persisted pending message stays visible when uncached history fails',
+    (tester) async {
+      final pendingKey = pendingSendsStorageKey(
+        userId: 'alice',
+        chatId: 'chat-1',
+      );
+      SharedPreferences.setMockInitialValues({
+        pendingKey: jsonEncode({
+          'ownerId': 'alice',
+          'messages': [
+            {
+              'id': 'pending-after-restart',
+              'chatId': 'chat-1',
+              'originalText': 'Queued while offline',
+              'sentAt': '2026-09-21T08:20:00.000Z',
+              'status': 'pending',
+              'type': 'text',
+              'attachment': null,
+              'replyToId': null,
+              'replyToText': null,
+              'replyToWasOutgoing': null,
+              'replyToSentAt': null,
+            },
+          ],
+        }),
+      });
+      final container = _chatScreenContainer(_RetryingHistoryService());
+
+      await tester.pumpWidget(_chatScreenHost(container));
+      await _pumpUntilFound(tester, find.text('Queued while offline'));
+
+      expect(find.text('Queued while offline'), findsOneWidget);
+      expect(find.text("Couldn't load messages"), findsNothing);
+      expect(find.byKey(const ValueKey('chat-history-retry')), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
     },
   );
 

@@ -25,7 +25,13 @@
   "translationPreferences": "Translation preferences",
   "yourGrammaticalForm": "Your grammatical form",
   "partnerGrammaticalForm": "{name}'s grammatical form",
-  "@partnerGrammaticalForm": {"placeholders": {"name": {"type": "String"}}},
+  "@partnerGrammaticalForm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "conversationTone": "Conversation tone",
   "grammaticalForm": "Grammatical form",
   "notSet": "Not set",
@@ -37,9 +43,19 @@
   "interfaceLanguage": "Interface language",
   "interfaceLanguageHelp": "Pick the language for menus, buttons, and other system text across the app.",
   "switchedToLanguage": "Switched to {language}",
-  "@switchedToLanguage": {"placeholders": {"language": {"type": "String"}}},
+  "@switchedToLanguage": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
   "couldNotSaveLanguage": "Could not save the interface language. Try again.",
-  "knownLanguages": "Languages you know",
+  "knownLanguages": "Languages you understand",
+  "knownLanguagesHelp": "Select every language you can read without translation. In Normal mode, messages in these languages stay as written.",
+  "translationLanguage": "Translation language",
+  "translationLanguageHelp": "Choose the language you understand best. Blab uses it for translations and explanations.",
+  "addLanguage": "Add language",
   "setPrimaryLanguage": "Set as primary language",
   "languageEnglish": "English",
   "languageDutch": "Dutch",
@@ -54,9 +70,21 @@
   "languageTurkish": "Turkish",
   "authTagline": "Learn a language by chatting with a friend.",
   "signUpToChat": "Sign up to chat with {name}.",
-  "@signUpToChat": {"placeholders": {"name": {"type": "String"}}},
+  "@signUpToChat": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "logInToChat": "Log in to chat with {name}.",
-  "@logInToChat": {"placeholders": {"name": {"type": "String"}}},
+  "@logInToChat": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "name": "Name",
   "firstNameHint": "Your first name",
   "email": "Email",
@@ -81,14 +109,20 @@
   "enterValidEmail": "Enter a valid email address",
   "emailResetLink": "Email me a reset link",
   "checkYourEmail": "Check your email",
-  "resetLinkSent": "We sent a reset link to\u00a0{email}",
-  "@resetLinkSent": {"placeholders": {"email": {"type": "String"}}},
+  "resetLinkSent": "We sent a reset link to {email}",
+  "@resetLinkSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "backToLogin": "Back to log in",
   "setNewPassword": "Set a new password",
   "newPassword": "New password",
   "confirmNewPassword": "Confirm new password",
   "saveNewPassword": "Save new password",
-  "passwordUpdated": "Password updated ✓",
+  "passwordUpdated": "Password updated",
   "showPassword": "Show password",
   "hidePassword": "Hide password",
   "passwordWeak": "Weak",
@@ -112,7 +146,13 @@
   "emailChangeHelp": "We'll send a confirmation link. Your old email stays active until you confirm.",
   "checkYourInbox": "Check your inbox",
   "emailConfirmationSent": "We sent a confirmation link to\n{email}. Tap it to finish the change.",
-  "@emailConfirmationSent": {"placeholders": {"email": {"type": "String"}}},
+  "@emailConfirmationSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "enterNewEmail": "Enter your new email",
   "emailAlreadyUsed": "That's already your email",
   "changePassword": "Change password",
@@ -140,26 +180,85 @@
   "yourSettings": "Your settings and preferences",
   "confirmWithPassword": "Confirm with password",
   "typeEmailToConfirm": "Type {email} to confirm",
-  "@typeEmailToConfirm": {"placeholders": {"email": {"type": "String"}}},
+  "@typeEmailToConfirm": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "deleteForever": "Delete forever",
   "deleteAccountConfirmationTitle": "Delete your account permanently?",
   "deleteAccountConfirmationBody": "This can't be undone.",
   "enterPasswordToConfirm": "Enter your password to confirm",
   "emailDoesNotMatch": "That doesn't match your email",
   "couldNotDeleteAccount": "Couldn't delete your account. Try again.",
-  "newChat": "New chat", "noChatsYet": "No chats yet", "inviteFriendStart": "Invite a friend and start chatting.", "inviteFriend": "Invite a friend", "couldNotLoadChats": "Couldn't load chats", "couldNotLoadMessages": "Couldn't load messages", "newConnectionSayHi": "New connection · say hi", "typing": "typing...", "offline": "Offline", "noConnection": "No connection", "relativeMinutes": "{count}m", "relativeHours": "{count}h", "relativeDays": "{count}d",
-  "@relativeMinutes": {"placeholders": {"count": {"type": "int"}}}, "@relativeHours": {"placeholders": {"count": {"type": "int"}}}, "@relativeDays": {"placeholders": {"count": {"type": "int"}}},
+  "newChat": "New chat",
+  "noChatsYet": "No chats yet",
+  "inviteFriendStart": "Invite a friend and start chatting.",
+  "inviteFriend": "Invite a friend",
+  "couldNotLoadChats": "Couldn't load chats",
+  "couldNotLoadMessages": "Couldn't load messages",
+  "newConnectionSayHi": "New connection · say hi",
+  "typing": "typing...",
+  "offline": "Offline",
+  "noConnection": "No connection",
+  "relativeMinutes": "{count}m",
+  "relativeHours": "{count}h",
+  "relativeDays": "{count}d",
+  "@relativeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@relativeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@relativeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chooseLanguageToPractice": "Choose a language to practice",
   "chooseLanguageToPracticeHelp": "You can change it later in Settings.",
   "startPracticing": "Start practicing",
   "newMessages": "{count, plural, =1{1 new message} other{{count} new messages}}",
-  "@newMessages": {"placeholders": {"count": {"type": "int"}}},
+  "@newMessages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "nowLearning": "Now learning {language}",
-  "@nowLearning": {"placeholders": {"language": {"type": "String"}}},
+  "@nowLearning": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
   "practiceModeTipTitle": "Practice mode",
   "normalModeTipTitle": "Normal mode",
   "practiceModeTipBody": "Messages appear in {practiceLanguage}. Blab helps correct mistakes and translates from {knownLanguage}. Switch to Normal to see the original.",
-  "@practiceModeTipBody": {"placeholders": {"practiceLanguage": {"type": "String"}, "knownLanguage": {"type": "String"}}},
+  "@practiceModeTipBody": {
+    "placeholders": {
+      "practiceLanguage": {
+        "type": "String"
+      },
+      "knownLanguage": {
+        "type": "String"
+      }
+    }
+  },
   "normalModeTipBody": "Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.",
   "editKnownLanguages": "Edit known languages",
   "noMessagesYet": "No messages here yet…",
@@ -170,21 +269,204 @@
   "chooseGrammaticalForm": "Choose grammatical form",
   "chooseYourGenderedForm": "Choose your gendered form",
   "choosePersonsGenderedForm": "Choose {name}'s gendered form",
-  "@choosePersonsGenderedForm": {"placeholders": {"name": {"type": "String"}}},
+  "@choosePersonsGenderedForm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "reactWith": "React with {emoji}",
-  "@reactWith": {"placeholders": {"emoji": {"type": "String"}}},
+  "@reactWith": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
+  },
   "moreReactions": "More reactions",
-  "learningLanguage": "Learning language", "learningLanguageHelp": "Pick the language you want to learn in this chat. You can change it anytime.", "chatMenu": "Chat menu", "normalMode": "Normal", "practiceMode": "Practice", "practiceComposerHint": "Type in {learningLanguage} or {knownLanguage}", "@practiceComposerHint": {"placeholders": {"learningLanguage": {"type": "String"}, "knownLanguage": {"type": "String"}}}, "translationLimitReached": "Translation limit reached", "translationUnavailable": "Translation unavailable", "translating": "Translating…", "checking": "Checking…", "couldntTranslateRetry": "Couldn’t translate · Retry", "couldntCheckRetry": "Couldn’t check · Retry", "correction": "Correction", "possibleCorrection": "Possible correction", "edited": "edited", "sending": "Sending", "delivered": "Delivered", "read": "Read", "failedToSend": "Not sent · Tap to try again", "attach": "Attach", "message": "Message", "sayHi": "Say hi", "replyingTo": "Replying to {name}", "editingMessage": "Edit message", "messageFailed": "Message failed to send", "copied": "Copied", "messageDeleted": "Message deleted", "deleteMessageQuestion": "Delete message?", "deleteMessageBody": "Are you sure you want to delete this message? It will also be deleted for {name}.", "@deleteMessageBody": {"placeholders": {"name": {"type": "String"}}}, "thanksReport": "Thanks — we'll review this.", "couldNotReport": "Couldn't send the report. Try again.", "couldNotSaveLearningLanguage": "Couldn't save language. Try again.", "reportMessage": "Report message",
-  "sendInvite": "Send invite", "pickLanguage": "Pick a language", "pickLanguageHelp": "We'll translate all messages into this language. Switch it whenever you like.", "continueAction": "Continue", "sendLinkHelp": "Send the link to start chatting.", "onePersonInvite": "Only one friend can use this link", "validFor48Hours": "Valid for 48 hours.", "creatingLink": "Creating link…", "shareInvite": "Share invite", "change": "Change", "inviteSent": "Invite sent ✓", "couldNotCreateInvite": "Couldn't create invite. Try again.", "shareInviteLink": "Share invite link", "more": "More", "linkCopied": "Link copied", "copyLink": "Copy link", "pasteInChat": "Now paste it in a chat", "practicingLanguage": "You're practicing {language}.", "shareYourInvite": "Share your invite link.", "validUntil": "Valid until {date}.", "inviteAlreadyClaimed": "This invite has already been claimed", "askForFreshLink": "Ask {name} for a fresh link", "goToChats": "Go to chats", "inviteNotFound": "We couldn't find that invite.", "checkInviteLink": "Check the link is correct, or ask for a new one.", "sayHello": "Say hello", "sayWord": "Say {word}", "aFriend": "A friend", "you": "You", "partner": "Partner", "yourself": "yourself", "couldNotEditMessage": "Couldn't edit message. Try again.", "today": "Today", "yesterday": "Yesterday", "now": "Now", "newLabel": "New", "inviteCardTitle": "Let's chat on Blab", "inviteLinkUnavailable": "Invite link unavailable", "openingShareSheet": "Opening sharing…", "couldNotOpenSharing": "Couldn't open sharing. Try again.", "openingInvite": "Opening invite", "couldNotOpenInvite": "Couldn't open the invite.", "tryAgainToContinue": "Try again to continue.", "askFriendForNewLink": "Ask your friend for a new link.", "inviteShareMessage": "Let's chat on Blab: {link}", "inviteShareBlurb": "Let's chat on Blab.", "inviteEmailSubject": "Chat with me on Blab", "inviteSelfClaim": "You can't use your own invite.", "inviteInvalidLanguage": "Choose a supported language and try again.",
-  "@inviteShareMessage": {"placeholders": {"link": {"type": "String"}}},
-  "invitedYouToChat": "invited you to chat", "joinPerson": "Join {name}", "inviteExpired": "This invite expired", "alreadyConnected": "You're already connected. Open the chat to start.", "openChat": "Open chat", "yourInviteExpired": "Your invite expired.", "inviteExpiredHelp": "Nobody joined in 48 hours. Send a fresh link to a friend.", "sendNewInvite": "Send new invite", "youLearnLanguage": "You learn {language}", "personLearnsLanguage": "{name} learns {language}", "youAreLearningLanguageWithPerson": "You're learning {language} with {name}", "sendAnyMessage": "Send any message to start.",
-  "languages": "Languages", "speaksNatively": "Speaks {language} natively", "learningWithYou": "Learning {language} with you", "chat": "Chat", "startedJustNow": "Started chatting just now", "startedMinutesAgo": "Started chatting {count}m ago", "startedHoursAgo": "Started chatting {count}h ago", "startedDaysAgo": "Started chatting {count}d ago", "startedMonthsAgo": "Started chatting {count}mo ago", "safety": "Safety", "reportPerson": "Report {name}", "blockPerson": "Block {name}", "unblockPerson": "Unblock {name}", "personBlocked": "{name} blocked", "personUnblocked": "{name} unblocked", "couldNotBlock": "Couldn't block. Try again.", "couldNotUnblock": "Couldn't unblock. Try again.",
-  "reportSpam": "Spam or scam", "reportHarassment": "Harassment or bullying", "reportHate": "Hate speech", "reportSexual": "Sexual or inappropriate content", "reportChildSafety": "Child safety", "reportOther": "Something else", "inviteClaimExpired": "This invite has expired.", "inviteClaimUsed": "This invite has already been used.", "inviteClaimInvalid": "This invite is invalid.", "inviteClaimFailed": "Couldn't accept the invite. Try again.",
-  "appleSignInSoon": "Apple sign-in coming soon", "invalidCredentials": "Email or password is incorrect", "accountAlreadyExists": "An account with this email already exists", "confirmEmailInbox": "Check your inbox to confirm your email", "somethingWentWrong": "Something went wrong. Try again.", "currentPasswordIncorrect": "Current password is incorrect", "signInAgain": "Please sign in again before changing your password", "tooManyAttempts": "Too many attempts. Try again later.", "couldNotUpdatePassword": "Could not update your password. Try again.", "emailChanged": "Email changed", "someoneJoined": "Someone joined.", "personJoined": "{name} joined.",
-  "notifications": "Notifications", "showMessagePreviews": "Show message previews", "showMessagePreviewsHelp": "Show the sender and original message in notifications.", "androidNotificationSettings": "Android notification settings", "notificationsEnabled": "Notifications are enabled", "notificationsDisabled": "Notifications are turned off", "notificationsNotRequested": "Open a chat to enable notifications", "notificationsUnavailable": "Notifications aren't available in this build", "couldNotSaveNotifications": "Couldn't save notification setting.", "enableNotificationsReminder": "Enable notifications to hear from your partner", "dismiss": "Dismiss",
-  "photos": "Photos", "photoAccessNeeded": "Photo access needed", "photoAccessNeededBody": "Allow access to your photos to share one in chat.", "openSettings": "Open Settings", "noPhotosFound": "No photos yet", "photoMessagePreview": "Photo", "searchEmoji": "Search emoji",
+  "learningLanguage": "Learning language",
+  "learningLanguageHelp": "Pick the language you want to learn in this chat. You can change it anytime.",
+  "chatMenu": "Chat menu",
+  "normalMode": "Normal",
+  "practiceMode": "Practice",
+  "practiceComposerHint": "Type in {learningLanguage} or {knownLanguage}",
+  "@practiceComposerHint": {
+    "placeholders": {
+      "learningLanguage": {
+        "type": "String"
+      },
+      "knownLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "translationLimitReached": "Translation limit reached",
+  "translationUnavailable": "Translation unavailable",
+  "translating": "Translating…",
+  "checking": "Checking…",
+  "couldntTranslateRetry": "Couldn’t translate · Retry",
+  "couldntCheckRetry": "Couldn’t check · Retry",
+  "correction": "Correction",
+  "possibleCorrection": "Possible correction",
+  "edited": "edited",
+  "sending": "Sending",
+  "delivered": "Delivered",
+  "read": "Read",
+  "failedToSend": "Not sent · Tap to try again",
+  "attach": "Attach",
+  "message": "Message",
+  "sayHi": "Say hi",
+  "replyingTo": "Replying to {name}",
+  "editingMessage": "Edit message",
+  "messageFailed": "Message failed to send",
+  "copied": "Copied",
+  "messageDeleted": "Message deleted",
+  "deleteMessageQuestion": "Delete message?",
+  "deleteMessageBody": "Are you sure you want to delete this message? It will also be deleted for {name}.",
+  "@deleteMessageBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "thanksReport": "Thanks — we'll review this.",
+  "couldNotReport": "Couldn't send the report. Try again.",
+  "couldNotSaveLearningLanguage": "Couldn't save language. Try again.",
+  "reportMessage": "Report message",
+  "sendInvite": "Send invite",
+  "pickLanguage": "Pick a language",
+  "pickLanguageHelp": "We'll translate all messages into this language. Switch it whenever you like.",
+  "continueAction": "Continue",
+  "sendLinkHelp": "Send the link to start chatting.",
+  "onePersonInvite": "Only one friend can use this link",
+  "validFor48Hours": "Valid for 48 hours.",
+  "creatingLink": "Creating link…",
+  "shareInvite": "Share invite",
+  "change": "Change",
+  "couldNotCreateInvite": "Couldn't create invite. Try again.",
+  "shareInviteLink": "Share invite link",
+  "more": "More",
+  "linkCopied": "Link copied",
+  "copyLink": "Copy link",
+  "pasteInChat": "Now paste it in a chat",
+  "practicingLanguage": "You're practicing {language}.",
+  "shareYourInvite": "Share your invite link.",
+  "validUntil": "Valid until {date}.",
+  "inviteAlreadyClaimed": "This invite has already been claimed",
+  "askForFreshLink": "Ask {name} for a fresh link",
+  "goToChats": "Go to chats",
+  "inviteNotFound": "We couldn't find that invite.",
+  "checkInviteLink": "Check the link is correct, or ask for a new one.",
+  "sayHello": "Say hello",
+  "sayWord": "Say {word}",
+  "aFriend": "A friend",
+  "you": "You",
+  "partner": "Partner",
+  "yourself": "yourself",
+  "couldNotEditMessage": "Couldn't edit message. Try again.",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "now": "Now",
+  "newLabel": "New",
+  "inviteCardTitle": "Let's chat on Blab",
+  "inviteLinkUnavailable": "Invite link unavailable",
+  "openingShareSheet": "Opening sharing…",
+  "couldNotOpenSharing": "Couldn't open sharing. Try again.",
+  "openingInvite": "Opening invite",
+  "couldNotOpenInvite": "Couldn't open the invite.",
+  "tryAgainToContinue": "Try again to continue.",
+  "askFriendForNewLink": "Ask your friend for a new link.",
+  "inviteShareMessage": "Let's chat on Blab: {link}",
+  "inviteShareBlurb": "Let's chat on Blab.",
+  "inviteEmailSubject": "Chat with me on Blab",
+  "inviteSelfClaim": "You can't use your own invite.",
+  "inviteInvalidLanguage": "Choose a supported language and try again.",
+  "@inviteShareMessage": {
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "invitedYouToChat": "invited you to chat",
+  "joinPerson": "Join {name}",
+  "inviteExpired": "This invite expired",
+  "alreadyConnected": "You're already connected. Open the chat to start.",
+  "openChat": "Open chat",
+  "yourInviteExpired": "Your invite expired.",
+  "inviteExpiredHelp": "Nobody joined in 48 hours. Send a fresh link to a friend.",
+  "sendNewInvite": "Send new invite",
+  "youLearnLanguage": "You learn {language}",
+  "personLearnsLanguage": "{name} learns {language}",
+  "youAreLearningLanguageWithPerson": "You're learning {language} with {name}",
+  "sendAnyMessage": "Send any message to start.",
+  "languages": "Languages",
+  "speaksNatively": "Speaks {language} natively",
+  "learningWithYou": "Learning {language} with you",
+  "chat": "Chat",
+  "startedJustNow": "Started chatting just now",
+  "startedMinutesAgo": "Started chatting {count}m ago",
+  "startedHoursAgo": "Started chatting {count}h ago",
+  "startedDaysAgo": "Started chatting {count}d ago",
+  "startedMonthsAgo": "Started chatting {count}mo ago",
+  "safety": "Safety",
+  "reportPerson": "Report {name}",
+  "blockPerson": "Block {name}",
+  "unblockPerson": "Unblock {name}",
+  "personBlocked": "{name} blocked",
+  "personUnblocked": "{name} unblocked",
+  "couldNotBlock": "Couldn't block. Try again.",
+  "couldNotUnblock": "Couldn't unblock. Try again.",
+  "reportSpam": "Spam or scam",
+  "reportHarassment": "Harassment or bullying",
+  "reportHate": "Hate speech",
+  "reportSexual": "Sexual or inappropriate content",
+  "reportChildSafety": "Child safety",
+  "reportOther": "Something else",
+  "inviteClaimExpired": "This invite has expired.",
+  "inviteClaimUsed": "This invite has already been used.",
+  "inviteClaimInvalid": "This invite is invalid.",
+  "inviteClaimFailed": "Couldn't accept the invite. Try again.",
+  "appleSignInSoon": "Apple sign-in coming soon",
+  "invalidCredentials": "Email or password is incorrect",
+  "accountAlreadyExists": "An account with this email already exists",
+  "confirmEmailInbox": "Check your inbox to confirm your email",
+  "somethingWentWrong": "Something went wrong. Try again.",
+  "currentPasswordIncorrect": "Current password is incorrect",
+  "signInAgain": "Please sign in again before changing your password",
+  "tooManyAttempts": "Too many attempts. Try again later.",
+  "couldNotUpdatePassword": "Could not update your password. Try again.",
+  "emailChanged": "Email changed",
+  "someoneJoined": "Someone joined.",
+  "personJoined": "{name} joined.",
+  "notifications": "Notifications",
+  "showMessagePreviews": "Show message previews",
+  "showMessagePreviewsHelp": "Show the sender and original message in notifications.",
+  "androidNotificationSettings": "Android notification settings",
+  "notificationsEnabled": "Notifications are enabled",
+  "notificationsDisabled": "Notifications are turned off",
+  "notificationsNotRequested": "Open a chat to enable notifications",
+  "notificationsUnavailable": "Notifications aren't available in this build",
+  "couldNotSaveNotifications": "Couldn't save notification setting.",
+  "enableNotificationsReminder": "Enable notifications to hear from your partner",
+  "dismiss": "Dismiss",
+  "photos": "Photos",
+  "photoAccessNeeded": "Photo access needed",
+  "photoAccessNeededBody": "Allow access to your photos to share one in chat.",
+  "openSettings": "Open Settings",
+  "noPhotosFound": "No photos yet",
+  "photoMessagePreview": "Photo",
+  "searchEmoji": "Search emoji",
   "reactionsCount": "{count, plural, one{{count} reaction} other{{count} reactions}}",
-  "@reactionsCount": {"placeholders": {"count": {"type": "int"}}},
+  "@reactionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tapToRemove": "Tap to remove",
   "usingFeminineForms": "Using feminine forms for {person}",
   "@usingFeminineForms": {
@@ -210,5 +492,60 @@
   "nativeScripts": "Native scripts",
   "englishLetters": "English letters",
   "learningTimelineMarker": "{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning English}}",
-  "@learningTimelineMarker": {"placeholders": {"languageCode": {"type": "String"}}}
+  "@learningTimelineMarker": {
+    "placeholders": {
+      "languageCode": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSpamQuestion": "Report spam?",
+  "reportPersonSpamQuestion": "Report {name} for spam?",
+  "@reportPersonSpamQuestion": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPersonSpamBody": "Blab will be notified that {name} may be sending spam. Messages from this chat won't be included.",
+  "@reportPersonSpamBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "submitSpamReport": "Report spam",
+  "reportAndBlock": "Report and block",
+  "reportSubmitted": "Report submitted",
+  "couldNotReportOrBlock": "Couldn't report or block. Try again.",
+  "reportSucceededBlockFailed": "Report submitted. Couldn't block.",
+  "blockSucceededReportFailed": "{name} blocked. Couldn't submit report.",
+  "@blockSucceededReportFailed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockPersonQuestion": "Block {name}?",
+  "@blockPersonQuestion": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockPersonConfirmation": "Neither of you will be able to send messages in this chat.",
+  "block": "Block",
+  "unblock": "Unblock",
+  "youBlockedPerson": "You blocked {name}",
+  "@youBlockedPerson": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

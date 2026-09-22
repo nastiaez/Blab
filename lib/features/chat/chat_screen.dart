@@ -51,6 +51,7 @@ import 'message_translation_lifecycle.dart';
 import 'reaction_row_positioning.dart';
 import 'services/chat_image_picker.dart';
 import 'widgets/chat_composer_input.dart';
+import 'widgets/blocked_chat_bar.dart';
 import 'widgets/delayed_translation_status.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
@@ -65,7 +66,7 @@ import 'widgets/grammatical_form_note.dart';
 import '../../shared/state/profile_state.dart';
 import 'widgets/message_reaction_bar.dart';
 import 'widgets/mode_toggle.dart';
-import 'widgets/partner_profile_sheet.dart';
+import 'partner_profile_page.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
 import 'widgets/translating_message_content.dart';
@@ -94,6 +95,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final FocusNode _inputFocus = FocusNode();
   final ScrollController _scroll = ScrollController();
   final GlobalKey _stackKey = GlobalKey();
+  final GlobalKey _bottomSurfaceKey = GlobalKey();
   final GlobalKey _selectedBubbleKey = GlobalKey();
   final GlobalKey _unreadDividerKey = GlobalKey();
   final Map<String, GlobalKey> _messageAnchorKeys = <String, GlobalKey>{};
@@ -420,29 +422,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             chatId: chat.id,
             reportedUserId: chat.partnerId,
           );
-      showAppSnack(successMessage);
+      showAppSuccessSnack(
+        successMessage,
+        bottomClearance: _activeBottomSurfaceHeight,
+      );
     } catch (_) {
       showAppSnack(errorMessage);
     }
+  }
+
+  Future<void> _unblockPartner(Chat chat) async {
+    final success = context.l10n.personUnblocked(chat.partnerName);
+    final failure = context.l10n.couldNotUnblock;
+    try {
+      await ref.read(chatServiceProvider).unblockUser(chat.partnerId!);
+      showAppSuccessSnack(success, bottomClearance: _activeBottomSurfaceHeight);
+    } catch (_) {
+      showAppSnack(failure);
+    }
+  }
+
+  double get _activeBottomSurfaceHeight {
+    final renderObject = _bottomSurfaceKey.currentContext?.findRenderObject();
+    if (renderObject is RenderBox && renderObject.hasSize) {
+      return renderObject.size.height;
+    }
+    return 0;
   }
 
   Future<void> _confirmDelete(Message message, Chat chat) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: BlabColors.chatSurface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(28)),
-          side: BorderSide(color: Color(0xFFE7D7D0)),
+          side: BorderSide(color: BlabColors.chatDivider),
         ),
-        title: Text(context.l10n.deleteMessageQuestion),
-        content: Text(context.l10n.deleteMessageBody(chat.partnerName)),
+        title: Text(
+          context.l10n.deleteMessageQuestion,
+          style: const TextStyle(color: BlabColors.warmInk),
+        ),
+        content: Text(
+          context.l10n.deleteMessageBody(chat.partnerName),
+          style: const TextStyle(color: BlabColors.warmMuted),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
               context.l10n.cancel,
-              style: const TextStyle(color: BlabColors.textMuted),
+              style: const TextStyle(color: BlabColors.warmInk),
             ),
           ),
           TextButton(
@@ -643,6 +673,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     }
     final chat = resolved;
+    final blockedUserIds =
+        ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final isPartnerBlocked =
+        chat.partnerId != null && blockedUserIds.contains(chat.partnerId);
     _showRequiredLanguageSheetIfNeeded(chat);
     if (!_notificationPermissionTriggered) {
       _notificationPermissionTriggered = true;
@@ -1033,15 +1067,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         _closeSelection();
                         return;
                       }
-                      final result = await showPartnerProfileSheet(
-                        context,
-                        chat: chat,
-                      );
-                      // Blocking the partner hides this chat — leave the view.
-                      if (result == PartnerProfileResult.blocked &&
-                          context.mounted) {
-                        context.go('/chats');
-                      } else if (context.mounted && editing != null) {
+                      await showPartnerProfilePage(context, chat: chat);
+                      if (!context.mounted) return;
+                      final blockedIds =
+                          ref.read(blockedUserIdsProvider).value ??
+                          const <String>{};
+                      if (blockedIds.contains(chat.partnerId)) {
+                        ref
+                            .read(replyingToProvider(widget.chatId).notifier)
+                            .clear();
+                        ref
+                            .read(editingProvider(widget.chatId).notifier)
+                            .clear();
+                        _inputFocus.unfocus();
+                      } else if (editing != null) {
                         _inputFocus.requestFocus();
                       }
                     },
@@ -1096,7 +1135,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // keep showing the last-known messages rather than
                             // collapsing to the loading shimmer.
                             final knownMessages = messagesAsync.value;
-                            if (knownMessages == null) {
+                            final pending = ref.watch(
+                              pendingSendsProvider(widget.chatId),
+                            );
+                            if (knownMessages == null && pending.isEmpty) {
                               if (messagesAsync.hasError) {
                                 return _ChatHistoryErrorState(
                                   onRetry: () => ref.invalidate(
@@ -1108,10 +1150,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             }
                             return Builder(
                               builder: (context) {
-                                final messages = knownMessages;
-                                final pending = ref.watch(
-                                  pendingSendsProvider(widget.chatId),
-                                );
+                                final messages =
+                                    knownMessages ?? const <Message>[];
                                 // In-place upgrade: after the server confirms
                                 // a send, the pending bubble carries the server's
                                 // id + timestamp. As soon as the realtime stream
@@ -1269,7 +1309,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                   ),
-                  if (replyingTo != null)
+                  if (!isPartnerBlocked && replyingTo != null)
                     _ReplyBar(
                       message: replyingTo,
                       partnerName: chat.partnerName,
@@ -1277,31 +1317,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           .read(replyingToProvider(widget.chatId).notifier)
                           .clear(),
                     ),
-                  if (editing != null)
+                  if (!isPartnerBlocked && editing != null)
                     _EditBar(
                       onClose: () => ref
                           .read(editingProvider(widget.chatId).notifier)
                           .clear(),
                     ),
-                  _selectedMessage != null
-                      ? MessageActionRow(
-                          message: _selectedMessage!,
-                          mode: chatMode,
-                          hasOriginal: activePresentation.canRevealOriginal,
-                          canListen:
-                              activePresentation.listenText != null &&
-                              hasSpeakableText(activePresentation.listenText!),
-                          isOriginalVisible: _showSelectedOriginal,
-                          onAction: (action) {
-                            final message = _selectedMessage!;
-                            if (action == MessageAction.original) {
-                              setState(
-                                () => _showSelectedOriginal =
-                                    !_showSelectedOriginal,
-                              );
-                              return;
-                            }
-                            if (action == MessageAction.listen) {
+                  KeyedSubtree(
+                    key: _bottomSurfaceKey,
+                    child: _selectedMessage != null
+                        ? MessageActionRow(
+                            message: _selectedMessage!,
+                            mode: chatMode,
+                            hasOriginal: activePresentation.canRevealOriginal,
+                            canListen:
+                                activePresentation.listenText != null &&
+                                hasSpeakableText(
+                                  activePresentation.listenText!,
+                                ),
+                            isOriginalVisible: _showSelectedOriginal,
+                            onAction: (action) {
+                              final message = _selectedMessage!;
+                              if (action == MessageAction.original) {
+                                setState(
+                                  () => _showSelectedOriginal =
+                                      !_showSelectedOriginal,
+                                );
+                                return;
+                              }
+                              if (action == MessageAction.listen) {
+                                _handleAction(
+                                  message,
+                                  action,
+                                  chat,
+                                  activePresentation,
+                                  learningLang.code,
+                                );
+                                return;
+                              }
+                              _closeSelection();
                               _handleAction(
                                 message,
                                 action,
@@ -1309,56 +1363,56 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 activePresentation,
                                 learningLang.code,
                               );
-                              return;
-                            }
-                            _closeSelection();
-                            _handleAction(
-                              message,
-                              action,
-                              chat,
-                              activePresentation,
-                              learningLang.code,
-                            );
-                          },
-                        )
-                      : AbsorbPointer(
-                          absorbing:
-                              chat.needsPracticeLanguageSelection ||
-                              historyUnavailable,
-                          child: Opacity(
-                            opacity:
+                            },
+                          )
+                        : isPartnerBlocked
+                        ? BlockedChatBar(
+                            message: context.l10n.youBlockedPerson(
+                              chat.partnerName,
+                            ),
+                            actionLabel: context.l10n.unblock,
+                            onUnblock: () => unawaited(_unblockPartner(chat)),
+                          )
+                        : AbsorbPointer(
+                            absorbing:
                                 chat.needsPracticeLanguageSelection ||
-                                    historyUnavailable
-                                ? .45
-                                : 1,
-                            child: _InputBar(
-                              controller: _input,
-                              focusNode: _inputFocus,
-                              hasText: _hasText,
-                              hintText:
-                                  practiceHint ??
-                                  (chatIsEmpty
-                                      ? context.l10n.sayHi
-                                      : context.l10n.message),
-                              textLength: _textLength,
-                              maxLength: _maxMessageLength,
-                              counterShowAt: _counterShowAt,
-                              isPractice: chatMode == ChatMode.practice,
-                              enabled:
-                                  !chat.needsPracticeLanguageSelection &&
-                                  !historyUnavailable,
-                              showTopBorder: replyingTo == null,
-                              onAttach: () =>
-                                  _attachImage(recipientName: chat.partnerName),
-                              onSend: _send,
-                              autofocus:
-                                  chatIsEmpty ||
-                                  replyingTo != null ||
-                                  editing != null,
-                              allowAttachment: editing == null,
+                                historyUnavailable,
+                            child: Opacity(
+                              opacity:
+                                  chat.needsPracticeLanguageSelection ||
+                                      historyUnavailable
+                                  ? .45
+                                  : 1,
+                              child: _InputBar(
+                                controller: _input,
+                                focusNode: _inputFocus,
+                                hasText: _hasText,
+                                hintText:
+                                    practiceHint ??
+                                    (chatIsEmpty
+                                        ? context.l10n.sayHi
+                                        : context.l10n.message),
+                                textLength: _textLength,
+                                maxLength: _maxMessageLength,
+                                counterShowAt: _counterShowAt,
+                                isPractice: chatMode == ChatMode.practice,
+                                enabled:
+                                    !chat.needsPracticeLanguageSelection &&
+                                    !historyUnavailable,
+                                showTopBorder: replyingTo == null,
+                                onAttach: () => _attachImage(
+                                  recipientName: chat.partnerName,
+                                ),
+                                onSend: _send,
+                                autofocus:
+                                    chatIsEmpty ||
+                                    replyingTo != null ||
+                                    editing != null,
+                                allowAttachment: editing == null,
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ],
               ),
               if (_menuOpen)
@@ -1789,7 +1843,7 @@ class _ModeTipCard extends StatelessWidget {
             width: 280,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF88C5A),
+              color: BlabColors.brand,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(
@@ -1886,7 +1940,7 @@ class _ModeTipPointerPainter extends CustomPainter {
       ..lineTo(size.width / 2, 0)
       ..lineTo(size.width, size.height)
       ..close();
-    canvas.drawPath(pointer, Paint()..color = const Color(0xFFF88C5A));
+    canvas.drawPath(pointer, Paint()..color = BlabColors.brand);
   }
 
   @override
@@ -3379,7 +3433,7 @@ class _MessageStatusNotice extends StatelessWidget {
               fontSize: 12,
               height: 1.25,
               fontWeight: FontWeight.w500,
-              color: Color(0xFFC62828),
+              color: BlabColors.error,
             ),
           ),
         ),
@@ -3790,7 +3844,7 @@ class _InputBar extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: atLimit
-                            ? const Color(0xFFEF4444)
+                            ? BlabColors.error
                             : BlabColors.textMuted,
                       ),
                     ),

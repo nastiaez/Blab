@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +16,15 @@ Widget _localizedText({Locale? locale}) {
 }
 
 void main() {
+  test('obsolete invite-sent feedback is absent from every catalog', () {
+    for (final locale in const ['en', 'de', 'es', 'uk']) {
+      final catalog =
+          jsonDecode(File('lib/l10n/app_$locale.arb').readAsStringSync())
+              as Map<String, dynamic>;
+      expect(catalog, isNot(contains('inviteSent')), reason: locale);
+    }
+  });
+
   testWidgets('English is the app-localization default', (tester) async {
     await tester.pumpWidget(_localizedText());
     expect(find.text('No chats yet'), findsOneWidget);
@@ -40,6 +52,30 @@ void main() {
       'de',
       'es',
     });
+  });
+
+  test(
+    'Ukrainian hate-speech reason avoids the ambiguous formal label',
+    () async {
+      final uk = await AppLocalizations.delegate.load(const Locale('uk'));
+      expect(uk.reportHate, 'Ненависницькі висловлювання');
+      expect(uk.reportHate, isNot('Мова ворожнечі'));
+    },
+  );
+
+  test('partner spam reporting copy exists in every launch locale', () async {
+    for (final locale in const ['en', 'de', 'es', 'uk']) {
+      final l10n = await AppLocalizations.delegate.load(Locale(locale));
+
+      expect(l10n.reportPersonSpamQuestion('Alice'), isNotEmpty);
+      expect(l10n.reportPersonSpamBody('Alice'), isNotEmpty);
+      expect(l10n.submitSpamReport, isNotEmpty);
+      expect(l10n.reportAndBlock, isNotEmpty);
+      expect(l10n.reportSubmitted, isNotEmpty);
+      expect(l10n.couldNotReportOrBlock, isNotEmpty);
+      expect(l10n.reportSucceededBlockFailed, isNotEmpty);
+      expect(l10n.blockSucceededReportFailed('Alice'), isNotEmpty);
+    }
   });
 
   test('auth copy uses natural Spanish and informal Ukrainian', () {

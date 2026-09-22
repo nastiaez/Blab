@@ -38,7 +38,7 @@ class FloatingReactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: BlabColors.chatSurface,
       borderRadius: BorderRadius.circular(28),
       elevation: 4,
       shadowColor: Colors.black.withValues(alpha: 0.2),
@@ -138,7 +138,7 @@ class _MoreButton extends StatelessWidget {
           child: const BlabIcon(
             name: 'plus-circle - 20',
             size: 20,
-            color: BlabColors.textMuted,
+            color: BlabColors.warmMuted,
           ),
         ),
       ),

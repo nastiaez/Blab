@@ -335,7 +335,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SsoButtons(onPressed: _socialSignIn),
+                      SsoButtons(onPressed: _socialSignIn, enabled: !_busy),
                       const SizedBox(height: 14),
                       const _OrDivider(),
                       const SizedBox(height: 14),
@@ -352,6 +352,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     hint: context.l10n.firstNameHint,
                                     errorText: _nameErr,
                                     textInputAction: TextInputAction.next,
+                                    enabled: !_busy,
                                   ),
                                   const SizedBox(height: 12),
                                 ],
@@ -367,6 +368,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         errorText: _emailErr,
                         onEditingComplete: _validateEmail,
                         textInputAction: TextInputAction.next,
+                        enabled: !_busy,
                       ),
                       const SizedBox(height: 12),
                       PasswordField(
@@ -374,33 +376,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         errorText: _pwErr,
                         onChanged: (_) => setState(() {}),
                         textInputAction: TextInputAction.done,
+                        enabled: !_busy,
                       ),
                       if (!isSignUp)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: () => context.push('/auth/forgot'),
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 4,
-                              ),
-                            ),
-                            child: Text(
-                              context.l10n.forgotPassword,
-                              style: const TextStyle(
-                                color: BlabColors.brand,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
-                            ),
+                        SizedBox(
+                          height: 32,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: _formErr != null
+                                ? Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    child: _InlineError(message: _formErr!),
+                                  )
+                                : TextButton(
+                                    onPressed: _busy
+                                        ? null
+                                        : () => context.push('/auth/forgot'),
+                                    style: TextButton.styleFrom(
+                                      minimumSize: const Size(0, 32),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 4,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      context.l10n.forgotPassword,
+                                      style: TextStyle(
+                                        color: _busy
+                                            ? BlabColors.disabledOnSurface
+                                            : BlabColors.brand,
+                                        fontWeight: FontWeight.w400,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
                           ),
                         ),
                       if (isSignUp) PasswordGuidance(password: _password.text),
-                      if (_formErr != null) ...[
-                        const SizedBox(height: 10),
+                      if (isSignUp && _formErr != null) ...[
+                        const SizedBox(height: 6),
                         _InlineError(message: _formErr!),
                       ],
                       const SizedBox(height: 16),
@@ -414,7 +432,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       const SizedBox(height: 4),
                       Center(
                         child: TextButton(
-                          onPressed: _switchMode,
+                          onPressed: _busy ? null : _switchMode,
                           style: TextButton.styleFrom(
                             minimumSize: const Size(0, 36),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -423,10 +441,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             isSignUp
                                 ? context.l10n.alreadyHaveAccount
                                 : context.l10n.newToBlab,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: BlabColors.brand,
+                              fontWeight: FontWeight.w400,
+                              color: _busy
+                                  ? BlabColors.disabledOnSurface
+                                  : BlabColors.brand,
                             ),
                           ),
                         ),
@@ -550,23 +570,14 @@ class _InlineError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(Icons.error_outline, size: 16, color: BlabColors.error),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            message,
-            style: const TextStyle(
-              fontSize: 13,
-              color: BlabColors.error,
-              fontWeight: FontWeight.w500,
-              height: 1.35,
-            ),
-          ),
-        ),
-      ],
+    return Text(
+      key: const ValueKey('auth-form-error'),
+      message,
+      style: const TextStyle(
+        fontSize: 12,
+        color: BlabColors.error,
+        fontWeight: FontWeight.w400,
+      ),
     );
   }
 }

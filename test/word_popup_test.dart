@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/features/chat/widgets/word_popup.dart';
 import 'package:blab/shared/models/message.dart';
@@ -216,27 +217,27 @@ void main() {
 
     expect(popupWord.style?.fontSize, 22);
     expect(popupWord.style?.fontWeight, FontWeight.w800);
-    expect(popupWord.style?.color, const Color(0xFF1A0A1E));
+    expect(popupWord.style?.color, BlabColors.warmInk);
     expect(transliteration.style?.fontSize, 13);
     expect(transliteration.style?.fontWeight, FontWeight.w400);
-    expect(transliteration.style?.color, const Color(0xFF808080));
+    expect(transliteration.style?.color, BlabColors.warmMuted);
     expect(translation.style?.fontSize, 14);
     expect(translation.style?.fontWeight, FontWeight.w600);
-    expect(translation.style?.color, const Color(0xFF1A0A1E));
+    expect(translation.style?.color, BlabColors.warmInk);
 
     final divider = tester.widget<Container>(
       find.byKey(const ValueKey('word-popup-divider')),
     );
     expect(divider.constraints?.minHeight, 1);
-    expect(divider.color, const Color(0xFFE7D7D0));
+    expect(divider.color, BlabColors.chatDivider);
 
     final card = tester.widget<Container>(
       find.byKey(const ValueKey('word-popup-card')),
     );
     final decoration = card.decoration! as BoxDecoration;
     final border = decoration.border! as Border;
-    expect(decoration.color, Colors.white);
-    expect(border.top.color, const Color(0xFFE7D7D0));
+    expect(decoration.color, BlabColors.chatSurface);
+    expect(border.top.color, BlabColors.chatDivider);
     expect(border.top.width, 1);
 
     final wordTopLeft = tester.getTopLeft(find.text('காலை').last);
@@ -250,9 +251,45 @@ void main() {
       find.byKey(const ValueKey('word-popup-tail')),
     );
     final dynamic painter = tail.painter;
-    expect(painter.fillColor, Colors.white);
-    expect(painter.strokeColor, const Color(0xFFE7D7D0));
+    expect(painter.fillColor, BlabColors.chatSurface);
+    expect(painter.strokeColor, BlabColors.chatDivider);
     expect(painter.drawsBaseEdge, isFalse);
+  });
+
+  testWidgets('correction explanation uses the same warm popup surface', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: blabTheme,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showExplanationPopup(
+                context,
+                explanation: 'Use the polite form here.',
+                anchorTopLeft: const Offset(120, 300),
+                anchorSize: const Size(80, 24),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final card = tester.widget<Container>(
+      find.byKey(const ValueKey('word-popup-explanation-card')),
+    );
+    final decoration = card.decoration! as BoxDecoration;
+    expect(decoration.color, BlabColors.chatSurface);
+    final explanation = tester.widget<Text>(
+      find.text('Use the polite form here.'),
+    );
+    expect(explanation.style?.color, BlabColors.warmInk);
   });
 
   // Mode-display-fixes spec § 2: the padding that used to sit around each

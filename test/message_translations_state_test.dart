@@ -528,6 +528,37 @@ void main() {
   });
 
   test(
+    'provider timeout is terminal even before the deadline expires',
+    () async {
+      var calls = 0;
+      final container = _container(
+        chatService: _ControlledCacheChatService(),
+        lifecycleDeadline: const Duration(seconds: 1),
+        translateFn: (id) async {
+          calls++;
+          throw TimeoutException('provider timeout');
+        },
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .ensure(
+            messageId: 'm1',
+            text: 'hello',
+            targetLang: 'de',
+            interfaceLang: 'en',
+          );
+
+      expect(calls, 1);
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncError<MessageTranslation>>(),
+      );
+    },
+  );
+
+  test(
     'a result committed just after timeout resolves without manual retry',
     () async {
       final cached = <String, MessageTranslation>{};

@@ -78,7 +78,7 @@ The user is a **designer**. They speak UX/product vocabulary fluently but do not
 - One copyable line max if they have to paste something, with one sentence of what it's for.
 
 **End-of-step format:**
-- Screenshot.
+- Screenshot. Every Blab UI, error, and recovery review must include the actual app screenshot; never send only a written description of a visible state.
 - One or two sentences max. What's new + one thing to look at or decide.
 - "Next?" or a single design question. Never "Proceed?" or long recaps.
 

@@ -19,6 +19,7 @@ class BlabTextField extends StatelessWidget {
     this.autofocus = false,
     this.textInputAction,
     this.focusNode,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -33,6 +34,7 @@ class BlabTextField extends StatelessWidget {
   final bool autofocus;
   final TextInputAction? textInputAction;
   final FocusNode? focusNode;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +44,13 @@ class BlabTextField extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.6,
-            color: BlabColors.textMuted,
+            color: enabled
+                ? BlabColors.textMuted
+                : BlabColors.disabledOnSurface,
           ),
         ),
         const SizedBox(height: 6),
@@ -59,34 +63,44 @@ class BlabTextField extends StatelessWidget {
           child: TextField(
             controller: controller,
             focusNode: focusNode,
+            enabled: enabled,
             keyboardType: keyboardType,
             obscureText: obscureText,
             onChanged: onChanged,
             onEditingComplete: onEditingComplete,
             autofocus: autofocus,
             textInputAction: textInputAction,
+            cursorColor: BlabColors.brand,
+            style: const TextStyle(color: BlabColors.textPrimary),
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: const TextStyle(color: BlabColors.warmMuted),
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,
                 vertical: 14,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: enabled
+                  ? BlabColors.chatSurface
+                  : BlabColors.selectedTint,
               suffixIcon: suffix,
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
-                  color: hasError ? BlabColors.error : Colors.grey.shade300,
+                  color: hasError ? BlabColors.error : BlabColors.chatDivider,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
                   color: hasError ? BlabColors.error : BlabColors.focusBorder,
                   width: 1.5,
                 ),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: BlabColors.divider),
               ),
             ),
           ),

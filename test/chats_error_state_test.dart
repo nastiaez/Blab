@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/chats/chats_screen.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,10 @@ void main() {
     expect(find.byIcon(Icons.refresh), findsOneWidget);
     expect(find.textContaining('PostgrestException'), findsNothing);
     expect(find.textContaining('https://'), findsNothing);
+    expect(
+      tester.widget<Text>(find.text("Couldn't load chats")).style!.color,
+      BlabColors.error,
+    );
 
     await tester.tap(find.byKey(const ValueKey('chat-list-retry')));
     expect(retries, 1);

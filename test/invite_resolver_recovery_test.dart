@@ -100,6 +100,17 @@ Future<GoRouter> _mount(
   return router;
 }
 
+void _expectCloseAction(WidgetTester tester) {
+  final close = find.byKey(const ValueKey('invite-close'));
+  expect(close, findsOneWidget);
+  expect(tester.getSize(close).width, greaterThanOrEqualTo(48));
+  expect(tester.getSize(close).height, greaterThanOrEqualTo(48));
+  final scaffold = tester.getRect(find.byType(Scaffold));
+  final closeRect = tester.getRect(close);
+  expect(closeRect.right, greaterThan(scaffold.right - 32));
+  expect(closeRect.top, lessThan(scaffold.top + 80));
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -129,6 +140,11 @@ void main() {
     await _mount(tester, lookup: (_) async => null);
     await tester.pump(const Duration(seconds: 2));
     expect(find.text("We couldn't find that invite."), findsOneWidget);
+    expect(find.text('Go to chats'), findsNothing);
+    _expectCloseAction(tester);
+    await tester.tap(find.byKey(const ValueKey('invite-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('chats'), findsOneWidget);
   });
 
   testWidgets('recipient failure states follow the app locale', (tester) async {
@@ -137,9 +153,27 @@ void main() {
 
     expect(find.text('Не вдалося знайти це запрошення.'), findsOneWidget);
     expect(find.text('Перевір посилання або попроси нове.'), findsOneWidget);
-    expect(find.text('До чатів'), findsOneWidget);
+    expect(find.text('До чатів'), findsNothing);
+    _expectCloseAction(tester);
     expect(find.text("We couldn't find that invite."), findsNothing);
   });
+
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets(
+      'terminal invite state uses only close in ${locale.languageCode}',
+      (tester) async {
+        await _mount(tester, lookup: (_) async => null, locale: locale);
+        await tester.pump(const Duration(seconds: 2));
+
+        expect(
+          find.text(lookupAppLocalizations(locale).goToChats),
+          findsNothing,
+        );
+        _expectCloseAction(tester);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets(
     'used anonymous link cannot replace latest valid pending invite',
@@ -151,6 +185,8 @@ void main() {
             _metadata(token, status: 'used', usedBy: 'bob'),
       );
       expect(find.text('This invite has already been claimed'), findsOneWidget);
+      expect(find.text('Go to chats'), findsNothing);
+      _expectCloseAction(tester);
       expect(await loadPendingInvite(), 'older-valid');
     },
   );
@@ -169,7 +205,17 @@ void main() {
         },
       );
       expect(await loadPendingInvite(), 'first');
-      expect(find.text('Retry'), findsOneWidget);
+      final retry = find.widgetWithText(TextButton, 'Retry');
+      expect(retry, findsOneWidget);
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.text('Try again to continue.'), findsNothing);
+      expect(find.text('Go to chats'), findsNothing);
+      expect(tester.getSize(retry).height, greaterThanOrEqualTo(48));
+      final visualGap =
+          tester.getTopLeft(find.text('Retry')).dy -
+          tester.getBottomLeft(find.text("Couldn't open the invite.")).dy;
+      expect(visualGap, lessThanOrEqualTo(12));
+      _expectCloseAction(tester);
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text('chat:recovered'), findsOneWidget);

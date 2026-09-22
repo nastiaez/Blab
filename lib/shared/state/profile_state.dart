@@ -10,7 +10,7 @@ final profileServiceProvider = Provider<ProfileService>(
 final currentProfileProvider = FutureProvider<UserProfile>((ref) async {
   ref.watch(authSessionProvider);
   return ref.watch(profileServiceProvider).fetchCurrentProfile();
-});
+}, retry: (_, _) => null);
 
 typedef UpdateDisplayNameAction = Future<String> Function(String displayName);
 

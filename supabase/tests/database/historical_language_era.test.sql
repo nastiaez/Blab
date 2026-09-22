@@ -138,7 +138,7 @@ select ok(
     null,
     '[]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   'a historical era translation can be completed after the viewer switches again'
 );
@@ -158,7 +158,7 @@ select is(
     null,
     '[]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   false,
   'a result for the current language cannot replace an older message era'

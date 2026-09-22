@@ -128,7 +128,21 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die App-Sprache konnte nicht gespeichert werden. Versuche es erneut.';
 
   @override
-  String get knownLanguages => 'Sprachen, die du sprichst';
+  String get knownLanguages => 'Sprachen, die du verstehst';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Wähle alle Sprachen aus, die du ohne Übersetzung lesen kannst. Im Normalmodus bleiben Nachrichten in diesen Sprachen unverändert.';
+
+  @override
+  String get translationLanguage => 'Übersetzungssprache';
+
+  @override
+  String get translationLanguageHelp =>
+      'Wähle die Sprache, die du am besten verstehst. Blab verwendet sie für Übersetzungen und Erklärungen.';
+
+  @override
+  String get addLanguage => 'Sprache hinzufügen';
 
   @override
   String get setPrimaryLanguage => 'Als Hauptsprache festlegen';
@@ -274,7 +288,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get saveNewPassword => 'Neues Passwort speichern';
 
   @override
-  String get passwordUpdated => 'Passwort aktualisiert ✓';
+  String get passwordUpdated => 'Passwort aktualisiert';
 
   @override
   String get showPassword => 'Passwort anzeigen';
@@ -727,9 +741,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get change => 'Ändern';
 
   @override
-  String get inviteSent => 'Einladung gesendet ✓';
-
-  @override
   String get couldNotCreateInvite =>
       'Einladung konnte nicht erstellt werden. Versuche es erneut.';
 
@@ -1175,5 +1186,60 @@ class AppLocalizationsDe extends AppLocalizations {
       'other': 'Jetzt lernst du Englisch',
     });
     return '$_temp0';
+  }
+
+  @override
+  String get reportSpamQuestion => 'Spam melden?';
+
+  @override
+  String reportPersonSpamQuestion(String name) {
+    return '$name wegen Spam melden?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Blab wird darüber informiert, dass $name möglicherweise Spam sendet. Nachrichten aus diesem Chat werden nicht übermittelt.';
+  }
+
+  @override
+  String get submitSpamReport => 'Spam melden';
+
+  @override
+  String get reportAndBlock => 'Melden und blockieren';
+
+  @override
+  String get reportSubmitted => 'Meldung gesendet';
+
+  @override
+  String get couldNotReportOrBlock =>
+      'Melden und Blockieren fehlgeschlagen. Versuche es erneut.';
+
+  @override
+  String get reportSucceededBlockFailed =>
+      'Meldung gesendet. Blockieren fehlgeschlagen.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name blockiert. Meldung konnte nicht gesendet werden.';
+  }
+
+  @override
+  String blockPersonQuestion(String name) {
+    return '$name blockieren?';
+  }
+
+  @override
+  String get blockPersonConfirmation =>
+      'Ihr könnt euch in diesem Chat keine Nachrichten senden.';
+
+  @override
+  String get block => 'Blockieren';
+
+  @override
+  String get unblock => 'Blockierung aufheben';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'Du hast $name blockiert';
   }
 }

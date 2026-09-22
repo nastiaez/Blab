@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/widgets/floating_reaction_row.dart';
 import 'package:blab/features/chat/message_actions.dart'
     show kQuickMessageReactions;
@@ -52,6 +53,30 @@ void main() {
       find.byKey(const ValueKey('floating-reaction-selected')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('uses the approved warm raised surface', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: blabTheme,
+        home: Scaffold(
+          body: FloatingReactionRow(
+            selectedEmoji: null,
+            onPick: (_) {},
+            onMore: () {},
+          ),
+        ),
+      ),
+    );
+
+    final rowSurface = tester.widget<Material>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Material &&
+            widget.borderRadius == BorderRadius.circular(28),
+      ),
+    );
+    expect(rowSurface.color, BlabColors.chatSurface);
   });
 
   testWidgets('tapping an emoji fires onPick with that emoji', (tester) async {

@@ -22,11 +22,11 @@ class ChatsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatsAsync = ref.watch(visibleChatsProvider);
+    final chatsAsync = ref.watch(chatListProvider);
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F2),
+      backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF7F2),
+        backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
@@ -61,7 +61,7 @@ class ChatsScreen extends ConsumerWidget {
                     separatorBuilder: (context, i) => Divider(
                       height: 1,
                       indent: 76,
-                      color: Colors.grey.shade100,
+                      color: BlabColors.chatDivider,
                     ),
                     itemBuilder: (context, i) {
                       final c = chats[i];
@@ -101,13 +101,13 @@ class ChatsScreen extends ConsumerWidget {
           child: FloatingActionButton(
             onPressed: () => context.push('/chats/new'),
             shape: const CircleBorder(),
-            backgroundColor: const Color(0xFFF88C5A),
-            foregroundColor: Colors.white,
+            backgroundColor: BlabColors.brand,
+            foregroundColor: BlabColors.warmInk,
             elevation: 0,
             tooltip: context.l10n.newChat,
             child: const BlabIcon(
               name: 'plus - 20',
-              color: Colors.white,
+              color: BlabColors.warmInk,
               size: 20,
             ),
           ),
@@ -174,7 +174,7 @@ class ChatsErrorState extends StatelessWidget {
             Text(
               context.l10n.couldNotLoadChats,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 15, color: BlabColors.textMuted),
+              style: const TextStyle(fontSize: 15, color: BlabColors.error),
             ),
             const SizedBox(height: 16),
             TextButton.icon(
@@ -200,8 +200,8 @@ class _BottomTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F2),
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        color: BlabColors.chatCanvas,
+        border: const Border(top: BorderSide(color: BlabColors.chatDivider)),
       ),
       child: SafeArea(
         top: false,

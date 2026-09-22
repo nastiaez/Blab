@@ -126,7 +126,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save the interface language. Try again.';
 
   @override
-  String get knownLanguages => 'Languages you know';
+  String get knownLanguages => 'Languages you understand';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Select every language you can read without translation. In Normal mode, messages in these languages stay as written.';
+
+  @override
+  String get translationLanguage => 'Translation language';
+
+  @override
+  String get translationLanguageHelp =>
+      'Choose the language you understand best. Blab uses it for translations and explanations.';
+
+  @override
+  String get addLanguage => 'Add language';
 
   @override
   String get setPrimaryLanguage => 'Set as primary language';
@@ -270,7 +284,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveNewPassword => 'Save new password';
 
   @override
-  String get passwordUpdated => 'Password updated ✓';
+  String get passwordUpdated => 'Password updated';
 
   @override
   String get showPassword => 'Show password';
@@ -717,9 +731,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get change => 'Change';
 
   @override
-  String get inviteSent => 'Invite sent ✓';
-
-  @override
   String get couldNotCreateInvite => 'Couldn\'t create invite. Try again.';
 
   @override
@@ -1156,5 +1167,58 @@ class AppLocalizationsEn extends AppLocalizations {
       'other': 'Now learning English',
     });
     return '$_temp0';
+  }
+
+  @override
+  String get reportSpamQuestion => 'Report spam?';
+
+  @override
+  String reportPersonSpamQuestion(String name) {
+    return 'Report $name for spam?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Blab will be notified that $name may be sending spam. Messages from this chat won\'t be included.';
+  }
+
+  @override
+  String get submitSpamReport => 'Report spam';
+
+  @override
+  String get reportAndBlock => 'Report and block';
+
+  @override
+  String get reportSubmitted => 'Report submitted';
+
+  @override
+  String get couldNotReportOrBlock => 'Couldn\'t report or block. Try again.';
+
+  @override
+  String get reportSucceededBlockFailed => 'Report submitted. Couldn\'t block.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name blocked. Couldn\'t submit report.';
+  }
+
+  @override
+  String blockPersonQuestion(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String get blockPersonConfirmation =>
+      'Neither of you will be able to send messages in this chat.';
+
+  @override
+  String get block => 'Block';
+
+  @override
+  String get unblock => 'Unblock';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'You blocked $name';
   }
 }

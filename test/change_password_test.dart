@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 GoRouter _router() => GoRouter(
   initialLocation: '/profile/password',
+  observers: [appSnackRouteObserver],
   routes: [
     GoRoute(
       path: '/profile/password',
@@ -62,6 +63,18 @@ Future<void> _enterValidPasswords(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('recovery link uses the regular settings-link weight', (
+    tester,
+  ) async {
+    await _pumpChangePassword(
+      tester,
+      action: ({required currentPassword, required newPassword}) async {},
+    );
+
+    final link = tester.widget<Text>(find.text('Forgot your password?'));
+    expect(link.style?.fontWeight, FontWeight.w400);
+  });
+
   testWidgets('invalid or unchanged input never invokes Auth', (tester) async {
     var calls = 0;
     await _pumpChangePassword(
@@ -108,7 +121,8 @@ void main() {
     expect(current, 'OldPass123!');
     expect(next, 'NewPass456!');
     expect(find.text('profile destination'), findsOneWidget);
-    expect(find.text('Password updated ✓'), findsOneWidget);
+    expect(find.text('Password updated'), findsOneWidget);
+    expect(find.byKey(const Key('app-success-icon')), findsOneWidget);
   });
 
   testWidgets('six-character password is accepted even when strength is weak', (
@@ -151,7 +165,7 @@ void main() {
 
     expect(find.text('Current password is incorrect'), findsOneWidget);
     expect(find.text('Change password'), findsOneWidget);
-    expect(find.text('Password updated ✓'), findsNothing);
+    expect(find.text('Password updated'), findsNothing);
   });
 
   testWidgets('busy state blocks duplicate submission and back navigation', (
@@ -184,7 +198,7 @@ void main() {
       find.text('Could not update your password. Try again.'),
       findsOneWidget,
     );
-    expect(find.text('Password updated ✓'), findsNothing);
+    expect(find.text('Password updated'), findsNothing);
   });
 
   testWidgets('Google-only direct route has no password form', (tester) async {

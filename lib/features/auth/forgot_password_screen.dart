@@ -109,6 +109,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 errorText: _err,
                 autofocus: true,
                 textInputAction: TextInputAction.send,
+                enabled: !_busy,
                 onChanged: (v) {
                   if (_err != null && _isValidEmail(v)) {
                     setState(() => _err = null);

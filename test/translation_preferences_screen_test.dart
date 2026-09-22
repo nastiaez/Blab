@@ -1,6 +1,7 @@
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
 import 'package:blab/features/chat/translation_preferences_screen.dart';
+import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/grammatical_form.dart';
 import 'package:blab/shared/models/reading_script.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -11,6 +12,7 @@ import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/profile_state.dart';
 import 'package:blab/shared/state/reading_script_state.dart';
 import 'package:blab/shared/widgets/blab_icon.dart';
+import 'package:blab/shared/widgets/inline_setting_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +41,24 @@ class _FakeChatService implements ChatService {
 
   @override
   Stream<void> watchChatListTranslationChanges() => const Stream.empty();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _RetryableFormPreferencesService
+    implements GrammaticalFormPreferencesService {
+  _RetryableFormPreferencesService(this.onSaved);
+
+  final void Function(GrammaticalForm? value) onSaved;
+  final attempts = <GrammaticalForm?>[];
+
+  @override
+  Future<void> setOwnForm(GrammaticalForm? value) async {
+    attempts.add(value);
+    if (attempts.length == 1) throw Exception('save failed');
+    onSaved(value);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -76,17 +96,23 @@ ProviderContainer _preferencesContainer({
   ],
 );
 
-Widget _preferencesHost(ProviderContainer container, {String? chatId}) =>
-    UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp(
-        theme: blabTheme,
-        home: TranslationPreferencesScreen(
-          chatId: chatId,
-          partnerName: chatId == null ? null : 'Bob',
-        ),
-      ),
-    );
+Widget _preferencesHost(
+  ProviderContainer container, {
+  String? chatId,
+  Locale locale = const Locale('en'),
+}) => UncontrolledProviderScope(
+  container: container,
+  child: MaterialApp(
+    locale: locale,
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    theme: blabTheme,
+    home: TranslationPreferencesScreen(
+      chatId: chatId,
+      partnerName: chatId == null ? null : 'Bob',
+    ),
+  ),
+);
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -307,23 +333,93 @@ void main() {
     },
   );
 
-  testWidgets('failed Reading script save keeps the prior choice', (
+  testWidgets('failed grammatical-form save keeps the prior value inline', (
     tester,
   ) async {
-    final container = _preferencesContainer(
-      rows: [_chatRow('chat-1', 'hi')],
-      update: (_) async => throw Exception('save failed'),
+    var savedForm = GrammaticalForm.masculine;
+    late _RetryableFormPreferencesService service;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authSessionProvider.overrideWith((ref) => const Stream.empty()),
+          chatServiceProvider.overrideWithValue(_FakeChatService(const [])),
+          currentProfileProvider.overrideWith(
+            (ref) async => UserProfile(
+              displayName: 'Alice',
+              grammaticalForm: savedForm.wire,
+            ),
+          ),
+          grammaticalFormPreferencesServiceProvider.overrideWithValue(
+            service = _RetryableFormPreferencesService((value) {
+              savedForm = value!;
+            }),
+          ),
+        ],
+        child: MaterialApp(
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          theme: blabTheme,
+          home: const TranslationPreferencesScreen(),
+        ),
+      ),
     );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(_preferencesHost(container, chatId: 'chat-1'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Reading script'));
+    await tester.tap(find.text('Your grammatical form'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('English letters'));
+    await tester.tap(find.text('Feminine'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Hindi script'), findsOneWidget);
+    expect(find.text('Masculine'), findsOneWidget);
     expect(find.text('Couldn’t save. Try again.'), findsOneWidget);
+    expect(find.byType(InlineSettingError), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+
+    final card = find.byKey(const Key('translation-preferences-card'));
+    final error = find.byType(InlineSettingError);
+    expect(card, findsOneWidget);
+    expect(find.ancestor(of: error, matching: card), findsNothing);
+    expect(
+      tester.getTopLeft(error).dy,
+      greaterThan(tester.getBottomLeft(card).dy),
+    );
+
+    await tester.tap(find.text('Couldn’t save. Try again.'));
+    await tester.pumpAndSettle();
+
+    expect(service.attempts, [
+      GrammaticalForm.feminine,
+      GrammaticalForm.feminine,
+    ]);
+    expect(find.text('Feminine'), findsOneWidget);
+    expect(find.text('Couldn’t save. Try again.'), findsNothing);
   });
+
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets(
+      'failed Reading script save stays inline in ${locale.languageCode}',
+      (tester) async {
+        final container = _preferencesContainer(
+          rows: [_chatRow('chat-1', 'hi')],
+          update: (_) async => throw Exception('save failed'),
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          _preferencesHost(container, chatId: 'chat-1', locale: locale),
+        );
+        await tester.pumpAndSettle();
+
+        final localizations = lookupAppLocalizations(locale);
+        await tester.tap(find.text(localizations.readingScript));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(localizations.englishLetters));
+        await tester.pumpAndSettle();
+
+        expect(find.text(localizations.hindiScript), findsOneWidget);
+        expect(find.text(localizations.couldNotSavePreference), findsOneWidget);
+        expect(find.byType(InlineSettingError), findsOneWidget);
+        expect(find.byType(SnackBar), findsNothing);
+      },
+    );
+  }
 }

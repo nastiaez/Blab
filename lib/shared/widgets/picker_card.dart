@@ -2,101 +2,72 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 import '../data/languages.dart';
+import 'blab_icon.dart';
 
 // Spring overshoot curve for scale-back on tap release.
 const _kSpring = Cubic(0.34, 1.56, 0.64, 1);
 
-/// Tappable language card used across all language pickers.
+/// Tappable language row used by the full-screen language pickers.
 ///
-/// Scale-press interaction (no Material ripple) so there is no gray flash.
-/// Border width is constant (2 px) — only color changes on select, so
-/// adjacent cards never shift position.
-class LanguageCard extends StatefulWidget {
+/// Mirrors the approved learning-language sheet: quiet unselected rows,
+/// a warm selected fill, and a trailing check without card outlines.
+class LanguageCard extends StatelessWidget {
   const LanguageCard({
     super.key,
     required this.label,
     required this.selected,
     required this.onTap,
+    this.trailing,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
-
-  @override
-  State<LanguageCard> createState() => _LanguageCardState();
-}
-
-class _LanguageCardState extends State<LanguageCard>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _press;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _press = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 80),
-      reverseDuration: const Duration(milliseconds: 300),
-    );
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(
-        parent: _press,
-        curve: Curves.easeIn,
-        reverseCurve: _kSpring,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _press.dispose();
-    super.dispose();
-  }
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      selected: widget.selected,
+      selected: selected,
       button: true,
-      child: GestureDetector(
-        onTapDown: (_) => _press.forward(),
-        onTapUp: (_) {
-          _press.reverse();
-          widget.onTap();
-        },
-        onTapCancel: () => _press.reverse(),
-        child: ScaleTransition(
-          scale: _scale,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              color: widget.selected
-                  ? BlabColors.brand.withValues(alpha: 0.12)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                // Always 2 px — only color changes, no layout shift.
-                color: widget.selected
-                    ? BlabColors.brand
-                    : Colors.grey.shade200,
-                width: 2,
-              ),
-            ),
+      child: Material(
+        color: selected ? BlabColors.languageSelectionTint : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: SizedBox(
+            height: 48,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-              child: Text(
-                widget.label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: widget.selected
-                      ? FontWeight.w700
-                      : FontWeight.w500,
-                  color: widget.selected
-                      ? BlabColors.brand
-                      : BlabColors.textPrimary,
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.2,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w400,
+                        color: BlabColors.bubbleInk,
+                      ),
+                    ),
+                  ),
+                  if (trailing != null) ...[
+                    const SizedBox(width: 8),
+                    trailing!,
+                  ],
+                  if (selected) ...[
+                    const SizedBox(width: 12),
+                    const BlabIcon(
+                      name: 'check - 20',
+                      size: 18,
+                      color: BlabColors.bubbleInk,
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -212,7 +183,9 @@ class _BrandButtonState extends State<BrandButton>
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.4,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        BlabColors.warmInk,
+                      ),
                     ),
                   )
                 : Text(
@@ -222,7 +195,7 @@ class _BrandButtonState extends State<BrandButton>
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: _enabled
-                          ? Colors.white
+                          ? BlabColors.warmInk
                           : BlabColors.disabledOnSurface,
                     ),
                   ),

@@ -17,7 +17,7 @@ class ShareImageScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final image = ref.watch(pendingSharedImageProvider);
-    final chatsAsync = ref.watch(visibleChatsProvider);
+    final chatsAsync = ref.watch(shareableChatsProvider);
     if (image == null) {
       return Scaffold(
         backgroundColor: Colors.white,

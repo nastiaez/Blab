@@ -63,8 +63,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         newPassword: next,
       );
       if (!mounted) return;
-      showAppSnack(context.l10n.passwordUpdated);
       context.go('/profile');
+      showAppSuccessSnackAfterNavigation(context.l10n.passwordUpdated);
     } catch (error) {
       if (!mounted) return;
       final message = localizedAuthMessage(
@@ -187,7 +187,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     context.l10n.forgotYourPassword,
                     style: const TextStyle(
                       color: BlabColors.brand,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w400,
                       fontSize: 13,
                     ),
                   ),
@@ -217,7 +217,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 const SizedBox(height: 10),
                 Text(
                   _formErr!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  style: const TextStyle(color: BlabColors.error, fontSize: 13),
                 ),
               ],
               const SizedBox(height: 24),

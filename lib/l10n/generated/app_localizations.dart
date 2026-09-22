@@ -327,8 +327,32 @@ abstract class AppLocalizations {
   /// No description provided for @knownLanguages.
   ///
   /// In en, this message translates to:
-  /// **'Languages you know'**
+  /// **'Languages you understand'**
   String get knownLanguages;
+
+  /// No description provided for @knownLanguagesHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select every language you can read without translation. In Normal mode, messages in these languages stay as written.'**
+  String get knownLanguagesHelp;
+
+  /// No description provided for @translationLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation language'**
+  String get translationLanguage;
+
+  /// No description provided for @translationLanguageHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the language you understand best. Blab uses it for translations and explanations.'**
+  String get translationLanguageHelp;
+
+  /// No description provided for @addLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add language'**
+  String get addLanguage;
 
   /// No description provided for @setPrimaryLanguage.
   ///
@@ -603,7 +627,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Password updated ✓'**
+  /// **'Password updated'**
   String get passwordUpdated;
 
   /// No description provided for @showPassword.
@@ -1398,12 +1422,6 @@ abstract class AppLocalizations {
   /// **'Change'**
   String get change;
 
-  /// No description provided for @inviteSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Invite sent ✓'**
-  String get inviteSent;
-
   /// No description provided for @couldNotCreateInvite.
   ///
   /// In en, this message translates to:
@@ -2117,6 +2135,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning English}}'**
   String learningTimelineMarker(String languageCode);
+
+  /// No description provided for @reportSpamQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Report spam?'**
+  String get reportSpamQuestion;
+
+  /// No description provided for @reportPersonSpamQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name} for spam?'**
+  String reportPersonSpamQuestion(String name);
+
+  /// No description provided for @reportPersonSpamBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Blab will be notified that {name} may be sending spam. Messages from this chat won\'t be included.'**
+  String reportPersonSpamBody(String name);
+
+  /// No description provided for @submitSpamReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report spam'**
+  String get submitSpamReport;
+
+  /// No description provided for @reportAndBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Report and block'**
+  String get reportAndBlock;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted'**
+  String get reportSubmitted;
+
+  /// No description provided for @couldNotReportOrBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t report or block. Try again.'**
+  String get couldNotReportOrBlock;
+
+  /// No description provided for @reportSucceededBlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Report submitted. Couldn\'t block.'**
+  String get reportSucceededBlockFailed;
+
+  /// No description provided for @blockSucceededReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} blocked. Couldn\'t submit report.'**
+  String blockSucceededReportFailed(String name);
+
+  /// No description provided for @blockPersonQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String blockPersonQuestion(String name);
+
+  /// No description provided for @blockPersonConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Neither of you will be able to send messages in this chat.'**
+  String get blockPersonConfirmation;
+
+  /// No description provided for @block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get block;
+
+  /// No description provided for @unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblock;
+
+  /// No description provided for @youBlockedPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked {name}'**
+  String youBlockedPerson(String name);
 }
 
 class _AppLocalizationsDelegate

@@ -278,7 +278,7 @@ select ok(
     null,
     '[{"text":"Hallo aktuell","gloss":"Hello current","isContent":true}]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   'service role can complete an unchanged authorized translation'
 );
@@ -393,7 +393,7 @@ select is(
     null,
     '[]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   false,
   'completion rejects a source that changed after preparation'
@@ -573,7 +573,7 @@ select ok(
     null,
     '[{"text":"Kurzes implizites Subjekt","gloss":"संक्षिप्त निहित विषय","isContent":true}]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   'service role accepts Hindi as the primary known language output lane'
 );

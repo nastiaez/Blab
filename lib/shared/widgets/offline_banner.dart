@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../state/connectivity_state.dart';
 
 /// Slim system banner shown across post-login surfaces when the device loses
 /// connectivity. PRD US-031.
 ///
-/// Fixed 40 px tall, dark gray (`#333`) with 12 px w500 white text. Uses an
+/// Fixed 40 px tall, warm warning surface with 12 px w500 error text. Uses an
 /// [AnimatedSize] + [AnimatedSwitcher] so it slides in / out at 200 ms.
 class OfflineBanner extends ConsumerWidget {
   const OfflineBanner({super.key});
@@ -52,12 +53,12 @@ class _Bar extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: OfflineBanner.bannerHeight,
-        color: const Color(0xFF333333),
+        color: BlabColors.brandSoft,
         alignment: Alignment.center,
         child: Text(
           context.l10n.noConnection,
           style: const TextStyle(
-            color: Colors.white,
+            color: BlabColors.error,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),

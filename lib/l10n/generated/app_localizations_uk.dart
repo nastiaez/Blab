@@ -126,7 +126,21 @@ class AppLocalizationsUk extends AppLocalizations {
       'Не вдалося зберегти мову інтерфейсу. Спробуйте ще раз.';
 
   @override
-  String get knownLanguages => 'Мови, які ти знаєш';
+  String get knownLanguages => 'Мови, які ти розумієш';
+
+  @override
+  String get knownLanguagesHelp =>
+      'Вибери всі мови, які можеш читати без перекладу. У звичайному режимі повідомлення цими мовами залишаються без змін.';
+
+  @override
+  String get translationLanguage => 'Мова перекладу';
+
+  @override
+  String get translationLanguageHelp =>
+      'Вибери мову, яку розумієш найкраще. Blab використовує її для перекладів і пояснень.';
+
+  @override
+  String get addLanguage => 'Додати мову';
 
   @override
   String get setPrimaryLanguage => 'Зробити основною мовою';
@@ -271,7 +285,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get saveNewPassword => 'Зберегти новий пароль';
 
   @override
-  String get passwordUpdated => 'Пароль оновлено ✓';
+  String get passwordUpdated => 'Пароль оновлено';
 
   @override
   String get showPassword => 'Показати пароль';
@@ -721,9 +735,6 @@ class AppLocalizationsUk extends AppLocalizations {
   String get change => 'Змінити';
 
   @override
-  String get inviteSent => 'Запрошення надіслано ✓';
-
-  @override
   String get couldNotCreateInvite =>
       'Не вдалося створити запрошення. Спробуй ще раз.';
 
@@ -977,7 +988,7 @@ class AppLocalizationsUk extends AppLocalizations {
   String get reportHarassment => 'Домагання або цькування';
 
   @override
-  String get reportHate => 'Мова ворожнечі';
+  String get reportHate => 'Ненависницькі висловлювання';
 
   @override
   String get reportSexual => 'Сексуальний або неприйнятний вміст';
@@ -1163,5 +1174,60 @@ class AppLocalizationsUk extends AppLocalizations {
       'other': 'Тепер вивчаєш англійську.',
     });
     return '$_temp0';
+  }
+
+  @override
+  String get reportSpamQuestion => 'Поскаржитися на спам?';
+
+  @override
+  String reportPersonSpamQuestion(String name) {
+    return 'Поскаржитися на спам від $name?';
+  }
+
+  @override
+  String reportPersonSpamBody(String name) {
+    return 'Blab отримає сповіщення, що $name може надсилати спам. Повідомлення з цього чату не буде додано.';
+  }
+
+  @override
+  String get submitSpamReport => 'Поскаржитися на спам';
+
+  @override
+  String get reportAndBlock => 'Поскаржитися й заблокувати';
+
+  @override
+  String get reportSubmitted => 'Скаргу надіслано';
+
+  @override
+  String get couldNotReportOrBlock =>
+      'Не вдалося поскаржитися й заблокувати. Спробуйте ще раз.';
+
+  @override
+  String get reportSucceededBlockFailed =>
+      'Скаргу надіслано. Не вдалося заблокувати.';
+
+  @override
+  String blockSucceededReportFailed(String name) {
+    return '$name заблоковано. Не вдалося надіслати скаргу.';
+  }
+
+  @override
+  String blockPersonQuestion(String name) {
+    return 'Заблокувати $name?';
+  }
+
+  @override
+  String get blockPersonConfirmation =>
+      'Ви не зможете надсилати одне одному повідомлення в цьому чаті.';
+
+  @override
+  String get block => 'Заблокувати';
+
+  @override
+  String get unblock => 'Розблокувати';
+
+  @override
+  String youBlockedPerson(String name) {
+    return 'Ви заблокували $name';
   }
 }

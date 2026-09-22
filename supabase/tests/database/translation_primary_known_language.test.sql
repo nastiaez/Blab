@@ -82,7 +82,7 @@ select ok(
     null,
     '[{"text":"Привіт","gloss":"Hello","roman":"Pryvit","isContent":true}]'::jsonb,
     null,
-    'automatic-forms-v2'
+    'complete-language-aids-v3'
   ),
   'completion accepts primary known language when the app language differs'
 );

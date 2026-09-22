@@ -29,9 +29,9 @@ class ProfileScreen extends ConsumerWidget {
         profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F2),
+      backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF7F2),
+        backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
@@ -45,7 +45,10 @@ class ProfileScreen extends ConsumerWidget {
             knownLanguages.when(
               data: (value) => _KnownLanguagesGroup(
                 knownLanguages: value,
-                onAdd: () => context.push('/profile/known-languages'),
+                onEditUnderstood: () =>
+                    context.push('/profile/known-languages'),
+                onEditTranslation: () =>
+                    context.push('/profile/translation-language'),
               ),
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
@@ -151,7 +154,7 @@ Future<bool?> _confirmLogout(BuildContext context) {
   return showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: BlabColors.chatSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         context.l10n.logOutQuestion,
@@ -177,7 +180,7 @@ Future<bool?> _confirmLogout(BuildContext context) {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: BlabColors.brand,
+              color: BlabColors.error,
             ),
           ),
         ),
@@ -237,20 +240,17 @@ class _ProfileHero extends StatelessWidget {
 class _KnownLanguagesGroup extends StatelessWidget {
   const _KnownLanguagesGroup({
     required this.knownLanguages,
-    required this.onAdd,
+    required this.onEditUnderstood,
+    required this.onEditTranslation,
   });
 
   final KnownLanguages knownLanguages;
-  final VoidCallback onAdd;
+  final VoidCallback onEditUnderstood;
+  final VoidCallback onEditTranslation;
 
   @override
   Widget build(BuildContext context) {
-    final primary = knownLanguages.primary;
-    final orderedCodes = [
-      if (knownLanguages.codes.contains(primary)) primary,
-      ...knownLanguages.codes.where((code) => code != primary),
-    ];
-    final languages = orderedCodes
+    final languages = knownLanguages.codes
         .map(
           (code) => kBlabLanguages.firstWhere(
             (language) => language.code == code,
@@ -273,11 +273,22 @@ class _KnownLanguagesGroup extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             for (final language in languages)
-              _KnownLanguagePill(
-                language: language,
-                primary: language.code == primary,
+              _KnownLanguagePill(language: language),
+            _AddKnownLanguageButton(onTap: onEditUnderstood),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _SettingsCard(
+          children: [
+            _SettingsRow(
+              iconName: 'translate - 20',
+              label: context.l10n.translationLanguage,
+              trailingLabel: localizedLanguageName(
+                context.l10n,
+                knownLanguages.primary,
               ),
-            _AddKnownLanguageButton(onTap: onAdd),
+              onTap: onEditTranslation,
+            ),
           ],
         ),
       ],
@@ -304,10 +315,9 @@ class _ProfileSectionLabel extends StatelessWidget {
 }
 
 class _KnownLanguagePill extends StatelessWidget {
-  const _KnownLanguagePill({required this.language, required this.primary});
+  const _KnownLanguagePill({required this.language});
 
   final BlabLanguage language;
-  final bool primary;
 
   @override
   Widget build(BuildContext context) {
@@ -332,14 +342,6 @@ class _KnownLanguagePill extends StatelessWidget {
               color: Color(0xFF46281C),
             ),
           ),
-          if (primary) ...[
-            SizedBox(width: largeText ? 6 : 4),
-            BlabIcon(
-              name: 'star - 25',
-              color: Color(0xFF46281C),
-              size: largeText ? 20 : 16,
-            ),
-          ],
         ],
       ),
     );
@@ -353,28 +355,36 @@ class _AddKnownLanguageButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(22),
-          child: Center(
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3ECE3),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFE1DAD2)),
-              ),
-              alignment: Alignment.center,
-              child: const BlabIcon(
-                name: 'plus - 16',
-                color: Color(0xFF46281C),
-                size: 16,
+    return Semantics(
+      button: true,
+      label: context.l10n.addLanguage,
+      child: Tooltip(
+        message: context.l10n.addLanguage,
+        excludeFromSemantics: true,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(22),
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3ECE3),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFE1DAD2)),
+                  ),
+                  alignment: Alignment.center,
+                  child: const BlabIcon(
+                    name: 'plus - 16',
+                    color: Color(0xFF46281C),
+                    size: 16,
+                  ),
+                ),
               ),
             ),
           ),
@@ -425,10 +435,10 @@ class _SettingsRow extends StatelessWidget {
     final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.75;
     final iconSize = largeText ? 24.0 : 20.0;
     final Color iconColor = destructive
-        ? Colors.red.shade400
+        ? BlabColors.error
         : BlabColors.textMuted;
     final Color labelColor = destructive
-        ? Colors.red.shade400
+        ? BlabColors.error
         : const Color(0xFF46281C);
     return InkWell(
       onTap: onTap,
@@ -519,7 +529,7 @@ class _BottomTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F2),
+        color: BlabColors.chatCanvas,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
       child: SafeArea(

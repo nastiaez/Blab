@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 
 enum PasswordStrength { empty, weak, fair, strong }
@@ -38,7 +39,7 @@ class PasswordGuidance extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: Text(
         context.l10n.passwordMinHint,
-        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        style: const TextStyle(fontSize: 12, color: BlabColors.textMuted),
       ),
     );
   }
@@ -64,10 +65,10 @@ class PasswordStrengthBar extends StatelessWidget {
       PasswordStrength.strong => 3,
     };
     final Color color = switch (s) {
-      PasswordStrength.weak => Colors.red.shade400,
+      PasswordStrength.weak => BlabColors.error,
       PasswordStrength.fair => Colors.orange.shade400,
       PasswordStrength.strong => Colors.green.shade500,
-      _ => Colors.grey.shade300,
+      _ => BlabColors.divider,
     };
     final String label = switch (s) {
       PasswordStrength.weak => context.l10n.passwordWeak,
@@ -85,7 +86,7 @@ class PasswordStrengthBar extends StatelessWidget {
               child: Container(
                 height: 4,
                 decoration: BoxDecoration(
-                  color: i < filled ? color : Colors.grey.shade200,
+                  color: i < filled ? color : BlabColors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

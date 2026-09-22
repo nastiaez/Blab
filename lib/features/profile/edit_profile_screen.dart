@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/app_messenger.dart';
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/profile_service.dart';
@@ -70,7 +69,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final saved = await ref.read(updateDisplayNameActionProvider)(next);
       if (!mounted) return;
       _initialName = saved;
-      showAppSnack(context.l10n.profileUpdated);
       context.go('/profile');
     } catch (_) {
       if (!mounted) return;
@@ -207,10 +205,16 @@ class _ProfileLoadError extends StatelessWidget {
           children: [
             Text(
               context.l10n.couldNotLoadProfile,
-              style: const TextStyle(color: BlabColors.textPrimary),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, color: BlabColors.textMuted),
             ),
-            const SizedBox(height: 12),
-            TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              key: const ValueKey('profile-load-retry'),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.retry),
+            ),
           ],
         ),
       ),

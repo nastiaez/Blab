@@ -45,7 +45,7 @@ class DevMenu extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Blab — dev menu'),
         backgroundColor: BlabColors.brand,
-        foregroundColor: Colors.white,
+        foregroundColor: BlabColors.warmInk,
       ),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
@@ -55,7 +55,8 @@ class DevMenu extends ConsumerWidget {
           if (i == _entries.length + 2) {
             return FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
+                backgroundColor: BlabColors.error,
+                foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),

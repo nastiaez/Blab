@@ -58,9 +58,9 @@ const double _kEdgePadding = 12;
 const double _kTailWidth = 16;
 const double _kTailHeight = 10;
 const double _kPopupStrokeWidth = 1;
-const Color _kPopupInk = Color(0xFF1A0A1E);
-const Color _kPopupMuted = Color(0xFF808080);
-const Color _kPopupStroke = Color(0xFFE7D7D0);
+const Color _kPopupInk = BlabColors.warmInk;
+const Color _kPopupMuted = BlabColors.warmMuted;
+const Color _kPopupStroke = BlabColors.chatDivider;
 
 /// Open a word popup pointing at the supplied word rectangle.
 ///
@@ -387,7 +387,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
                   size: const Size(_kTailWidth, _kTailHeight),
                   painter: _TailPainter(
                     pointDown: !flipBelow,
-                    fillColor: Colors.white,
+                    fillColor: BlabColors.chatSurface,
                     strokeColor: _kPopupStroke,
                   ),
                 ),
@@ -507,7 +507,7 @@ class _PopupCardState extends State<_PopupCard> {
         child: Container(
           key: const ValueKey('word-popup-card'),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: BlabColors.chatSurface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: _kPopupStroke, width: _kPopupStrokeWidth),
             boxShadow: [
@@ -575,9 +575,14 @@ class _ExplanationCard extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _kMaxPopupWidth),
         child: Container(
+          key: const ValueKey('word-popup-explanation-card'),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: BlabColors.chatSurface,
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: BlabColors.chatDivider,
+              width: _kPopupStrokeWidth,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.15),
@@ -592,7 +597,7 @@ class _ExplanationCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               height: 1.4,
-              color: BlabColors.textPrimary,
+              color: BlabColors.warmInk,
             ),
           ),
         ),

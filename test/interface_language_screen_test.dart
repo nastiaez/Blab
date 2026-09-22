@@ -76,7 +76,7 @@ Future<void> applyLanguage(
   await tester.tap(find.text(interfaceLanguageForCode(target).nativeName));
   await tester.pumpAndSettle();
   final localizations = lookupAppLocalizations(Locale(source));
-  await tester.tap(find.text(localizations.apply));
+  await tester.tap(find.text(localizations.save));
   await tester.pumpAndSettle();
 }
 

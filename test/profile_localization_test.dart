@@ -103,7 +103,7 @@ void main() {
     expect(find.text('KONTO'), findsOneWidget);
     expect(find.text('Übersetzungs\u00adeinstellungen'), findsOneWidget);
     expect(find.text('EINSTELLUNGEN'), findsOneWidget);
-    expect(find.text('Niederländisch'), findsOneWidget);
+    expect(find.text('Niederländisch'), findsNWidgets(2));
     expect(find.text('Account'), findsNothing);
     expect(find.text('Translation preferences'), findsNothing);
     expect(find.text('Dutch'), findsNothing);
@@ -123,22 +123,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('Known Languages headings use direct personal copy', () {
+  test('language settings use the approved canonical copy', () {
     expect(
       lookupAppLocalizations(const Locale('en')).knownLanguages,
-      'Languages you know',
+      'Languages you understand',
     );
     expect(
       lookupAppLocalizations(const Locale('de')).knownLanguages,
-      'Sprachen, die du sprichst',
+      'Sprachen, die du verstehst',
     );
     expect(
       lookupAppLocalizations(const Locale('es')).knownLanguages,
-      'Idiomas que hablas',
+      'Idiomas que entiendes',
     );
     expect(
       lookupAppLocalizations(const Locale('uk')).knownLanguages,
-      'Мови, які ти знаєш',
+      'Мови, які ти розумієш',
+    );
+
+    final english = lookupAppLocalizations(const Locale('en'));
+    expect(
+      english.knownLanguagesHelp,
+      'Select every language you can read without translation. '
+      'In Normal mode, messages in these languages stay as written.',
+    );
+    expect(english.translationLanguage, 'Translation language');
+    expect(
+      english.translationLanguageHelp,
+      'Choose the language you understand best. '
+      'Blab uses it for translations and explanations.',
+    );
+  });
+
+  testWidgets('Profile keeps language chips and exposes translation language', (
+    tester,
+  ) async {
+    await _pumpProfile(
+      tester,
+      locale: const Locale('en'),
+      knownLanguages: const KnownLanguages(codes: ['es', 'uk'], primary: 'uk'),
+    );
+
+    expect(find.text('LANGUAGES YOU UNDERSTAND (2)'), findsOneWidget);
+    expect(find.text('Spanish'), findsOneWidget);
+    expect(find.text('Ukrainian'), findsNWidgets(2));
+    expect(find.text('Translation language'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is BlabIcon && widget.name == 'star - 25',
+      ),
+      findsNothing,
     );
   });
 
@@ -226,6 +260,13 @@ void main() {
     expect(find.text('Log out?'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Log out'), findsNWidgets(2));
+    final confirmLogOut = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Log out'),
+      ),
+    );
+    expect(confirmLogOut.style!.color, BlabColors.error);
     expect(
       find.text(
         "You'll need your email and password (or Google) to sign back in.",

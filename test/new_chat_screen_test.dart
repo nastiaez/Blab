@@ -1,3 +1,4 @@
+import 'package:blab/app/theme.dart';
 import 'package:blab/features/invite/new_chat_screen.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -70,19 +71,32 @@ void main() {
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
     expect(sharedText, "Let's chat on Blab: https://loveblab.com/i/token1");
-    expect(find.text("Couldn't create invite. Try again."), findsOneWidget);
+    final error = find.text("Couldn't create invite.");
+    final retry = find.widgetWithText(TextButton, 'Try again.');
+    expect(error, findsOneWidget);
+    expect(retry, findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Only one friend can use this link'), findsNothing);
+    expect(find.text('Send invite'), findsNothing);
+    final card = find.byKey(const ValueKey('invite-card'));
+    final recovery = find.byKey(const ValueKey('invite-create-recovery'));
+    expect(card, findsOneWidget);
+    expect(recovery, findsOneWidget);
     expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-      isNull,
+      tester.getTopLeft(recovery).dy - tester.getBottomLeft(card).dy,
+      inInclusiveRange(0, 16),
     );
-    await tester.tap(find.text('Retry'));
+    expect(find.descendant(of: recovery, matching: error), findsOneWidget);
+    expect(find.descendant(of: recovery, matching: retry), findsOneWidget);
+    expect(
+      (tester.getCenter(error).dy - tester.getCenter(retry).dy).abs(),
+      lessThan(8),
+    );
+    await tester.tap(find.text('Try again.'));
     await tester.pumpAndSettle();
     expect(find.text('loveblab.com/i/token3'), findsOneWidget);
     expect(find.text("Couldn't create invite. Try again."), findsNothing);
-    expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-      isNotNull,
-    );
+    expect(find.text('Send invite'), findsOneWidget);
   });
 
   testWidgets('dismissing native sharing preserves the current link', (
@@ -107,6 +121,31 @@ void main() {
     expect(tester.getTopLeft(helper).dx, tester.getTopLeft(card).dx);
   });
 
+  testWidgets('invite card and CTA use the approved warm palette', (
+    tester,
+  ) async {
+    await openOnlineInvite(tester, FakeInvites());
+
+    final title = find.text("Let's chat on Blab");
+    final card = tester.widget<Container>(
+      find.ancestor(of: title, matching: find.byType(Container)).first,
+    );
+    final decoration = card.decoration! as BoxDecoration;
+    final border = decoration.border! as Border;
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+
+    expect(decoration.color, BlabColors.chatSurface);
+    expect(border.top.color, BlabColors.chatDivider);
+    expect(
+      button.style!.backgroundColor!.resolve(<WidgetState>{}),
+      BlabColors.brand,
+    );
+    expect(
+      button.style!.foregroundColor!.resolve(<WidgetState>{}),
+      BlabColors.warmInk,
+    );
+  });
+
   testWidgets('invite creator localizes the complete visible flow', (
     tester,
   ) async {
@@ -123,6 +162,40 @@ void main() {
     expect(find.text('Let’s chat on Blab'), findsNothing);
   });
 
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets(
+      'failed invite retry stays attached in ${locale.languageCode}',
+      (tester) async {
+        await openOnlineInvite(
+          tester,
+          FakeInvites(failOnCalls: {1}),
+          locale: locale,
+        );
+
+        final l10n = lookupAppLocalizations(locale);
+        final separator = l10n.couldNotCreateInvite.indexOf('. ');
+        expect(separator, greaterThan(0));
+        final error = find.text(
+          l10n.couldNotCreateInvite.substring(0, separator + 1),
+        );
+        final retry = find.widgetWithText(
+          TextButton,
+          l10n.couldNotCreateInvite.substring(separator + 2),
+        );
+        expect(error, findsOneWidget);
+        expect(retry, findsOneWidget);
+        expect(find.text(l10n.retry), findsNothing);
+        expect(find.text(l10n.onePersonInvite), findsNothing);
+        expect(find.text(l10n.sendInvite), findsNothing);
+        final recovery = find.byKey(const ValueKey('invite-create-recovery'));
+        expect(recovery, findsOneWidget);
+        expect(find.descendant(of: recovery, matching: error), findsOneWidget);
+        expect(find.descendant(of: recovery, matching: retry), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('sharing failure keeps the link and lets the user try again', (
     tester,
   ) async {
@@ -137,6 +210,13 @@ void main() {
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't open sharing. Try again."), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(find.text("Couldn't open sharing. Try again."))
+          .style!
+          .color,
+      BlabColors.error,
+    );
     expect(find.text('loveblab.com/i/token1'), findsOneWidget);
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
@@ -166,6 +246,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(service.calls, 0);
     expect(find.text('No connection'), findsOneWidget);
+    final offlineText = tester.widget<Text>(find.text('No connection'));
+    final offlineBar = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.text('No connection'),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    expect(offlineBar.color, BlabColors.brandSoft);
+    expect(offlineText.style!.color, BlabColors.error);
     expect(
       tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
       isNull,

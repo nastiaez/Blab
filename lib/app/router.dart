@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_messenger.dart';
+import 'email_change_feedback.dart';
 import 'ui_workbench_screen.dart';
 
 import '../features/auth/auth_screen.dart';
@@ -27,8 +28,8 @@ import '../features/profile/known_languages_screen.dart';
 import '../features/profile/privacy_screen.dart';
 import '../features/profile/notification_settings_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/profile/translation_language_screen.dart';
 import '../features/share/share_image_screen.dart';
-import '../l10n/l10n.dart';
 import 'dev_menu.dart';
 
 const _publicPaths = <String>{
@@ -91,31 +92,36 @@ final GoRouter blabRouter = GoRouter(
     // Custom-scheme deep-link URIs (e.g. `blab://auth/email-changed#
     // access_token=...&type=email_change`) land here because go_router
     // can't match the full URI to any route. Consume the tokens with
-    // Supabase so the session reflects the new email, then bounce
-    // home and toast.
+    // Supabase so the session reflects the new email, then bounce home.
+    // BlabApp compares the authenticated account before and after refresh;
+    // the route alone is not proof that an email change succeeded.
     final loc = state.matchedLocation;
+    final callbackUri = loc.startsWith('blab://') ? Uri.tryParse(loc) : null;
+    final isEmailChangeCallback =
+        callbackUri?.host == 'auth' && callbackUri?.path == '/email-changed';
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (loc.startsWith('blab://')) {
-        final uri = Uri.tryParse(loc);
-        if (uri != null && uri.host == 'auth' && uri.path == '/email-changed') {
-          try {
-            await Supabase.instance.client.auth.getSessionFromUrl(
-              uri,
-              storeSession: true,
-            );
-          } catch (_) {
-            // supabase_flutter may have already consumed the link.
-          }
-          // Force a user refresh so the in-app email shows the new value.
-          try {
-            await Supabase.instance.client.auth.refreshSession();
-          } catch (_) {}
-          final context = appMessengerKey.currentContext;
-          showAppSnack(context?.l10n.emailChanged ?? 'Email changed');
+      if (isEmailChangeCallback && callbackUri != null) {
+        try {
+          await Supabase.instance.client.auth.getSessionFromUrl(
+            callbackUri,
+            storeSession: true,
+          );
+        } catch (_) {
+          // supabase_flutter may have already consumed the link.
         }
+        // Force a user refresh so the in-app email shows the new value.
+        try {
+          await Supabase.instance.client.auth.refreshSession();
+        } catch (_) {}
       }
       final signedIn = _currentSessionOrNull() != null;
-      blabRouter.go(signedIn ? '/chats' : '/auth?mode=login');
+      blabRouter.go(
+        isEmailChangeCallback
+            ? confirmedEmailChangeDestination(signedIn: signedIn)
+            : signedIn
+            ? '/chats'
+            : '/auth?mode=login',
+      );
     });
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   },
@@ -157,18 +163,13 @@ final GoRouter blabRouter = GoRouter(
       builder: (context, state) => const ResetPasswordScreen(),
     ),
     // Deep-link landing for email-change confirmation. supabase_flutter
-    // already consumed the tokens before this builds — we schedule the
-    // "Email changed ✓" snack via the global ScaffoldMessenger key then
-    // bounce the user back into the app.
+    // consumes the tokens before this builds. The authenticated user change,
+    // not visiting this route, owns the success acknowledgement.
     GoRoute(
       path: '/auth/email-changed',
       redirect: (context, state) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final context = appMessengerKey.currentContext;
-          showAppSnack(context?.l10n.emailChanged ?? 'Email changed');
-        });
         final signedIn = _currentSessionOrNull() != null;
-        return signedIn ? '/chats' : '/auth?mode=login';
+        return confirmedEmailChangeDestination(signedIn: signedIn);
       },
     ),
     GoRoute(
@@ -255,6 +256,10 @@ final GoRouter blabRouter = GoRouter(
     GoRoute(
       path: '/profile/known-languages',
       builder: (context, state) => const KnownLanguagesScreen(),
+    ),
+    GoRoute(
+      path: '/profile/translation-language',
+      builder: (context, state) => const TranslationLanguageScreen(),
     ),
     GoRoute(
       path: '/profile/delete-account',

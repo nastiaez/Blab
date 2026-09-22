@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
 import '../../../shared/widgets/blab_icon.dart';
@@ -146,7 +147,6 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
     const outline = Color(0xFFE1DAD2);
     const ink = Color(0xFF231208);
     const muted = Color(0xFF8C735F);
-    const selectedFill = Color(0xFFF7EFE5);
     const radius = BorderRadius.vertical(top: Radius.circular(16));
     final viewportHeight = MediaQuery.sizeOf(context).height;
     final sheetHeight = math.min(
@@ -244,7 +244,9 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                           final language = kBlabLanguages[index];
                           final selected = language.code == _selected?.code;
                           return Material(
-                            color: selected ? selectedFill : Colors.transparent,
+                            color: selected
+                                ? BlabColors.languageSelectionTint
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
@@ -300,7 +302,7 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                   height: 50,
                   child: FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFF88C5A),
+                      backgroundColor: BlabColors.brand,
                       disabledBackgroundColor: const Color(0xFFE1DAD2),
                       disabledForegroundColor: muted,
                       shape: RoundedRectangleBorder(
@@ -313,7 +315,7 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                             dimension: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: BlabColors.warmInk,
                             ),
                           )
                         : Text(
@@ -321,7 +323,7 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: BlabColors.warmInk,
                             ),
                           ),
                   ),
