@@ -28,7 +28,7 @@
 
 ## Task 4: Integrate after approval
 
-- [ ] Fetch GitHub and check for divergence/conflicts.
-- [ ] Commit the approved packet.
-- [ ] Push and merge to `main` using a conflict-free fast-forward path.
-- [ ] Confirm remote CI and update `tasks/ui-consistency-sweep.md`.
+- [x] Fetch GitHub and check for divergence/conflicts.
+- [x] Commit the approved packet.
+- [x] Push and merge to `main` using a conflict-free fast-forward path.
+- [x] Confirm remote CI and update `tasks/ui-consistency-sweep.md`.
