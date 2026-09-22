@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -25,13 +27,34 @@ void main() {
       expect(scrubbed.data!.containsKey('body'), isFalse);
     });
 
-    test('leaves non-HTTP breadcrumbs untouched', () {
+    test('removes free text and URL secrets from HTTP breadcrumbs', () {
       final crumb = Breadcrumb(
-        category: 'navigation',
-        data: {'from': '/chats', 'to': '/chat/abc'},
+        type: 'http',
+        category: 'http',
+        message: 'private chat text',
+        data: {
+          'method': 'POST',
+          'url': 'https://api.example.com/messages?token=secret#private',
+          'status_code': 201,
+          'http.query': 'token=secret',
+          'http.fragment': 'private',
+        },
       );
       final scrubbed = scrubBreadcrumb(crumb)!;
-      expect(scrubbed.data, {'from': '/chats', 'to': '/chat/abc'});
+      expect(scrubbed.message, isNull);
+      expect(scrubbed.data!['url'], 'https://api.example.com/messages');
+      expect(scrubbed.data!.containsKey('http.query'), isFalse);
+      expect(scrubbed.data!.containsKey('http.fragment'), isFalse);
+    });
+
+    test('removes free text and arbitrary non-HTTP breadcrumb data', () {
+      final crumb = Breadcrumb.console(
+        message: 'alice@example.com wrote meet me at 8pm',
+        data: {'password': 'secret', 'message': 'meet me at 8pm'},
+      );
+      final scrubbed = scrubBreadcrumb(crumb)!;
+      expect(scrubbed.message, isNull);
+      expect(scrubbed.data, isEmpty);
     });
 
     test('null and empty-data breadcrumbs pass through', () {
@@ -48,6 +71,57 @@ void main() {
       );
       final scrubbed = scrubEvent(event);
       expect(scrubbed.request!.data, '[redacted]');
+    });
+
+    test('removes private content from the complete event envelope', () {
+      final event = SentryEvent(
+        message: SentryMessage('meet me at 8pm'),
+        exceptions: [
+          SentryException(
+            type: 'StateError',
+            value: 'alice@example.com password=hunter2 token=invite-secret',
+          ),
+        ],
+        tags: {'email': 'alice@example.com'},
+        // Exercise legacy Sentry scope data because it can still reach events.
+        // ignore: deprecated_member_use
+        extra: {'password': 'hunter2'},
+        fingerprint: ['invite-secret'],
+        breadcrumbs: [Breadcrumb.console(message: 'meet me at 8pm')],
+        user: SentryUser(
+          id: 'user-123',
+          email: 'alice@example.com',
+          data: {'token': 'invite-secret'},
+        ),
+        request: SentryRequest(
+          url: 'https://api.example.com/messages?token=invite-secret#private',
+          method: 'POST',
+          queryString: 'token=invite-secret',
+          cookies: 'session=hunter2',
+          data: 'meet me at 8pm',
+          headers: {'authorization': 'Bearer invite-secret'},
+          fragment: 'private',
+        ),
+        transaction: '/invite/invite-secret',
+        culprit: 'alice@example.com',
+        logger: 'meet me at 8pm',
+        serverName: 'alice-laptop',
+      );
+
+      final scrubbed = scrubEvent(event);
+      final serialized = jsonEncode(scrubbed.toJson());
+
+      expect(serialized, contains('user-123'));
+      expect(serialized, contains('[redacted]'));
+      for (final privateValue in [
+        'meet me at 8pm',
+        'alice@example.com',
+        'hunter2',
+        'invite-secret',
+        'private',
+      ]) {
+        expect(serialized, isNot(contains(privateValue)));
+      }
     });
 
     test('event without a request is returned unchanged', () {

@@ -399,6 +399,11 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/translate-message/index.ts"
 
+[functions.prepare-message-jobs]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/prepare-message-jobs/index.ts"
+
 [functions.send-push]
 enabled = true
 verify_jwt = false

@@ -1475,8 +1475,8 @@
         title: 'Security and production hygiene',
         note: 'No accidental exposure or environment drift',
         tasks: [
-          { id: 'security-env-file', type: 'security', label: 'Protect the unignored local credential file', detail: 'Ignore or relocate it, verify it was never committed, and rotate the key if it has been shared anywhere.' },
-          { id: 'security-secret-scan', type: 'security', label: 'Run the final repository and release secret scan', detail: 'Check current files, history, and the release bundle for service credentials, signing secrets, message text, and private configuration.' },
+          { id: 'security-env-file', type: 'security', label: 'Protect the unignored local credential file', detail: 'Ignore or relocate it, verify it was never committed, and rotate the key if it has been shared anywhere.', done: true },
+          { id: 'security-secret-scan', type: 'security', label: 'Run the final repository and release secret scan', detail: 'Check current files, history, and the release bundle for service credentials, signing secrets, message text, and private configuration.', done: true },
           { id: 'security-production-parity', type: 'security', label: 'Re-verify production service parity', detail: 'Confirm migrations, translation worker, notification worker, quotas, retention controls, moderation intake, and environment labels match the release.' },
           { id: 'security-privacy-boundaries', type: 'security', label: 'Verify every plaintext and processor disclosure', detail: 'Storage, AI translation, notification previews, diagnostics, deletion, and moderation promises must match actual behavior.' }
         ]
