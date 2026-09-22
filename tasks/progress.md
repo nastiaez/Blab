@@ -388,7 +388,7 @@
   - [x] Privacy + Terms **deployed to production** (2026-06-09) — live at `https://blab-gray.vercel.app/privacy.html` + `/terms.html` (200, verified).
   - [ ] **Nastia's to-dos:** fill the operator legal name in `web/privacy.html` (then redeploy); make the 1024×500 feature graphic; create a reviewer demo account; fill the Play forms using the drafted answers.
 
-### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[ ]` ← in progress
+### Step 3.6a — In-app Report + Block (Play UGC/CSAE gate) `[x]` — complete
 - **Scope:** Play requires social/messaging apps to provide a way to report objectionable content and block another user. Keep message and person reporting. The partner profile becomes a full page; person reporting uses a centered spam confirmation, while message reporting keeps the six-reason bottom sheet. Block requires confirmation, freezes sending in both directions, and keeps the readable chat visible as the V1 recovery surface with an in-place Unblock action. Reports route to the moderation store; no separate blocked-people settings screen is added in V1.
 - **Why:** missing report/block is a common Play rejection for social apps; also required by the child-safety (CSAE) standards. Decision 2026-06-09: build before submission.
 - **Done when:**
@@ -404,9 +404,10 @@
   - [x] Migration **applied to remote** (`supabase db push`, 2026-06-09) — `blocks` + `reports` + the updated message-insert policy are live.
   - [x] Gesture regression locked (`test/word_gesture_test.dart`): a quick tap on a learning-language word opens the word popup (not the menu); a held press opens the action sheet (incl. Report) and not the popup. Adding Report didn't change the bubble's tap/long-press routing.
   - [x] `flutter analyze` clean; `flutter test` 62/62 green (`test/report_block_test.dart` + `test/word_gesture_test.dart`); debug APK builds.
-  - [ ] **2026-09-15 approved redesign in progress:** report acknowledgements use the passive-success pill; Block uses the concise localized confirmation; the chat stays visible and readable with `You blocked Name · Unblock`; invite reuse preserves the block; a database migration freezes sending for both participants.
-  - [x] **2026-09-16 profile/reporting refinement implemented and verified:** replaced the stacked partner-profile sheet with a full page; separated the Signal-style person spam confirmation from the six-reason message report; verified Report spam / Report and block / Cancel in EN/DE/ES/UK on Android. Owner screenshot acceptance remains pending before Step 3.6a can close.
-  - [ ] **Device verification owed** (Nastia): report a message + a person; Cancel and confirm Block; verify the persistent Unblock state, both-direction send denial, unblock recovery, and blocked-pair invite reuse in all four interface languages.
+  - [x] **2026-09-15 approved redesign complete:** report acknowledgements use the passive-success pill; Block uses the concise localized confirmation; the chat stays visible and readable with `You blocked Name · Unblock`; invite reuse preserves the block; a database migration freezes sending for both participants.
+  - [x] **2026-09-16 profile/reporting refinement implemented and verified:** replaced the stacked partner-profile sheet with a full page; separated the Signal-style person spam confirmation from the six-reason message report; verified Report spam / Report and block / Cancel in EN/DE/ES/UK on Android. Owner acceptance completed on 2026-09-22.
+  - [x] **Device verification complete:** the existing four-interface-language Android evidence covers localized UI and action fit; the 2026-09-22 current-main Alice/Bob replay covers message/person persistence, persistent Unblock state, both-direction send denial, unblock recovery, and blocked-pair invite reuse. Owner approved the combined result.
+  - [x] **2026-09-22 current-main replay approved:** message and person reports persisted with the correct evidence; the blocked chat stayed readable; both send directions were denied without persistence; invite reuse kept one chat and preserved the block; unblock restored live messaging in both directions. Baseline: 694 passed, 15 intentional skips. QA records were removed.
 
 ### Step 3.6 — Closed testing run (Play policy gate) `[ ]`
 - **Scope:** Play now requires solo dev accounts to run a closed test with **≥12 testers for ≥14 continuous days** before production. Lock down tester list early.

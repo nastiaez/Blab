@@ -34,3 +34,15 @@ Bob's interface language was restored to Ukrainian. The QA-created person report
 ## UI review
 
 The dialog hierarchy, destructive emphasis, persistent recovery affordance, localization fit, and transient feedback consistency all score at least 8/10. No blocking visual issue was found in this cycle.
+
+## 2026-09-22 current-main replay
+
+Alice in the browser and Bob on an isolated Android emulator completed the English end-to-end moderation flow on `093d803`:
+
+- Message report and person report both showed acknowledgement and persisted distinct `spam` rows with the expected message-level versus person-level evidence.
+- Blocking kept the existing conversation and history visible, replaced Bob's composer with `You blocked Alice Local · Unblock`, and preserved the block row.
+- Alice's send attempt failed visibly and did not persist; Bob's direct policy probe was rejected by row-level security with HTTP 403 and did not persist.
+- A fresh Alice invite opened from a cold Android app launch reused the one existing chat, consumed the invite, and left the block intact.
+- Unblock removed the block row, restored Bob's composer, and allowed new messages from both Alice and Bob to persist and arrive.
+
+Baseline verification passed 694 Flutter checks with 15 intentional environment-gated skips. The two QA report rows, two recovery messages, consumed invite, and block row were removed afterward; the original chat remains. No product failure or screenshot-worthy mismatch was found. Combined with the existing English, German, Spanish, and Ukrainian Android UI evidence above, the owner approved the flow and closed Step 3.6a on 2026-09-22.
