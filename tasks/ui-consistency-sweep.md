@@ -63,8 +63,13 @@ integration passed. Owner screenshot approval received.
 - [ ] Verify Notifications permission states on a physical Android device. ← blocked: no physical device connected
 - [x] Run final QA: 694 passed, 15 skipped; formatting, analysis, shell checks, diff validation, and production web build passed.
 - [x] Receive owner approval for the final non-Auth screenshot review set.
-- [ ] Commit, push, merge, confirm remote CI, and close the sweep.
+- [x] Commit, push, merge, confirm remote CI, and close the sweep (`5c9d22c`).
 
 Scale quality bar: default through moderate scaling must remain visually polished;
 Android's maximum 200% font setting is an accessibility stress test and must
 remain usable without overlap, clipping, or blocked actions.
+
+Review gate: 694 tests passed, 15 skipped; formatting, analysis, production web
+build, GitHub Quality, Android release compile, and local Supabase integration
+passed. Owner screenshot approval received. Physical Notifications remains a
+separate device-only follow-up.

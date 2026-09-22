@@ -121,3 +121,4 @@ Notifications permission verification remains a separate blocked follow-up.
 - `git diff --check`: passed.
 - `flutter build web --release`: passed.
 - The build emitted only the existing `flutter_tts_web` WebAssembly dry-run warnings from the third-party package; the production web build completed successfully.
+- GitHub CI for `5c9d22c`: Quality, Android release compile, and disposable local-Supabase integration passed.
