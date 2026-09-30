@@ -73,6 +73,28 @@ void main() {
     expect(find.text(explanationText), findsNothing);
   });
 
+  testWidgets('corrected word keeps gloss from spaced provider token', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      harness(
+        originalText: 'Ich habe gestern gehen.',
+        correctedText: 'Ich bin gestern gegangen.',
+        correctedTokens: const [
+          MessageToken(text: 'Ich', gloss: 'I'),
+          MessageToken(text: ' bin', gloss: 'am'),
+          MessageToken(text: ' gestern', gloss: 'yesterday'),
+          MessageToken(text: ' gegangen.', gloss: 'went'),
+        ],
+      ),
+    );
+
+    await tester.tap(find.text('bin'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('am'), findsOneWidget);
+  });
+
   testWidgets('corrected word uses semibold emphasis', (tester) async {
     await tester.pumpWidget(
       harness(originalText: 'I goed', correctedText: 'I went'),

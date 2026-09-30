@@ -298,10 +298,16 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       widget.originalText,
       widget.correctedText,
     );
+    final metadataByWord = <String, List<MessageToken>>{};
+    for (final token in messageTokensForText(
+      widget.correctedText,
+      metadata: widget.correctedTokens,
+    ).where((token) => token.isContent)) {
+      metadataByWord.putIfAbsent(token.text, () => []).add(token);
+    }
     MessageToken metadataFor(String word) {
-      for (final token in widget.correctedTokens) {
-        if (token.isContent && token.text == word) return token;
-      }
+      final matches = metadataByWord[word];
+      if (matches != null && matches.isNotEmpty) return matches.removeAt(0);
       return MessageToken(text: word, isContent: true);
     }
 
