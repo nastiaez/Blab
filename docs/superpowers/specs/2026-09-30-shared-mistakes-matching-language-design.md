@@ -1,8 +1,8 @@
 # Shared Mistakes for Matching Learning Languages
 
 **Status:** Approved for implementation
-**Date:** 2026-09-30  
-**Related:** US-015, US-043, US-044; FR-13, FR-36, FR-38  
+**Date:** 2026-09-30
+**Related:** US-015, US-043, US-044; FR-13, FR-36, FR-38
 **Supersedes:** The former blanket rule in US-015, US-043, and FR-13 that recipients always receive clean correction output.
 
 ## Objective

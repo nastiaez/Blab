@@ -1,6 +1,6 @@
 # Correction Explanation Removal QA
 
-**Date:** 2026-09-30  
+**Date:** 2026-09-30
 **Branch:** `codex/shared-mistakes`
 
 ## Expected behavior
