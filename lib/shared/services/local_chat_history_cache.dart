@@ -386,6 +386,7 @@ class LocalChatHistoryCache {
     'status': message.status.name,
     'type': message.type.name,
     'isEdited': message.isEdited,
+    'languagesMatchedAtSend': message.languagesMatchedAtSend,
     'attachment': message.attachment == null
         ? null
         : {
@@ -410,6 +411,7 @@ class LocalChatHistoryCache {
             'originalText': message.replyTo!.originalText,
             'sentAt': message.replyTo!.sentAt.toIso8601String(),
             'type': message.replyTo!.type.name,
+            'languagesMatchedAtSend': message.replyTo!.languagesMatchedAtSend,
           },
   };
 
@@ -473,6 +475,8 @@ class LocalChatHistoryCache {
           translation: '',
           sentAt: replyTime,
           status: MessageStatus.delivered,
+          languagesMatchedAtSend:
+              reply['languagesMatchedAtSend'] as bool? ?? false,
           type: reply['type'] == 'image' ? MessageType.image : MessageType.text,
         );
       }
@@ -492,6 +496,7 @@ class LocalChatHistoryCache {
       attachment: attachment,
       replyTo: replyTo,
       isEdited: row['isEdited'] as bool? ?? false,
+      languagesMatchedAtSend: row['languagesMatchedAtSend'] as bool? ?? false,
     );
   }
 

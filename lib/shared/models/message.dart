@@ -93,6 +93,7 @@ class Message {
     this.tokens,
     this.replyTo,
     this.isEdited = false,
+    this.languagesMatchedAtSend = false,
   });
 
   final String id;
@@ -127,6 +128,10 @@ class Message {
   /// "· edited" tag in the meta row. PRD US-019.
   final bool isEdited;
 
+  /// True when both chat participants had the same learning language at the
+  /// moment this message was created. This historical decision never changes.
+  final bool languagesMatchedAtSend;
+
   Message copyWith({
     MessageStatus? status,
     String? originalText,
@@ -136,6 +141,7 @@ class Message {
     MessageAttachment? attachment,
     Message? replyTo,
     bool? isEdited,
+    bool? languagesMatchedAtSend,
   }) {
     return Message(
       id: id,
@@ -150,6 +156,8 @@ class Message {
       attachment: attachment ?? this.attachment,
       replyTo: replyTo ?? this.replyTo,
       isEdited: isEdited ?? this.isEdited,
+      languagesMatchedAtSend:
+          languagesMatchedAtSend ?? this.languagesMatchedAtSend,
     );
   }
 }

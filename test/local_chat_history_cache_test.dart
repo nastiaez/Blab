@@ -23,6 +23,17 @@ void main() {
         translation: '',
         sentAt: sentAt,
         status: MessageStatus.delivered,
+        languagesMatchedAtSend: true,
+        replyTo: Message(
+          id: 'reply-source',
+          chatId: 'chat-1',
+          isOutgoing: true,
+          originalText: 'Earlier message',
+          translation: '',
+          sentAt: sentAt.subtract(const Duration(minutes: 1)),
+          status: MessageStatus.delivered,
+          languagesMatchedAtSend: true,
+        ),
         attachment: const MessageAttachment(
           id: 'attachment-1',
           messageId: 'message-1',
@@ -42,6 +53,8 @@ void main() {
     final restored = await cache.loadMessages('chat-1');
     expect(restored, hasLength(1));
     expect(restored.single.originalText, 'Привіт');
+    expect(restored.single.languagesMatchedAtSend, true);
+    expect(restored.single.replyTo?.languagesMatchedAtSend, true);
     expect(
       restored.single.attachment?.previewStoragePath,
       'chat-1/attachment-1.preview.jpg',
@@ -49,6 +62,34 @@ void main() {
     expect(restored.single.attachment?.localBytes, [1, 2, 3]);
     expect(await LocalChatHistoryCache('bob').loadMessages('chat-1'), isEmpty);
   });
+
+  test(
+    'legacy cached messages fail closed without match eligibility',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        cachedMessagesStorageKey(userId: 'alice', chatId: 'chat-1'),
+        jsonEncode([
+          {
+            'id': 'legacy-message',
+            'chatId': 'chat-1',
+            'isOutgoing': false,
+            'originalText': 'Old message',
+            'sentAt': DateTime.utc(2026, 8, 28, 10).toIso8601String(),
+            'status': 'delivered',
+            'type': 'text',
+            'isEdited': false,
+          },
+        ]),
+      );
+
+      final restored = await LocalChatHistoryCache(
+        'alice',
+      ).loadMessages('chat-1');
+
+      expect(restored.single.languagesMatchedAtSend, false);
+    },
+  );
 
   test('touching a cached attachment updates its LRU index', () async {
     final cache = LocalChatHistoryCache('alice');

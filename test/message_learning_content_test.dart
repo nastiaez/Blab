@@ -11,6 +11,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'correction marks follow authorship or the historical language match',
+    () {
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: true,
+          languagesMatchedAtSend: false,
+          mode: LearningAidMode.correction,
+        ),
+        true,
+      );
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: false,
+          languagesMatchedAtSend: true,
+          mode: LearningAidMode.correction,
+        ),
+        true,
+      );
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: false,
+          languagesMatchedAtSend: false,
+          mode: LearningAidMode.correction,
+        ),
+        false,
+      );
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: true,
+          languagesMatchedAtSend: true,
+          mode: LearningAidMode.translation,
+        ),
+        false,
+      );
+    },
+  );
+
   MessageTranslation result({
     required String learning,
     required String interfaceText,
@@ -37,6 +75,7 @@ void main() {
     AsyncValue<MessageTranslation>? translation, {
     String authoredText = 'What are you doing?',
     bool isOutgoing = false,
+    bool languagesMatchedAtSend = false,
     bool showTranslation = true,
     String learningCode = 'de',
     String interfaceCode = 'en',
@@ -62,6 +101,7 @@ void main() {
           showTranslation: showTranslation,
           learningLanguageCode: learningCode,
           isOutgoing: isOutgoing,
+          languagesMatchedAtSend: languagesMatchedAtSend,
           popupTopInset: 0,
           unavailableText: 'Translation unavailable',
           retryText: 'Retry',
@@ -335,6 +375,10 @@ void main() {
     expect(find.textContaining('Correction:'), findsNothing);
     expect(find.textContaining('Possible correction:'), findsNothing);
     expect(find.text('was machen du'), findsNothing);
+
+    await tester.tap(find.text('machen'));
+    await tester.pumpAndSettle();
+    expect(find.text('The verb must agree with du.'), findsNothing);
   });
 
   testWidgets('recipient sees clean correction without author coaching marks', (
@@ -365,6 +409,69 @@ void main() {
     expect(find.text('Що ти робиш?'), findsOneWidget);
     expect(find.textContaining('Correction:'), findsNothing);
     expect(find.text('What is you doing?'), findsNothing);
+  });
+
+  testWidgets(
+    'matching-language recipient sees correction marks without explanation',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(
+              learning: 'What are you doing?',
+              interfaceText: 'Що ти робиш?',
+              source: 'en',
+              learningCode: 'en',
+              interfaceCode: 'uk',
+              mode: LearningAidMode.correction,
+              explanation: 'Use are with you.',
+              confidence: CorrectionConfidence.high,
+            ),
+          ),
+          authoredText: 'What is you doing?',
+          learningCode: 'en',
+          interfaceCode: 'uk',
+          languagesMatchedAtSend: true,
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('inline-correction')), findsOneWidget);
+      expect(find.text('Use are with you.'), findsNothing);
+      await tester.tap(find.text('is'));
+      await tester.pumpAndSettle();
+      expect(find.text('Use are with you.'), findsNothing);
+      expect(find.text('Що ти робиш?'), findsOneWidget);
+    },
+  );
+
+  testWidgets('normal mode stays clean when send-time languages matched', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        AsyncData(
+          result(
+            learning: 'What are you doing?',
+            interfaceText: 'Що ти робиш?',
+            source: 'en',
+            learningCode: 'en',
+            interfaceCode: 'uk',
+            mode: LearningAidMode.correction,
+            explanation: 'Use are with you.',
+            confidence: CorrectionConfidence.high,
+          ),
+        ),
+        authoredText: 'What is you doing?',
+        learningCode: 'en',
+        interfaceCode: 'uk',
+        languagesMatchedAtSend: true,
+        mode: ChatMode.normal,
+        knownLanguageCodes: const ['uk'],
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+    expect(find.byType(MessageText), findsOneWidget);
   });
 
   testWidgets(

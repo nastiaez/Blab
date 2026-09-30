@@ -171,12 +171,9 @@ List<CorrectionSegment> correctionSegments(
   return segments;
 }
 
-/// Renders a word-level correction diff with independently tappable
-/// segments: corrected text opens the word popup (PRD US-018, FR-12), and
-/// struck-through text opens an explanation popup with the correction
-/// reasoning (Task 11). Mirrors [MessageText]'s per-word
-/// `TapGestureRecognizer`/`GlobalKey` pattern, but at [CorrectionSegment]
-/// granularity rather than per individual word.
+/// Renders a word-level correction diff. Corrected and unchanged words open
+/// the standard word popup (PRD US-018, FR-12); struck-through text is purely
+/// visual and has no interaction.
 class InlineCorrectionText extends ConsumerStatefulWidget {
   const InlineCorrectionText({
     super.key,
@@ -184,7 +181,6 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
     required this.correctedText,
     required this.style,
     required this.learningLanguageCode,
-    required this.explanation,
     required this.popupTopInset,
     this.correctedTokens = const [],
   });
@@ -197,11 +193,7 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
   /// (non-struck) segments' word popup.
   final String learningLanguageCode;
 
-  /// Correction reasoning shown when a struck-through segment is tapped.
-  /// `null` disables the tap on struck segments (no explanation to show).
-  final String? explanation;
-
-  /// Minimum top-Y either popup is allowed to occupy (global coords). Used
+  /// Minimum top-Y the word popup is allowed to occupy (global coords). Used
   /// to keep popups from drawing over the chat header. BUG-009.
   final double popupTopInset;
 
@@ -238,22 +230,6 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     _recognizers.clear();
   }
 
-  void _onStruckTap(int index) {
-    final explanation = widget.explanation;
-    if (explanation == null) return;
-    final ctx = _keys[index]?.currentContext;
-    if (ctx == null) return;
-    final box = ctx.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    showExplanationPopup(
-      context,
-      explanation: explanation,
-      anchorTopLeft: box.localToGlobal(Offset.zero),
-      anchorSize: box.size,
-      topInset: widget.popupTopInset,
-    );
-  }
-
   void _onCorrectedTap(int index, MessageToken token) {
     final ctx = _keys[index]?.currentContext;
     if (ctx == null) return;
@@ -277,19 +253,16 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
   /// own independent hit area.
   InlineSpan _tappableSpan({
     required String text,
-    required bool struck,
     required TextStyle style,
     MessageToken? popupToken,
   }) {
     final index = _nextKeyIndex++;
     final key = _keys.putIfAbsent(index, () => GlobalKey());
     final recognizer = TapGestureRecognizer()
-      ..onTap = () => struck
-          ? _onStruckTap(index)
-          : _onCorrectedTap(
-              index,
-              popupToken ?? MessageToken(text: text, isContent: true),
-            );
+      ..onTap = () => _onCorrectedTap(
+        index,
+        popupToken ?? MessageToken(text: text, isContent: true),
+      );
     _recognizers.add(recognizer);
 
     return WidgetSpan(
@@ -325,25 +298,33 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       widget.originalText,
       widget.correctedText,
     );
+    final metadataByWord = <String, List<MessageToken>>{};
+    for (final token in messageTokensForText(
+      widget.correctedText,
+      metadata: widget.correctedTokens,
+    ).where((token) => token.isContent)) {
+      metadataByWord.putIfAbsent(token.text, () => []).add(token);
+    }
     MessageToken metadataFor(String word) {
-      for (final token in widget.correctedTokens) {
-        if (token.isContent && token.text == word) return token;
-      }
+      final matches = metadataByWord[word];
+      if (matches != null && matches.isNotEmpty) return matches.removeAt(0);
       return MessageToken(text: word, isContent: true);
     }
 
     final spans = <InlineSpan>[];
     for (final segment in segments) {
       if (segment.struck) {
-        // An explanation is about the whole mistake, not one word within
-        // it — a struck run stays a single tap target that opens the
-        // explanation popup, same as before.
-        if (segment.text.trim().isEmpty) {
-          spans.add(TextSpan(text: segment.text, style: widget.style));
-          continue;
-        }
+        // Keep the struck run as a separate visual span, but intentionally
+        // attach no recognizer: correction explanations are not interactive.
         spans.add(
-          _tappableSpan(text: segment.text, struck: true, style: struckStyle),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(segment.text, style: struckStyle),
+            ),
+          ),
         );
         continue;
       }
@@ -369,7 +350,6 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
         spans.add(
           _tappableSpan(
             text: token.text,
-            struck: false,
             style: segment.corrected ? correctedStyle : widget.style,
             popupToken: metadataFor(token.text),
           ),

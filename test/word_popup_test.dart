@@ -256,42 +256,6 @@ void main() {
     expect(painter.drawsBaseEdge, isFalse);
   });
 
-  testWidgets('correction explanation uses the same warm popup surface', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: blabTheme,
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () => showExplanationPopup(
-                context,
-                explanation: 'Use the polite form here.',
-                anchorTopLeft: const Offset(120, 300),
-                anchorSize: const Size(80, 24),
-              ),
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-
-    final card = tester.widget<Container>(
-      find.byKey(const ValueKey('word-popup-explanation-card')),
-    );
-    final decoration = card.decoration! as BoxDecoration;
-    expect(decoration.color, BlabColors.chatSurface);
-    final explanation = tester.widget<Text>(
-      find.text('Use the polite form here.'),
-    );
-    expect(explanation.style?.color, BlabColors.warmInk);
-  });
-
   // Mode-display-fixes spec § 2: the padding that used to sit around each
   // word is gone (it inflated the line box). Tap targets must not shrink
   // with it — each word's box still spans the full line height, and a tap
