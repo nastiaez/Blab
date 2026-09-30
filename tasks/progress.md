@@ -590,6 +590,15 @@
   - Approved work is committed and pushed to `feat/localization`.
 - **Current packet:** B01A through B08 and L01-L03 are approved after real-client review. Publishing L03 before L04 German begins. Supported-build Notifications delivery/tap remains blocked until a physical Android device is connected.
 
+### Step 2.16 — Shared mistakes for matching learning languages `[ ]` ← in progress
+- **Design:** `docs/superpowers/specs/2026-09-30-shared-mistakes-matching-language-design.md`.
+- **Scope:** US-015, US-043; FR-13. Persist whether both participants had the same Learning Language when each new message was created. In Practice, an eligible incoming correction reuses the existing inline correction treatment and the recipient's own Primary Known Language explanation. Mismatched and pre-feature messages remain clean; later language changes never rewrite history.
+- **Done when:**
+  - Message creation atomically persists matching-language eligibility, including deterministic ordering against a simultaneous language change.
+  - Text messages and photo captions preserve eligibility across retries, edits, reloads, offline idempotent sends, and later language changes.
+  - Incoming Practice corrections show marks only for eligible messages; outgoing corrections, Normal mode, clean text, failures, and mismatched-language messages remain unchanged.
+  - Focused database and Flutter regressions, the full automated gate, and a two-participant true/false/true language-switch check pass.
+
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
 - **Owner deferral (2026-09-10):** Owner explicitly deferred testing automatic installed-app invite opening until after launch. Keep this test unverified and unchecked, not passed; original signing/matching-app prerequisite still applies when resumed. This deferral does not approve or complete the separate Play install → signup → invite continuation test. Existing local no-expiry, failure/retry, conditional browser/emulator and approved sharing evidence remains valid; source is committed and pushed.
@@ -632,6 +641,7 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-30 — Approved and started Step 2.16: when both participants had the same Learning Language at send time, Practice shares the author's correction marks and the recipient's own explanation. Eligibility is stored once per message; mismatched, legacy, and later language eras stay unchanged.
 - 2026-09-30 — Completed the publication gate for the isolated onboarding/auth and first-time empty Chats branch: 787 Flutter checks passed with 15 environment-only skips, 35 database checks passed, static analysis/formatting/diff checks were clean, and the debug Android APK built successfully.
 - 2026-09-30 — Isolated the owner-approved onboarding/auth refresh and first-time empty Chats activation from unrelated local icon and shared-learning work for publication. The empty Chats shell keeps the incumbent Blab logo, tabs, and warm cream canvas while replacing only the central illustration, copy, and Invite a friend action.
 - 2026-09-30 — Applied the owner-requested onboarding consistency pass and selected Ukrainian Welcome copy. The refreshed flow retains the production-safe legacy fallback while configured-device Google auth, the real two-account invite journey, final overlay review, and complete owner acceptance remain open.
