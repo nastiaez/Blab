@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/auth/auth_screen.dart';
 import 'package:blab/features/onboarding/auth/auth_method_screen.dart';
@@ -34,102 +36,107 @@ void _setViewport(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('capture approved onboarding review surfaces', (tester) async {
-    _setViewport(tester);
+  testWidgets(
+    'capture approved onboarding review surfaces',
+    (tester) async {
+      _setViewport(tester);
 
-    await tester.pumpWidget(
-      _app(
-        WelcomeScreen(
-          interfaceLanguageCode: 'en',
-          onContinue: () {},
-          onChangeInterfaceLanguage: (_) async {},
+      await tester.pumpWidget(
+        _app(
+          WelcomeScreen(
+            interfaceLanguageCode: 'en',
+            onContinue: () {},
+            onChangeInterfaceLanguage: (_) async {},
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile(
-        '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/welcome.png',
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile(
+          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/welcome.png',
+        ),
+      );
 
-    await tester.pumpWidget(
-      _app(
-        LearnInContextScreen(
-          interfaceLanguageCode: 'en',
-          onBack: () {},
-          onContinue: () {},
-          onChangeInterfaceLanguage: (_) async {},
-          onPlayAudio: () async {},
-          onStopAudio: () async {},
+      await tester.pumpWidget(
+        _app(
+          LearnInContextScreen(
+            interfaceLanguageCode: 'en',
+            onBack: () {},
+            onContinue: () {},
+            onChangeInterfaceLanguage: (_) async {},
+            onPlayAudio: () async {},
+            onStopAudio: () async {},
+          ),
+          reducedMotion: true,
         ),
-        reducedMotion: true,
-      ),
-    );
-    await tester.pump();
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile(
-        '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/learn-reduced-motion.png',
-      ),
-    );
+      );
+      await tester.pump();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile(
+          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/learn-reduced-motion.png',
+        ),
+      );
 
-    await tester.pumpWidget(
-      _app(
-        AuthMethodScreen(
-          mode: AuthMode.signUp,
-          interfaceLanguageCode: 'en',
-          onBack: () {},
-          onGoogle: () async {},
-          onEmail: () {},
-          onSwitchMode: () {},
-          onChangeInterfaceLanguage: (_) async {},
-          onTerms: () {},
-          onPrivacy: () {},
+      await tester.pumpWidget(
+        _app(
+          AuthMethodScreen(
+            mode: AuthMode.signUp,
+            interfaceLanguageCode: 'en',
+            onBack: () {},
+            onGoogle: () async {},
+            onEmail: () {},
+            onSwitchMode: () {},
+            onChangeInterfaceLanguage: (_) async {},
+            onTerms: () {},
+            onPrivacy: () {},
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile(
-        '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/signup-method.png',
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile(
+          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/signup-method.png',
+        ),
+      );
 
-    await tester.pumpWidget(
-      _app(
-        ConfirmNameScreen(
-          initialName: 'Nastia',
-          onBack: () {},
-          onComplete: () {},
+      await tester.pumpWidget(
+        _app(
+          ConfirmNameScreen(
+            initialName: 'Nastia',
+            onBack: () {},
+            onComplete: () {},
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile(
-        '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/confirm-name.png',
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile(
+          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/confirm-name.png',
+        ),
+      );
 
-    await tester.pumpWidget(
-      _app(
-        LanguageYouUnderstandScreen(
-          initialLanguageCode: 'de',
-          onBack: () {},
-          onComplete: () {},
+      await tester.pumpWidget(
+        _app(
+          LanguageYouUnderstandScreen(
+            initialLanguageCode: 'de',
+            onBack: () {},
+            onComplete: () {},
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await expectLater(
-      find.byType(MaterialApp),
-      matchesGoldenFile(
-        '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/language.png',
-      ),
-    );
-  });
+      );
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile(
+          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/language.png',
+        ),
+      );
+    },
+    // These reviewed baselines use macOS font rasterization.
+    skip: !Platform.isMacOS,
+  );
 }
