@@ -11,6 +11,56 @@ import 'profile_state.dart';
 typedef FetchInterfaceLanguage = Future<String> Function();
 typedef UpdateInterfaceLanguage = Future<String> Function(String languageCode);
 
+bool isNewAuthAccount({required String createdAt, String? lastSignInAt}) {
+  final created = DateTime.tryParse(createdAt);
+  final signedIn = DateTime.tryParse(lastSignInAt ?? '');
+  if (created == null || signedIn == null) return false;
+  return signedIn.difference(created).abs() <= const Duration(seconds: 10);
+}
+
+Future<void> queueGuestInterfaceLanguageSync({
+  required bool isNewAccount,
+  required String? userId,
+}) async {
+  final preferences = await SharedPreferences.getInstance();
+  final explicitlyChanged =
+      preferences.getBool(kGuestInterfaceLanguageExplicitKey) ?? false;
+  if ((!isNewAccount && !explicitlyChanged) || userId == null) return;
+  final code = interfaceLanguageForCode(
+    preferences.getString(kGuestInterfaceLanguageKey),
+  ).code;
+  await preferences.setString(kPendingInterfaceLanguageSyncKey, code);
+  await preferences.setString(kPendingInterfaceLanguageSyncUserIdKey, userId);
+}
+
+Future<void> applyPendingGuestInterfaceLanguageSync({
+  required String? Function() activeUserId,
+  required UpdateInterfaceLanguage update,
+}) async {
+  final preferences = await SharedPreferences.getInstance();
+  final pendingCode = preferences.getString(kPendingInterfaceLanguageSyncKey);
+  if (pendingCode == null) return;
+  final pendingUserId = preferences.getString(
+    kPendingInterfaceLanguageSyncUserIdKey,
+  );
+  if (pendingUserId == null) {
+    await preferences.remove(kPendingInterfaceLanguageSyncKey);
+    return;
+  }
+  if (activeUserId() != pendingUserId) return;
+  final code = interfaceLanguageForCode(pendingCode).code;
+  await update(code);
+  if (activeUserId() != pendingUserId) return;
+  if (preferences.getString(kPendingInterfaceLanguageSyncKey) != pendingCode ||
+      preferences.getString(kPendingInterfaceLanguageSyncUserIdKey) !=
+          pendingUserId) {
+    return;
+  }
+  await preferences.remove(kPendingInterfaceLanguageSyncKey);
+  await preferences.remove(kPendingInterfaceLanguageSyncUserIdKey);
+  await preferences.setBool(kGuestInterfaceLanguageExplicitKey, false);
+}
+
 final fetchInterfaceLanguageProvider = Provider<FetchInterfaceLanguage>((ref) {
   return ref.read(profileServiceProvider).fetchInterfaceLanguage;
 });
@@ -75,6 +125,7 @@ class InterfaceLanguageNotifier extends Notifier<BlabLanguage> {
         interfaceLanguageStorageKey(userId),
         next.code,
       );
+      await preferences.setBool(kGuestInterfaceLanguageExplicitKey, true);
       return;
     }
 

@@ -975,13 +975,13 @@ abstract class AppLocalizations {
   /// No description provided for @noChatsYet.
   ///
   /// In en, this message translates to:
-  /// **'No chats yet'**
+  /// **'Start your first chat'**
   String get noChatsYet;
 
   /// No description provided for @inviteFriendStart.
   ///
   /// In en, this message translates to:
-  /// **'Invite a friend and start chatting.'**
+  /// **'Practice a language through real conversations.'**
   String get inviteFriendStart;
 
   /// No description provided for @inviteFriend.
@@ -1385,6 +1385,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get continueAction;
+
+  /// No description provided for @onboardingWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn chats with friends into language practice'**
+  String get onboardingWelcomeTitle;
+
+  /// No description provided for @onboardingLearnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn words in context. Build natural sentences'**
+  String get onboardingLearnTitle;
+
+  /// No description provided for @onboardingLearningStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re learning English'**
+  String get onboardingLearningStatus;
+
+  /// No description provided for @onboardingLearningConversationSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'English practice conversation with a correction and translation'**
+  String get onboardingLearningConversationSemantics;
+
+  /// No description provided for @signupMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up to\nstart learning'**
+  String get signupMethodTitle;
+
+  /// No description provided for @loginMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to Blab'**
+  String get loginMethodTitle;
+
+  /// No description provided for @continueWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get continueWithEmail;
+
+  /// No description provided for @signUpWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up with email'**
+  String get signUpWithEmail;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get createAccount;
+
+  /// No description provided for @dontHaveAccountSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t have an account? Sign up'**
+  String get dontHaveAccountSignUp;
+
+  /// No description provided for @onboardingLegal.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing, you agree to Blab\'s Terms of Service and Privacy Policy.'**
+  String get onboardingLegal;
+
+  /// No description provided for @onboardingLegalPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing, you agree to Blab\'s '**
+  String get onboardingLegalPrefix;
+
+  /// No description provided for @onboardingLegalTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get onboardingLegalTerms;
+
+  /// No description provided for @onboardingLegalAnd.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get onboardingLegalAnd;
+
+  /// No description provided for @onboardingLegalPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy.'**
+  String get onboardingLegalPrivacy;
+
+  /// No description provided for @confirmNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your name?'**
+  String get confirmNameTitle;
+
+  /// No description provided for @yourNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get yourNameHint;
+
+  /// No description provided for @nextAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get nextAction;
+
+  /// No description provided for @languageYouUnderstandTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language you understand'**
+  String get languageYouUnderstandTitle;
+
+  /// No description provided for @languageYouUnderstandSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blab will translate messages into this language. You can change it later'**
+  String get languageYouUnderstandSubtitle;
+
+  /// No description provided for @startChatting.
+  ///
+  /// In en, this message translates to:
+  /// **'Start chatting'**
+  String get startChatting;
+
+  /// No description provided for @resetLinkExpiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset link expired'**
+  String get resetLinkExpiredTitle;
+
+  /// No description provided for @resetLinkExpiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This reset link is no longer valid. Request a new link to choose a password.'**
+  String get resetLinkExpiredBody;
+
+  /// No description provided for @requestNewLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Request a new link'**
+  String get requestNewLink;
+
+  /// No description provided for @didntReceiveIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn’t receive it?'**
+  String get didntReceiveIt;
+
+  /// No description provided for @sendAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again'**
+  String get sendAgain;
+
+  /// No description provided for @emailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Email sent'**
+  String get emailSent;
+
+  /// No description provided for @sendAgainIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again in {seconds}s'**
+  String sendAgainIn(int seconds);
 
   /// No description provided for @sendLinkHelp.
   ///

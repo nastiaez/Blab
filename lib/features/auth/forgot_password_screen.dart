@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/theme.dart';
+import '../onboarding/onboarding_theme.dart';
+import '../onboarding/widgets/onboarding_form_top_bar.dart';
+import '../onboarding/widgets/onboarding_scaffold.dart';
+import '../onboarding/widgets/onboarding_text_field.dart';
+import '../onboarding/widgets/primary_action_button.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
-import '../../shared/widgets/picker_card.dart';
-import 'widgets/blab_text_field.dart';
 
 /// PRD US-004. Forgot-password page.
 ///
@@ -73,58 +75,54 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
-        backgroundColor: BlabColors.appBackground,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          color: BlabColors.textPrimary,
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/auth?mode=login'),
-        ),
-        title: Text(
-          context.l10n.forgotPassword,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: BlabColors.textPrimary,
+    return OnboardingScaffold(
+      body: Column(
+        children: [
+          OnboardingFormTopBar(
+            title: context.l10n.forgotPassword,
+            onBack: () => context.canPop()
+                ? context.pop()
+                : context.go('/auth/login/email'),
           ),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              BlabTextField(
-                controller: _email,
-                label: context.l10n.email,
-                hint: context.l10n.emailHint,
-                keyboardType: TextInputType.emailAddress,
-                errorText: _err,
-                autofocus: true,
-                textInputAction: TextInputAction.send,
-                enabled: !_busy,
-                onChanged: (v) {
-                  if (_err != null && _isValidEmail(v)) {
-                    setState(() => _err = null);
-                  }
-                },
+          Expanded(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                OnboardingTheme.horizontalGutter,
+                20,
+                OnboardingTheme.horizontalGutter,
+                24 + MediaQuery.viewInsetsOf(context).bottom,
               ),
-              const SizedBox(height: 24),
-              BrandButton(
-                label: context.l10n.emailResetLink,
-                onPressed: _send,
-                loading: _busy,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  OnboardingTextField(
+                    controller: _email,
+                    label: context.l10n.email,
+                    hintText: context.l10n.emailHint,
+                    keyboardType: TextInputType.emailAddress,
+                    errorText: _err,
+                    textInputAction: TextInputAction.send,
+                    autofillHints: const [AutofillHints.email],
+                    enabled: !_busy,
+                    onSubmitted: (_) => _send(),
+                    onChanged: (value) {
+                      if (_err != null && _isValidEmail(value)) {
+                        setState(() => _err = null);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  PrimaryActionButton(
+                    label: context.l10n.emailResetLink,
+                    onPressed: _send,
+                    loading: _busy,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

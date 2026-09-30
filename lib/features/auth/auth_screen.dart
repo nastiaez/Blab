@@ -16,7 +16,6 @@ import '../../shared/state/interface_language.dart';
 import '../../shared/util/open_url.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/picker_card.dart';
-import '../invite/invite_continuation.dart';
 import '../invite/widgets/invite_progress_bar.dart';
 import 'widgets/blab_text_field.dart';
 import 'widgets/language_picker_sheet.dart';
@@ -244,13 +243,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _completeAuthentication() async {
-    final continuation = InviteContinuation(
-      token: await loadPendingInvite() ?? widget.inviteToken,
-    );
     if (!mounted) return;
-    context.go(
-      continuation.canResume ? continuation.resolverLocation : '/chats',
-    );
+    context.go('/bootstrap');
   }
 
   void _switchMode() {

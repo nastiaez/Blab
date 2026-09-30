@@ -38,6 +38,10 @@ GoRouter _authRouter() {
       ),
       GoRoute(path: '/chats', builder: (context, state) => const Text('chats')),
       GoRoute(
+        path: '/bootstrap',
+        builder: (context, state) => const Text('bootstrap'),
+      ),
+      GoRoute(
         path: '/auth/forgot',
         builder: (context, state) => const Text('forgot'),
       ),
@@ -98,7 +102,7 @@ void main() {
 
   for (final signUp in [true, false]) {
     testWidgets(
-      'email auth resumes invite through resolver (signup: $signUp)',
+      'email auth hands invite continuation to resolver (signup: $signUp)',
       (tester) async {
         final router = _authRouter();
         addTearDown(router.dispose);
@@ -113,7 +117,7 @@ void main() {
         );
         await _submitEmailAuth(tester, signUp: signUp);
         expect(authCalls, 1);
-        expect(find.text('invite:invite-token'), findsOneWidget);
+        expect(find.text('bootstrap'), findsOneWidget);
       },
     );
   }
@@ -132,7 +136,7 @@ void main() {
       inviteClaim: (_) async => 'wrong',
     );
     await _submitEmailAuth(tester, signUp: true);
-    expect(find.text('invite:most-recent'), findsOneWidget);
+    expect(find.text('bootstrap'), findsOneWidget);
     expect(await loadPendingInvite(), 'most-recent');
   });
 
@@ -150,11 +154,14 @@ void main() {
         inviteClaim: (_) async => 'wrong',
       );
       await _submitEmailAuth(tester, signUp: false);
-      expect(find.text('invite:saved-before-restart'), findsOneWidget);
+      expect(find.text('bootstrap'), findsOneWidget);
+      expect(await loadPendingInvite(), 'saved-before-restart');
     },
   );
 
-  testWidgets('ordinary auth without invite still opens chats', (tester) async {
+  testWidgets('ordinary auth without invite still uses the resolver', (
+    tester,
+  ) async {
     final router = _authRouter()..go('/auth?mode=login');
     addTearDown(router.dispose);
     await _pumpRouter(
@@ -165,7 +172,7 @@ void main() {
       inviteClaim: (_) async => throw StateError('must not claim'),
     );
     await _submitEmailAuth(tester, signUp: false);
-    expect(find.text('chats'), findsOneWidget);
+    expect(find.text('bootstrap'), findsOneWidget);
   });
 
   testWidgets('signup explains and enforces the visible minimum length', (

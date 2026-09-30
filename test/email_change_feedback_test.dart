@@ -6,7 +6,7 @@ void main() {
     expect(confirmedEmailChangeDestination(signedIn: true), '/profile');
     expect(
       confirmedEmailChangeDestination(signedIn: false),
-      '/auth?mode=login',
+      '/onboarding/welcome',
     );
   });
 

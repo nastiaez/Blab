@@ -78,7 +78,7 @@ flutter_launcher_icons:
   image_path: "assets/icon/launcher_icon.png"
   remove_alpha_ios: true
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icon/launcher_icon.png"
+  adaptive_icon_foreground: "assets/icon/final/hedgehog_icon_foreground_adaptive.png"
   adaptive_icon_foreground_inset: 0
 
 flutter_native_splash:
@@ -106,8 +106,10 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/onboarding/
     - assets/blab-logo.svg
     - assets/blab-logo 2.svg
+    - assets/empty-chats-friends.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -34,7 +34,8 @@ lib/
     router.dart              // route definitions (one route per PRD flow)
     theme.dart               // colors, typography, radii — pulled from prototype.html
   features/
-    auth/                    // Flow 1 (US-001…US-005)
+    onboarding/              // Welcome, Learn, setup resolver, name, language
+    auth/                    // Signup, login, recovery, shared auth controls
     chats/                   // Flow 2 (US-006…US-012)
     chat/                    // Flow 3 + 4 chat surface (US-013…US-023, US-028)
     invite/                  // Flow 4 invite landing + join (US-024…US-027)
@@ -86,7 +87,7 @@ Service mapping:
 
 | Need | Supabase product |
 |------|------------------|
-| Email + password auth, Apple SSO, Google SSO, password reset | **Supabase Auth** (`supabase_flutter` package) |
+| Email + password auth, Google SSO, password reset | **Supabase Auth** (`supabase_flutter` package); Apple follows in the iOS phase |
 | Persistent storage (users, chats, messages, invite links) | **Supabase Postgres** with Row-Level Security (RLS) |
 | Real-time chat transport (US-015, US-016) | **Supabase Realtime** — Postgres change streams + Broadcast channels for typing/presence (if added later) |
 | Avatar uploads (US-011) | **Supabase Storage** |
@@ -107,11 +108,22 @@ Message translation and word metadata come from the authenticated translation se
 
 ## Design Fidelity
 
-The prototype (`prototype.html`) is the visual + interaction reference. Translation rules:
+The app has more than one historical prototype, so onboarding/auth uses an explicit source hierarchy:
+
+1. approved product behavior in `docs/superpowers/specs/2026-09-30-onboarding-auth-refresh-design.md`;
+2. the latest approved Paper artboard for default-state composition and copy;
+3. the current onboarding HTML/CSS/JavaScript for motion, focus, loading, and validation behavior;
+4. the existing Flutter app for retained authentication, callback, session, locale, profile, and invite behavior.
+
+Older prototype documents and removed photo/multi-language screens are historical only. Other app surfaces continue to use their own approved specs and incumbent Flutter implementation.
+
+Onboarding/auth uses a scoped native Flutter component family with cream `#FAF7F2`, action orange `#F88C5A`, ink `#1F3340`, 56 px controls, 16 px radii, and system typography. This does not silently retheme Chats or Profile.
+
+General translation rules:
 
 | Prototype | Flutter |
 |-----------|---------|
-| `#5B4FE8` purple | `ThemeData.colorScheme.primary` |
+| Approved surface color token | Shared Flutter token for that surface family |
 | 375×780 phone shell | Real device safe areas — drop fixed dimensions |
 | Inline `onclick` handlers | Widget callbacks, never global functions |
 | DOM `display:none` toggling | Widget tree rebuilds via state |
@@ -222,13 +234,15 @@ Not yet set up. When added:
 
 36. ✅ **Profile language-settings contract (2026-09-22, US-010 / FR-9 / FR-13):** Keep `profiles.known_languages` as the ordered understood-language set and `profiles.primary_known_language` as the user-facing Translation language. Profile presents understood languages as achievement-like chips without a primary star, followed by one explicit Translation language row. Separate full-screen editors share the same list treatment: understood languages are multi-select; Translation language is single-select across every supported language. Saving a Translation language not already understood appends it to `known_languages` in the same profile update. Saving understood languages without the old Translation language assigns the first remaining selection. Both editors require an actual change before Save, discard drafts on Back, and localize the approved explanations in every launch interface language. See `docs/superpowers/specs/2026-09-22-profile-language-settings-design.md`.
 
+37. ✅ **Versioned onboarding/auth refresh (2026-09-30, US-001…US-005B):** Retain Supabase email, Google, recovery, session, callback, locale, profile, and invite engines while replacing their presentation with the approved native Flutter flow. Store `onboarding_version` plus monotonic `intro | name | language | complete` state on each profile. Advance setup only through authenticated, self-only, idempotent RPCs that atomically confirm the saved display name and merge/set the Translation language without deleting known languages. One asynchronous resolver owns startup and post-auth destinations after session restoration, callback classification, profile state, and invite continuation are ready. A server-owned `onboarding_auth_refresh` flag selects the refreshed resolver or the retained legacy entry; clients can read but cannot mutate it, the production-safe default is off, and debug builds fail open only when the flag cannot be fetched. The scoped onboarding/auth visual family uses the approved Paper default states and HTML interaction/motion behavior; it does not globally retheme unrelated app surfaces. Apple remains deferred to iOS. See `docs/superpowers/specs/2026-09-30-onboarding-auth-refresh-design.md`.
+
 ## Open Decisions
 
 Still need a call. Surface them, don't silently choose.
 
 1. **Word lookup data source:** bundled JSON per language pair (proposed) vs static CDN vs lightweight API
 2. **Analytics:** none vs PostHog vs Supabase log queries only
-3. **iOS-native feel on Android:** all-purple + Cupertino-style across both platforms (proposed) vs Material on Android / Cupertino on iOS
+3. **Platform-wide native styling after onboarding:** keep the current shared Blab treatment across platforms vs introduce platform-specific Material/Cupertino differences. The onboarding/auth refresh itself is already resolved as one approved native Flutter treatment for Android first.
 
 PRD § Open Questions are product questions, distinct from these — keep them separate.
 

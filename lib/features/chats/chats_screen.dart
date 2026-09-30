@@ -23,6 +23,8 @@ class ChatsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatsAsync = ref.watch(chatListProvider);
+    final chats = chatsAsync.value;
+    final hasConfirmedEmptyList = preview || (chats != null && chats.isEmpty);
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
@@ -42,7 +44,6 @@ class ChatsScreen extends ConsumerWidget {
                 // Show last-known data even during transient errors
                 // (offline, token refresh, etc.) instead of collapsing
                 // to the skeleton.
-                final chats = chatsAsync.value;
                 if (chats == null) {
                   if (chatsAsync.isLoading) return const ChatListSkeleton();
                   return ChatsErrorState(
@@ -77,42 +78,45 @@ class ChatsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: Theme(
-        data: Theme.of(context).copyWith(
-          floatingActionButtonTheme: Theme.of(context).floatingActionButtonTheme
-              .copyWith(
-                sizeConstraints: const BoxConstraints.tightFor(
-                  width: 44,
-                  height: 44,
+      floatingActionButton: hasConfirmedEmptyList
+          ? null
+          : Theme(
+              data: Theme.of(context).copyWith(
+                floatingActionButtonTheme: Theme.of(context)
+                    .floatingActionButtonTheme
+                    .copyWith(
+                      sizeConstraints: const BoxConstraints.tightFor(
+                        width: 44,
+                        height: 44,
+                      ),
+                    ),
+              ),
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x21231208),
+                      offset: Offset(0, 2),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  onPressed: () => context.push('/chats/new'),
+                  shape: const CircleBorder(),
+                  backgroundColor: BlabColors.brand,
+                  foregroundColor: BlabColors.warmInk,
+                  elevation: 0,
+                  tooltip: context.l10n.newChat,
+                  child: const BlabIcon(
+                    name: 'plus - 20',
+                    color: BlabColors.warmInk,
+                    size: 20,
+                  ),
                 ),
               ),
-        ),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x21231208),
-                offset: Offset(0, 2),
-                blurRadius: 6,
-              ),
-            ],
-          ),
-          child: FloatingActionButton(
-            onPressed: () => context.push('/chats/new'),
-            shape: const CircleBorder(),
-            backgroundColor: BlabColors.brand,
-            foregroundColor: BlabColors.warmInk,
-            elevation: 0,
-            tooltip: context.l10n.newChat,
-            child: const BlabIcon(
-              name: 'plus - 20',
-              color: BlabColors.warmInk,
-              size: 20,
             ),
-          ),
-        ),
-      ),
       bottomNavigationBar: const _BottomTabs(active: _Tab.chats),
     );
   }
@@ -123,37 +127,63 @@ class ChatsEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              context.l10n.noChatsYet,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: BlabColors.textPrimary,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const verticalPadding = 24.0;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: verticalPadding,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight - (verticalPadding * 2),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/empty-chats-friends.png',
+                    width: 240,
+                    height: 172,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.none,
+                    excludeFromSemantics: true,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    context.l10n.noChatsYet,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: BlabColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.l10n.inviteFriendStart,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: BlabColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: 180,
+                    child: BrandButton(
+                      label: context.l10n.inviteFriend,
+                      onPressed: () => context.push('/chats/new'),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.inviteFriendStart,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: BlabColors.textMuted),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: 180,
-              child: BrandButton(
-                label: context.l10n.inviteFriend,
-                onPressed: () => context.push('/chats/new'),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

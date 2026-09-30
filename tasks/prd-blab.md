@@ -21,7 +21,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 | Flow | Screen | POV |
 |------|--------|-----|
-| Flow 1 | Auth | Any new user |
+| Flow 1 | Onboarding + Auth | New and returning users |
 | Flow 2 | Main App — Chats + Profile | Nastia (existing user) |
 | Flow 3 | Chat view | Nastia (learning Tamil from Aswin) |
 | Flow 4 | Invite + Join + Chat | Aswin (new user, learning Ukrainian) |
@@ -34,39 +34,43 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
-### US-001: Sign up with email
-**Description:** As a new user, I want to create an account with my name, email, and password so I can access Blab.
+### US-001: Refreshed onboarding introduction
+**Description:** As a new or returning user, I want to understand why Blab is exciting before I am asked to authenticate or complete profile setup.
 
 **Acceptance Criteria:**
-- [ ] Screen shows "Sign up" tab active by default
-- [ ] Fields: name, email, password
-- [ ] Name field hidden when "Log in" tab active
-- [ ] Email validated on blur — shows inline error "Enter a valid email address" if invalid
-- [ ] Password shows strength bar below field (Weak / Fair / Strong) during signup
-- [ ] Password field has show/hide eye toggle
-- [ ] Empty field on submit shows inline error per field
-- [ ] CTA: "Create account →" (signup) / "Log in →" (login)
-- [ ] Successful submit navigates to main app (Phone 2)
+- [ ] Every signed-out entry begins with Welcome, then Learn in context, including after logout or reinstall
+- [ ] Existing signed-in accounts below the current onboarding version see the introduction once without losing their session
+- [ ] Welcome uses the approved Paper composition and copy; Learn reproduces the approved HTML dialogue animation and vocabulary popup
+- [ ] Continue never waits for the animation cycle and routes through the central onboarding resolver
+- [ ] Reduced motion shows the final corrected dialogue and open popup without looping motion
+- [ ] Completing the refreshed introduction is persisted per account after authentication; a failed acknowledgement safely replays it
 
 ---
 
-### US-002: Log in with email
-**Description:** As a returning user, I want to log in with my email and password.
+### US-002: Sign up and log in with email
+**Description:** As a user, I want clear, separate email signup and login paths that retain Blab's working authentication behavior.
 
 **Acceptance Criteria:**
-- [ ] Tapping "Log in" tab hides name field, shows "or log in with email" divider
-- [ ] "Forgot password?" link appears below CTA in login mode
-- [ ] Successful login navigates to main app
+- [ ] Sign up method and Log in method are separate screens with reciprocal navigation
+- [ ] Email signup asks for email and password only; name is confirmed after account creation
+- [ ] Email login asks for email and password and exposes Forgot password
+- [ ] Email, password, strength, existing-account, incorrect-credential, loading, offline, and retry states remain inline and retain recoverable input
+- [ ] Email signup does not require email confirmation
+- [ ] Every success routes through the central resolver, never directly to Chats
 
 ---
 
-### US-003: SSO — Apple / Google
-**Description:** As a user, I want to sign up or log in with Apple or Google to skip the form.
+### US-003: Google authentication
+**Description:** As a user, I want to authenticate with Google and then explicitly confirm my Blab profile setup.
 
 **Acceptance Criteria:**
-- [ ] Two SSO buttons above email form: "Continue with Apple", "Continue with Google"
-- [ ] Either button skips all fields and goes directly to main app
-- [ ] Apple + Google logos render correctly
+- [ ] Sign up method and Log in method both offer native Google authentication
+- [ ] Cancellation is silent; provider, configuration, exchange, and offline failures are inline and retryable
+- [ ] A new Google account receives the provider display name as an editable proposal on Confirm name
+- [ ] An existing Blab display name always wins over current Google metadata
+- [ ] The returned account/profile state determines the next route; the label of the button does not assume whether the account is new
+- [ ] Duplicate actions are disabled while Google authentication is active
+- [ ] Apple sign-in remains deferred to the iOS phase
 
 ---
 
@@ -74,11 +78,13 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user who forgot their password, I want to request a reset link via email.
 
 **Acceptance Criteria:**
-- [ ] "Forgot password?" link visible only in login mode
-- [ ] Tapping opens Forgot Password screen with email field (pre-filled)
-- [ ] Tapping "Send reset link →" navigates to confirmation screen
-- [ ] Confirmation shows 📬 icon + "Check your email" + email address
-- [ ] "Back to log in" link returns to login tab
+- [ ] Forgot password opens from email login with a valid entered email pre-filled and editable
+- [ ] Accepted requests show Check your email without revealing whether an account exists
+- [ ] Check your email supports resend cooldown and Change email without losing the address
+- [ ] A valid recovery callback opens Set a new password
+- [ ] Weak, mismatched, offline, update-failure, and expired-session states remain inline
+- [ ] Expired, malformed, already-used, or unexchangeable links open Reset link expired with Request a new link
+- [ ] Successful password update clears recovery-only state and returns to email login with a quiet acknowledgement
 
 ---
 
@@ -86,13 +92,34 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to set my interface language before or during sign up.
 
 **Acceptance Criteria:**
-- [ ] Globe icon 🌐 with language code (e.g. "EN") in top-right of auth screen
-- [ ] Tapping opens a bottom sheet containing English, Ukrainian, German, and Spanish
+- [ ] Welcome and Learn expose a language control containing English, Ukrainian, German, and Spanish
+- [ ] Selecting a language updates all localizable onboarding/auth copy immediately
 - [ ] English is the first-launch default and fallback; selecting another language updates all localized app chrome
 - [ ] Same sheet accessible from Profile → Interface language
 - [ ] The pre-auth choice persists locally; a signed-in choice persists to that account without leaking across logout/account switches
+- [ ] An explicitly changed guest language is synchronized after both email and Google authentication; an unmarked guest default never overwrites an existing account preference
 - [ ] Switching the interface language immediately re-renders interface copy only; sentence translations, word descriptions, correction explanations, and audio remain unchanged
 - [ ] A successful signed-in change returns to Profile and shows a target-locale `Switched to [language] · Undo` Snackbar for 4 seconds, with no close icon; navigation dismisses it, while an unrelated tap does not
+
+### US-005A: Confirm display name
+**Description:** As a new or migrated user, I want to confirm the name other people will see before entering Blab.
+
+**Acceptance Criteria:**
+- [ ] New email accounts begin blank; new Google accounts propose the provider name; existing accounts prefill the saved Blab name
+- [ ] The value remains editable and requires an explicit Next action even when prefilled
+- [ ] Name is trimmed, limited to 1–50 characters, rejects control characters, and keeps input through recoverable failures
+- [ ] Saving the name and advancing onboarding is one atomic, idempotent, self-only server operation
+
+### US-005B: Choose translation language
+**Description:** As a user, I want to choose the one language Blab translates messages into before entering Chats.
+
+**Acceptance Criteria:**
+- [ ] The screen offers Dutch, English, French, German, Hindi, Italian, Portuguese, Spanish, Tamil, Turkish, and Ukrainian in that order
+- [ ] Exactly one language can be selected; Start chatting is disabled until a selection exists
+- [ ] A legacy client English fallback is not treated as an explicit choice
+- [ ] Existing known languages are preserved; the selected language is added when missing and becomes the primary translation language
+- [ ] Saving language and completing the current onboarding version is atomic, idempotent, and self-only
+- [ ] Interrupted setup resumes at Confirm name or Language you understand without bypassing pending invite continuation
 
 ---
 
@@ -107,7 +134,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] "Chats" tab active by default
 - [ ] Each chat item shows: avatar (initial), name, last message preview, timestamp, unread badge
 - [ ] Tapping a chat opens the chat view (Phone 3)
-- [ ] "+" button in top-right navigates to Invite a friend
+- [ ] "+" button navigates to Invite a friend once at least one chat exists; the empty state hides it to avoid duplicating its primary action
 - [ ] A newly claimed connection appears in the same priority position as an unread message with preview `Ready to chat · Say hi`; it remains unread until that participant chooses a practice language
 
 ---
@@ -116,8 +143,9 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a new user with no chats, I want to see a clear prompt to start one.
 
 **Acceptance Criteria:**
-- [ ] If no chats, show empty state: 💬 icon + "No chats yet" + subtitle + "Invite someone" button
-- [ ] Button navigates to Invite a friend
+- [ ] If no chats, show the approved two-friends pixel illustration + "Start your first chat" + "Practice a language through real conversations." + "Invite a friend" button
+- [ ] The empty state has no duplicate "+" action; the button navigates to Invite a friend
+- [ ] A successfully claimed invite bypasses this state and opens the resulting chat directly
 
 ---
 
@@ -715,8 +743,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ## Functional Requirements
 
-- FR-1: Auth supports sign up, login, SSO (Apple/Google), forgot password — all as tab-toggle on one screen
-- FR-2: Password field has show/hide toggle, strength meter visible during sign up only
+- FR-1: Signed-out entry is Welcome → Learn in context → separate Sign up or Log in method screens. Email, Google, recovery, callback, session, and invite behavior are retained under a new central resolver; no auth success handler navigates directly to Chats
+- FR-2: The refreshed account setup is versioned and server-persisted. Every pre-release account completes Welcome/Learn, explicitly confirms its saved name, and confirms one Translation language once for this version without losing its valid session, existing name, interface locale, or known languages
+- FR-2A: Email signup collects email/password only, then Confirm name. Google proposes a provider name only for a new account; an existing saved Blab name has priority. Password controls use secure entry, visibility, Android autofill, inline strength/validation, and real system keyboard behavior
+- FR-2B: One resolver waits for session restoration, callback classification, account onboarding state, and pending invite state before choosing a destination. Recovery and email-change callbacks resolve before ordinary onboarding; required name/language setup resolves before invite continuation or Chats
+- FR-2C: Learn in context reproduces the approved approximately 7.05-second HTML dialogue cycle, disposes safely, restarts from the beginning after backgrounding, never blocks Continue, and renders a static complete state when reduced motion is enabled
 - FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth. A successful signed-in change uses target-locale feedback with one Undo action, no close icon, a 4-second normal timeout, and navigation dismissal
 - FR-4: Invite creation never asks for a language or contacts access. A link is valid until one successful claim, with no time expiry; each exposed link is unique and a fresh link is prepared after Copy or a selected share target
 - FR-5: `Send invite` opens the device native share sheet with the standard Copy affordance and return behaviour; no custom share sheet or success page is used

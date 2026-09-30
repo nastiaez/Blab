@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:blab/features/invite/invite_continuation.dart';
 import 'package:blab/features/invite/invite_resolver_screen.dart';
+import 'package:blab/features/onboarding/state/onboarding_destination.dart';
+import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/state/auth_state.dart';
@@ -28,6 +30,17 @@ class _Invites extends ChatService {
   Future<InviteMetadata?> getInvite(String token) => lookup(token);
 }
 
+class _UserIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => 'bob';
+
+  void set(String? value) => state = value;
+}
+
+final _userIdProvider = NotifierProvider<_UserIdNotifier, String?>(
+  _UserIdNotifier.new,
+);
+
 InviteMetadata _metadata(
   String token, {
   String status = 'valid',
@@ -50,6 +63,10 @@ Future<GoRouter> _mount(
   InviteClaimAction? claim,
   Stream<bool>? online,
   Locale locale = const Locale('en'),
+  OnboardingDestination onboardingDestination =
+      OnboardingDestination.pendingInvite,
+  Future<OnboardingDestination>? onboardingDestinationFuture,
+  bool mutableUser = false,
 }) async {
   final router = GoRouter(
     initialLocation: '/i/first',
@@ -71,6 +88,10 @@ Future<GoRouter> _mount(
       ),
       GoRoute(path: '/chats', builder: (_, _) => const Text('chats')),
       GoRoute(
+        path: '/bootstrap',
+        builder: (_, _) => const Text('onboarding-bootstrap'),
+      ),
+      GoRoute(
         path: '/chat/:id',
         builder: (_, state) => Text('chat:${state.pathParameters['id']}'),
       ),
@@ -81,10 +102,20 @@ Future<GoRouter> _mount(
     ProviderScope(
       overrides: [
         chatServiceProvider.overrideWithValue(_Invites(lookup)),
-        currentUserIdProvider.overrideWithValue(userId),
+        if (mutableUser)
+          currentUserIdProvider.overrideWith(
+            (ref) => ref.watch(_userIdProvider),
+          )
+        else
+          currentUserIdProvider.overrideWithValue(userId),
         onlineProvider.overrideWith((_) => online ?? Stream.value(true)),
         inviteClaimActionProvider.overrideWithValue(
           claim ?? (_) async => 'new-chat',
+        ),
+        onboardingDestinationProvider.overrideWith(
+          (_) =>
+              onboardingDestinationFuture ??
+              Future.value(onboardingDestination),
         ),
       ],
       child: MaterialApp.router(
@@ -190,6 +221,84 @@ void main() {
       expect(await loadPendingInvite(), 'older-valid');
     },
   );
+
+  testWidgets('signed-in invite waits for required onboarding before claim', (
+    tester,
+  ) async {
+    var claimCalls = 0;
+    await _mount(
+      tester,
+      userId: 'bob',
+      lookup: (token) async => _metadata(token),
+      onboardingDestination: OnboardingDestination.confirmName,
+      claim: (_) async {
+        claimCalls++;
+        return 'must-not-open';
+      },
+    );
+
+    expect(find.text('onboarding-bootstrap'), findsOneWidget);
+    expect(claimCalls, 0);
+    expect(await loadPendingInvite(), 'first');
+  });
+
+  testWidgets('account switch during onboarding resolution never claims', (
+    tester,
+  ) async {
+    final destination = Completer<OnboardingDestination>();
+    var claimCalls = 0;
+    await _mount(
+      tester,
+      lookup: (token) async => _metadata(token),
+      mutableUser: true,
+      onboardingDestinationFuture: destination.future,
+      claim: (_) async {
+        claimCalls++;
+        return 'must-not-open';
+      },
+    );
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(InviteResolverScreen)),
+    );
+    container.read(_userIdProvider.notifier).set('alice');
+    destination.complete(OnboardingDestination.pendingInvite);
+    await tester.pumpAndSettle();
+
+    expect(find.text('onboarding-bootstrap'), findsOneWidget);
+    expect(claimCalls, 0);
+    expect(await loadPendingInvite(), 'first');
+  });
+
+  testWidgets(
+    'used invite waits for required onboarding before reopening chat',
+    (tester) async {
+      await _mount(
+        tester,
+        userId: 'bob',
+        lookup: (token) async =>
+            _metadata(token, status: 'used', usedBy: 'bob'),
+        onboardingDestination: OnboardingDestination.confirmName,
+      );
+
+      expect(find.text('onboarding-bootstrap'), findsOneWidget);
+      expect(find.text('chat:existing'), findsNothing);
+      expect(await loadPendingInvite(), 'first');
+    },
+  );
+
+  testWidgets('own invite cannot bypass required onboarding', (tester) async {
+    await _mount(
+      tester,
+      userId: 'alice',
+      lookup: (token) async => _metadata(token),
+      onboardingDestination: OnboardingDestination.language,
+      claim: (_) async => throw StateError('must not claim'),
+    );
+
+    expect(find.text('onboarding-bootstrap'), findsOneWidget);
+    expect(find.text('share:first'), findsNothing);
+  });
 
   testWidgets(
     'signed-in transient claim persists and retries without stuck loading',
@@ -336,6 +445,7 @@ void main() {
       tester,
       userId: 'alice',
       lookup: (token) async => _metadata(token),
+      onboardingDestination: OnboardingDestination.chats,
       claim: (_) async => throw StateError('must not claim'),
     );
     expect(find.text('share:first'), findsOneWidget);

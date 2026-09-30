@@ -30,7 +30,11 @@ class SupabaseAuthService {
     return _auth.signUp(
       email: email.trim(),
       password: password,
-      data: {'name': name.trim(), 'interface_language': interfaceLanguage},
+      data: {
+        'name': name.trim(),
+        'interface_language': interfaceLanguage,
+        if (name.trim().isEmpty) 'onboarding_name_blank': true,
+      },
     );
   }
 

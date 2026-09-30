@@ -27,16 +27,16 @@ void main() {
 
   testWidgets('English is the app-localization default', (tester) async {
     await tester.pumpWidget(_localizedText());
-    expect(find.text('No chats yet'), findsOneWidget);
+    expect(find.text('Start your first chat'), findsOneWidget);
   });
 
   testWidgets('German, Spanish, and Ukrainian chrome is generated', (
     tester,
   ) async {
     const expectations = {
-      'de': 'Noch keine Chats',
-      'es': 'Aún no hay chats',
-      'uk': 'Чатів ще немає',
+      'de': 'Starte deinen ersten Chat',
+      'es': 'Empieza tu primer chat',
+      'uk': 'Почни свій перший чат',
     };
 
     for (final entry in expectations.entries) {
@@ -103,6 +103,11 @@ void main() {
     expect(ukrainian.enterValidEmail, 'Введи дійсну адресу електронної пошти');
     expect(ukrainian.checkYourEmail, 'Перевір пошту');
     expect(
+      ukrainian.resetLinkExpiredBody,
+      'Це посилання більше не дійсне. Запроси нове, щоб вибрати пароль.',
+    );
+    expect(ukrainian.didntReceiveIt, 'Не бачиш листа?');
+    expect(
       ukrainian.resetLinkSent('bob@blab.test'),
       'Ми надіслали посилання для скидання пароля на адресу\u00a0bob@blab.test',
     );
@@ -154,7 +159,11 @@ void main() {
   test('Ukrainian chat and invite copy uses informal singular voice', () {
     final ukrainian = lookupAppLocalizations(const Locale('uk'));
     expect(ukrainian.chats, 'Чати');
-    expect(ukrainian.inviteFriendStart, 'Запроси друга й почни спілкуватися.');
+    expect(
+      ukrainian.onboardingWelcomeTitle,
+      'Спілкуйся з друзями та практикуй мову',
+    );
+    expect(ukrainian.inviteFriendStart, 'Практикуй мову в реальних розмовах.');
     expect(ukrainian.newConnectionSayHi, 'Новий контакт · привітайся');
     expect(
       ukrainian.couldNotCreateInvite,
