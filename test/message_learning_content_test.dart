@@ -375,6 +375,10 @@ void main() {
     expect(find.textContaining('Correction:'), findsNothing);
     expect(find.textContaining('Possible correction:'), findsNothing);
     expect(find.text('was machen du'), findsNothing);
+
+    await tester.tap(find.text('machen'));
+    await tester.pumpAndSettle();
+    expect(find.text('The verb must agree with du.'), findsNothing);
   });
 
   testWidgets('recipient sees clean correction without author coaching marks', (
@@ -408,7 +412,7 @@ void main() {
   });
 
   testWidgets(
-    'matching-language recipient sees correction marks and own explanation',
+    'matching-language recipient sees correction marks without explanation',
     (tester) async {
       await tester.pumpWidget(
         host(
@@ -435,7 +439,7 @@ void main() {
       expect(find.text('Use are with you.'), findsNothing);
       await tester.tap(find.text('is'));
       await tester.pumpAndSettle();
-      expect(find.text('Use are with you.'), findsOneWidget);
+      expect(find.text('Use are with you.'), findsNothing);
       expect(find.text('Що ти робиш?'), findsOneWidget);
     },
   );

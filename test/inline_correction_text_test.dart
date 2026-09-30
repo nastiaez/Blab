@@ -28,7 +28,6 @@ void main() {
   Widget harness({
     required String originalText,
     required String correctedText,
-    String? explanation = explanationText,
     List<MessageToken> correctedTokens = const [],
   }) {
     return ProviderScope(
@@ -39,7 +38,6 @@ void main() {
             originalText: originalText,
             correctedText: correctedText,
             learningLanguageCode: 'en',
-            explanation: explanation,
             popupTopInset: 0,
             correctedTokens: correctedTokens,
             style: const TextStyle(fontSize: 16, color: Colors.black),
@@ -94,7 +92,7 @@ void main() {
     expect(correctedSpan.textSpan?.style?.fontWeight, FontWeight.w600);
   });
 
-  testWidgets('tapping struck-through text opens the explanation popup', (
+  testWidgets('tapping struck-through text does not open an explanation', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -108,27 +106,10 @@ void main() {
     await tester.tap(find.text('goed'));
     await tester.pumpAndSettle();
 
-    expect(find.text(explanationText), findsOneWidget);
-    // Explanation popup, not the word popup — 'went' must still only be
-    // the one inline span, not also echoed as a popup headline.
-    expect(find.text('went'), findsOneWidget);
-  });
-
-  testWidgets('tapping struck-through text with no explanation does nothing', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      harness(
-        originalText: 'I goed',
-        correctedText: 'I went',
-        explanation: null,
-      ),
-    );
-
-    await tester.tap(find.text('goed'));
-    await tester.pumpAndSettle();
-
     expect(find.text(explanationText), findsNothing);
+    // The corrected word is still only the inline span. Struck text has no
+    // interaction of its own.
+    expect(find.text('went'), findsOneWidget);
   });
 
   testWidgets('every word in a merged corrected run gets its own tap target '
@@ -181,17 +162,14 @@ void main() {
       harness(originalText: 'a b c d', correctedText: 'x b y d'),
     );
 
-    // First struck segment.
+    // Struck segments have no interaction.
     await tester.tap(find.text('a'));
     await tester.pumpAndSettle();
-    expect(find.text(explanationText), findsOneWidget);
-    await dismiss(tester);
+    expect(find.text(explanationText), findsNothing);
 
-    // Second, independent struck segment.
     await tester.tap(find.text('c'));
     await tester.pumpAndSettle();
-    expect(find.text(explanationText), findsOneWidget);
-    await dismiss(tester);
+    expect(find.text(explanationText), findsNothing);
 
     // First word of the corrected run ' x b '.
     await tester.tap(find.text('x'));

@@ -167,7 +167,7 @@ Use the supplied assets without redrawing or substituting platform icons:
 
 - New chats still default to Practice mode.
 - Mode choice remains private per person and per chat.
-- Switching modes keeps the existing behavior: close word/explanation popups and reaction UI, and collapse any expanded learning content.
+- Switching modes keeps the existing behavior: close word popups and reaction UI, and collapse any expanded learning content.
 - Normal mode and Practice mode continue to follow the existing message-display rules; this refresh does not change message content.
 - Word taps still open the word-description popup and must not open the message menu.
 - Existing simple tap-padding/long-press message actions remain unchanged until the separate long-press spec is approved.
