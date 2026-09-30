@@ -10,6 +10,7 @@ import 'package:blab/shared/widgets/blab_icon.dart';
 import 'package:blab/shared/widgets/offline_banner.dart';
 import 'package:blab/shared/widgets/picker_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -110,30 +111,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Chats New Chat action meets Android touch-target minimum', (
+  testWidgets('empty Chats omits the duplicate New Chat action', (
     tester,
   ) async {
     await _pumpChats(tester, locale: const Locale('en'));
 
-    final rect = tester.getRect(find.byType(FloatingActionButton));
-    expect(rect.width, greaterThanOrEqualTo(48));
-    expect(rect.height, greaterThanOrEqualTo(48));
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 
-  testWidgets('transparent recovery AppBars request dark status content', (
-    tester,
-  ) async {
+  testWidgets('recovery screens request dark status content', (tester) async {
     for (final screen in <Widget>[
       const ResetPasswordScreen(),
       const ForgotPasswordSentScreen(email: 'bob@blab.test'),
     ]) {
       await _pumpLocalized(tester, home: screen);
-      final appBar = tester.widget<AppBar>(find.byType(AppBar));
-      expect(
-        appBar.systemOverlayStyle?.statusBarIconBrightness,
-        Brightness.dark,
+      final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+        find.byType(AnnotatedRegion<SystemUiOverlayStyle>).first,
       );
-      expect(appBar.systemOverlayStyle?.statusBarBrightness, Brightness.light);
+      expect(region.value.statusBarIconBrightness, Brightness.dark);
+      expect(region.value.statusBarColor, const Color(0xFFFAF7F2));
     }
   });
 

@@ -476,10 +476,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newChat => 'Nuevo chat';
 
   @override
-  String get noChatsYet => 'Aún no hay chats';
+  String get noChatsYet => 'Empieza tu primer chat';
 
   @override
-  String get inviteFriendStart => 'Invita a un amigo y empieza a chatear.';
+  String get inviteFriendStart =>
+      'Practica un idioma con conversaciones reales.';
 
   @override
   String get inviteFriend => 'Invitar a un amigo';
@@ -716,6 +717,98 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get continueAction => 'Continuar';
+
+  @override
+  String get onboardingWelcomeTitle =>
+      'Convierte los chats con amigos en práctica de idiomas';
+
+  @override
+  String get onboardingLearnTitle =>
+      'Aprende palabras en contexto. Construye frases naturales';
+
+  @override
+  String get onboardingLearningStatus => 'Estás aprendiendo inglés';
+
+  @override
+  String get onboardingLearningConversationSemantics =>
+      'Conversación de práctica en inglés con corrección y traducción';
+
+  @override
+  String get signupMethodTitle => 'Regístrate y\nempieza a aprender';
+
+  @override
+  String get loginMethodTitle => 'Inicia sesión en Blab';
+
+  @override
+  String get continueWithEmail => 'Continuar con correo electrónico';
+
+  @override
+  String get signUpWithEmail => 'Registrarte con correo electrónico';
+
+  @override
+  String get createAccount => 'Crear cuenta';
+
+  @override
+  String get dontHaveAccountSignUp => '¿No tienes cuenta? Regístrate';
+
+  @override
+  String get onboardingLegal =>
+      'Al continuar, aceptas los Términos del servicio y la Política de privacidad de Blab.';
+
+  @override
+  String get onboardingLegalPrefix => 'Al continuar, aceptas los ';
+
+  @override
+  String get onboardingLegalTerms => 'Términos del servicio';
+
+  @override
+  String get onboardingLegalAnd => ' y la ';
+
+  @override
+  String get onboardingLegalPrivacy => 'Política de privacidad de Blab.';
+
+  @override
+  String get confirmNameTitle => '¿Cómo te llamas?';
+
+  @override
+  String get yourNameHint => 'Tu nombre';
+
+  @override
+  String get nextAction => 'Siguiente';
+
+  @override
+  String get languageYouUnderstandTitle => 'Idioma que entiendes';
+
+  @override
+  String get languageYouUnderstandSubtitle =>
+      'Blab traducirá los mensajes a este idioma. Puedes cambiarlo más adelante';
+
+  @override
+  String get startChatting => 'Empezar a chatear';
+
+  @override
+  String get resetLinkExpiredTitle => 'El enlace ha caducado';
+
+  @override
+  String get resetLinkExpiredBody =>
+      'Este enlace ya no es válido. Solicita uno nuevo para elegir una contraseña.';
+
+  @override
+  String get requestNewLink => 'Solicitar otro enlace';
+
+  @override
+  String get didntReceiveIt => '¿No lo recibiste?';
+
+  @override
+  String get sendAgain => 'Enviar de nuevo';
+
+  @override
+  String get emailSent => 'Email enviado';
+
+  @override
+  String sendAgainIn(int seconds) {
+    return 'Enviar de nuevo en ${seconds}s';
+  }
 
   @override
   String get sendLinkHelp => 'Envía el enlace para empezar a chatear.';

@@ -8,6 +8,12 @@ const String kCachedAttachmentKeyPrefix = 'cached_attachment:';
 const String kCachedAttachmentPreviewKeyPrefix = 'cached_attachment_preview:';
 const String kCachedAttachmentIndexKeyPrefix = 'cached_attachment_index:';
 const String kGuestInterfaceLanguageKey = 'interface_language:guest';
+const String kGuestInterfaceLanguageExplicitKey =
+    'interface_language:guest_explicit';
+const String kPendingInterfaceLanguageSyncKey =
+    'interface_language:pending_sync';
+const String kPendingInterfaceLanguageSyncUserIdKey =
+    'interface_language:pending_sync_user_id';
 const String kAccountInterfaceLanguageKeyPrefix = 'interface_language:account:';
 const String kNotificationPermissionRequestedKey =
     'notifications_permission_requested';

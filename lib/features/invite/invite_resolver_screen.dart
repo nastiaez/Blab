@@ -7,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
+import '../onboarding/state/onboarding_destination.dart';
+import '../onboarding/state/onboarding_destination_state.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/connectivity_state.dart';
@@ -85,6 +87,38 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
     }
   }
 
+  Future<OnboardingDestination?> _destinationForSignedInUser({
+    required String userId,
+    required int generation,
+  }) async {
+    ref.invalidate(onboardingDestinationProvider);
+    final destination = await ref.read(onboardingDestinationProvider.future);
+    if (!mounted || generation != _generation) return null;
+    if (ref.read(currentUserIdProvider) != userId) {
+      _finished = true;
+      context.go('/bootstrap');
+      return null;
+    }
+    return destination;
+  }
+
+  Future<bool> _canContinueForSignedInUser({
+    required String userId,
+    required int generation,
+  }) async {
+    final destination = await _destinationForSignedInUser(
+      userId: userId,
+      generation: generation,
+    );
+    if (!mounted || destination == null) return false;
+    if (destination != OnboardingDestination.pendingInvite) {
+      _finished = true;
+      context.go('/bootstrap');
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _resolve() async {
     if (_busy || _finished) return;
     if (ref.read(onlineProvider).value == false) return;
@@ -112,8 +146,31 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
       }
       final userId = ref.read(currentUserIdProvider);
       if (userId != null &&
+          userId == metadata.inviterUserId &&
+          metadata.status == 'valid') {
+        final destination = await _destinationForSignedInUser(
+          userId: userId,
+          generation: generation,
+        );
+        if (!mounted || destination == null) return;
+        if (destination != OnboardingDestination.chats) {
+          _finished = true;
+          context.go('/bootstrap');
+          return;
+        }
+      }
+      if (userId != null &&
           (userId == metadata.inviterUserId ||
               (metadata.status == 'used' && metadata.usedByUserId == userId))) {
+        if (metadata.status == 'used') {
+          await savePendingInvite(token);
+          if (!await _canContinueForSignedInUser(
+            userId: userId,
+            generation: generation,
+          )) {
+            return;
+          }
+        }
         await clearPendingInvite(matchingToken: token);
         if (metadata.status == 'valid') {
           await retireInstallInvite();
@@ -157,6 +214,12 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
       if (userId == null) {
         _finished = true;
         context.go(InviteContinuation(token: token).authLocation());
+        return;
+      }
+      if (!await _canContinueForSignedInUser(
+        userId: userId,
+        generation: generation,
+      )) {
         return;
       }
       if (ref.read(onlineProvider).value == false) return;

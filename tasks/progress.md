@@ -161,6 +161,25 @@
   - [ ] Apple SSO — deferred to Phase 3 (iOS); requires Apple Developer membership.
   - [x] Delete-account edge function + sheet wiring (deployed, verified end-to-end on Samsung S931B with a Google-auth account).
 
+### Step 2.1b — Onboarding and authentication refresh `[ ]` ← in progress
+- **Design:** `docs/superpowers/specs/2026-09-30-onboarding-auth-refresh-design.md`.
+- **Plan:** `docs/superpowers/plans/2026-09-30-onboarding-auth-refresh.md`.
+- **Scope:** US-001…US-005B, US-034. Replace the combined auth presentation with Welcome, Learn in context, separate signup/login methods and email forms, recovery states, Confirm name, and Language you understand while retaining the working auth engine.
+- **Done when:**
+  - New, returning, migrated, interrupted, recovery, invite, logout/reinstall, revoked-session, and account-switch journeys resolve without setup bypass or forced logout
+  - Versioned setup state and self-only atomic operations preserve saved names, interface locale, sessions, and existing known languages
+  - All canonical screens and failure states fit the approved Paper/HTML references at supported sizes, 200% text, TalkBack, keyboard/autofill, and EN/DE/ES/UK localization
+  - Learn motion and reduced motion match the approved behavior
+  - Automated gates and the exact Android build pass; the owner accepts the complete journey before the legacy fallback is removed
+- **Progress (2026-09-30):**
+  - [x] Versioned, resumable onboarding and the remote rollout fallback are implemented
+  - [x] Welcome, Learn, email/Google method screens, recovery, Confirm name, and Language are implemented and localized
+  - [x] Invite continuation waits for required setup and remains account-scoped across resume/reconnect and account switches
+  - [x] Owner UI review changes are applied: centered Welcome title, plain account-switch copy, leading password recovery, consistent field focus, and Ukrainian `Спілкуйся з друзями та практикуй мову`
+  - [x] Accessibility, localization, interruption/offline, motion, and Android screenshot checks pass
+  - [x] Publication gate passes: 787 Flutter checks, 15 environment-only skips, 35 database checks, clean static analysis/formatting/diff checks, and a debug Android build
+  - [ ] Configured-device Google auth, real two-account invite continuation, final overlay review, and owner acceptance remain
+
 ### Step 2.2 — Chat persistence + real-time transport  `[x]`
 - **Scope:** US-015, US-016, US-026. Plaintext bodies for now — encryption moves to Step 2.6 (hard gate before any external tester).
 - **Done when:**
@@ -613,6 +632,10 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-09-30 — Completed the publication gate for the isolated onboarding/auth and first-time empty Chats branch: 787 Flutter checks passed with 15 environment-only skips, 35 database checks passed, static analysis/formatting/diff checks were clean, and the debug Android APK built successfully.
+- 2026-09-30 — Isolated the owner-approved onboarding/auth refresh and first-time empty Chats activation from unrelated local icon and shared-learning work for publication. The empty Chats shell keeps the incumbent Blab logo, tabs, and warm cream canvas while replacing only the central illustration, copy, and Invite a friend action.
+- 2026-09-30 — Applied the owner-requested onboarding consistency pass and selected Ukrainian Welcome copy. The refreshed flow retains the production-safe legacy fallback while configured-device Google auth, the real two-account invite journey, final overlay review, and complete owner acceptance remain open.
+- 2026-09-23 — Updated the zero-chat activation state with the approved two-friends illustration, value-focused copy, one Invite a friend action, and no duplicate floating plus while the list is confirmed empty.
 - 2026-09-16 — Expanded B07A after owner feedback to audit every chat-owned error and conditional state. Catalog-backed history, send/retry, translation/checking, edit/report, block/unblock, gallery-permission, and no-photo messages exist in EN/DE/ES/UK, but three failure branches still hardcode English: photo-picker launch plus grammatical-form and reading-script saves. Ukrainian B07 send/delete/report/edit/language-save/block/photo-permission copy still uses formal plural. Mode tips, empty-chat copy, camera/caption labels, and accessibility labels are also hardcoded English. No repair made before owner confirmation of the expanded scope.
 - 2026-09-16 — Captured B07A on one stable real-client fixture in EN/DE/ES/UK. Header mode and date labels localize, but the unread divider and private language-history markers remain English; language names remain English in the composer and menu; `Translation preferences` remains hardcoded; the learning-language sheet heading, helper, and all language names remain English outside English. Ukrainian guidance and several source-audited B07 errors still use formal plural. No repair made before owner review.
 - 2026-09-16 — Owner approved B06 Chats and invite localization. Relative time and the new-connection preview follow Interface Language; invite creation, loading, failure, retry, native share/email copy, recipient resolution, and fallback states use the EN/DE/ES/UK catalog. Ukrainian keeps `Чати` and uses informal singular copy. The full Flutter suite passes 589 checks with 15 environment-gated skips, static analysis is clean, and the installed Android APK matches the verified build. Final DE/ES/UK review screenshots fit without clipping.

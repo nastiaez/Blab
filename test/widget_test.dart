@@ -6,17 +6,32 @@ import 'package:blab/app/router.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/auth/reset_password_screen.dart';
 import 'package:blab/features/auth/widgets/password_strength.dart';
+import 'package:blab/features/onboarding/state/onboarding_destination.dart';
+import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
 import 'package:blab/main.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
-  testWidgets('Signed-out app boots into login, not the dev menu', (
+  testWidgets('Signed-out app boots into Welcome, not the dev menu', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: BlabApp()));
+    blabRouter.go('/bootstrap');
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          onboardingDestinationProvider.overrideWith(
+            (ref) async => OnboardingDestination.welcome,
+          ),
+        ],
+        child: const BlabApp(),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(find.text('Forgot password?'), findsOneWidget);
+    expect(
+      find.text('Turn chats with friends into language practice'),
+      findsOneWidget,
+    );
     expect(find.text('Blab — dev menu'), findsNothing);
     final BuildContext ctx = tester.element(find.byType(Scaffold).first);
     expect(Theme.of(ctx).colorScheme.primary, BlabColors.brand);
@@ -66,14 +81,14 @@ void main() {
 
     final fieldBottom = tester.getRect(find.byType(TextField).first).bottom;
     final hintTop = tester.getRect(find.text('At least 6 characters')).top;
-    expect(hintTop - fieldBottom, closeTo(6, 0.01));
+    expect(hintTop - fieldBottom, closeTo(8, 0.01));
 
     await tester.enterText(find.byType(TextField).first, 'abcdef');
     await tester.pump();
     expect(find.text('At least 6 characters'), findsNothing);
     expect(find.text('Weak'), findsOneWidget);
     final strengthTop = tester.getRect(find.text('Weak')).top;
-    expect(strengthTop - fieldBottom, closeTo(6, 0.01));
+    expect(strengthTop - fieldBottom, closeTo(8, 0.01));
   });
 
   test('revoked refresh-token failures are recognized for local recovery', () {

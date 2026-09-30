@@ -47,6 +47,89 @@ void main() {
         .set(interfaceLanguageForCode('es'));
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(kGuestInterfaceLanguageKey), 'es');
+    expect(preferences.getBool(kGuestInterfaceLanguageExplicitKey), isTrue);
+  });
+
+  test(
+    'explicit guest locale is queued and applied after existing login',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        kGuestInterfaceLanguageKey: 'de',
+        kGuestInterfaceLanguageExplicitKey: true,
+      });
+
+      await queueGuestInterfaceLanguageSync(
+        isNewAccount: false,
+        userId: 'user-a',
+      );
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getString(kPendingInterfaceLanguageSyncKey), 'de');
+
+      final updates = <String>[];
+      await applyPendingGuestInterfaceLanguageSync(
+        activeUserId: () => 'user-a',
+        update: (code) async {
+          updates.add(code);
+          return code;
+        },
+      );
+
+      expect(updates, ['de']);
+      expect(preferences.getString(kPendingInterfaceLanguageSyncKey), isNull);
+      expect(preferences.getBool(kGuestInterfaceLanguageExplicitKey), isFalse);
+    },
+  );
+
+  test('unmarked guest default never overwrites an existing account', () async {
+    SharedPreferences.setMockInitialValues({kGuestInterfaceLanguageKey: 'en'});
+
+    await queueGuestInterfaceLanguageSync(
+      isNewAccount: false,
+      userId: 'user-a',
+    );
+    final updates = <String>[];
+    await applyPendingGuestInterfaceLanguageSync(
+      activeUserId: () => 'user-a',
+      update: (code) async {
+        updates.add(code);
+        return code;
+      },
+    );
+
+    expect(updates, isEmpty);
+  });
+
+  test('new Google account receives the current guest locale', () async {
+    SharedPreferences.setMockInitialValues({kGuestInterfaceLanguageKey: 'uk'});
+
+    await queueGuestInterfaceLanguageSync(isNewAccount: true, userId: 'user-a');
+    final updates = <String>[];
+    await applyPendingGuestInterfaceLanguageSync(
+      activeUserId: () => 'user-a',
+      update: (code) async {
+        updates.add(code);
+        return code;
+      },
+    );
+
+    expect(updates, ['uk']);
+  });
+
+  test('new-account detection compares auth creation and sign-in times', () {
+    expect(
+      isNewAuthAccount(
+        createdAt: '2026-09-30T09:00:00.000Z',
+        lastSignInAt: '2026-09-30T09:00:02.000Z',
+      ),
+      isTrue,
+    );
+    expect(
+      isNewAuthAccount(
+        createdAt: '2026-09-01T09:00:00.000Z',
+        lastSignInAt: '2026-09-30T09:00:00.000Z',
+      ),
+      isFalse,
+    );
   });
 
   test('signed-in locale is server authoritative and account scoped', () async {

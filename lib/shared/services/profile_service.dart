@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../data/languages.dart';
+import '../models/onboarding_stage.dart';
 import '../models/reading_script.dart';
 
 class UserProfile {
@@ -10,6 +12,8 @@ class UserProfile {
     this.primaryKnownLanguage,
     this.grammaticalForm,
     this.readingScript = ReadingScript.native,
+    this.onboardingVersion = 0,
+    this.onboardingStage = OnboardingStage.intro,
   });
 
   factory UserProfile.fromRow(Map<String, dynamic> row) {
@@ -24,6 +28,10 @@ class UserProfile {
       primaryKnownLanguage: row['primary_known_language'] as String?,
       grammaticalForm: row['grammatical_form'] as String?,
       readingScript: readingScriptFromWire(row['reading_script'] as String?),
+      onboardingVersion: (row['onboarding_version'] as num?)?.toInt() ?? 0,
+      onboardingStage: onboardingStageFromWire(
+        row['onboarding_stage'] as String?,
+      ),
     );
   }
 
@@ -33,6 +41,15 @@ class UserProfile {
   final String? primaryKnownLanguage;
   final String? grammaticalForm;
   final ReadingScript readingScript;
+  final int onboardingVersion;
+  final OnboardingStage onboardingStage;
+
+  bool get hasExplicitTranslationLanguage {
+    final primary = primaryKnownLanguage;
+    return primary != null &&
+        knownLanguages.contains(primary) &&
+        kBlabLanguages.any((language) => language.code == primary);
+  }
 }
 
 class ProfileService {
@@ -51,7 +68,8 @@ class ProfileService {
         .from('profiles')
         .select(
           'display_name,interface_language,known_languages,'
-          'primary_known_language,grammatical_form,reading_script',
+          'primary_known_language,grammatical_form,reading_script,'
+          'onboarding_version,onboarding_stage',
         )
         .eq('id', _uid)
         .single();
@@ -123,5 +141,44 @@ class ProfileService {
           'primary_known_language': primaryCode,
         })
         .eq('id', _uid);
+  }
+
+  Future<OnboardingProgress> acknowledgeOnboarding({
+    int version = currentOnboardingVersion,
+  }) async {
+    final value = await _client.rpc(
+      'acknowledge_my_onboarding',
+      params: {'p_version': version},
+    );
+    return _onboardingProgress(value);
+  }
+
+  Future<OnboardingProgress> confirmOnboardingName(
+    String displayName, {
+    int version = currentOnboardingVersion,
+  }) async {
+    final value = await _client.rpc(
+      'confirm_my_onboarding_name',
+      params: {'p_version': version, 'p_display_name': displayName},
+    );
+    return _onboardingProgress(value);
+  }
+
+  Future<OnboardingProgress> confirmOnboardingLanguage(
+    String languageCode, {
+    int version = currentOnboardingVersion,
+  }) async {
+    final value = await _client.rpc(
+      'confirm_my_onboarding_language',
+      params: {'p_version': version, 'p_language': languageCode},
+    );
+    return _onboardingProgress(value);
+  }
+
+  OnboardingProgress _onboardingProgress(Object? value) {
+    if (value is! Map) {
+      throw StateError('invalid_profile_response');
+    }
+    return OnboardingProgress.fromJson(Map<String, dynamic>.from(value));
   }
 }

@@ -474,10 +474,10 @@ class AppLocalizationsUk extends AppLocalizations {
   String get newChat => 'Новий чат';
 
   @override
-  String get noChatsYet => 'Чатів ще немає';
+  String get noChatsYet => 'Почни свій перший чат';
 
   @override
-  String get inviteFriendStart => 'Запроси друга й почни спілкуватися.';
+  String get inviteFriendStart => 'Практикуй мову в реальних розмовах.';
 
   @override
   String get inviteFriend => 'Запросити друга';
@@ -714,6 +714,98 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get continueAction => 'Продовжити';
+
+  @override
+  String get onboardingWelcomeTitle => 'Спілкуйся з друзями та практикуй мову';
+
+  @override
+  String get onboardingLearnTitle =>
+      'Вивчай слова в контексті. Будуй природні речення';
+
+  @override
+  String get onboardingLearningStatus => 'Ти вивчаєш англійську';
+
+  @override
+  String get onboardingLearningConversationSemantics =>
+      'Навчальна розмова англійською з виправленням і перекладом';
+
+  @override
+  String get signupMethodTitle => 'Зареєструйся та\nпочни навчатися';
+
+  @override
+  String get loginMethodTitle => 'Увійди в Blab';
+
+  @override
+  String get continueWithEmail => 'Продовжити з поштою';
+
+  @override
+  String get signUpWithEmail => 'Зареєструватися через пошту';
+
+  @override
+  String get createAccount => 'Створити обліковий запис';
+
+  @override
+  String get dontHaveAccountSignUp =>
+      'Ще не маєш облікового запису? Зареєструйся';
+
+  @override
+  String get onboardingLegal =>
+      'Продовжуючи, ти погоджуєшся з Умовами користування та Політикою конфіденційності Blab.';
+
+  @override
+  String get onboardingLegalPrefix => 'Продовжуючи, ти погоджуєшся з ';
+
+  @override
+  String get onboardingLegalTerms => 'Умовами користування';
+
+  @override
+  String get onboardingLegalAnd => ' та ';
+
+  @override
+  String get onboardingLegalPrivacy => 'Політикою конфіденційності Blab.';
+
+  @override
+  String get confirmNameTitle => 'Як тебе звати?';
+
+  @override
+  String get yourNameHint => 'Твоє ім’я';
+
+  @override
+  String get nextAction => 'Далі';
+
+  @override
+  String get languageYouUnderstandTitle => 'Мова, яку ти розумієш';
+
+  @override
+  String get languageYouUnderstandSubtitle =>
+      'Blab перекладатиме повідомлення цією мовою. Ти зможеш змінити її пізніше';
+
+  @override
+  String get startChatting => 'Почати спілкування';
+
+  @override
+  String get resetLinkExpiredTitle => 'Термін дії посилання минув';
+
+  @override
+  String get resetLinkExpiredBody =>
+      'Це посилання більше не дійсне. Запроси нове, щоб вибрати пароль.';
+
+  @override
+  String get requestNewLink => 'Запросити нове посилання';
+
+  @override
+  String get didntReceiveIt => 'Не бачиш листа?';
+
+  @override
+  String get sendAgain => 'Надіслати ще раз';
+
+  @override
+  String get emailSent => 'Лист надіслано';
+
+  @override
+  String sendAgainIn(int seconds) {
+    return 'Повторити через $seconds с';
+  }
 
   @override
   String get sendLinkHelp => 'Надішли посилання, щоб почати спілкування.';

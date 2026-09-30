@@ -1,5 +1,5 @@
 String confirmedEmailChangeDestination({required bool signedIn}) {
-  return signedIn ? '/profile' : '/auth?mode=login';
+  return signedIn ? '/profile' : '/onboarding/welcome';
 }
 
 bool isSameAccountEmailChange({

@@ -18,6 +18,8 @@ import 'features/share/android_share_intent_service.dart';
 import 'features/invite/invite_continuation.dart';
 import 'features/invite/invite_install_referrer.dart';
 import 'features/invite/prepared_invite_state.dart';
+import 'features/onboarding/state/onboarding_destination_state.dart';
+import 'features/onboarding/state/onboarding_resolver.dart';
 import 'shared/state/connectivity_state.dart';
 import 'l10n/l10n.dart';
 import 'shared/data/invite_host.dart';
@@ -53,9 +55,59 @@ Future<void> _initializeAndRunApp() async {
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
+    authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
   );
   await _stabilizeInitialSession(Supabase.instance.client);
+  await _routeInitialAuthCallback();
   runApp(const ProviderScope(child: BlabApp()));
+}
+
+final AuthCallbackGuard _authCallbackGuard = AuthCallbackGuard();
+
+Future<void> _routeInitialAuthCallback() async {
+  Uri? uri;
+  try {
+    uri = await AppLinks().getInitialLink();
+  } catch (_) {
+    return;
+  }
+  if (uri == null ||
+      classifyAuthCallbackUri(uri.toString()) == AuthCallbackRoute.none) {
+    return;
+  }
+  if (!_authCallbackGuard.claim(uri)) return;
+  final resolution = await resolveAuthCallbackUri(
+    uri,
+    exchange: (callback) async {
+      await Supabase.instance.client.auth.getSessionFromUrl(
+        callback,
+        storeSession: true,
+      );
+    },
+  );
+  await _openResolvedAuthCallback(resolution);
+}
+
+Future<void> _openResolvedAuthCallback(
+  AuthCallbackResolution resolution,
+) async {
+  switch (resolution) {
+    case AuthCallbackResolution.none:
+      return;
+    case AuthCallbackResolution.passwordRecovery:
+      blabRouter.go('/auth/reset');
+    case AuthCallbackResolution.passwordRecoveryInvalid:
+      blabRouter.go('/auth/reset-invalid');
+    case AuthCallbackResolution.emailChange:
+      try {
+        await Supabase.instance.client.auth.refreshSession();
+      } catch (_) {}
+      blabRouter.go(
+        confirmedEmailChangeDestination(
+          signedIn: Supabase.instance.client.auth.currentSession != null,
+        ),
+      );
+  }
 }
 
 Future<void> _stabilizeInitialSession(SupabaseClient client) async {
@@ -107,10 +159,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       final user = Supabase.instance.client.auth.currentUser;
       _knownEmail = user?.email;
       _knownUserId = user?.id;
-      // supabase_flutter consumes the `blab://auth/reset?code=...`
-      // deep link and exchanges it for a recovery session. We listen
-      // for the resulting `passwordRecovery` event and route to the
-      // reset screen. We also reset the email-change baseline on
+      // Blab owns auth-link exchange so invalid/expired links have an explicit
+      // destination. We still listen for password-recovery events as a safe
+      // fallback. We also reset the email-change baseline on
       // sign-in/sign-out so switching accounts cannot look like an email
       // change. A same-account email difference is announced only on auth
       // events that can follow confirmation, never the initial update request.
@@ -194,20 +245,19 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     _knownEmail = null;
     _knownUserId = null;
     ref.invalidate(messageTranslationsProvider);
-    blabRouter.go('/auth?mode=login');
+    blabRouter.go(sessionLossBootstrapLocation);
   }
 
-  /// Listen for incoming `blab://i/<token>` invite links. Routes the
-  /// initial cold-launch URI plus any subsequent links while the app
-  /// is running. Non-invite `blab://` URIs (e.g. Supabase auth deep
-  /// links) are ignored — supabase_flutter consumes those itself.
+  /// Routes initial and warm invite/auth links. Supabase's automatic URI
+  /// observer is disabled so a recovery code is exchanged exactly once and
+  /// failures can open the explicit invalid-link screen.
   Future<void> _initInviteDeepLinks() async {
     try {
       final links = AppLinks();
       final initial = await links.getInitialLink();
-      if (initial != null) _routeIncomingLink(initial);
+      if (initial != null) await _routeIncomingLink(initial);
       _linkSub = links.uriLinkStream.listen(
-        _routeIncomingLink,
+        (uri) => unawaited(_routeIncomingLink(uri)),
         onError: (_) {},
       );
     } catch (_) {
@@ -233,21 +283,30 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     if (!mounted || !_initialInviteLinksReady || _resumingInvite) return;
     final userId = _knownUserId;
     if (userId == null) return;
-    bool routeAllowsResume() {
-      final path = blabRouter.routeInformationProvider.value.uri.path;
-      if (path.startsWith('/i/')) return false;
-      if (path.startsWith('/auth')) return openInvite && path == '/auth';
-      return true;
-    }
-
-    if (!routeAllowsResume()) return;
     _resumingInvite = true;
     try {
+      final destination = await ref.read(onboardingDestinationProvider.future);
+      final routePath = blabRouter.routeInformationProvider.value.uri.path;
+      if (!mounted ||
+          !canAutoResumePendingInvite(
+            destination: destination,
+            requestUserId: userId,
+            activeUserId: _knownUserId,
+            routePath: routePath,
+            openInvite: openInvite,
+          )) {
+        return;
+      }
       final token = await loadPendingInvite();
       if (!mounted ||
           token == null ||
-          _knownUserId != userId ||
-          !routeAllowsResume()) {
+          !canAutoResumePendingInvite(
+            destination: destination,
+            requestUserId: userId,
+            activeUserId: _knownUserId,
+            routePath: blabRouter.routeInformationProvider.value.uri.path,
+            openInvite: openInvite,
+          )) {
         return;
       }
       if (openInvite) {
@@ -255,6 +314,8 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       } else if (ref.read(isOnlineProvider)) {
         await resumePendingInvite(claim: ref.read(inviteClaimActionProvider));
       }
+    } catch (_) {
+      // Bootstrap owns retry UI; never bypass it with a saved invite.
     } finally {
       _resumingInvite = false;
     }
@@ -288,7 +349,22 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     });
   }
 
-  void _routeIncomingLink(Uri uri) {
+  Future<void> _routeIncomingLink(Uri uri) async {
+    if (classifyAuthCallbackUri(uri.toString()) != AuthCallbackRoute.none) {
+      if (!_authCallbackGuard.claim(uri)) return;
+      final resolution = await resolveAuthCallbackUri(
+        uri,
+        exchange: (callback) async {
+          await Supabase.instance.client.auth.getSessionFromUrl(
+            callback,
+            storeSession: true,
+          );
+        },
+      );
+      if (!mounted) return;
+      await _openResolvedAuthCallback(resolution);
+      return;
+    }
     // Verified Android App Link: https://<host>/i/<token>
     if (uri.scheme == 'https' &&
         uri.host == kInviteHost &&

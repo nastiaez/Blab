@@ -115,6 +115,27 @@ void main() {
     );
   });
 
+  test('app_links exclusively owns Android invite and auth-link delivery', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final mainDart = File('lib/main.dart').readAsStringSync();
+
+    expect(
+      manifest,
+      matches(
+        RegExp(
+          r'<meta-data\s+'
+          r'android:name="flutter_deeplinking_enabled"\s+'
+          r'android:value="false"\s*/>',
+        ),
+      ),
+    );
+    expect(
+      mainDart,
+      contains('FlutterAuthClientOptions(detectSessionInUri: false)'),
+    );
+  });
   test(
     'Android push permission, channel, and settings bridge stay configured',
     () {

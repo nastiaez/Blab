@@ -126,7 +126,7 @@ class ProfileScreen extends ConsumerWidget {
                         .prepareForSignOut();
                     await ref.read(supabaseAuthServiceProvider).signOut();
                     if (!context.mounted) return;
-                    context.go('/auth?mode=login');
+                    context.go('/onboarding/welcome');
                   },
                 ),
               ],
