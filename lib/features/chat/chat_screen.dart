@@ -3077,6 +3077,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
       translationLanguageCode: targetLanguageCode,
       readingScript: readingScript,
       isOutgoing: isOut,
+      languagesMatchedAtSend: message.languagesMatchedAtSend,
       popupTopInset: popupTopInset,
       mode: mode,
       knownLanguageCodes: knownLanguageCodes,

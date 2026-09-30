@@ -43,6 +43,7 @@ class MessageLearningContent extends StatelessWidget {
     required this.showTranslation,
     required this.learningLanguageCode,
     required this.isOutgoing,
+    this.languagesMatchedAtSend = false,
     required this.popupTopInset,
     required this.unavailableText,
     required this.retryText,
@@ -70,6 +71,7 @@ class MessageLearningContent extends StatelessWidget {
   final bool showTranslation;
   final String learningLanguageCode;
   final bool isOutgoing;
+  final bool languagesMatchedAtSend;
   final double popupTopInset;
   final String unavailableText;
   final String retryText;
@@ -276,8 +278,9 @@ class MessageLearningContent extends StatelessWidget {
 
     // Practice mode: always the learning-language line, collapsible second
     // (interface-language) lane driven by the externally-owned [expanded].
-    final authorCorrection =
-        isOutgoing && value.mode == LearningAidMode.correction;
+    final showCorrectionMarks =
+        value.mode == LearningAidMode.correction &&
+        (isOutgoing || languagesMatchedAtSend);
 
     final formChoices = formAlternativesOverride == null
         ? value.formChoices
@@ -302,7 +305,7 @@ class MessageLearningContent extends StatelessWidget {
                   onMarkerTap: onFormMarkerTap,
                   activeIndex: activeFormChoiceIndex,
                 )
-        : authorCorrection
+        : showCorrectionMarks
         ? (() {
             final corrected = presentGenerated(value.translation, value.tokens);
             return InlineCorrectionText(

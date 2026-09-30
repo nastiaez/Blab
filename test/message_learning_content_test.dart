@@ -37,6 +37,7 @@ void main() {
     AsyncValue<MessageTranslation>? translation, {
     String authoredText = 'What are you doing?',
     bool isOutgoing = false,
+    bool languagesMatchedAtSend = false,
     bool showTranslation = true,
     String learningCode = 'de',
     String interfaceCode = 'en',
@@ -62,6 +63,7 @@ void main() {
           showTranslation: showTranslation,
           learningLanguageCode: learningCode,
           isOutgoing: isOutgoing,
+          languagesMatchedAtSend: languagesMatchedAtSend,
           popupTopInset: 0,
           unavailableText: 'Translation unavailable',
           retryText: 'Retry',
@@ -365,6 +367,69 @@ void main() {
     expect(find.text('Що ти робиш?'), findsOneWidget);
     expect(find.textContaining('Correction:'), findsNothing);
     expect(find.text('What is you doing?'), findsNothing);
+  });
+
+  testWidgets(
+    'matching-language recipient sees correction marks and own explanation',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(
+              learning: 'What are you doing?',
+              interfaceText: 'Що ти робиш?',
+              source: 'en',
+              learningCode: 'en',
+              interfaceCode: 'uk',
+              mode: LearningAidMode.correction,
+              explanation: 'Use are with you.',
+              confidence: CorrectionConfidence.high,
+            ),
+          ),
+          authoredText: 'What is you doing?',
+          learningCode: 'en',
+          interfaceCode: 'uk',
+          languagesMatchedAtSend: true,
+        ),
+      );
+
+      expect(find.byKey(const ValueKey('inline-correction')), findsOneWidget);
+      expect(find.text('Use are with you.'), findsNothing);
+      await tester.tap(find.text('is'));
+      await tester.pumpAndSettle();
+      expect(find.text('Use are with you.'), findsOneWidget);
+      expect(find.text('Що ти робиш?'), findsOneWidget);
+    },
+  );
+
+  testWidgets('normal mode stays clean when send-time languages matched', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        AsyncData(
+          result(
+            learning: 'What are you doing?',
+            interfaceText: 'Що ти робиш?',
+            source: 'en',
+            learningCode: 'en',
+            interfaceCode: 'uk',
+            mode: LearningAidMode.correction,
+            explanation: 'Use are with you.',
+            confidence: CorrectionConfidence.high,
+          ),
+        ),
+        authoredText: 'What is you doing?',
+        learningCode: 'en',
+        interfaceCode: 'uk',
+        languagesMatchedAtSend: true,
+        mode: ChatMode.normal,
+        knownLanguageCodes: const ['uk'],
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+    expect(find.byType(MessageText), findsOneWidget);
   });
 
   testWidgets(
