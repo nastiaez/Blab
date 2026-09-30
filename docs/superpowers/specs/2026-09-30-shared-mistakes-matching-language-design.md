@@ -7,7 +7,7 @@
 
 ## Objective
 
-Let two people learn collaboratively when they were learning the same language at the moment a message was sent. A recipient may see the author's inline correction marks and correction explanation only for messages that were created while both participants had the same learning language.
+Let two people learn collaboratively when they were learning the same language at the moment a message was sent. A recipient may see the author's inline correction marks only for messages that were created while both participants had the same learning language.
 
 Success means the behavior is automatic, historically stable, race-safe, and visually reuses the existing correction treatment. Language changes must never rewrite the correction visibility of an older message.
 
@@ -24,13 +24,14 @@ Success means the behavior is automatic, historically stable, race-safe, and vis
 
 ### Presentation
 
-- The author continues to see their own eligible inline correction exactly as today.
+- The author continues to see their own inline correction marks.
 - In Practice mode, the recipient sees the same inline replaced/struck-through correction treatment when:
   1. the message contains a correction result; and
   2. `languages matched at send` is true.
-- The recipient's explanation remains in the recipient's Primary Known Language, using that recipient's prepared package.
+- Correction explanations are not exposed in the UI for either participant. Struck-through text has no tap action.
+- Corrected and unchanged words retain the existing standard word-help interaction.
 - A low- or medium-confidence correction keeps the existing `Possible correction` treatment.
-- When the languages did not match at send, the recipient continues to see the existing clean corrected learning-language line without correction marks or coaching explanation.
+- When the languages did not match at send, the recipient continues to see the existing clean corrected learning-language line without correction marks.
 - Correct writing, translations, and messages with no correction result remain unchanged.
 - Normal mode remains unchanged.
 - No setting, consent toggle, notice, notification, timeline event, or `Both learning …` label is added in v1.
@@ -53,7 +54,7 @@ Example:
 
 1. Message creation reads and locks the two chat-membership language rows in a stable order.
 2. The database compares the two language codes and stores one non-null `languages_matched_at_send` boolean on the message before the insert completes.
-3. Existing per-viewer preparation continues to snapshot the learning language and revision and to create each participant's own explanation and learning-aid package.
+3. Existing per-viewer preparation continues to snapshot the learning language and revision and to create each participant's learning-aid package. Explanation data may remain in that internal package but is not presented by this feature.
 4. Translation or correction completion uses the message's saved language/revision assignment. A later language change cannot replace the message's historical result.
 5. Message loading exposes the saved boolean to the presentation layer.
 6. Incoming Practice presentation shows inline correction marks only when the result mode is `correction` and the saved boolean is true.
@@ -138,6 +139,8 @@ scripts/local_test.sh integration
 
 - Outgoing corrections retain current inline treatment.
 - Incoming Practice shows inline correction marks only for eligible messages.
+- Tapping struck-through text does nothing for both outgoing and incoming corrections.
+- Tapping a corrected word still opens the existing word-help popup.
 - Incoming mismatched-language Practice remains a clean generated line.
 - Normal mode is unchanged.
 - Correct, `none`, loading, error, edited, and photo-caption states do not expose correction marks incorrectly.
@@ -159,7 +162,7 @@ Use two connected participants:
 
 - Decide eligibility atomically at message creation.
 - Preserve the exact send-time decision across reloads, edits, retries, and later language changes.
-- Keep explanations viewer-specific and protected by existing message access rules.
+- Keep prepared learning-aid data protected by existing message access rules.
 - Fail closed for pre-feature messages.
 
 ### Ask first
@@ -179,6 +182,7 @@ Use two connected participants:
 ## Success criteria
 
 - [ ] When both participants learn the same language at send time, both see the author's clear mistake with inline correction marks in Practice.
+- [ ] Neither participant can open a correction explanation from struck-through text; corrected-word help remains available.
 - [ ] When their learning languages differ at send time, only the author sees correction marks; the recipient retains the existing clean line.
 - [ ] Later language changes never change an older message's correction visibility.
 - [ ] Switching away and back creates the expected true/false/true sequence for newly sent messages.

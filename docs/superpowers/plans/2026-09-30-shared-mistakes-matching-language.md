@@ -269,7 +269,7 @@ git commit -m "feat: share corrections for matching learners"
 
 - [ ] **Step 1: Record the resolved engineering decision**
 
-Revise Resolved Decision 19 to state that the database snapshots matching-language eligibility at message creation, eligible incoming Practice messages show marks with viewer-specific explanations, and legacy/mismatched messages remain clean.
+Revise Resolved Decision 19 to state that the database snapshots matching-language eligibility at message creation, eligible incoming Practice messages show marks only, struck-through text has no explanation interaction for either participant, and legacy/mismatched messages remain clean.
 
 - [ ] **Step 2: Run source and Flutter gates**
 
