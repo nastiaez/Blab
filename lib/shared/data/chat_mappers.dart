@@ -23,6 +23,7 @@ Message messageFromRow(
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),
     status: MessageStatus.delivered,
+    languagesMatchedAtSend: row['languages_matched_at_send'] as bool? ?? false,
     type: type,
     attachment: attachmentRows.isEmpty
         ? null
@@ -82,6 +83,7 @@ Message _replyPreviewFromRow(
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),
     status: MessageStatus.delivered,
+    languagesMatchedAtSend: row['languages_matched_at_send'] as bool? ?? false,
     type: deleted ? MessageType.text : type,
     attachment: deleted || attachmentRows.isEmpty
         ? null

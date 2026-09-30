@@ -12,6 +12,7 @@ void main() {
       'edited_at': null,
       'reply_to': null,
       'deleted_at': null,
+      'languages_matched_at_send': true,
     };
     final m = messageFromRow(row, currentUserId: 'user-1');
     expect(m.id, 'msg-1');
@@ -19,6 +20,23 @@ void main() {
     expect(m.isOutgoing, true);
     expect(m.originalText, 'hello');
     expect(m.isEdited, false);
+    expect(m.languagesMatchedAtSend, true);
+    expect(m.copyWith(status: m.status).languagesMatchedAtSend, true);
+  });
+
+  test('legacy message rows fail closed when match eligibility is absent', () {
+    final m = messageFromRow({
+      'id': 'legacy',
+      'chat_id': 'c',
+      'sender_id': 'them',
+      'body': 'old message',
+      'created_at': '2026-05-30T12:00:00Z',
+      'edited_at': null,
+      'reply_to': null,
+      'deleted_at': null,
+    }, currentUserId: 'me');
+
+    expect(m.languagesMatchedAtSend, false);
   });
 
   test('incoming when sender != current user', () {
@@ -60,6 +78,7 @@ void main() {
         'edited_at': null,
         'reply_to': null,
         'deleted_at': null,
+        'languages_matched_at_send': true,
       },
       {
         'id': 'reply',
@@ -78,6 +97,7 @@ void main() {
     expect(messages.last.replyTo?.id, 'source');
     expect(messages.last.replyTo?.originalText, 'original');
     expect(messages.last.replyTo?.isOutgoing, false);
+    expect(messages.last.replyTo?.languagesMatchedAtSend, true);
   });
 
   test('deleted reply targets use a non-sensitive placeholder', () {
