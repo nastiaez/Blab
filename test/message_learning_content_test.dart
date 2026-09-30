@@ -11,6 +11,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'correction marks follow authorship or the historical language match',
+    () {
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: true,
+          languagesMatchedAtSend: false,
+          mode: LearningAidMode.correction,
+        ),
+        true,
+      );
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: false,
+          languagesMatchedAtSend: true,
+          mode: LearningAidMode.correction,
+        ),
+        true,
+      );
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: false,
+          languagesMatchedAtSend: false,
+          mode: LearningAidMode.correction,
+        ),
+        false,
+      );
+      expect(
+        shouldShowCorrectionMarks(
+          isOutgoing: true,
+          languagesMatchedAtSend: true,
+          mode: LearningAidMode.translation,
+        ),
+        false,
+      );
+    },
+  );
+
   MessageTranslation result({
     required String learning,
     required String interfaceText,

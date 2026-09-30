@@ -14,6 +14,15 @@ import 'grammatical_form_chooser.dart';
 import '../../../shared/models/grammatical_form.dart';
 import '../message_presentation.dart';
 
+bool shouldShowCorrectionMarks({
+  required bool isOutgoing,
+  required bool languagesMatchedAtSend,
+  required LearningAidMode mode,
+}) {
+  return mode == LearningAidMode.correction &&
+      (isOutgoing || languagesMatchedAtSend);
+}
+
 /// Resolves which text to show for a translated message, per the modes/
 /// known-languages design spec's § Display logic three rules:
 /// - `LearningAidMode.none` (server decided no learning aid is needed, e.g.
@@ -278,9 +287,11 @@ class MessageLearningContent extends StatelessWidget {
 
     // Practice mode: always the learning-language line, collapsible second
     // (interface-language) lane driven by the externally-owned [expanded].
-    final showCorrectionMarks =
-        value.mode == LearningAidMode.correction &&
-        (isOutgoing || languagesMatchedAtSend);
+    final showCorrectionMarks = shouldShowCorrectionMarks(
+      isOutgoing: isOutgoing,
+      languagesMatchedAtSend: languagesMatchedAtSend,
+      mode: value.mode,
+    );
 
     final formChoices = formAlternativesOverride == null
         ? value.formChoices

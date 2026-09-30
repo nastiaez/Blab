@@ -598,6 +598,7 @@
   - Text messages and photo captions preserve eligibility across retries, edits, reloads, offline idempotent sends, and later language changes.
   - Incoming Practice corrections show marks only for eligible messages; outgoing corrections, Normal mode, clean text, failures, and mismatched-language messages remain unchanged.
   - Focused database and Flutter regressions, the full automated gate, and a two-participant true/false/true language-switch check pass.
+- **Automated verification (2026-09-30):** Formatting, shell syntax, static analysis, and 708 Flutter tests pass with 15 documented environment-only skips. A fresh local reset applies the migration and the six-check matching-language database contract passes. The repository-wide database suite and local integration retain their existing translation-contract failures; both failure sets reproduce unchanged on the untouched `feat/localization` branch. The real two-client true/false/true UI sequence remains required before completion.
 
 ### Step 3.7 — Static invite landing + Android App Links `[ ]` ← in progress — **PARTIAL (closed-test); remaining work required before public launch**
 
@@ -642,6 +643,7 @@ Do not start Step N+1 until Step N is fully `[x]`.
 ## Changelog
 
 - 2026-09-30 — Approved and started Step 2.16: when both participants had the same Learning Language at send time, Practice shares the author's correction marks and the recipient's own explanation. Eligibility is stored once per message; mismatched, legacy, and later language eras stay unchanged.
+- 2026-09-30 — Implemented Step 2.16 in an isolated branch with a server-owned send-time eligibility snapshot, legacy-safe message/offline transport, and conditional incoming Practice correction rendering. Focused database and Flutter contracts, static analysis, formatting, shell syntax, and the 708-test Flutter suite pass. Kept the step open for the real two-client sequence; unrelated full-database and integration failures were reproduced on the untouched branch.
 - 2026-09-30 — Completed the publication gate for the isolated onboarding/auth and first-time empty Chats branch: 787 Flutter checks passed with 15 environment-only skips, 35 database checks passed, static analysis/formatting/diff checks were clean, and the debug Android APK built successfully.
 - 2026-09-30 — Isolated the owner-approved onboarding/auth refresh and first-time empty Chats activation from unrelated local icon and shared-learning work for publication. The empty Chats shell keeps the incumbent Blab logo, tabs, and warm cream canvas while replacing only the central illustration, copy, and Invite a friend action.
 - 2026-09-30 — Applied the owner-requested onboarding consistency pass and selected Ukrainian Welcome copy. The refreshed flow retains the production-safe legacy fallback while configured-device Google auth, the real two-account invite journey, final overlay review, and complete owner acceptance remain open.
