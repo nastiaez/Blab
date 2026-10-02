@@ -11,6 +11,10 @@ const languageAidsMigrationUrl = new URL(
   "../../migrations/20260921000001_complete_language_aids_cache.sql",
   import.meta.url,
 );
+const translationReliabilityMigrationUrl = new URL(
+  "../../migrations/20261002000001_translation_reliability_cache.sql",
+  import.meta.url,
+);
 
 Deno.test("automatic-form migration invalidates every legacy cache variant", async () => {
   const sql = (await Deno.readTextFile(migrationUrl))
@@ -102,9 +106,9 @@ Deno.test("automatic-form migration rejects every legacy completion contract", a
   const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
   assert(
     edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "complete-language-aids-v3";',
+      'const CACHE_CONTRACT_VERSION = "minimal-source-anchor-v11";',
     ),
-    "the edge function must declare the database completion contract",
+    "the edge function must declare the latest database completion contract",
   );
   assert(
     edgeFunction.match(
@@ -145,6 +149,45 @@ Deno.test("complete-language-aids migration advances and invalidates the cache",
       "check (cache_contract_version = 'complete-language-aids-v3')",
     ),
     "stored translations must identify the new contract",
+  );
+});
+
+Deno.test("translation-reliability migration replaces every stale result", async () => {
+  const sql = (await Deno.readTextFile(translationReliabilityMigrationUrl))
+    .replace(/--.*$/gm, "")
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim()
+    .toLowerCase();
+  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
+
+  assert(
+    sql.match(/p_cache_contract_version <> 'minimal-source-anchor-v11'/g)
+      ?.length === 2,
+    "both completion paths must reject pre-v11 translation results",
+  );
+  assert(
+    sql.includes("delete from public.message_preparation_jobs") &&
+      sql.includes("where status in ('processing', 'ready')"),
+    "ready and in-flight variants must regenerate under the final contract",
+  );
+  assert(
+    sql.includes("delete from public.message_prepared_packages;") &&
+      sql.includes("delete from public.message_translations;"),
+    "all stale translations and word-help metadata must be invalidated",
+  );
+  assert(
+    sql.includes(
+      "check (cache_contract_version = 'minimal-source-anchor-v11')",
+    ),
+    "stored translations must identify the v11 contract",
+  );
+  assert(
+    edgeFunction.includes(
+      'const CACHE_CONTRACT_VERSION = "minimal-source-anchor-v11";',
+    ),
+    "the provider and database must use the same v11 contract",
   );
 });
 

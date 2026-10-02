@@ -56,7 +56,7 @@ insert into public.message_translations (
     extensions.digest(convert_to('duplicate history', 'UTF8'), 'sha256'),
     'hex'
   ),
-  'complete-language-aids-v3'
+  'minimal-source-anchor-v11'
 );
 
 insert into public.invites (

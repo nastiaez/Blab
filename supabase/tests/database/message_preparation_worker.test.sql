@@ -124,7 +124,7 @@ insert into public.message_translations (
   'en',
   'translation',
   'Oldest first',
-  'complete-language-aids-v3'
+  'minimal-source-anchor-v11'
 );
 
 create temp table claimed_context_jobs as

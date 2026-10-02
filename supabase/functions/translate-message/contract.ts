@@ -34,6 +34,8 @@ export type FormParticipantContext = {
 
 const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const SEMANTIC_FIDELITY_RULE =
+  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning.";
 
 export function providerCredentials(env: {
   openRouterKey?: string | null;
@@ -144,7 +146,7 @@ export function focusedTranslationRetryMessages({
   return [{
     role: "system",
     content:
-      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
+      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. ${SEMANTIC_FIDELITY_RULE} Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
   }, { role: "user", content: text }];
 }
 
@@ -263,6 +265,66 @@ export const INTERFACE_RESPONSE_FORMAT = {
         interfaceText: { type: "string", minLength: 1 },
       },
       required: ["interfaceText"],
+    },
+  },
+} as const;
+
+export const SOURCE_MEANING_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_source_meaning_anchor",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        sourceMeaning: { type: "string", minLength: 1 },
+      },
+      required: ["sourceMeaning"],
+    },
+  },
+} as const;
+
+export const SEMANTIC_AUDIT_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_semantic_translation_audit",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        sourceMeaning: { type: "string", minLength: 1 },
+        candidateMeaning: { type: "string", minLength: 1 },
+        preservesMeaning: { type: "boolean" },
+        correctedTranslation: { type: ["string", "null"] },
+      },
+      required: [
+        "sourceMeaning",
+        "candidateMeaning",
+        "preservesMeaning",
+        "correctedTranslation",
+      ],
+    },
+  },
+} as const;
+
+export const WORD_METADATA_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_word_metadata_repair",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        tokens: {
+          type: "array",
+          minItems: 1,
+          items: TOKEN_RESPONSE_SCHEMA,
+        },
+      },
+      required: ["tokens"],
     },
   },
 } as const;
@@ -453,6 +515,16 @@ export type CorrectionAuditResult =
     explanation: string;
     confidence: CorrectionConfidence;
     tokens: TranslationToken[];
+  };
+
+export type CorrectionAuditCandidate =
+  | Extract<CorrectionAuditResult, { hasError: false }>
+  | {
+    hasError: true;
+    correctedText: string;
+    explanation: string;
+    confidence: CorrectionConfidence;
+    tokens: TranslationToken[] | null;
   };
 
 type DirectSubjectRule = {
@@ -760,10 +832,10 @@ function validatedCompleteTokens(
   return reproduced === expectedText ? tokens : null;
 }
 
-export function parseCorrectionAuditResult(
+export function parseCorrectionAuditCandidate(
   content: string,
   sourceText: string,
-): CorrectionAuditResult | null {
+): CorrectionAuditCandidate | null {
   const firstBrace = content.indexOf("{");
   const lastBrace = content.lastIndexOf("}");
   if (firstBrace < 0 || lastBrace <= firstBrace) return null;
@@ -801,7 +873,6 @@ export function parseCorrectionAuditResult(
   ) return null;
   const correctedText = value.correctedText.trim();
   const tokens = validatedCompleteTokens(value.tokens, correctedText);
-  if (tokens === null) return null;
   return {
     hasError: true,
     correctedText,
@@ -809,6 +880,17 @@ export function parseCorrectionAuditResult(
     confidence: value.confidence as CorrectionConfidence,
     tokens,
   };
+}
+
+export function parseCorrectionAuditResult(
+  content: string,
+  sourceText: string,
+): CorrectionAuditResult | null {
+  const candidate = parseCorrectionAuditCandidate(content, sourceText);
+  if (candidate === null || candidate.hasError && candidate.tokens === null) {
+    return null;
+  }
+  return candidate as CorrectionAuditResult;
 }
 
 export function parseFormAuditResult(content: string): FormAuditResult | null {
@@ -1256,6 +1338,66 @@ export function wordMetadataNeedsRetry(result: TranslationResult): boolean {
   return Array.from(result.translation).some((character) =>
     /\p{L}/u.test(character) && !/\p{Script=Latin}/u.test(character)
   );
+}
+
+function normalizedWordMetadataValue(value: string): string {
+  return value.normalize("NFKC").trim().toLocaleLowerCase().replace(
+    /[’‘]/g,
+    "'",
+  );
+}
+
+/// A structurally valid provider response can still contain no translation at
+/// all in its word-help lane. Require strong evidence before spending a repair
+/// call: different learning/known languages, at least two content words, and
+/// every gloss copied from the displayed word or its pronunciation field.
+export function wordGlossMetadataNeedsRepair(
+  result: TranslationResult,
+  targetLang: string,
+  interfaceLang: string,
+  sourceText?: string,
+): boolean {
+  if (targetLang === interfaceLang) return false;
+  const contentTokens = result.tokens.flatMap((raw) => {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+      return [];
+    }
+    const token = raw as Record<string, unknown>;
+    return token.isContent === true && typeof token.text === "string" &&
+        typeof token.gloss === "string"
+      ? [{
+        text: token.text,
+        gloss: token.gloss,
+        roman: typeof token.roman === "string" ? token.roman : null,
+      }]
+      : [];
+  });
+  if (contentTokens.length < 2) return false;
+  const copiedFromTarget = contentTokens.every((token) => {
+    const gloss = normalizedWordMetadataValue(token.gloss);
+    const text = normalizedWordMetadataValue(token.text);
+    const roman = token.roman === null
+      ? null
+      : normalizedWordMetadataValue(token.roman);
+    return gloss === text || roman !== null && gloss === roman;
+  });
+  if (copiedFromTarget) return true;
+  if (sourceText === undefined || result.sourceLang === interfaceLang) {
+    return false;
+  }
+  const sourceWords = new Set(
+    sourceText.normalize("NFKC").toLocaleLowerCase().match(
+      /[\p{L}\p{M}\p{N}'’]+/gu,
+    ) ?? [],
+  );
+  if (sourceWords.size < 3) return false;
+  return contentTokens.every((token) => {
+    const glossWords = token.gloss.normalize("NFKC").toLocaleLowerCase().match(
+      /[\p{L}\p{M}\p{N}'’]+/gu,
+    ) ?? [];
+    return glossWords.length > 0 &&
+      glossWords.every((word) => sourceWords.has(word));
+  });
 }
 
 /// Hindi `कल` can mean yesterday or tomorrow. A focused review uses the
@@ -1753,6 +1895,7 @@ Return strict JSON only:
 
 Rules:
 - Preserve meaning and tone. Keep URLs, @mentions, hashtags, code, numbers, and emoji unchanged, and preserve names' identity rather than translating their meaning; transliterate a confidently identified name when the target script differs. Move protected content with the surrounding sentence when the target language needs a different natural word order.
+- ${SEMANTIC_FIDELITY_RULE}
 - Produce natural, standard ${targetName} spelling and word formation.${targetLanguageGuidance}
 - Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
 - A likely personal name is not an unsupported language. Keep its identity, and when the target script differs, transliterate it rather than translating its meaning. Use conversation context and the supplied participant names when available; do not infer a name from capitalization alone.
@@ -1793,4 +1936,186 @@ export function interfaceRepairSystemPrompt(
   return `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation.
 ${GENDER_ADDRESS_RULES}
 Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`;
+}
+
+export function sourceMeaningAnchorSystemPrompt(): string {
+  return `Resolve the complete semantic meaning of one authored chat message before any candidate exists.
+
+Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
+
+Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. Do not assume a target language or a later translation; neither is provided.`;
+}
+
+export function parseSourceMeaningAnchorResult(content: string): string | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const sourceMeaning = (raw as Record<string, unknown>).sourceMeaning;
+  return typeof sourceMeaning === "string" && sourceMeaning.trim().length > 0
+    ? sourceMeaning.trim()
+    : null;
+}
+
+export function semanticTranslationAuditSystemPrompt(
+  sourceLang: string,
+  targetLang: string,
+  _interfaceLang: string,
+): string {
+  const sourceName = LANG_NAMES[sourceLang] ?? sourceLang;
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const auditLang = "en";
+  const auditName = LANG_NAMES[auditLang];
+  return `Audit one candidate translation from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}) for semantic fidelity.
+
+Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
+
+The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated from the authored message before the candidate existed. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
+
+Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.`;
+}
+
+export type SemanticAuditResult = {
+  sourceMeaning: string;
+  candidateMeaning: string;
+  preservesMeaning: true;
+  correctedTranslation: null;
+} | {
+  sourceMeaning: string;
+  candidateMeaning: string;
+  preservesMeaning: false;
+  correctedTranslation: string;
+};
+
+export function parseSemanticAuditResult(
+  content: string,
+  candidateTranslation: string,
+  trustedSourceMeaning?: string,
+): SemanticAuditResult | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const value = raw as Record<string, unknown>;
+  if (
+    typeof value.sourceMeaning !== "string" ||
+    value.sourceMeaning.trim().length === 0 ||
+    typeof value.candidateMeaning !== "string" ||
+    value.candidateMeaning.trim().length === 0 ||
+    typeof value.preservesMeaning !== "boolean" ||
+    value.correctedTranslation !== null &&
+      typeof value.correctedTranslation !== "string"
+  ) return null;
+  if (
+    trustedSourceMeaning !== undefined &&
+    value.sourceMeaning.trim() !== trustedSourceMeaning.trim()
+  ) return null;
+  if (value.preservesMeaning) {
+    if (value.correctedTranslation !== null) return null;
+  } else if (
+    typeof value.correctedTranslation !== "string" ||
+    value.correctedTranslation.trim().length === 0 ||
+    value.correctedTranslation.trim() === candidateTranslation.trim()
+  ) {
+    return null;
+  }
+  if (value.preservesMeaning) {
+    return {
+      sourceMeaning: value.sourceMeaning.trim(),
+      candidateMeaning: value.candidateMeaning.trim(),
+      preservesMeaning: true,
+      correctedTranslation: null,
+    };
+  }
+  return {
+    sourceMeaning: value.sourceMeaning.trim(),
+    candidateMeaning: value.candidateMeaning.trim(),
+    preservesMeaning: false,
+    correctedTranslation: (value.correctedTranslation as string).trim(),
+  };
+}
+
+export function resolveSemanticAuditConsensus(
+  audits: SemanticAuditResult[],
+): SemanticAuditResult | null {
+  if (audits.length < 2) return null;
+
+  const preserved = audits.filter((audit) => audit.preservesMeaning);
+  if (preserved.length >= 2) return preserved[0];
+
+  const corrections = new Map<string, SemanticAuditResult[]>();
+  for (const audit of audits) {
+    if (audit.preservesMeaning) continue;
+    const key = audit.correctedTranslation.normalize("NFKC").trim()
+      .toLocaleLowerCase();
+    const matching = corrections.get(key) ?? [];
+    matching.push(audit);
+    corrections.set(key, matching);
+  }
+  for (const matching of corrections.values()) {
+    if (matching.length >= 2) return matching[0];
+  }
+  return null;
+}
+
+export function wordMetadataRepairSystemPrompt(
+  targetLang: string,
+  interfaceLang: string,
+  acceptedInterfaceText?: string,
+): string {
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  return `Create word-help metadata for one already accepted ${targetName} (${targetLang}) sentence. The sentence is immutable: you must not translate, rewrite, or correct it.
+
+Return strict JSON only: {"tokens":[{"text":"<exact segment of the accepted sentence>","gloss":"<1-3 word ${interfaceName} meaning>","roman":"<Latin-script pronunciation>","isContent":true},{"text":" ","gloss":null,"roman":null,"isContent":false}]}.
+
+Rules:
+- Concatenating every tokens[].text must reproduce the accepted sentence exactly.
+- Use one content token per word or non-whitespace term, never a phrase or full sentence.
+- Every content-token gloss must be a short meaning in ${interfaceName} (${interfaceLang}); never copy the ${targetName} word merely because it already uses Latin script.
+${
+    acceptedInterfaceText === undefined
+      ? ""
+      : "- The user also supplies an independently accepted Known Language sentence. Every gloss must agree with this accepted Known Language sentence in context; never substitute a related but different concept."
+  }
+- For a Latin-script word, roman repeats the written word. For a non-Latin word, roman is its Latin-script transliteration.
+- Whitespace, punctuation, and emoji use isContent=false with gloss and roman set to null.`;
+}
+
+export function parseWordMetadataRepairResult(
+  content: string,
+  expectedText: string,
+): TranslationToken[] | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  return validatedCompleteTokens(
+    (raw as Record<string, unknown>).tokens,
+    expectedText,
+  );
 }

@@ -237,7 +237,7 @@ void main() {
             'p_confidence': null,
             'p_tokens': <Map<String, dynamic>>[],
             'p_form_alternatives': null,
-            'p_cache_contract_version': 'complete-language-aids-v3',
+            'p_cache_contract_version': 'minimal-source-anchor-v11',
           },
         );
         expect(completed, isTrue);

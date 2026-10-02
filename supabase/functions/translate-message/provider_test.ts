@@ -22,12 +22,137 @@ Deno.test("focused audits use their matching strict response schemas", async () 
     "same-language review must use the correction schema",
   );
   assert(
+    correctionBlock.includes("parseCorrectionAuditCandidate"),
+    "same-language review must preserve valid correction semantics",
+  );
+  assert(
+    correctionBlock.includes("candidate.tokens !== null") &&
+      correctionBlock.includes("repairWordMetadata("),
+    "same-language review must repair only stale correction metadata",
+  );
+  assert(
     futureBlock.includes("TRANSLATION_RESPONSE_FORMAT"),
     "Hindi future rewrite must use the full translation schema",
   );
   assert(
     !futureBlock.includes("revised.translation !== candidateTranslation"),
     "the temporal audit must accept unchanged past or already-correct Hindi",
+  );
+});
+
+Deno.test("cross-language results receive a semantic audit before form and storage", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const functionStart = source.indexOf(
+    "async function auditTranslationSemantics",
+  );
+  const functionEnd = source.indexOf(
+    "async function auditInterfaceTextSemantics",
+  );
+  const auditBlock = source.slice(functionStart, functionEnd);
+  const anchorStart = source.indexOf("async function anchorSourceMeaning");
+  const consensusStart = source.indexOf(
+    "async function auditTranslationMeaningConsensus",
+  );
+  const anchorBlock = source.slice(anchorStart, consensusStart);
+  const consensusBlock = source.slice(consensusStart, functionStart);
+  assert(anchorStart >= 0, "the candidate-blind source anchor function exists");
+  assert(
+    source.includes("function semanticReviewCredential") &&
+      source.includes('"openai/gpt-4.1-mini"') &&
+      source.includes('"gpt-4.1-mini"'),
+    "semantic review uses a stronger independent model than generation",
+  );
+  assert(
+    anchorBlock.includes("SOURCE_MEANING_RESPONSE_FORMAT") &&
+      anchorBlock.includes("sourceMeaningAnchorSystemPrompt(") &&
+      anchorBlock.includes("parseSourceMeaningAnchorResult("),
+    "source meaning is resolved through its narrow strict contract",
+  );
+  assert(
+    !anchorBlock.includes("candidateTranslation"),
+    "the source anchor cannot see the candidate translation",
+  );
+  assert(functionStart >= 0, "the semantic audit function exists");
+  assert(
+    consensusBlock.includes("SEMANTIC_AUDIT_RESPONSE_FORMAT") &&
+      consensusBlock.includes("semanticTranslationAuditSystemPrompt("),
+    "the audit uses its narrow two-meaning response contract",
+  );
+  assert(
+    consensusBlock.includes("parseSemanticAuditResult(") &&
+      auditBlock.includes("repairWordMetadata(") &&
+      auditBlock.includes("repairInterfaceText("),
+    "only an explicit meaning mismatch can replace the sentence and both metadata lanes",
+  );
+  assert(
+    consensusBlock.includes("auditAttempt < 3") &&
+      consensusBlock.includes("resolveSemanticAuditConsensus(audits)") &&
+      consensusBlock.includes("trustedSourceMeaning"),
+    "semantic audits retry independently and require a two-review consensus",
+  );
+
+  const interfaceAuditStart = source.indexOf(
+    "async function auditInterfaceTextSemantics",
+  );
+  const interfaceAuditEnd = source.indexOf(
+    "async function auditSameLanguageCorrection",
+  );
+  const interfaceAuditBlock = source.slice(
+    interfaceAuditStart,
+    interfaceAuditEnd,
+  );
+  assert(
+    interfaceAuditStart >= 0 &&
+      interfaceAuditBlock.includes("auditTranslationMeaningConsensus(") &&
+      interfaceAuditBlock.includes("repairWordMetadata(") &&
+      interfaceAuditBlock.includes("acceptedInterfaceText"),
+    "Known Language text is audited and its learning-word glosses are always regenerated against the accepted sentence",
+  );
+
+  const callIndex = source.indexOf("await auditTranslationSemantics(");
+  const formIndex = source.indexOf("const needsFormAudit");
+  const storageIndex = source.indexOf("const completion = isWorker");
+  assert(callIndex >= 0, "cross-language candidates invoke the audit");
+  assert(
+    source.indexOf("await anchorSourceMeaning(") < callIndex &&
+      callIndex < formIndex && callIndex < storageIndex,
+    "meaning is audited before grammatical-form processing and storage",
+  );
+  const interfaceCallIndex = source.indexOf(
+    "await auditInterfaceTextSemantics(",
+  );
+  assert(
+    interfaceCallIndex > callIndex &&
+      interfaceCallIndex < formIndex &&
+      interfaceCallIndex < storageIndex,
+    "Known Language text is independently audited before storage",
+  );
+});
+
+Deno.test("copied glosses use a focused metadata repair", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const repairBlock = source.slice(
+    source.indexOf("async function repairWordMetadata"),
+    source.indexOf("async function auditSameLanguageCorrection"),
+  );
+  assert(
+    repairBlock.includes("WORD_METADATA_RESPONSE_FORMAT"),
+    "word-help repair must use its narrow strict schema",
+  );
+  assert(
+    repairBlock.includes("parseWordMetadataRepairResult"),
+    "word-help repair must validate exact sentence reproduction",
+  );
+  const detectionIndex = source.indexOf("wordGlossMetadataNeedsRepair(");
+  const replacementIndex = source.indexOf("candidate.tokens = repairedTokens");
+  assert(detectionIndex >= 0, "copied glosses must be detected before storage");
+  assert(
+    replacementIndex > detectionIndex,
+    "the accepted sentence keeps its result while only tokens are replaced",
   );
 });
 

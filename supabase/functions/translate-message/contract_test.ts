@@ -18,18 +18,30 @@ import {
   parseCorrectionAuditResult,
   parseFormAuditResult,
   parseProviderResult,
+  parseSemanticAuditResult,
+  parseSourceMeaningAnchorResult,
+  parseWordMetadataRepairResult,
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
   recognizedAbbreviationSourceLanguage,
+  resolveSemanticAuditConsensus,
+  SEMANTIC_AUDIT_RESPONSE_FORMAT,
+  semanticTranslationAuditSystemPrompt,
+  SOURCE_MEANING_RESPONSE_FORMAT,
+  sourceMeaningAnchorSystemPrompt,
   systemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
   type TranslationResult,
+  type TranslationToken,
   unsupportedSourceScript,
   validateRequest,
+  WORD_METADATA_RESPONSE_FORMAT,
+  wordGlossMetadataNeedsRepair,
   wordMetadataNeedsRetry,
+  wordMetadataRepairSystemPrompt,
 } from "./contract.ts";
 import * as contract from "./contract.ts";
 
@@ -162,6 +174,72 @@ Deno.test("focused correction audit catches a clear agreement error", () => {
   assert(
     (audit?.tokens ?? []).length === 10,
     "the correction keeps word metadata",
+  );
+});
+
+Deno.test("stale correction tokens preserve the valid correction for metadata repair", () => {
+  const parseCandidate = (contract as unknown as {
+    parseCorrectionAuditCandidate?: (
+      content: string,
+      sourceText: string,
+    ) => {
+      hasError: boolean;
+      correctedText: string | null;
+      tokens: unknown[] | null;
+    } | null;
+  }).parseCorrectionAuditCandidate;
+  assert(
+    typeof parseCandidate === "function",
+    "semantic correction candidate parser must exist",
+  );
+  const content = JSON.stringify({
+    hasError: true,
+    correctedText: "குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறார்கள்.",
+    explanation: "Le sujet pluriel exige le verbe pluriel « இருக்கிறார்கள் ».",
+    confidence: "high",
+    tokens: [
+      {
+        text: "குழந்தைகள்",
+        gloss: "enfants",
+        roman: "kuzhandaigal",
+        isContent: true,
+      },
+      {
+        text: "நிலையத்திற்கு",
+        gloss: "à la gare",
+        roman: "nilaiyaththirku",
+        isContent: true,
+      },
+      {
+        text: "அருகில்",
+        gloss: "près de",
+        roman: "arugil",
+        isContent: true,
+      },
+      {
+        text: "இருக்கிறது",
+        gloss: "est",
+        roman: "irukkirathu",
+        isContent: true,
+      },
+      { text: ".", gloss: null, roman: null, isContent: false },
+    ],
+  });
+  const sourceText = "குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறது.";
+  const candidate = parseCandidate!(content, sourceText);
+  assert(candidate?.hasError === true, "the clear correction is retained");
+  assert(
+    candidate?.correctedText ===
+      "குழந்தைகள் நிலையத்திற்கு அருகில் இருக்கிறார்கள்.",
+    "the corrected plural sentence is retained",
+  );
+  assert(
+    candidate?.tokens === null,
+    "only the stale token metadata is marked for repair",
+  );
+  assert(
+    parseCorrectionAuditResult(content, sourceText) === null,
+    "the strict complete-result parser still rejects mismatched tokens",
   );
 });
 
@@ -355,6 +433,11 @@ Deno.test("focused short retry isolates semantic translation from source detecti
     "chat abbreviations must become an idiomatic target-language expression",
   );
   assert(
+    system.includes("false friends") &&
+      system.includes("back-translate"),
+    "the focused retry must reject similar-looking words with different meanings",
+  );
+  assert(
     messages![1].content === "No",
     "the authored message is the only user input",
   );
@@ -366,6 +449,219 @@ Deno.test("focused short retry isolates semantic translation from source detecti
       text: "This message is deliberately longer than the bounded retry limit",
     }) === null,
     "long messages stay on the ordinary provider path",
+  );
+});
+
+Deno.test("semantic translation audit independently checks source meaning", () => {
+  const prompt = semanticTranslationAuditSystemPrompt("fr", "uk", "fr");
+  assert(prompt.includes("French (fr)"), "the source language is pinned");
+  assert(prompt.includes("Ukrainian (uk)"), "the target language is pinned");
+  assert(
+    prompt.includes("sourceMeaning") && prompt.includes("candidateMeaning"),
+    "the audit must expose both independently rendered meanings",
+  );
+  assert(
+    prompt.includes("false friends") && prompt.includes("back-translate"),
+    "the audit explicitly checks semantic drift",
+  );
+  assert(
+    prompt.includes("do not rewrite") && prompt.includes("meanings differ"),
+    "correct candidate wording remains stable",
+  );
+  for (const word of ["librairie", "бібліотеку", "книгарню"]) {
+    assert(!prompt.includes(word), `the audit does not hardcode ${word}`);
+  }
+});
+
+Deno.test("source meaning is anchored before any candidate is visible", () => {
+  const prompt = sourceMeaningAnchorSystemPrompt();
+  assert(
+    SOURCE_MEANING_RESPONSE_FORMAT.json_schema.name ===
+      "blab_source_meaning_anchor",
+    "the candidate-blind source anchor has its own strict schema",
+  );
+  assert(
+    prompt.includes("authored chat message") &&
+      prompt.includes("plain English") &&
+      prompt.includes("before any candidate exists"),
+    "the source anchor resolves the authored meaning independently",
+  );
+  assert(
+    prompt.includes("choose the exact English sense") &&
+      prompt.includes("similar-looking word") &&
+      prompt.includes("never add likely activities"),
+    "ambiguous words are disambiguated without expanding the authored message",
+  );
+  assert(
+    !prompt.includes("Candidate translation:"),
+    "the source anchor cannot be biased by a candidate",
+  );
+
+  assert(
+    parseSourceMeaningAnchorResult(
+      JSON.stringify({
+        sourceMeaning: "We want to visit the shop that sells books tomorrow.",
+      }),
+    ) === "We want to visit the shop that sells books tomorrow.",
+    "a complete source meaning is accepted",
+  );
+  assert(
+    parseSourceMeaningAnchorResult(
+      JSON.stringify({ sourceMeaning: "   " }),
+    ) === null,
+    "an empty source meaning is rejected",
+  );
+});
+
+Deno.test("semantic translation audit uses one stable internal meaning language", () => {
+  const prompt = semanticTranslationAuditSystemPrompt("en", "es", "hi");
+  assert(
+    prompt.includes("source meaning in English (en)") &&
+      prompt.includes("back-translate the candidate into English"),
+    "semantic comparison stays in English instead of the user's help language",
+  );
+  assert(
+    !prompt.includes("rendered in Hindi") &&
+      !prompt.includes("candidate into Hindi"),
+    "Hindi remains user-facing metadata and cannot distort the internal audit",
+  );
+});
+
+Deno.test("semantic audit parser accepts only internally consistent verdicts", () => {
+  assert(
+    SEMANTIC_AUDIT_RESPONSE_FORMAT.json_schema.name ===
+      "blab_semantic_translation_audit",
+    "the semantic audit has its own strict schema",
+  );
+  const preserved = parseSemanticAuditResult(
+    JSON.stringify({
+      sourceMeaning: "Nous voulons visiter la librairie demain.",
+      candidateMeaning: "Nous voulons visiter la librairie demain.",
+      preservesMeaning: true,
+      correctedTranslation: null,
+    }),
+    "Ми хочемо відвідати книгарню завтра.",
+  );
+  assert(
+    preserved?.preservesMeaning === true &&
+      preserved.correctedTranslation === null,
+    "an equivalent candidate remains immutable",
+  );
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify({
+        sourceMeaning: "We want to visit the library tomorrow.",
+        candidateMeaning: "We want to visit the library tomorrow.",
+        preservesMeaning: true,
+        correctedTranslation: null,
+      }),
+      "Ми хочемо відвідати бібліотеку завтра.",
+      "We want to visit the shop that sells books tomorrow.",
+    ) === null,
+    "an audit cannot rewrite the candidate-blind source anchor",
+  );
+
+  const corrected = parseSemanticAuditResult(
+    JSON.stringify({
+      sourceMeaning: "Nous voulons visiter la librairie demain.",
+      candidateMeaning: "Nous voulons visiter la bibliothèque demain.",
+      preservesMeaning: false,
+      correctedTranslation: "Ми хочемо відвідати книгарню завтра.",
+    }),
+    "Ми хочемо відвідати бібліотеку завтра.",
+  );
+  assert(
+    corrected?.preservesMeaning === false &&
+      corrected.correctedTranslation ===
+        "Ми хочемо відвідати книгарню завтра.",
+    "a meaning mismatch carries one corrected target sentence",
+  );
+
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify({
+        sourceMeaning: "source",
+        candidateMeaning: "different",
+        preservesMeaning: false,
+        correctedTranslation: null,
+      }),
+      "candidate",
+    ) === null,
+    "a mismatch without a correction is rejected",
+  );
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify({
+        sourceMeaning: "source",
+        candidateMeaning: "different",
+        preservesMeaning: false,
+        correctedTranslation: "candidate",
+      }),
+      "candidate",
+    ) === null,
+    "a mismatch cannot claim the unchanged candidate as its correction",
+  );
+});
+
+Deno.test("semantic audit consensus retries contradictions and requires agreement", () => {
+  const preserved = {
+    sourceMeaning: "We want to visit the bookstore tomorrow.",
+    candidateMeaning: "We want to visit the bookstore tomorrow.",
+    preservesMeaning: true as const,
+    correctedTranslation: null,
+  };
+  const repaired = {
+    sourceMeaning: "We want to visit the bookstore tomorrow.",
+    candidateMeaning: "We want to visit the library tomorrow.",
+    preservesMeaning: false as const,
+    correctedTranslation: "Queremos visitar la librería mañana.",
+  };
+
+  assert(
+    resolveSemanticAuditConsensus([preserved]) === null,
+    "one optimistic audit cannot approve a translation by itself",
+  );
+  assert(
+    resolveSemanticAuditConsensus([preserved, preserved])?.preservesMeaning ===
+      true,
+    "two independent approvals may preserve the candidate",
+  );
+  assert(
+    resolveSemanticAuditConsensus([preserved, repaired]) === null,
+    "a split verdict requires a tie-breaking review",
+  );
+  const corrected = resolveSemanticAuditConsensus([
+    preserved,
+    repaired,
+    repaired,
+  ]);
+  assert(
+    corrected?.preservesMeaning === false &&
+      corrected.correctedTranslation ===
+        "Queremos visitar la librería mañana.",
+    "two matching repairs override one false approval",
+  );
+});
+
+Deno.test("semantic audit consensus rejects competing corrections", () => {
+  const first = {
+    sourceMeaning: "We want to visit the bookstore tomorrow.",
+    candidateMeaning: "We want to visit the library tomorrow.",
+    preservesMeaning: false as const,
+    correctedTranslation: "Queremos visitar la librería mañana.",
+  };
+  const second = {
+    ...first,
+    correctedTranslation: "Mañana queremos ir a una librería.",
+  };
+  assert(
+    resolveSemanticAuditConsensus([first, second, second])
+      ?.correctedTranslation === second.correctedTranslation,
+    "only a correction supported by two audits may be saved",
+  );
+  assert(
+    resolveSemanticAuditConsensus([first, second]) === null,
+    "one-off competing rewrites remain unresolved",
   );
 });
 
@@ -1631,6 +1927,226 @@ Deno.test("non-Latin learning text requires complete word metadata", () => {
   );
 });
 
+Deno.test("copied multi-word glosses require a focused metadata repair", () => {
+  const copiedTokens: TranslationToken[] = [
+    { text: "Nós", gloss: "Nós", roman: "Nós", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    { text: "nos", gloss: "nos", roman: "nos", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "encontramos",
+      gloss: "encontramos",
+      roman: "encontramos",
+      isContent: true,
+    },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "amanhã",
+      gloss: "amanhã",
+      roman: "amanhã",
+      isContent: true,
+    },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    { text: "no", gloss: "no", roman: "no", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "parque",
+      gloss: "parque",
+      roman: "parque",
+      isContent: true,
+    },
+    { text: ".", gloss: null, roman: null, isContent: false },
+  ];
+  const copied: TranslationResult = {
+    mode: "translation",
+    sourceLang: "fr",
+    translation: "Nós nos encontramos amanhã no parque.",
+    interfaceText: "Nous nous retrouvons demain au parc.",
+    explanation: null,
+    confidence: null,
+    formAlternatives: null,
+    tokens: copiedTokens,
+  };
+  assert(
+    wordGlossMetadataNeedsRepair(copied, "pt", "fr"),
+    "Portuguese words copied as French meanings must be repaired",
+  );
+
+  const valid = {
+    ...copied,
+    tokens: copiedTokens.map((token) => {
+      if (!token.isContent) return token;
+      const frenchByPortuguese: Record<string, string> = {
+        "Nós": "Nous",
+        nos: "nous",
+        encontramos: "retrouvons",
+        amanhã: "demain",
+        no: "au",
+        parque: "parc",
+      };
+      return { ...token, gloss: frenchByPortuguese[token.text] };
+    }),
+  };
+  assert(
+    !wordGlossMetadataNeedsRepair(valid, "pt", "fr"),
+    "real French meanings must remain untouched",
+  );
+  assert(
+    !wordGlossMetadataNeedsRepair(
+      {
+        ...copied,
+        translation: "restaurant",
+        tokens: [{
+          text: "restaurant",
+          gloss: "restaurant",
+          roman: "restaurant",
+          isContent: true,
+        }],
+      },
+      "pt",
+      "fr",
+    ),
+    "one identical cognate is not enough evidence for a repair",
+  );
+  assert(
+    !wordGlossMetadataNeedsRepair(copied, "pt", "pt"),
+    "matching learning and known languages legitimately reuse words",
+  );
+});
+
+Deno.test("source-language glosses are repaired when known language differs", () => {
+  const englishGlosses: TranslationResult = {
+    mode: "translation",
+    sourceLang: "en",
+    translation: "Wir wollen morgen die Buchhandlung besuchen.",
+    interfaceText: "Queremos visitar la librería mañana.",
+    explanation: null,
+    confidence: null,
+    formAlternatives: null,
+    tokens: [
+      { text: "Wir", gloss: "We", roman: "Wir", isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "wollen", gloss: "want", roman: "wollen", isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "morgen",
+        gloss: "tomorrow",
+        roman: "morgen",
+        isContent: true,
+      },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "die", gloss: "the", roman: "die", isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "Buchhandlung",
+        gloss: "bookstore",
+        roman: "Buchhandlung",
+        isContent: true,
+      },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "besuchen",
+        gloss: "visit",
+        roman: "besuchen",
+        isContent: true,
+      },
+      { text: ".", gloss: null, roman: null, isContent: false },
+    ],
+  };
+  const source = "We want to visit the bookstore tomorrow.";
+  assert(
+    wordGlossMetadataNeedsRepair(englishGlosses, "de", "es", source),
+    "English source words cannot masquerade as Spanish word help",
+  );
+
+  const spanishGlosses = {
+    ...englishGlosses,
+    tokens: englishGlosses.tokens.map((raw) => {
+      const token = raw as TranslationToken;
+      if (!token.isContent) return token;
+      const spanishByGerman: Record<string, string> = {
+        Wir: "nosotros",
+        wollen: "queremos",
+        morgen: "mañana",
+        die: "la",
+        Buchhandlung: "librería",
+        besuchen: "visitar",
+      };
+      return { ...token, gloss: spanishByGerman[token.text] };
+    }),
+  };
+  assert(
+    !wordGlossMetadataNeedsRepair(spanishGlosses, "de", "es", source),
+    "valid Spanish word help remains unchanged",
+  );
+});
+
+Deno.test("focused word metadata repair preserves the accepted sentence", () => {
+  const prompt = wordMetadataRepairSystemPrompt(
+    "pt",
+    "fr",
+    "Nous allons au parc.",
+  );
+  assert(
+    prompt.includes("Portuguese (pt)"),
+    "the repair names the learning language",
+  );
+  assert(
+    prompt.includes("French (fr)"),
+    "the repair names the primary known language",
+  );
+  assert(
+    prompt.includes("must not translate, rewrite, or correct"),
+    "the accepted sentence is immutable during metadata repair",
+  );
+  assert(
+    prompt.includes("agree with this accepted Known Language sentence") &&
+      !prompt.includes("Nous allons au parc."),
+    "word meanings are anchored to the independently accepted Known Language sentence",
+  );
+  assert(
+    WORD_METADATA_RESPONSE_FORMAT.json_schema.strict,
+    "the focused metadata response is strict",
+  );
+
+  const translation = "Nós vamos ao parque.";
+  const repaired = parseWordMetadataRepairResult(
+    JSON.stringify({
+      tokens: [
+        { text: "Nós", gloss: "Nous", roman: "Nós", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "vamos", gloss: "allons", roman: "vamos", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "ao", gloss: "au", roman: "ao", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "parque",
+          gloss: "parc",
+          roman: "parque",
+          isContent: true,
+        },
+        { text: ".", gloss: null, roman: null, isContent: false },
+      ],
+    }),
+    translation,
+  );
+  assert(repaired?.length === 8, "valid repaired metadata is accepted");
+  assert(
+    parseWordMetadataRepairResult(
+      JSON.stringify({
+        tokens: [{
+          text: "Nous allons au parc.",
+          gloss: "phrase française",
+          roman: null,
+          isContent: true,
+        }],
+      }),
+      translation,
+    ) === null,
+    "a repair cannot rewrite the accepted Portuguese sentence",
+  );
+});
+
 Deno.test("provider retries only when a cross-language result copies the source", () => {
   const copied = {
     mode: "translation" as const,
@@ -2161,6 +2677,10 @@ Deno.test("auto-source prompt requests learning output with localized glosses", 
   assert(
     prompt.includes("likely personal name is not an unsupported language"),
     "names are transliterated instead of treated as unsupported",
+  );
+  assert(
+    prompt.includes("false friends") && prompt.includes("back-translate"),
+    "the standard prompt must verify semantic fidelity instead of trusting spelling similarity",
   );
   assert(
     prompt.includes(
