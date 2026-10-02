@@ -371,13 +371,14 @@
 - **Progress (2026-06-09):**
   - [x] `sentry_flutter` added (9.21.0 — 8.x failed the release build by pinning Kotlin language version 1.6, which the project's modern Kotlin compiler rejects; 9.x fixes it). `runApp` runs inside `SentryFlutter.init` via `bootstrap()`, so uncaught Dart, Flutter framework, and native crashes are all captured automatically.
   - [x] DSN supplied at build time via `--dart-define=SENTRY_DSN=…` (never in the repo). No DSN → Sentry is a clean no-op, so dev/tests/CI send nothing.
-  - [x] Message plaintext redacted: `beforeBreadcrumb` strips everything but safe metadata (method/url/status) from HTTP breadcrumbs; `beforeSend` rebuilds the request with the body replaced by `[redacted]`. `sendDefaultPii = false`, tracing off. Pure scrub helpers unit-tested (`test/sentry_scrub_test.dart`, 5 cases).
+  - [x] Private crash data redacted: `beforeBreadcrumb` removes free text and arbitrary non-HTTP data while keeping only safe HTTP method/path/status metadata; `beforeSend` strips query strings, fragments, headers, cookies, account details, tokens, and message text from the event envelope. `sendDefaultPii = false`, tracing off. Pure scrub helpers are covered by focused regression tests.
   - [x] Dev-menu "Throw test error" button (uncaught throw → framework handler → Sentry) for end-to-end verification on device.
   - [x] `flutter analyze` clean; `flutter test` 54/54 green; **release** APK builds with the DSN wired (`flutter build apk --release --dart-define=SENTRY_DSN=…`).
   - [x] **L-18 re-verification:** distinct staging and production Sentry DSNs
     are present only in ignored environment config, both guarded release builds
     pass, and a deliberate staging error arrived with redacted message content
     and the correct `staging` environment label.
+  - [x] **Deployment parity recovery (2026-10-02):** staging and production manifests now include the existing authenticated `prepare-message-jobs` function, with a repository contract test preventing function/JWT-policy drift.
   - [ ] **Live check during manual test** (Nastia): on the installed release build, dev menu → "Throw test error" → confirm the event lands in Sentry within ~1 min and carries no message text.
 
 ### Step 3.1 — iOS build  `[ ]` — **DEFERRED to post-launch** (2026-06-01 ship-fast decision)

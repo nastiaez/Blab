@@ -5,6 +5,7 @@
   "functions": {
     "delete-account": true,
     "translate-message": true,
+    "prepare-message-jobs": true,
     "send-push": false
   },
   "required_secrets": [
