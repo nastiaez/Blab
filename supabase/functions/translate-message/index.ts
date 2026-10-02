@@ -25,7 +25,7 @@ import {
   LANG_NAMES,
   missingFormAlternativesNeedsAudit,
   normalizeFormSubject,
-  parseCorrectionAuditResult,
+  parseCorrectionAuditCandidate,
   parseFormAuditResult,
   parseProviderResult,
   parseWordMetadataRepairResult,
@@ -195,9 +195,20 @@ async function auditSameLanguageCorrection(
   const content = (payload as {
     choices?: Array<{ message?: { content?: unknown } }>;
   })?.choices?.[0]?.message?.content;
-  return typeof content === "string"
-    ? parseCorrectionAuditResult(content, text)
-    : null;
+  if (typeof content !== "string") return null;
+  const candidate = parseCorrectionAuditCandidate(content, text);
+  if (candidate === null) return null;
+  if (!candidate.hasError || candidate.tokens !== null) return candidate;
+  const repairedTokens = await repairWordMetadata(
+    credential,
+    candidate.correctedText,
+    targetLang,
+    interfaceLang,
+  );
+  return repairedTokens === null ? null : {
+    ...candidate,
+    tokens: repairedTokens,
+  };
 }
 
 async function auditHindiFutureTranslation(
