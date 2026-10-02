@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -136,6 +137,91 @@ class LocalChatHistoryCache {
       return const [];
     }
   }
+
+  Future<void> savePreparedTranslations(
+    String chatId,
+    Iterable<Map<String, dynamic>> rows, {
+    required Map<String, String> sourceTexts,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = cachedPreparedTranslationsStorageKey(
+      userId: userId,
+      chatId: chatId,
+    );
+    final existing = await loadPreparedTranslations(chatId);
+    final byVariant = <String, Map<String, dynamic>>{
+      for (final row in existing) _preparedTranslationVariantKey(row): row,
+    };
+    final cachedAt = DateTime.now().microsecondsSinceEpoch;
+    var cacheOrder = 0;
+    for (final row in rows) {
+      final messageId = row['message_id'];
+      final sourceText = messageId is String ? sourceTexts[messageId] : null;
+      final sourceVersion = sourceText == null
+          ? null
+          : sha256.convert(utf8.encode(sourceText.trim())).toString();
+      if (messageId is! String ||
+          sourceText == null ||
+          row['source_version'] != sourceVersion ||
+          row['status'] != 'ready') {
+        continue;
+      }
+      final cached = Map<String, dynamic>.from(row)
+        ..['source_text'] = sourceText
+        ..['_cached_at'] = cachedAt + cacheOrder++;
+      byVariant[_preparedTranslationVariantKey(cached)] = cached;
+    }
+    final newestByMessage = <String, int>{};
+    for (final row in byVariant.values) {
+      final messageId = row['message_id'];
+      if (messageId is! String) continue;
+      final rowCachedAt = row['_cached_at'];
+      final timestamp = rowCachedAt is int ? rowCachedAt : 0;
+      final current = newestByMessage[messageId];
+      if (current == null || timestamp > current) {
+        newestByMessage[messageId] = timestamp;
+      }
+    }
+    final retainedMessageIds = newestByMessage.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final retained = retainedMessageIds
+        .take(50)
+        .map((entry) => entry.key)
+        .toSet();
+    await prefs.setString(
+      key,
+      jsonEncode(
+        byVariant.values
+            .where((row) => retained.contains(row['message_id']))
+            .toList(),
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> loadPreparedTranslations(
+    String chatId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(
+      cachedPreparedTranslationsStorageKey(userId: userId, chatId: chatId),
+    );
+    if (raw == null) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static String _preparedTranslationVariantKey(Map<String, dynamic> row) =>
+      '${row['message_id']}|${row['learning_language']}|'
+      '${row['primary_known_language']}|${row['language_revision']}|'
+      '${row['source_version']}';
 
   Future<void> saveMessages(String chatId, Iterable<Message> messages) async {
     final prefs = await SharedPreferences.getInstance();

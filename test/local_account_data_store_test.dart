@@ -14,6 +14,8 @@ void main() {
           '[{"body":"one"}]',
       pendingSendsStorageKey(userId: 'user-b', chatId: 'chat-b'):
           '[{"body":"two"}]',
+      cachedPreparedTranslationsStorageKey(userId: 'user-a', chatId: 'chat-a'):
+          '[{"message_id":"message-a"}]',
       'unrelated_device_preference': 'keep',
     });
 
@@ -25,6 +27,12 @@ void main() {
     expect(
       preferences.getKeys().where(
         (key) => key.startsWith(kPendingSendsKeyPrefix),
+      ),
+      isEmpty,
+    );
+    expect(
+      preferences.getKeys().where(
+        (key) => key.startsWith(kCachedPreparedTranslationsKeyPrefix),
       ),
       isEmpty,
     );
