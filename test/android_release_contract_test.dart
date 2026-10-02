@@ -136,6 +136,34 @@ void main() {
       contains('FlutterAuthClientOptions(detectSessionInUri: false)'),
     );
   });
+
+  test('approved launcher and onboarding assets stay packaged', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    const requiredAssets = <String>[
+      'assets/icon/launcher_icon.png',
+      'assets/icon/final/hedgehog_icon_foreground_adaptive.png',
+      'assets/onboarding/email.svg',
+      'assets/onboarding/google.svg',
+      'android/app/src/main/res/mipmap-mdpi/launcher_icon.png',
+      'android/app/src/main/res/mipmap-hdpi/launcher_icon.png',
+      'android/app/src/main/res/mipmap-xhdpi/launcher_icon.png',
+      'android/app/src/main/res/mipmap-xxhdpi/launcher_icon.png',
+      'android/app/src/main/res/mipmap-xxxhdpi/launcher_icon.png',
+      'android/app/src/main/res/drawable-mdpi/ic_launcher_foreground.png',
+      'android/app/src/main/res/drawable-hdpi/ic_launcher_foreground.png',
+      'android/app/src/main/res/drawable-xhdpi/ic_launcher_foreground.png',
+      'android/app/src/main/res/drawable-xxhdpi/ic_launcher_foreground.png',
+      'android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png',
+    ];
+
+    for (final path in requiredAssets) {
+      expect(File(path).existsSync(), isTrue, reason: 'Missing $path');
+    }
+    expect(manifest, contains('android:roundIcon="@mipmap/launcher_icon"'));
+  });
+
   test(
     'Android push permission, channel, and settings bridge stay configured',
     () {
