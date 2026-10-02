@@ -127,7 +127,7 @@ select ok(
     'medium',
     '[{"text":"Machst du","gloss":"do you","isContent":true},{"text":" ...?","isContent":false}]'::jsonb,
     null,
-    'complete-language-aids-v3'
+    'minimal-source-anchor-v11'
   ),
   'a recipient request can complete a shared correction'
 );
@@ -246,7 +246,7 @@ select ok(
     null,
     '[]'::jsonb,
     null,
-    'complete-language-aids-v3'
+    'minimal-source-anchor-v11'
   ),
   'correct writing stores a shared none result'
 );
