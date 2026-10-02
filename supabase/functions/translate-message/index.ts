@@ -29,6 +29,7 @@ import {
   parseFormAuditResult,
   parseProviderResult,
   parseSemanticAuditResult,
+  parseSourceMeaningAnchorResult,
   parseWordMetadataRepairResult,
   type ProviderCredential,
   providerCredentials,
@@ -36,12 +37,15 @@ import {
   providerResultFailureReason,
   recognizedAbbreviationSourceLanguage,
   resolveOptionalFormAudit,
+  resolveSemanticAuditConsensus,
   SEMANTIC_AUDIT_RESPONSE_FORMAT,
   type SemanticAuditResult,
   semanticTranslationAuditSystemPrompt,
+  SOURCE_MEANING_RESPONSE_FORMAT,
   sourceClassificationRetryGuidance,
   sourceEvidenceLanguage,
   sourceEvidenceNeedsRetry,
+  sourceMeaningAnchorSystemPrompt,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
@@ -64,8 +68,13 @@ const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
+const OPENROUTER_SEMANTIC_REVIEW_MODEL =
+  Deno.env.get("OPENROUTER_SEMANTIC_REVIEW_MODEL")?.trim() ||
+  "openai/gpt-4.1-mini";
+const OPENAI_SEMANTIC_REVIEW_MODEL =
+  Deno.env.get("OPENAI_SEMANTIC_REVIEW_MODEL")?.trim() || "gpt-4.1-mini";
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
-const CACHE_CONTRACT_VERSION = "semantic-fidelity-v5";
+const CACHE_CONTRACT_VERSION = "minimal-source-anchor-v11";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -76,6 +85,17 @@ const CORS_HEADERS = {
 
 function providerName(credential: ProviderCredential): string {
   return credential.provider === "openrouter" ? "OpenRouter" : "OpenAI";
+}
+
+function semanticReviewCredential(
+  credential: ProviderCredential,
+): ProviderCredential {
+  return {
+    ...credential,
+    model: credential.provider === "openrouter"
+      ? OPENROUTER_SEMANTIC_REVIEW_MODEL
+      : OPENAI_SEMANTIC_REVIEW_MODEL,
+  };
 }
 
 async function repairInterfaceText(
@@ -132,6 +152,7 @@ async function repairWordMetadata(
   acceptedTranslation: string,
   targetLang: string,
   interfaceLang: string,
+  acceptedInterfaceText?: string,
 ) {
   let response: Response;
   try {
@@ -142,9 +163,21 @@ async function repairWordMetadata(
       messages: [
         {
           role: "system",
-          content: wordMetadataRepairSystemPrompt(targetLang, interfaceLang),
+          content: wordMetadataRepairSystemPrompt(
+            targetLang,
+            interfaceLang,
+            acceptedInterfaceText,
+          ),
         },
-        { role: "user", content: acceptedTranslation },
+        {
+          role: "user",
+          content: acceptedInterfaceText === undefined
+            ? acceptedTranslation
+            : JSON.stringify({
+              acceptedLearningSentence: acceptedTranslation,
+              acceptedKnownLanguageSentence: acceptedInterfaceText,
+            }),
+        },
       ],
     });
   } catch {
@@ -169,66 +202,203 @@ async function repairWordMetadata(
 type SemanticTranslationAudit =
   | Extract<SemanticAuditResult, { preservesMeaning: true }> & {
     repairedTokens: null;
+    repairedInterfaceText: null;
   }
   | Extract<SemanticAuditResult, { preservesMeaning: false }> & {
     repairedTokens: TranslationToken[];
+    repairedInterfaceText: string;
   };
+
+type InterfaceTextSemanticAudit = {
+  interfaceText: string;
+  repairedTokens: TranslationToken[] | null;
+};
+
+async function anchorSourceMeaning(
+  credential: ProviderCredential,
+  sourceText: string,
+): Promise<string | null> {
+  for (let anchorAttempt = 0; anchorAttempt < 2; anchorAttempt += 1) {
+    let response: Response;
+    try {
+      response = await fetchChatCompletion(credential, {
+        temperature: 0,
+        max_completion_tokens: 1000,
+        response_format: SOURCE_MEANING_RESPONSE_FORMAT,
+        messages: [
+          {
+            role: "system",
+            content: sourceMeaningAnchorSystemPrompt(),
+          },
+          {
+            role: "user",
+            content: `Authored source message:\n${sourceText}`,
+          },
+        ],
+      });
+    } catch {
+      continue;
+    }
+    if (!response.ok) continue;
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      continue;
+    }
+    const content = (payload as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    })?.choices?.[0]?.message?.content;
+    if (typeof content !== "string") continue;
+    const sourceMeaning = parseSourceMeaningAnchorResult(content);
+    if (sourceMeaning !== null) return sourceMeaning;
+  }
+  return null;
+}
+
+async function auditTranslationMeaningConsensus(
+  credential: ProviderCredential,
+  sourceText: string,
+  trustedSourceMeaning: string,
+  candidateTranslation: string,
+  sourceLang: string,
+  targetLang: string,
+): Promise<SemanticAuditResult | null> {
+  const audits: SemanticAuditResult[] = [];
+  for (let auditAttempt = 0; auditAttempt < 3; auditAttempt += 1) {
+    let response: Response;
+    try {
+      response = await fetchChatCompletion(credential, {
+        temperature: 0,
+        max_completion_tokens: 4000,
+        response_format: SEMANTIC_AUDIT_RESPONSE_FORMAT,
+        messages: [
+          {
+            role: "system",
+            content: semanticTranslationAuditSystemPrompt(
+              sourceLang,
+              targetLang,
+              "en",
+            ),
+          },
+          {
+            role: "user",
+            content: `Independent audit pass ${
+              auditAttempt + 1
+            } of 3. The trusted source meaning was resolved before this candidate existed. Copy it exactly into sourceMeaning. If the candidate is already correct, preserve it. If it is wrong, the correction must actually change it.\n\nTrusted source meaning:\n${trustedSourceMeaning}\n\nAuthored source message:\n${sourceText}\n\nCandidate translation:\n${candidateTranslation}`,
+          },
+        ],
+      });
+    } catch {
+      continue;
+    }
+    if (!response.ok) continue;
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      continue;
+    }
+    const content = (payload as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    })?.choices?.[0]?.message?.content;
+    if (typeof content !== "string") continue;
+    const audit = parseSemanticAuditResult(
+      content,
+      candidateTranslation,
+      trustedSourceMeaning,
+    );
+    if (audit === null) continue;
+    audits.push(audit);
+    const consensus = resolveSemanticAuditConsensus(audits);
+    if (consensus === null) continue;
+    return consensus;
+  }
+  return null;
+}
 
 async function auditTranslationSemantics(
   credential: ProviderCredential,
   sourceText: string,
+  trustedSourceMeaning: string,
   candidateTranslation: string,
   sourceLang: string,
   targetLang: string,
   interfaceLang: string,
 ): Promise<SemanticTranslationAudit | null> {
-  let response: Response;
-  try {
-    response = await fetchChatCompletion(credential, {
-      temperature: 0,
-      max_completion_tokens: 4000,
-      response_format: SEMANTIC_AUDIT_RESPONSE_FORMAT,
-      messages: [
-        {
-          role: "system",
-          content: semanticTranslationAuditSystemPrompt(
-            sourceLang,
-            targetLang,
-            interfaceLang,
-          ),
-        },
-        {
-          role: "user",
-          content:
-            `Source message:\n${sourceText}\n\nCandidate translation:\n${candidateTranslation}`,
-        },
-      ],
-    });
-  } catch {
-    return null;
-  }
-  if (!response.ok) return null;
-
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    return null;
-  }
-  const content = (payload as {
-    choices?: Array<{ message?: { content?: unknown } }>;
-  })?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") return null;
-  const audit = parseSemanticAuditResult(content, candidateTranslation);
-  if (audit === null) return null;
-  if (audit.preservesMeaning) return { ...audit, repairedTokens: null };
-  const repairedTokens = await repairWordMetadata(
+  const consensus = await auditTranslationMeaningConsensus(
     credential,
-    audit.correctedTranslation!,
+    sourceText,
+    trustedSourceMeaning,
+    candidateTranslation,
+    sourceLang,
     targetLang,
+  );
+  if (consensus === null) return null;
+  if (consensus.preservesMeaning) {
+    return {
+      ...consensus,
+      repairedTokens: null,
+      repairedInterfaceText: null,
+    };
+  }
+  const [repairedTokens, repairedInterfaceText] = await Promise.all([
+    repairWordMetadata(
+      credential,
+      consensus.correctedTranslation,
+      targetLang,
+      interfaceLang,
+    ),
+    repairInterfaceText(
+      credential,
+      consensus.correctedTranslation,
+      targetLang,
+      interfaceLang,
+    ),
+  ]);
+  return repairedTokens === null || repairedInterfaceText === null
+    ? null
+    : { ...consensus, repairedTokens, repairedInterfaceText };
+}
+
+async function auditInterfaceTextSemantics(
+  credential: ProviderCredential,
+  sourceText: string,
+  trustedSourceMeaning: string,
+  learningTranslation: string,
+  candidateInterfaceText: string,
+  sourceLang: string,
+  targetLang: string,
+  interfaceLang: string,
+): Promise<InterfaceTextSemanticAudit | null> {
+  if (interfaceLang === targetLang) {
+    return { interfaceText: candidateInterfaceText, repairedTokens: null };
+  }
+  const consensus = await auditTranslationMeaningConsensus(
+    credential,
+    sourceText,
+    trustedSourceMeaning,
+    candidateInterfaceText,
+    sourceLang,
     interfaceLang,
   );
-  return repairedTokens === null ? null : { ...audit, repairedTokens };
+  if (consensus === null) return null;
+  const acceptedInterfaceText = consensus.preservesMeaning
+    ? candidateInterfaceText
+    : consensus.correctedTranslation;
+  const repairedTokens = await repairWordMetadata(
+    credential,
+    learningTranslation,
+    targetLang,
+    interfaceLang,
+    acceptedInterfaceText,
+  );
+  return repairedTokens === null ? null : {
+    interfaceText: acceptedInterfaceText,
+    repairedTokens,
+  };
 }
 
 async function auditSameLanguageCorrection(
@@ -606,6 +776,20 @@ Deno.serve(async (req) => {
   let providerFailure = "unknown";
   let lastFailedSourceLang: string | null = null;
   for (const credential of providerKeys) {
+    const semanticCredential = semanticReviewCredential(credential);
+    const trustedSourceMeaning = await anchorSourceMeaning(
+      semanticCredential,
+      text,
+    );
+    if (trustedSourceMeaning === null) {
+      providerFailure = `${credential.provider}_source_meaning_anchor`;
+      console.error("translation provider attempt failed", {
+        provider: credential.provider,
+        model: credential.model,
+        reason: providerFailure,
+      });
+      continue;
+    }
     let previousSourceClassificationConflict = false;
     let retrySourceLang: string | null = recognizedAbbreviationSourceLanguage(
       text,
@@ -742,8 +926,9 @@ Deno.serve(async (req) => {
         candidate.sourceLang !== targetLang
       ) {
         const semanticAudit = await auditTranslationSemantics(
-          credential,
+          semanticCredential,
           text,
+          trustedSourceMeaning,
           candidate.translation,
           candidate.sourceLang,
           targetLang,
@@ -762,11 +947,35 @@ Deno.serve(async (req) => {
           candidate = {
             ...candidate,
             translation: semanticAudit.correctedTranslation,
-            interfaceText: semanticAudit.sourceMeaning,
+            interfaceText: semanticAudit.repairedInterfaceText,
             tokens: semanticAudit.repairedTokens,
             formAlternatives: null,
           };
         }
+        const interfaceAudit = await auditInterfaceTextSemantics(
+          semanticCredential,
+          text,
+          trustedSourceMeaning,
+          candidate.translation,
+          candidate.interfaceText,
+          candidate.sourceLang,
+          targetLang,
+          interfaceLang,
+        );
+        if (interfaceAudit === null) {
+          providerFailure = `${credential.provider}_interface_semantic_audit`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        candidate = {
+          ...candidate,
+          interfaceText: interfaceAudit.interfaceText,
+          tokens: interfaceAudit.repairedTokens ?? candidate.tokens,
+        };
       }
       if (candidate.mode === "none" && candidate.sourceLang === targetLang) {
         const correctionAudit = await auditSameLanguageCorrection(
@@ -908,7 +1117,12 @@ Deno.serve(async (req) => {
         continue;
       }
       if (
-        wordGlossMetadataNeedsRepair(candidate, targetLang, interfaceLang)
+        wordGlossMetadataNeedsRepair(
+          candidate,
+          targetLang,
+          interfaceLang,
+          text,
+        )
       ) {
         const repairedTokens = await repairWordMetadata(
           credential,
@@ -927,7 +1141,12 @@ Deno.serve(async (req) => {
         }
         candidate.tokens = repairedTokens;
         if (
-          wordGlossMetadataNeedsRepair(candidate, targetLang, interfaceLang)
+          wordGlossMetadataNeedsRepair(
+            candidate,
+            targetLang,
+            interfaceLang,
+            text,
+          )
         ) {
           providerFailure = `${credential.provider}_word_metadata_copied`;
           console.error("translation provider attempt failed", {

@@ -48,19 +48,67 @@ Deno.test("cross-language results receive a semantic audit before form and stora
     "async function auditTranslationSemantics",
   );
   const functionEnd = source.indexOf(
-    "async function auditSameLanguageCorrection",
+    "async function auditInterfaceTextSemantics",
   );
   const auditBlock = source.slice(functionStart, functionEnd);
+  const anchorStart = source.indexOf("async function anchorSourceMeaning");
+  const consensusStart = source.indexOf(
+    "async function auditTranslationMeaningConsensus",
+  );
+  const anchorBlock = source.slice(anchorStart, consensusStart);
+  const consensusBlock = source.slice(consensusStart, functionStart);
+  assert(anchorStart >= 0, "the candidate-blind source anchor function exists");
+  assert(
+    source.includes("function semanticReviewCredential") &&
+      source.includes('"openai/gpt-4.1-mini"') &&
+      source.includes('"gpt-4.1-mini"'),
+    "semantic review uses a stronger independent model than generation",
+  );
+  assert(
+    anchorBlock.includes("SOURCE_MEANING_RESPONSE_FORMAT") &&
+      anchorBlock.includes("sourceMeaningAnchorSystemPrompt(") &&
+      anchorBlock.includes("parseSourceMeaningAnchorResult("),
+    "source meaning is resolved through its narrow strict contract",
+  );
+  assert(
+    !anchorBlock.includes("candidateTranslation"),
+    "the source anchor cannot see the candidate translation",
+  );
   assert(functionStart >= 0, "the semantic audit function exists");
   assert(
-    auditBlock.includes("SEMANTIC_AUDIT_RESPONSE_FORMAT") &&
-      auditBlock.includes("semanticTranslationAuditSystemPrompt("),
+    consensusBlock.includes("SEMANTIC_AUDIT_RESPONSE_FORMAT") &&
+      consensusBlock.includes("semanticTranslationAuditSystemPrompt("),
     "the audit uses its narrow two-meaning response contract",
   );
   assert(
-    auditBlock.includes("parseSemanticAuditResult(") &&
-      auditBlock.includes("repairWordMetadata("),
-    "only an explicit meaning mismatch can replace the sentence and metadata",
+    consensusBlock.includes("parseSemanticAuditResult(") &&
+      auditBlock.includes("repairWordMetadata(") &&
+      auditBlock.includes("repairInterfaceText("),
+    "only an explicit meaning mismatch can replace the sentence and both metadata lanes",
+  );
+  assert(
+    consensusBlock.includes("auditAttempt < 3") &&
+      consensusBlock.includes("resolveSemanticAuditConsensus(audits)") &&
+      consensusBlock.includes("trustedSourceMeaning"),
+    "semantic audits retry independently and require a two-review consensus",
+  );
+
+  const interfaceAuditStart = source.indexOf(
+    "async function auditInterfaceTextSemantics",
+  );
+  const interfaceAuditEnd = source.indexOf(
+    "async function auditSameLanguageCorrection",
+  );
+  const interfaceAuditBlock = source.slice(
+    interfaceAuditStart,
+    interfaceAuditEnd,
+  );
+  assert(
+    interfaceAuditStart >= 0 &&
+      interfaceAuditBlock.includes("auditTranslationMeaningConsensus(") &&
+      interfaceAuditBlock.includes("repairWordMetadata(") &&
+      interfaceAuditBlock.includes("acceptedInterfaceText"),
+    "Known Language text is audited and its learning-word glosses are always regenerated against the accepted sentence",
   );
 
   const callIndex = source.indexOf("await auditTranslationSemantics(");
@@ -68,8 +116,18 @@ Deno.test("cross-language results receive a semantic audit before form and stora
   const storageIndex = source.indexOf("const completion = isWorker");
   assert(callIndex >= 0, "cross-language candidates invoke the audit");
   assert(
-    callIndex < formIndex && callIndex < storageIndex,
+    source.indexOf("await anchorSourceMeaning(") < callIndex &&
+      callIndex < formIndex && callIndex < storageIndex,
     "meaning is audited before grammatical-form processing and storage",
+  );
+  const interfaceCallIndex = source.indexOf(
+    "await auditInterfaceTextSemantics(",
+  );
+  assert(
+    interfaceCallIndex > callIndex &&
+      interfaceCallIndex < formIndex &&
+      interfaceCallIndex < storageIndex,
+    "Known Language text is independently audited before storage",
   );
 });
 
