@@ -34,6 +34,8 @@ export type FormParticipantContext = {
 
 const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const SEMANTIC_FIDELITY_RULE =
+  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning.";
 
 export function providerCredentials(env: {
   openRouterKey?: string | null;
@@ -144,7 +146,7 @@ export function focusedTranslationRetryMessages({
   return [{
     role: "system",
     content:
-      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
+      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. ${SEMANTIC_FIDELITY_RULE} Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
   }, { role: "user", content: text }];
 }
 
@@ -263,6 +265,30 @@ export const INTERFACE_RESPONSE_FORMAT = {
         interfaceText: { type: "string", minLength: 1 },
       },
       required: ["interfaceText"],
+    },
+  },
+} as const;
+
+export const SEMANTIC_AUDIT_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    name: "blab_semantic_translation_audit",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        sourceMeaning: { type: "string", minLength: 1 },
+        candidateMeaning: { type: "string", minLength: 1 },
+        preservesMeaning: { type: "boolean" },
+        correctedTranslation: { type: ["string", "null"] },
+      },
+      required: [
+        "sourceMeaning",
+        "candidateMeaning",
+        "preservesMeaning",
+        "correctedTranslation",
+      ],
     },
   },
 } as const;
@@ -1835,6 +1861,7 @@ Return strict JSON only:
 
 Rules:
 - Preserve meaning and tone. Keep URLs, @mentions, hashtags, code, numbers, and emoji unchanged, and preserve names' identity rather than translating their meaning; transliterate a confidently identified name when the target script differs. Move protected content with the surrounding sentence when the target language needs a different natural word order.
+- ${SEMANTIC_FIDELITY_RULE}
 - Produce natural, standard ${targetName} spelling and word formation.${targetLanguageGuidance}
 - Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
 - A likely personal name is not an unsupported language. Keep its identity, and when the target script differs, transliterate it rather than translating its meaning. Use conversation context and the supplied participant names when available; do not infer a name from capitalization alone.
@@ -1875,6 +1902,86 @@ export function interfaceRepairSystemPrompt(
   return `Translate the complete user message from ${targetName} (${targetLang}) into ${interfaceName} (${interfaceLang}). Preserve meaning, tone, names, URLs, emoji, and punctuation.
 ${GENDER_ADDRESS_RULES}
 Translate all translatable words even when the message is short. Return strict JSON only: {"interfaceText":"<complete ${interfaceName} translation>"}`;
+}
+
+export function semanticTranslationAuditSystemPrompt(
+  sourceLang: string,
+  targetLang: string,
+  interfaceLang: string,
+): string {
+  const sourceName = LANG_NAMES[sourceLang] ?? sourceLang;
+  const targetName = LANG_NAMES[targetLang] ?? targetLang;
+  const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+  return `Audit one candidate translation from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}) for semantic fidelity.
+
+Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${interfaceName}>","candidateMeaning":"<complete candidate independently back-translated into ${interfaceName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
+
+First render the complete source meaning in ${interfaceName} (${interfaceLang}) as sourceMeaning. Separately back-translate the candidate into ${interfaceName} as candidateMeaning without copying wording from sourceMeaning. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
+
+Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.`;
+}
+
+export type SemanticAuditResult = {
+  sourceMeaning: string;
+  candidateMeaning: string;
+  preservesMeaning: true;
+  correctedTranslation: null;
+} | {
+  sourceMeaning: string;
+  candidateMeaning: string;
+  preservesMeaning: false;
+  correctedTranslation: string;
+};
+
+export function parseSemanticAuditResult(
+  content: string,
+  candidateTranslation: string,
+): SemanticAuditResult | null {
+  const firstBrace = content.indexOf("{");
+  const lastBrace = content.lastIndexOf("}");
+  if (firstBrace < 0 || lastBrace <= firstBrace) return null;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.slice(firstBrace, lastBrace + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return null;
+  }
+  const value = raw as Record<string, unknown>;
+  if (
+    typeof value.sourceMeaning !== "string" ||
+    value.sourceMeaning.trim().length === 0 ||
+    typeof value.candidateMeaning !== "string" ||
+    value.candidateMeaning.trim().length === 0 ||
+    typeof value.preservesMeaning !== "boolean" ||
+    value.correctedTranslation !== null &&
+      typeof value.correctedTranslation !== "string"
+  ) return null;
+  if (value.preservesMeaning) {
+    if (value.correctedTranslation !== null) return null;
+  } else if (
+    typeof value.correctedTranslation !== "string" ||
+    value.correctedTranslation.trim().length === 0 ||
+    value.correctedTranslation.trim() === candidateTranslation.trim()
+  ) {
+    return null;
+  }
+  if (value.preservesMeaning) {
+    return {
+      sourceMeaning: value.sourceMeaning.trim(),
+      candidateMeaning: value.candidateMeaning.trim(),
+      preservesMeaning: true,
+      correctedTranslation: null,
+    };
+  }
+  return {
+    sourceMeaning: value.sourceMeaning.trim(),
+    candidateMeaning: value.candidateMeaning.trim(),
+    preservesMeaning: false,
+    correctedTranslation: (value.correctedTranslation as string).trim(),
+  };
 }
 
 export function wordMetadataRepairSystemPrompt(

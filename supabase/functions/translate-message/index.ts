@@ -28,6 +28,7 @@ import {
   parseCorrectionAuditCandidate,
   parseFormAuditResult,
   parseProviderResult,
+  parseSemanticAuditResult,
   parseWordMetadataRepairResult,
   type ProviderCredential,
   providerCredentials,
@@ -35,12 +36,16 @@ import {
   providerResultFailureReason,
   recognizedAbbreviationSourceLanguage,
   resolveOptionalFormAudit,
+  SEMANTIC_AUDIT_RESPONSE_FORMAT,
+  type SemanticAuditResult,
+  semanticTranslationAuditSystemPrompt,
   sourceClassificationRetryGuidance,
   sourceEvidenceLanguage,
   sourceEvidenceNeedsRetry,
   TRANSLATION_RESPONSE_FORMAT,
   type TranslationContextMessage,
   translationNeedsRetry,
+  type TranslationToken,
   unsupportedSourceScript,
   validateRequest,
   WORD_METADATA_RESPONSE_FORMAT,
@@ -60,7 +65,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
-const CACHE_CONTRACT_VERSION = "primary-known-word-metadata-v4";
+const CACHE_CONTRACT_VERSION = "semantic-fidelity-v5";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -159,6 +164,71 @@ async function repairWordMetadata(
   return typeof content === "string"
     ? parseWordMetadataRepairResult(content, acceptedTranslation)
     : null;
+}
+
+type SemanticTranslationAudit =
+  | Extract<SemanticAuditResult, { preservesMeaning: true }> & {
+    repairedTokens: null;
+  }
+  | Extract<SemanticAuditResult, { preservesMeaning: false }> & {
+    repairedTokens: TranslationToken[];
+  };
+
+async function auditTranslationSemantics(
+  credential: ProviderCredential,
+  sourceText: string,
+  candidateTranslation: string,
+  sourceLang: string,
+  targetLang: string,
+  interfaceLang: string,
+): Promise<SemanticTranslationAudit | null> {
+  let response: Response;
+  try {
+    response = await fetchChatCompletion(credential, {
+      temperature: 0,
+      max_completion_tokens: 4000,
+      response_format: SEMANTIC_AUDIT_RESPONSE_FORMAT,
+      messages: [
+        {
+          role: "system",
+          content: semanticTranslationAuditSystemPrompt(
+            sourceLang,
+            targetLang,
+            interfaceLang,
+          ),
+        },
+        {
+          role: "user",
+          content:
+            `Source message:\n${sourceText}\n\nCandidate translation:\n${candidateTranslation}`,
+        },
+      ],
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") return null;
+  const audit = parseSemanticAuditResult(content, candidateTranslation);
+  if (audit === null) return null;
+  if (audit.preservesMeaning) return { ...audit, repairedTokens: null };
+  const repairedTokens = await repairWordMetadata(
+    credential,
+    audit.correctedTranslation!,
+    targetLang,
+    interfaceLang,
+  );
+  return repairedTokens === null ? null : { ...audit, repairedTokens };
 }
 
 async function auditSameLanguageCorrection(
@@ -667,6 +737,37 @@ Deno.serve(async (req) => {
         });
         continue;
       }
+      if (
+        candidate.mode === "translation" &&
+        candidate.sourceLang !== targetLang
+      ) {
+        const semanticAudit = await auditTranslationSemantics(
+          credential,
+          text,
+          candidate.translation,
+          candidate.sourceLang,
+          targetLang,
+          interfaceLang,
+        );
+        if (semanticAudit === null) {
+          providerFailure = `${credential.provider}_semantic_audit`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        if (semanticAudit.preservesMeaning === false) {
+          candidate = {
+            ...candidate,
+            translation: semanticAudit.correctedTranslation,
+            interfaceText: semanticAudit.sourceMeaning,
+            tokens: semanticAudit.repairedTokens,
+            formAlternatives: null,
+          };
+        }
+      }
       if (candidate.mode === "none" && candidate.sourceLang === targetLang) {
         const correctionAudit = await auditSameLanguageCorrection(
           credential,
@@ -690,7 +791,7 @@ Deno.serve(async (req) => {
             translation: correctionAudit.correctedText,
             explanation: correctionAudit.explanation,
             confidence: correctionAudit.confidence,
-            tokens: correctionAudit.tokens,
+            tokens: correctionAudit.tokens!,
             formAlternatives: null,
           };
         }
