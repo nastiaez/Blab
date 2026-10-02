@@ -18,6 +18,7 @@ import {
   parseCorrectionAuditResult,
   parseFormAuditResult,
   parseProviderResult,
+  parseWordMetadataRepairResult,
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
@@ -27,9 +28,13 @@ import {
   type TranslationContextMessage,
   translationNeedsRetry,
   type TranslationResult,
+  type TranslationToken,
   unsupportedSourceScript,
   validateRequest,
+  WORD_METADATA_RESPONSE_FORMAT,
+  wordGlossMetadataNeedsRepair,
   wordMetadataNeedsRetry,
+  wordMetadataRepairSystemPrompt,
 } from "./contract.ts";
 import * as contract from "./contract.ts";
 
@@ -1628,6 +1633,150 @@ Deno.test("non-Latin learning text requires complete word metadata", () => {
   assert(
     !wordMetadataNeedsRetry(emojiOnly),
     "emoji-only messages do not need word metadata",
+  );
+});
+
+Deno.test("copied multi-word glosses require a focused metadata repair", () => {
+  const copiedTokens: TranslationToken[] = [
+    { text: "Nós", gloss: "Nós", roman: "Nós", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    { text: "nos", gloss: "nos", roman: "nos", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "encontramos",
+      gloss: "encontramos",
+      roman: "encontramos",
+      isContent: true,
+    },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "amanhã",
+      gloss: "amanhã",
+      roman: "amanhã",
+      isContent: true,
+    },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    { text: "no", gloss: "no", roman: "no", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "parque",
+      gloss: "parque",
+      roman: "parque",
+      isContent: true,
+    },
+    { text: ".", gloss: null, roman: null, isContent: false },
+  ];
+  const copied: TranslationResult = {
+    mode: "translation",
+    sourceLang: "fr",
+    translation: "Nós nos encontramos amanhã no parque.",
+    interfaceText: "Nous nous retrouvons demain au parc.",
+    explanation: null,
+    confidence: null,
+    formAlternatives: null,
+    tokens: copiedTokens,
+  };
+  assert(
+    wordGlossMetadataNeedsRepair(copied, "pt", "fr"),
+    "Portuguese words copied as French meanings must be repaired",
+  );
+
+  const valid = {
+    ...copied,
+    tokens: copiedTokens.map((token) => {
+      if (!token.isContent) return token;
+      const frenchByPortuguese: Record<string, string> = {
+        "Nós": "Nous",
+        nos: "nous",
+        encontramos: "retrouvons",
+        amanhã: "demain",
+        no: "au",
+        parque: "parc",
+      };
+      return { ...token, gloss: frenchByPortuguese[token.text] };
+    }),
+  };
+  assert(
+    !wordGlossMetadataNeedsRepair(valid, "pt", "fr"),
+    "real French meanings must remain untouched",
+  );
+  assert(
+    !wordGlossMetadataNeedsRepair(
+      {
+        ...copied,
+        translation: "restaurant",
+        tokens: [{
+          text: "restaurant",
+          gloss: "restaurant",
+          roman: "restaurant",
+          isContent: true,
+        }],
+      },
+      "pt",
+      "fr",
+    ),
+    "one identical cognate is not enough evidence for a repair",
+  );
+  assert(
+    !wordGlossMetadataNeedsRepair(copied, "pt", "pt"),
+    "matching learning and known languages legitimately reuse words",
+  );
+});
+
+Deno.test("focused word metadata repair preserves the accepted sentence", () => {
+  const prompt = wordMetadataRepairSystemPrompt("pt", "fr");
+  assert(
+    prompt.includes("Portuguese (pt)"),
+    "the repair names the learning language",
+  );
+  assert(
+    prompt.includes("French (fr)"),
+    "the repair names the primary known language",
+  );
+  assert(
+    prompt.includes("must not translate, rewrite, or correct"),
+    "the accepted sentence is immutable during metadata repair",
+  );
+  assert(
+    WORD_METADATA_RESPONSE_FORMAT.json_schema.strict,
+    "the focused metadata response is strict",
+  );
+
+  const translation = "Nós vamos ao parque.";
+  const repaired = parseWordMetadataRepairResult(
+    JSON.stringify({
+      tokens: [
+        { text: "Nós", gloss: "Nous", roman: "Nós", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "vamos", gloss: "allons", roman: "vamos", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        { text: "ao", gloss: "au", roman: "ao", isContent: true },
+        { text: " ", gloss: null, roman: null, isContent: false },
+        {
+          text: "parque",
+          gloss: "parc",
+          roman: "parque",
+          isContent: true,
+        },
+        { text: ".", gloss: null, roman: null, isContent: false },
+      ],
+    }),
+    translation,
+  );
+  assert(repaired?.length === 8, "valid repaired metadata is accepted");
+  assert(
+    parseWordMetadataRepairResult(
+      JSON.stringify({
+        tokens: [{
+          text: "Nous allons au parc.",
+          gloss: "phrase française",
+          roman: null,
+          isContent: true,
+        }],
+      }),
+      translation,
+    ) === null,
+    "a repair cannot rewrite the accepted Portuguese sentence",
   );
 });
 

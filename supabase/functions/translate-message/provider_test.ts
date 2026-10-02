@@ -31,6 +31,31 @@ Deno.test("focused audits use their matching strict response schemas", async () 
   );
 });
 
+Deno.test("copied glosses use a focused metadata repair", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const repairBlock = source.slice(
+    source.indexOf("async function repairWordMetadata"),
+    source.indexOf("async function auditSameLanguageCorrection"),
+  );
+  assert(
+    repairBlock.includes("WORD_METADATA_RESPONSE_FORMAT"),
+    "word-help repair must use its narrow strict schema",
+  );
+  assert(
+    repairBlock.includes("parseWordMetadataRepairResult"),
+    "word-help repair must validate exact sentence reproduction",
+  );
+  const detectionIndex = source.indexOf("wordGlossMetadataNeedsRepair(");
+  const replacementIndex = source.indexOf("candidate.tokens = repairedTokens");
+  assert(detectionIndex >= 0, "copied glosses must be detected before storage");
+  assert(
+    replacementIndex > detectionIndex,
+    "the accepted sentence keeps its result while only tokens are replaced",
+  );
+});
+
 Deno.test("provider fetch aborts and reports a controlled timeout", async () => {
   const started = Date.now();
   try {

@@ -11,6 +11,10 @@ const languageAidsMigrationUrl = new URL(
   "../../migrations/20260921000001_complete_language_aids_cache.sql",
   import.meta.url,
 );
+const primaryKnownWordMetadataMigrationUrl = new URL(
+  "../../migrations/20260921000002_primary_known_word_metadata_cache.sql",
+  import.meta.url,
+);
 
 Deno.test("automatic-form migration invalidates every legacy cache variant", async () => {
   const sql = (await Deno.readTextFile(migrationUrl))
@@ -102,7 +106,7 @@ Deno.test("automatic-form migration rejects every legacy completion contract", a
   const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
   assert(
     edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "complete-language-aids-v3";',
+      'const CACHE_CONTRACT_VERSION = "primary-known-word-metadata-v4";',
     ),
     "the edge function must declare the database completion contract",
   );
@@ -145,6 +149,51 @@ Deno.test("complete-language-aids migration advances and invalidates the cache",
       "check (cache_contract_version = 'complete-language-aids-v3')",
     ),
     "stored translations must identify the new contract",
+  );
+});
+
+Deno.test("primary-known word metadata migration refreshes every stale package", async () => {
+  const sql = (await Deno.readTextFile(primaryKnownWordMetadataMigrationUrl))
+    .replace(/--.*$/gm, "")
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim()
+    .toLowerCase();
+  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
+
+  assert(
+    sql.match(/p_cache_contract_version <> 'primary-known-word-metadata-v4'/g)
+      ?.length === 2,
+    "both completion paths must reject pre-v4 word metadata",
+  );
+  assert(
+    sql.includes("delete from public.message_preparation_jobs"),
+    "ready and in-flight jobs must be replaced before cache deletion",
+  );
+  assert(
+    sql.includes("where status in ('processing', 'ready')"),
+    "both completed and in-flight variants must regenerate",
+  );
+  assert(
+    sql.includes("delete from public.message_prepared_packages;"),
+    "prepared packages with copied meanings must be removed",
+  );
+  assert(
+    sql.includes("delete from public.message_translations;"),
+    "shared token metadata with copied meanings must be removed",
+  );
+  assert(
+    sql.includes(
+      "check (cache_contract_version = 'primary-known-word-metadata-v4')",
+    ),
+    "stored translations must identify the v4 contract",
+  );
+  assert(
+    edgeFunction.includes(
+      'const CACHE_CONTRACT_VERSION = "primary-known-word-metadata-v4";',
+    ),
+    "the provider and database must use the same v4 contract",
   );
 });
 

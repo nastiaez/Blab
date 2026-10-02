@@ -28,6 +28,7 @@ import {
   parseCorrectionAuditResult,
   parseFormAuditResult,
   parseProviderResult,
+  parseWordMetadataRepairResult,
   type ProviderCredential,
   providerCredentials,
   providerMessages,
@@ -42,7 +43,10 @@ import {
   translationNeedsRetry,
   unsupportedSourceScript,
   validateRequest,
+  WORD_METADATA_RESPONSE_FORMAT,
+  wordGlossMetadataNeedsRepair,
   wordMetadataNeedsRetry,
+  wordMetadataRepairSystemPrompt,
 } from "./contract.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
 import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
@@ -56,7 +60,7 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
-const CACHE_CONTRACT_VERSION = "complete-language-aids-v3";
+const CACHE_CONTRACT_VERSION = "primary-known-word-metadata-v4";
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -116,6 +120,45 @@ async function repairInterfaceText(
   } catch {
     return null;
   }
+}
+
+async function repairWordMetadata(
+  credential: ProviderCredential,
+  acceptedTranslation: string,
+  targetLang: string,
+  interfaceLang: string,
+) {
+  let response: Response;
+  try {
+    response = await fetchChatCompletion(credential, {
+      temperature: 0,
+      max_completion_tokens: 4000,
+      response_format: WORD_METADATA_RESPONSE_FORMAT,
+      messages: [
+        {
+          role: "system",
+          content: wordMetadataRepairSystemPrompt(targetLang, interfaceLang),
+        },
+        { role: "user", content: acceptedTranslation },
+      ],
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  const content = (payload as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  })?.choices?.[0]?.message?.content;
+  return typeof content === "string"
+    ? parseWordMetadataRepairResult(content, acceptedTranslation)
+    : null;
 }
 
 async function auditSameLanguageCorrection(
@@ -751,6 +794,37 @@ Deno.serve(async (req) => {
           reason: providerFailure,
         });
         continue;
+      }
+      if (
+        wordGlossMetadataNeedsRepair(candidate, targetLang, interfaceLang)
+      ) {
+        const repairedTokens = await repairWordMetadata(
+          credential,
+          candidate.translation,
+          targetLang,
+          interfaceLang,
+        );
+        if (repairedTokens === null) {
+          providerFailure = `${credential.provider}_word_metadata_repair`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        candidate.tokens = repairedTokens;
+        if (
+          wordGlossMetadataNeedsRepair(candidate, targetLang, interfaceLang)
+        ) {
+          providerFailure = `${credential.provider}_word_metadata_copied`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
       }
       if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
         const repaired = await repairInterfaceText(
