@@ -577,7 +577,7 @@
   - Automated preference/rendering regressions, the complete Flutter suite, static analysis, and the Alice-browser/Bob-Android Hindi/Tamil matrix pass.
   - Final browser and Android screenshots are sent for owner review and explicitly approved.
 
-### Step 2.15 — Language and localization QA `[ ]` ← in progress
+### Step 2.15 — Language and localization QA `[x]`
 - **Design:** `docs/superpowers/specs/2026-09-14-language-localization-qa-design.md`.
 - **Plan:** `docs/superpowers/plans/2026-09-14-language-localization-qa.md`.
 - **Scope:** every user-facing screen and state in English, German, Spanish, and Ukrainian; all eleven Learning Languages; every Primary Known Language; word descriptions; word and sentence audio; account/language switching; normal and 200% text size.
@@ -585,11 +585,11 @@
 - **Done when:**
   - All eight interface batches complete the screenshot → owner feedback → approved fix → retest cycle, with four to eight real-app screenshots per packet.
   - All eleven Learning Language packets pass sentence translation, correction behavior, word descriptions, word audio, and sentence audio, or record an owner-accepted device limitation.
-  - Primary Known Language switching refreshes Normal translations and word descriptions without stale content; Interface Language switching changes interface copy only.
+  - Primary Known Language switching refreshes Normal translations, word descriptions, and correction metadata without stale content; Interface Language switching changes interface copy only.
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A through B08, all eleven Learning Language packets, and K01 Primary Known Language switching were approved after real-client review on the preserved feature branch. The final approved translation engine is being recovered onto current `main` with a forward-only cache migration; clean-main automated and release gates remain in progress. Supported-build Notifications delivery/tap remains a separate physical-device gate.
+- **Completion:** B01A through B08, all eleven Learning Language packets, and K01 Primary Known Language switching were approved after real-client review. The final engine matches that approved revision exactly and is integrated through one forward-only cache migration. Clean-main verification passed 116 translation-engine checks, 196 database checks, 11 local integration checks with 3 provider-only skips, 786 Flutter checks with 15 environment-only skips, static analysis, formatting, and Android release packaging. Supported-build Notifications delivery/tap remains a separate physical-device gate.
 
 ### Step 2.16 — Shared mistakes for matching learning languages `[x]`
 - **Design:** `docs/superpowers/specs/2026-09-30-shared-mistakes-matching-language-design.md`.
@@ -644,6 +644,7 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-10-02 — Recovered the owner-approved translation reliability engine from the mixed localization branch onto current `main` without its screenshots, draft plans, or stale UI documents. Consolidated eight historical cache revisions into one forward-only migration and updated database fixtures to the final contract. The recovered core is byte-identical to the approved revision; 116 translation-engine checks, 196 database checks, 11 local integration checks with 3 provider-only skips, 786 Flutter checks with 15 environment-only skips, static analysis, formatting, and Android release packaging pass.
 - 2026-09-30 — Approved and started Step 2.16: when both participants had the same Learning Language at send time, Practice shares the author's correction marks. Eligibility is stored once per message; mismatched, legacy, and later language eras stay unchanged.
 - 2026-09-30 — Implemented Step 2.16 in an isolated branch with a server-owned send-time eligibility snapshot, legacy-safe message/offline transport, and conditional incoming Practice correction rendering. Focused database and Flutter contracts, static analysis, formatting, shell syntax, and the 708-test Flutter suite pass. Kept the step open for the real two-client sequence; unrelated full-database and integration failures were reproduced on the untouched branch.
 - 2026-09-30 — Completed Step 2.16 after Alice/browser and Bob/Android passed the real German → Spanish → German sequence, including stable old history, clean mismatched output, clean Normal mode, and restored sharing after switching back. Recorded one separate intermittent OpenRouter correction failure without treating fixture-assisted UI evidence as a live-provider pass; the next two messages completed live.
