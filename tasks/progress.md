@@ -589,7 +589,7 @@
   - Every supported interface error is localized, no raw backend error is visible, and critical UI remains usable at 200% text size.
   - Alice in Chrome and Bob on Android pass the final two-client regression, automated localization gates pass, and the owner explicitly approves the final evidence.
   - Approved work is committed and pushed to `feat/localization`.
-- **Current packet:** B01A through B08 and L01-L03 are approved after real-client review. Publishing L03 before L04 German begins. Supported-build Notifications delivery/tap remains blocked until a physical Android device is connected.
+- **Current packet:** B01A through B08, all eleven Learning Language packets, and K01 Primary Known Language switching were approved after real-client review on the preserved feature branch. The final approved translation engine is being recovered onto current `main` with a forward-only cache migration; clean-main automated and release gates remain in progress. Supported-build Notifications delivery/tap remains a separate physical-device gate.
 
 ### Step 2.16 — Shared mistakes for matching learning languages `[x]`
 - **Design:** `docs/superpowers/specs/2026-09-30-shared-mistakes-matching-language-design.md`.

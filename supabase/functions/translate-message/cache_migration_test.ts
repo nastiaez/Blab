@@ -11,36 +11,8 @@ const languageAidsMigrationUrl = new URL(
   "../../migrations/20260921000001_complete_language_aids_cache.sql",
   import.meta.url,
 );
-const primaryKnownWordMetadataMigrationUrl = new URL(
-  "../../migrations/20260921000002_primary_known_word_metadata_cache.sql",
-  import.meta.url,
-);
-const semanticTranslationFidelityMigrationUrl = new URL(
-  "../../migrations/20260921000003_semantic_translation_fidelity_cache.sql",
-  import.meta.url,
-);
-const semanticConsensusMigrationUrl = new URL(
-  "../../migrations/20260921000004_semantic_consensus_cache.sql",
-  import.meta.url,
-);
-const semanticAuditPivotMigrationUrl = new URL(
-  "../../migrations/20260921000005_semantic_audit_pivot_cache.sql",
-  import.meta.url,
-);
-const sourceMeaningAnchorMigrationUrl = new URL(
-  "../../migrations/20260921000006_source_meaning_anchor_cache.sql",
-  import.meta.url,
-);
-const interfaceMeaningAuditMigrationUrl = new URL(
-  "../../migrations/20260921000007_interface_meaning_audit_cache.sql",
-  import.meta.url,
-);
-const independentSemanticReviewMigrationUrl = new URL(
-  "../../migrations/20260921000008_independent_semantic_review_cache.sql",
-  import.meta.url,
-);
-const minimalSourceAnchorMigrationUrl = new URL(
-  "../../migrations/20260921000009_minimal_source_anchor_cache.sql",
+const translationReliabilityMigrationUrl = new URL(
+  "../../migrations/20261002000001_translation_reliability_cache.sql",
   import.meta.url,
 );
 
@@ -180,264 +152,8 @@ Deno.test("complete-language-aids migration advances and invalidates the cache",
   );
 });
 
-Deno.test("primary-known word metadata migration refreshes every stale package", async () => {
-  const sql = (await Deno.readTextFile(primaryKnownWordMetadataMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-  assert(
-    sql.match(/p_cache_contract_version <> 'primary-known-word-metadata-v4'/g)
-      ?.length === 2,
-    "both completion paths must reject pre-v4 word metadata",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs"),
-    "ready and in-flight jobs must be replaced before cache deletion",
-  );
-  assert(
-    sql.includes("where status in ('processing', 'ready')"),
-    "both completed and in-flight variants must regenerate",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;"),
-    "prepared packages with copied meanings must be removed",
-  );
-  assert(
-    sql.includes("delete from public.message_translations;"),
-    "shared token metadata with copied meanings must be removed",
-  );
-  assert(
-    sql.includes(
-      "check (cache_contract_version = 'primary-known-word-metadata-v4')",
-    ),
-    "stored translations must identify the v4 contract",
-  );
-});
-
-Deno.test("semantic-fidelity migration refreshes every stale translation", async () => {
-  const sql = (await Deno.readTextFile(semanticTranslationFidelityMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-
-  assert(
-    sql.match(/p_cache_contract_version <> 'semantic-fidelity-v5'/g)
-      ?.length === 2,
-    "both completion paths must reject pre-v5 translations",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs") &&
-      sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate under the stronger prompt",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;") &&
-      sql.includes("delete from public.message_translations;"),
-    "all cached semantic results must be invalidated",
-  );
-  assert(
-    sql.includes("check (cache_contract_version = 'semantic-fidelity-v5')"),
-    "stored translations must identify the v5 contract",
-  );
-});
-
-Deno.test("semantic-consensus migration replaces one-review cache entries", async () => {
-  const sql = (await Deno.readTextFile(semanticConsensusMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
-
-  assert(
-    sql.match(/p_cache_contract_version <> 'semantic-consensus-v6'/g)
-      ?.length === 2,
-    "both completion paths must reject one-review translations",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs") &&
-      sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate with audit consensus",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;") &&
-      sql.includes("delete from public.message_translations;"),
-    "all one-review semantic results must be invalidated",
-  );
-  assert(
-    sql.includes("check (cache_contract_version = 'semantic-consensus-v6')"),
-    "stored translations must identify the v6 contract",
-  );
-  assert(
-    !edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "semantic-consensus-v6";',
-    ),
-    "the provider must not continue writing the superseded v6 contract",
-  );
-});
-
-Deno.test("semantic-audit-pivot migration replaces localized audit cache entries", async () => {
-  const sql = (await Deno.readTextFile(semanticAuditPivotMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
-
-  assert(
-    sql.match(/p_cache_contract_version <> 'semantic-audit-pivot-v7'/g)
-      ?.length === 2,
-    "both completion paths must reject localized semantic-audit results",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs") &&
-      sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate with the stable audit pivot",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;") &&
-      sql.includes("delete from public.message_translations;"),
-    "all localized semantic-audit results must be invalidated",
-  );
-  assert(
-    sql.includes("check (cache_contract_version = 'semantic-audit-pivot-v7')"),
-    "stored translations must identify the v7 contract",
-  );
-  assert(
-    !edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "semantic-audit-pivot-v7";',
-    ),
-    "the provider must not continue writing the superseded v7 contract",
-  );
-});
-
-Deno.test("source-meaning-anchor migration replaces post-candidate audit cache entries", async () => {
-  const sql = (await Deno.readTextFile(sourceMeaningAnchorMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
-
-  assert(
-    sql.match(/p_cache_contract_version <> 'source-meaning-anchor-v8'/g)
-      ?.length === 2,
-    "both completion paths must reject post-candidate source meanings",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs") &&
-      sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate from a candidate-blind source anchor",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;") &&
-      sql.includes("delete from public.message_translations;"),
-    "all post-candidate source meanings must be invalidated",
-  );
-  assert(
-    sql.includes("check (cache_contract_version = 'source-meaning-anchor-v8')"),
-    "stored translations must identify the v8 contract",
-  );
-  assert(
-    !edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "source-meaning-anchor-v8";',
-    ),
-    "the provider must not continue writing the superseded v8 contract",
-  );
-});
-
-Deno.test("interface-meaning migration replaces unchecked Known Language text", async () => {
-  const sql = (await Deno.readTextFile(interfaceMeaningAuditMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
-
-  assert(
-    sql.match(/p_cache_contract_version <> 'interface-meaning-audit-v9'/g)
-      ?.length === 2,
-    "both completion paths must reject unchecked Known Language text",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs") &&
-      sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate with interface meaning review",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;") &&
-      sql.includes("delete from public.message_translations;"),
-    "all unchecked Known Language text must be invalidated",
-  );
-  assert(
-    sql.includes(
-      "check (cache_contract_version = 'interface-meaning-audit-v9')",
-    ),
-    "stored translations must identify the v9 contract",
-  );
-  assert(
-    !edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "interface-meaning-audit-v9";',
-    ),
-    "the provider must not continue writing the superseded v9 contract",
-  );
-});
-
-Deno.test("independent-review migration replaces same-model semantic decisions", async () => {
-  const sql = (await Deno.readTextFile(independentSemanticReviewMigrationUrl))
-    .replace(/--.*$/gm, "")
-    .replace(/\s+/g, " ")
-    .replace(/\(\s+/g, "(")
-    .replace(/\s+\)/g, ")")
-    .trim()
-    .toLowerCase();
-  const edgeFunction = await Deno.readTextFile(edgeFunctionUrl);
-
-  assert(
-    sql.match(/p_cache_contract_version <> 'independent-semantic-review-v10'/g)
-      ?.length === 2,
-    "both completion paths must reject same-model semantic decisions",
-  );
-  assert(
-    sql.includes("delete from public.message_preparation_jobs") &&
-      sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate with independent review",
-  );
-  assert(
-    sql.includes("delete from public.message_prepared_packages;") &&
-      sql.includes("delete from public.message_translations;"),
-    "all same-model semantic decisions must be invalidated",
-  );
-  assert(
-    sql.includes(
-      "check (cache_contract_version = 'independent-semantic-review-v10')",
-    ),
-    "stored translations must identify the v10 contract",
-  );
-  assert(
-    !edgeFunction.includes(
-      'const CACHE_CONTRACT_VERSION = "independent-semantic-review-v10";',
-    ),
-    "the provider must not continue writing the superseded v10 contract",
-  );
-});
-
-Deno.test("minimal-anchor migration replaces expanded source meanings", async () => {
-  const sql = (await Deno.readTextFile(minimalSourceAnchorMigrationUrl))
+Deno.test("translation-reliability migration replaces every stale result", async () => {
+  const sql = (await Deno.readTextFile(translationReliabilityMigrationUrl))
     .replace(/--.*$/gm, "")
     .replace(/\s+/g, " ")
     .replace(/\(\s+/g, "(")
@@ -449,17 +165,17 @@ Deno.test("minimal-anchor migration replaces expanded source meanings", async ()
   assert(
     sql.match(/p_cache_contract_version <> 'minimal-source-anchor-v11'/g)
       ?.length === 2,
-    "both completion paths must reject expanded source meanings",
+    "both completion paths must reject pre-v11 translation results",
   );
   assert(
     sql.includes("delete from public.message_preparation_jobs") &&
       sql.includes("where status in ('processing', 'ready')"),
-    "ready and in-flight variants must regenerate from a minimal anchor",
+    "ready and in-flight variants must regenerate under the final contract",
   );
   assert(
     sql.includes("delete from public.message_prepared_packages;") &&
       sql.includes("delete from public.message_translations;"),
-    "all expanded source meanings must be invalidated",
+    "all stale translations and word-help metadata must be invalidated",
   );
   assert(
     sql.includes(

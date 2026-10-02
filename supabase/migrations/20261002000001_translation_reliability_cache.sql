@@ -1,5 +1,5 @@
--- K01: move semantic review and word-help regeneration to an independent,
--- stronger model and anchor every gloss to the accepted Known Language text.
+-- Regenerate every cached translation under the final word-metadata and
+-- meaning-preservation contract recovered from the approved language QA.
 
 create or replace function public.complete_message_translation(
   p_message_id uuid, p_requester_id uuid, p_target_lang text,
@@ -16,7 +16,7 @@ begin
   if auth.role() is distinct from 'service_role' then
     raise insufficient_privilege using message = 'service_role_required';
   end if;
-  if p_cache_contract_version <> 'independent-semantic-review-v10' then
+  if p_cache_contract_version <> 'minimal-source-anchor-v11' then
     return false;
   end if;
   perform set_config(
@@ -46,7 +46,7 @@ begin
   if auth.role() is distinct from 'service_role' then
     raise insufficient_privilege using message = 'service_role_required';
   end if;
-  if p_cache_contract_version <> 'independent-semantic-review-v10' then
+  if p_cache_contract_version <> 'minimal-source-anchor-v11' then
     return false;
   end if;
   perform set_config(
@@ -61,6 +61,8 @@ begin
 end;
 $$;
 
+-- Replace every completed or in-flight job before deleting its output. This
+-- makes older workers fail by job ID even if they finish during the migration.
 with invalidated_jobs as (
   delete from public.message_preparation_jobs
   where status in ('processing', 'ready')
@@ -74,7 +76,7 @@ insert into public.message_preparation_jobs (
 select
   message_id, chat_id, viewer_id, learning_language,
   primary_known_language, language_revision, source_version,
-  'independent_semantic_review_cache_invalidated'
+  'translation_reliability_cache_invalidated'
 from invalidated_jobs
 on conflict (
   message_id, viewer_id, learning_language, primary_known_language,
@@ -93,4 +95,4 @@ delete from public.message_translations;
 alter table public.message_translations
   drop constraint message_translations_cache_contract_version_check,
   add constraint message_translations_cache_contract_version_check
-  check (cache_contract_version = 'independent-semantic-review-v10');
+  check (cache_contract_version = 'minimal-source-anchor-v11');
