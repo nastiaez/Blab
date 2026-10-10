@@ -24,7 +24,9 @@ void main() {
     expect(completionCount, 0);
 
     await tester.pump(const Duration(milliseconds: 16));
-    await tester.pump(BlabWordmarkAnimation.duration);
+    await tester.pump(BlabWordmarkAnimation.handoffHold);
+    await tester.pump(BlabWordmarkAnimation.motionDuration);
+    await tester.pump(const Duration(milliseconds: 16));
 
     expect(completionCount, 1);
     expect(tester.takeException(), isNull);

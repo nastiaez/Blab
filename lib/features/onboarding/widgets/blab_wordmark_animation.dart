@@ -15,7 +15,9 @@ class BlabWordmarkAnimation extends StatefulWidget {
     super.key,
   });
 
-  static const duration = Duration(milliseconds: 2500);
+  static const handoffHold = Duration(milliseconds: 350);
+  static const motionDuration = Duration(milliseconds: 1600);
+  static const duration = Duration(milliseconds: 1950);
 
   final bool animate;
   final VoidCallback? onCompleted;
@@ -34,14 +36,17 @@ class _BlabWordmarkAnimationState extends State<BlabWordmarkAnimation>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: BlabWordmarkAnimation.duration,
+      duration: BlabWordmarkAnimation.motionDuration,
       value: widget.animate ? 0 : 1,
     );
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) widget.onCompleted?.call();
     });
     if (widget.animate) {
-      _controller.forward();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future<void>.delayed(BlabWordmarkAnimation.handoffHold);
+        if (mounted) _controller.forward();
+      });
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) widget.onCompleted?.call();
@@ -70,9 +75,7 @@ class _BlabWordmarkAnimationState extends State<BlabWordmarkAnimation>
             height: 72,
             child: AnimatedBuilder(
               animation: _controller,
-              builder: (context, _) => _WordmarkFrame(
-                t: ((_controller.value - 0.10) / 0.90).clamp(0, 1),
-              ),
+              builder: (context, _) => _WordmarkFrame(t: _controller.value),
             ),
           ),
         ),
@@ -88,7 +91,7 @@ class _WordmarkFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final aAppear = _progress(t, 0, 0.07, Curves.easeOutCubic);
+    final aIntro = _progress(t, 0, 0.08, Curves.easeOutCubic);
     final aSettle = _progress(t, 0.25, 0.42, Curves.easeInOutCubic);
     final lWalk = _progress(t, 0.25, 0.42, Curves.easeOutCubic);
     final firstB = _progress(t, 0.52, 0.65, Curves.easeOutCubic);
@@ -116,9 +119,9 @@ class _WordmarkFrame extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             _aLetter(
-              opacity: aAppear,
+              opacity: 1,
               dx: _lerp(-17, 0, aSettle),
-              scale: _lerp(0.92, 1, aAppear),
+              scale: _lerp(0.92, 1, aIntro),
               eyebrow: eyebrow,
               duck: duck,
             ),

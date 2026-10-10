@@ -8,6 +8,7 @@ import 'package:blab/features/auth/reset_password_screen.dart';
 import 'package:blab/features/auth/widgets/password_strength.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
+import 'package:blab/features/onboarding/widgets/blab_wordmark_animation.dart';
 import 'package:blab/main.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -27,6 +28,7 @@ void main() {
         child: const BlabApp(),
       ),
     );
+    await tester.pump(BlabWordmarkAnimation.handoffHold);
     await tester.pumpAndSettle();
     expect(
       find.text('Turn chats with friends into language practice'),
