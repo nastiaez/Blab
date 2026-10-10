@@ -57,6 +57,8 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 
 ## Launch blockers
 
+**Private Android recovery (2026-10-10):** Original signing material restored; existing production backend restored and parity verification passes after 32 owner-approved migrations and four function deployments. Generated translation cache cleared without backup as explicitly approved; 26 accounts and 229 original messages retained. Existing Play listing confirmed. Owner-approved GitHub connection restored access to the existing Blab Sentry project; production environment validation now passes. Firebase upload, invitation, exact-artifact emulator verification, crash-event receipt, and owner phone acceptance remain pending. Earlier missing-key/backend findings below are historical.
+
 **Independent fallback test (2026-09-10):** No existing signed APK/AAB was found locally or in GitHub releases/artifacts. With temporary Android user link selection, a fresh Alice invite opened Bob Link QA’s existing chat, Bob’s new message reached Alice’s browser, and a cold-start repeat reopened the same chat. User selection was restored to disabled afterward; no forced verification or production debug certificate was used. This is conditional journey evidence, not automatic association or Play proof. See `docs/qa/2026-09-10-self-test/README.md`.
 
 **Google confirms the website association (2026-09-10):** Public verification returns `linked: true` for the approved release identity. Matching-app testing is still waiting for the original signing backup; the bounded 1Password account lookup returned no data before timing out.
