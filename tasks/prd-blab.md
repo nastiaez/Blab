@@ -743,6 +743,20 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
+### US-052: Recognisable Blab opening
+**Description:** As a person opening Blab, I want one brief branded transition into the app, so startup feels warm and recognisable without delaying access.
+
+**Acceptance Criteria:**
+- [ ] The native launch surface is warm cream only, with no avatar or completed wordmark before the app-owned animation
+- [ ] The exact Blab letterforms assemble once as `a → la → bla → blab`; the intact `a` lifts its upper curve and right stroke together while its foot stays planted, `l` walks in subtly, and a duplicated `b` hops in a clean arc over `la`; `l` and `a` duck together as it passes, then recover when it lands at the end
+- [ ] The app-owned motion is non-looping, silent, interrupt-safe, and implemented in Flutter without a Rive or video runtime dependency
+- [ ] Startup routes only after both the real destination resolver and the animation are ready; a slower resolver holds the completed wordmark without replaying it
+- [ ] The animation plays on a cold process launch and does not replay when the existing app resumes from the background; if the operating system has evicted the process, the next open is treated as a cold launch
+- [ ] Reduced Motion renders the completed static wordmark and adds no decorative delay
+- [ ] The final timing and cold-start handoff pass on the Android release candidate and receive owner approval
+
+---
+
 ## Functional Requirements
 
 - FR-1: Signed-out entry is Welcome → Learn in context → separate Sign up or Log in method screens. Email, Google, recovery, callback, session, and invite behavior are retained under a new central resolver; no auth success handler navigates directly to Chats
@@ -792,6 +806,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-42: Invite handoff preserves the most recently opened valid invite through standard email auth and app return. Claim happens only once a signed-in recipient is known; existing pairs reuse their chat and no one can self-claim. The static web page is generic and never validates or claims a token
 - FR-43: First-time Practice and Normal guidance is a once-per-account, non-modal mode-switch tip using the approved copy and warm-orange treatment
 - FR-44: Hindi and Tamil share one account-wide `Reading script` preference (`native` default or `english_letters`). It is exposed as one contextual Translation preferences row only when relevant, re-renders eligible cached Blab-generated sentences and word-description hierarchy immediately, falls back to the whole native sentence when Romanization is incomplete, preserves authored/Original text and native TTS, and never creates a script-only correction
+- FR-46: Startup uses a cream native launch surface followed by one app-owned Flutter wordmark assembly from the exact logo vectors. It completes once, coordinates with destination resolution, holds its final state only while real startup work continues, and becomes a static final wordmark with no added delay when Reduced Motion is enabled
 
 ---
 

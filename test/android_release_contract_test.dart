@@ -141,9 +141,11 @@ void main() {
     final manifest = File(
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
+    final pubspec = File('pubspec.yaml').readAsStringSync();
     const requiredAssets = <String>[
       'assets/icon/launcher_icon.png',
       'assets/icon/final/hedgehog_icon_foreground_adaptive.png',
+      'assets/splash/transparent_android12_splash.png',
       'assets/onboarding/email.svg',
       'assets/onboarding/google.svg',
       'android/app/src/main/res/mipmap-mdpi/launcher_icon.png',
@@ -162,6 +164,10 @@ void main() {
       expect(File(path).existsSync(), isTrue, reason: 'Missing $path');
     }
     expect(manifest, contains('android:roundIcon="@mipmap/launcher_icon"'));
+    expect(
+      pubspec,
+      contains('image: "assets/splash/transparent_android12_splash.png"'),
+    );
   });
 
   test(

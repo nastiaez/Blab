@@ -83,11 +83,10 @@ flutter_launcher_icons:
   adaptive_icon_foreground_inset: 0
 
 flutter_native_splash:
-  color: "#FFFFFF"
-  image: "assets/splash/blab_splash.png"
+  color: "#FAF7F2"
   android_12:
-    image: "assets/splash/blab_splash.png"
-    color: "#FFFFFF"
+    color: "#FAF7F2"
+    image: "assets/splash/transparent_android12_splash.png"
   android: true
   ios: false
   web: false

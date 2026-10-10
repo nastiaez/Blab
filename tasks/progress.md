@@ -391,6 +391,11 @@
 - **Done when:** Play Store internal track accepts the build. (TestFlight removed — iOS deferred.)
 - **Progress (2026-06-09):** app icon (adaptive) + splash (incl. Android 12) already generated and wired from an earlier session — verified present. Remaining: feature graphic (1024×500, design work, Nastia) + reuse Track A screenshots. Folds into the Step 3.5 listing.
 
+### Step 3.3a — Branded opening animation  `[ ]` ← awaiting signed release verification
+- **Scope:** US-052 / FR-46 — icon-free native cream launch handoff into the exact Blab wordmark assembling as `a → la → bla → blab`, including the intact `a` raising its upper curve from a planted foot, a duplicated `b` hopping over `la`, and `l` plus `a` ducking together as it passes.
+- **Done when:** the owner approves the motion and the same cold-start sequence passes on the signed Android release candidate with Reduced Motion verified.
+- **Progress (2026-10-10):** implemented directly in Flutter with no Rive/video dependency; bootstrap waits for both real destination resolution and the non-looping sequence. The approved 2.5-second pass starts from a clean cream surface, keeps the `a` intact while its upper form rises from a planted foot, gives `l` its restrained walk, and sends the duplicated `b` over `la` in a clean arc while `l` and `a` duck together by nine percent beneath it. Focused widget checks, targeted static analysis, profile Android packaging, emulator installation, cold/warm launch checks, and visual frame review pass. Owner motion approval was received on 2026-10-10. Signed-release verification remains.
+
 ### Step 3.5 — Play Store listing + legal `[ ]` ← in progress
 - **Scope:**
   - Feature graphic (1024×500), phone screenshots (from Track A), short description (≤80 chars), long description, app category, content rating questionnaire
@@ -644,6 +649,7 @@ Do not start Step N+1 until Step N is fully `[x]`.
 
 ## Changelog
 
+- 2026-10-10 — Added and owner-approved the app-owned Blab opening animation from the exact orange wordmark vectors: `a → la → bla → blab`, with an intact reacting `a`, walking `l`, and duplicated `b` hopping over `la` while those letters duck together. Replaced the old completed-wordmark native splash with an icon-free warm cream surface, coordinated animation completion with the real onboarding resolver, limited playback to cold process launches, and added Reduced Motion/static fallback coverage. Focused tests, profile packaging, emulator install, cold/warm launch checks, and frame-by-frame review pass; signed-release verification remains open.
 - 2026-10-02 — Recovered the owner-approved translation reliability engine from the mixed localization branch onto current `main` without its screenshots, draft plans, or stale UI documents. Consolidated eight historical cache revisions into one forward-only migration and updated database fixtures to the final contract. The recovered core is byte-identical to the approved revision; 116 translation-engine checks, 196 database checks, 11 local integration checks with 3 provider-only skips, 786 Flutter checks with 15 environment-only skips, static analysis, formatting, and Android release packaging pass.
 - 2026-09-30 — Approved and started Step 2.16: when both participants had the same Learning Language at send time, Practice shares the author's correction marks. Eligibility is stored once per message; mismatched, legacy, and later language eras stay unchanged.
 - 2026-09-30 — Implemented Step 2.16 in an isolated branch with a server-owned send-time eligibility snapshot, legacy-safe message/offline transport, and conditional incoming Practice correction rendering. Focused database and Flutter contracts, static analysis, formatting, shell syntax, and the 708-test Flutter suite pass. Kept the step open for the real two-client sequence; unrelated full-database and integration failures were reproduced on the untouched branch.
