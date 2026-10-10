@@ -106,9 +106,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _translationResolveDeferred = false;
   int _lastMessageCount = 0;
   Message? _selectedMessage;
+  Message? _reactionRowMessage;
   Rect? _selectedBubbleRect;
   Offset? _selectedPressPosition;
   bool _showSelectedOriginal = false;
+  Timer? _reactionRowDismissTimer;
 
   /// Hard cap from PRD US-036.
   static const int _maxMessageLength = kMaxMessageCharacters;
@@ -163,6 +165,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _reactionRowDismissTimer?.cancel();
     _scroll.removeListener(_loadOlderNearTop);
     _input.dispose();
     _inputFocus.dispose();
@@ -598,8 +601,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final keyboardShift = Offset(0, MediaQuery.viewInsetsOf(context).bottom);
     FocusScope.of(context).unfocus();
     HapticFeedback.mediumImpact();
+    _reactionRowDismissTimer?.cancel();
     setState(() {
       _selectedMessage = message;
+      _reactionRowMessage = message;
       _selectedBubbleRect = bubbleRect.shift(keyboardShift);
       _selectedPressPosition = pressPosition + keyboardShift;
       _showSelectedOriginal = false;
@@ -629,11 +634,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _closeSelection() {
     unawaited(ref.read(ttsServiceProvider).stop());
     if (_selectedMessage == null) return;
+    _reactionRowDismissTimer?.cancel();
     setState(() {
       _selectedMessage = null;
-      _selectedBubbleRect = null;
-      _selectedPressPosition = null;
       _showSelectedOriginal = false;
+    });
+    _reactionRowDismissTimer = Timer(kFloatingReactionRowExitDuration, () {
+      if (!mounted || _selectedMessage != null) return;
+      setState(() {
+        _reactionRowMessage = null;
+        _selectedBubbleRect = null;
+        _selectedPressPosition = null;
+      });
     });
   }
 
@@ -1484,12 +1496,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                 ),
-              if (_selectedMessage != null &&
+              if (_reactionRowMessage != null &&
                   _selectedBubbleRect != null &&
                   _selectedPressPosition != null &&
-                  canReplyToMessage(_selectedMessage!))
+                  canReplyToMessage(_reactionRowMessage!))
                 Builder(
                   builder: (_) {
+                    final reactionRowMessage = _reactionRowMessage!;
                     final stackBox =
                         _stackKey.currentContext?.findRenderObject()
                             as RenderBox?;
@@ -1549,11 +1562,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       top: localTop,
                       left: left,
                       child: FloatingReactionRow(
+                        key: ValueKey(
+                          'floating-reaction-row-${reactionRowMessage.id}',
+                        ),
+                        visible: _selectedMessage?.id == reactionRowMessage.id,
+                        scaleAlignment: reactionRowMessage.isOutgoing
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         selectedEmoji: _viewerReactionEmoji(
-                          _selectedMessage!.id,
+                          reactionRowMessage.id,
                         ),
                         onPick: (emoji) {
-                          final message = _selectedMessage!;
+                          final message = reactionRowMessage;
                           _closeSelection();
                           ref
                               .read(
@@ -1564,7 +1584,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               .react(messageId: message.id, emoji: emoji);
                         },
                         onMore: () {
-                          final message = _selectedMessage!;
+                          final message = reactionRowMessage;
                           _closeSelection();
                           showFullEmojiPickerSheet(
                             context,
@@ -2252,12 +2272,15 @@ class _MessageList extends ConsumerWidget {
       if (startsNewDate) {
         items.add(_DateDividerItem(m.sentAt));
       }
+      ({DateTime? when, String? language})? visibleChange;
       while (languageChangeIndex < languageChanges.length &&
           !languageChanges[languageChangeIndex].when!.isAfter(m.sentAt)) {
-        final change = languageChanges[languageChangeIndex++];
+        visibleChange = languageChanges[languageChangeIndex++];
+      }
+      if (visibleChange != null) {
         items.add(
           _LanguageTimelineItem(
-            languageCode: change.language!,
+            languageCode: visibleChange.language!,
             topPadding: startsNewDate ? 0 : 10,
             bottomPadding: (10 - messageTopGap).clamp(0, 10).toDouble(),
           ),
@@ -2281,8 +2304,8 @@ class _MessageList extends ConsumerWidget {
         ),
       );
     }
-    while (languageChangeIndex < languageChanges.length) {
-      final change = languageChanges[languageChangeIndex++];
+    if (languageChangeIndex < languageChanges.length) {
+      final change = languageChanges.last;
       items.add(
         _LanguageTimelineItem(
           languageCode: change.language!,
