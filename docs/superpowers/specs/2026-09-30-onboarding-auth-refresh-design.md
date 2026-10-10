@@ -213,14 +213,15 @@ Terms and Privacy use the app's existing legal destinations. A broken or placeho
 
 #### Dialogue motion sequence
 
-Each approximately 7.05-second cycle follows the working HTML sequence:
+Each approximately 7.75-second cycle follows the working HTML sequence, with
+the owner-approved longer reading pause before the vocabulary popup:
 
 1. Both messages hidden for 250 ms.
 2. Outgoing `What we cook tonight?` arrives with a 160 ms upward fade-and-scale transition.
 3. Wait 350 ms, then show the white text shimmer for 1,200 ms; its sweep cadence is 1,700 ms linear.
 4. Remove authored text left-to-right over 120 ms, reshape the bubble over 150 ms with the prototype easing, then reveal `What are we cooking tonight?` left-to-right over 220 ms. `are` and `cooking` use the approved emphasis and `cook` remains visibly struck through.
 5. Wait 800 ms, then show the incoming risotto message with the 160 ms arrival.
-6. Wait 500 ms, then open the vocabulary popup over 160 ms with the prototype fade, slight upward motion, scale, and bottom-center transform origin.
+6. Wait 1,200 ms, then open the vocabulary popup over 160 ms with the prototype fade, slight upward motion, scale, and bottom-center transform origin.
 7. Hold for 1,800 ms, close over 120 ms, then wait 600 ms.
 8. Remove incoming and outgoing messages in reverse order, 120 ms each, with the slight downward fade-and-scale exit.
 9. Keep the conversation area blank for 500 ms, then repeat while the screen is active.

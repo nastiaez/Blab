@@ -2,8 +2,8 @@ import 'package:blab/features/onboarding/learning_dialogue_timeline.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('matches the approved 7.05 second HTML sequence', () {
-    expect(learningDialogueCycle, const Duration(milliseconds: 7050));
+  test('keeps the approved sequence with longer reply reading time', () {
+    expect(learningDialogueCycle, const Duration(milliseconds: 7750));
 
     const cases = <(int, LearningDialoguePhase)>[
       (0, LearningDialoguePhase.blankStart),
@@ -17,12 +17,13 @@ void main() {
       (2450, LearningDialoguePhase.waitingForIncoming),
       (3250, LearningDialoguePhase.incomingArrival),
       (3410, LearningDialoguePhase.waitingForPopup),
-      (3910, LearningDialoguePhase.popupOpen),
-      (5710, LearningDialoguePhase.popupClosing),
-      (6310, LearningDialoguePhase.incomingExit),
-      (6430, LearningDialoguePhase.outgoingExit),
-      (6550, LearningDialoguePhase.blankEnd),
-      (7049, LearningDialoguePhase.blankEnd),
+      (4609, LearningDialoguePhase.waitingForPopup),
+      (4610, LearningDialoguePhase.popupOpen),
+      (6410, LearningDialoguePhase.popupClosing),
+      (7010, LearningDialoguePhase.incomingExit),
+      (7130, LearningDialoguePhase.outgoingExit),
+      (7250, LearningDialoguePhase.blankEnd),
+      (7749, LearningDialoguePhase.blankEnd),
     ];
 
     for (final scenario in cases) {

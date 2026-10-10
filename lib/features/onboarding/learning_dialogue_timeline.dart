@@ -1,6 +1,6 @@
 import 'package:flutter/animation.dart';
 
-const learningDialogueCycle = Duration(milliseconds: 7050);
+const learningDialogueCycle = Duration(milliseconds: 7750);
 
 const _learningDialogueArrivalCurve = Cubic(0.16, 1, 0.3, 1);
 
@@ -39,11 +39,11 @@ LearningDialoguePhase learningDialoguePhaseAt(
   if (milliseconds < 2450) return LearningDialoguePhase.landing;
   if (milliseconds < 3250) return LearningDialoguePhase.waitingForIncoming;
   if (milliseconds < 3410) return LearningDialoguePhase.incomingArrival;
-  if (milliseconds < 3910) return LearningDialoguePhase.waitingForPopup;
-  if (milliseconds < 5710) return LearningDialoguePhase.popupOpen;
-  if (milliseconds < 6310) return LearningDialoguePhase.popupClosing;
-  if (milliseconds < 6430) return LearningDialoguePhase.incomingExit;
-  if (milliseconds < 6550) return LearningDialoguePhase.outgoingExit;
+  if (milliseconds < 4610) return LearningDialoguePhase.waitingForPopup;
+  if (milliseconds < 6410) return LearningDialoguePhase.popupOpen;
+  if (milliseconds < 7010) return LearningDialoguePhase.popupClosing;
+  if (milliseconds < 7130) return LearningDialoguePhase.incomingExit;
+  if (milliseconds < 7250) return LearningDialoguePhase.outgoingExit;
   return LearningDialoguePhase.blankEnd;
 }
 

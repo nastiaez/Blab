@@ -254,7 +254,7 @@ class _LearningConversation extends StatelessWidget {
         learningDialoguePhaseProgress(elapsed, 250, 160),
       ),
       LearningDialoguePhase.outgoingExit => learningDialogueExitProgress(
-        learningDialoguePhaseProgress(elapsed, 6430, 120),
+        learningDialoguePhaseProgress(elapsed, 7130, 120),
       ),
       _ => outgoingVisible ? 1.0 : 0.0,
     };
@@ -263,7 +263,7 @@ class _LearningConversation extends StatelessWidget {
         learningDialoguePhaseProgress(elapsed, 3250, 160),
       ),
       LearningDialoguePhase.incomingExit => learningDialogueExitProgress(
-        learningDialoguePhaseProgress(elapsed, 6310, 120),
+        learningDialoguePhaseProgress(elapsed, 7010, 120),
       ),
       _ => incomingVisible ? 1.0 : 0.0,
     };
@@ -386,39 +386,38 @@ class _OutgoingBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget text = corrected
-        ? const Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: 'What '),
-                TextSpan(
-                  text: 'are',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(text: ' we '),
-                TextSpan(
-                  text: 'cook',
-                  style: TextStyle(
-                    color: Color(0x94231208),
-                    decoration: TextDecoration.lineThrough,
-                    decorationThickness: 2,
-                  ),
-                ),
-                TextSpan(text: ' '),
-                TextSpan(
-                  text: 'cooking',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                TextSpan(text: ' tonight?'),
-              ],
-            ),
-          )
-        : Text(
-            'What we cook tonight?',
+    final authoredText = Text(
+      'What we cook tonight?',
+      style: TextStyle(color: const Color(0xFF231208).withValues(alpha: 0.48)),
+    );
+    const correctedText = Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: 'What '),
+          TextSpan(
+            text: 'are',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: ' we '),
+          TextSpan(
+            text: 'cook',
             style: TextStyle(
-              color: const Color(0xFF231208).withValues(alpha: 0.48),
+              color: Color(0x94231208),
+              decoration: TextDecoration.lineThrough,
+              decorationThickness: 2,
             ),
-          );
+          ),
+          TextSpan(text: ' '),
+          TextSpan(
+            text: 'cooking',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: ' tonight?'),
+        ],
+      ),
+    );
+
+    Widget text = corrected ? correctedText : authoredText;
 
     if (phase == LearningDialoguePhase.shimmer) {
       final progress = learningDialogueShimmerProgress(elapsed);
@@ -435,22 +434,21 @@ class _OutgoingBubble extends StatelessWidget {
 
     if (phase == LearningDialoguePhase.clearing) {
       final progress = learningDialoguePhaseProgress(elapsed, 1960, 120);
-      text = ClipRect(
-        child: Align(
-          alignment: Alignment.centerRight,
-          widthFactor: 1 - progress,
-          child: text,
-        ),
+      text = _HorizontalTextMask(
+        progress: progress,
+        revealing: false,
+        child: authoredText,
       );
     } else if (phase == LearningDialoguePhase.reshaping) {
-      text = Opacity(opacity: 0, child: text);
+      text = Opacity(opacity: 0, child: correctedText);
     } else if (phase == LearningDialoguePhase.landing) {
       final progress = learningDialoguePhaseProgress(elapsed, 2230, 220);
-      text = ClipRect(
-        child: Align(
-          alignment: Alignment.centerLeft,
-          widthFactor: progress,
-          child: text,
+      text = Transform.translate(
+        offset: Offset(0, 2 * (1 - progress)),
+        child: _HorizontalTextMask(
+          progress: progress,
+          revealing: true,
+          child: correctedText,
         ),
       );
     }
@@ -459,6 +457,7 @@ class _OutgoingBubble extends StatelessWidget {
       duration: const Duration(milliseconds: 150),
       curve: const Cubic(0.22, 0.72, 0.24, 1),
       alignment: Alignment.centerRight,
+      clipBehavior: Clip.none,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 332),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -480,6 +479,46 @@ class _OutgoingBubble extends StatelessWidget {
           child: text,
         ),
       ),
+    );
+  }
+}
+
+class _HorizontalTextMask extends StatelessWidget {
+  const _HorizontalTextMask({
+    required this.progress,
+    required this.revealing,
+    required this.child,
+  });
+
+  final double progress;
+  final bool revealing;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final edge = progress.clamp(0.0, 1.0);
+    final featherStart = (edge - 0.035).clamp(0.0, 1.0);
+    final featherEnd = (edge + 0.035).clamp(0.0, 1.0);
+    final colors = revealing
+        ? const [
+            Colors.white,
+            Colors.white,
+            Colors.transparent,
+            Colors.transparent,
+          ]
+        : const [
+            Colors.transparent,
+            Colors.transparent,
+            Colors.white,
+            Colors.white,
+          ];
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (bounds) => LinearGradient(
+        colors: colors,
+        stops: [0, featherStart, featherEnd, 1],
+      ).createShader(bounds),
+      child: child,
     );
   }
 }

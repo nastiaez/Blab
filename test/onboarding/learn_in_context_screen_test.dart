@@ -81,6 +81,39 @@ void main() {
     expect(popupRect.bottom, lessThanOrEqualTo(anchorRect.top - 9));
   });
 
+  testWidgets('reshapes the outgoing bubble once while text stays hidden', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_app(onContinue: () {}));
+    await tester.pump(const Duration(milliseconds: 1960));
+    final authoredRect = tester.getRect(
+      find.byKey(const Key('learning-outgoing-message')),
+    );
+
+    await tester.pump(const Duration(milliseconds: 60));
+    final clearingRect = tester.getRect(
+      find.byKey(const Key('learning-outgoing-message')),
+    );
+    expect(clearingRect.size, authoredRect.size);
+
+    await tester.pump(const Duration(milliseconds: 130));
+    await tester.pump(const Duration(milliseconds: 150));
+    final reshapedRect = tester.getRect(
+      find.byKey(const Key('learning-outgoing-message')),
+    );
+    await tester.pump(const Duration(milliseconds: 220));
+    expect(
+      tester.getRect(find.byKey(const Key('learning-outgoing-message'))).size,
+      reshapedRect.size,
+      reason: 'The bubble must be settled before the corrected text lands.',
+    );
+  });
+
   testWidgets('200% text keeps the vocabulary popup below the status', (
     tester,
   ) async {
