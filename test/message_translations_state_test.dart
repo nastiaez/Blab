@@ -208,6 +208,14 @@ class _ControlledCacheChatService implements ChatService {
 
 class _RealtimeTranslationChatService implements ChatService {
   final changes = StreamController<MessageTranslationChange>.broadcast();
+  bool pending = false;
+
+  @override
+  Future<bool> isMessageTranslationPending({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => pending;
 
   @override
   Stream<MessageTranslationChange> watchMessageTranslationChanges({
@@ -896,6 +904,69 @@ void main() {
       expect(chatService.fetchCalls, 2);
       expect(entry, isA<AsyncData<MessageTranslation>>());
       expect(entry!.value!.translation, 'Hallo');
+    },
+  );
+
+  test(
+    'active preparation keeps loading past deadline without duplicate AI calls',
+    () async {
+      final service = _RealtimeTranslationChatService()..pending = true;
+      var calls = 0;
+      final container = _container(
+        chatService: service,
+        loadingTimeout: const Duration(milliseconds: 5),
+        translateFn: (id) async {
+          calls++;
+          return _translation('unused');
+        },
+      );
+      addTearDown(() async {
+        container.dispose();
+        await service.changes.close();
+      });
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      notifier.watchDbRows({'m1'}, 'de', 'en');
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncLoading<MessageTranslation>>(),
+      );
+      expect(calls, 0);
+      service.pending = false;
+      service.changes.add(
+        MessageTranslationChange(
+          messageId: 'm1',
+          targetLang: 'de',
+          interfaceLang: 'en',
+          translation: (
+            text: 'Hallo',
+            interfaceText: 'Hello',
+            interfaceLang: 'en',
+            sourceLang: 'en',
+            mode: 'translation',
+            explanation: null,
+            confidence: null,
+            tokens: <Map<String, dynamic>>[],
+          ),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+            .value!
+            .translation,
+        'Hallo',
+      );
+      expect(calls, 0);
     },
   );
 

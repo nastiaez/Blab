@@ -284,6 +284,37 @@ class MessageTranslationsNotifier
     _resolvedSourceLangs[messageId] = translation.sourceLang;
   }
 
+  Future<bool> _continuePreparedWork({
+    required String key,
+    required String messageId,
+    required String text,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    try {
+      final pending = await ref
+          .read(chatServiceProvider)
+          .isMessageTranslationPending(
+            messageId: messageId,
+            targetLang: targetLang,
+            interfaceLang: interfaceLang,
+          );
+      if (!ref.mounted || _sourceTexts[key] != text || !pending) return false;
+      if (state[key] is AsyncData<MessageTranslation>) return true;
+      state = {...state, key: const AsyncLoading()};
+      _scheduleLoadingTimeout(
+        key: key,
+        messageId: messageId,
+        text: text,
+        targetLang: targetLang,
+        interfaceLang: interfaceLang,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// The language this message was detected to be in, if any resolution has
   /// ever reported it in this session. Null while it has never resolved.
   String? resolvedSourceLangFor(String messageId) =>
@@ -327,6 +358,15 @@ class MessageTranslationsNotifier
           }
         } catch (_) {
           // Fall through to a visible retryable timeout state.
+        }
+        if (await _continuePreparedWork(
+          key: key,
+          messageId: messageId,
+          text: text,
+          targetLang: targetLang,
+          interfaceLang: interfaceLang,
+        )) {
+          return;
         }
         if (!ref.mounted) return;
         if (_sourceTexts[key] == text &&
@@ -726,6 +766,19 @@ class MessageTranslationsNotifier
     // or overwrite that authoritative historical result.
     if (state[key] is AsyncData<MessageTranslation>) return;
 
+    // Delivery already owns this work. Do not race it with another provider
+    // invocation or consume allowance while the authoritative job is active.
+    if (await _continuePreparedWork(
+      key: key,
+      messageId: messageId,
+      text: text,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+    )) {
+      return;
+    }
+    if (!ref.mounted || state[key] is AsyncData<MessageTranslation>) return;
+
     // 2. Live translator. Cache misses are serialized per chat so a viewport
     // full of uncached bubbles cannot fan out into concurrent provider calls.
     // The function performs its own cache check and persists a verified result
@@ -801,6 +854,16 @@ class MessageTranslationsNotifier
         _cancelLoadingTimeout(key);
         return;
       }
+      if (await _continuePreparedWork(
+        key: key,
+        messageId: messageId,
+        text: text,
+        targetLang: targetLang,
+        interfaceLang: interfaceLang,
+      )) {
+        return;
+      }
+      if (!ref.mounted || state[key] is AsyncData<MessageTranslation>) return;
       _cancelLoadingTimeout(key);
       state = {...state, key: AsyncError(error, stack)};
       if (error is MessageTranslationFailed && error.reason == 'timeout') {

@@ -964,6 +964,21 @@ class ChatService {
   /// Fetch a cached translation for [messageId] into [targetLang], if
   /// any. Returns null on cache miss (so the caller falls back to the
   /// live translator).
+  Future<bool> isMessageTranslationPending({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async =>
+      await _client.rpc(
+        'message_translation_work_pending',
+        params: {
+          'p_message_id': messageId,
+          'p_target_lang': targetLang,
+          'p_interface_lang': interfaceLang,
+        },
+      ) ==
+      true;
+
   Future<CachedMessageTranslation?> fetchCachedTranslation({
     required String messageId,
     required String targetLang,

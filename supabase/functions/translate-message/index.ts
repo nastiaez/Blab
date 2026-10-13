@@ -57,6 +57,7 @@ import {
   wordMetadataNeedsRetry,
   wordMetadataRepairSystemPrompt,
 } from "./contract.ts";
+import { independentConsensus } from "./consensus.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
 import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
 
@@ -268,8 +269,7 @@ async function auditTranslationMeaningConsensus(
   sourceLang: string,
   targetLang: string,
 ): Promise<SemanticAuditResult | null> {
-  const audits: SemanticAuditResult[] = [];
-  for (let auditAttempt = 0; auditAttempt < 3; auditAttempt += 1) {
+  return independentConsensus(async (auditAttempt) => {
     let response: Response;
     try {
       response = await fetchChatCompletion(credential, {
@@ -294,32 +294,28 @@ async function auditTranslationMeaningConsensus(
         ],
       });
     } catch {
-      continue;
+      return null;
     }
-    if (!response.ok) continue;
+    if (!response.ok) return null;
 
     let payload: unknown;
     try {
       payload = await response.json();
     } catch {
-      continue;
+      return null;
     }
     const content = (payload as {
       choices?: Array<{ message?: { content?: unknown } }>;
     })?.choices?.[0]?.message?.content;
-    if (typeof content !== "string") continue;
+    if (typeof content !== "string") return null;
     const audit = parseSemanticAuditResult(
       content,
       candidateTranslation,
       trustedSourceMeaning,
     );
-    if (audit === null) continue;
-    audits.push(audit);
-    const consensus = resolveSemanticAuditConsensus(audits);
-    if (consensus === null) continue;
-    return consensus;
-  }
-  return null;
+    if (audit === null) return null;
+    return audit;
+  }, resolveSemanticAuditConsensus);
 }
 
 async function auditTranslationSemantics(
@@ -388,18 +384,20 @@ async function auditInterfaceTextSemantics(
   sourceLang: string,
   targetLang: string,
   interfaceLang: string,
+  preparedConsensus?: Promise<SemanticAuditResult | null>,
 ): Promise<InterfaceTextSemanticAudit | null> {
   if (interfaceLang === targetLang) {
     return { interfaceText: candidateInterfaceText, repairedTokens: null };
   }
-  const consensus = await auditTranslationMeaningConsensus(
-    credential,
-    sourceText,
-    trustedSourceMeaning,
-    candidateInterfaceText,
-    sourceLang,
-    interfaceLang,
-  );
+  const consensus =
+    await (preparedConsensus ?? auditTranslationMeaningConsensus(
+      credential,
+      sourceText,
+      trustedSourceMeaning,
+      candidateInterfaceText,
+      sourceLang,
+      interfaceLang,
+    ));
   if (consensus === null) return null;
   const acceptedInterfaceText = consensus.preservesMeaning
     ? candidateInterfaceText
@@ -941,6 +939,19 @@ Deno.serve(async (req) => {
         candidate.mode === "translation" &&
         candidate.sourceLang !== targetLang
       ) {
+        // Both lanes are reviewed against the same candidate-blind anchor.
+        // Word-help repair still waits for the accepted final learning text.
+        const originalInterfaceText = candidate.interfaceText;
+        const interfaceConsensus = targetLang === interfaceLang
+          ? undefined
+          : auditTranslationMeaningConsensus(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            originalInterfaceText,
+            candidate.sourceLang,
+            interfaceLang,
+          );
         const semanticAudit = await auditTranslationSemantics(
           semanticCredential,
           text,
@@ -979,6 +990,10 @@ Deno.serve(async (req) => {
           candidate.sourceLang,
           targetLang,
           interfaceLang,
+          // A corrected Known Language sentence needs its own fresh review.
+          candidate.interfaceText === originalInterfaceText
+            ? interfaceConsensus
+            : undefined,
         );
         if (interfaceAudit === null) {
           providerFailure = `${credential.provider}_interface_semantic_audit`;

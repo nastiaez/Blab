@@ -1,0 +1,30 @@
+begin;
+select plan(7);
+update profiles set primary_known_language='en' where id='00000000-0000-4000-8000-00000000000a';
+insert into chats(id) values('6b000000-0000-4000-8000-000000000001');
+insert into chat_members(chat_id,user_id,learning_language,mode) values
+('6b000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a','de','practice'),
+('6b000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000b','en','practice');
+insert into messages(id,chat_id,sender_id,body) values('6b000000-0000-4000-8000-000000000002','6b000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a','Hello');
+update message_preparation_jobs set status='processing',locked_at=now() where message_id='6b000000-0000-4000-8000-000000000002';
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-00000000000a',true);
+set local role authenticated;
+select ok(message_translation_work_pending('6b000000-0000-4000-8000-000000000002','de','en'),'active own preparation is pending');
+select ok(not message_translation_work_pending('6b000000-0000-4000-8000-000000000002','fr','en'),'wrong target cannot mask failure');
+select ok(not message_translation_work_pending('6b000000-0000-4000-8000-000000000002','de','fr'),'wrong known language cannot mask failure');
+reset role;
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-00000000000c',true);
+set local role authenticated;
+select ok(not message_translation_work_pending('6b000000-0000-4000-8000-000000000002','de','en'),'nonmember cannot inspect preparation');
+reset role;
+select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-00000000000a',true);
+update message_preparation_jobs set locked_at=now()-interval '3 minutes' where message_id='6b000000-0000-4000-8000-000000000002';
+set local role authenticated;
+select ok(not message_translation_work_pending('6b000000-0000-4000-8000-000000000002','de','en'),'stale work cannot keep loading forever');
+reset role;
+update message_preparation_jobs set locked_at=now(),source_version=repeat('0',64) where message_id='6b000000-0000-4000-8000-000000000002';
+set local role authenticated;
+select ok(not message_translation_work_pending('6b000000-0000-4000-8000-000000000002','de','en'),'edited source cannot reuse obsolete job');
+select ok(not has_function_privilege('anon','message_translation_work_pending(uuid,text,text)','execute'),'anonymous work access stays disabled');
+select * from finish();
+rollback;

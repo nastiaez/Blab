@@ -164,3 +164,8 @@ An offline or failed send remains the existing message-delivery state: clock whi
 - The final hierarchy for word taps, sentence audio, reactions, long press, swipe to reply, View original, and delete feedback.
 - Deep-dive grammar explanations and correction explanations beyond their existing popup entry points.
 - Translation infrastructure, monitoring, capacity alerts, or provider fallback implementation. Those are requirements for the reliability backlog item, not user-facing UI.
+
+
+## 2026-10-13: confirmed active preparation versus failure
+
+Nastia requested fixing both slow translation and the false failure while work is still running. Preserve the existing rendering, speed branches and language exceptions. At the ten-second failure boundary, an authenticated, source/version/locale-scoped server check may confirm active preparation. In that case retain the existing translating state and recover via the published cache row; do not invoke duplicate AI work or consume another allowance request. Check again at the existing ten-second cadence. Active-work evidence is bounded to two minutes; missing, expired, failed or inaccessible work uses the existing readable-original plus Retry state. This does not change delivery failure behavior.

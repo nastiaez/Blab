@@ -87,8 +87,8 @@ Deno.test("cross-language results receive a semantic audit before form and stora
     "only an explicit meaning mismatch can replace the sentence and both metadata lanes",
   );
   assert(
-    consensusBlock.includes("auditAttempt < 3") &&
-      consensusBlock.includes("resolveSemanticAuditConsensus(audits)") &&
+    consensusBlock.includes("independentConsensus(async (auditAttempt)") &&
+      consensusBlock.includes("resolveSemanticAuditConsensus)") &&
       consensusBlock.includes("trustedSourceMeaning"),
     "semantic audits retry independently and require a two-review consensus",
   );
