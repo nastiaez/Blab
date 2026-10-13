@@ -603,6 +603,43 @@ void main() {
     },
   );
 
+  test(
+    'late cache recovery continues after the first miss without AI retry',
+    () async {
+      final cached = <String, MessageTranslation>{};
+      var calls = 0;
+      final container = _container(
+        chatService: _ControlledCacheChatService(cachedByMessageId: cached),
+        lifecycleDeadline: const Duration(milliseconds: 10),
+        loadingTimeout: const Duration(milliseconds: 100),
+        lateCacheRecoveryDelay: const Duration(milliseconds: 10),
+        translateFn: (id) {
+          calls++;
+          return Completer<MessageTranslation>().future;
+        },
+      );
+      addTearDown(container.dispose);
+      unawaited(
+        container
+            .read(messageTranslationsProvider('chat-1').notifier)
+            .ensure(
+              messageId: 'm1',
+              text: 'hello',
+              targetLang: 'de',
+              interfaceLang: 'en',
+            ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 45));
+      cached['m1'] = _translation('Hallo');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncData<MessageTranslation>>(),
+      );
+      expect(calls, 1);
+    },
+  );
+
   test('protected-only text creates no state and no request', () async {
     var calls = 0;
     final container = _container(

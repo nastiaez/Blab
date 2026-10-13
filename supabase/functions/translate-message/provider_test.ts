@@ -240,3 +240,31 @@ Deno.test("provider fetch preserves endpoint, signal, model, and privacy policy"
   assert(openAiBody.model === "gpt-4o-mini", "OpenAI model included");
   assert(!("provider" in openAiBody), "OpenAI request omits router policy");
 });
+
+Deno.test("same-language corrections and literal characters are gated before completion", async () => {
+  const source = await Deno.readTextFile(
+    new URL("./index.ts", import.meta.url),
+  );
+  const gate = source.indexOf(
+    'candidate.mode === "correction" && candidate.sourceLang === targetLang',
+  );
+  const completion = source.indexOf("const completion = isWorker");
+  assert(
+    gate > 0 && gate < completion,
+    "correction meaning gate precedes completion",
+  );
+  assert(
+    source.slice(gate, gate + 1000).includes(
+      "auditTranslationMeaningConsensus(",
+    ),
+    "corrections require independent consensus",
+  );
+  assert(
+    source.includes("!preservesLiteralCharacters(text, candidate.translation)"),
+    "learning text preserves literal characters",
+  );
+  assert(
+    source.includes("preservesLiteralCharacters(text, repaired)"),
+    "repaired known-language text cannot bypass literal guard",
+  );
+});

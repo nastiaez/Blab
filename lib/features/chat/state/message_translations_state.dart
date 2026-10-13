@@ -250,11 +250,12 @@ class MessageTranslationsNotifier
     required String text,
     required String targetLang,
     required String interfaceLang,
+    int attempt = 0,
   }) {
     _lateCacheRecoveryTimers.remove(key)?.cancel();
     final delay = ref.read(translationLateCacheRecoveryDelayProvider);
     if (delay <= Duration.zero) return;
-    _lateCacheRecoveryTimers[key] = Timer(delay, () {
+    _lateCacheRecoveryTimers[key] = Timer(delay * (1 << attempt), () {
       _lateCacheRecoveryTimers.remove(key);
       unawaited(() async {
         try {
@@ -265,7 +266,22 @@ class MessageTranslationsNotifier
                 targetLang: targetLang,
                 interfaceLang: interfaceLang,
               );
-          if (!ref.mounted || _sourceTexts[key] != text || cached == null) {
+          if (!ref.mounted ||
+              _sourceTexts[key] != text ||
+              state[key] is AsyncData<MessageTranslation>) {
+            return;
+          }
+          if (cached == null) {
+            if (attempt < 5) {
+              _scheduleLateCacheRecovery(
+                key: key,
+                messageId: messageId,
+                text: text,
+                targetLang: targetLang,
+                interfaceLang: interfaceLang,
+                attempt: attempt + 1,
+              );
+            }
             return;
           }
           final value = _translationFromCache(cached);
@@ -273,7 +289,21 @@ class MessageTranslationsNotifier
           state = {...state, key: AsyncData(value)};
         } catch (_) {
           // The visible Retry state remains available when cache recovery
-          // cannot reach a result.
+          // cannot reach a result. Read-only retries bridge missed Realtime
+          // events without starting AI work or hiding an actionable error.
+          if (ref.mounted &&
+              _sourceTexts[key] == text &&
+              state[key] is! AsyncData<MessageTranslation> &&
+              attempt < 5) {
+            _scheduleLateCacheRecovery(
+              key: key,
+              messageId: messageId,
+              text: text,
+              targetLang: targetLang,
+              interfaceLang: interfaceLang,
+              attempt: attempt + 1,
+            );
+          }
         }
       }());
     });

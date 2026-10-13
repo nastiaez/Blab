@@ -3,6 +3,21 @@ import 'package:blab/shared/models/chat.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('isolated literal capital characters do not request language work', () {
+    expect(containsMeaningBearingText('O'), isFalse);
+    expect(containsMeaningBearingText('Z'), isFalse);
+    for (final word in [
+      'I',
+      'A',
+      'Y',
+      'U',
+      'all',
+      'Oh',
+      'Es übersetzt deine O',
+    ]) {
+      expect(containsMeaningBearingText(word), isTrue);
+    }
+  });
   group('resolveTranslationTarget', () {
     test('practice mode always targets the learning language', () {
       expect(

@@ -98,6 +98,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final GlobalKey _selectedBubbleKey = GlobalKey();
   final GlobalKey _unreadDividerKey = GlobalKey();
   final Map<String, GlobalKey> _messageAnchorKeys = <String, GlobalKey>{};
+  String? _replyHighlightId;
+  Timer? _replyHighlightTimer;
   bool _menuOpen = false;
   bool _hasText = false;
   int _textLength = 0;
@@ -168,6 +170,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void dispose() {
     _modeAnchorTimer?.cancel();
+    _replyHighlightTimer?.cancel();
     _reactionRowDismissTimer?.cancel();
     _scroll.removeListener(_loadOlderNearTop);
     _input.dispose();
@@ -491,6 +494,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ? Duration.zero
                 : const Duration(milliseconds: 180),
           );
+          if (!mounted) return;
+          _replyHighlightTimer?.cancel();
+          setState(() => _replyHighlightId = target.id);
+          _replyHighlightTimer = Timer(const Duration(seconds: 1), () {
+            if (mounted) setState(() => _replyHighlightId = null);
+          });
           return;
         }
         final messages =
@@ -1401,6 +1410,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                       List<MessageReactionSummary>
                                     >{};
                                 return _MessageList(
+                                  highlightedMessageId: _replyHighlightId,
                                   chatId: widget.chatId,
                                   partnerName: chat.partnerName,
                                   messages: all,
@@ -2293,6 +2303,7 @@ class _ChatHistoryErrorState extends StatelessWidget {
 
 class _MessageList extends ConsumerWidget {
   const _MessageList({
+    this.highlightedMessageId,
     required this.chatId,
     required this.partnerName,
     required this.messages,
@@ -2322,6 +2333,7 @@ class _MessageList extends ConsumerWidget {
     this.emptyState,
   });
 
+  final String? highlightedMessageId;
   final String chatId;
   final String partnerName;
   final List<Message> messages;
@@ -2488,6 +2500,7 @@ class _MessageList extends ConsumerWidget {
           return KeyedSubtree(
             key: messageAnchorKey(item.message.id),
             child: _MessageRow(
+              highlighted: highlightedMessageId == item.message.id,
               chatId: chatId,
               partnerName: partnerName,
               message: item.message,
@@ -2672,6 +2685,7 @@ class _UnreadDivider extends StatelessWidget {
 
 class _MessageRow extends ConsumerWidget {
   const _MessageRow({
+    this.highlighted = false,
     required this.chatId,
     required this.partnerName,
     required this.message,
@@ -2698,6 +2712,7 @@ class _MessageRow extends ConsumerWidget {
     this.selectedBubbleKey,
   });
 
+  final bool highlighted;
   final String chatId;
   final String partnerName;
   final Message message;
@@ -2889,13 +2904,30 @@ class _MessageRow extends ConsumerWidget {
         // Keep the same 12px breathing room on both physical edges. Outgoing
         // rows still need the Align below: without it their bubble starts at
         // the left instead of occupying the right side of the chat.
-        padding: EdgeInsets.fromLTRB(12, topGap, 12, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: EdgeInsets.only(top: topGap),
+        child: Stack(
           children: [
-            Align(
-              alignment: isOut ? Alignment.centerRight : Alignment.centerLeft,
-              child: bubble,
+            Positioned.fill(
+              bottom: reactions.isNotEmpty ? 19 : 0,
+              child: IgnorePointer(
+                child: AnimatedContainer(
+                  key: ValueKey('reply-jump-highlight-${message.id}'),
+                  duration:
+                      highlighted || MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 350),
+                  color: highlighted
+                      ? const Color(0xFFE9E1D7)
+                      : const Color(0x00E9E1D7),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Align(
+                alignment: isOut ? Alignment.centerRight : Alignment.centerLeft,
+                child: bubble,
+              ),
             ),
           ],
         ),
@@ -3284,9 +3316,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
     final unchangedForLifecycle =
         resolvedTranslation != null &&
         translationResultIsUnchanged(message.originalText, resolvedTranslation);
-    final reducedMotion =
-        MediaQuery.disableAnimationsOf(context) ||
-        MediaQuery.accessibleNavigationOf(context);
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
     final retryingRevealedIncoming =
         !isOut &&
         _incomingOriginalRevealedAfterFailure &&

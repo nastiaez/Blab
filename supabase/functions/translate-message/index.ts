@@ -22,6 +22,7 @@ import {
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
+  isProtectedLiteralMessage,
   LANG_NAMES,
   missingFormAlternativesNeedsAudit,
   normalizeFormSubject,
@@ -31,6 +32,7 @@ import {
   parseSemanticAuditResult,
   parseSourceMeaningAnchorResult,
   parseWordMetadataRepairResult,
+  preservesLiteralCharacters,
   type ProviderCredential,
   providerCredentials,
   providerMessages,
@@ -761,16 +763,21 @@ Deno.serve(async (req) => {
     })
     : [];
   const formContext = formContextFrom(rawFormContext);
+  const protectedLiteral = isProtectedLiteralMessage(text);
   const deterministicUnsupported = unsupportedSourceScript(text);
-  const providerKeys = deterministicUnsupported ? [] : providerCredentials({
-    openRouterKey: OPEN_ROUTER_KEY,
-    openAiKey: OPENAI_API_KEY,
-    openRouterModel: OPENROUTER_MODEL,
-    openAiModel: OPENAI_MODEL,
-    openRouterProviderPolicy: OPENROUTER_PROVIDER_POLICY,
-    environment: BLAB_ENV,
-  });
-  if (!deterministicUnsupported && providerKeys.length === 0) {
+  const providerKeys = deterministicUnsupported || protectedLiteral
+    ? []
+    : providerCredentials({
+      openRouterKey: OPEN_ROUTER_KEY,
+      openAiKey: OPENAI_API_KEY,
+      openRouterModel: OPENROUTER_MODEL,
+      openAiModel: OPENAI_MODEL,
+      openRouterProviderPolicy: OPENROUTER_PROVIDER_POLICY,
+      environment: BLAB_ENV,
+    });
+  if (
+    !deterministicUnsupported && !protectedLiteral && providerKeys.length === 0
+  ) {
     console.error("translation provider key is missing");
     return json({ error: "translation_unavailable" }, 500);
   }
@@ -779,6 +786,17 @@ Deno.serve(async (req) => {
     ? {
       mode: "translation",
       sourceLang: "other",
+      translation: text,
+      interfaceText: text,
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    }
+    : protectedLiteral
+    ? {
+      mode: "none",
+      sourceLang: targetLang,
       translation: text,
       interfaceText: text,
       explanation: null,
@@ -1038,6 +1056,72 @@ Deno.serve(async (req) => {
           };
         }
       }
+      if (
+        candidate.mode === "correction" && candidate.sourceLang === targetLang
+      ) {
+        const verdict = await auditTranslationMeaningConsensus(
+          semanticCredential,
+          text,
+          trustedSourceMeaning,
+          candidate.translation,
+          candidate.sourceLang,
+          targetLang,
+        );
+        if (verdict === null) {
+          providerFailure =
+            `${credential.provider}_correction_meaning_unverified`;
+          continue;
+        }
+        if (!verdict.preservesMeaning) {
+          // The authored sentence is already in the learning language. A
+          // rejected speculative correction must not turn readable source
+          // text into a permanent failure. Preserve it and verify the known-
+          // language lane separately against the original source anchor.
+          const literalInterface = targetLang === interfaceLang
+            ? text
+            : await repairInterfaceText(
+              credential,
+              text,
+              targetLang,
+              interfaceLang,
+            );
+          if (
+            literalInterface === null ||
+            !preservesLiteralCharacters(text, literalInterface)
+          ) {
+            providerFailure = `${credential.provider}_literal_interface_repair`;
+            continue;
+          }
+          const interfaceVerdict = targetLang === interfaceLang
+            ? null
+            : await auditTranslationMeaningConsensus(
+              semanticCredential,
+              text,
+              trustedSourceMeaning,
+              literalInterface,
+              targetLang,
+              interfaceLang,
+            );
+          if (
+            targetLang !== interfaceLang &&
+            (interfaceVerdict === null || !interfaceVerdict.preservesMeaning)
+          ) {
+            providerFailure =
+              `${credential.provider}_literal_interface_meaning`;
+            continue;
+          }
+          candidate = {
+            ...candidate,
+            mode: "none",
+            translation: text,
+            interfaceText: literalInterface,
+            tokens: [],
+            explanation: null,
+            confidence: null,
+            formAlternatives: null,
+          };
+        }
+      }
       if (hindiFutureNeedsAudit(candidate, targetLang)) {
         const futureAudit = await auditHindiFutureTranslation(
           credential,
@@ -1197,7 +1281,11 @@ Deno.serve(async (req) => {
           targetLang,
           interfaceLang,
         );
-        if (repaired !== null) {
+        if (
+          repaired !== null &&
+          preservesLiteralCharacters(text, candidate.translation) &&
+          preservesLiteralCharacters(text, repaired)
+        ) {
           candidate.interfaceText = repaired;
           result = candidate;
           break;
@@ -1208,6 +1296,13 @@ Deno.serve(async (req) => {
           model: credential.model,
           reason: providerFailure,
         });
+        continue;
+      }
+      if (
+        !preservesLiteralCharacters(text, candidate.translation) ||
+        !preservesLiteralCharacters(text, candidate.interfaceText)
+      ) {
+        providerFailure = `${credential.provider}_literal_character_changed`;
         continue;
       }
       console.log(

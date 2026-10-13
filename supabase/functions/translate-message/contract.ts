@@ -1,5 +1,36 @@
 export const MAX_CHARS = 2000;
 
+/// Content with no linguistic meaning, or an isolated capital letter used as
+/// an opaque character. Do not exempt real one-letter words/abbreviations.
+export function isProtectedLiteralMessage(text: string): boolean {
+  const value = text.trim();
+  if (!value) return false;
+  if (!/\p{L}/u.test(value)) return true;
+  if (/^(https?:\/\/\S+|@[\p{L}\p{N}_]+|#[\p{L}\p{N}_]+)$/u.test(value)) {
+    return true;
+  }
+  return /^[B-DF-HJ-TV-XZ]$/u.test(value) &&
+    recognizedAbbreviationSourceLanguage(value) === null;
+}
+
+/// Standalone opaque capital characters in a sentence must survive unchanged.
+/// A correction must never expand a referenced character into a guessed word.
+export function preservesLiteralCharacters(
+  source: string,
+  candidate: string,
+): boolean {
+  const letters = (text: string) =>
+    text.match(/(?<![\p{L}\p{N}])[B-DF-HJ-TV-XZ](?![\p{L}\p{N}])/gu) ?? [];
+  const required = letters(source).filter((letter) =>
+    recognizedAbbreviationSourceLanguage(letter) === null
+  );
+  const actual = letters(candidate);
+  return required.every((letter) =>
+    actual.filter((v) => v === letter).length >=
+      required.filter((v) => v === letter).length
+  );
+}
+
 export const OPENROUTER_PROVIDER = {
   allow_fallbacks: true,
   require_parameters: true,
@@ -35,7 +66,7 @@ export type FormParticipantContext = {
 const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
 const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
 const SEMANTIC_FIDELITY_RULE =
-  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning.";
+  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Preserve ambiguous isolated characters and initials literally; never expand O to ears or another guessed noun. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning.";
 
 export function providerCredentials(env: {
   openRouterKey?: string | null;
@@ -1897,6 +1928,7 @@ Return strict JSON only:
 }
 
 Rules:
+- Never expand an ambiguous character, initial, or fragment into a guessed noun. Preserve the character literally (e.g. "deine O" must not become "deine Ohren"). Low confidence is not permission to invent meaning.
 - Preserve meaning and tone. Keep URLs, @mentions, hashtags, code, numbers, and emoji unchanged, and preserve names' identity rather than translating their meaning; transliterate a confidently identified name when the target script differs. Move protected content with the surrounding sentence when the target language needs a different natural word order.
 - ${SEMANTIC_FIDELITY_RULE}
 - Produce natural, standard ${targetName} spelling and word formation.${targetLanguageGuidance}
@@ -1946,7 +1978,7 @@ export function sourceMeaningAnchorSystemPrompt(): string {
 
 Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
 
-Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. Do not assume a target language or a later translation; neither is provided.`;
+Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. Do not assume a target language or a later translation; neither is provided.`;
 }
 
 export function parseSourceMeaningAnchorResult(content: string): string | null {

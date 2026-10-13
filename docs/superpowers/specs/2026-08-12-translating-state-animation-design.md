@@ -26,7 +26,7 @@ This specification covers every message state in Normal and Practice modes: sent
 
 Emoji, URLs, @mentions, hashtags, code, intentionally preserved names, and number-only content remain part of sentence layout but are never translated or corrected. They move with the sentence when word order changes.
 
-- A message made only of protected content skips language processing and the wave.
+- A message made only of protected content skips language processing and the wave. Isolated opaque capital characters (such as the reported `O`) remain literal; real one-letter words and chat abbreviations stay eligible. A referenced character inside a sentence must never expand into a guessed noun.
 - Mixed text processes as one sentence. Example: `I will see you at 8pm 😊` becomes the natural target-language sentence with `8pm` and `😊` retained in their grammatically natural positions.
 - Common chat abbreviations such as `brb` and `ttyl` are treated as meaning-bearing text: translate their meaning when the target language has a natural equivalent; otherwise preserve them. They are not correction mistakes.
 
@@ -140,6 +140,8 @@ An offline or failed send remains the existing message-delivery state: clock whi
 
 ## Reduced motion
 
+Use the platform disable-animations preference, not accessibility navigation alone, to select this branch. With disable-animations off, outgoing pending Practice messages use the normal glyph wave and no standalone processing label.
+
 - No arrival rise/scale, wave, fade, stagger, or resize animation.
 - Outgoing messages show a static background status after 350ms: `Translating…` or `Checking…`.
 - A final result swaps directly at final size.
@@ -169,3 +171,7 @@ An offline or failed send remains the existing message-delivery state: clock whi
 ## 2026-10-13: confirmed active preparation versus failure
 
 Nastia requested fixing both slow translation and the false failure while work is still running. Preserve the existing rendering, speed branches and language exceptions. At the ten-second failure boundary, an authenticated, source/version/locale-scoped server check may confirm active preparation. In that case retain the existing translating state and recover via the published cache row; do not invoke duplicate AI work or consume another allowance request. Check again at the existing ten-second cadence. Active-work evidence is bounded to two minutes; missing, expired, failed or inaccessible work uses the existing readable-original plus Retry state. This does not change delivery failure behavior.
+
+## Reply navigation highlight (approved 2026-10-13)
+
+After quote navigation lands, highlight the target with a full-width background band (`#E9E1D7`) for one second, then fade out over 350ms. The bubble fill, outline, typography, and size are unchanged in Normal and Practice. The band matches the message height with no vertical gap padding; reaction overflow is excluded. No selection menu is opened. Disable-animations retains the static hold and removes the fade. Reference: Blab Paper artboards 27/28, background-only highlight previews.

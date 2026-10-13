@@ -371,6 +371,7 @@ class _NoopTyping implements TypingTransport {
 Widget _host(
   ProviderContainer container, {
   bool disableAnimations = false,
+  bool accessibleNavigation = false,
   Locale? locale,
 }) {
   return UncontrolledProviderScope(
@@ -383,7 +384,7 @@ Widget _host(
         builder: (context) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             disableAnimations: disableAnimations,
-            accessibleNavigation: disableAnimations,
+            accessibleNavigation: accessibleNavigation,
           ),
           child: const ChatScreen(chatId: 'chat-1'),
         ),
@@ -654,6 +655,32 @@ void main() {
     },
   );
 
+  testWidgets('accessibility navigation does not disable outgoing wave', (
+    tester,
+  ) async {
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        pending: true,
+        chatMode: 'practice',
+        messageIsOutgoing: true,
+        messageText: 'Hello there',
+      ),
+      primaryKnownLanguage: 'en',
+      knownLanguages: const ['en'],
+    );
+    await tester.pumpWidget(_host(container, accessibleNavigation: true));
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('translation-wave')), findsOneWidget);
+    expect(find.text('Translating…'), findsNothing);
+    await tester.pumpWidget(_host(container, disableAnimations: true));
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
+    expect(find.text('Translating…'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump();
+  });
+
   testWidgets(
     'one pending incoming message uses the shared lifecycle without a status row',
     (tester) async {
@@ -667,7 +694,7 @@ void main() {
         primaryKnownLanguage: 'en',
         knownLanguages: const ['en'],
       );
-      await tester.pumpWidget(_host(container));
+      await tester.pumpWidget(_host(container, accessibleNavigation: true));
       await _settle(tester);
 
       expect(
@@ -1597,6 +1624,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 20));
     }
     expect(service.historyPageRequests, greaterThan(1));
+    final highlight = tester.widget<AnimatedContainer>(
+      find.byKey(ValueKey('reply-jump-highlight-${service.history[4].id}')),
+    );
+    expect(
+      (highlight.decoration as BoxDecoration).color,
+      const Color(0xFFE9E1D7),
+    );
+    await tester.pump(const Duration(milliseconds: 1400));
+    final faded = tester.widget<AnimatedContainer>(
+      find.byKey(ValueKey('reply-jump-highlight-${service.history[4].id}')),
+    );
+    expect((faded.decoration as BoxDecoration).color, const Color(0x00E9E1D7));
     final targets = find.text(service.history[4].originalText).evaluate();
     expect(
       targets.any((e) {

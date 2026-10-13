@@ -13,6 +13,7 @@ import {
   INTERFACE_RESPONSE_FORMAT,
   interfaceOutputNeedsRetry,
   interfaceRepairSystemPrompt,
+  isProtectedLiteralMessage,
   MAX_CHARS,
   OPENROUTER_PROVIDER,
   parseCorrectionAuditResult,
@@ -21,6 +22,7 @@ import {
   parseSemanticAuditResult,
   parseSourceMeaningAnchorResult,
   parseWordMetadataRepairResult,
+  preservesLiteralCharacters,
   providerCredentials,
   providerMessages,
   providerResultFailureReason,
@@ -3078,4 +3080,52 @@ Deno.test("accepted Latin translation remains readable without optional popup me
     wordMetadataNeedsRetry({ translation: "Привіт!", tokens: [] }),
     "non-Latin reading aids remain required",
   );
+});
+
+Deno.test("protected literal messages bypass linguistic guessing without exempting words", () => {
+  for (
+    const text of [
+      "O",
+      "Z",
+      "0",
+      "123.4",
+      "😂",
+      "https://example.com",
+      "@aswin",
+      "#Blab",
+    ]
+  ) {
+    if (!isProtectedLiteralMessage(text)) {
+      throw new Error(`not protected: ${text}`);
+    }
+  }
+  for (
+    const text of [
+      "I",
+      "A",
+      "Y",
+      "U",
+      "all",
+      "oh",
+      "Es übersetzt deine O ewig! Lol",
+      "我",
+    ]
+  ) {
+    if (isProtectedLiteralMessage(text)) {
+      throw new Error(`word incorrectly exempted: ${text}`);
+    }
+  }
+});
+
+Deno.test("literal character guard rejects guessed expansion in every display lane", () => {
+  const source = "Es übersetzt deine O ewig! Lol";
+  if (
+    preservesLiteralCharacters(source, "Es übersetzt deine Ohren ewig! Lol")
+  ) throw new Error("invented ears accepted");
+  if (
+    !preservesLiteralCharacters(source, "It translates your O forever! Lol")
+  ) throw new Error("literal not retained");
+  if (!preservesLiteralCharacters("I am happy", "Ich bin glücklich")) {
+    throw new Error("real one-letter word protected");
+  }
 });

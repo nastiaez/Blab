@@ -44,6 +44,9 @@ const Set<String> kSupportedLearningLanguages = {
 const int kMaxMessageCharacters = 2000;
 
 bool containsMeaningBearingText(String text) {
+  // Isolated opaque capital characters are literal content, not inferred
+  // missing words. Keep one-letter words/abbreviations A/E/I/U/Y eligible.
+  if (RegExp(r'^[B-DF-HJ-TV-XZ]$').hasMatch(text.trim())) return false;
   var candidate = text;
   candidate = candidate.replaceAll(
     RegExp(r'```[\s\S]*?```|`[^`]*`', multiLine: true),
