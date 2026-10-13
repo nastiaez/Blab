@@ -61,8 +61,11 @@ import { workerJobId } from "../prepare-message-jobs/contract.ts";
 import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("BLAB_SUPABASE_ANON_KEY")?.trim() ||
+  Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY =
+  Deno.env.get("BLAB_SUPABASE_SERVICE_ROLE_KEY")?.trim() ||
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const BLAB_ENV = Deno.env.get("BLAB_ENV");
 const OPEN_ROUTER_KEY = Deno.env.get("OPEN_ROUTER_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -327,7 +330,7 @@ async function auditTranslationSemantics(
   sourceLang: string,
   targetLang: string,
   interfaceLang: string,
-): Promise<SemanticTranslationAudit | null> {
+): Promise<SemanticTranslationAudit | string | null> {
   const consensus = await auditTranslationMeaningConsensus(
     credential,
     sourceText,
@@ -336,7 +339,7 @@ async function auditTranslationSemantics(
     sourceLang,
     targetLang,
   );
-  if (consensus === null) return null;
+  if (consensus === null) return "consensus";
   if (consensus.preservesMeaning) {
     return {
       ...consensus,
@@ -351,16 +354,29 @@ async function auditTranslationSemantics(
       targetLang,
       interfaceLang,
     ),
-    repairInterfaceText(
-      credential,
-      consensus.correctedTranslation,
-      targetLang,
-      interfaceLang,
-    ),
+    targetLang === interfaceLang
+      ? Promise.resolve(consensus.correctedTranslation)
+      : repairInterfaceText(
+        credential,
+        consensus.correctedTranslation,
+        targetLang,
+        interfaceLang,
+      ),
   ]);
-  return repairedTokens === null || repairedInterfaceText === null
-    ? null
-    : { ...consensus, repairedTokens, repairedInterfaceText };
+  if (
+    repairedTokens === null && wordMetadataNeedsRetry({
+      translation: consensus.correctedTranslation,
+      tokens: [],
+    })
+  ) return "word_metadata_repair";
+  if (repairedInterfaceText === null) return "interface_text_repair";
+  // The independent meaning audit has accepted this correction. Optional
+  // Latin-word popup metadata must not discard that readable translation.
+  return {
+    ...consensus,
+    repairedTokens: repairedTokens ?? [],
+    repairedInterfaceText,
+  };
 }
 
 async function auditInterfaceTextSemantics(
@@ -934,8 +950,10 @@ Deno.serve(async (req) => {
           targetLang,
           interfaceLang,
         );
-        if (semanticAudit === null) {
-          providerFailure = `${credential.provider}_semantic_audit`;
+        if (semanticAudit === null || typeof semanticAudit === "string") {
+          providerFailure = `${credential.provider}_semantic_audit_${
+            semanticAudit ?? "unknown"
+          }`;
           console.error("translation provider attempt failed", {
             provider: credential.provider,
             model: credential.model,

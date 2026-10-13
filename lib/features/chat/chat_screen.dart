@@ -2196,24 +2196,13 @@ class _MessageList extends ConsumerWidget {
       return emptyState ?? const SizedBox.expand();
     }
 
-    final mode = ref.watch(chatModeProvider(chatId));
-    final knownLanguages = ref.watch(knownLanguagesProvider).value;
     final languageTimeline = parseChatLanguageTimeline(languageTimelineRows);
     ChatLanguageEra eraForMessage(Message message) => languageEraForMessage(
       sentAt: message.sentAt,
       timeline: languageTimeline,
       fallbackLanguageCode: languageCode,
     );
-    String targetForMessage(Message message) {
-      if (practiceSetupRequired || knownLanguages == null) return '';
-      return resolveTranslationTarget(
-        mode: mode,
-        learningLanguageCode: eraForMessage(message).languageCode,
-        primaryKnownLanguageCode: knownLanguages.primary,
-      );
-    }
 
-    final translationState = ref.watch(messageTranslationsProvider(chatId));
     final languageChanges = languageTimelineRows
         .where((event) => (event['revision'] as num?)?.toInt() != 1)
         .map(
@@ -2224,35 +2213,6 @@ class _MessageList extends ConsumerWidget {
         )
         .where((event) => event.when != null && event.language != null)
         .toList();
-    final pendingIncoming = messages.where((message) {
-      if (!languageTimelineReady) return false;
-      final targetLanguage = targetForMessage(message);
-      if (message.isOutgoing ||
-          !shouldRequestBubbleTranslation(
-            targetLanguageCode: targetLanguage,
-            text: message.originalText,
-            sentAt: message.sentAt,
-            translationCutoffAt: null,
-          )) {
-        return false;
-      }
-      final entry =
-          translationState[translationEntryKey(
-            message.id,
-            targetLanguage,
-            translationInterfaceLanguageCode,
-          )];
-      return entry is! AsyncData<MessageTranslation> &&
-          entry is! AsyncError<MessageTranslation>;
-    }).toList();
-    final pendingIds = pendingIncoming.map((message) => message.id).toSet();
-    final hasEarlierPending = <String, bool>{};
-    var earlierPending = false;
-    for (final message in messages) {
-      hasEarlierPending[message.id] = earlierPending;
-      if (pendingIds.contains(message.id)) earlierPending = true;
-    }
-
     // Pre-compute rendering hints: date dividers + whether each message is
     // the last in its group (for timestamp/tick visibility).
     final items = <_ListItem>[];
@@ -2379,8 +2339,8 @@ class _MessageList extends ConsumerWidget {
               translationCutoffAt: null,
               popupTopInset: popupTopInset,
               deferTranslationResolve: deferTranslationResolve,
-              holdIncomingUntilPrevious:
-                  hasEarlierPending[item.message.id] ?? false,
+              // Cached/ready text must never wait on another message's request.
+              holdIncomingUntilPrevious: false,
               isSelected: selectedMessageId == item.message.id,
               showOriginal:
                   selectedMessageId == item.message.id && showSelectedOriginal,

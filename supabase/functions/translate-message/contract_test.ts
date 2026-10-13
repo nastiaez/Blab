@@ -3030,3 +3030,52 @@ Deno.test("server keeps duplicate target and interface lanes identical", () => {
 Deno.test("maximum character contract remains 2000", () => {
   assert(characterCount("a".repeat(MAX_CHARS)) === MAX_CHARS, "maximum length");
 });
+
+Deno.test("word metadata repair restores paragraph separators and emoji without rewriting words", () => {
+  const expected = "Hello!\n\nThank you ❤️";
+  const tokens = [
+    { text: "Hello", gloss: "greeting", roman: "Hello", isContent: true },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    {
+      text: "Thank",
+      gloss: "express gratitude",
+      roman: "Thank",
+      isContent: true,
+    },
+    { text: " ", gloss: null, roman: null, isContent: false },
+    { text: "you", gloss: "the listener", roman: "you", isContent: true },
+  ];
+  const repaired = parseWordMetadataRepairResult(
+    JSON.stringify({ tokens }),
+    expected,
+  );
+  assert(
+    repaired !== null,
+    "complete word metadata tolerates provider separator loss",
+  );
+  assert(
+    repaired?.map((t) => t.text).join("") === expected,
+    "paragraphs, punctuation and emoji are restored exactly",
+  );
+  assert(
+    parseWordMetadataRepairResult(
+      JSON.stringify({ tokens }),
+      "Goodbye! Thank you ❤️",
+    ) === null,
+    "changed words are never accepted",
+  );
+});
+
+Deno.test("accepted Latin translation remains readable without optional popup metadata", () => {
+  assert(
+    !wordMetadataNeedsRetry({
+      translation: "Hello!\n\nThank you ❤️",
+      tokens: [],
+    }),
+    "Latin text must not fail because optional word help failed",
+  );
+  assert(
+    wordMetadataNeedsRetry({ translation: "Привіт!", tokens: [] }),
+    "non-Latin reading aids remain required",
+  );
+});

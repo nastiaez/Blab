@@ -13,6 +13,7 @@
 // for: every other fixture in this branch left `primaryKnownLanguage` at
 // its default (equal to `interfaceLanguage`), which is exactly why this bug
 // shipped through 12 task reviews undetected.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:blab/features/chat/chat_screen.dart';
@@ -380,6 +381,64 @@ ProviderContainer _containerForHeader(
 }
 
 void main() {
+  testWidgets('active older translation cannot hide ready later text', (
+    tester,
+  ) async {
+    final older = Completer<MessageTranslation>();
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        previousMessageIsOutgoing: false,
+        previousMessageSentAt: DateTime.utc(2026, 8, 3, 11, 59),
+      ),
+      translate: (_) => older.future,
+    );
+    unawaited(
+      container
+          .read(messageTranslationsProvider('chat-1').notifier)
+          .ensure(
+            messageId: 'msg-0',
+            text: 'Earlier',
+            targetLang: 'uk',
+            interfaceLang: 'uk',
+          ),
+    );
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    expect(find.text('Привіт'), findsOneWidget);
+    older.complete(
+      const MessageTranslation(
+        translation: 'Раніше',
+        interfaceText: 'Раніше',
+        interfaceLang: 'uk',
+        sourceLang: 'en',
+        tokens: [],
+      ),
+    );
+    await _settle(tester);
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump();
+  });
+
+  testWidgets(
+    'uncached older incoming message cannot hide a ready later message',
+    (tester) async {
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          previousMessageIsOutgoing: false,
+          previousMessageSentAt: DateTime.utc(2026, 8, 3, 11, 59),
+          previousMessageText: 'Older uncached message',
+        ),
+      );
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      expect(find.text('Привіт'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
+    },
+  );
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {

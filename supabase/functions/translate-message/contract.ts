@@ -1333,7 +1333,9 @@ export function translationNeedsRetry(
 /// transliteration and known-language gloss are essential reading aids there.
 /// parseProviderResult already discards the whole token list when any token is
 /// incomplete, so an empty list is the bounded signal for one provider retry.
-export function wordMetadataNeedsRetry(result: TranslationResult): boolean {
+export function wordMetadataNeedsRetry(
+  result: Pick<TranslationResult, "translation" | "tokens">,
+): boolean {
   if (result.tokens.length > 0) return false;
   return Array.from(result.translation).some((character) =>
     /\p{L}/u.test(character) && !/\p{Script=Latin}/u.test(character)
@@ -1679,6 +1681,7 @@ function repairTokensToTranslation(
   targetLang: string,
 ): Array<Record<string, unknown>> | null {
   const isWordCharacter = (character: string) =>
+    !/\p{Variation_Selector}/u.test(character) &&
     /[\p{L}\p{M}\p{N}]/u.test(character);
   const contentTokens = tokens.filter((token) =>
     (token as { isContent?: unknown }).isContent === true
@@ -2114,8 +2117,21 @@ export function parseWordMetadataRepairResult(
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return null;
   }
-  return validatedCompleteTokens(
-    (raw as Record<string, unknown>).tokens,
-    expectedText,
-  );
+  const rawTokens = (raw as Record<string, unknown>).tokens;
+  const exact = validatedCompleteTokens(rawTokens, expectedText);
+  if (exact !== null) return exact;
+  if (!Array.isArray(rawTokens)) return null;
+  const reproduced = rawTokens.map((token) =>
+    typeof token === "object" && token !== null &&
+      typeof token.text === "string"
+      ? token.text
+      : ""
+  ).join("");
+  const valid = validatedCompleteTokens(rawTokens, reproduced);
+  if (valid === null) return null;
+  // Keep accepted words immutable; only restore their original separators.
+  const canonical = repairTokensToTranslation(valid, expectedText, "");
+  return canonical === null
+    ? null
+    : validatedCompleteTokens(canonical, expectedText);
 }
