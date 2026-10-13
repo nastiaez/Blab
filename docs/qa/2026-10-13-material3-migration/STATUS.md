@@ -62,3 +62,9 @@ Logs under /tmp/blab-material3-*. Raw local backend logs/status can include gene
 - Current candidate synthetic release AAB compiled successfully. Retained the original cupertino_icons dependency after release tree-shaking exposed an SDK font reference despite no direct app import; do not remove framework-needed assets based only on app source scans. Final compile with the baseline dependency intact passed; both font assets were retained/tree-shaken without the missing-font warning.
 - Owned functions/backend stopped safely; original supabase/config.toml restored. Existing unrelated backend remained healthy and untouched. Owned local data volume preserved for reproducible resume.
 - Older root screenshots 01–18 and first native-back.mp4 are historical intermediate evidence, not final parity approval. Final comparison folder, incoming-share/reply evidence and native-back-complete-cancel.mp4 are current review evidence.
+
+## Final shared-chip correction
+- Native Chip label alignment differed by one logical pixel from the original pill. Supported shared visual-density styling now restores the original center/height/inset; a geometry regression covers this contract.
+- Final Profile capture was repeated and inspected. Chip-region mean absolute RGB difference is below 0.001/255 per channel (minor border rasterization only); both capsule crops remain identical for the reviewed default states.
+- After this last source change: **833 Flutter tests passed, 15 environment-dependent skips**, analysis and formatting clean. Debug Android APK rebuilt and installed for the final capture.
+- Earlier remote pinned-SDK Quality gate passed; final exact-head CI must include this correction. No main merge or release authorized/claimed.

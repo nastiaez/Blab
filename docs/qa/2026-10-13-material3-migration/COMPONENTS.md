@@ -58,7 +58,7 @@ All rows are implemented or deliberately retained as listed. None is owner-accep
 
 ## Verification and acceptance separation
 
-- Full Flutter suite: **832 passed, 15 environment-dependent skips**. Analyzer and format clean. Baseline had 821 tests; four removed tests exercised only the removed unreachable subtitle renderer; replacement/native contracts add coverage.
+- Full Flutter suite: **833 passed, 15 environment-dependent skips**. Analyzer and format clean. Baseline had 821 tests; four removed tests exercised only the removed unreachable subtitle renderer; replacement/native contracts add coverage.
 - Backend unit: 136 passed. Owned disposable integration: 12 passed; three live-provider cases intentionally skipped. No production model credentials/data used.
 - Separate Android baseline/candidate screenshots: Chats, Profile, Privacy, language editor, Edit Profile, both modes. Capsule static crops match exactly; language editor static region matches. Navigation shadow is intentional; native account Switch thumb/track differs.
 - Android local account setup, invite/native-share return, used-invite recovery, two-client literal/Normal messages, gallery/photo/view/cache and incoming ACTION_SEND recipient/preview/send exercised. Predictive Back completed/cancelled recording retained.

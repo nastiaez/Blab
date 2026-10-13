@@ -1,4 +1,6 @@
 import 'package:blab/app/theme.dart';
+import 'package:blab/shared/data/languages.dart';
+import 'package:blab/shared/widgets/selection/blab_language_chip.dart';
 import 'package:blab/features/chat/chat_screen.dart';
 import 'package:blab/features/chat/widgets/chat_mode_toggle.dart';
 import 'package:blab/l10n/l10n.dart';
@@ -26,6 +28,30 @@ Widget _host(
   home: Scaffold(body: child),
 );
 void main() {
+  testWidgets(
+    'native language chip keeps the original centered 32-high label',
+    (tester) async {
+      await tester.pumpWidget(
+        _host(
+          Align(
+            alignment: Alignment.topLeft,
+            child: BlabLanguageChip(
+              language: kBlabLanguages.firstWhere(
+                (language) => language.code == 'en',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final pill = tester.getRect(find.byType(BlabLanguageChip));
+      final label = tester.getRect(find.text('English'));
+      expect(pill.height, 32);
+      expect(label.center.dy, closeTo(pill.center.dy, 0.01));
+      expect(label.left - pill.left, closeTo(13, 0.01));
+    },
+  );
+
   testWidgets('navigation top border survives the native bar paint', (
     tester,
   ) async {

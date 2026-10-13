@@ -14,11 +14,14 @@ class BlabLanguageChip extends StatelessWidget {
     return SizedBox(
       height: height,
       child: Chip(
+        // Match the original 32-high pill inside the native shape border.
+        visualDensity: const VisualDensity(horizontal: 0, vertical: -1),
         label: Text(
           localizedLanguageName(context.l10n, language.code),
           style: const TextStyle(
             fontSize: 13,
             height: 1.43,
+            leadingDistribution: TextLeadingDistribution.even,
             letterSpacing: 0.25,
             fontWeight: FontWeight.w700,
             color: Color(0xFF46281C),
