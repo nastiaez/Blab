@@ -900,6 +900,67 @@ void main() {
   );
 
   test(
+    'realtime completion replaces a final timeout without another request',
+    () async {
+      final service = _RealtimeTranslationChatService();
+      var calls = 0;
+      final container = _container(
+        chatService: service,
+        lifecycleDeadline: const Duration(milliseconds: 5),
+        lateCacheRecoveryDelay: Duration.zero,
+        translateFn: (id) {
+          calls++;
+          return Completer<MessageTranslation>().future;
+        },
+      );
+      addTearDown(() async {
+        container.dispose();
+        await service.changes.close();
+      });
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      notifier.watchDbRows({'m1'}, 'de', 'en');
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncError<MessageTranslation>>(),
+      );
+      service.changes.add(
+        MessageTranslationChange(
+          messageId: 'm1',
+          targetLang: 'de',
+          interfaceLang: 'en',
+          translation: (
+            text: 'Hallo',
+            interfaceText: 'Hello',
+            interfaceLang: 'en',
+            sourceLang: 'en',
+            mode: 'translation',
+            explanation: null,
+            confidence: null,
+            tokens: <Map<String, dynamic>>[],
+          ),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+            .value!
+            .translation,
+        'Hallo',
+      );
+      expect(calls, 1);
+    },
+  );
+
+  test(
     'realtime database row hydrates the matching open-chat bubble',
     () async {
       final chatService = _RealtimeTranslationChatService();
