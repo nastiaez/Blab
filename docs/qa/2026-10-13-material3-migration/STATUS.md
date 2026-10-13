@@ -23,7 +23,7 @@ Main and tester v13 remain unchanged. Source spec is on docs/material3-migration
 - Latest full coverage: 832 passed, 15 environment-dependent skips; analyzer clean; formatting/whitespace/shell checks pass. Current debug Android APK built and installed; final CI/current release compile and device review remain pending.
 - Two initial Android fixture screenshots delivered. They are review candidates, not approved visuals or production/model-quality proof.
 
-## Runtime ownership / safe resume
+## Runtime ownership / safe resume (backend now stopped; see final checks)
 Dedicated AVD blab_material3_20261013 at emulator-5556; unrelated emulator-5554 must not be touched.
 Local backend project Blab_Material3_20261013 uses ports 54420–54429, inspector8183.
 Existing Language_App backend was not reset/stopped. Temporary migration supabase/config.toml must be restored from /tmp/blab-material3-original-config.toml BEFORE committing, but ONLY AFTER stopping the owned Blab_Material3_20261013 backend while its project id is still configured.
@@ -59,6 +59,6 @@ Logs under /tmp/blab-material3-*. Raw local backend logs/status can include gene
 ## Final local runtime/package checks
 - Incoming Android ACTION_SEND image reaches recipient picker, dark preview and successful photo send on candidate. The shell-owned MediaStore fixture required media-read permission on the owned emulator; this is not a fresh physical-app URI-grant certification.
 - Long-press Reply → compose literal O → send produced the correct quote; tapping the sent quote returned to the original Hello local message. Keyboard and quote screenshots were opened/inspected.
-- Current candidate synthetic release AAB compiled successfully. Retained the original cupertino_icons dependency after release tree-shaking exposed an SDK font reference despite no direct app import; do not remove framework-needed assets based only on app source scans. Final compile repeats with baseline dependency intact.
+- Current candidate synthetic release AAB compiled successfully. Retained the original cupertino_icons dependency after release tree-shaking exposed an SDK font reference despite no direct app import; do not remove framework-needed assets based only on app source scans. Final compile with the baseline dependency intact passed; both font assets were retained/tree-shaken without the missing-font warning.
 - Owned functions/backend stopped safely; original supabase/config.toml restored. Existing unrelated backend remained healthy and untouched. Owned local data volume preserved for reproducible resume.
 - Older root screenshots 01–18 and first native-back.mp4 are historical intermediate evidence, not final parity approval. Final comparison folder, incoming-share/reply evidence and native-back-complete-cancel.mp4 are current review evidence.
