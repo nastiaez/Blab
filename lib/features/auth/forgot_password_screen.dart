@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../onboarding/onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import '../onboarding/widgets/onboarding_form_top_bar.dart';
 import '../onboarding/widgets/onboarding_scaffold.dart';
-import '../onboarding/widgets/onboarding_text_field.dart';
-import '../onboarding/widgets/primary_action_button.dart';
+import '../../shared/widgets/forms/blab_form_field.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
@@ -96,7 +96,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  OnboardingTextField(
+                  BlabFormField.onboarding(
                     controller: _email,
                     label: context.l10n.email,
                     hintText: context.l10n.emailHint,
@@ -113,7 +113,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  PrimaryActionButton(
+                  BlabButton.onboarding(
                     label: context.l10n.emailResetLink,
                     onPressed: _send,
                     loading: _busy,

@@ -378,7 +378,10 @@ void main() {
     expect(
       tester
           .widget<IconButton>(
-            find.byKey(const ValueKey('composer-attach-button')),
+            find.descendant(
+              of: find.byKey(const ValueKey('composer-attach-button')),
+              matching: find.byType(IconButton),
+            ),
           )
           .onPressed,
       isNull,

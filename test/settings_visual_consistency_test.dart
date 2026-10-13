@@ -64,19 +64,18 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-BoxDecoration _cardDecoration(WidgetTester tester, Key key) {
+void _expectWarmCard(WidgetTester tester, Key key) {
   final card = find.byKey(key);
   expect(card, findsOneWidget);
-  final container = find.descendant(of: card, matching: find.byType(Container));
-  return tester.widget<Container>(container.first).decoration! as BoxDecoration;
-}
-
-void _expectWarmCard(WidgetTester tester, Key key) {
-  final decoration = _cardDecoration(tester, key);
-  final border = decoration.border! as Border;
-  expect(decoration.color, BlabColors.chatSurface);
-  expect(border.top.color, BlabColors.chatDivider);
-
+  final materialFinder = find.descendant(
+    of: card,
+    matching: find.byType(Material),
+  );
+  final material = tester.widget<Material>(materialFinder.first);
+  expect(material.color, BlabColors.chatSurface);
+  final shape = material.shape! as RoundedRectangleBorder;
+  expect(shape.side.color, BlabColors.chatDivider);
+  expect(shape.borderRadius, BorderRadius.circular(16));
   final divider = find.descendant(
     of: find.byKey(key),
     matching: find.byType(Divider),

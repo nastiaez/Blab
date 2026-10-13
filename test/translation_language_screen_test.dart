@@ -1,10 +1,11 @@
+import 'package:blab/shared/widgets/actions/blab_button.dart';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/profile/translation_language_screen.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/state/profile_state.dart';
-import 'package:blab/shared/widgets/picker_card.dart';
+import 'package:blab/shared/widgets/selection/blab_selection_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,13 +95,16 @@ void main() {
     );
 
     final spanishCard = find
-        .ancestor(of: find.text('Spanish'), matching: find.byType(LanguageCard))
+        .ancestor(
+          of: find.text('Spanish'),
+          matching: find.byType(BlabSelectionRow),
+        )
         .first;
-    expect(tester.widget<LanguageCard>(spanishCard).selected, isTrue);
+    expect(tester.widget<BlabSelectionRow>(spanishCard).selected, isTrue);
     expect(find.text('Ukrainian'), findsOneWidget);
 
-    final save = tester.widget<BrandButton>(
-      find.widgetWithText(BrandButton, 'Save'),
+    final save = tester.widget<BlabButton>(
+      find.widgetWithText(BlabButton, 'Save'),
     );
     expect(save.onPressed, isNull);
   });

@@ -1,3 +1,6 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,8 +11,7 @@ import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
-import '../../shared/widgets/picker_card.dart';
-import '../auth/widgets/password_field.dart';
+import '../../shared/widgets/forms/blab_password_field.dart';
 import '../auth/widgets/password_strength.dart';
 
 /// PRD US-012.
@@ -115,9 +117,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     if (!hasPasswordIdentity) {
       return Scaffold(
         backgroundColor: BlabColors.appBackground,
-        appBar: AppBar(
+        appBar: BlabAppBar(
           backgroundColor: BlabColors.appBackground,
-          leading: IconButton(
+          leading: BlabIconButton(
             icon: const Icon(Icons.arrow_back_ios_new, size: 20),
             onPressed: () => context.go('/profile'),
           ),
@@ -139,12 +141,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       canPop: !_busy,
       child: Scaffold(
         backgroundColor: BlabColors.appBackground,
-        appBar: AppBar(
+        appBar: BlabAppBar(
           backgroundColor: BlabColors.appBackground,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: true,
-          leading: IconButton(
+          leading: BlabIconButton(
             icon: const Icon(Icons.arrow_back_ios_new, size: 20),
             color: BlabColors.textPrimary,
             onPressed: _busy ? null : () => context.pop(),
@@ -163,7 +165,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PasswordField(
+              BlabPasswordField.account(
                 controller: _current,
                 label: context.l10n.currentPassword,
                 errorText: _currentErr,
@@ -194,7 +196,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              PasswordField(
+              BlabPasswordField.account(
                 controller: _next,
                 label: context.l10n.newPassword,
                 errorText: _nextErr,
@@ -206,7 +208,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               PasswordGuidance(password: _next.text),
               const SizedBox(height: 16),
-              PasswordField(
+              BlabPasswordField.account(
                 controller: _confirm,
                 label: context.l10n.confirmNewPassword,
                 errorText: _confirmErr,
@@ -221,7 +223,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 ),
               ],
               const SizedBox(height: 24),
-              BrandButton(
+              BlabButton.account(
                 label: context.l10n.save,
                 onPressed: _busy ? null : _submit,
                 loading: _busy,

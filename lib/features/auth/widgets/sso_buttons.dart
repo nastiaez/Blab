@@ -1,3 +1,4 @@
+import '../../../shared/widgets/actions/blab_auth_method_button.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -23,14 +24,14 @@ class SsoButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _SsoButton(
+        BlabAuthMethodButton.account(
           label: context.l10n.continueWithGoogle,
-          iconWidget: _GoogleGlyph(enabled: enabled),
+          leading: _GoogleGlyph(enabled: enabled),
           onPressed: enabled ? () => onPressed('google') : null,
         ),
         if (_showApple) ...[
           const SizedBox(height: 10),
-          _SsoButton(
+          BlabAuthMethodButton.account(
             label: context.l10n.continueWithApple,
             icon: Icons.apple,
             onPressed: enabled ? () => onPressed('apple') : null,
@@ -41,64 +42,6 @@ class SsoButtons extends StatelessWidget {
   }
 }
 
-class _SsoButton extends StatelessWidget {
-  const _SsoButton({
-    required this.label,
-    required this.onPressed,
-    this.icon,
-    this.iconWidget,
-  });
-
-  final String label;
-  final IconData? icon;
-  final Widget? iconWidget;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon:
-            iconWidget ??
-            Icon(
-              icon,
-              size: 22,
-              color: onPressed == null
-                  ? BlabColors.disabledOnSurface
-                  : BlabColors.textPrimary,
-            ),
-        label: Text(
-          label,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: onPressed == null
-                ? BlabColors.disabledOnSurface
-                : BlabColors.textPrimary,
-          ),
-        ),
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.disabled)
-                ? BlabColors.selectedTint
-                : BlabColors.chatSurface,
-          ),
-          side: const WidgetStatePropertyAll(
-            BorderSide(color: BlabColors.chatDivider),
-          ),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Simple "G" glyph in Google's blue. Avoids bundling brand assets.
 class _GoogleGlyph extends StatelessWidget {
   const _GoogleGlyph({required this.enabled});
 

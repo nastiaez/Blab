@@ -1,13 +1,14 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import 'learning_dialogue_timeline.dart';
-import 'onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import 'widgets/onboarding_scaffold.dart';
 import 'widgets/onboarding_top_bar.dart';
-import 'widgets/primary_action_button.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import 'widgets/interface_language_menu.dart';
 
 class LearnInContextScreen extends StatefulWidget {
@@ -115,7 +116,7 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
               OnboardingTheme.horizontalGutter,
               16 + MediaQuery.paddingOf(context).bottom,
             ),
-            child: PrimaryActionButton(
+            child: BlabButton.onboarding(
               label: context.l10n.continueAction,
               onPressed: widget.onContinue,
             ),
@@ -633,7 +634,7 @@ class _VocabularyPopup extends StatelessWidget {
                   ),
                   SizedBox.square(
                     dimension: 24,
-                    child: IconButton(
+                    child: BlabIconButton(
                       tooltip: '${context.l10n.listen}: exquisite',
                       padding: EdgeInsets.zero,
                       onPressed: audioPlaying ? null : onPlayAudio,

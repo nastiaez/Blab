@@ -1,3 +1,4 @@
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -35,7 +36,7 @@ Future<ReportReason?> showReportReasonSheet(
   BuildContext context, {
   required String title,
 }) {
-  return showModalBottomSheet<ReportReason>(
+  return showBlabModalSheet<ReportReason>(
     context: context,
     isScrollControlled: true,
     backgroundColor: BlabColors.chatSurface,

@@ -1,3 +1,6 @@
+import '../../../shared/widgets/actions/blab_icon_button.dart';
+import '../../../shared/widgets/forms/blab_composer_field.dart';
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -9,7 +12,7 @@ Future<String?> showPhotoPreviewSheet(
   PickedChatImage image,
   String recipientName,
 ) {
-  return showModalBottomSheet<String>(
+  return showBlabModalSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -47,7 +50,7 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
     final bottomPadding = 14 + keyboardInset;
     return ColoredBox(
       key: const ValueKey('photo-preview-fullscreen'),
-      color: Colors.black,
+      color: BlabMediaTheme.of(context).canvas,
       child: SafeArea(
         child: SizedBox.expand(
           child: Stack(
@@ -56,9 +59,11 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                 top: 12,
                 left: 16,
                 child: Material(
-                  color: const Color(0xFF121A20).withValues(alpha: 0.92),
+                  color: BlabMediaTheme.of(
+                    context,
+                  ).field.withValues(alpha: 0.92),
                   shape: const CircleBorder(),
-                  child: IconButton(
+                  child: BlabIconButton(
                     key: const ValueKey('photo-preview-close'),
                     tooltip: context.l10n.cancel,
                     icon: const Icon(Icons.close, color: Colors.white),
@@ -99,8 +104,8 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Expanded(
-                          child: TextField(
-                            key: const ValueKey('photo-preview-caption'),
+                          child: BlabComposerField(
+                            fieldKey: const ValueKey('photo-preview-caption'),
                             controller: _caption,
                             minLines: 1,
                             maxLines: 4,
@@ -115,7 +120,7 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                               hintText: context.l10n.addCaption,
                               hintStyle: const TextStyle(color: Colors.white),
                               filled: true,
-                              fillColor: const Color(0xFF121A20),
+                              fillColor: BlabMediaTheme.of(context).field,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 13,
@@ -134,16 +139,15 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                           child: Material(
                             color: BlabColors.brand,
                             shape: const CircleBorder(),
-                            child: InkWell(
+                            child: BlabIconButton(
                               key: const ValueKey('photo-preview-send'),
-                              customBorder: const CircleBorder(),
-                              onTap: () =>
+                              tooltip: context.l10n.send,
+                              onPressed: () =>
                                   Navigator.of(context).pop(_caption.text),
-                              child: Icon(
+                              icon: const Icon(
                                 Icons.arrow_forward,
                                 color: Colors.white,
                                 size: 30,
-                                semanticLabel: context.l10n.send,
                               ),
                             ),
                           ),

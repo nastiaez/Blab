@@ -6,10 +6,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../l10n/l10n.dart';
 import '../../shared/state/auth_state.dart';
-import '../onboarding/onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import '../onboarding/widgets/onboarding_form_top_bar.dart';
 import '../onboarding/widgets/onboarding_scaffold.dart';
-import '../onboarding/widgets/primary_action_button.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 
 class ForgotPasswordSentScreen extends ConsumerStatefulWidget {
   const ForgotPasswordSentScreen({
@@ -168,7 +168,7 @@ class _ForgotPasswordSentScreenState
                       children: [
                         ...recoveryDetails,
                         const SizedBox(height: 28),
-                        PrimaryActionButton(
+                        BlabButton.onboarding(
                           label: context.l10n.backToLogin,
                           onPressed: backToLogin,
                         ),
@@ -184,7 +184,7 @@ class _ForgotPasswordSentScreenState
                         const Spacer(flex: 2),
                         ...recoveryDetails,
                         const Spacer(flex: 3),
-                        PrimaryActionButton(
+                        BlabButton.onboarding(
                           label: context.l10n.backToLogin,
                           onPressed: backToLogin,
                         ),

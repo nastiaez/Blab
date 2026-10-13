@@ -1,3 +1,4 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
@@ -28,7 +29,7 @@ class InviteCloseAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return BlabIconButton(
       key: const ValueKey('invite-close'),
       tooltip: tooltip,
       constraints: const BoxConstraints.tightFor(width: 48, height: 48),

@@ -268,9 +268,7 @@ void main() {
         .widget<InkWell>(
           find
               .descendant(
-                of: find.byKey(
-                  const ValueKey('mode-toggle-segment-chat-bubble-empty - 16'),
-                ),
+                of: find.byType(ModeToggle),
                 matching: find.byType(InkWell),
               )
               .first,

@@ -1,4 +1,4 @@
-import 'package:blab/features/onboarding/widgets/primary_action_button.dart';
+import 'package:blab/shared/widgets/actions/blab_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +9,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PrimaryActionButton(label: 'Continue', onPressed: () {}),
+          body: BlabButton.onboarding(label: 'Continue', onPressed: () {}),
         ),
       ),
     );
@@ -31,7 +31,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: PrimaryActionButton(label: 'Continue', onPressed: null),
+          body: BlabButton.onboarding(label: 'Continue', onPressed: null),
         ),
       ),
     );
@@ -63,7 +63,7 @@ void main() {
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(24),
-            child: PrimaryActionButton(
+            child: BlabButton.onboarding(
               label: 'Створити обліковий запис',
               onPressed: () {},
             ),

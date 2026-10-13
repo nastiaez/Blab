@@ -1,3 +1,4 @@
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -13,7 +14,7 @@ Future<void> showFailedMessageSheet(
   BuildContext context, {
   required void Function(FailedMessageAction) onAction,
 }) {
-  return showModalBottomSheet<void>(
+  return showBlabModalSheet<void>(
     context: context,
     backgroundColor: BlabColors.chatSurface,
     barrierColor: Colors.black.withValues(alpha: 0.32),

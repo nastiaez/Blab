@@ -1,3 +1,6 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -9,7 +12,7 @@ import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/interface_language.dart';
-import '../../shared/widgets/picker_card.dart';
+import '../../shared/widgets/selection/blab_selection_row.dart';
 
 /// Full-screen interface-language picker. PRD US-005, FR-3.
 class InterfaceLanguageScreen extends ConsumerStatefulWidget {
@@ -62,12 +65,12 @@ class _InterfaceLanguageScreenState
 
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: BlabIconButton(
           tooltip: localizations.back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
@@ -106,7 +109,7 @@ class _InterfaceLanguageScreenState
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-              child: BrandButton(
+              child: BlabButton.account(
                 label: localizations.save,
                 onPressed: hasChange ? apply : null,
               ),

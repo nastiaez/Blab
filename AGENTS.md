@@ -108,3 +108,14 @@ Hygiene:
 ## Keeping `progress.html` in sync (mandatory)
 
 Follow [`.codex/instructions.md`](./.codex/instructions.md) whenever work matches a task in the owner-facing Play Store tracker. A tracker checkbox may be committed as complete only after the owner explicitly confirms the matching manual test passed.
+
+
+## Owner-approved delivery workflow (13 October 2026)
+
+- Always work in a dedicated Git worktree based on current remote main; do not implement directly on main.
+- Deliver one user-journey slice at a time. Inspect and send actual screenshots, plus recordings for motion, for Ash's review of both visuals and workflow.
+- Iterate until Ash explicitly approves the slice. Spec approval is not approval of unseen implementation.
+- Only then merge the approved changes into main and synchronize local/remote main.
+- Build from the integrated main revision, verify the accepted journey on Android, then deliver that exact signed artifact to the existing Firebase App Tester channel. Preserve signing identity and user data.
+- Record approval, revision, test/device evidence, artifact hash and delivery result before retiring the worktree.
+- A spec-only request authorizes documentation in a worktree, not application implementation, merge or release.

@@ -1,3 +1,4 @@
+import 'package:blab/shared/widgets/actions/blab_button.dart';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/profile/interface_language_screen.dart';
@@ -6,7 +7,6 @@ import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/data/local_storage_keys.dart';
 import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/interface_language.dart';
-import 'package:blab/shared/widgets/picker_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -78,7 +78,7 @@ void main() {
         final target = interfaceLanguageForCode(scenario.targetCode);
         await tester.tap(find.text(target.nativeName));
         await tester.pumpAndSettle();
-        await tester.tap(find.byType(BrandButton));
+        await tester.tap(find.byType(BlabButton));
         await tester.pumpAndSettle();
 
         final targetLocalizations = lookupAppLocalizations(

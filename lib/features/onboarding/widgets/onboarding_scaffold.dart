@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../onboarding_theme.dart';
+import '../../../app/onboarding_tokens.dart';
 
 class OnboardingScaffold extends StatelessWidget {
   const OnboardingScaffold({

@@ -1,3 +1,5 @@
+import '../../../shared/widgets/actions/blab_icon_button.dart';
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -15,7 +17,7 @@ import '../../../l10n/l10n.dart';
 /// behind it, and dragging it down (or tapping the scrim) dismisses it,
 /// matching WhatsApp/Telegram's attach-gallery sheet.
 Future<File?> showGalleryPickerSheet(BuildContext context) {
-  return showModalBottomSheet<File>(
+  return showBlabModalSheet<File>(
     context: context,
     backgroundColor: Colors.black,
     isScrollControlled: true,
@@ -234,7 +236,7 @@ class _Header extends StatelessWidget {
           ),
           Positioned(
             left: 4,
-            child: IconButton(
+            child: BlabIconButton(
               key: const ValueKey('gallery-picker-close'),
               tooltip: context.l10n.cancel,
               icon: const Icon(Icons.close, color: Colors.white),
@@ -319,13 +321,12 @@ class _CameraTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: const ColoredBox(
-        color: Color(0xFF2A2A2A),
-        child: Center(
-          child: Icon(Icons.photo_camera, color: Colors.white, size: 28),
-        ),
+    return Material(
+      color: const Color(0xFF2A2A2A),
+      child: BlabIconButton(
+        tooltip: context.l10n.camera,
+        onPressed: onTap,
+        icon: const Icon(Icons.photo_camera, color: Colors.white, size: 28),
       ),
     );
   }
@@ -339,17 +340,21 @@ class _GalleryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: FutureBuilder<Uint8List?>(
-        future: asset.thumbnailDataWithSize(const ThumbnailSize(240, 240)),
-        builder: (context, snapshot) {
-          final bytes = snapshot.data;
-          if (bytes == null) {
-            return const ColoredBox(color: Color(0xFF1A1A1A));
-          }
-          return Image.memory(bytes, fit: BoxFit.cover);
-        },
+    return Semantics(
+      button: true,
+      label: context.l10n.photoMessagePreview,
+      child: GestureDetector(
+        onTap: onTap,
+        child: FutureBuilder<Uint8List?>(
+          future: asset.thumbnailDataWithSize(const ThumbnailSize(240, 240)),
+          builder: (context, snapshot) {
+            final bytes = snapshot.data;
+            if (bytes == null) {
+              return const ColoredBox(color: Color(0xFF1A1A1A));
+            }
+            return Image.memory(bytes, fit: BoxFit.cover);
+          },
+        ),
       ),
     );
   }

@@ -1,3 +1,8 @@
+import '../../shared/widgets/surfaces/blab_section_label.dart';
+import '../../shared/widgets/settings/blab_icon_label_row.dart';
+import '../../shared/widgets/surfaces/blab_section_card.dart';
+import '../../shared/widgets/blab_avatar.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -184,7 +189,7 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
 
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.chatSurface,
         foregroundColor: BlabColors.warmInk,
         surfaceTintColor: Colors.transparent,
@@ -245,13 +250,13 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
               _ProfileSection(
                 title: context.l10n.safety,
                 children: [
-                  _SafetyRow(
+                  BlabIconLabelRow.partnerSafety(
                     key: const Key('partner-report-action'),
                     icon: Icons.flag_outlined,
                     label: context.l10n.reportPerson(chat.partnerName),
                     onTap: _report,
                   ),
-                  _SafetyRow(
+                  BlabIconLabelRow.partnerSafety(
                     key: const Key('partner-block-action'),
                     icon: isBlocked ? Icons.lock_open_outlined : Icons.block,
                     label: isBlocked
@@ -279,22 +284,13 @@ class _IdentityHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          width: 104,
-          height: 104,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: BlabColors.avatarColorFor(chat.partnerName),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            chat.partnerInitial,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 38,
-            ),
-          ),
+        BlabAvatar(
+          name: chat.partnerName,
+          initials: chat.partnerInitial,
+          size: 104,
+          fontSize: 38,
+          fontWeight: FontWeight.w700,
+          shadows: null,
         ),
         const SizedBox(height: 16),
         Text(
@@ -332,36 +328,21 @@ class _ProfileSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            title.toUpperCase(),
-            style: const TextStyle(
-              color: BlabColors.warmMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-            ),
-          ),
+          child: BlabSectionLabel.partner(title),
         ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: BlabColors.chatSurface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: BlabColors.chatDivider),
-          ),
-          child: Column(
-            children: [
-              for (var index = 0; index < children.length; index++) ...[
-                children[index],
-                if (index < children.length - 1)
-                  const Divider(
-                    height: 1,
-                    indent: 16,
-                    endIndent: 16,
-                    color: BlabColors.chatDivider,
-                  ),
-              ],
+        BlabSectionCard.flush(
+          children: [
+            for (var index = 0; index < children.length; index++) ...[
+              children[index],
+              if (index < children.length - 1)
+                const Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: BlabColors.chatDivider,
+                ),
             ],
-          ),
+          ],
         ),
       ],
     );
@@ -389,52 +370,6 @@ class _LanguageRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SafetyRow extends StatelessWidget {
-  const _SafetyRow({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.destructive = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = destructive ? BlabColors.error : BlabColors.warmInk;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 22, color: color),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

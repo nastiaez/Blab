@@ -1,6 +1,7 @@
+import '../../../shared/widgets/actions/blab_icon_button.dart';
 import 'package:flutter/material.dart';
 
-import '../onboarding_theme.dart';
+import '../../../app/onboarding_tokens.dart';
 
 class OnboardingFormTopBar extends StatelessWidget {
   const OnboardingFormTopBar({
@@ -28,7 +29,7 @@ class OnboardingFormTopBar extends StatelessWidget {
           children: [
             Positioned(
               left: 8,
-              child: IconButton(
+              child: BlabIconButton(
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 onPressed: onBack,
                 icon: const Icon(Icons.chevron_left_rounded, size: 28),
@@ -61,7 +62,7 @@ class OnboardingFormTopBar extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 8),
-          IconButton(
+          BlabIconButton(
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             onPressed: onBack,
             icon: const Icon(Icons.chevron_left_rounded, size: 28),

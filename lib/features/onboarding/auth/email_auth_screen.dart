@@ -6,12 +6,12 @@ import '../../../shared/services/supabase_auth_service.dart';
 import '../../../shared/state/interface_language.dart';
 import '../../auth/auth_screen.dart';
 import '../../auth/widgets/password_strength.dart';
-import '../onboarding_theme.dart';
-import '../widgets/onboarding_password_field.dart';
+import '../../../app/onboarding_tokens.dart';
+import '../../../shared/widgets/forms/blab_password_field.dart';
 import '../widgets/onboarding_scaffold.dart';
-import '../widgets/onboarding_text_field.dart';
+import '../../../shared/widgets/forms/blab_form_field.dart';
 import '../widgets/onboarding_form_top_bar.dart';
-import '../widgets/primary_action_button.dart';
+import '../../../shared/widgets/actions/blab_button.dart';
 
 class EmailAuthScreen extends ConsumerStatefulWidget {
   const EmailAuthScreen({
@@ -131,7 +131,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    OnboardingTextField(
+                    BlabFormField.onboarding(
                       controller: _email,
                       label: context.l10n.email,
                       hintText: context.l10n.emailHint,
@@ -152,7 +152,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    OnboardingPasswordField(
+                    BlabPasswordField.onboarding(
                       controller: _password,
                       focusNode: _passwordFocus,
                       label: context.l10n.password,
@@ -229,7 +229,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                         ),
                     ],
                     const SizedBox(height: 20),
-                    PrimaryActionButton(
+                    BlabButton.onboarding(
                       label: _isSignUp
                           ? context.l10n.createAccount
                           : context.l10n.logIn,

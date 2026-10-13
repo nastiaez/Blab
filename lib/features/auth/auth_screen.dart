@@ -1,3 +1,4 @@
+import '../../shared/widgets/actions/blab_button.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -15,11 +16,10 @@ import '../../shared/state/auth_state.dart';
 import '../../shared/state/interface_language.dart';
 import '../../shared/util/open_url.dart';
 import '../../shared/widgets/blab_icon.dart';
-import '../../shared/widgets/picker_card.dart';
 import '../invite/widgets/invite_progress_bar.dart';
-import 'widgets/blab_text_field.dart';
+import '../../shared/widgets/forms/blab_form_field.dart';
 import 'widgets/language_picker_sheet.dart';
-import 'widgets/password_field.dart';
+import '../../shared/widgets/forms/blab_password_field.dart';
 import 'widgets/password_strength.dart';
 import 'widgets/sso_buttons.dart';
 
@@ -340,10 +340,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  BlabTextField(
+                                  BlabFormField.account(
                                     controller: _name,
                                     label: context.l10n.name,
-                                    hint: context.l10n.firstNameHint,
+                                    hintText: context.l10n.firstNameHint,
                                     errorText: _nameErr,
                                     textInputAction: TextInputAction.next,
                                     enabled: !_busy,
@@ -353,11 +353,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               )
                             : const SizedBox.shrink(),
                       ),
-                      BlabTextField(
+                      BlabFormField.account(
                         controller: _email,
                         focusNode: _emailFocus,
                         label: context.l10n.email,
-                        hint: context.l10n.emailHint,
+                        hintText: context.l10n.emailHint,
                         keyboardType: TextInputType.emailAddress,
                         errorText: _emailErr,
                         onEditingComplete: _validateEmail,
@@ -365,7 +365,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         enabled: !_busy,
                       ),
                       const SizedBox(height: 12),
-                      PasswordField(
+                      BlabPasswordField.account(
                         controller: _password,
                         errorText: _pwErr,
                         onChanged: (_) => setState(() {}),
@@ -416,7 +416,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         _InlineError(message: _formErr!),
                       ],
                       const SizedBox(height: 16),
-                      BrandButton(
+                      BlabButton.account(
                         label: isSignUp
                             ? context.l10n.joinBlab
                             : context.l10n.logIn,

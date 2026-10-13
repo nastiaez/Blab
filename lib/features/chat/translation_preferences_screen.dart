@@ -1,3 +1,7 @@
+import '../../shared/widgets/settings/blab_value_row.dart';
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/selection/blab_selection_sheet.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'dart:async';
 
 import 'state/form_correction_state.dart';
@@ -5,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../shared/widgets/surfaces/blab_section_card.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/models/grammatical_form.dart';
 import '../../shared/models/reading_script.dart';
@@ -17,7 +22,6 @@ import 'state/chat_state.dart';
 import 'state/grammatical_form_preferences_state.dart';
 
 const _preferenceInk = Color(0xFF46281C);
-const _preferenceMuted = Color(0xFF917869);
 
 enum _PreferenceFailure { ownForm, partnerForm, tone, readingScript }
 
@@ -197,7 +201,7 @@ class _TranslationPreferencesScreenState
 
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         leadingWidth: 48,
         titleSpacing: 0,
         title: Text(
@@ -208,7 +212,7 @@ class _TranslationPreferencesScreenState
             fontWeight: FontWeight.w400,
           ),
         ),
-        leading: IconButton(
+        leading: BlabIconButton(
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.maybePop(context),
           padding: const EdgeInsets.only(left: 8),
@@ -231,10 +235,10 @@ class _TranslationPreferencesScreenState
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _PreferenceCard(
+              BlabSectionCard(
                 key: const Key('translation-preferences-card'),
                 children: [
-                  _PreferenceRow(
+                  BlabValueRow(
                     label: localizations.yourGrammaticalForm,
                     value: ownForm == null
                         ? localizations.notSet
@@ -243,7 +247,7 @@ class _TranslationPreferencesScreenState
                   ),
                   if (!isProfile) ...[
                     const Divider(height: 1, color: BlabColors.chatDivider),
-                    _PreferenceRow(
+                    BlabValueRow(
                       label: localizations.partnerGrammaticalForm(
                         partnerName ?? localizations.partner,
                       ),
@@ -256,7 +260,7 @@ class _TranslationPreferencesScreenState
                       onTap: pickPartnerForm,
                     ),
                     const Divider(height: 1, color: BlabColors.chatDivider),
-                    _PreferenceRow(
+                    BlabValueRow(
                       label: localizations.conversationTone,
                       value: _localizedConversationTone(
                         localizations,
@@ -280,7 +284,7 @@ class _TranslationPreferencesScreenState
                   ],
                   if (showReadingScript) ...[
                     const Divider(height: 1, color: BlabColors.chatDivider),
-                    _PreferenceRow(
+                    BlabValueRow(
                       label: context.l10n.readingScript,
                       value: readingScript == ReadingScript.englishLetters
                           ? context.l10n.englishLetters
@@ -321,7 +325,7 @@ Future<void> _pickReadingScript(
   required String nativeLabel,
   required Future<void> Function(ReadingScript value) onSelected,
 }) async {
-  final value = await showModalBottomSheet<ReadingScript>(
+  final value = await showBlabModalSheet<ReadingScript>(
     context: context,
     builder: (context) => SafeArea(
       child: Column(
@@ -350,120 +354,6 @@ Future<void> _pickReadingScript(
   await onSelected(value);
 }
 
-class _PreferenceCard extends StatelessWidget {
-  const _PreferenceCard({super.key, required this.children});
-  final List<Widget> children;
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: BlabColors.chatSurface,
-      border: Border.all(color: BlabColors.chatDivider),
-      borderRadius: BorderRadius.circular(14),
-    ),
-    child: Material(
-      type: MaterialType.transparency,
-      child: Column(children: children),
-    ),
-  );
-}
-
-class _PreferenceRow extends StatelessWidget {
-  const _PreferenceRow({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) {
-    const labelStyle = TextStyle(
-      color: _preferenceInk,
-      fontSize: 15,
-      fontWeight: FontWeight.w400,
-    );
-    const valueStyle = TextStyle(
-      color: _preferenceMuted,
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-    );
-
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final textDirection = Directionality.of(context);
-            final textScaler = MediaQuery.textScalerOf(context);
-            final labelPainter = TextPainter(
-              text: TextSpan(text: label, style: labelStyle),
-              textDirection: textDirection,
-              textScaler: textScaler,
-              maxLines: 1,
-            );
-            final valuePainter = TextPainter(
-              text: TextSpan(text: value, style: valueStyle),
-              textDirection: textDirection,
-              textScaler: textScaler,
-              maxLines: 1,
-            );
-            labelPainter.layout();
-            valuePainter.layout();
-
-            const trailingWidth = 20.0;
-            final shouldStack =
-                labelPainter.width + valuePainter.width + trailingWidth + 12 >
-                constraints.maxWidth;
-
-            Widget trailing() => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(value, textAlign: TextAlign.end, style: valueStyle),
-                const BlabIcon(
-                  name: 'nav-arrow-right - 20',
-                  color: _preferenceMuted,
-                  size: 20,
-                ),
-              ],
-            );
-
-            return Row(
-              children: [
-                Expanded(
-                  child: shouldStack
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(label, style: labelStyle),
-                            const SizedBox(height: 4),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: trailing(),
-                            ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: Text(label, style: labelStyle),
-                            ),
-                            const SizedBox(width: 12),
-                            trailing(),
-                          ],
-                        ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
 Future<void> _pickForm(
   BuildContext context, {
   required GrammaticalForm? current,
@@ -472,7 +362,7 @@ Future<void> _pickForm(
   final localizations = context.l10n;
   // Use a non-null sentinel so dismissing the sheet never clears a saved
   // preference accidentally.
-  final selected = await showModalBottomSheet<String>(
+  final selected = await showBlabModalSheet<String>(
     context: context,
     builder: (context) => SafeArea(
       child: Column(
@@ -524,7 +414,7 @@ Future<void> _pickTone(
   required Future<void> Function(ConversationTone value) onSelected,
 }) async {
   final localizations = context.l10n;
-  final value = await showModalBottomSheet<ConversationTone>(
+  final value = await showBlabModalSheet<ConversationTone>(
     context: context,
     builder: (context) => SafeArea(
       child: Column(

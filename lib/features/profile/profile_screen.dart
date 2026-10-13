@@ -1,8 +1,19 @@
+import '../../shared/widgets/surfaces/blab_section_label.dart';
+import '../../shared/widgets/selection/blab_language_chip.dart';
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/surfaces/blab_confirmation_dialog.dart';
+import 'widgets/profile_identity.dart';
+import '../../shared/widgets/surfaces/blab_section_divider.dart';
+import '../../shared/widgets/surfaces/blab_dialog.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../shared/widgets/settings/blab_settings_row.dart';
+import '../../shared/widgets/surfaces/blab_section_card.dart';
+import '../../shared/widgets/navigation/blab_navigation_bar.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/auth_state.dart';
@@ -30,7 +41,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -40,7 +51,7 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ProfileHero(name: displayName),
+            ProfileIdentity(name: displayName),
             const SizedBox(height: 28),
             knownLanguages.when(
               data: (value) => _KnownLanguagesGroup(
@@ -54,37 +65,37 @@ class ProfileScreen extends ConsumerWidget {
               error: (_, _) => const SizedBox.shrink(),
             ),
             const SizedBox(height: 24),
-            _ProfileSectionLabel(context.l10n.account),
+            BlabSectionLabel.account(context.l10n.account),
             const SizedBox(height: 8),
-            _SettingsCard(
+            BlabSectionCard(
               children: [
-                _SettingsRow(
+                BlabSettingsRow(
                   iconName: 'language - 20',
                   label: context.l10n.interfaceLanguage,
                   trailingLabel: lang.nativeName,
                   onTap: () => context.push('/profile/interface-language'),
                 ),
-                const _RowDivider(),
-                _SettingsRow(
+                BlabSectionDivider(inset: 52, color: const Color(0xFFF5F5F5)),
+                BlabSettingsRow(
                   iconName: 'wrench - 20',
                   label: context.l10n.translationPreferences,
                   onTap: () => context.push('/profile/translation-preferences'),
                 ),
-                const _RowDivider(),
-                _SettingsRow(
+                BlabSectionDivider(inset: 52, color: const Color(0xFFF5F5F5)),
+                BlabSettingsRow(
                   iconName: 'edit-pencil - 20',
                   label: context.l10n.editProfile,
                   onTap: () => context.push('/profile/edit'),
                 ),
-                const _RowDivider(),
-                _SettingsRow(
+                BlabSectionDivider(inset: 52, color: const Color(0xFFF5F5F5)),
+                BlabSettingsRow(
                   iconName: 'at-sign - 20',
                   label: context.l10n.changeEmail,
                   onTap: () => context.push('/profile/email'),
                 ),
                 if (hasPasswordIdentity) ...[
-                  const _RowDivider(),
-                  _SettingsRow(
+                  BlabSectionDivider(inset: 52, color: const Color(0xFFF5F5F5)),
+                  BlabSettingsRow(
                     iconName: 'lock - 20',
                     label: context.l10n.changePassword,
                     onTap: () => context.push('/profile/password'),
@@ -93,18 +104,18 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
-            _ProfileSectionLabel(context.l10n.settings),
+            BlabSectionLabel.account(context.l10n.settings),
             const SizedBox(height: 8),
-            _SettingsCard(
+            BlabSectionCard(
               children: [
-                _SettingsRow(
+                BlabSettingsRow(
                   iconName: 'historic-shield - 20',
                   label: context.l10n.privacy,
                   onTap: () => context.push('/profile/privacy'),
                 ),
                 if (pushNotifications.isSupported) ...[
-                  const _RowDivider(),
-                  _SettingsRow(
+                  BlabSectionDivider(inset: 52, color: const Color(0xFFF5F5F5)),
+                  BlabSettingsRow(
                     iconName: 'bell - 20',
                     label: context.l10n.notifications,
                     onTap: () => context.push('/profile/notifications'),
@@ -113,9 +124,9 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
-            _SettingsCard(
+            BlabSectionCard(
               children: [
-                _SettingsRow(
+                BlabSettingsRow(
                   iconName: 'log-out - 20',
                   label: context.l10n.logOut,
                   onTap: () async {
@@ -132,9 +143,9 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 24),
-            _SettingsCard(
+            BlabSectionCard(
               children: [
-                _SettingsRow(
+                BlabSettingsRow(
                   iconName: 'trash - 20',
                   label: context.l10n.deleteAccount,
                   destructive: true,
@@ -145,15 +156,20 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const _BottomTabs(active: _Tab.profile),
+      bottomNavigationBar: BlabNavigationBar(
+        selectedIndex: 1,
+        onDestinationSelected: (index) {
+          if (index != 1) context.go(index == 0 ? '/chats' : '/profile');
+        },
+      ),
     );
   }
 }
 
 Future<bool?> _confirmLogout(BuildContext context) {
-  return showDialog<bool>(
+  return showBlabDialog<bool>(
     context: context,
-    builder: (ctx) => AlertDialog(
+    builder: (ctx) => BlabConfirmationDialog(
       backgroundColor: BlabColors.chatSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
@@ -189,54 +205,6 @@ Future<bool?> _confirmLogout(BuildContext context) {
   );
 }
 
-class _ProfileHero extends StatelessWidget {
-  const _ProfileHero({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final initials = BlabColors.avatarInitialsFor(name);
-    return Column(
-      children: [
-        Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: BlabColors.avatarColorFor(name),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x21231208),
-                offset: Offset(0, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            initials,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w400,
-            color: Color(0xFF46281C),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _KnownLanguagesGroup extends StatelessWidget {
   const _KnownLanguagesGroup({
     required this.knownLanguages,
@@ -263,7 +231,7 @@ class _KnownLanguagesGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ProfileSectionLabel(
+        BlabSectionLabel.account(
           '${context.l10n.knownLanguages} (${knownLanguages.codes.length})',
         ),
         const SizedBox(height: 8),
@@ -273,14 +241,14 @@ class _KnownLanguagesGroup extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             for (final language in languages)
-              _KnownLanguagePill(language: language),
+              BlabLanguageChip(language: language),
             _AddKnownLanguageButton(onTap: onEditUnderstood),
           ],
         ),
         const SizedBox(height: 12),
-        _SettingsCard(
+        BlabSectionCard(
           children: [
-            _SettingsRow(
+            BlabSettingsRow(
               iconName: 'translate - 20',
               label: context.l10n.translationLanguage,
               trailingLabel: localizedLanguageName(
@@ -296,306 +264,33 @@ class _KnownLanguagesGroup extends StatelessWidget {
   }
 }
 
-class _ProfileSectionLabel extends StatelessWidget {
-  const _ProfileSectionLabel(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF917869),
-      ),
-    );
-  }
-}
-
-class _KnownLanguagePill extends StatelessWidget {
-  const _KnownLanguagePill({required this.language});
-
-  final BlabLanguage language;
-
-  @override
-  Widget build(BuildContext context) {
-    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.75;
-    final height = largeText ? 44.0 : 32.0;
-    return Container(
-      height: height,
-      padding: EdgeInsets.symmetric(horizontal: largeText ? 14 : 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF8),
-        border: Border.all(color: const Color(0xFFE1DAD2)),
-        borderRadius: BorderRadius.circular(height / 2),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            localizedLanguageName(context.l10n, language.code),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF46281C),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _AddKnownLanguageButton extends StatelessWidget {
   const _AddKnownLanguageButton({required this.onTap});
-
   final VoidCallback onTap;
-
   @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: context.l10n.addLanguage,
-      child: Tooltip(
-        message: context.l10n.addLanguage,
-        excludeFromSemantics: true,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(22),
-              child: Center(
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3ECE3),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE1DAD2)),
-                  ),
-                  alignment: Alignment.center,
-                  child: const BlabIcon(
-                    name: 'plus - 16',
-                    color: Color(0xFF46281C),
-                    size: 16,
-                  ),
-                ),
-              ),
-            ),
-          ),
+  Widget build(BuildContext context) => SizedBox(
+    width: 44,
+    height: 44,
+    child: BlabIconButton(
+      tooltip: context.l10n.addLanguage,
+      onPressed: onTap,
+      padding: const EdgeInsets.all(6),
+      constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+      icon: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3ECE3),
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFE1DAD2)),
+        ),
+        alignment: Alignment.center,
+        child: const BlabIcon(
+          name: 'plus - 16',
+          color: Color(0xFF46281C),
+          size: 16,
         ),
       ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE1DAD2)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(children: children),
-      ),
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.iconName,
-    required this.label,
-    required this.onTap,
-    this.trailingLabel,
-    this.destructive = false,
-  });
-
-  final String iconName;
-  final String label;
-  final VoidCallback onTap;
-  final String? trailingLabel;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.75;
-    final iconSize = largeText ? 24.0 : 20.0;
-    final Color iconColor = destructive
-        ? BlabColors.error
-        : BlabColors.textMuted;
-    final Color labelColor = destructive
-        ? BlabColors.error
-        : const Color(0xFF46281C);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: largeText ? 18 : 16,
-          vertical: largeText ? 18 : 14,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            BlabIcon(name: iconName, size: iconSize, color: iconColor),
-            SizedBox(width: largeText ? 18 : 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: labelColor,
-                    ),
-                  ),
-                  if (largeText && trailingLabel != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      trailingLabel!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: BlabColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (!largeText && trailingLabel != null) ...[
-              const SizedBox(width: 12),
-              Text(
-                trailingLabel!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: BlabColors.textMuted,
-                ),
-              ),
-            ],
-            SizedBox(width: largeText ? 16 : 8),
-            BlabIcon(
-              name: 'nav-arrow-right - 20',
-              color: iconColor,
-              size: iconSize,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 52),
-      child: Divider(height: 1, color: Colors.grey.shade100),
-    );
-  }
-}
-
-enum _Tab { chats, profile }
-
-class _BottomTabs extends StatelessWidget {
-  const _BottomTabs({required this.active});
-  final _Tab active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: BlabColors.chatCanvas,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _TabItem(
-                iconName: 'chat-bubble-empty - 20',
-                label: context.l10n.chats,
-                selected: active == _Tab.chats,
-                onTap: () => context.go('/chats'),
-              ),
-              _TabItem(
-                iconName: 'profile-circle - 20',
-                label: context.l10n.profile,
-                selected: active == _Tab.profile,
-                onTap: () {},
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TabItem extends StatelessWidget {
-  const _TabItem({
-    required this.iconName,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String iconName;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? BlabColors.brand : BlabColors.textMuted;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            BlabIcon(name: iconName, color: color, size: 20),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

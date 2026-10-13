@@ -1,3 +1,5 @@
+import '../../shared/widgets/navigation/blab_app_bar.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,11 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../app/theme.dart';
+import '../../shared/widgets/navigation/blab_navigation_bar.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/state/chat_list_state.dart';
 import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/offline_banner.dart';
-import '../../shared/widgets/picker_card.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'widgets/chat_list_tile.dart';
 
@@ -27,7 +29,7 @@ class ChatsScreen extends ConsumerWidget {
     final hasConfirmedEmptyList = preview || (chats != null && chats.isEmpty);
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -117,7 +119,12 @@ class ChatsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-      bottomNavigationBar: const _BottomTabs(active: _Tab.chats),
+      bottomNavigationBar: BlabNavigationBar(
+        selectedIndex: 0,
+        onDestinationSelected: (index) {
+          if (index != 0) context.go(index == 0 ? '/chats' : '/profile');
+        },
+      ),
     );
   }
 }
@@ -173,7 +180,7 @@ class ChatsEmptyState extends StatelessWidget {
                   const SizedBox(height: 24),
                   SizedBox(
                     width: 180,
-                    child: BrandButton(
+                    child: BlabButton.account(
                       label: context.l10n.inviteFriend,
                       onPressed: () => context.push('/chats/new'),
                     ),
@@ -212,87 +219,6 @@ class ChatsErrorState extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: Text(context.l10n.retry),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-enum _Tab { chats, profile }
-
-class _BottomTabs extends StatelessWidget {
-  const _BottomTabs({required this.active});
-  final _Tab active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: BlabColors.chatCanvas,
-        border: const Border(top: BorderSide(color: BlabColors.chatDivider)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _TabItem(
-                iconName: 'chat-bubble-empty - 20',
-                label: context.l10n.chats,
-                selected: active == _Tab.chats,
-                onTap: () {},
-              ),
-              _TabItem(
-                iconName: 'profile-circle - 20',
-                label: context.l10n.profile,
-                selected: active == _Tab.profile,
-                onTap: () => context.go('/profile'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TabItem extends StatelessWidget {
-  const _TabItem({
-    required this.iconName,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String iconName;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? BlabColors.brand : BlabColors.textMuted;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            BlabIcon(name: iconName, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              ),
             ),
           ],
         ),

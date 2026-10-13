@@ -1,8 +1,9 @@
+import 'package:blab/shared/widgets/actions/blab_button.dart';
 import 'dart:io';
 
 import 'package:blab/app/theme.dart';
 import 'package:blab/shared/widgets/blab_icon.dart';
-import 'package:blab/shared/widgets/picker_card.dart';
+import 'package:blab/shared/widgets/selection/blab_selection_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -54,7 +55,7 @@ void main() {
     expect(foreground, BlabColors.warmInk);
   });
 
-  testWidgets('BrandButton uses dark ink for its label and progress', (
+  testWidgets('BlabButton uses dark ink for its label and progress', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -63,8 +64,8 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              BrandButton(label: 'Continue', onPressed: () {}),
-              const BrandButton(label: 'Loading', loading: true),
+              BlabButton.account(label: 'Continue', onPressed: () {}),
+              const BlabButton.account(label: 'Loading', loading: true),
             ],
           ),
         ),
@@ -78,7 +79,7 @@ void main() {
     final progress = tester.widget<CircularProgressIndicator>(
       find.byType(CircularProgressIndicator),
     );
-    expect(progress.valueColor!.value, BlabColors.warmInk);
+    expect(progress.color ?? progress.valueColor?.value, BlabColors.warmInk);
   });
 
   testWidgets('language cards match the approved flat picker rows', (
@@ -90,13 +91,13 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              LanguageCard(
+              BlabSelectionRow(
                 key: const Key('selected-language'),
                 label: 'English',
                 selected: true,
                 onTap: () {},
               ),
-              LanguageCard(
+              BlabSelectionRow(
                 key: const Key('unselected-language'),
                 label: 'Deutsch',
                 selected: false,

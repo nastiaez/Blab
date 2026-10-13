@@ -206,18 +206,15 @@ void main() {
     expect(value.style?.fontSize, 14);
     expect(value.style?.fontWeight, FontWeight.w400);
 
-    final cardDecorations = tester
-        .widgetList<Container>(find.byType(Container))
-        .map((container) => container.decoration)
-        .whereType<BoxDecoration>();
-    expect(
-      cardDecorations.where(
-        (decoration) =>
-            decoration.color == const Color(0xFFFFFCF8) &&
-            decoration.border?.top.color == const Color(0xFFE1DAD2),
-      ),
-      hasLength(1),
-    );
+    final matchingSurfaces = tester
+        .widgetList<Material>(find.byType(Material))
+        .where((material) {
+          final shape = material.shape;
+          return material.color == const Color(0xFFFFFCF8) &&
+              shape is RoundedRectangleBorder &&
+              shape.side.color == const Color(0xFFE1DAD2);
+        });
+    expect(matchingSurfaces, hasLength(1));
 
     final icons = tester.widgetList<BlabIcon>(find.byType(BlabIcon)).toList();
     expect(

@@ -1,3 +1,5 @@
+import '../../../shared/widgets/actions/blab_icon_button.dart';
+import '../../../shared/widgets/forms/blab_composer_field.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -40,8 +42,8 @@ class ChatComposerInput extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: TextField(
-              key: const ValueKey('composer-message-text-field'),
+            child: BlabComposerField(
+              fieldKey: const ValueKey('composer-message-text-field'),
               controller: controller,
               focusNode: focusNode,
               enabled: enabled,
@@ -80,7 +82,7 @@ class ChatComposerInput extends StatelessWidget {
           ),
           if (showAttachment) ...[
             const SizedBox(width: 2),
-            IconButton(
+            BlabIconButton(
               key: const ValueKey('composer-attach-button'),
               tooltip: attachTooltip,
               icon: const BlabIcon(
@@ -140,26 +142,19 @@ class ChatSendButton extends StatelessWidget {
                 ? BlabColors.sendButton
                 : BlabColors.sendButton.withValues(alpha: 0.4),
           ),
-          child: Material(
-            color: Colors.transparent,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: canSend ? onSend : null,
-              child: Center(
-                child: Tooltip(
-                  message: tooltip,
-                  child: const SizedBox(
-                    key: ValueKey('composer-send-icon'),
-                    width: 20,
-                    height: 20,
-                    child: BlabIcon(
-                      name: 'arrow-up - 20',
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
+          child: BlabIconButton(
+            tooltip: tooltip,
+            onPressed: canSend ? onSend : null,
+            padding: EdgeInsets.zero,
+            style: IconButton.styleFrom(shape: const CircleBorder()),
+            icon: const SizedBox(
+              key: ValueKey('composer-send-icon'),
+              width: 20,
+              height: 20,
+              child: BlabIcon(
+                name: 'arrow-up - 20',
+                color: Colors.white,
+                size: 20,
               ),
             ),
           ),

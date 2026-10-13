@@ -1,12 +1,13 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
-import 'onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import 'state/onboarding_actions.dart';
 import 'widgets/onboarding_scaffold.dart';
-import 'widgets/onboarding_text_field.dart';
-import 'widgets/primary_action_button.dart';
+import '../../shared/widgets/forms/blab_form_field.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 
 String onboardingNameSuggestion({
   String? savedDisplayName,
@@ -88,7 +89,7 @@ class _ConfirmNameScreenState extends ConsumerState<ConfirmNameScreen> {
               alignment: Alignment.centerLeft,
               child: Padding(
                 padding: const EdgeInsets.only(left: 12),
-                child: IconButton(
+                child: BlabIconButton(
                   tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   onPressed: _busy ? null : widget.onBack,
                   icon: const Icon(Icons.chevron_left_rounded, size: 26),
@@ -112,7 +113,7 @@ class _ConfirmNameScreenState extends ConsumerState<ConfirmNameScreen> {
                     style: OnboardingTheme.headline.copyWith(fontSize: 28),
                   ),
                   const SizedBox(height: 16),
-                  OnboardingTextField(
+                  BlabFormField.onboarding(
                     controller: _name,
                     label: '',
                     hintText: context.l10n.yourNameHint,
@@ -136,7 +137,7 @@ class _ConfirmNameScreenState extends ConsumerState<ConfirmNameScreen> {
               OnboardingTheme.horizontalGutter,
               16 + MediaQuery.paddingOf(context).bottom,
             ),
-            child: PrimaryActionButton(
+            child: BlabButton.onboarding(
               label: context.l10n.nextAction,
               onPressed: _submit,
               loading: _busy,

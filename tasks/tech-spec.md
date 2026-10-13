@@ -21,7 +21,7 @@
 | Android  | 1     | API 24 (Android 7.0) | Covers ~97% of devices |
 | iOS      | 2     | iOS 14      | Matches Flutter's current minimum |
 
-Rationale: the PRD calls for an "iOS-native feel" but we ship Android first. We keep the iOS look across both platforms (sunset-orange brand on cream, rounded corners, bottom sheets, system fonts) rather than adapting to Material on Android. This is a product choice from `prd-blab.md` § Design Principles, not a Flutter constraint.
+Owner clarification, 2026-10-13: retain the current Blab visual language and assets while composing reusable Flutter Material 3 controls. Android uses genuine Material navigation, SDK-standard page transitions and system/predictive Back; do not recreate these mechanisms with custom replicas. Minimal unavoidable geometry changes require screenshot/journey approval before integration. Implementation is in progress on `feat/material3-migration`, not released.
 
 ---
 
@@ -172,9 +172,9 @@ The prototype's `id`/class names are not API — don't carry them into Dart.
 
 ## CI / Release
 
-Not yet set up. When added:
-- GitHub Actions: `flutter analyze`, `flutter test`, `flutter build apk` on PRs
-- Internal track on Google Play for dogfooding before public release
+Existing GitHub Actions validate formatting, shell syntax, Flutter analysis/tests, disposable Supabase integration and a synthetic Android release compile. The synthetic signing/config artifact is non-distributable.
+
+Private delivery uses the existing Firebase App Tester channel. Worktree implementation → numbered screenshots and journey review → explicit owner approval → merge/synchronize main → signed integrated-main Android verification → distribute and download-back hash verification. Never release a feature-worktree or CI synthetic artifact.
 
 ---
 
@@ -244,7 +244,7 @@ Still need a call. Surface them, don't silently choose.
 
 1. **Word lookup data source:** bundled JSON per language pair (proposed) vs static CDN vs lightweight API
 2. **Analytics:** none vs PostHog vs Supabase log queries only
-3. **Platform-wide native styling after onboarding:** keep the current shared Blab treatment across platforms vs introduce platform-specific Material/Cupertino differences. The onboarding/auth refresh itself is already resolved as one approved native Flutter treatment for Android first.
+**Resolved by owner, 2026-10-13:** shared Blab visuals/icons on Flutter Material 3, genuine Material navigation and Android-standard transitions/Back. Custom chat capsule and message compositions retain their exact appearance; no platform-specific redesign. Implementation remains subject to screenshot/journey acceptance.
 
 PRD § Open Questions are product questions, distinct from these — keep them separate.
 

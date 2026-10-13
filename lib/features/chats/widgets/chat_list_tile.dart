@@ -1,3 +1,5 @@
+import '../../../shared/widgets/blab_unread_badge.dart';
+import '../../../shared/widgets/blab_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,7 +33,7 @@ class ChatListTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            _Avatar(name: chat.partnerName),
+            BlabAvatar(name: chat.partnerName),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -92,7 +94,7 @@ class ChatListTile extends ConsumerWidget {
                       ),
                       if (hasActualMessage && chat.unreadCount > 0) ...[
                         const SizedBox(width: 8),
-                        _UnreadBadge(count: chat.unreadCount),
+                        BlabUnreadBadge(count: chat.unreadCount),
                       ],
                     ],
                   ),
@@ -100,65 +102,6 @@ class ChatListTile extends ConsumerWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name});
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: BlabColors.avatarColorFor(name),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x2B231208),
-            offset: Offset(0, 2),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        BlabColors.avatarInitialsFor(name),
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 16,
-        ),
-      ),
-    );
-  }
-}
-
-class _UnreadBadge extends StatelessWidget {
-  const _UnreadBadge({required this.count});
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      decoration: const BoxDecoration(
-        color: BlabColors.brand,
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '$count',
-        style: const TextStyle(
-          color: BlabColors.bubbleInk,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
         ),
       ),
     );

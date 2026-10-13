@@ -1,3 +1,5 @@
+import '../../../shared/widgets/selection/blab_selection_row.dart';
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -5,7 +7,6 @@ import 'package:flutter/material.dart';
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
-import '../../../shared/widgets/blab_icon.dart';
 
 const _sheetHeightRatio = 567 / 932;
 
@@ -75,7 +76,7 @@ Future<BlabLanguage?> showLearningLanguageSheet(
   BuildContext context, {
   required BlabLanguage current,
   Future<void> Function(BlabLanguage language)? onSelected,
-}) => showModalBottomSheet<BlabLanguage>(
+}) => showBlabModalSheet<BlabLanguage>(
   context: context,
   backgroundColor: Colors.transparent,
   barrierColor: const Color(0x4D231208),
@@ -243,52 +244,15 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                         itemBuilder: (context, index) {
                           final language = kBlabLanguages[index];
                           final selected = language.code == _selected?.code;
-                          return Material(
-                            color: selected
-                                ? BlabColors.languageSelectionTint
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: _saving
-                                  ? null
-                                  : () => setState(() => _selected = language),
-                              child: SizedBox(
-                                height: 48,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          localizedLanguageName(
-                                            context.l10n,
-                                            language.code,
-                                          ),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            height: 1.2,
-                                            fontWeight: selected
-                                                ? FontWeight.w700
-                                                : FontWeight.w400,
-                                            color: ink,
-                                          ),
-                                        ),
-                                      ),
-                                      if (selected)
-                                        const BlabIcon(
-                                          name: 'check - 20',
-                                          size: 18,
-                                          color: ink,
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                          return BlabSelectionRow(
+                            label: localizedLanguageName(
+                              context.l10n,
+                              language.code,
                             ),
+                            selected: selected,
+                            onTap: _saving
+                                ? null
+                                : () => setState(() => _selected = language),
                           );
                         },
                       ),

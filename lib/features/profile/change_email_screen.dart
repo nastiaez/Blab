@@ -1,3 +1,5 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,7 @@ import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
-import '../auth/widgets/blab_text_field.dart';
+import '../../shared/widgets/forms/blab_form_field.dart';
 
 /// PRD US-039. Change-email page. Mirrors the Edit profile chassis:
 /// cream canvas, AppBar with centered title + a `Send` action in the
@@ -81,12 +83,12 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
     final currentEmail = auth.currentUser?.email ?? '';
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: BlabIconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
           onPressed: () => context.pop(),
@@ -181,10 +183,10 @@ class _FormBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
-        BlabTextField(
+        BlabFormField.account(
           controller: emailController,
           label: context.l10n.newEmail,
-          hint: context.l10n.emailHint,
+          hintText: context.l10n.emailHint,
           keyboardType: TextInputType.emailAddress,
           errorText: err,
           autofocus: true,

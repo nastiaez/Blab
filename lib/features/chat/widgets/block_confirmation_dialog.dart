@@ -1,3 +1,4 @@
+import '../../../shared/widgets/surfaces/blab_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -7,7 +8,7 @@ Future<bool> showBlockConfirmation(
   BuildContext context, {
   required String personName,
 }) async {
-  return await showDialog<bool>(
+  return await showBlabDialog<bool>(
         context: context,
         builder: (dialogContext) => Dialog(
           backgroundColor: BlabColors.chatSurface,

@@ -7,7 +7,7 @@ import '../../l10n/l10n.dart';
 import '../../shared/data/languages.dart';
 import '../../shared/state/known_languages_state.dart';
 import '../../shared/state/profile_state.dart';
-import '../../shared/widgets/picker_card.dart';
+import '../../shared/widgets/selection/blab_selection_row.dart';
 import 'widgets/language_settings_scaffold.dart';
 
 /// Single-select editor for the account's translation/explanation language.
@@ -63,7 +63,7 @@ class _TranslationLanguageScreenState
           children: [
             for (var i = 0; i < kBlabLanguages.length; i++) ...[
               if (i > 0) const SizedBox(height: 8),
-              LanguageCard(
+              BlabSelectionRow(
                 label: localizedLanguageName(
                   localizations,
                   kBlabLanguages[i].code,

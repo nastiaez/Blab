@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
-import '../onboarding_theme.dart';
+import '../../../app/onboarding_tokens.dart';
 import '../widgets/onboarding_scaffold.dart';
-import '../widgets/primary_action_button.dart';
+import '../../../shared/widgets/actions/blab_button.dart';
 
 class ResetLinkInvalidScreen extends StatelessWidget {
   const ResetLinkInvalidScreen({
@@ -49,7 +49,7 @@ class ResetLinkInvalidScreen extends StatelessWidget {
       ),
     ];
     final actions = <Widget>[
-      PrimaryActionButton(
+      BlabButton.onboarding(
         label: context.l10n.requestNewLink,
         onPressed: onRequestNewLink,
       ),

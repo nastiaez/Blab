@@ -1,3 +1,6 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/blab_avatar.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +10,7 @@ import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/profile_service.dart';
 import '../../shared/state/profile_state.dart';
-import '../auth/widgets/blab_text_field.dart';
+import '../../shared/widgets/forms/blab_form_field.dart';
 
 String? validateDisplayName(String input) {
   final value = input.trim();
@@ -93,12 +96,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       canPop: !_busy,
       child: Scaffold(
         backgroundColor: BlabColors.appBackground,
-        appBar: AppBar(
+        appBar: BlabAppBar(
           backgroundColor: BlabColors.appBackground,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: true,
-          leading: IconButton(
+          leading: BlabIconButton(
             icon: const Icon(Icons.arrow_back_ios_new, size: 20),
             color: BlabColors.textPrimary,
             onPressed: _busy ? null : () => context.pop(),
@@ -149,29 +152,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 children: [
                   const SizedBox(height: 8),
                   Center(
-                    child: Container(
-                      width: 112,
-                      height: 112,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: BlabColors.avatarColorFor(_name.text.trim()),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 44,
-                        ),
-                      ),
+                    child: BlabAvatar(
+                      name: _name.text.trim(),
+                      initials: initial,
+                      size: 112,
+                      fontSize: 44,
+                      fontWeight: FontWeight.w700,
+                      shadows: null,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  BlabTextField(
+                  BlabFormField.account(
                     controller: _name,
                     label: context.l10n.displayName,
-                    hint: context.l10n.yourName,
+                    hintText: context.l10n.yourName,
                     errorText: _error,
                     autofocus: true,
                     textInputAction: TextInputAction.done,

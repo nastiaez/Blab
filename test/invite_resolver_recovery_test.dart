@@ -67,6 +67,8 @@ Future<GoRouter> _mount(
       OnboardingDestination.pendingInvite,
   Future<OnboardingDestination>? onboardingDestinationFuture,
   bool mutableUser = false,
+  bool observeChatGuard = false,
+  Future<OnboardingDestination> Function()? resolveDestination,
 }) async {
   final router = GoRouter(
     initialLocation: '/i/first',
@@ -93,7 +95,16 @@ Future<GoRouter> _mount(
       ),
       GoRoute(
         path: '/chat/:id',
-        builder: (_, state) => Text('chat:${state.pathParameters['id']}'),
+        builder: (_, state) => Consumer(
+          builder: (context, ref, _) {
+            final destination = ref.watch(onboardingDestinationProvider);
+            if (observeChatGuard &&
+                destination.value != OnboardingDestination.chats) {
+              return const Text('chat-blocked-by-stale-setup');
+            }
+            return Text('chat:${state.pathParameters['id']}');
+          },
+        ),
       ),
     ],
   );
@@ -114,6 +125,7 @@ Future<GoRouter> _mount(
         ),
         onboardingDestinationProvider.overrideWith(
           (_) =>
+              resolveDestination?.call() ??
               onboardingDestinationFuture ??
               Future.value(onboardingDestination),
         ),
@@ -144,6 +156,24 @@ void _expectCloseAction(WidgetTester tester) {
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('claim retires cached pending-invite setup before opening chat', (
+    tester,
+  ) async {
+    await _mount(
+      tester,
+      userId: 'bob',
+      lookup: (token) async => _metadata(token),
+      observeChatGuard: true,
+      resolveDestination: () async => await loadPendingInvite() == null
+          ? OnboardingDestination.chats
+          : OnboardingDestination.pendingInvite,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('chat:new-chat'), findsOneWidget);
+    expect(find.text('chat-blocked-by-stale-setup'), findsNothing);
+    expect(await loadPendingInvite(), isNull);
+  });
 
   testWidgets('loading waits one second then smoothly fades its dots', (
     tester,

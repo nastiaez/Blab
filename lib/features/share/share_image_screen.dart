@@ -1,3 +1,5 @@
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +25,7 @@ class ShareImageScreen extends ConsumerWidget {
     if (image == null) {
       return Scaffold(
         backgroundColor: BlabColors.appBackground,
-        appBar: AppBar(
+        appBar: BlabAppBar(
           backgroundColor: BlabColors.appBackground,
           elevation: 0,
           foregroundColor: BlabColors.warmInk,
@@ -115,11 +117,11 @@ class ShareImageChatPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.chatCanvas,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
+        leading: BlabIconButton(
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,

@@ -1,3 +1,4 @@
+import '../../../shared/widgets/surfaces/blab_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -22,7 +23,7 @@ Future<PartnerReportResult?> showPartnerReportDialog(
   required String personName,
   required Future<PartnerReportResult> Function({required bool block}) onSubmit,
 }) {
-  return showDialog<PartnerReportResult>(
+  return showBlabDialog<PartnerReportResult>(
     context: context,
     builder: (_) =>
         _PartnerReportDialog(personName: personName, onSubmit: onSubmit),

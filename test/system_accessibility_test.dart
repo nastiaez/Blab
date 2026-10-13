@@ -1,3 +1,4 @@
+import 'package:blab/shared/widgets/actions/blab_button.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/auth/forgot_password_sent_screen.dart';
 import 'package:blab/features/auth/reset_password_screen.dart';
@@ -8,7 +9,6 @@ import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/connectivity_state.dart';
 import 'package:blab/shared/widgets/blab_icon.dart';
 import 'package:blab/shared/widgets/offline_banner.dart';
-import 'package:blab/shared/widgets/picker_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,7 +84,7 @@ void main() {
     for (final entry in expectations.entries) {
       await _pumpChats(tester, locale: Locale(entry.key), textScale: 2);
 
-      final buttonRect = tester.getRect(find.byType(BrandButton));
+      final buttonRect = tester.getRect(find.byType(BlabButton));
       final labelRect = tester.getRect(find.text(entry.value.$1));
       expect(labelRect.left, greaterThanOrEqualTo(buttonRect.left));
       expect(labelRect.right, lessThanOrEqualTo(buttonRect.right));

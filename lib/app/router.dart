@@ -213,6 +213,12 @@ final GoRouter blabRouter = GoRouter(
     if (kDebugMode) ...[
       GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
       GoRoute(
+        path: '/dev/invite/:state',
+        builder: (context, state) => InviteReviewFixture(
+          state: state.pathParameters['state'] ?? 'not-found',
+        ),
+      ),
+      GoRoute(
         path: '/dev/workbench',
         builder: (context, state) => const UiWorkbenchScreen(),
       ),
@@ -360,30 +366,39 @@ final GoRouter blabRouter = GoRouter(
           const _OnboardingGuard(child: ShareImageScreen()),
     ),
     GoRoute(
-      path: '/chat',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
-    ),
-    GoRoute(
-      path: '/chat/:id',
-      builder: (context, state) => _OnboardingGuard(
-        child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
+      path: '/',
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        child: const _OnboardingGuard(child: ChatsScreen()),
       ),
-    ),
-    GoRoute(
-      path: '/chat/:id/translation-preferences',
-      builder: (context, state) => _OnboardingGuard(
-        child: TranslationPreferencesScreen(
-          chatId: state.pathParameters['id'],
-          partnerName: state.uri.queryParameters['name'],
-          initialSubjectIsViewer:
-              switch (state.uri.queryParameters['subject']) {
-                'viewer' => true,
-                'partner' => false,
-                _ => null,
-              },
+      routes: [
+        GoRoute(
+          path: 'chat',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
         ),
-      ),
+        GoRoute(
+          path: 'chat/:id',
+          builder: (context, state) => _OnboardingGuard(
+            child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
+          ),
+        ),
+        GoRoute(
+          path: 'chat/:id/translation-preferences',
+          builder: (context, state) => _OnboardingGuard(
+            child: TranslationPreferencesScreen(
+              chatId: state.pathParameters['id'],
+              partnerName: state.uri.queryParameters['name'],
+              initialSubjectIsViewer:
+                  switch (state.uri.queryParameters['subject']) {
+                    'viewer' => true,
+                    'partner' => false,
+                    _ => null,
+                  },
+            ),
+          ),
+        ),
+      ],
     ),
     GoRoute(
       path: '/i/:token',
@@ -396,56 +411,58 @@ final GoRouter blabRouter = GoRouter(
         key: state.pageKey,
         child: const _OnboardingGuard(child: ProfileScreen()),
       ),
-    ),
-    GoRoute(
-      path: '/profile/edit',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: EditProfileScreen()),
-    ),
-    GoRoute(
-      path: '/profile/translation-preferences',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: TranslationPreferencesScreen()),
-    ),
-    GoRoute(
-      path: '/profile/password',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: ChangePasswordScreen()),
-    ),
-    GoRoute(
-      path: '/profile/email',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: ChangeEmailScreen()),
-    ),
-    GoRoute(
-      path: '/profile/privacy',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: PrivacyScreen()),
-    ),
-    GoRoute(
-      path: '/profile/notifications',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: NotificationSettingsScreen()),
-    ),
-    GoRoute(
-      path: '/profile/interface-language',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: InterfaceLanguageScreen()),
-    ),
-    GoRoute(
-      path: '/profile/known-languages',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: KnownLanguagesScreen()),
-    ),
-    GoRoute(
-      path: '/profile/translation-language',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: TranslationLanguageScreen()),
-    ),
-    GoRoute(
-      path: '/profile/delete-account',
-      builder: (context, state) =>
-          const _OnboardingGuard(child: DeleteAccountScreen()),
+      routes: [
+        GoRoute(
+          path: 'edit',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: EditProfileScreen()),
+        ),
+        GoRoute(
+          path: 'translation-preferences',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: TranslationPreferencesScreen()),
+        ),
+        GoRoute(
+          path: 'password',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: ChangePasswordScreen()),
+        ),
+        GoRoute(
+          path: 'email',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: ChangeEmailScreen()),
+        ),
+        GoRoute(
+          path: 'privacy',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: PrivacyScreen()),
+        ),
+        GoRoute(
+          path: 'notifications',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: NotificationSettingsScreen()),
+        ),
+        GoRoute(
+          path: 'interface-language',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: InterfaceLanguageScreen()),
+        ),
+        GoRoute(
+          path: 'known-languages',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: KnownLanguagesScreen()),
+        ),
+        GoRoute(
+          path: 'translation-language',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: TranslationLanguageScreen()),
+        ),
+        GoRoute(
+          path: 'delete-account',
+          builder: (context, state) =>
+              const _OnboardingGuard(child: DeleteAccountScreen()),
+        ),
+      ],
     ),
   ],
 );

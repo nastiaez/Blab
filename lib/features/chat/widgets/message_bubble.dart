@@ -1,0 +1,644 @@
+part of '../chat_screen.dart';
+
+class MessageBubble extends ConsumerStatefulWidget {
+  const MessageBubble({
+    super.key,
+    required this.chatId,
+    required this.partnerName,
+    required this.message,
+    required this.reactions,
+    required this.maxWidth,
+    required this.isLastInGroup,
+    required this.languageCode,
+    required this.targetLanguageCode,
+    required this.replyTargetLanguageCode,
+    required this.translationInterfaceLanguageCode,
+    required this.mode,
+    required this.knownLanguageCodes,
+    required this.shouldTranslate,
+    required this.replyToShouldTranslate,
+    required this.popupTopInset,
+    required this.deferTranslationResolve,
+    required this.holdIncomingUntilPrevious,
+    required this.onReact,
+    required this.isFailed,
+    required this.onLongPress,
+    required this.onFailedTap,
+    required this.onFailedRetry,
+    required this.isSelected,
+    required this.showOriginal,
+    required this.onJumpToMessage,
+    this.onSwipeReply,
+    this.selectedBubbleKey,
+  });
+
+  final String chatId;
+  final String partnerName;
+  final Message message;
+  final List<MessageReactionSummary> reactions;
+  final double maxWidth;
+  final bool isLastInGroup;
+
+  /// The chat's learning language — used for word-popup/TTS lookups.
+  final String languageCode;
+
+  /// The mode-resolved translation target (FR-23): the learning language in
+  /// practice mode, or the reader's primary known language in normal mode.
+  final String targetLanguageCode;
+  final String replyTargetLanguageCode;
+
+  /// The reader's primary known language (modes-known-languages spec): the
+  /// translation pipeline's "interface" slot — cache-row key and second-lane
+  /// target. Never `profiles.interface_language`.
+  final String translationInterfaceLanguageCode;
+
+  /// FR-23: drives MessageLearningContent's single-lane-default branching.
+  final ChatMode mode;
+
+  /// The reader's known-language codes — normal mode's source-language
+  /// bypass check.
+  final List<String> knownLanguageCodes;
+  final bool shouldTranslate;
+  final bool replyToShouldTranslate;
+  final double popupTopInset;
+  final bool deferTranslationResolve;
+  final bool holdIncomingUntilPrevious;
+
+  /// [MessageInteractionTarget]'s gesture-surface inputs — applied inside
+  /// this widget's build around the bubble content only (never around the
+  /// practice-mode translate icon beside it), so the long-press rect it
+  /// measures for the floating reaction row stays the bubble's true bounds.
+  final bool isFailed;
+  final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
+  final VoidCallback onFailedTap;
+  final VoidCallback onFailedRetry;
+  final VoidCallback? onSwipeReply;
+  final void Function(Message) onJumpToMessage;
+  final VoidCallback onReact;
+  final bool isSelected;
+  final bool showOriginal;
+  final GlobalKey? selectedBubbleKey;
+
+  @override
+  ConsumerState<MessageBubble> createState() => _BubbleState();
+}
+
+class _BubbleState extends ConsumerState<MessageBubble> {
+  bool _incomingOriginalRevealedAfterFailure = false;
+  bool _incomingWasHeld = false;
+  int _openFormChoiceIndex = 0;
+
+  @override
+  void didUpdateWidget(covariant MessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.message.id != widget.message.id ||
+        oldWidget.message.originalText != widget.message.originalText ||
+        oldWidget.mode != widget.mode ||
+        oldWidget.targetLanguageCode != widget.targetLanguageCode) {
+      _incomingOriginalRevealedAfterFailure = false;
+      _incomingWasHeld = false;
+      _openFormChoiceIndex = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final formPreferences = ref.watch(
+      grammaticalFormPreferencesProvider(widget.chatId),
+    );
+    final readingScript = ref.watch(readingScriptProvider);
+
+    final message = widget.message;
+    final chatId = widget.chatId;
+    final reactions = widget.reactions;
+    final maxWidth = widget.maxWidth;
+    final isLastInGroup = widget.isLastInGroup;
+    final languageCode = widget.languageCode;
+    final targetLanguageCode = widget.targetLanguageCode;
+    final replyTargetLanguageCode = widget.replyTargetLanguageCode;
+    final translationInterfaceLanguageCode =
+        widget.translationInterfaceLanguageCode;
+    final mode = widget.mode;
+    final knownLanguageCodes = widget.knownLanguageCodes;
+    final shouldTranslate = widget.shouldTranslate;
+    final replyToShouldTranslate = widget.replyToShouldTranslate;
+    final popupTopInset = widget.popupTopInset;
+    final holdIncomingUntilPrevious = widget.holdIncomingUntilPrevious;
+    final onReact = widget.onReact;
+    final isFailed = widget.isFailed;
+    final onLongPress = widget.onLongPress;
+    final onFailedTap = widget.onFailedTap;
+    final onFailedRetry = widget.onFailedRetry;
+    final onSwipeReply = widget.onSwipeReply;
+
+    final isOut = message.isOutgoing;
+    final isPractice = mode == ChatMode.practice;
+    final bubbleColor = isOut
+        ? (isPractice
+              ? BlabColors.bubbleOutgoingPractice
+              : BlabColors.bubbleOutgoingNormal)
+        : BlabColors.bubbleIncomingSurface;
+    final bubbleOutline = isOut
+        ? (isPractice
+              ? BlabColors.bubbleOutgoingPracticeOutline
+              : BlabColors.bubbleOutgoingNormalOutline)
+        : BlabColors.bubbleIncomingOutline;
+
+    final liveTranslation =
+        shouldTranslate &&
+            kSupportedLearningLanguages.contains(targetLanguageCode)
+        ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
+            message.id,
+            targetLanguageCode,
+            translationInterfaceLanguageCode,
+          )]
+        : null;
+    if (!isOut && liveTranslation is AsyncError<MessageTranslation>) {
+      _incomingOriginalRevealedAfterFailure = true;
+    }
+    final replyTo = message.replyTo;
+    final replyTranslation =
+        replyTo != null &&
+            replyToShouldTranslate &&
+            kSupportedLearningLanguages.contains(replyTargetLanguageCode)
+        ? ref.watch(messageTranslationsProvider(chatId))[translationEntryKey(
+            replyTo.id,
+            replyTargetLanguageCode,
+            translationInterfaceLanguageCode,
+          )]
+        : null;
+    final resolvedTranslation = liveTranslation is AsyncData<MessageTranslation>
+        ? liveTranslation.value
+        : null;
+    // Survives the entry falling back to loading/error, so normal mode can
+    // tell "the reader can't read this" from "we never found out".
+    final resolvedSourceLang =
+        resolvedTranslation?.sourceLang ??
+        ref
+            .read(messageTranslationsProvider(chatId).notifier)
+            .resolvedSourceLangFor(message.id);
+    final presentation = resolveMessagePresentation(
+      authoredText: message.originalText,
+      translation: liveTranslation,
+      mode: mode,
+      knownLanguageCodes: knownLanguageCodes,
+      resolvedSourceLang: resolvedSourceLang,
+      targetLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
+    );
+    final canRetryTranslation =
+        liveTranslation is AsyncError<MessageTranslation>;
+    void retryTranslation() {
+      ref
+          .read(messageTranslationsProvider(chatId).notifier)
+          .retry(
+            messageId: message.id,
+            text: message.originalText,
+            targetLang: targetLanguageCode,
+            interfaceLang: translationInterfaceLanguageCode,
+          );
+    }
+
+    final formLedger = ref.watch(formCorrectionProvider).asData?.value;
+    final resolutionKey = formResolutionKey(
+      chatId,
+      message.id,
+      targetLanguageCode,
+    );
+    final stored = formLedger?.resolutions[resolutionKey];
+    final snapshot = stored?.sourceText == message.originalText ? stored : null;
+    final formChoices = resolvedTranslation?.formChoices ?? const [];
+    final formAlternatives =
+        (snapshot?.alternatives ??
+                (formChoices.isEmpty ? null : formChoices.first))
+            ?.forMessage(
+              isOutgoing: isOut,
+              sourceText: message.originalText,
+              viewerName:
+                  ref.watch(currentProfileProvider).asData?.value.displayName ??
+                  context.l10n.you,
+              partnerName: widget.partnerName,
+            );
+    final persistedForm = formAlternatives == null
+        ? null
+        : switch (formPreferences) {
+            AsyncData(:final value) =>
+              formAlternatives.subjectIsViewer
+                  ? value.ownForm
+                  : value.partnerForm,
+            _ => null,
+          };
+    final fallbackForm = formAlternatives == null
+        ? null
+        : formLedger?.suggestionFor(chatId, formAlternatives.subjectIsViewer) ??
+              formAlternatives.suggestedForm;
+    final isCurrentNoteTarget = formLedger?.hasNote(resolutionKey) ?? false;
+    final noteNeedsTargetTransfer =
+        formAlternatives != null &&
+        !isCurrentNoteTarget &&
+        (formLedger?.hasPersonNoteOnMessage(
+              chatId,
+              formAlternatives.subjectIsViewer,
+              message.id,
+            ) ??
+            false);
+    final resolvedForm = isCurrentNoteTarget && formPreferences.asData != null
+        ? persistedForm ?? fallbackForm
+        : snapshot?.form ?? persistedForm ?? fallbackForm;
+    List<Message> correctionMessages() => [
+      ...?ref.read(chatMessagesProvider(chatId)).asData?.value,
+      ...ref.read(pendingSendsProvider(chatId)),
+    ];
+    final noteNeedsReconciliation =
+        isCurrentNoteTarget &&
+        snapshot != null &&
+        resolvedForm != null &&
+        snapshot.form != resolvedForm;
+    if (formLedger != null &&
+        (snapshot == null ||
+            snapshot.form == null ||
+            noteNeedsReconciliation ||
+            noteNeedsTargetTransfer ||
+            (formAlternatives != null &&
+                !formLedger.hasPersonNote(
+                  chatId,
+                  formAlternatives.subjectIsViewer,
+                ))) &&
+        formPreferences.asData != null &&
+        formAlternatives != null &&
+        resolvedForm != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          ref
+              .read(formCorrectionProvider.notifier)
+              .mutate((ledger) {
+                if (!mounted) return ledger;
+                final latestMessages = correctionMessages();
+                if (!latestMessages.any(
+                  (current) =>
+                      current.id == message.id &&
+                      current.originalText == message.originalText,
+                )) {
+                  return ledger;
+                }
+                final latestPreferences = ref
+                    .read(grammaticalFormPreferencesProvider(chatId))
+                    .asData
+                    ?.value;
+                if (latestPreferences == null) return ledger;
+                final alreadySaved = formAlternatives.subjectIsViewer
+                    ? latestPreferences.ownForm
+                    : latestPreferences.partnerForm;
+                final effectiveForm =
+                    alreadySaved ?? formAlternatives.suggestedForm;
+                if (ledger.hasNote(resolutionKey)) {
+                  return ledger.reconcileNoteForm(resolutionKey, effectiveForm);
+                }
+                return ledger.record(
+                  FormResolution(
+                    chatId: chatId,
+                    messageId: message.id,
+                    targetLang: targetLanguageCode,
+                    sourceText: message.originalText,
+                    alternatives: formAlternatives,
+                    form: effectiveForm,
+                  ),
+                  explicit: false,
+                  note: true,
+                  messages: latestMessages,
+                );
+              })
+              .catchError((Object _) {}),
+        );
+      });
+    }
+    final showLearningAid =
+        shouldTranslate &&
+        kSupportedLearningLanguages.contains(targetLanguageCode);
+    Widget buildLearningContent({
+      required AsyncValue<MessageTranslation>? translation,
+      required bool showTranslation,
+      bool pending = false,
+    }) => MessageLearningContent(
+      authoredText: message.originalText,
+      translation: translation,
+      showTranslation: showTranslation,
+      learningLanguageCode: languageCode,
+      translationLanguageCode: targetLanguageCode,
+      readingScript: readingScript,
+      isOutgoing: isOut,
+      languagesMatchedAtSend: message.languagesMatchedAtSend,
+      popupTopInset: popupTopInset,
+      mode: mode,
+      knownLanguageCodes: knownLanguageCodes,
+      resolvedSourceLang: resolvedSourceLang,
+      expanded: widget.isSelected && mode == ChatMode.practice,
+      showOriginal: widget.isSelected && widget.showOriginal,
+      pendingColor: pending
+          ? (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary).withValues(
+              alpha: 0.48,
+            )
+          : null,
+      onToggleExpanded: () {},
+      unavailableText: context.l10n.translationUnavailable,
+      retryText: context.l10n.retry,
+      onRetry: canRetryTranslation ? retryTranslation : null,
+      resolvedForm: resolvedForm,
+      formAlternativesOverride: formAlternatives,
+      onFormMarkerTap: (index) {
+        if (!mounted) return;
+        setState(() => _openFormChoiceIndex = index);
+      },
+      activeFormChoiceIndex: _openFormChoiceIndex,
+    );
+
+    final incomingProcessing =
+        isPractice &&
+        showLearningAid &&
+        (holdIncomingUntilPrevious ||
+            liveTranslation is! AsyncData<MessageTranslation>) &&
+        liveTranslation is! AsyncError<MessageTranslation>;
+    if (shouldHoldIncomingTranslation(
+      isOutgoing: isOut,
+      processing: incomingProcessing,
+      originalWasRevealedAfterFailure: _incomingOriginalRevealedAfterFailure,
+    )) {
+      _incomingWasHeld = true;
+    }
+
+    final authoredContent = buildLearningContent(
+      translation: null,
+      showTranslation: false,
+      pending: true,
+    );
+    final finalContent = buildLearningContent(
+      translation: liveTranslation,
+      showTranslation: showLearningAid,
+    );
+    final resolvedForLifecycle =
+        liveTranslation is AsyncData<MessageTranslation>;
+    final unchangedForLifecycle =
+        resolvedTranslation != null &&
+        translationResultIsUnchanged(message.originalText, resolvedTranslation);
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    final retryingRevealedIncoming =
+        !isOut &&
+        _incomingOriginalRevealedAfterFailure &&
+        showLearningAid &&
+        liveTranslation is! AsyncError<MessageTranslation>;
+    final pendingContent = !isOut && !retryingRevealedIncoming
+        ? IncomingTranslationPlaceholder(
+            semanticsLabel: context.l10n.translating,
+          )
+        : authoredContent;
+    final animateTranslationLifecycle =
+        isPractice &&
+        showLearningAid &&
+        liveTranslation is! AsyncError<MessageTranslation>;
+    final messageLearningContent = animateTranslationLifecycle
+        ? TranslatingMessageContent(
+            key: ValueKey(
+              'translation-lifecycle-$targetLanguageCode-'
+              '${message.originalText.hashCode}',
+            ),
+            authoredContent: pendingContent,
+            finalContent: finalContent,
+            resolved: resolvedForLifecycle && !holdIncomingUntilPrevious,
+            delivered:
+                message.status == MessageStatus.delivered ||
+                message.status == MessageStatus.read,
+            unchanged: unchangedForLifecycle,
+            reduceMotion: reducedMotion,
+            outgoing: isOut,
+            showAuthoredImmediately: retryingRevealedIncoming,
+            deferResolve: widget.deferTranslationResolve,
+            keepAuthoredDuringFastHold: isOut,
+            animateArrival: false,
+            waveBaseColor:
+                (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary)
+                    .withValues(alpha: 0.48),
+            waveHighlightColor: Colors.white,
+          )
+        : finalContent;
+
+    final BorderRadius radius = isOut
+        ? const BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(4),
+            bottomLeft: Radius.circular(18),
+            bottomRight: Radius.circular(18),
+          )
+        : const BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(18),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(18),
+          );
+
+    // Reactions overlap the bubble's bottom corner (WhatsApp-style) instead
+    // of pushing content down in normal flow. Only the top third of the
+    // badge sits over the bubble — the rest hangs below it — plus extra
+    // reserved space so it's unambiguous which bubble a reaction belongs
+    // to when the next message follows close behind.
+    const reactionBadgeHeight = 32.0;
+    const reactionBadgeOverlap = 21.0;
+    const reactionRowGap = 8.0;
+
+    Widget bubbleStack = Padding(
+      key: ValueKey('bubble-content-${message.id}'),
+      padding: EdgeInsets.only(
+        bottom: reactions.isNotEmpty
+            ? (reactionBadgeHeight - reactionBadgeOverlap) + reactionRowGap
+            : 0,
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: isOut ? Alignment.topRight : Alignment.topLeft,
+        children: [
+          IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: MessageBubbleSurface(
+                    outgoing: isOut,
+                    practice: isPractice,
+                    fill: bubbleColor,
+                    outline: bubbleOutline,
+                    radius: radius,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (replyTo != null) ...[
+                          ReplyPreview(
+                            replyTo: replyTo,
+                            onTap: () => widget.onJumpToMessage(replyTo),
+                            partnerName: widget.partnerName,
+                            parentIsOutgoing: isOut,
+                            translation: replyTranslation?.whenData(
+                              (value) =>
+                                  (formLedger ?? const FormCorrectionLedger())
+                                      .resolveTranslation(
+                                        value,
+                                        chatId: chatId,
+                                        messageId: replyTo.id,
+                                        targetLang: replyTargetLanguageCode,
+                                        sourceText: replyTo.originalText,
+                                      ),
+                            ),
+                            mode: mode,
+                            knownLanguageCodes: knownLanguageCodes,
+                            targetLanguageCode: replyTargetLanguageCode,
+                            readingScript: readingScript,
+                          ),
+                          const SizedBox(height: 6),
+                        ],
+                        if (message.attachment != null) ...[
+                          PhotoMessageView(attachment: message.attachment!),
+                          if (message.originalText.trim().isNotEmpty)
+                            const SizedBox(height: 8),
+                        ],
+                        if (message.originalText.trim().isNotEmpty)
+                          messageLearningContent,
+                        if (isLastInGroup || message.isEdited) ...[
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: MessageMeta(
+                              chatId: chatId,
+                              message: message,
+                              isOutgoing: isOut,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (showLearningAid &&
+                    formAlternatives != null &&
+                    resolvedForm != null &&
+                    (formLedger?.hasNote(resolutionKey) ?? false))
+                  GrammaticalFormNote(
+                    form: resolvedForm,
+                    person: formAlternatives.subjectName,
+                    subjectIsViewer: formAlternatives.subjectIsViewer,
+                    onChange: () => context.push(
+                      '/chat/$chatId/translation-preferences?name=${Uri.encodeComponent(widget.partnerName)}&subject=${formAlternatives.subjectIsViewer ? 'viewer' : 'partner'}',
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (reactions.isNotEmpty)
+            Positioned(
+              bottom: -reactionBadgeOverlap,
+              // Reactions sit on the bubble edge nearest the conversation's
+              // center: left for sent messages, right for received messages.
+              left: isOut ? 14 : null,
+              right: isOut ? null : 14,
+              child: MessageReactionBar(
+                reactions: reactions,
+                isOutgoing: isOut,
+                isPractice: isPractice,
+                onTap: onReact,
+              ),
+            ),
+        ],
+      ),
+    );
+
+    bubbleStack = MessageArrival(
+      animate:
+          _incomingWasHeld ||
+          DateTime.now().difference(message.sentAt).abs() <
+              const Duration(seconds: 2),
+      reduceMotion: reducedMotion,
+      outgoing: isOut,
+      child: bubbleStack,
+    );
+
+    final interactiveBubble = MessageInteractionTarget(
+      key: widget.selectedBubbleKey,
+      isFailed: isFailed,
+      onLongPress: onLongPress,
+      onFailedTap: onFailedTap,
+      onSwipeReply: onSwipeReply,
+      child: bubbleStack,
+    );
+    final hasError = isFailed || presentation.translationFailed;
+    final showUnsupportedLanguageHint =
+        presentation.unsupportedSource && showLearningAid;
+    final showReducedMotionProcessing =
+        reducedMotion &&
+        isOut &&
+        isPractice &&
+        showLearningAid &&
+        liveTranslation is AsyncLoading<MessageTranslation> &&
+        (message.status == MessageStatus.delivered ||
+            message.status == MessageStatus.read);
+    if (!hasError &&
+        !showReducedMotionProcessing &&
+        !showUnsupportedLanguageHint) {
+      return interactiveBubble;
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: isOut
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        interactiveBubble,
+        if (showReducedMotionProcessing)
+          DelayedTranslationStatus(
+            active: true,
+            status: Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                resolvedSourceLang == targetLanguageCode
+                    ? context.l10n.checking
+                    : context.l10n.translating,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.25,
+                  color: BlabColors.textMuted,
+                ),
+              ),
+            ),
+            idle: const SizedBox.shrink(),
+          ),
+        if (showUnsupportedLanguageHint)
+          UnsupportedLanguageNotice(
+            key: const ValueKey('unsupported-language-hint'),
+            text: context.l10n.unsupportedLanguageHint,
+            alignRight: isOut,
+          ),
+        if (isFailed) ...[
+          if (reactions.isEmpty) const SizedBox(height: 6),
+          MessageStatusNotice(
+            key: const ValueKey('failed-message-retry'),
+            text: context.l10n.failedToSend,
+            onTap: onFailedRetry,
+            alignRight: isOut,
+          ),
+        ],
+        if (presentation.translationFailed) ...[
+          if (!isFailed && reactions.isEmpty) const SizedBox(height: 6),
+          if (isFailed) const SizedBox(height: 4),
+          MessageStatusNotice(
+            key: const ValueKey('translation-message-retry'),
+            text: isOut && resolvedSourceLang == targetLanguageCode
+                ? context.l10n.couldntCheckRetry
+                : context.l10n.couldntTranslateRetry,
+            onTap: canRetryTranslation ? retryTranslation : null,
+            alignRight: isOut,
+          ),
+        ],
+      ],
+    );
+  }
+}

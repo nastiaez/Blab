@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
-import 'onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import 'widgets/onboarding_scaffold.dart';
 import 'widgets/onboarding_top_bar.dart';
-import 'widgets/primary_action_button.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import 'widgets/interface_language_menu.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -62,7 +62,7 @@ class WelcomeScreen extends StatelessWidget {
                             OnboardingTheme.horizontalGutter,
                             18 + MediaQuery.paddingOf(context).bottom,
                           ),
-                          child: PrimaryActionButton(
+                          child: BlabButton.onboarding(
                             label: context.l10n.continueAction,
                             onPressed: onContinue,
                           ),
@@ -104,7 +104,7 @@ class WelcomeScreen extends StatelessWidget {
                               OnboardingTheme.horizontalGutter,
                               18 + MediaQuery.paddingOf(context).bottom,
                             ),
-                            child: PrimaryActionButton(
+                            child: BlabButton.onboarding(
                               label: context.l10n.continueAction,
                               onPressed: onContinue,
                             ),

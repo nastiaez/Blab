@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/auth/auth_screen.dart';
-import 'package:blab/features/auth/widgets/blab_text_field.dart';
+import 'package:blab/shared/widgets/forms/blab_form_field.dart';
 import 'package:blab/features/auth/widgets/language_picker_sheet.dart';
 import 'package:blab/features/auth/widgets/sso_buttons.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
-import 'package:blab/shared/widgets/picker_card.dart';
+import 'package:blab/shared/widgets/selection/blab_selection_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,8 +41,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final sheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
-    final englishRow = tester.widget<LanguageCard>(
-      find.widgetWithText(LanguageCard, 'English'),
+    final englishRow = tester.widget<BlabSelectionRow>(
+      find.widgetWithText(BlabSelectionRow, 'English'),
     );
     final title = tester.widget<Text>(find.text('Interface language'));
     final helper = tester.widget<Text>(
@@ -67,10 +67,10 @@ void main() {
       _localized(
         Padding(
           padding: const EdgeInsets.all(20),
-          child: BlabTextField(
+          child: BlabFormField.account(
             controller: controller,
             label: 'Email',
-            hint: 'you@example.com',
+            hintText: 'you@example.com',
           ),
         ),
       ),
@@ -93,7 +93,11 @@ void main() {
 
     await tester.pumpWidget(
       _localized(
-        BlabTextField(controller: controller, label: 'Email', enabled: false),
+        BlabFormField.account(
+          controller: controller,
+          label: 'Email',
+          enabled: false,
+        ),
       ),
     );
 

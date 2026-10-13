@@ -1,6 +1,7 @@
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
-import '../onboarding_theme.dart';
+import '../../../app/onboarding_tokens.dart';
 
 Future<String?> showInterfaceLanguageMenu(
   BuildContext context, {
@@ -12,7 +13,7 @@ Future<String?> showInterfaceLanguageMenu(
     ('de', 'Deutsch'),
     ('es', 'Español'),
   ];
-  return showModalBottomSheet<String>(
+  return showBlabModalSheet<String>(
     context: context,
     backgroundColor: OnboardingTheme.warmSurface,
     builder: (sheetContext) => SafeArea(

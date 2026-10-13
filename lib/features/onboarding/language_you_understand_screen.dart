@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
 import '../../shared/data/languages.dart';
-import 'onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import 'state/onboarding_actions.dart';
 import 'widgets/onboarding_scaffold.dart';
 import 'widgets/onboarding_form_top_bar.dart';
-import 'widgets/primary_action_button.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 
 class LanguageYouUnderstandScreen extends ConsumerStatefulWidget {
   const LanguageYouUnderstandScreen({
@@ -188,7 +188,7 @@ class _LanguageYouUnderstandScreenState
                 OnboardingTheme.horizontalGutter,
                 16 + MediaQuery.paddingOf(context).bottom,
               ),
-              child: PrimaryActionButton(
+              child: BlabButton.onboarding(
                 label: context.l10n.startChatting,
                 onPressed: _selected == null ? null : _submit,
                 loading: _busy,

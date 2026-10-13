@@ -1,10 +1,11 @@
+import 'package:blab/shared/widgets/actions/blab_button.dart';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/profile/known_languages_screen.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/profile_service.dart';
 import 'package:blab/shared/state/profile_state.dart';
-import 'package:blab/shared/widgets/picker_card.dart';
+import 'package:blab/shared/widgets/selection/blab_selection_row.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -67,18 +68,27 @@ void main() {
 
     // English starts selected (seeded from the provider).
     final initialEnglishCard = find
-        .ancestor(of: find.text('English'), matching: find.byType(LanguageCard))
+        .ancestor(
+          of: find.text('English'),
+          matching: find.byType(BlabSelectionRow),
+        )
         .first;
-    expect(tester.widget<LanguageCard>(initialEnglishCard).selected, isTrue);
+    expect(
+      tester.widget<BlabSelectionRow>(initialEnglishCard).selected,
+      isTrue,
+    );
 
     // Ukrainian starts unselected.
     final initialUkrainianCard = find
         .ancestor(
           of: find.text('Ukrainian'),
-          matching: find.byType(LanguageCard),
+          matching: find.byType(BlabSelectionRow),
         )
         .first;
-    expect(tester.widget<LanguageCard>(initialUkrainianCard).selected, isFalse);
+    expect(
+      tester.widget<BlabSelectionRow>(initialUkrainianCard).selected,
+      isFalse,
+    );
 
     expect(find.byIcon(Icons.star_rounded), findsNothing);
     expect(find.byIcon(Icons.star_border_rounded), findsNothing);
@@ -91,10 +101,10 @@ void main() {
     final ukrainianCard = find
         .ancestor(
           of: find.text('Ukrainian'),
-          matching: find.byType(LanguageCard),
+          matching: find.byType(BlabSelectionRow),
         )
         .first;
-    expect(tester.widget<LanguageCard>(ukrainianCard).selected, isTrue);
+    expect(tester.widget<BlabSelectionRow>(ukrainianCard).selected, isTrue);
   });
 
   testWidgets('Save is inactive until the understood languages change', (
@@ -121,8 +131,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final save = tester.widget<BrandButton>(
-      find.widgetWithText(BrandButton, 'Save'),
+    final save = tester.widget<BlabButton>(
+      find.widgetWithText(BlabButton, 'Save'),
     );
     expect(save.onPressed, isNull);
   });

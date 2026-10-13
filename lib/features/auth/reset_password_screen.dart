@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_messenger.dart';
-import '../onboarding/onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import '../onboarding/widgets/onboarding_form_top_bar.dart';
-import '../onboarding/widgets/onboarding_password_field.dart';
+import '../../shared/widgets/forms/blab_password_field.dart';
 import '../onboarding/widgets/onboarding_scaffold.dart';
-import '../onboarding/widgets/primary_action_button.dart';
+import '../../shared/widgets/actions/blab_button.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/supabase_auth_service.dart';
 import '../../shared/state/auth_state.dart';
@@ -93,7 +93,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  OnboardingPasswordField(
+                  BlabPasswordField.onboarding(
                     controller: _password,
                     label: context.l10n.newPassword,
                     errorText: _err,
@@ -110,7 +110,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     child: PasswordGuidance(password: _password.text),
                   ),
                   const SizedBox(height: 16),
-                  OnboardingPasswordField(
+                  BlabPasswordField.onboarding(
                     controller: _confirm,
                     label: context.l10n.confirmNewPassword,
                     enabled: !_busy,
@@ -122,7 +122,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
-                  PrimaryActionButton(
+                  BlabButton.onboarding(
                     label: context.l10n.saveNewPassword,
                     onPressed: _save,
                     loading: _busy,

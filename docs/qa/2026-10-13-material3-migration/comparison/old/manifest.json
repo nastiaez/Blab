@@ -1,0 +1,136 @@
+[
+  {
+    "screen": "chats",
+    "labels": [
+      "AL\nAlice Local\n1h",
+      "New chat",
+      "Chats",
+      "Profile"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  },
+  {
+    "screen": "profile",
+    "labels": [
+      "BO",
+      "Bob Local",
+      "LANGUAGES YOU UNDERSTAND (1)",
+      "English",
+      "Add language",
+      "Translation language\nEnglish",
+      "ACCOUNT",
+      "Interface language\nEnglish",
+      "Translation preferences",
+      "Edit profile",
+      "Change email",
+      "Change password",
+      "SETTINGS",
+      "Privacy",
+      "Chats",
+      "Profile"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  },
+  {
+    "screen": "privacy",
+    "labels": [
+      "Privacy",
+      "Typing indicators",
+      "If turned off, you won't see when others are typing, and they won't see when you are.",
+      "Read receipts",
+      "If turned off, you won't see read receipts from others, and they won't see yours.",
+      "Privacy Policy",
+      "Terms of Use"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  },
+  {
+    "screen": "known-languages",
+    "labels": [
+      "Back",
+      "Languages you understand",
+      "Select every language you can read without translation. In Normal mode, messages in these languages stay as written.",
+      "Dutch",
+      "English",
+      "French",
+      "German",
+      "Hindi",
+      "Italian",
+      "Portuguese",
+      "Spanish",
+      "Tamil",
+      "Turkish",
+      "Ukrainian",
+      "Save"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  },
+  {
+    "screen": "edit-profile",
+    "labels": [
+      "Edit profile",
+      "Save",
+      "B",
+      "DISPLAY NAME",
+      "Bob Local"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  },
+  {
+    "screen": "chat-normal",
+    "labels": [
+      "Back",
+      "AL\nAlice Local",
+      "Normal",
+      "Practice",
+      "Chat menu",
+      "Today",
+      "O\n19:19\n·\nRead",
+      "Hello local\n19:20",
+      "O\n19:27\n·\nRead",
+      "19:29",
+      "Attach",
+      "Send"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  },
+  {
+    "screen": "chat-practice",
+    "labels": [
+      "Back",
+      "AL\nAlice Local",
+      "Normal",
+      "Practice",
+      "Chat menu",
+      "Today",
+      "O\n19:19\n·\nRead",
+      "Hello local\n19:20",
+      "O\n19:27\n·\nRead",
+      "19:29",
+      "Attach",
+      "Send"
+    ],
+    "device": "emulator-5558",
+    "viewport": "1080x2400",
+    "locale": "en",
+    "fontScale": "1.0"
+  }
+]

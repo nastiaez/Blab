@@ -1,3 +1,9 @@
+import '../../shared/widgets/settings/blab_icon_label_row.dart';
+import '../../shared/widgets/actions/blab_icon_button.dart';
+import '../../shared/widgets/surfaces/blab_confirmation_dialog.dart';
+import '../../shared/widgets/surfaces/blab_section_divider.dart';
+import '../../shared/widgets/surfaces/blab_dialog.dart';
+import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
+import '../../shared/widgets/surfaces/blab_section_card.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/services/local_account_data_store.dart';
 import '../../shared/services/supabase_auth_service.dart';
@@ -80,12 +87,12 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: BlabIconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
           onPressed: _busy ? null : () => context.pop(),
@@ -118,13 +125,19 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _Card(
+              BlabSectionCard(
                 children: [
-                  _DeleteRow(text: context.l10n.allChatsMessages),
-                  const _RowDivider(),
-                  _DeleteRow(text: context.l10n.yourProfile),
-                  const _RowDivider(),
-                  _DeleteRow(text: context.l10n.yourSettings),
+                  BlabIconLabelRow.accountWarning(
+                    label: context.l10n.allChatsMessages,
+                  ),
+                  BlabSectionDivider(inset: 50, color: BlabColors.chatDivider),
+                  BlabIconLabelRow.accountWarning(
+                    label: context.l10n.yourProfile,
+                  ),
+                  BlabSectionDivider(inset: 50, color: BlabColors.chatDivider),
+                  BlabIconLabelRow.accountWarning(
+                    label: context.l10n.yourSettings,
+                  ),
                 ],
               ),
               const SizedBox(height: 22),
@@ -197,9 +210,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 }
 
 Future<bool?> _confirmDeleteAccount(BuildContext context) {
-  return showDialog<bool>(
+  return showBlabDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (dialogContext) => BlabConfirmationDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
@@ -241,64 +254,4 @@ Future<bool?> _confirmDeleteAccount(BuildContext context) {
       ],
     ),
   );
-}
-
-class _Card extends StatelessWidget {
-  const _Card({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: BlabColors.chatSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: BlabColors.chatDivider),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Column(children: children),
-      ),
-    );
-  }
-}
-
-class _RowDivider extends StatelessWidget {
-  const _RowDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 50),
-      child: Container(height: 1, color: BlabColors.chatDivider),
-    );
-  }
-}
-
-class _DeleteRow extends StatelessWidget {
-  const _DeleteRow({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Icon(Icons.warning_amber_outlined, size: 20, color: BlabColors.error),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: BlabColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

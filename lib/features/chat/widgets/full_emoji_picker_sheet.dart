@@ -1,3 +1,4 @@
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ Future<void> showFullEmojiPickerSheet(
   required void Function(String emoji) onPick,
   required String interfaceLanguageCode,
 }) {
-  return showModalBottomSheet<void>(
+  return showBlabModalSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: BlabColors.chatSurface,

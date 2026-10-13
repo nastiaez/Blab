@@ -1,3 +1,4 @@
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -30,7 +31,7 @@ Future<void> showReactionDetailsSheet(
   }
   final total = reactions.fold<int>(0, (sum, r) => sum + r.count);
 
-  return showModalBottomSheet<void>(
+  return showBlabModalSheet<void>(
     context: context,
     backgroundColor: BlabColors.chatSurface,
     shape: const RoundedRectangleBorder(

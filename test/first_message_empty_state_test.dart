@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:blab/features/chat/widgets/first_message_empty_state.dart';
-import 'package:blab/features/invite/widgets/exchange_card.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/chat.dart';
@@ -95,7 +94,6 @@ void main() {
     'has no flags, no exchange card, no pointer icon, no "connected"',
     (tester) async {
       await pump(tester);
-      expect(find.byType(ExchangeCard), findsNothing);
       expect(find.byIcon(Icons.swap_vert), findsNothing);
       expect(find.text('🇪🇸'), findsNothing);
       expect(find.text('🇳🇱'), findsNothing);

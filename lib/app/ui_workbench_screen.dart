@@ -1,3 +1,16 @@
+import '../shared/widgets/navigation/blab_navigation_bar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/chat/chat_screen.dart';
+import '../features/chat/widgets/chat_mode_toggle.dart';
+import '../features/chat/widgets/message_text.dart';
+import '../features/chat/widgets/message_bubble_surface.dart';
+import '../features/chats/widgets/chat_list_tile.dart';
+import '../features/profile/widgets/profile_identity.dart';
+import '../shared/widgets/settings/blab_settings_row.dart';
+import '../shared/widgets/surfaces/blab_section_card.dart';
+import '../shared/data/languages.dart';
+import '../shared/models/chat.dart';
+import '../shared/models/message.dart';
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
@@ -5,7 +18,7 @@ import '../shared/widgets/blab_icon.dart';
 
 /// Debug-only visual audit board for the current Blab direction.
 ///
-/// This screen deliberately uses review fixtures instead of production state.
+/// This screen uses production components with isolated review fixtures instead of hosted state.
 /// It is an additive reference surface: changing a status here never changes
 /// a production widget or persisted preference.
 class UiWorkbenchScreen extends StatefulWidget {
@@ -31,7 +44,10 @@ class _UiWorkbenchScreenState extends State<UiWorkbenchScreen> {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ProviderScope(child: _buildWorkbench(context));
+
+  Widget _buildWorkbench(BuildContext context) {
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
       appBar: AppBar(
@@ -292,14 +308,14 @@ class _ChatsPreview extends StatelessWidget {
       child: Column(
         children: [
           const _PreviewHeader(title: 'Chats', trailing: '＋'),
-          const _ChatTilePreview(
+          const _ChatTileFixture(
             initials: 'AS',
             name: 'Aswin',
             message: 'I can help you with Tamil.',
             time: '10:42',
             unread: 2,
           ),
-          const _ChatTilePreview(
+          const _ChatTileFixture(
             initials: 'BO',
             name: 'Bob Local',
             message: 'New connection · Say hi',
@@ -330,6 +346,7 @@ class _ChatsPreview extends StatelessWidget {
               ],
             ),
           ),
+          BlabNavigationBar(selectedIndex: 0, onDestinationSelected: (_) {}),
         ],
       ),
     );
@@ -347,7 +364,7 @@ class _ProfilePreview extends StatelessWidget {
         children: [
           const _PreviewHeader(title: 'Profile'),
           const SizedBox(height: 14),
-          const _ProfileHeroPreview(),
+          const ProfileIdentity(name: 'Bob Local'),
           const SizedBox(height: 14),
           _SettingsPreviewCard(
             title: 'Account',
@@ -373,6 +390,7 @@ class _ProfilePreview extends StatelessWidget {
             rows: const [('log-out - 20', 'Log out', '›')],
             destructiveRows: const {'Delete account'},
           ),
+          BlabNavigationBar(selectedIndex: 1, onDestinationSelected: (_) {}),
         ],
       ),
     );
@@ -391,7 +409,7 @@ class _ChatPreview extends StatelessWidget {
       label: 'Flow 3 · person-to-person chat',
       child: Column(
         children: [
-          _ChatHeaderPreview(
+          _HeaderFixture(
             practice: practice,
             onPracticeChanged: onPracticeChanged,
           ),
@@ -400,14 +418,20 @@ class _ChatPreview extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
             child: Column(
               children: [
-                const _DateSeparatorPreview(label: 'Yesterday'),
-                const _LearningBoundaryPreview(label: 'Now learning Spanish'),
-                const _MessageBubblePreview(
+                ChatDateDivider(
+                  when: DateTime.now().subtract(const Duration(days: 1)),
+                ),
+                const ChatLanguageMarker(
+                  languageCode: 'es',
+                  topPadding: 10,
+                  bottomPadding: 10,
+                ),
+                const _MessageFixture(
                   text: '¿Vienes hoy en autobús?',
                   outgoing: false,
                 ),
                 const SizedBox(height: 10),
-                _MessageBubblePreview(
+                _MessageFixture(
                   text: practice
                       ? 'Sí, voy en autobús.'
                       : 'Yes, I’m going by bus.',
@@ -415,23 +439,23 @@ class _ChatPreview extends StatelessWidget {
                   practice: practice,
                 ),
                 const SizedBox(height: 10),
-                const _DateSeparatorPreview(label: 'Today'),
-                const _MessageBubblePreview(
+                ChatDateDivider(when: DateTime.now()),
+                const _MessageFixture(
                   text: '¡Perfecto, hasta luego!',
                   outgoing: false,
                 ),
                 const SizedBox(height: 10),
-                _MessageBubblePreview(
+                _MessageFixture(
                   text: practice ? 'Hasta luego 👋' : 'See you later 👋',
                   outgoing: true,
                   practice: practice,
                 ),
                 const SizedBox(height: 16),
-                const _ChatMenuPreview(),
+                const _ChatMenuFixture(),
               ],
             ),
           ),
-          _ComposerPreview(practice: practice),
+          _ComposerFixture(practice: practice),
         ],
       ),
     );
@@ -522,8 +546,8 @@ class _PreviewHeader extends StatelessWidget {
   }
 }
 
-class _ChatTilePreview extends StatelessWidget {
-  const _ChatTilePreview({
+class _ChatTileFixture extends StatelessWidget {
+  const _ChatTileFixture({
     required this.initials,
     required this.name,
     required this.message,
@@ -531,137 +555,28 @@ class _ChatTilePreview extends StatelessWidget {
     this.unread = 0,
     this.invite = false,
   });
-
-  final String initials;
-  final String name;
-  final String message;
-  final String time;
+  final String initials, name, message, time;
   final int unread;
   final bool invite;
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF1ECE7))),
-      ),
-      child: Row(
-        children: [
-          _AvatarPreview(initials: initials),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: BlabColors.bubbleInk,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      time,
-                      style: const TextStyle(
-                        color: BlabColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        message,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: invite
-                              ? BlabColors.bubbleOutgoingPractice
-                              : BlabColors.textMuted,
-                          fontSize: 13,
-                          fontWeight: invite
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                    if (unread > 0) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 22,
-                        height: 22,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: BlabColors.bubbleOutgoingPractice,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$unread',
-                          style: const TextStyle(
-                            color: BlabColors.bubbleInk,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileHeroPreview extends StatelessWidget {
-  const _ProfileHeroPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const _AvatarPreview(initials: 'NE', size: 72),
-        const SizedBox(height: 8),
-        const Text(
-          'Nastia',
-          style: TextStyle(
-            color: BlabColors.bubbleInk,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3E3D9),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Text(
-            'Learning Spanish',
-            style: TextStyle(
-              color: BlabColors.bubbleInk,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => ChatListTile(
+    chat: Chat(
+      id: 'workbench-$name',
+      partnerName: name,
+      partnerInitial: initials,
+      learningLanguage: kBlabLanguages.firstWhere((l) => l.code == 'es'),
+      mode: ChatMode.practice,
+      partnerNativeLanguage: kBlabLanguages.firstWhere((l) => l.code == 'en'),
+      partnerLearningLanguage: kBlabLanguages.firstWhere((l) => l.code == 'es'),
+      lastMessage: message,
+      lastMessageTranslation: message,
+      timestamp: DateTime.now(),
+      unreadCount: unread,
+      lastMessageId: invite ? null : 'fixture',
+      isNewInvite: true,
+    ),
+    onTap: () {},
+  );
 }
 
 class _SettingsPreviewCard extends StatelessWidget {
@@ -670,308 +585,108 @@ class _SettingsPreviewCard extends StatelessWidget {
     required this.rows,
     this.destructiveRows = const <String>{},
   });
-
   final String title;
   final List<(String, String, String)> rows;
   final Set<String> destructiveRows;
-
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: BlabColors.textMuted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: .4,
-            ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: BlabColors.textMuted,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: .4,
           ),
-          const SizedBox(height: 5),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: BlabColors.chatSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: BlabColors.chatDivider),
-            ),
-            child: Column(
-              children: [
-                for (var i = 0; i < rows.length; i++) ...[
-                  _SettingsRowPreview(
-                    iconName: rows[i].$1,
-                    label: rows[i].$2,
-                    value: rows[i].$3,
-                    destructive: destructiveRows.contains(rows[i].$2),
-                  ),
-                  if (i < rows.length - 1)
-                    const Divider(
-                      height: 1,
-                      indent: 48,
-                      color: BlabColors.chatDivider,
-                    ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SettingsRowPreview extends StatelessWidget {
-  const _SettingsRowPreview({
-    required this.iconName,
-    required this.label,
-    required this.value,
-    this.destructive = false,
-  });
-
-  final String iconName;
-  final String label;
-  final String value;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = destructive ? BlabColors.error : BlabColors.bubbleInk;
-    return SizedBox(
-      height: 48,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
+        ),
+        const SizedBox(height: 5),
+        BlabSectionCard(
           children: [
-            BlabIcon(name: iconName, color: color, size: 19),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label, style: TextStyle(color: color, fontSize: 13)),
-            ),
-            Text(
-              value,
-              style: const TextStyle(color: BlabColors.textMuted, fontSize: 12),
-            ),
+            for (var i = 0; i < rows.length; i++) ...[
+              BlabSettingsRow(
+                iconName: rows[i].$1,
+                label: rows[i].$2,
+                trailingLabel: rows[i].$3.isEmpty ? null : rows[i].$3,
+                destructive: destructiveRows.contains(rows[i].$2),
+                onTap: () {},
+              ),
+              if (i < rows.length - 1)
+                const Divider(
+                  height: 1,
+                  indent: 48,
+                  color: BlabColors.chatDivider,
+                ),
+            ],
           ],
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }
 
-class _ChatHeaderPreview extends StatelessWidget {
-  const _ChatHeaderPreview({
+class _HeaderFixture extends StatelessWidget {
+  const _HeaderFixture({
     required this.practice,
     required this.onPracticeChanged,
   });
-
   final bool practice;
   final ValueChanged<bool> onPracticeChanged;
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-      decoration: const BoxDecoration(
-        color: BlabColors.chatSurface,
-        border: Border(bottom: BorderSide(color: BlabColors.chatDivider)),
+  Widget build(BuildContext context) => ChatHeaderFrame(
+    onBack: () {},
+    identity: ChatHeaderIdentity(name: 'Bob Local', onTap: () {}),
+    modeControl: BlabChatModeToggle.segmented(
+      practice: practice,
+      onChanged: onPracticeChanged,
+    ),
+    menuButton: MenuAnchor(
+      menuChildren: buildChatMenuEntries(
+        context,
+        learningLanguage: kBlabLanguages.firstWhere((l) => l.code == 'es'),
+        onLearningLanguageTap: () {},
+        onTranslationPreferencesTap: () {},
       ),
-      child: Row(
-        children: [
-          const BlabIcon(
-            name: 'nav-arrow-left - 20',
-            color: BlabColors.bubbleInk,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
-          const _AvatarPreview(initials: 'BO', size: 36),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Bob Local',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: BlabColors.sendButton,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          _ModeTogglePreview(practice: practice, onChanged: onPracticeChanged),
-          const SizedBox(width: 8),
-          const BlabIcon(
-            name: 'more-vert - 20',
-            color: BlabColors.bubbleInk,
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeTogglePreview extends StatelessWidget {
-  const _ModeTogglePreview({required this.practice, required this.onChanged});
-
-  final bool practice;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final width = practice ? 135.0 : 129.0;
-    return GestureDetector(
-      onTap: () => onChanged(!practice),
-      child: Container(
-        width: width,
-        height: 34,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          border: Border.all(color: BlabColors.chatDivider),
-          borderRadius: BorderRadius.circular(18),
+      builder: (context, controller, child) => IconButton(
+        icon: const BlabIcon(
+          name: 'more-vert - 20',
+          size: 20,
+          color: BlabColors.textPrimary,
         ),
-        child: Row(
-          children: [
-            _ModeSegmentPreview(
-              iconName: 'chat-bubble-empty - 16',
-              label: 'Normal',
-              selected: !practice,
-              width: !practice ? 83 : 36,
-            ),
-            const SizedBox(width: 2),
-            _ModeSegmentPreview(
-              iconName: 'flash - 16',
-              label: 'Practice',
-              selected: practice,
-              width: practice ? 89 : 36,
-            ),
-          ],
-        ),
+        onPressed: () =>
+            controller.isOpen ? controller.close() : controller.open(),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _ModeSegmentPreview extends StatelessWidget {
-  const _ModeSegmentPreview({
-    required this.iconName,
-    required this.label,
-    required this.selected,
-    required this.width,
-  });
-
-  final String iconName;
-  final String label;
-  final bool selected;
-  final double width;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: 28,
-      padding: selected ? const EdgeInsets.symmetric(horizontal: 8) : null,
-      decoration: BoxDecoration(
-        color: selected
-            ? (iconName == 'flash - 16'
-                  ? BlabColors.bubbleOutgoingPractice
-                  : const Color(0xFFCDC0B6))
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: selected && iconName == 'flash - 16'
-            ? const [
-                BoxShadow(
-                  color: Color(0x1A231208),
-                  offset: Offset(0, 2),
-                  blurRadius: 6,
-                  spreadRadius: -2,
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          BlabIcon(
-            name: iconName,
-            color: selected ? BlabColors.bubbleInk : const Color(0xFF8C735F),
-            size: 16,
-          ),
-          if (selected) ...[
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: BlabColors.bubbleInk,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MessageBubblePreview extends StatelessWidget {
-  const _MessageBubblePreview({
+class _MessageFixture extends StatelessWidget {
+  const _MessageFixture({
     required this.text,
     required this.outgoing,
     this.practice = false,
   });
-
   final String text;
-  final bool outgoing;
-  final bool practice;
-
+  final bool outgoing, practice;
   @override
-  Widget build(BuildContext context) {
-    final fill = outgoing
-        ? practice
-              ? BlabColors.bubbleOutgoingPractice
-              : BlabColors.bubbleOutgoingNormal
-        : BlabColors.bubbleIncomingSurface;
-    final outline = outgoing
-        ? practice
-              ? BlabColors.bubbleOutgoingPracticeOutline
-              : BlabColors.bubbleOutgoingNormalOutline
-        : BlabColors.bubbleIncomingOutline;
-    return Align(
-      alignment: outgoing ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 280),
-        padding: const EdgeInsets.fromLTRB(14, 11, 12, 8),
-        decoration: BoxDecoration(
-          color: fill,
-          border: Border.all(color: outline),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(outgoing ? 18 : 4),
-            bottomRight: Radius.circular(outgoing ? 4 : 18),
-          ),
-          boxShadow: outgoing && practice
-              ? const [
-                  BoxShadow(
-                    color: Color(0x1A231208),
-                    offset: Offset(0, 2),
-                    blurRadius: 6,
-                    spreadRadius: -2,
-                  ),
-                ]
-              : null,
-        ),
+  Widget build(BuildContext context) => Align(
+    alignment: outgoing ? Alignment.centerRight : Alignment.centerLeft,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 260),
+      child: MessageBubbleSurface(
+        outgoing: outgoing,
+        practice: practice,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              text,
+            MessageText(
+              text: text,
+              tokens: const [],
+              languageCode: 'es',
               style: TextStyle(
                 color: outgoing ? BlabColors.bubbleInk : BlabColors.textPrimary,
                 fontSize: 15,
@@ -981,258 +696,75 @@ class _MessageBubblePreview extends StatelessWidget {
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '10:42',
-                    style: TextStyle(
-                      color: outgoing
-                          ? BlabColors.bubbleInk.withValues(alpha: .65)
-                          : BlabColors.textMuted,
-                      fontSize: 10,
-                    ),
-                  ),
-                  if (outgoing) ...[
-                    const SizedBox(width: 5),
-                    const BlabIcon(
-                      name: 'double-check - 16',
-                      color: BlabColors.bubbleInk,
-                      size: 14,
-                    ),
-                  ],
-                ],
+              child: MessageMeta(
+                chatId: 'workbench',
+                message: Message(
+                  id: 'fixture',
+                  chatId: 'workbench',
+                  isOutgoing: outgoing,
+                  originalText: text,
+                  translation: '',
+                  sentAt: DateTime(2026, 10, 13, 10, 42),
+                  status: MessageStatus.read,
+                ),
+                isOutgoing: outgoing,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
-class _DateSeparatorPreview extends StatelessWidget {
-  const _DateSeparatorPreview({required this.label});
-
-  final String label;
-
+class _ChatMenuFixture extends StatelessWidget {
+  const _ChatMenuFixture();
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: BlabColors.textMuted,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
+  Widget build(BuildContext context) => BlabSectionCard(
+    children: [
+      const Padding(padding: EdgeInsets.all(12), child: Text('··· Chat menu')),
+      ...buildChatMenuEntries(
+        context,
+        learningLanguage: kBlabLanguages.firstWhere((l) => l.code == 'es'),
+        onLearningLanguageTap: () {},
+        onTranslationPreferencesTap: () {},
       ),
-    );
-  }
+    ],
+  );
 }
 
-class _LearningBoundaryPreview extends StatelessWidget {
-  const _LearningBoundaryPreview({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFF917869),
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-class _ChatMenuPreview extends StatelessWidget {
-  const _ChatMenuPreview();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 6),
-      decoration: BoxDecoration(
-        color: BlabColors.chatSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: BlabColors.chatDivider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '··· Chat menu',
-            style: TextStyle(
-              color: BlabColors.bubbleInk,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _MenuRowPreview(
-            iconName: 'translate - 20',
-            label: 'Show translations',
-            trailing: const _SwitchPreview(value: true),
-          ),
-          _MenuRowPreview(
-            iconName: 'wrench - 20',
-            label: 'Translation preferences',
-            trailing: const BlabIcon(
-              name: 'nav-arrow-right - 20',
-              color: BlabColors.textMuted,
-              size: 20,
-            ),
-          ),
-          _MenuRowPreview(
-            iconName: 'language - 20',
-            label: 'Learning Spanish',
-            trailing: const BlabIcon(
-              name: 'nav-arrow-right - 20',
-              color: BlabColors.textMuted,
-              size: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuRowPreview extends StatelessWidget {
-  const _MenuRowPreview({
-    required this.iconName,
-    required this.label,
-    required this.trailing,
-  });
-
-  final String iconName;
-  final String label;
-  final Widget trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 42,
-      child: Row(
-        children: [
-          BlabIcon(name: iconName, color: BlabColors.bubbleInk, size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: BlabColors.bubbleInk, fontSize: 13),
-            ),
-          ),
-          trailing,
-        ],
-      ),
-    );
-  }
-}
-
-class _SwitchPreview extends StatelessWidget {
-  const _SwitchPreview({required this.value});
-
-  final bool value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 20,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: value
-            ? BlabColors.bubbleOutgoingPractice
-            : BlabColors.chatDivider,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        width: 16,
-        height: 16,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
-}
-
-class _ComposerPreview extends StatelessWidget {
-  const _ComposerPreview({required this.practice});
-
+class _ComposerFixture extends StatefulWidget {
+  const _ComposerFixture({required this.practice});
   final bool practice;
+  @override
+  State<_ComposerFixture> createState() => _ComposerFixtureState();
+}
+
+class _ComposerFixtureState extends State<_ComposerFixture> {
+  final _controller = TextEditingController();
+  final _focus = FocusNode();
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: const BoxDecoration(
-        color: BlabColors.chatSurface,
-        border: Border(top: BorderSide(color: BlabColors.chatDivider)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
-                color: BlabColors.chatSurface,
-                border: Border.all(color: BlabColors.chatDivider),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Text(
-                practice ? 'Type in Spanish or English' : 'Message',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: BlabColors.textMuted,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: BlabColors.sendButton,
-              shape: BoxShape.circle,
-              boxShadow: practice
-                  ? const [
-                      BoxShadow(
-                        color: Color(0x2E231208),
-                        offset: Offset(0, 3),
-                        blurRadius: 8,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: const BlabIcon(
-              name: 'arrow-up - 20',
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ChatComposer(
+    controller: _controller,
+    focusNode: _focus,
+    hasText: _controller.text.isNotEmpty,
+    hintText: widget.practice ? 'Type in Spanish or English' : 'Message',
+    textLength: _controller.text.length,
+    maxLength: 1000,
+    counterShowAt: 900,
+    isPractice: widget.practice,
+    enabled: true,
+    showTopBorder: true,
+    onAttach: () {},
+    onSend: () {},
+  );
 }
 
 class _StatePreviewStrip extends StatelessWidget {
@@ -1909,41 +1441,6 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
-class _AvatarPreview extends StatelessWidget {
-  const _AvatarPreview({required this.initials, this.size = 48});
-
-  final String initials;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: BlabColors.sendButton,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x2B231208),
-            offset: Offset(0, 2),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: size * .30,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
 class _MiniIconCircle extends StatelessWidget {
   const _MiniIconCircle({required this.icon, required this.color});
 
@@ -2105,7 +1602,8 @@ const _inventory = <_InventoryItem>[
   _InventoryItem(
     id: 'profile-settings-row',
     title: 'Profile/settings rows',
-    source: 'lib/features/profile/profile_screen.dart · _SettingsRow',
+    source:
+        'lib/shared/widgets/settings/blab_settings_row.dart · BlabSettingsRow',
     context: 'Flow 2 · Profile',
     parameters:
         '20 px icon · label · optional value or chevron · dividers · destructive treatment',
@@ -2285,7 +1783,7 @@ const _comparisons = <_ComparisonItem>[
     id: 'compare-primary-action',
     title: 'Primary commit action',
     leftTitle: 'Brand CTA',
-    leftSource: 'BrandButton · auth/invite/profile',
+    leftSource: 'BlabButton · auth/invite/profile',
     leftBody: 'Full-width labeled action using the broader brand token.',
     rightTitle: 'Send button',
     rightSource: 'ChatComposerInput',

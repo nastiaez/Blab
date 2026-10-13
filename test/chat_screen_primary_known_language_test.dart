@@ -1,3 +1,7 @@
+import 'package:blab/app/router.dart';
+import 'package:blab/features/chats/chats_screen.dart';
+import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
+import 'package:blab/features/onboarding/state/onboarding_destination.dart';
 // Final whole-branch review, finding #1 (CRITICAL): the migration computes
 // the server's `interfaceLang` slot as the reader's *primary known
 // language* (falling back to `profiles.interface_language` only when unset)
@@ -425,6 +429,9 @@ ProviderContainer _containerForHeader(
   return ProviderContainer(
     overrides: [
       chatServiceProvider.overrideWithValue(service),
+      onboardingDestinationProvider.overrideWith(
+        (_) async => OnboardingDestination.chats,
+      ),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue('alice'),
       isOnlineProvider.overrideWithValue(isOnline),
@@ -460,6 +467,58 @@ ProviderContainer _containerForHeader(
 }
 
 void main() {
+  testWidgets(
+    'direct chat entry has a Material Chats parent; Back closes menu before popping',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          messageText: 'Hello',
+          learningLanguageCode: 'en',
+        ),
+        knownLanguages: ['en'],
+        primaryKnownLanguage: 'en',
+      );
+      final router = GoRouter(
+        routes: blabRouter.configuration.routes,
+        initialLocation: '/chat/chat-1',
+      );
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            theme: blabTheme,
+            routerConfig: router,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+          ),
+        ),
+      );
+      await _settle(tester);
+      expect(find.byType(ChatScreen), findsOneWidget);
+      expect(router.canPop(), isTrue);
+      await tester.tap(
+        find.byWidgetPredicate(
+          (w) => w is BlabIcon && w.name == 'more-vert - 20',
+        ),
+      );
+      await _settle(tester);
+      expect(find.byType(MenuItemButton), findsNWidgets(2));
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+      expect(find.byType(MenuItemButton), findsNothing);
+      expect(find.byType(ChatScreen), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+      expect(find.byType(ChatScreen), findsNothing);
+      expect(find.byType(ChatsScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      router.dispose();
+      container.dispose();
+      await tester.pump();
+    },
+  );
+
   testWidgets('active older translation cannot hide ready later text', (
     tester,
   ) async {
@@ -1035,23 +1094,12 @@ void main() {
     );
     await tester.pump();
 
-    final matchingSurfaces = tester
-        .widgetList<Container>(find.byType(Container))
-        .map((container) => container.decoration)
-        .whereType<BoxDecoration>()
-        .where(
-          (decoration) =>
-              decoration.color == const Color(0xFFFFFCF8) &&
-              decoration.border?.top.color == const Color(0xFFE1DAD2) &&
-              decoration.borderRadius == BorderRadius.circular(14) &&
-              decoration.boxShadow?.single ==
-                  const BoxShadow(
-                    color: Color(0x1A231208),
-                    offset: Offset(0, 2),
-                    blurRadius: 12,
-                  ),
-        );
-    expect(matchingSurfaces, hasLength(1));
+    expect(find.byType(MenuItemButton), findsNWidgets(2));
+    final menu = tester.widget<MenuAnchor>(find.byType(MenuAnchor));
+    expect(menu.style!.backgroundColor!.resolve({}), BlabColors.chatSurface);
+    final shape = menu.style!.shape!.resolve({})! as RoundedRectangleBorder;
+    expect(shape.borderRadius, BorderRadius.circular(14));
+    expect(shape.side.color, BlabColors.chatDivider);
 
     final learningLabel = tester.widget<Text>(find.text('Learning language'));
     expect(learningLabel.style?.fontSize, 15);

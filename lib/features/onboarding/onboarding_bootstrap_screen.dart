@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
-import 'onboarding_theme.dart';
+import '../../app/onboarding_tokens.dart';
 import 'state/onboarding_destination.dart';
 import 'state/onboarding_destination_state.dart';
 import 'widgets/blab_wordmark_animation.dart';

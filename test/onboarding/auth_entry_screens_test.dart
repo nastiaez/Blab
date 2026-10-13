@@ -3,7 +3,7 @@ import 'package:blab/features/auth/auth_screen.dart';
 import 'package:blab/features/auth/forgot_password_screen.dart';
 import 'package:blab/features/onboarding/auth/email_auth_screen.dart';
 import 'package:blab/features/onboarding/auth/auth_method_screen.dart';
-import 'package:blab/features/onboarding/onboarding_theme.dart';
+import 'package:blab/app/onboarding_tokens.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

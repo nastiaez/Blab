@@ -906,7 +906,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 
 ## Design Principles
 
-- iOS-native feel: rounded corners, bottom sheets, nav-bar Save, system fonts
+- Current Blab visual language: rounded corners, bottom sheets, nav-bar Save, system fonts. Owner clarification (2026-10-13): reusable Flutter Material 3 controls with genuine Android-standard navigation/Back, preserving existing visuals/icons; screenshot/journey approval is required before migration integration.
 - Purple brand (`#5B4FE8`) as primary action color
 - Translations visible by default, toggleable per chat
 - Partner's language always shown first; English always second

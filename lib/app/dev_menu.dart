@@ -13,21 +13,9 @@ class DevMenu extends ConsumerWidget {
     (label: 'Sign up / Log in', path: '/auth', us: 'US-001…US-005'),
     (label: 'Your chats', path: '/chats', us: 'US-006…US-012'),
     (label: 'Chat list — empty state', path: '/chats/empty', us: 'US-006'),
-    (
-      label: 'Invite landing — valid',
-      path: '/invite?from=Nastia&learning=ta',
-      us: 'US-024',
-    ),
-    (
-      label: 'Invite landing — expired',
-      path: '/invite?status=expired&from=Nastia',
-      us: 'US-037',
-    ),
-    (
-      label: 'Invite landing — used',
-      path: '/invite?status=used&from=Nastia',
-      us: 'US-037',
-    ),
+    (label: 'Invite a friend', path: '/chats/new', us: 'US-024'),
+    (label: 'Invite — not found', path: '/dev/invite/not-found', us: 'US-037'),
+    (label: 'Invite — already used', path: '/dev/invite/used', us: 'US-037'),
     (label: 'Profile', path: '/profile', us: 'US-010…US-012, US-034, US-035'),
     (
       label: 'UI workbench',

@@ -180,6 +180,7 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
         if (!mounted || !isCurrent()) return;
         _finished = true;
         if (metadata.status == 'used' && metadata.resultingChatId != null) {
+          ref.invalidate(onboardingDestinationProvider);
           context.go('/chat/${metadata.resultingChatId}');
         } else {
           context.go('/chats/new?token=${Uri.encodeComponent(token)}');
@@ -234,6 +235,9 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
         return;
       }
       _finished = true;
+      // The route guard must re-resolve after retiring the pending invite.
+      // Otherwise its cached pendingInvite result keeps the chat behind setup.
+      ref.invalidate(onboardingDestinationProvider);
       context.go('/chat/$chatId');
     } catch (error) {
       if (!mounted || !isCurrent()) return;
@@ -476,4 +480,23 @@ class _InviteState extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Debug review adapter for the same production invite-state components.
+/// This fixture performs no token lookup or claim.
+class InviteReviewFixture extends StatelessWidget {
+  const InviteReviewFixture({super.key, required this.state});
+  final String state;
+  @override
+  Widget build(BuildContext context) => switch (state) {
+    'used' => _InviteState(
+      title: context.l10n.inviteAlreadyClaimed,
+      body: context.l10n.askFriendForNewLink,
+    ),
+    'loading' => const _OpeningInvite(showLoading: true),
+    _ => _InviteState(
+      title: context.l10n.inviteNotFound,
+      body: context.l10n.checkInviteLink,
+    ),
+  };
 }

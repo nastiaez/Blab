@@ -1,9 +1,10 @@
+import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/data/languages.dart';
-import '../../../shared/widgets/picker_card.dart';
+import '../../../shared/widgets/selection/blab_selection_row.dart';
 
 /// Interface-language bottom sheet. PRD US-005, FR-3.
 ///
@@ -19,7 +20,7 @@ Future<BlabLanguage?> showLanguagePickerSheet(
     ...kInterfaceLanguages.where((l) => l.code != current.code),
   ];
 
-  return showModalBottomSheet<BlabLanguage>(
+  return showBlabModalSheet<BlabLanguage>(
     context: context,
     backgroundColor: BlabColors.chatSurface,
     barrierColor: const Color(0x4D231208),
@@ -69,7 +70,7 @@ class _SheetBody extends StatelessWidget {
                 itemBuilder: (ctx, i) {
                   final lang = ordered[i];
                   final selected = lang.code == current.code;
-                  return LanguageCard(
+                  return BlabSelectionRow(
                     label: localizedInterfaceLanguageName(
                       localizations,
                       lang.code,

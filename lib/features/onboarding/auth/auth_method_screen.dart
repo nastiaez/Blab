@@ -4,11 +4,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/services/supabase_auth_service.dart';
 import '../../auth/auth_screen.dart';
-import '../onboarding_theme.dart';
+import '../../../app/onboarding_tokens.dart';
 import '../widgets/onboarding_scaffold.dart';
 import '../widgets/onboarding_top_bar.dart';
 import '../widgets/interface_language_menu.dart';
-import '../widgets/auth_method_button.dart';
+import '../../../shared/widgets/actions/blab_auth_method_button.dart';
 
 class AuthMethodScreen extends StatefulWidget {
   const AuthMethodScreen({
@@ -72,7 +72,7 @@ class _AuthMethodScreenState extends State<AuthMethodScreen> {
         style: OnboardingTheme.headline,
       ),
       const SizedBox(height: 52),
-      AuthMethodButton(
+      BlabAuthMethodButton.onboarding(
         label: context.l10n.continueWithGoogle,
         leading: SvgPicture.asset(
           'assets/onboarding/google.svg',
@@ -85,7 +85,7 @@ class _AuthMethodScreenState extends State<AuthMethodScreen> {
         onPressed: _busy ? null : _google,
       ),
       const SizedBox(height: 12),
-      AuthMethodButton(
+      BlabAuthMethodButton.onboarding(
         label: context.l10n.continueWithEmail,
         leading: SvgPicture.asset(
           'assets/onboarding/email.svg',

@@ -1,9 +1,11 @@
+import '../../../shared/widgets/actions/blab_icon_button.dart';
+import '../../../shared/widgets/navigation/blab_app_bar.dart';
+import '../../../shared/widgets/actions/blab_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../l10n/l10n.dart';
-import '../../../shared/widgets/picker_card.dart';
 
 /// Shared full-screen structure for account language editors.
 class LanguageSettingsScaffold extends StatelessWidget {
@@ -26,12 +28,12 @@ class LanguageSettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: BlabColors.appBackground,
-      appBar: AppBar(
+      appBar: BlabAppBar(
         backgroundColor: BlabColors.appBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        leading: IconButton(
+        leading: BlabIconButton(
           tooltip: context.l10n.back,
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           color: BlabColors.textPrimary,
@@ -73,7 +75,7 @@ class LanguageSettingsScaffold extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-              child: BrandButton(
+              child: BlabButton.account(
                 label: context.l10n.save,
                 onPressed: onSave,
                 loading: saving,
