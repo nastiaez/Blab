@@ -1,8 +1,8 @@
 # Material 3 migration — implementation and evidence ledger
 
-Status: implementation/test review in progress; NOT owner-accepted, merged or released.
+Status: reviewed visuals/journeys owner-approved, merged and distributed as signed v14; physical-phone acceptance remains separate.
 Baseline: acecd59061323e962a967639f960ae730a2488b8, branch feat/material3-migration.
-Main and tester v13 remain unchanged. Source spec is on docs/material3-migration-spec.
+Application source e626fda is integrated into main and delivered in tester v14. Earlier entries below are chronological pre-approval evidence; final delivery supersedes their pending status.
 
 ## Implemented sections
 - Semantic/component themes, shared Material bottom navigation/app bars/buttons/icon buttons/fields/password fields/auth-method actions.
@@ -31,7 +31,7 @@ Owned functions exec session65714; fake non-billable provider env supabase/.env.
 Debug google-services.json is ignored/local; synthetic CI script refuses this file. Back up/restore around non-distributable compile; never distribute synthetic artifact.
 Logs under /tmp/blab-material3-*. Raw local backend logs/status can include generated credentials: report only filtered summaries.
 
-## Remaining acceptance gates
+## Pre-approval acceptance gates (historical; see final delivery)
 - Final full checks and Android package compile.
 - Latest candidate screenshots/recordings and same-viewport baseline comparisons.
 - Complete affected journey matrix on Android, including predictive gesture completion/cancellation, keyboard/reply precedence, auth/selection persistence/media/native shares.
@@ -68,3 +68,14 @@ Logs under /tmp/blab-material3-*. Raw local backend logs/status can include gene
 - Final Profile capture was repeated and inspected. Chip-region mean absolute RGB difference is below 0.001/255 per channel (minor border rasterization only); both capsule crops remain identical for the reviewed default states.
 - After this last source change: **833 Flutter tests passed, 15 environment-dependent skips**, analysis and formatting clean. Debug Android APK rebuilt and installed for the final capture.
 - Earlier remote pinned-SDK Quality gate passed; final exact-head CI must include this correction. No main merge or release authorized/claimed.
+
+## Approved integration and private delivery — 13 October 2026
+
+- Ash explicitly approved the displayed screenshots/journeys and merge (topic message 12421). Reviewed application source `e626fdaf016dc50aa051643f721afbbfaef01b92` was fast-forwarded into main and pushed; local/remote main were verified identical and clean.
+- Both final-revision and integrated-main CI passed all three jobs: Quality, disposable Supabase integration and non-distributable Android compile. Main evidence: https://github.com/nastiaez/Blab/actions/runs/38456762247 . Pinned Quality: 832 passed / 16 skipped (visual-capture case skips on CI); local: 833 / 15. Disposable readiness 1 + integration 11 passed; three live-provider cases deliberately skipped. Backend unit 136 passed locally.
+- Signed **1.0.0 (14)** APK built from integrated main with the same hosted backend, Google/Firebase configuration, onboarding rollout and signing identity as v13. An obsolete local template Sentry setting was caught before upload; final artifact uses the exact original hosted setting recovered from the signed predecessor. No application source/config-validation guard was weakened.
+- Certificate SHA-256: `1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb`.
+- APK/download-back SHA-256: `4a6863677c5c1706acff646fb6dd276d9433003520b3b70211b10173ed59e005`.
+- Existing Firebase project/app reused: `blab-nastia-ez`, `1:363935775546:android:c3a351249463d5f9356e03`. Release `77gcillcfljpo` distributed to the existing two approved testers; observed Invited 2 / Accepted 2 / Downloaded 0. No new tester, cloud project or automated testing agent was added.
+- Dedicated emulator-5560: reconstructed baseline by installing archived signed v13 and selecting German through normal Welcome UI, then replacement-installed exact v14 without uninstall/data-clear. German persisted after cold launch; Welcome → Learn navigation inspected. This is a locale-retention signed emulator proof, **not authenticated history/account retention or physical-phone acceptance**.
+- Private manifest, exact APK, download-back and before/after screenshots retained outside Git under the project's release/material3-migration-20261013 evidence directory. Physical App Tester installation and phone-only notification/identity checks remain separate acceptance states.

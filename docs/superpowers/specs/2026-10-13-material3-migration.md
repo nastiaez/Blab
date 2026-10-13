@@ -1,6 +1,6 @@
 # Blab: Material 3 component migration specification
 
-**Status:** Implementation authorized by the owner on 13 October 2026. Feature worktree review in progress; no screenshot/journey acceptance, merge or tester release yet.
+**Status:** Implementation authorized by the owner on 13 October 2026. Reviewed visuals/journeys subsequently approved; application source e626fda integrated into main and distributed as signed tester v14. The checklists below are the original contract; current disposition/evidence is in docs/qa/2026-10-13-material3-migration. Physical-phone acceptance remains separate.
 
 **Date:** 13 October 2026. **Audited baseline:** `acecd59061323e962a967639f960ae730a2488b8` on local and remote `main`. Tester v13 was built from `65c6974`; the next commit records delivery and changes documentation only.
 

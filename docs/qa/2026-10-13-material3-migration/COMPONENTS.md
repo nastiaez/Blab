@@ -1,6 +1,6 @@
 # Component implementation disposition
 
-All rows are implemented or deliberately retained as listed. None is owner-accepted or released yet. The full migration checklist remains the acceptance contract; this is a source/evidence index, not a claim that every external integration was re-exercised.
+All rows are implemented or deliberately retained as listed. Ash approved the reviewed visuals/journeys, and the integrated source is delivered in signed tester v14. The full migration checklist remains the acceptance contract; this is a source/evidence index, not a claim that every external integration was re-exercised.
 
 ## Shared C01–C25
 
@@ -64,4 +64,4 @@ All rows are implemented or deliberately retained as listed. None is owner-accep
 - Android local account setup, invite/native-share return, used-invite recovery, two-client literal/Normal messages, gallery/photo/view/cache and incoming ACTION_SEND recipient/preview/send exercised. Predictive Back completed/cancelled recording retained.
 - Widget/regression coverage covers all four locales at 100%/200% text, focused native destination semantics, keyboard/disabled capsule, border paint, guarded Back, form validation and existing product rules.
 - **Not yet proven by this migration:** fresh physical-phone notification delivery, Google identity login, live translation quality, production signed update, distributed artifact hash. Existing integrations are preserved, not asserted newly certified.
-- **Pending:** exact-head pinned repository CI, remaining journey review, owner screenshot/behavior acceptance, then integrated-main signed release/update/distribution evidence. Main/tester unchanged.
+- Exact-head/integrated-main CI passed; owner approval, main integration and signed v14 delivery/download-back evidence are recorded in STATUS.md. Physical-phone acceptance remains separate.
