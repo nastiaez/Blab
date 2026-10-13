@@ -101,6 +101,37 @@ _listenForMessages(ProviderContainer container) {
 }
 
 void main() {
+  test(
+    'notification refresh merges latest messages without discarding older history',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final service = _PaginationChatService();
+      final container = ProviderContainer(
+        overrides: [
+          chatServiceProvider.overrideWithValue(service),
+          authSessionProvider.overrideWith((ref) => Stream.value(null)),
+          currentUserIdProvider.overrideWithValue('user-a'),
+        ],
+      );
+      final listener = _listenForMessages(container);
+      addTearDown(() async {
+        listener.subscription.close();
+        container.dispose();
+        await service.changes.close();
+      });
+      await listener.first;
+      await container.read(chatMessagesProvider('chat-1').notifier).loadOlder();
+      service.initial = [...service.initial, _message(101)];
+      await container
+          .read(chatMessagesProvider('chat-1').notifier)
+          .refreshRecent();
+      final rows = container.read(chatMessagesProvider('chat-1')).value!;
+      expect(rows.first.id, 'm001');
+      expect(rows.last.id, 'm101');
+      expect(rows, hasLength(101));
+    },
+  );
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() => SharedPreferences.setMockInitialValues({}));

@@ -249,7 +249,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] The name temporarily gains a second line reading "typing…" (brand color) while the partner is typing AND both sides have the typing-indicator toggle ON; it returns to vertical center when typing stops (see § Privacy)
 - [ ] Header identity uses a 36 px avatar with the approved warm palette and subtle shadow; back icon → avatar and avatar → name are both 10 px; name is 15 px heavy, 18 px line height, `#46281C`
 - [ ] The entire Normal/Practice switch is one tap target; tapping anywhere on the control always flips to the other mode
-- [ ] Back navigates to chat list
+- [ ] Back navigates to Chats from every chat entry path, including notification/direct entry; an active reply is cancelled first without leaving the chat
 
 ---
 
@@ -372,7 +372,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Reply opens the keyboard automatically and quotes exactly the primary text currently presented in chat
 - [ ] Sending includes a visual quote block inside the bubble; outgoing quote fill is `#FAB894`, incoming quote fill is `#F5F0E8`, with existing radius and side line unchanged
 - [ ] Photo replies use the same container with thumbnail + caption, or thumbnail + localized `Photo`
-- [ ] Cancel (×) dismisses reply bar
+- [ ] Cancel (×) or Back dismisses an active reply without leaving the chat; typed composer text is preserved
+- [ ] Tapping the quote in a sent reply navigates to the original message, loading older authorized history when needed
 
 ---
 
@@ -584,6 +585,9 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] If denied, a single inline reminder appears once in the chat header: "Enable notifications to hear from your partner" with a × dismiss
 - [ ] Settings deep-link available from Profile (Phase 2)
 
+- [ ] Notification receipt prefetches authorized recent messages and already-prepared language variants into the active account's cache when background execution/network permits; notification payloads remain routing hints, not message content or authorization
+- [ ] A tap preserves warm chat data, refreshes the target history and chat list concurrently, and opens directly to readable history without an artificial display delay; offline/cold/background limits retain truthful cached/loading recovery
+
 ---
 
 ### US-040: Typing indicators (Signal-symmetric toggle)
@@ -643,7 +647,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Mechanical writing fixes are silent; clear author mistakes use the normal inline correction treatment; recipients see that treatment only when both participants had the same Learning Language at send time, otherwise they see clean output
 - [ ] Emoji, URLs, mentions, hashtags, code, protected names, and number-only content are never corrected or translated; mixed messages preserve them in natural target-language order
 - [ ] Incoming Practice messages wait for their target-language result; incoming Normal messages translate only when their source is unknown to the reader
-- [ ] Pending incoming translation uses the same lifecycle timing and resolve motion as outgoing translation, but keeps authored text private behind two neutral placeholder lines; a single pending bubble has no separate status row
+- [ ] Pending incoming Practice translation uses the same lifecycle timing and resolve motion as outgoing translation, but keeps authored text private behind two neutral placeholder lines; Normal does not hide authored text behind the Practice loading state; a single pending Practice bubble has no separate status row
 - [ ] After one quiet retry and no more than ten seconds without confirmed active preparation, language-help failure preserves readable original text and shows an actionable Retry; confirmed current server work retains its translating state without duplicate AI requests, bounded to two minutes; delivery failure remains a separate state
 - [ ] Cached messages, mode switches, edits, deletion, captions, grammatical alternatives, off-screen resolution, concurrent sends, and reduced-motion behavior follow `2026-08-12-translating-state-animation-design.md`
 
@@ -658,7 +662,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] A genuine remaining miss appears as a normal incoming bubble with two `#EAE6E0` placeholder lines; slow work waves across the lines, then clears, reshapes, and lands final text using the outgoing lifecycle timing
 - [ ] One pending message has no standalone status row; two or more pending messages use one muted `Translating N messages…` group row
 - [ ] Pending results reveal oldest-first, and each ready result appears without waiting for every other pending message
-- [ ] Incoming Practice never exposes the authored message while processing; Normal shows authored text immediately when the reader knows its source language
+- [ ] Incoming Practice never exposes the authored message while processing; Normal keeps exact authored text readable immediately while language help is pending, then retains known-language authored text or resolves the existing unknown-language translation exception
 - [ ] A final failure replaces only that skeleton with readable authored text plus `Couldn’t translate · Retry` and never blocks later messages
 
 ---

@@ -22,13 +22,21 @@ class PushTapRouter {
     required ChatInvalidator invalidateChat,
     required PendingChatConsumer consumePendingChat,
     required ChatNavigator goToChat,
+    Future<void> Function(String chatId)? prepareChat,
     PushTapErrorLogger? onError,
   }) async {
     if (_inFlightChatId != null) return false;
     _inFlightChatId = chatId;
     try {
-      invalidateChat(chatId);
-      await refreshChatList().timeout(refreshTimeout);
+      if (prepareChat == null) {
+        invalidateChat(chatId);
+        await refreshChatList().timeout(refreshTimeout);
+      } else {
+        await Future.wait([
+          refreshChatList(),
+          prepareChat(chatId),
+        ]).timeout(refreshTimeout);
+      }
       if (currentPendingChatId() != chatId) return false;
       consumePendingChat();
       goToChat(chatId);

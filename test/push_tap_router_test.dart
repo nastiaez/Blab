@@ -108,4 +108,33 @@ void main() {
     expect(await first, isTrue);
     expect(navigationCount, 1);
   });
+  test(
+    'notification route prepares history without invalidating warm data',
+    () async {
+      final release = Completer<void>();
+      var navigated = false;
+      var invalidated = false;
+      var prepared = false;
+      String? pending = _chatId;
+      final task = PushTapRouter().route(
+        chatId: _chatId,
+        currentPendingChatId: () => pending,
+        refreshChatList: () async {},
+        invalidateChat: (_) => invalidated = true,
+        prepareChat: (_) async {
+          prepared = true;
+          await release.future;
+        },
+        consumePendingChat: () => pending = null,
+        goToChat: (_) => navigated = true,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(prepared, isTrue);
+      expect(invalidated, isFalse);
+      expect(navigated, isFalse);
+      release.complete();
+      expect(await task, isTrue);
+      expect(navigated, isTrue);
+    },
+  );
 }

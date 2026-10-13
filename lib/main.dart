@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +29,10 @@ import 'shared/data/firebase_config.dart';
 import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
 import 'shared/services/push_tap_router.dart';
+import 'shared/services/push_chat_prefetch.dart';
+import 'shared/services/push_notification_gateway.dart';
+import 'shared/services/chat_service.dart';
+import 'shared/services/local_chat_history_cache.dart';
 import 'shared/services/supabase_auth_service.dart';
 import 'shared/state/chat_list_state.dart';
 import 'shared/state/interface_language.dart';
@@ -37,6 +43,47 @@ Future<void> main() async {
   // Sentry uses a guarded zone on web. Flutter bindings and every async
   // startup dependency must be initialized inside that same zone.
   await bootstrap(_initializeAndRunApp);
+}
+
+@pragma('vm:entry-point')
+Future<void> _cacheBackgroundPush(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final event = PushOpenEvent.fromData(message.data);
+  if (event == null) return;
+  try {
+    await initializeFirebaseForPush(
+      enabled: true,
+      expectedProjectId: SupabaseConfig.firebaseProjectId,
+      requiredForHostedAndroid: true,
+    );
+    try {
+      Supabase.instance.client;
+    } catch (_) {
+      await Supabase.initialize(
+        url: SupabaseConfig.url,
+        anonKey: SupabaseConfig.publishableKey,
+        authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
+      );
+    }
+    await _cachePushChat(event.chatId).timeout(const Duration(seconds: 20));
+  } catch (_) {
+    // Background execution/connectivity is best effort; tap recovery remains.
+  }
+}
+
+Future<void> _cachePushChat(String chatId) async {
+  final client = Supabase.instance.client;
+  if (client.auth.currentSession?.isExpired == true) {
+    await client.auth.refreshSession();
+  }
+  final userId = client.auth.currentUser?.id;
+  if (userId == null) return;
+  await prefetchPushedChat(
+    chatId: chatId,
+    service: ChatService(client),
+    cache: LocalChatHistoryCache(userId),
+    accountStillCurrent: () => client.auth.currentUser?.id == userId,
+  );
 }
 
 Future<void> _initializeAndRunApp() async {
@@ -52,6 +99,9 @@ Future<void> _initializeAndRunApp() async {
     requiredForHostedAndroid:
         SupabaseConfig.environment != BlabEnvironment.local,
   );
+  if (BlabFirebaseConfig.isAndroidPlatform && Firebase.apps.isNotEmpty) {
+    FirebaseMessaging.onBackgroundMessage(_cacheBackgroundPush);
+  }
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
@@ -146,6 +196,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   bool _resumingInvite = false;
   bool _initialInviteLinksReady = false;
   final PushTapRouter _pushTapRouter = PushTapRouter();
+  StreamSubscription<RemoteMessage>? _receivedPushSub;
   final AndroidShareIntentService _shareIntentService =
       const AndroidShareIntentService();
 
@@ -195,6 +246,14 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       }, onError: _handleAuthStreamError);
     } catch (_) {
       // Test environment without Supabase. Skip silently.
+    }
+    if (BlabFirebaseConfig.isAndroidPlatform && Firebase.apps.isNotEmpty) {
+      _receivedPushSub = FirebaseMessaging.onMessage.listen((message) {
+        final event = PushOpenEvent.fromData(message.data);
+        if (event != null) {
+          unawaited(_cachePushChat(event.chatId).catchError((Object _) {}));
+        }
+      });
     }
     _initInviteDeepLinks();
     _initAndroidShareIntents();
@@ -428,6 +487,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _receivedPushSub?.cancel();
     _authSub?.cancel();
     _linkSub?.cancel();
     super.dispose();
@@ -477,11 +537,28 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       chatId: pendingChatId,
       currentPendingChatId: () =>
           ref.read(pushNotificationsProvider).pendingChatId,
-      invalidateChat: (chatId) {
-        ref.invalidate(chatMessagesProvider(chatId));
-        ref.invalidate(chatPaginationProvider(chatId));
+      invalidateChat: (_) {},
+      prepareChat: (chatId) async {
+        await ref.read(chatMessagesProvider(chatId).future);
+        try {
+          await ref.read(chatMessagesProvider(chatId).notifier).refreshRecent();
+        } catch (_) {
+          if (!ref.read(chatMessagesProvider(chatId)).hasValue) rethrow;
+        }
       },
-      refreshChatList: () => ref.read(chatListProvider.notifier).refresh(),
+      refreshChatList: () async {
+        try {
+          await ref.read(chatListProvider.notifier).refresh();
+        } catch (_) {
+          if (!(ref
+                  .read(chatListProvider)
+                  .value
+                  ?.any((c) => c.id == pendingChatId) ??
+              false)) {
+            rethrow;
+          }
+        }
+      },
       consumePendingChat: () =>
           ref.read(pushNotificationsProvider.notifier).consumePendingChat(),
       goToChat: (chatId) {

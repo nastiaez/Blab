@@ -244,6 +244,28 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
   }
 
+  Future<void> refreshRecent() async {
+    final accountId = ref.read(currentUserIdProvider);
+    final cache = ref.read(localChatHistoryCacheProvider);
+    final page = await ref
+        .read(chatServiceProvider)
+        .fetchMessagePage(chatId, limit: pageSize);
+    if (!ref.mounted || ref.read(currentUserIdProvider) != accountId) return;
+    for (final message in page.messages) {
+      _messagesById[message.id] = message;
+    }
+    if (_oldestCursor == null) {
+      _oldestCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      _setPagination();
+    }
+    final snapshot = _snapshot();
+    await cache?.saveMessages(chatId, snapshot);
+    if (ref.mounted && ref.read(currentUserIdProvider) == accountId) {
+      state = AsyncData(snapshot);
+    }
+  }
+
   /// Loads the next older page once. Concurrent edge notifications collapse
   /// into the same request and cursor ordering prevents insert races from
   /// skipping or duplicating history.

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -140,6 +139,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _modeAnchorAtBottom = false;
   bool _requiredLanguageSheetVisible = false;
   _ModeTip? _visibleModeTip;
+  int _modeAnchorGeneration = 0;
+  Timer? _modeAnchorTimer;
+  bool _jumpingToReply = false;
 
   @override
   void initState() {
@@ -157,7 +159,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
     _scroll.addListener(_loadOlderNearTop);
-    _ready = Future<void>.delayed(const Duration(milliseconds: 400));
+    _ready = Future<void>.value();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
@@ -165,6 +167,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _modeAnchorTimer?.cancel();
     _reactionRowDismissTimer?.cancel();
     _scroll.removeListener(_loadOlderNearTop);
     _input.dispose();
@@ -298,7 +301,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (render is! RenderBox || !render.hasSize) continue;
           final top = render.localToGlobal(Offset.zero).dy;
           final bottom = top + render.size.height;
-          if (bottom > viewportTop && top < viewportBottom) {
+          final visibleHeight =
+              (bottom.clamp(viewportTop, viewportBottom) -
+              top.clamp(viewportTop, viewportBottom));
+          final meaningfulHeight = render.size.height * 0.5 < 44
+              ? render.size.height * 0.5
+              : 44.0;
+          if (visibleHeight >= meaningfulHeight) {
             visible.add((id: entry.key, top: top));
           }
         }
@@ -310,33 +319,202 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     }
     final fallbackOffset = position.pixels;
+    final generation = ++_modeAnchorGeneration;
+    _modeAnchorTimer?.cancel();
+    var seekSteps = 0;
+    void restore() {
+      if (!mounted ||
+          !_scroll.hasClients ||
+          generation != _modeAnchorGeneration) {
+        return;
+      }
+      final next = _scroll.position;
+      if (_modeAnchorAtBottom) {
+        next.jumpTo(0);
+        return;
+      }
+      final render = _messageAnchorKeys[_modeAnchorMessageId]?.currentContext
+          ?.findRenderObject();
+      if (render is! RenderBox &&
+          _modeAnchorMessageId != null &&
+          seekSteps++ < 30) {
+        final messages =
+            ref.read(chatMessagesProvider(widget.chatId)).value ??
+            const <Message>[];
+        final targetIndex = messages.indexWhere(
+          (m) => m.id == _modeAnchorMessageId,
+        );
+        final builtIndices = <int>[
+          for (var i = 0; i < messages.length; i++)
+            if (_messageAnchorKeys[messages[i].id]?.currentContext != null) i,
+        ];
+        if (targetIndex >= 0 && builtIndices.isNotEmpty) {
+          final middle = builtIndices[builtIndices.length ~/ 2];
+          final direction = targetIndex < middle ? 1 : -1;
+          final offset =
+              (next.pixels + direction * next.viewportDimension * 0.6).clamp(
+                0.0,
+                next.maxScrollExtent,
+              );
+          if (offset != next.pixels) {
+            next.jumpTo(offset);
+            WidgetsBinding.instance.addPostFrameCallback((_) => restore());
+            return;
+          }
+        }
+      }
+      final viewport = next.context.storageContext.findRenderObject();
+      if (render is RenderBox &&
+          viewport is RenderBox &&
+          _modeAnchorOffset != null) {
+        final actualOffset =
+            render.localToGlobal(Offset.zero).dy -
+            viewport.localToGlobal(Offset.zero).dy;
+        final delta = actualOffset - _modeAnchorOffset!;
+        final sign = next.axisDirection == AxisDirection.up ? -1.0 : 1.0;
+        next.jumpTo(
+          (next.pixels + sign * delta).clamp(0.0, next.maxScrollExtent),
+        );
+      } else {
+        next.jumpTo(fallbackOffset.clamp(0.0, next.maxScrollExtent));
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scroll.hasClients) return;
-      final nextPosition = _scroll.position;
-      if (_modeAnchorAtBottom || _modeAnchorMessageId == null) {
-        nextPosition.jumpTo(
-          fallbackOffset.clamp(0.0, nextPosition.maxScrollExtent),
-        );
-        return;
-      }
-      final context = _messageAnchorKeys[_modeAnchorMessageId!]?.currentContext;
-      final render = context?.findRenderObject();
-      final anchorOffset = _modeAnchorOffset;
-      if (render is RenderBox && anchorOffset != null) {
-        final viewport = RenderAbstractViewport.of(render);
-        final reveal = viewport.getOffsetToReveal(render, 0);
-        nextPosition.jumpTo(
-          (reveal.offset - anchorOffset).clamp(
-            0.0,
-            nextPosition.maxScrollExtent,
-          ),
-        );
-        return;
-      }
-      nextPosition.jumpTo(
-        fallbackOffset.clamp(0.0, nextPosition.maxScrollExtent),
-      );
+      restore();
+      // Cached text can finish its measured layout after the mode frame.
+      _modeAnchorTimer = Timer(const Duration(milliseconds: 350), restore);
     });
+  }
+
+  void _handleChatBack() {
+    if (_selectedMessage != null) {
+      _closeSelection();
+      return;
+    }
+    if (ref.read(replyingToProvider(widget.chatId)) != null) {
+      ref.read(replyingToProvider(widget.chatId).notifier).clear();
+      _inputFocus.unfocus();
+      return;
+    }
+    context.go('/chats');
+  }
+
+  void _beginReply(Message message, {String? displayedText}) {
+    if (ref.read(editingProvider(widget.chatId)) != null) return;
+    _closeSelection();
+    if (displayedText == null) {
+      final known = ref.read(knownLanguagesProvider).value;
+      final mode = ref.read(chatModeProvider(widget.chatId));
+      final era = languageEraForMessage(
+        sentAt: message.sentAt,
+        timeline: parseChatLanguageTimeline(
+          ref.read(chatLanguageTimelineProvider(widget.chatId)).value ?? [],
+        ),
+        fallbackLanguageCode: ref
+            .read(learningLanguageProvider(widget.chatId))
+            .code,
+      );
+      final target = known == null
+          ? ''
+          : resolveTranslationTarget(
+              mode: mode,
+              learningLanguageCode: era.languageCode,
+              primaryKnownLanguageCode: known.primary,
+            );
+      final entry = ref.read(
+        messageTranslationsProvider(widget.chatId),
+      )[translationEntryKey(message.id, target, known?.primary ?? '')];
+      displayedText = resolveMessagePresentation(
+        authoredText: message.originalText,
+        translation: entry?.whenData(
+          (v) =>
+              (ref.read(formCorrectionProvider).asData?.value ??
+                      const FormCorrectionLedger())
+                  .resolveTranslation(
+                    v,
+                    chatId: widget.chatId,
+                    messageId: message.id,
+                    targetLang: target,
+                    sourceText: message.originalText,
+                  ),
+        ),
+        mode: mode,
+        knownLanguageCodes: known?.codes ?? [],
+        targetLanguageCode: target,
+        readingScript: ref.read(readingScriptProvider),
+      ).primaryText;
+    }
+    ref
+        .read(replyingToProvider(widget.chatId).notifier)
+        .set(message.copyWith(originalText: displayedText));
+    HapticFeedback.selectionClick();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _inputFocus.requestFocus();
+      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+    });
+  }
+
+  Future<void> _jumpToQuotedMessage(Message target) async {
+    if (_jumpingToReply || target.chatId != widget.chatId) return;
+    final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    _jumpingToReply = true;
+    _modeAnchorGeneration++;
+    _closeSelection();
+    _inputFocus.unfocus();
+    try {
+      final notifier = ref.read(chatMessagesProvider(widget.chatId).notifier);
+      for (var page = 0; page < 100; page++) {
+        final messages =
+            ref.read(chatMessagesProvider(widget.chatId)).value ??
+            const <Message>[];
+        if (messages.any((m) => m.id == target.id)) break;
+        if (!ref.read(chatPaginationProvider(widget.chatId)).hasMore) return;
+        final before = messages.length;
+        await notifier.loadOlder();
+        if (!mounted ||
+            (ref.read(chatMessagesProvider(widget.chatId)).value?.length ??
+                    0) <=
+                before) {
+          return;
+        }
+      }
+      for (var step = 0; step < 100 && mounted && _scroll.hasClients; step++) {
+        final targetContext = _messageAnchorKeys[target.id]?.currentContext;
+        if (targetContext != null) {
+          if (!targetContext.mounted) return;
+          await Scrollable.ensureVisible(
+            targetContext,
+            alignment: 0.35,
+            duration: reducedMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 180),
+          );
+          return;
+        }
+        final messages =
+            ref.read(chatMessagesProvider(widget.chatId)).value ??
+            const <Message>[];
+        final targetIndex = messages.indexWhere((m) => m.id == target.id);
+        if (targetIndex < 0) return;
+        final visibleIndex = messages.indexWhere(
+          (m) => _messageAnchorKeys[m.id]?.currentContext != null,
+        );
+        final direction = visibleIndex < 0 || targetIndex < visibleIndex
+            ? 1
+            : -1;
+        final position = _scroll.position;
+        final next =
+            (position.pixels + direction * position.viewportDimension * 0.75)
+                .clamp(0.0, position.maxScrollExtent);
+        if (next == position.pixels) return;
+        position.jumpTo(next);
+        await WidgetsBinding.instance.endOfFrame;
+      }
+    } finally {
+      _jumpingToReply = false;
+    }
   }
 
   GlobalKey _messageAnchorKey(String messageId) =>
@@ -552,12 +730,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _reportMessage(message, chat);
         break;
       case MessageAction.reply:
-        ref
-            .read(replyingToProvider(widget.chatId).notifier)
-            .set(message.copyWith(originalText: presentation.primaryText));
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _inputFocus.requestFocus();
-        });
+        _beginReply(message, displayedText: presentation.primaryText);
         break;
       case MessageAction.edit:
         ref.read(editingProvider(widget.chatId).notifier).set(message);
@@ -996,9 +1169,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // its bubble. A shrinking inset is the keyboard we ourselves dismissed
       // in _selectMessage, which is already accounted for there.
       final keyboardAppeared = bottomInset > _lastBottomInset;
+      final cancelReplyOnBack =
+          bottomInset == 0 &&
+          _lastBottomInset > 0 &&
+          _inputFocus.hasFocus &&
+          replyingTo != null;
       _lastBottomInset = bottomInset;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        if (cancelReplyOnBack) {
+          ref.read(replyingToProvider(widget.chatId).notifier).clear();
+        }
         if (keyboardAppeared) _closeSelection();
         if (!_scroll.hasClients) return;
         if (_scroll.position.pixels > 200) return;
@@ -1030,9 +1211,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     return PopScope(
-      canPop: _selectedMessage == null,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _selectedMessage != null) _closeSelection();
+        if (!didPop) _handleChatBack();
       },
       child: Scaffold(
         backgroundColor: BlabColors.chatCanvas,
@@ -1056,17 +1237,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     practiceSetupRequired: chat.needsPracticeLanguageSelection,
                     selectionActive: _selectedMessage != null,
                     onDismissSelection: _closeSelection,
-                    onBack: () {
-                      if (_selectedMessage != null) {
-                        _closeSelection();
-                        return;
-                      }
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/chats');
-                      }
-                    },
+                    onBack: _handleChatBack,
                     onMenu: () {
                       if (_selectedMessage != null) {
                         _closeSelection();
@@ -1120,6 +1291,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           final isUserDrag =
                               notification is ScrollStartNotification &&
                               notification.dragDetails != null;
+                          if (isUserDrag) _modeAnchorGeneration++;
                           if (isUserDrag && _selectedMessage != null) {
                             _closeSelection();
                           }
@@ -1261,18 +1433,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     chat: chat,
                                   ),
                                   onLongPress: _selectMessage,
-                                  onReply: (m) {
-                                    if (editing != null) return;
-                                    _closeSelection();
-                                    HapticFeedback.selectionClick();
-                                    ref
-                                        .read(
-                                          replyingToProvider(
-                                            widget.chatId,
-                                          ).notifier,
-                                        )
-                                        .set(m);
-                                  },
+                                  onReply: _beginReply,
+                                  onJumpToMessage: _jumpToQuotedMessage,
                                   onFailedTap: (m) {
                                     final notifier = ref.read(
                                       chatMessagesProvider(
@@ -2150,6 +2312,7 @@ class _MessageList extends ConsumerWidget {
     required this.popupTopInset,
     required this.onLongPress,
     required this.onReply,
+    required this.onJumpToMessage,
     required this.onFailedTap,
     required this.onFailedRetry,
     required this.onReact,
@@ -2182,6 +2345,7 @@ class _MessageList extends ConsumerWidget {
   final double popupTopInset;
   final void Function(Message, Rect, Offset) onLongPress;
   final void Function(Message) onReply;
+  final void Function(Message) onJumpToMessage;
   final void Function(Message) onFailedTap;
   final void Function(Message) onFailedRetry;
   final void Function(Message) onReact;
@@ -2350,6 +2514,7 @@ class _MessageList extends ConsumerWidget {
               onLongPress: (rect, position) =>
                   onLongPress(item.message, rect, position),
               onReply: () => onReply(item.message),
+              onJumpToMessage: onJumpToMessage,
               onFailedTap: () => onFailedTap(item.message),
               onFailedRetry: () => onFailedRetry(item.message),
               onReact: () => onReact(item.message),
@@ -2524,6 +2689,7 @@ class _MessageRow extends ConsumerWidget {
     required this.holdIncomingUntilPrevious,
     required this.onLongPress,
     required this.onReply,
+    required this.onJumpToMessage,
     required this.onFailedTap,
     required this.onFailedRetry,
     required this.onReact,
@@ -2553,6 +2719,7 @@ class _MessageRow extends ConsumerWidget {
   final bool holdIncomingUntilPrevious;
   final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onReply;
+  final void Function(Message) onJumpToMessage;
   final VoidCallback onFailedTap;
   final VoidCallback onFailedRetry;
   final VoidCallback onReact;
@@ -2629,6 +2796,7 @@ class _MessageRow extends ConsumerWidget {
           )]
         : null;
     final readableForRead =
+        mode == ChatMode.normal ||
         isOut ||
         !canRequestTranslation ||
         translationEntry is AsyncData<MessageTranslation> ||
@@ -2645,6 +2813,7 @@ class _MessageRow extends ConsumerWidget {
     // rect would include the icon and throw off the row's horizontal
     // centering on every practice-mode long-press.
     Widget bubble = _Bubble(
+      onJumpToMessage: onJumpToMessage,
       chatId: chatId,
       partnerName: partnerName,
       message: message,
@@ -2761,6 +2930,7 @@ class _Bubble extends ConsumerStatefulWidget {
     required this.onFailedRetry,
     required this.isSelected,
     required this.showOriginal,
+    required this.onJumpToMessage,
     this.onSwipeReply,
     this.selectedBubbleKey,
   });
@@ -2806,6 +2976,7 @@ class _Bubble extends ConsumerStatefulWidget {
   final VoidCallback onFailedTap;
   final VoidCallback onFailedRetry;
   final VoidCallback? onSwipeReply;
+  final void Function(Message) onJumpToMessage;
   final VoidCallback onReact;
   final bool isSelected;
   final bool showOriginal;
@@ -3086,6 +3257,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
     );
 
     final incomingProcessing =
+        isPractice &&
         showLearningAid &&
         (holdIncomingUntilPrevious ||
             liveTranslation is! AsyncData<MessageTranslation>) &&
@@ -3126,7 +3298,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
           )
         : authoredContent;
     final animateTranslationLifecycle =
-        ((isOut && isPractice) || !isOut) &&
+        isPractice &&
         showLearningAid &&
         liveTranslation is! AsyncError<MessageTranslation>;
     final messageLearningContent = animateTranslationLifecycle
@@ -3223,6 +3395,7 @@ class _BubbleState extends ConsumerState<_Bubble> {
                         if (replyTo != null) ...[
                           _QuotedReply(
                             replyTo: replyTo,
+                            onTap: () => widget.onJumpToMessage(replyTo),
                             partnerName: widget.partnerName,
                             parentIsOutgoing: isOut,
                             translation: replyTranslation?.whenData(
@@ -3847,6 +4020,7 @@ class _InputBar extends StatelessWidget {
 class _QuotedReply extends StatelessWidget {
   const _QuotedReply({
     required this.replyTo,
+    required this.onTap,
     required this.partnerName,
     required this.parentIsOutgoing,
     required this.translation,
@@ -3857,6 +4031,7 @@ class _QuotedReply extends StatelessWidget {
   });
 
   final Message replyTo;
+  final VoidCallback onTap;
   final String partnerName;
   final bool parentIsOutgoing;
   final AsyncValue<MessageTranslation>? translation;
@@ -3902,47 +4077,51 @@ class _QuotedReply extends StatelessWidget {
         : rawPreviewText;
     final attachment = replyTo.attachment;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(color: tintBg),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 4, height: 44, color: barColor),
-            const SizedBox(width: 8),
-            if (attachment != null) ...[
-              _ReplyThumbnail(attachment: attachment),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          decoration: BoxDecoration(color: tintBg),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 4, height: 44, color: barColor),
               const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(2, 5, 8, 5),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      author,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: labelColor,
+              if (attachment != null) ...[
+                _ReplyThumbnail(attachment: attachment),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 5, 8, 5),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        author,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: labelColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      previewText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, color: previewColor),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        previewText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, color: previewColor),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -41,6 +41,7 @@ import 'package:blab/shared/state/profile_state.dart';
 import 'package:blab/shared/state/push_notifications_state.dart';
 import 'package:blab/shared/widgets/blab_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -54,6 +55,7 @@ import 'package:visibility_detector/visibility_detector.dart';
 class _PrimaryKnownLanguageChatService implements ChatService {
   _PrimaryKnownLanguageChatService({
     this.partnerName = 'Bob',
+    this.pending = false,
     this.needsPracticeLanguageSelection = false,
     this.learningLanguageCode = 'de',
     this.messageIsOutgoing = false,
@@ -86,6 +88,14 @@ class _PrimaryKnownLanguageChatService implements ChatService {
                sentAt: previousMessageSentAt,
                status: MessageStatus.delivered,
              );
+
+  final bool pending;
+  @override
+  Future<bool> isMessageTranslationPending({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => pending;
 
   final bool needsPracticeLanguageSelection;
   final String partnerName;
@@ -236,6 +246,72 @@ class _PrimaryKnownLanguageChatService implements ChatService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _InteractionHistoryService extends _PrimaryKnownLanguageChatService {
+  _InteractionHistoryService({this.paged = false}) : super(chatMode: 'normal') {
+    history = List.generate(
+      45,
+      (i) => Message(
+        id: 'h-$i',
+        chatId: 'chat-1',
+        isOutgoing: i.isOdd,
+        originalText:
+            'Original message $i. ${List.filled(i % 3 + 1, 'This is a readable message with several words. ').join()}',
+        translation: '',
+        sentAt: DateTime.utc(2026, 8, 3, 12, i),
+        status: MessageStatus.delivered,
+      ),
+    );
+    history[44] = history[44].copyWith(replyTo: history[4]);
+  }
+  final bool paged;
+  int historyPageRequests = 0;
+  late List<Message> history;
+  @override
+  Future<MessagePage> fetchMessagePage(
+    String chatId, {
+    int limit = 50,
+    MessageCursor? before,
+  }) async {
+    historyPageRequests++;
+    final rows = !paged
+        ? history
+        : before == null
+        ? history.sublist(30)
+        : history.sublist(0, 30);
+    return MessagePage(
+      messages: rows,
+      hasMore: paged && before == null,
+      nextCursor: MessageCursor(
+        createdAt: rows.first.sentAt,
+        id: rows.first.id,
+      ),
+    );
+  }
+
+  @override
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    final i = int.tryParse(messageId.replaceFirst('h-', ''));
+    if (i == null) return null;
+    final original = history[i].originalText;
+    return (
+      text: targetLang == 'en'
+          ? original
+          : 'Nachricht $i. ${List.filled(i % 3 + 2, 'Dies ist eine deutlich längere übersetzte Nachricht. ').join()}',
+      interfaceText: original,
+      interfaceLang: 'en',
+      sourceLang: 'en',
+      mode: 'translation',
+      explanation: null,
+      confidence: null,
+      tokens: <Map<String, dynamic>>[],
+    );
+  }
+}
+
 class _UnsupportedPushGateway implements PushNotificationGateway {
   @override
   bool get isSupported => false;
@@ -303,12 +379,14 @@ Widget _host(
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: MediaQuery(
-        data: MediaQueryData(
-          disableAnimations: disableAnimations,
-          accessibleNavigation: disableAnimations,
+      home: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            disableAnimations: disableAnimations,
+            accessibleNavigation: disableAnimations,
+          ),
+          child: const ChatScreen(chatId: 'chat-1'),
         ),
-        child: const ChatScreen(chatId: 'chat-1'),
       ),
     ),
   );
@@ -581,6 +659,7 @@ void main() {
     (tester) async {
       final container = _containerForHeader(
         _PrimaryKnownLanguageChatService(
+          pending: true,
           chatMode: 'practice',
           learningLanguageCode: 'de',
           messageText: 'Hello there',
@@ -651,6 +730,7 @@ void main() {
     (tester) async {
       final container = _containerForHeader(
         _PrimaryKnownLanguageChatService(
+          pending: true,
           chatMode: 'practice',
           learningLanguageCode: 'de',
           messageText: 'Reduced motion message',
@@ -712,6 +792,7 @@ void main() {
       final now = DateTime.now();
       final container = _containerForHeader(
         _PrimaryKnownLanguageChatService(
+          pending: true,
           chatMode: 'practice',
           learningLanguageCode: 'de',
           messageText: 'Second message',
@@ -748,6 +829,7 @@ void main() {
       final now = DateTime.now();
       final container = _containerForHeader(
         _PrimaryKnownLanguageChatService(
+          pending: true,
           chatMode: 'practice',
           learningLanguageCode: 'de',
           messageText: 'The second original message is intentionally longer.',
@@ -767,7 +849,6 @@ void main() {
 
       final divider = find.text('2 new messages');
       expect(divider, findsOneWidget);
-      final initialTop = tester.getTopLeft(divider).dy;
 
       container
           .read(messageTranslationsProvider('chat-1').notifier)
@@ -797,14 +878,24 @@ void main() {
             replaceExisting: true,
           );
       await tester.pump(const Duration(milliseconds: 700));
-      expect(tester.getTopLeft(divider).dy, closeTo(initialTop, 1));
+      expect(divider, findsOneWidget);
+      expect(
+        tester.widget<ListView>(find.byType(ListView).first).controller!.offset,
+        0,
+      );
 
       await tester.tap(find.byKey(const ValueKey('mode-toggle')));
       await _settle(tester);
       expect(divider, findsOneWidget);
-      expect(tester.getTopLeft(divider).dy, closeTo(initialTop, 1));
+      // FR-39: when all content fits, bottom retention takes precedence over
+      // keeping the old divider coordinate across different bubble heights.
+      expect(
+        tester.widget<ListView>(find.byType(ListView).first).controller!.offset,
+        0,
+      );
 
       await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
       await tester.pump(const Duration(seconds: 9));
     },
   );
@@ -1398,6 +1489,175 @@ void main() {
 
     expect(service.languageTimelineFetchCount, 2);
   });
+
+  testWidgets('Normal exposes authored text while Practice still waits', (
+    tester,
+  ) async {
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        pending: true,
+        chatMode: 'practice',
+        messageText: 'Read this immediately',
+      ),
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    expect(find.text('Read this immediately'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('mode-toggle')));
+    await _settle(tester);
+    expect(find.text('Read this immediately'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(seconds: 20));
+  });
+
+  testWidgets(
+    'mode switches retain the same visible history message in both directions',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final service = _InteractionHistoryService();
+      final container = _containerForHeader(
+        service,
+        primaryKnownLanguage: 'en',
+        knownLanguages: ['en'],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      final controller = tester
+          .widget<ListView>(find.byType(ListView).first)
+          .controller!;
+      controller.jumpTo(1600);
+      await _settle(tester);
+      final texts = find
+          .byType(Text)
+          .evaluate()
+          .where(
+            (e) =>
+                (e.widget as Text).data?.startsWith('Original message ') ??
+                false,
+          );
+      final visible =
+          texts.where((e) {
+            final r = e.findRenderObject() as RenderBox;
+            final top = r.localToGlobal(Offset.zero).dy;
+            return top + r.size.height > 80 && top < 700;
+          }).toList()..sort(
+            (a, b) => (a.findRenderObject() as RenderBox)
+                .localToGlobal(Offset.zero)
+                .dy
+                .compareTo(
+                  (b.findRenderObject() as RenderBox)
+                      .localToGlobal(Offset.zero)
+                      .dy,
+                ),
+          );
+      final original = (visible.first.widget as Text).data!;
+      final id = RegExp(
+        r'Original message (\d+)',
+      ).firstMatch(original)!.group(1)!;
+      final before = tester.getTopLeft(find.text(original)).dy;
+      await tester.tap(find.byKey(const ValueKey('mode-toggle')));
+      await _settle(tester);
+      final translated = find.byWidgetPredicate(
+        (w) => w is MessageText && w.text.startsWith('Nachricht $id.'),
+      );
+      expect(translated, findsOneWidget);
+      expect(tester.getTopLeft(translated).dy, closeTo(before, 2));
+      await tester.tap(find.byKey(const ValueKey('mode-toggle')));
+      await _settle(tester);
+      expect(tester.getTopLeft(find.text(original)).dy, closeTo(before, 2));
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 20));
+    },
+  );
+
+  testWidgets('quoted reply tap finds its virtualized original', (
+    tester,
+  ) async {
+    final service = _InteractionHistoryService(paged: true);
+    final container = _containerForHeader(
+      service,
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    final quote = find.text(service.history[4].originalText);
+    expect(quote, findsOneWidget);
+    await tester.tap(quote);
+    for (var i = 0; i < 50; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(service.historyPageRequests, greaterThan(1));
+    final targets = find.text(service.history[4].originalText).evaluate();
+    expect(
+      targets.any((e) {
+        final r = e.findRenderObject() as RenderBox;
+        final y = r.localToGlobal(Offset.zero).dy;
+        return y > 60 && y < 500;
+      }),
+      isTrue,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 20));
+  });
+
+  testWidgets(
+    'swipe reply opens keyboard; Back cancels reply then opens Chats',
+    (tester) async {
+      final service = _PrimaryKnownLanguageChatService(
+        messageText: 'Reply to me',
+      );
+      final container = _containerForHeader(service);
+      addTearDown(container.dispose);
+      final router = GoRouter(
+        initialLocation: '/chat/chat-1',
+        routes: [
+          GoRoute(
+            path: '/chats',
+            builder: (_, _) => const Scaffold(body: Text('Chats home')),
+          ),
+          GoRoute(
+            path: '/chat/:id',
+            builder: (_, _) => const ChatScreen(chatId: 'chat-1'),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            routerConfig: router,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+          ),
+        ),
+      );
+      await _settle(tester);
+      await tester.drag(find.text('Привіт'), const Offset(160, 0));
+      await _settle(tester);
+      expect(container.read(replyingToProvider('chat-1')), isNotNull);
+      expect(tester.testTextInput.isVisible, isTrue);
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+      expect(container.read(replyingToProvider('chat-1')), isNull);
+      expect(find.byType(ChatScreen), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+      expect(find.text('Chats home'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 20));
+    },
+  );
 
   test('avatar colors use only the refreshed palette', () {
     expect(BlabColors.avatarPalette, const [

@@ -416,6 +416,7 @@ void main() {
 
     expect(find.text('Replying to Bob'), findsNothing);
     expect(find.text('Bob'), findsWidgets);
-    expect(find.text('Yes'), findsWidgets);
+    expect(find.text('ஆம்.'), findsOneWidget);
+    expect(tester.testTextInput.isVisible, isTrue);
   });
 }
