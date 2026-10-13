@@ -10,6 +10,19 @@ import 'state/onboarding_destination_state.dart';
 import 'widgets/blab_wordmark_animation.dart';
 import 'widgets/onboarding_scaffold.dart';
 
+// US-001: resolving setup again must not replay the cold-launch animation.
+final openingAnimationGateProvider = Provider((ref) => OpeningAnimationGate());
+
+class OpeningAnimationGate {
+  bool _claimed = false;
+
+  bool claim() {
+    if (_claimed) return false;
+    _claimed = true;
+    return true;
+  }
+}
+
 class OnboardingBootstrapScreen extends ConsumerStatefulWidget {
   const OnboardingBootstrapScreen({required this.onResolved, super.key});
 
@@ -25,6 +38,14 @@ class _OnboardingBootstrapScreenState
   OnboardingDestination? _delivered;
   OnboardingDestination? _resolved;
   bool _animationCompleted = false;
+  late final bool _showOpeningAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _showOpeningAnimation = ref.read(openingAnimationGateProvider).claim();
+    _animationCompleted = !_showOpeningAnimation;
+  }
 
   void _deliverWhenReady(OnboardingDestination destination) {
     if (_delivered == destination) return;
@@ -96,6 +117,9 @@ class _OnboardingBootstrapScreenState
   }
 
   Widget _logoLoader() {
+    if (!_showOpeningAnimation) {
+      return const CircularProgressIndicator(color: OnboardingTheme.action);
+    }
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return BlabWordmarkAnimation(
       animate: !reduceMotion,

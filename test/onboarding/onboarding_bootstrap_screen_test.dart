@@ -9,6 +9,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('setup resolution does not replay the opening logo', (
+    tester,
+  ) async {
+    final gate = OpeningAnimationGate()..claim();
+    OnboardingDestination? resolved;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          openingAnimationGateProvider.overrideWithValue(gate),
+          onboardingDestinationProvider.overrideWith(
+            (ref) async => OnboardingDestination.chats,
+          ),
+        ],
+        child: MaterialApp(
+          theme: blabTheme,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: OnboardingBootstrapScreen(
+            onResolved: (destination) => resolved = destination,
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(BlabWordmarkAnimation), findsNothing);
+    await tester.pump();
+    await tester.pump();
+    expect(resolved, OnboardingDestination.chats);
+    expect(find.byType(BlabWordmarkAnimation), findsNothing);
+  });
+
   testWidgets('bootstrap finishes the wordmark before resolving', (
     tester,
   ) async {
