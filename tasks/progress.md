@@ -1242,15 +1242,17 @@ Owner reported v15 slow/missing translation, muted Normal text, type/reveal anim
 - Release completed 2026-10-14: approved source3361abb synchronized to main; production translate-message/prepare-message-jobs deployed and seven runtime source files read back identical. Backend environment verification and unauthenticated401 gates passed. Signed v16 APK SHA256 e795d7fdd1db3fbf82e148754eff8e7f6e6d7d465baced45e4a0dd301d17e0b5 replaces signed v15 on emulator5560, retains German, cold-launches successfully. Main CI38625954861 all three jobs passed. Firebase release3lm50l43b9k0o received exact download-back checksum and distributed to the existing two testers (both Accepted). Physical phone/authenticated-history retention remains unverified. Owner-facing checkbox remains unchecked pending actual phone acceptance. No chat-history cutover enabled.
 
 
-### v16 translation reliability and word taps — 14 October 2026 ← in progress
+### v16 translation reliability and word taps — 14 October 2026
 
 - [x] Diagnose production symptoms and reproduce short-message classification failure locally; explain causes before edits.
 - [x] Research production retry/deadline/fallback approaches and document evidence versus proposals in `docs/operations/translation-reliability-assessment-2026-10-14.md`.
 - [x] Fix source classification, same-language Practice word taps, pending-versus-terminal presentation and precise failure reasons.
 - [x] Implement and measure bounded fallback/recovery; isolate readable-message capacity from metadata; preserve quality/privacy constraints.
 - [x] Pass scoped fault injection, six-message burst and actual Android journeys; deliver screenshots and motion for owner review. Production SLO and hosted/live FCM remain unverified.
-- [ ] Owner approval, integrated verification and signed Firebase release.
+- [x] Owner approval, integrated verification and signed Firebase release.
 
 Implementation checkpoint: candidate8s budget, qualified hedge,8+2 phase slots,2s due-work recovery, lease fencing, pending UI and live word-help updates. 44/44 language results; six-send burst12/12 within6.906s after capacity correction. Android outage recovery and precise notification cancellation verified with local fault fixtures.898 Flutter/195 backend/381 DB pass. Evidence: docs/qa/2026-10-14-translation-recovery/README.md. Owner visual acceptance, hosted/live FCM and signed integrated release remain pending; current production is unchanged.
 
 - 2026-10-14 22:49 — Owner approved actual recovery/notification packet (12669). Integration and Firebase v17 underway. After this release, investigate consecutive incorrect/mixed German and Practice showing primary-known instead of learning language in a fresh worktree; no unseen follow-up changes included in v17.
+
+- 2026-10-14 23:04 — Approved recovery slice released as Firebase1.0.0(17) from4f8a521 after all main CI gates. Hosted migration/function readback and exact signed Android update/download-back passed; two existing testers assigned. Physical phone and live FCM remain unverified. Evidence: docs/qa/2026-10-14-translation-recovery/release-v17/receipt.json.

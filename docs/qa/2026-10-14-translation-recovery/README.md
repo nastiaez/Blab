@@ -50,3 +50,7 @@ Actual Android images and recordings delivered to the requesting Telegram topic7
 ## Owner approval
 
 2026-10-14 22:49 Berlin, topic7420 message12669: “Yes, approved.” Owner requests release of this slice first, then a separate investigation of consecutive incorrect/mixed German and Practice primary-language inversion. Release authorized; new cases are not included in this approved source.
+
+## Integrated Firebase v17 release
+
+2026-10-14: approved source4f8a521 synchronized to main. Migrations20–23 applied atomically through the authenticated management query connection (direct DB push stalled on keychain lookup); migration ledger and2s due-work cron verified. translate-message26, prepare-message-jobs7, send-push8 deployed;10 downloaded runtime files match integrated source. All unauthenticated endpoints reject401. Main CI38635557818 passes quality, backend integration and Android release compilation. Exact signed APK updates v16→v17 on emulator5560, retains German and cold-launches. Baseline was signed out; authenticated history/physical phone retention is unverified. Firebase release3s30lef5ttscg downloaded back with matching SHA256 and distributed to the existing two testers. Detailed hashes and limits in release-v17/receipt.json. Live FCM remains unverified; no chat-history cutover enabled.

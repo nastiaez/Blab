@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "build": 17,
+  "source": "4f8a521d4cb33440159088de759c2735ca384e13",
+  "apkSha256": "511cd667308f10651bd8d43d6a2af0f5b55f5c1b4a2dd673e0c0aac20787a004",
+  "signingSha256": "1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb",
+  "firebaseRelease": "3s30lef5ttscg",
+  "firebaseApp": "1:363935775546:android:c3a351249463d5f9356e03",
+  "downloadBackMatches": true,
+  "androidUpdate": "emulator-5560: v16 -> v17, install -r, German retained, cold launch passed; baseline signed out",
+  "backend": {
+    "project": "bhzcexhebjszwyqvcsxs",
+    "migrations": [
+      "20261014000020",
+      "20261014000021",
+      "20261014000022",
+      "20261014000023"
+    ],
+    "functions": {
+      "translate-message": 26,
+      "prepare-message-jobs": 7,
+      "send-push": 8
+    },
+    "readbackMatchingRuntimeFiles": 10,
+    "unauthenticatedGates": 401
+  },
+  "ci": "https://github.com/nastiaez/Blab/actions/runs/38635557818",
+  "distribution": "distributed to existing two testers; console accepted 2; physical download/install not verified",
+  "limitations": [
+    "Physical phone update/authenticated-history retention unverified",
+    "Live FCM delivery unverified; local tagged cancellation verified",
+    "Legacy notifications require one-time manual clearing",
+    "No chat-history cutover enabled",
+    "Next mixed-German/Practice-language slice excluded"
+  ],
+  "ciResult": "all three jobs passed"
+}
