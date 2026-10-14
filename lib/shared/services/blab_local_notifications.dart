@@ -87,7 +87,9 @@ abstract final class BlabLocalNotifications {
           'Messages',
           importance: Importance.high,
           priority: Priority.high,
-          tag: chat,
+          tag: receiver is String && data['messageId'] is String
+              ? 'blab:$receiver:$chat:${data['messageId']}'
+              : chat,
           onlyAlertOnce: false,
           icon: '@mipmap/launcher_icon',
         ),

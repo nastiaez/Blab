@@ -108,6 +108,12 @@ abstract class AppLocalizations {
   /// **'Blab'**
   String get appName;
 
+  /// No description provided for @wordHelpPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Word help is not ready yet.'**
+  String get wordHelpPending;
+
   /// No description provided for @unsupportedLanguageHint.
   ///
   /// In en, this message translates to:

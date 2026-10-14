@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:blab/features/chat/state/message_reads_state.dart';
 import 'package:blab/shared/data/local_storage_keys.dart';
 import 'package:blab/shared/state/privacy_settings.dart';
+import 'package:blab/shared/state/auth_state.dart';
 
 class _ReadEnabled extends Notifier<bool> {
   @override
@@ -18,6 +19,42 @@ final _readEnabledProvider = NotifierProvider<_ReadEnabled, bool>(
 );
 
 void main() {
+  test(
+    'read notifications clear without sending disabled read receipts',
+    () async {
+      final cleared = <String>[];
+      var receipts = 0;
+      final container = ProviderContainer(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('viewer'),
+          readReceiptsTransportStateProvider.overrideWithValue(
+            const PrivacySettingState.ready(false),
+          ),
+          clearReadNotificationsProvider.overrideWithValue((
+            user,
+            chat,
+            ids,
+          ) async {
+            cleared.add('$user/$chat/${ids.join(',')}');
+          }),
+          markReadFnProvider('chat').overrideWithValue((
+            ids, {
+            required receiptVisible,
+          }) async {
+            receipts++;
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      container
+          .read(messageReadsProvider('chat').notifier)
+          .reportVisible('read-one');
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(cleared, ['viewer/chat/read-one']);
+      expect(receipts, 0);
+    },
+  );
+
   test('reportVisible coalesces ids and is idempotent', () async {
     final calls = <List<String>>[];
     final container = ProviderContainer(

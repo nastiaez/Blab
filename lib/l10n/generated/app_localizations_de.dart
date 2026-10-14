@@ -12,6 +12,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appName => 'Blab';
 
   @override
+  String get wordHelpPending => 'Die Worthilfe ist noch nicht verfügbar.';
+
+  @override
   String get unsupportedLanguageHint =>
       'Blab spricht diese Sprache noch nicht.';
 

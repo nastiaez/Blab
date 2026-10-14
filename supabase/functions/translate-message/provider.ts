@@ -2,7 +2,10 @@ import { OPENROUTER_PROVIDER, type ProviderCredential } from "./contract.ts";
 
 export class ProviderFetchError extends Error {
   constructor(
-    public readonly reason: "provider_timeout" | "provider_unreachable",
+    public readonly reason:
+      | "provider_timeout"
+      | "provider_unreachable"
+      | "provider_backoff",
   ) {
     super(reason);
     this.name = "ProviderFetchError";
@@ -67,10 +70,27 @@ export async function fetchChatCompletion(
   } = {},
 ): Promise<Response> {
   const started = performance.now();
+  if (
+    credential.signal?.aborted ||
+    (credential.deadlineMs != null && credential.deadlineMs <= started)
+  ) {
+    throw new ProviderFetchError("provider_timeout");
+  }
+  if (credential.backoff && credential.backoff.untilMs > Date.now()) {
+    throw new ProviderFetchError("provider_backoff");
+  }
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort("provider_timeout"),
-    Math.max(1, options.timeoutMs ?? DEFAULT_PROVIDER_TIMEOUT_MS),
+    Math.max(
+      1,
+      Math.min(
+        options.timeoutMs ?? DEFAULT_PROVIDER_TIMEOUT_MS,
+        credential.deadlineMs == null
+          ? Infinity
+          : credential.deadlineMs - performance.now(),
+      ),
+    ),
   );
   const fetchImpl = options.fetchImpl ?? fetch;
   try {
@@ -80,7 +100,9 @@ export async function fetchChatCompletion(
         "Content-Type": "application/json",
         "Authorization": `Bearer ${credential.apiKey}`,
       },
-      signal: controller.signal,
+      signal: credential.signal
+        ? AbortSignal.any([controller.signal, credential.signal])
+        : controller.signal,
       body: JSON.stringify({
         ...body,
         model: credential.model,
@@ -90,6 +112,20 @@ export async function fetchChatCompletion(
           : {}),
       }),
     });
+    if (
+      (response.status === 429 || response.status === 402) && credential.backoff
+    ) {
+      const header = response.headers.get("Retry-After");
+      const seconds = header === null ? 0 : Number(header);
+      const retryAt = Number.isFinite(seconds)
+        ? Date.now() + Math.max(0, seconds) * 1000
+        : Date.parse(header ?? "") || 0;
+      credential.backoff.untilMs = Math.max(
+        credential.backoff.untilMs,
+        retryAt,
+        Date.now() + (response.status === 402 ? 60_000 : 2_000),
+      );
+    }
     let payload: unknown = null;
     if (response.headers.get("Content-Type")?.includes("application/json")) {
       try {

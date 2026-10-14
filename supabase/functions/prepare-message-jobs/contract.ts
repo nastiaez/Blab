@@ -39,9 +39,13 @@ export function orderedJobs<T extends PreparationJob>(jobs: T[]): T[] {
 export function planJobOutcome({
   status,
   attempts,
+  retryAfterSeconds = 0,
+  jitter = 0,
 }: {
   status: number;
   attempts: number;
+  retryAfterSeconds?: number;
+  jitter?: number;
 }): JobOutcome {
   if (status >= 200 && status < 300) return { kind: "ready" };
   if (status === 409) return { kind: "stale" };
@@ -50,7 +54,12 @@ export function planJobOutcome({
   if (retryable && attempts < MAX_JOB_ATTEMPTS) {
     return {
       kind: "retry",
-      delaySeconds: Math.min(300, 5 * 2 ** attempts),
+      delaySeconds: Math.max(
+        Math.ceil(retryAfterSeconds),
+        Math.ceil(
+          Math.min(30, 2 ** attempts) * (1 + Math.max(0, Math.min(1, jitter))),
+        ),
+      ),
     };
   }
   return { kind: "failed" };
@@ -63,8 +72,8 @@ export async function settleJobs<
   jobs: T[],
   run: (job: T) => Promise<R>,
 ): Promise<Array<{ job: T; result?: R; error?: string }>> {
-  // Postgres already leases at most four jobs globally. Start that bounded
-  // batch together; claiming four and running one serially wastes every slot.
+  // Postgres owns the global per-phase capacity. Start only that leased
+  // batch together; serial execution would waste reserved sentence slots.
   return await Promise.all(jobs.map(async (job) => {
     try {
       return { job, result: await run(job) };
@@ -75,4 +84,16 @@ export async function settleJobs<
       };
     }
   }));
+}
+
+export function jobFailureReason(body: unknown, status: number): string {
+  const fields = body && typeof body === "object"
+    ? body as Record<string, unknown>
+    : {};
+  for (const value of [fields.reason, fields.error]) {
+    if (typeof value === "string" && /^[a-zA-Z0-9_]{1,96}$/.test(value)) {
+      return value;
+    }
+  }
+  return status >= 200 && status < 300 ? "ready" : `http_${status}`;
 }

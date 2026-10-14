@@ -546,6 +546,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         (message.status == MessageStatus.delivered ||
             message.status == MessageStatus.read);
     if (!hasError &&
+        !presentation.translationDelayed &&
         !showReducedMotionProcessing &&
         !showUnsupportedLanguageHint) {
       return interactiveBubble;
@@ -574,6 +575,19 @@ class _BubbleState extends ConsumerState<MessageBubble> {
               ),
             ),
             idle: const SizedBox.shrink(),
+          ),
+        if (presentation.translationDelayed)
+          Padding(
+            key: const ValueKey('translation-delayed'),
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              context.l10n.translating,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.25,
+                color: BlabColors.textMuted,
+              ),
+            ),
           ),
         if (showUnsupportedLanguageHint)
           UnsupportedLanguageNotice(

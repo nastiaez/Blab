@@ -1,0 +1,794 @@
+[
+  {
+    "message_id": "396cf0d3-be19-4d65-b05f-3fc9a4b227bd",
+    "chat_id": "a1000000-0000-4000-8000-000000000001",
+    "direction": "en-to-nl",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 28,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2877,
+      "00000000-0000-4000-8000-00000000000a": 4750
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 5102,
+      "00000000-0000-4000-8000-00000000000a": 6346
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Ik breng morgen het boek mee.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "84b44ffb-1fdb-48fe-b3f5-873c53dba444",
+    "chat_id": "a1000000-0000-4000-8000-000000000001",
+    "direction": "nl-to-en",
+    "source": "Ik breng morgen het boek mee.",
+    "ack_ms": 11,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1710,
+      "00000000-0000-4000-8000-00000000000a": 1876
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2913,
+      "00000000-0000-4000-8000-00000000000a": 4118
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "nl",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "nl",
+        "explanation": null,
+        "translation": "Ik breng morgen het boek mee.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "fd34ecf1-8ad1-4b73-9ed5-99618fe55d6d",
+    "chat_id": "a1000000-0000-4000-8000-000000000002",
+    "direction": "en-to-en",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 10,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 1737,
+      "00000000-0000-4000-8000-00000000000b": 1902
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 4290,
+      "00000000-0000-4000-8000-00000000000b": 4290
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "c5e82091-d313-45df-9a9f-e9a03e2ee3cd",
+    "chat_id": "a1000000-0000-4000-8000-000000000002",
+    "direction": "en-to-en",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 38,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 1846,
+      "00000000-0000-4000-8000-00000000000b": 2314
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 3672,
+      "00000000-0000-4000-8000-00000000000b": 3672
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "4eddb272-9dfe-4141-a628-bc0047dd39fd",
+    "chat_id": "a1000000-0000-4000-8000-000000000003",
+    "direction": "en-to-fr",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 9,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1866,
+      "00000000-0000-4000-8000-00000000000a": 2399
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3767,
+      "00000000-0000-4000-8000-00000000000a": 5342
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "J'apporterai le livre demain.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "df5bcaf4-ca9b-4eeb-b662-2e2a8ea8ea9b",
+    "chat_id": "a1000000-0000-4000-8000-000000000003",
+    "direction": "fr-to-en",
+    "source": "J’apporterai le livre demain.",
+    "ack_ms": 32,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1841,
+      "00000000-0000-4000-8000-00000000000a": 2015
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3251,
+      "00000000-0000-4000-8000-00000000000a": 4466
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "fr",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "fr",
+        "explanation": null,
+        "translation": "J’apporterai le livre demain.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "161b8ac8-8b8e-40da-ba5b-72327a591fbb",
+    "chat_id": "a1000000-0000-4000-8000-000000000004",
+    "direction": "en-to-de",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 12,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1859,
+      "00000000-0000-4000-8000-00000000000a": 2685
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 4156,
+      "00000000-0000-4000-8000-00000000000a": 5833
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Ich bringe morgen das Buch mit.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "686e97c3-b326-4c78-9c48-7bd68e73aab2",
+    "chat_id": "a1000000-0000-4000-8000-000000000004",
+    "direction": "de-to-en",
+    "source": "Ich bringe morgen das Buch mit.",
+    "ack_ms": 17,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 1711,
+      "00000000-0000-4000-8000-00000000000b": 1883
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 3409,
+      "00000000-0000-4000-8000-00000000000b": 4585
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Ich bringe morgen das Buch mit.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "84df9a70-052e-427b-a268-b13a40a0d1e7",
+    "chat_id": "a1000000-0000-4000-8000-000000000005",
+    "direction": "en-to-hi",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 8,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1707,
+      "00000000-0000-4000-8000-00000000000a": 6351
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 5035,
+      "00000000-0000-4000-8000-00000000000a": 7394
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "मैं कल किताब लाऊँगी।",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "5efaf809-34c2-48f7-8dc2-59d7ac1467fc",
+    "chat_id": "a1000000-0000-4000-8000-000000000005",
+    "direction": "hi-to-en",
+    "source": "मैं कल किताब लाऊँगा।",
+    "ack_ms": 22,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1780,
+      "00000000-0000-4000-8000-00000000000a": 1780
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2824,
+      "00000000-0000-4000-8000-00000000000b": 4251
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "hi",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "hi",
+        "explanation": null,
+        "translation": "मैं कल किताब लाऊँगा।",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "0f76825f-5554-439a-b319-ad4e995052a7",
+    "chat_id": "a1000000-0000-4000-8000-000000000006",
+    "direction": "en-to-it",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 12,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2340,
+      "00000000-0000-4000-8000-00000000000a": 2917
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 4431,
+      "00000000-0000-4000-8000-00000000000a": 5777
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Porterò il libro domani.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "f90301b6-810d-4ee9-8fef-1cdf96918440",
+    "chat_id": "a1000000-0000-4000-8000-000000000006",
+    "direction": "it-to-en",
+    "source": "Porterò il libro domani.",
+    "ack_ms": 14,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1677,
+      "00000000-0000-4000-8000-00000000000a": 2004
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3166,
+      "00000000-0000-4000-8000-00000000000a": 4311
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "it",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "it",
+        "explanation": null,
+        "translation": "Porterò il libro domani.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "74943663-8817-4936-a679-9080e0018d1d",
+    "chat_id": "a1000000-0000-4000-8000-000000000007",
+    "direction": "en-to-pt",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 7,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2339,
+      "00000000-0000-4000-8000-00000000000a": 2994
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 4969,
+      "00000000-0000-4000-8000-00000000000a": 5966
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Vou trazer o livro amanhã.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "6815cc37-1b0d-4312-9224-3c6c4ede96f3",
+    "chat_id": "a1000000-0000-4000-8000-000000000007",
+    "direction": "pt-to-en",
+    "source": "Vou trazer o livro amanhã.",
+    "ack_ms": 7,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1836,
+      "00000000-0000-4000-8000-00000000000a": 2168
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 3336,
+      "00000000-0000-4000-8000-00000000000b": 4348
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "pt",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "pt",
+        "explanation": null,
+        "translation": "Vou trazer o livro amanhã.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "f5a70110-1ba8-4d0d-b3bc-5e72ea0be104",
+    "chat_id": "a1000000-0000-4000-8000-000000000008",
+    "direction": "en-to-es",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 5,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2455,
+      "00000000-0000-4000-8000-00000000000b": 2615
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 3634,
+      "00000000-0000-4000-8000-00000000000b": 4810
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Traeré el libro mañana.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "a66f56f9-66f9-460b-bae3-33629751a441",
+    "chat_id": "a1000000-0000-4000-8000-000000000008",
+    "direction": "es-to-en",
+    "source": "Traeré el libro mañana.",
+    "ack_ms": 8,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1850,
+      "00000000-0000-4000-8000-00000000000a": 2014
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3349,
+      "00000000-0000-4000-8000-00000000000a": 4494
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "es",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "es",
+        "explanation": null,
+        "translation": "Traeré el libro mañana.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "c4cd1ca8-fb49-46ab-8bf6-f7957b5bb7b0",
+    "chat_id": "a1000000-0000-4000-8000-000000000009",
+    "direction": "en-to-ta",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 4,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1650,
+      "00000000-0000-4000-8000-00000000000a": 2976
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3304,
+      "00000000-0000-4000-8000-00000000000a": 4623
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "நான் நாளை புத்தகத்தைக் கொண்டு வருவேன்.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "5c5142e7-26b1-47ce-95da-80610d687184",
+    "chat_id": "a1000000-0000-4000-8000-000000000009",
+    "direction": "ta-to-en",
+    "source": "நான் நாளை புத்தகத்தைக் கொண்டு வருவேன்.",
+    "ack_ms": 7,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 1500,
+      "00000000-0000-4000-8000-00000000000a": 1666
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2978,
+      "00000000-0000-4000-8000-00000000000a": 4303
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "ta",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "ta",
+        "explanation": null,
+        "translation": "நான் நாளை புத்தகத்தைக் கொண்டு வருவேன்.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "e5a6816d-4bb2-4c33-a078-bd6ee3b2335f",
+    "chat_id": "a1000000-0000-4000-8000-000000000010",
+    "direction": "en-to-tr",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 5,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 1833,
+      "00000000-0000-4000-8000-00000000000b": 1833
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2993,
+      "00000000-0000-4000-8000-00000000000a": 4138
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Yarın kitabı getireceğim.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "1ffe509d-e946-4e29-9642-3039be811ecb",
+    "chat_id": "a1000000-0000-4000-8000-000000000010",
+    "direction": "tr-to-en",
+    "source": "Yarın kitabı getireceğim.",
+    "ack_ms": 4,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 1827,
+      "00000000-0000-4000-8000-00000000000b": 1995
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2834,
+      "00000000-0000-4000-8000-00000000000b": 5006
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "tr",
+        "explanation": null,
+        "translation": "Yarın kitabı getireceğim.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "tr",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "a7465ced-9919-4e56-9af9-8330b6ffb764",
+    "chat_id": "a1000000-0000-4000-8000-000000000011",
+    "direction": "en-to-uk",
+    "source": "I will bring the book tomorrow.",
+    "ack_ms": 7,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2010,
+      "00000000-0000-4000-8000-00000000000a": 3009
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 4529,
+      "00000000-0000-4000-8000-00000000000a": 5671
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Я принесу книгу завтра.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "31ac0ed6-0825-4533-ad5f-43aa91032a54",
+    "chat_id": "a1000000-0000-4000-8000-000000000011",
+    "direction": "uk-to-en",
+    "source": "Я принесу книгу завтра.",
+    "ack_ms": 8,
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 2181,
+      "00000000-0000-4000-8000-00000000000a": 2520
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3534,
+      "00000000-0000-4000-8000-00000000000a": 4520
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "uk",
+        "explanation": null,
+        "translation": "I will bring the book tomorrow.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "uk",
+        "explanation": null,
+        "translation": "Я принесу книгу завтра.",
+        "interfaceText": "I will bring the book tomorrow.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  }
+]

@@ -42,6 +42,9 @@ void main() {
     final markedRead = <String>[];
     final container = ProviderContainer(
       overrides: [
+        clearReadNotificationsProvider.overrideWithValue(
+          (user, chat, ids) async {},
+        ),
         currentUserIdProvider.overrideWith((ref) => ref.watch(_userIdProvider)),
         readReceiptsTransportStateProvider.overrideWithValue(
           const PrivacySettingState.ready(true),

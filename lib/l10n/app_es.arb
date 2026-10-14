@@ -1,6 +1,7 @@
 {
   "@@locale": "es",
   "appName": "Blab",
+  "wordHelpPending": "La ayuda de palabras aún no está disponible.",
   "unsupportedLanguageHint": "Blab todavía no habla este idioma.",
   "back": "Atrás",
   "apply": "Aplicar",

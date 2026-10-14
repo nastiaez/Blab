@@ -1,0 +1,202 @@
+[
+  {
+    "message_id": "b7bed49a-a261-4935-a395-aaa214c4b79a",
+    "source": "We meet at six.",
+    "ack_ms": 16,
+    "readable": {
+      "00000000-0000-4000-8000-00000000000b": 2504,
+      "00000000-0000-4000-8000-00000000000a": 3271
+    },
+    "complete": {
+      "00000000-0000-4000-8000-00000000000a": 5051,
+      "00000000-0000-4000-8000-00000000000b": 5054
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Wir treffen uns um sechs.",
+        "interfaceText": "We meet at six.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Wir treffen uns um sechs.",
+        "interfaceText": "We meet at six.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "046d8b61-9628-4e53-98a4-af9236598f9a",
+    "source": "Not seven.",
+    "ack_ms": 25,
+    "readable": {
+      "00000000-0000-4000-8000-00000000000b": 2758,
+      "00000000-0000-4000-8000-00000000000a": 5321
+    },
+    "complete": {
+      "00000000-0000-4000-8000-00000000000a": 6100,
+      "00000000-0000-4000-8000-00000000000b": 6102
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Nicht sieben.",
+        "interfaceText": "Not seven.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Nicht sieben.",
+        "interfaceText": "Not seven.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "13e46c99-d6ea-4209-9e86-1874c8468b24",
+    "source": "Bring the red book.",
+    "ack_ms": 34,
+    "readable": {
+      "00000000-0000-4000-8000-00000000000b": 5330,
+      "00000000-0000-4000-8000-00000000000a": 5861
+    },
+    "complete": {
+      "00000000-0000-4000-8000-00000000000a": 7177,
+      "00000000-0000-4000-8000-00000000000b": 7180
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Bring das rote Buch.",
+        "interfaceText": "Bring the red book.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Bring das rote Buch.",
+        "interfaceText": "Bring the red book.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "000e8353-53ea-49f7-9d08-d3f0f0ea2569",
+    "source": "Not the blue one.",
+    "ack_ms": 41,
+    "readable": {
+      "00000000-0000-4000-8000-00000000000a": 9751,
+      "00000000-0000-4000-8000-00000000000b": 10242
+    },
+    "complete": {
+      "00000000-0000-4000-8000-00000000000a": 12259,
+      "00000000-0000-4000-8000-00000000000b": 12260
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Nicht das blaue Buch.",
+        "interfaceText": "Not the blue book.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Nicht das blaue Buch.",
+        "interfaceText": "Not the blue book.",
+        "formAlternatives": null
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "fd4f6471-2061-4d2e-91aa-72aa18e4380e",
+    "source": "At the library.",
+    "ack_ms": 48,
+    "readable": {
+      "00000000-0000-4000-8000-00000000000a": 8016,
+      "00000000-0000-4000-8000-00000000000b": 10249
+    },
+    "complete": {
+      "00000000-0000-4000-8000-00000000000a": 10248,
+      "00000000-0000-4000-8000-00000000000b": 10249
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "In der Bibliothek.",
+        "interfaceText": "In the library.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "error_code": null,
+        "translation_text": "In der Bibliothek.",
+        "interface_text": "In the library."
+      }
+    },
+    "errors": []
+  },
+  {
+    "message_id": "ef9b8dc6-596c-4e93-986a-b78421461886",
+    "source": "See you there!",
+    "ack_ms": 60,
+    "readable": {
+      "00000000-0000-4000-8000-00000000000b": 14472,
+      "00000000-0000-4000-8000-00000000000a": 16280
+    },
+    "complete": {
+      "00000000-0000-4000-8000-00000000000a": 16280,
+      "00000000-0000-4000-8000-00000000000b": 16282
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Ich sehe dich dort!",
+        "interfaceText": "I'll see you there!",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "error_code": null,
+        "translation_text": "Ich sehe dich dort!",
+        "interface_text": "I'll see you there!"
+      }
+    },
+    "errors": []
+  }
+]

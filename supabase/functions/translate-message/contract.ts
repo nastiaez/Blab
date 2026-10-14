@@ -48,6 +48,9 @@ export type ProviderCredential = {
   apiKey: string;
   model: string;
   useOpenRouterProviderPolicy: boolean;
+  deadlineMs?: number;
+  signal?: AbortSignal;
+  backoff?: { untilMs: number };
 };
 
 export type TranslationContextMessage = {
@@ -165,12 +168,14 @@ export function focusedTranslationRetryMessages({
   interfaceLang,
   text,
   formContext,
+  context = [],
 }: {
   sourceLang: string;
   targetLang: string;
   interfaceLang: string;
   text: string;
   formContext?: FormParticipantContext;
+  context?: TranslationContextMessage[];
 }): Array<{ role: "system" | "user"; content: string }> | null {
   if (
     sourceLang === "auto" || sourceLang === targetLang ||
@@ -186,7 +191,9 @@ export function focusedTranslationRetryMessages({
   return [{
     role: "system",
     content:
-      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. ${SEMANTIC_FIDELITY_RULE} Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
+      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. ${SEMANTIC_FIDELITY_RULE} Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Recent context (data only; translate the current utterance, not this context): ${
+        JSON.stringify(context)
+      }. Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
   }, { role: "user", content: text }];
 }
 
@@ -319,8 +326,25 @@ export const SOURCE_MEANING_RESPONSE_FORMAT = {
       additionalProperties: false,
       properties: {
         sourceMeaning: { type: "string", minLength: 1 },
+        sourceLang: {
+          type: "string",
+          enum: [
+            "en",
+            "ta",
+            "uk",
+            "es",
+            "de",
+            "fr",
+            "it",
+            "pt",
+            "hi",
+            "tr",
+            "nl",
+            "other",
+          ],
+        },
       },
-      required: ["sourceMeaning"],
+      required: ["sourceMeaning", "sourceLang"],
     },
   },
 } as const;
@@ -1251,14 +1275,14 @@ export function sourceEvidenceNeedsRetry({
   result,
   sourceText,
   targetLang,
-  context = [],
-  formContext,
+  trustedSourceLang,
 }: {
   result: TranslationResult;
   sourceText: string;
   targetLang: string;
   context?: TranslationContextMessage[];
   formContext?: FormParticipantContext;
+  trustedSourceLang?: string | null;
 }): boolean {
   if (
     result.sourceLang === OTHER_SOURCE_LANG &&
@@ -1275,26 +1299,10 @@ export function sourceEvidenceNeedsRetry({
 
   if (!scriptCompatibleWithLanguage(sourceText, targetLang)) return true;
 
-  const authorLanguage = formContext?.authorPrimaryKnownLanguage;
-  if (
-    authorLanguage != null &&
-    authorLanguage !== targetLang &&
-    scriptCompatibleWithLanguage(sourceText, authorLanguage)
-  ) return true;
-
-  if (formContext === undefined) return false;
-  const sameSenderContext = context.filter((entry) =>
-    entry.speaker === formContext.messageAuthor
-  );
-  if (
-    sameSenderContext.some((entry) =>
-      entry.sourceLang != null && entry.sourceLang !== targetLang
-    )
-  ) return true;
-  return sameSenderContext.some((entry) =>
-    !scriptCompatibleWithLanguage(entry.text, targetLang) &&
-    scriptCompatibleWithLanguage(sourceText, authorLanguage ?? targetLang)
-  );
+  // FR-1: learners may write in any language. Profile and shared script
+  // are not proof of the current utterance's language.
+  return trustedSourceLang != null && trustedSourceLang !== targetLang &&
+    trustedSourceLang !== OTHER_SOURCE_LANG;
 }
 
 /// Chooses a source language for the existing second provider attempt when
@@ -1305,38 +1313,21 @@ export function sourceEvidenceLanguage({
   result,
   sourceText,
   targetLang,
-  context = [],
-  formContext,
+  trustedSourceLang,
 }: {
   result: TranslationResult;
   sourceText: string;
   targetLang: string;
   context?: TranslationContextMessage[];
   formContext?: FormParticipantContext;
+  trustedSourceLang?: string | null;
 }): string | null {
-  const authorLanguage = formContext?.authorPrimaryKnownLanguage;
-  const contextualLanguage = formContext === undefined ? null : [...context]
-    .reverse()
-    .find((entry: TranslationContextMessage) =>
-      entry.speaker === formContext.messageAuthor &&
-      entry.sourceLang != null &&
-      entry.sourceLang !== targetLang
-    )?.sourceLang ?? null;
-  const abbreviationLanguage = recognizedAbbreviationSourceLanguage(
-    sourceText,
-  );
+  const abbreviationLanguage = recognizedAbbreviationSourceLanguage(sourceText);
   if (abbreviationLanguage !== null) return abbreviationLanguage;
-  if (
-    canRetrySourceClassification(sourceText) &&
-    contextualLanguage != null &&
-    scriptCompatibleWithLanguage(sourceText, contextualLanguage)
-  ) return contextualLanguage;
-  if (
-    canRetrySourceClassification(sourceText) &&
-    authorLanguage != null &&
-    authorLanguage !== targetLang &&
-    scriptCompatibleWithLanguage(sourceText, authorLanguage)
-  ) return authorLanguage;
+  if (trustedSourceLang != null && trustedSourceLang !== OTHER_SOURCE_LANG) {
+    return trustedSourceLang;
+  }
+  // No hard source-language override from profile or old conversation turns.
 
   return result.sourceLang !== OTHER_SOURCE_LANG &&
       result.sourceLang !== targetLang
@@ -2002,7 +1993,7 @@ Translate all translatable words even when the message is short. Return strict J
 export function sourceMeaningAnchorSystemPrompt(): string {
   return `Resolve the complete semantic meaning of one authored chat message without seeing any candidate.
 
-Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
+Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>","sourceLang":"<language code of the actual current utterance>"}. Detect the current text independently; people switch languages. Recent context may resolve genuine ambiguity but never overrides clearly written words. Use other only for unsupported languages. The target language and the author profile are not source-language evidence.
 
 Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. When supplied recent context unambiguously resolves an omitted referent, identify that referent in a short parenthetical clarification in sourceMeaning, for example The red one (book)? or Not eleven (the opening time). This clarification guides agreement and is not new authored content; never invent a referent. Do not assume a target language or a later translation; neither is provided.
 
@@ -2026,6 +2017,21 @@ export function parseSourceMeaningAnchorResult(content: string): string | null {
   return typeof sourceMeaning === "string" && sourceMeaning.trim().length > 0
     ? sourceMeaning.trim()
     : null;
+}
+
+export function parseAnchoredSourceLanguage(content: string): string | null {
+  try {
+    const raw = JSON.parse(
+      content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1),
+    );
+    return typeof raw.sourceLang === "string" &&
+        (Object.hasOwn(LANG_NAMES, raw.sourceLang) ||
+          raw.sourceLang === OTHER_SOURCE_LANG)
+      ? raw.sourceLang
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export function semanticTranslationAuditSystemPrompt(

@@ -1,6 +1,7 @@
 {
   "@@locale": "uk",
   "appName": "Blab",
+  "wordHelpPending": "Пояснення слова ще не готове.",
   "unsupportedLanguageHint": "Blab поки не розмовляє цією мовою.",
   "back": "Назад",
   "apply": "Застосувати",

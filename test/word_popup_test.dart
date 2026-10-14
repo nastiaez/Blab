@@ -48,6 +48,38 @@ class _RecordingTtsService implements TtsService {
 }
 
 void main() {
+  testWidgets('open popup gains late word help without a second tap', (
+    tester,
+  ) async {
+    final metadata = ValueNotifier<List<MessageToken>>([]);
+    addTearDown(metadata.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ValueListenableBuilder<List<MessageToken>>(
+              valueListenable: metadata,
+              builder: (_, tokens, _) => MessageText(
+                text: 'schnell',
+                tokens: tokens,
+                languageCode: 'de',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('schnell'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('word-help-pending')), findsOneWidget);
+    metadata.value = [const MessageToken(text: 'schnell', gloss: 'fast')];
+    await tester.pumpAndSettle();
+    expect(find.text('fast'), findsOneWidget);
+    expect(find.byKey(const ValueKey('word-help-pending')), findsNothing);
+  });
+
   testWidgets('tapping a content token opens the word popup', (tester) async {
     final message = Message(
       id: 'm1',

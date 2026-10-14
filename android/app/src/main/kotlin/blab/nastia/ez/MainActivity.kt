@@ -61,6 +61,20 @@ class MainActivity : FlutterActivity() {
                 if (call.method == "openNotificationSettings") {
                     openNotificationSettings()
                     result.success(null)
+                } else if (call.method == "clearReadNotifications") {
+                    val user = call.argument<String>("userId")
+                    val chat = call.argument<String>("chatId")
+                    val ids = call.argument<List<String>>("messageIds") ?: emptyList()
+                    val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    if (user != null && chat != null) {
+                        val tags = ids.map { "blab:$user:$chat:$it" }.toSet()
+                        for (notification in manager.activeNotifications) {
+                            if (notification.tag in tags) {
+                                manager.cancel(notification.tag, notification.id)
+                            }
+                        }
+                    }
+                    result.success(null)
                 } else {
                     result.notImplemented()
                 }

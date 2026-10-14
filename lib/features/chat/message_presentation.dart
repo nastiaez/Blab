@@ -14,6 +14,7 @@ class MessagePresentation {
     this.knownLanguageText,
     this.listenText,
     this.translationFailed = false,
+    this.translationDelayed = false,
     this.unsupportedSource = false,
   });
 
@@ -23,6 +24,7 @@ class MessagePresentation {
   final String? knownLanguageText;
   final String? listenText;
   final bool translationFailed;
+  final bool translationDelayed;
   final bool unsupportedSource;
 }
 
@@ -99,7 +101,10 @@ MessagePresentation resolveMessagePresentation({
     );
   }
 
-  final failed = translation is AsyncError<MessageTranslation>;
+  final delayed =
+      translation is AsyncError<MessageTranslation> &&
+      translation.error is MessageTranslationPending;
+  final failed = translation is AsyncError<MessageTranslation> && !delayed;
   final needsTranslation =
       mode == ChatMode.practice ||
       (resolvedSourceLang != null &&
@@ -109,5 +114,6 @@ MessagePresentation resolveMessagePresentation({
     originalText: authoredText,
     canRevealOriginal: false,
     translationFailed: failed && needsTranslation,
+    translationDelayed: delayed && needsTranslation,
   );
 }

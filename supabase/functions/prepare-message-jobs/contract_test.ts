@@ -1,4 +1,5 @@
 import {
+  jobFailureReason,
   orderedJobs,
   planJobOutcome,
   settleJobs,
@@ -38,7 +39,7 @@ Deno.test("transient failures retry with bounded delay", () => {
   const outcome = planJobOutcome({ status: 502, attempts: 2 });
   assert(outcome.kind === "retry", "provider outage retries");
   if (outcome.kind !== "retry") throw new Error("retry outcome required");
-  assert(outcome.delaySeconds === 20, "second retry uses bounded backoff");
+  assert(outcome.delaySeconds === 4, "second retry uses bounded backoff");
 });
 
 Deno.test("permanent failures stop immediately", () => {
@@ -88,5 +89,32 @@ Deno.test("an unrelated slow job does not delay an already claimed message", asy
   assert(
     outcomes.map((x) => x.result).join(",") === "a,b,c",
     "result order stays deterministic",
+  );
+});
+
+Deno.test("failure diagnostics retain bounded reasons, never private provider text", () => {
+  assert(
+    jobFailureReason({
+      error: "translation_unavailable",
+      reason: "openrouter_source_evidence_conflict",
+    }, 502) === "openrouter_source_evidence_conflict",
+    "specific reason survives",
+  );
+  assert(
+    jobFailureReason({ reason: "private user text goes here" }, 502) ===
+      "http_502",
+    "arbitrary provider prose excluded",
+  );
+});
+
+Deno.test("retry delay respects provider Retry-After", () => {
+  const value = planJobOutcome({
+    status: 429,
+    attempts: 1,
+    retryAfterSeconds: 90,
+  });
+  assert(
+    value.kind === "retry" && value.delaySeconds >= 90,
+    "no early quota retry",
   );
 });

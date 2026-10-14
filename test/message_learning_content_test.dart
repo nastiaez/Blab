@@ -126,6 +126,37 @@ void main() {
     }
   }
 
+  testWidgets('correct same-language Practice words still open definitions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: host(
+          const AsyncData(
+            MessageTranslation(
+              translation: 'Sehr schnell',
+              interfaceText: 'Very fast',
+              interfaceLang: 'en',
+              sourceLang: 'de',
+              mode: LearningAidMode.none,
+              tokens: [
+                MessageToken(text: 'Sehr', gloss: 'very', isContent: true),
+                MessageToken(text: ' ', isContent: false),
+                MessageToken(text: 'schnell', gloss: 'fast', isContent: true),
+              ],
+            ),
+          ),
+          authoredText: 'Sehr schnell',
+          expanded: false,
+        ),
+      ),
+    );
+    await tester.tap(find.text('schnell'));
+    await tester.pumpAndSettle();
+    expect(find.text('fast'), findsOneWidget);
+    expect(find.text('schnell'), findsNWidgets(2));
+  });
+
   testWidgets('unsupported source keeps the authored text visible', (
     tester,
   ) async {
@@ -680,7 +711,11 @@ void main() {
       ),
     );
 
-    expect(find.text('Was machst du?'), findsOneWidget);
+    expectWords(['Was', 'machst', 'du']);
+    expect(
+      tester.widget<MessageText>(find.byType(MessageText)).text,
+      'Was machst du?',
+    );
     expect(find.text('What are you doing?'), findsNothing);
     expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
     expect(find.textContaining('Correction:'), findsNothing);

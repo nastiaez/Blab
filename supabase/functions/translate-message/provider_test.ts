@@ -299,3 +299,38 @@ Deno.test("short messages do not reserve a long-message completion budget", () =
     "long metadata retains room",
   );
 });
+
+Deno.test("provider backoff prevents same-account hedge and retains Retry-After", async () => {
+  const { fetchChatCompletion, ProviderFetchError } = await import(
+    "./provider.ts"
+  );
+  const credential = {
+    provider: "openrouter" as const,
+    apiKey: "synthetic",
+    model: "test",
+    useOpenRouterProviderPolicy: false,
+    backoff: { untilMs: 0 },
+  };
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls++;
+    return new Response("{}", {
+      status: 429,
+      headers: { "Retry-After": "120" },
+    });
+  };
+  await fetchChatCompletion(credential, {}, { fetchImpl, onMetric: () => {} });
+  let blocked = false;
+  try {
+    await fetchChatCompletion({ ...credential, model: "fallback" }, {}, {
+      fetchImpl,
+    });
+  } catch (e) {
+    blocked = e instanceof ProviderFetchError &&
+      e.reason === "provider_backoff";
+  }
+  assert(
+    blocked && calls === 1 && credential.backoff.untilMs > Date.now() + 119000,
+    "backoff is shared by model routes on the same account",
+  );
+});

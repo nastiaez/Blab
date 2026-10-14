@@ -1033,6 +1033,12 @@ void main() {
         container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
         isA<AsyncError<MessageTranslation>>(),
       );
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+            .error,
+        isA<MessageTranslationPending>(),
+      );
       expect(calls, 0);
       await notifier.retryTransientFailures(
         targetLang: 'de',
@@ -1200,40 +1206,43 @@ void main() {
     },
   );
 
-  test('loading state times out into a retryable unavailable state', () async {
-    final live = Completer<MessageTranslation>();
-    final container = ProviderContainer(
-      overrides: [
-        translateMessageFnProvider.overrideWithValue(
-          (id, {targetLang}) => live.future,
-        ),
-        chatServiceProvider.overrideWithValue(_ControlledCacheChatService()),
-        translationLoadingTimeoutProvider.overrideWithValue(
-          const Duration(milliseconds: 10),
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    unawaited(
-      container
-          .read(messageTranslationsProvider('chat-1').notifier)
-          .ensure(
-            messageId: 'm1',
-            text: 'hello',
-            targetLang: 'de',
-            interfaceLang: 'en',
+  test(
+    'unreachable work status stays delayed rather than claiming failure',
+    () async {
+      final live = Completer<MessageTranslation>();
+      final container = ProviderContainer(
+        overrides: [
+          translateMessageFnProvider.overrideWithValue(
+            (id, {targetLang}) => live.future,
           ),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 40));
+          chatServiceProvider.overrideWithValue(_ControlledCacheChatService()),
+          translationLoadingTimeoutProvider.overrideWithValue(
+            const Duration(milliseconds: 10),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    final entry = container.read(
-      messageTranslationsProvider('chat-1'),
-    )['m1|de|en'];
-    expect(entry, isA<AsyncError<MessageTranslation>>());
-    expect((entry!.error as MessageTranslationFailed).reason, 'timeout');
-    live.complete(_translation('late'));
-  });
+      unawaited(
+        container
+            .read(messageTranslationsProvider('chat-1').notifier)
+            .ensure(
+              messageId: 'm1',
+              text: 'hello',
+              targetLang: 'de',
+              interfaceLang: 'en',
+            ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      final entry = container.read(
+        messageTranslationsProvider('chat-1'),
+      )['m1|de|en'];
+      expect(entry, isA<AsyncError<MessageTranslation>>());
+      expect(entry!.error, isA<MessageTranslationPending>());
+      live.complete(_translation('late'));
+    },
+  );
 
   test('visible cache misses serialize live translation calls', () async {
     final pending = <String, Completer<MessageTranslation>>{};

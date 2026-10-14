@@ -2191,6 +2191,7 @@ Deno.test("provider retries a misclassified short source", () => {
 });
 
 type SourceEvidenceNeedsRetry = (args: {
+  trustedSourceLang?: string | null;
   result: TranslationResult;
   sourceText: string;
   targetLang: string;
@@ -2228,6 +2229,7 @@ Deno.test("source evidence retry rejects No misclassified as German", () => {
       result: noAsGerman!,
       sourceText: "No",
       targetLang: "de",
+      trustedSourceLang: "en",
       context: [{
         speaker: "partner",
         text: "I am not coming today",
@@ -2243,7 +2245,7 @@ Deno.test("source evidence retry rejects No misclassified as German", () => {
         authorPrimaryKnownLanguage: "en",
       },
     }),
-    "same-sender English evidence must reject the German classification",
+    "independent English evidence must reject the German classification",
   );
 });
 
@@ -3220,4 +3222,42 @@ Deno.test("malformed optional forms defer to required agreement audit instead of
     }, 0),
     "dropping malformed metadata cannot bypass agreement review",
   );
+});
+
+Deno.test("learners can write short correct German despite an English profile", () => {
+  for (const text of ["Sehr schnell", "Nein", "Sehr schön"]) {
+    const result: TranslationResult = {
+      mode: "none",
+      sourceLang: "de",
+      translation: text,
+      interfaceText: "German utterance",
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    };
+    assert(
+      !sourceEvidenceRetry()({
+        result,
+        sourceText: text,
+        targetLang: "de",
+        trustedSourceLang: "de",
+        context: [{
+          speaker: "viewer",
+          text: "Yesterday I spoke English",
+          sourceLang: "en",
+        }],
+        formContext: {
+          viewerName: "Alice",
+          partnerName: "Bob",
+          messageAuthor: "viewer",
+          viewerForm: null,
+          partnerForm: null,
+          tone: "informal",
+          authorPrimaryKnownLanguage: "en",
+        },
+      }),
+      "profile/history must not override the utterance",
+    );
+  }
 });

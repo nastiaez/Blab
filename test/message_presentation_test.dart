@@ -22,6 +22,21 @@ MessageTranslation _translation({
 );
 
 void main() {
+  test('pending preparation is delayed, not a terminal error', () {
+    final result = resolveMessagePresentation(
+      authoredText: 'Hello',
+      translation: AsyncError(
+        const MessageTranslationPending(),
+        StackTrace.current,
+      ),
+      mode: ChatMode.practice,
+      knownLanguageCodes: ['en'],
+    );
+    expect(result.translationFailed, false);
+    expect(result.translationDelayed, true);
+    expect(result.primaryText, 'Hello');
+  });
+
   test(
     'practice primary text is learning language with known-language reveal',
     () {

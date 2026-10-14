@@ -43,11 +43,30 @@ class MessageText extends ConsumerStatefulWidget {
 }
 
 class _MessageTextState extends ConsumerState<MessageText> {
+  void Function(MessageToken?)? _updatePopup;
+  int? _selectedWord;
+
+  @override
+  void didUpdateWidget(covariant MessageText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final update = _updatePopup;
+    final selected = _selectedWord;
+    if (update == null || selected == null) return;
+    final tokens = messageTokensForText(widget.text, metadata: widget.tokens);
+    final token = oldWidget.text == widget.text && selected < tokens.length
+        ? tokens[selected]
+        : null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) update(token);
+    });
+  }
+
   final Map<int, GlobalKey> _wordKeys = <int, GlobalKey>{};
   final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
 
   @override
   void dispose() {
+    _updatePopup?.call(null);
     for (final r in _recognizers) {
       r.dispose();
     }
@@ -69,7 +88,8 @@ class _MessageTextState extends ConsumerState<MessageText> {
     final topLeft = box.localToGlobal(Offset.zero);
 
     final tts = ref.read(ttsServiceProvider);
-    showWordPopup(
+    _selectedWord = index;
+    _updatePopup = showWordPopup(
       context,
       token: token,
       wordTopLeft: topLeft,

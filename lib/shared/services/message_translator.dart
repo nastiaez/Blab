@@ -125,6 +125,11 @@ class MessageTranslation {
           : <GrammaticalFormAlternatives>[formAlternatives!]);
 }
 
+/// Durable server work is still pending; not a terminal translation failure.
+class MessageTranslationPending implements Exception {
+  const MessageTranslationPending();
+}
+
 class MessageTranslationFailed implements Exception {
   MessageTranslationFailed(this.reason, {this.retryAfter});
   final String reason;

@@ -26,6 +26,7 @@ import {
   LANG_NAMES,
   missingFormAlternativesNeedsAudit,
   normalizeFormSubject,
+  parseAnchoredSourceLanguage,
   parseCorrectionAuditCandidate,
   parseFormAuditResult,
   parseProviderResult,
@@ -60,6 +61,7 @@ import {
   wordMetadataNeedsRetry,
   wordMetadataRepairSystemPrompt,
 } from "./contract.ts";
+import { firstAccepted } from "./recovery.ts";
 import { independentConsensus } from "./consensus.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
 import {
@@ -270,7 +272,7 @@ async function anchorSourceMeaning(
   credential: ProviderCredential,
   sourceText: string,
   context: TranslationContextMessage[] = [],
-): Promise<string | null> {
+): Promise<{ meaning: string; sourceLang: string } | null> {
   for (let anchorAttempt = 0; anchorAttempt < 2; anchorAttempt += 1) {
     let response: Response;
     try {
@@ -310,7 +312,10 @@ async function anchorSourceMeaning(
     })?.choices?.[0]?.message?.content;
     if (typeof content !== "string") continue;
     const sourceMeaning = parseSourceMeaningAnchorResult(content);
-    if (sourceMeaning !== null) return sourceMeaning;
+    const sourceLang = parseAnchoredSourceLanguage(content);
+    if (sourceMeaning !== null && sourceLang !== null) {
+      return { meaning: sourceMeaning, sourceLang };
+    }
   }
   return null;
 }
@@ -705,6 +710,7 @@ Deno.serve(async (req) => {
     messageId?: unknown;
     forceRefresh?: unknown;
     jobId?: unknown;
+    jobLease?: unknown;
     targetLang?: unknown;
   };
   try {
@@ -715,6 +721,10 @@ Deno.serve(async (req) => {
   const internalJobId = workerJobId(body);
   const isWorker = internalJobId !== null &&
     authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+  const jobLease = workerJobId({ jobId: body.jobLease });
+  if (isWorker && jobLease === null) {
+    return json({ error: "translation_stale" }, 409);
+  }
   let messageId: string;
   let requesterId: string | null = null;
   let preparedData: unknown;
@@ -723,8 +733,10 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const response = await admin.rpc("request_message_translation_job", {
+    const response = await admin.rpc("leased_translation_action", {
       p_job_id: internalJobId,
+      p_lease_token: jobLease,
+      p_action: "prepare",
     });
     preparedData = response.data;
     preparedError = response.error;
@@ -861,7 +873,11 @@ Deno.serve(async (req) => {
       openAiModel: OPENAI_MODEL,
       openRouterProviderPolicy: OPENROUTER_PROVIDER_POLICY,
       environment: BLAB_ENV,
-    });
+    }).map((credential) => ({
+      ...credential,
+      deadlineMs: performance.now() + 8000,
+      backoff: { untilMs: 0 },
+    }));
   if (
     !deterministicUnsupported && !protectedLiteral && providerKeys.length === 0
   ) {
@@ -893,10 +909,10 @@ Deno.serve(async (req) => {
     }
     : null;
   let providerFailure = "unknown";
-  let lastFailedSourceLang: string | null = null;
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  let resumedReadable = false;
   if (TEXT_FIRST_DELIVERY && result === null && requesterId !== null) {
     // Resume metadata from verified text after a worker interruption. Never
     // translate the same accepted text again merely because its gloss failed.
@@ -909,6 +925,7 @@ Deno.serve(async (req) => {
       )
       .maybeSingle();
     if (readable) {
+      resumedReadable = true;
       result = restoreAcceptedReadable(
         readable.result,
         text,
@@ -917,199 +934,136 @@ Deno.serve(async (req) => {
       );
     }
   }
-  for (const credential of result === null ? providerKeys : []) {
-    const semanticCredential = semanticReviewCredential(credential);
-    const sourceMeaningPromise = anchorSourceMeaning(
-      semanticCredential,
-      text,
-      context,
-    );
-    let previousSourceClassificationConflict = false;
-    let retrySourceLang: string | null = recognizedAbbreviationSourceLanguage(
-      text,
-    );
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
-      const targetName = LANG_NAMES[targetLang] ?? targetLang;
-      const sourceClassificationGuidance = previousSourceClassificationConflict
-        ? sourceClassificationRetryGuidance(targetLang)
-        : "";
-      previousSourceClassificationConflict = false;
-      const wrongModeGuidance = lastFailedSourceLang !== null &&
-          lastFailedSourceLang !== targetLang
-        ? ` Your previous response detected sourceLang=${lastFailedSourceLang}, which is not ${targetLang}, so mode=none/correction was invalid there — mode must be translation, and "translation" must be a genuine full-sentence rendering in ${targetName}, not a copy of the input.`
-        : "";
-      const retryGuidance = attempt === 0
-        ? ""
-        : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${sourceClassificationGuidance}${wrongModeGuidance}`;
-      let llm: Response;
-      let resolvedSourceLang: string | undefined;
-      try {
-        const focusedRetry = retrySourceLang === null
-          ? null
-          : focusedTranslationRetryMessages({
-            sourceLang: retrySourceLang,
-            targetLang,
-            interfaceLang,
-            text,
-            formContext,
-          });
-        resolvedSourceLang = focusedRetry === null
-          ? undefined
-          : retrySourceLang ?? undefined;
-        llm = await fetchChatCompletion(credential, {
-          temperature: attempt === 0 ? 0 : 0.4,
-          max_completion_tokens: completionBudget(
-            text,
-            TEXT_FIRST_DELIVERY ? "readable" : "metadata",
-          ),
-          response_format: TEXT_FIRST_DELIVERY
-            ? READABLE_TRANSLATION_RESPONSE_FORMAT
-            : TRANSLATION_RESPONSE_FORMAT,
-          messages: (TEXT_FIRST_DELIVERY
-            ? readableProviderMessages
-            : (messages: Array<{ role: string; content: string }>) =>
-              messages)(
-              focusedRetry ?? providerMessages({
-                sourceLang: retrySourceLang ?? sourceLang,
-                targetLang,
-                interfaceLang,
-                text,
-                context,
-                formContext,
-                retryGuidance,
-              }),
-            ),
-        });
-      } catch (error) {
-        const reason = error instanceof ProviderFetchError
-          ? error.reason
-          : "provider_unreachable";
-        providerFailure = `${credential.provider}_${reason}`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      if (!llm.ok) {
-        providerFailure = `${credential.provider}_http_${llm.status}`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-
-      let payload: unknown;
-      try {
-        payload = await llm.json();
-      } catch {
-        providerFailure = `${credential.provider}_invalid_json`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      const content = (payload as {
-        choices?: Array<{ message?: { content?: unknown } }>;
-      })?.choices?.[0]?.message?.content;
-      if (typeof content !== "string") {
-        providerFailure = `${credential.provider}_missing_content`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      let candidate = parseProviderResult(
-        content,
+  const generateReadable = async (
+    credentials: ProviderCredential[],
+    maxAttempts: number,
+  ) => {
+    let result: TranslationResult | null = null;
+    let providerFailure = "unknown";
+    let lastFailedSourceLang: string | null = null;
+    for (const credential of credentials) {
+      const semanticCredential = semanticReviewCredential(credential);
+      const sourceMeaningPromise = anchorSourceMeaning(
+        semanticCredential,
         text,
-        targetLang,
-        interfaceLang,
-        resolvedSourceLang,
-        TEXT_FIRST_DELIVERY,
+        context,
       );
-      if (candidate === null) {
-        providerFailure = `${credential.provider}_${
-          providerResultFailureReason(content)
-        }`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      if (
-        genderedAmbiguityNeedsRetry(candidate, sourceLang, targetLang, text)
-      ) {
-        providerFailure = `${credential.provider}_gendered_ambiguity`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      if (correctionNeedsRetry(candidate, text)) {
-        providerFailure = `${credential.provider}_incomplete_correction`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      // The source-only request starts before generation and never receives a
-      // candidate. Overlap I/O, then require its evidence before any audit.
-      const trustedSourceMeaning = await sourceMeaningPromise;
-      if (trustedSourceMeaning === null) {
-        providerFailure = `${credential.provider}_source_meaning_anchor`;
-        break;
-      }
-      if (
-        candidate.mode === "translation" &&
-        candidate.sourceLang !== targetLang
-      ) {
-        // Both lanes are reviewed against the same candidate-blind anchor.
-        // Word-help repair still waits for the accepted final learning text.
-        const originalInterfaceText = candidate.interfaceText;
-        const interfaceConsensus = targetLang === interfaceLang ||
-            TEXT_FIRST_DELIVERY &&
-              knownLaneIsAuthoredOriginal(
-                text,
-                originalInterfaceText,
-                candidate.sourceLang,
-                interfaceLang,
-              )
-          ? undefined
-          : auditTranslationMeaningConsensus(
-            semanticCredential,
-            text,
-            trustedSourceMeaning,
-            originalInterfaceText,
-            candidate.sourceLang,
-            interfaceLang,
-          );
-        const semanticAudit = await auditTranslationSemantics(
-          semanticCredential,
+      let previousSourceClassificationConflict = false;
+      let retrySourceLang: string | null = recognizedAbbreviationSourceLanguage(
+        text,
+      );
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
+        const targetName = LANG_NAMES[targetLang] ?? targetLang;
+        const sourceClassificationGuidance =
+          previousSourceClassificationConflict
+            ? sourceClassificationRetryGuidance(targetLang)
+            : "";
+        previousSourceClassificationConflict = false;
+        const wrongModeGuidance = lastFailedSourceLang !== null &&
+            lastFailedSourceLang !== targetLang
+          ? ` Your previous response detected sourceLang=${lastFailedSourceLang}, which is not ${targetLang}, so mode=none/correction was invalid there — mode must be translation, and "translation" must be a genuine full-sentence rendering in ${targetName}, not a copy of the input.`
+          : "";
+        const retryGuidance = attempt === 0
+          ? ""
+          : `\n\nThe previous response was unusable. Re-check every contract rule. mode=none or mode=correction is valid only when sourceLang exactly equals ${targetLang}; for every other sourceLang, including other, mode must be translation. Infer the intended language of recognizable misspelled or expressively stretched text; repeated letters and playful capitalization do not make a supported message sourceLang=other. Treat likely names as names and transliterate them when the target script differs. When mode=translation, "translation" must be the complete sentence actually translated into ${targetName}; it must never be left as a copy of the original input, even for short, simple, or already-familiar-looking text. The tokens array is required whenever the translation contains words: reproduce the translation exactly with one content token per word, give every content token a short ${interfaceName} gloss, and include Latin-script romanization for every non-Latin content token. interfaceText must be the complete message in ${interfaceName} (${interfaceLang}); when the learning and interface languages differ, do not copy translation into interfaceText unless the wording is genuinely identical in both languages. Do not silently choose a gendered form when formAlternatives is required; return the explicit linked alternatives.${sourceClassificationGuidance}${wrongModeGuidance}`;
+        let llm: Response;
+        let resolvedSourceLang: string | undefined;
+        try {
+          const focusedRetry = retrySourceLang === null
+            ? null
+            : focusedTranslationRetryMessages({
+              sourceLang: retrySourceLang,
+              targetLang,
+              interfaceLang,
+              text,
+              formContext,
+              context,
+            });
+          resolvedSourceLang = focusedRetry === null
+            ? undefined
+            : retrySourceLang ?? undefined;
+          llm = await fetchChatCompletion(credential, {
+            temperature: attempt === 0 ? 0 : 0.4,
+            max_completion_tokens: completionBudget(
+              text,
+              TEXT_FIRST_DELIVERY ? "readable" : "metadata",
+            ),
+            response_format: TEXT_FIRST_DELIVERY
+              ? READABLE_TRANSLATION_RESPONSE_FORMAT
+              : TRANSLATION_RESPONSE_FORMAT,
+            messages: (TEXT_FIRST_DELIVERY
+              ? readableProviderMessages
+              : (messages: Array<{ role: string; content: string }>) =>
+                messages)(
+                focusedRetry ?? providerMessages({
+                  sourceLang: retrySourceLang ?? sourceLang,
+                  targetLang,
+                  interfaceLang,
+                  text,
+                  context,
+                  formContext,
+                  retryGuidance,
+                }),
+              ),
+          });
+        } catch (error) {
+          const reason = error instanceof ProviderFetchError
+            ? error.reason
+            : "provider_unreachable";
+          providerFailure = `${credential.provider}_${reason}`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        if (!llm.ok) {
+          providerFailure = `${credential.provider}_http_${llm.status}`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+
+        let payload: unknown;
+        try {
+          payload = await llm.json();
+        } catch {
+          providerFailure = `${credential.provider}_invalid_json`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        const content = (payload as {
+          choices?: Array<{ message?: { content?: unknown } }>;
+        })?.choices?.[0]?.message?.content;
+        if (typeof content !== "string") {
+          providerFailure = `${credential.provider}_missing_content`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        let candidate = parseProviderResult(
+          content,
           text,
-          trustedSourceMeaning,
-          candidate.translation,
-          candidate.sourceLang,
           targetLang,
           interfaceLang,
+          resolvedSourceLang,
           TEXT_FIRST_DELIVERY,
         );
-        if (semanticAudit === null || typeof semanticAudit === "string") {
-          providerFailure = `${credential.provider}_semantic_audit_${
-            semanticAudit ?? "unknown"
+        if (candidate === null) {
+          providerFailure = `${credential.provider}_${
+            providerResultFailureReason(content)
           }`;
           console.error("translation provider attempt failed", {
             provider: credential.provider,
@@ -1118,32 +1072,10 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-        if (semanticAudit.preservesMeaning === false) {
-          candidate = {
-            ...candidate,
-            translation: semanticAudit.correctedTranslation,
-            interfaceText: semanticAudit.repairedInterfaceText,
-            tokens: semanticAudit.repairedTokens,
-            formAlternatives: null,
-          };
-        }
-        const interfaceAudit = await auditInterfaceTextSemantics(
-          semanticCredential,
-          text,
-          trustedSourceMeaning,
-          candidate.translation,
-          candidate.interfaceText,
-          candidate.sourceLang,
-          targetLang,
-          interfaceLang,
-          // A corrected Known Language sentence needs its own fresh review.
-          candidate.interfaceText === originalInterfaceText
-            ? interfaceConsensus
-            : undefined,
-          TEXT_FIRST_DELIVERY,
-        );
-        if (interfaceAudit === null) {
-          providerFailure = `${credential.provider}_interface_semantic_audit`;
+        if (
+          genderedAmbiguityNeedsRetry(candidate, sourceLang, targetLang, text)
+        ) {
+          providerFailure = `${credential.provider}_gendered_ambiguity`;
           console.error("translation provider attempt failed", {
             provider: credential.provider,
             model: credential.model,
@@ -1151,21 +1083,8 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-        candidate = {
-          ...candidate,
-          interfaceText: interfaceAudit.interfaceText,
-          tokens: interfaceAudit.repairedTokens ?? candidate.tokens,
-        };
-      }
-      if (candidate.mode === "none" && candidate.sourceLang === targetLang) {
-        const correctionAudit = await auditSameLanguageCorrection(
-          credential,
-          text,
-          targetLang,
-          interfaceLang,
-        );
-        if (correctionAudit === null) {
-          providerFailure = `${credential.provider}_correction_audit`;
+        if (correctionNeedsRetry(candidate, text)) {
+          providerFailure = `${credential.provider}_incomplete_correction`;
           console.error("translation provider attempt failed", {
             provider: credential.provider,
             model: credential.model,
@@ -1173,229 +1092,393 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-        if (correctionAudit.hasError) {
+        // The source-only request starts before generation and never receives a
+        // candidate. Overlap I/O, then require its evidence before any audit.
+        const sourceAnchor = await sourceMeaningPromise;
+        if (sourceAnchor === null) {
+          providerFailure = `${credential.provider}_source_meaning_anchor`;
+          break;
+        }
+        const trustedSourceMeaning = sourceAnchor.meaning;
+        const trustedSourceLang = sourceAnchor.sourceLang;
+        // Correct a copied, mislabelled target-language utterance using the
+        // independently resolved source, not the learner's profile language.
+        if (
+          trustedSourceLang === targetLang && candidate.translation === text
+        ) {
           candidate = {
             ...candidate,
-            mode: "correction",
-            translation: correctionAudit.correctedText,
-            explanation: correctionAudit.explanation,
-            confidence: correctionAudit.confidence,
-            tokens: correctionAudit.tokens!,
-            formAlternatives: null,
+            sourceLang: targetLang,
+            mode: "none",
+            sourceClassificationConflict: false,
           };
         }
-      }
-      if (
-        candidate.mode === "correction" && candidate.sourceLang === targetLang
-      ) {
-        const verdict = await auditTranslationMeaningConsensus(
-          semanticCredential,
-          text,
-          trustedSourceMeaning,
-          candidate.translation,
-          candidate.sourceLang,
-          targetLang,
-        );
-        if (verdict === null) {
-          providerFailure =
-            `${credential.provider}_correction_meaning_unverified`;
+        if (
+          sourceEvidenceNeedsRetry({
+            result: candidate,
+            sourceText: text,
+            targetLang,
+            trustedSourceLang,
+          })
+        ) {
+          retrySourceLang = trustedSourceLang;
+          previousSourceClassificationConflict = true;
+          lastFailedSourceLang = candidate.sourceLang;
+          providerFailure = `${credential.provider}_source_evidence_conflict`;
           continue;
         }
-        if (!verdict.preservesMeaning) {
-          // The authored sentence is already in the learning language. A
-          // rejected speculative correction must not turn readable source
-          // text into a permanent failure. Preserve it and verify the known-
-          // language lane separately against the original source anchor.
-          const literalInterface = targetLang === interfaceLang
-            ? text
-            : await repairInterfaceText(
-              credential,
-              text,
-              targetLang,
-              interfaceLang,
-            );
-          if (
-            literalInterface === null ||
-            !preservesLiteralCharacters(text, literalInterface)
-          ) {
-            providerFailure = `${credential.provider}_literal_interface_repair`;
-            continue;
-          }
-          const interfaceVerdict = targetLang === interfaceLang
-            ? null
-            : await auditTranslationMeaningConsensus(
+        if (
+          candidate.mode === "translation" &&
+          candidate.sourceLang !== targetLang
+        ) {
+          // Both lanes are reviewed against the same candidate-blind anchor.
+          // Word-help repair still waits for the accepted final learning text.
+          const originalInterfaceText = candidate.interfaceText;
+          const interfaceConsensus = targetLang === interfaceLang ||
+              TEXT_FIRST_DELIVERY &&
+                knownLaneIsAuthoredOriginal(
+                  text,
+                  originalInterfaceText,
+                  candidate.sourceLang,
+                  interfaceLang,
+                )
+            ? undefined
+            : auditTranslationMeaningConsensus(
               semanticCredential,
               text,
               trustedSourceMeaning,
-              literalInterface,
-              targetLang,
+              originalInterfaceText,
+              candidate.sourceLang,
               interfaceLang,
             );
-          if (
-            targetLang !== interfaceLang &&
-            (interfaceVerdict === null || !interfaceVerdict.preservesMeaning)
-          ) {
-            providerFailure =
-              `${credential.provider}_literal_interface_meaning`;
+          const semanticAudit = await auditTranslationSemantics(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            candidate.translation,
+            candidate.sourceLang,
+            targetLang,
+            interfaceLang,
+            TEXT_FIRST_DELIVERY,
+          );
+          if (semanticAudit === null || typeof semanticAudit === "string") {
+            providerFailure = `${credential.provider}_semantic_audit_${
+              semanticAudit ?? "unknown"
+            }`;
+            console.error("translation provider attempt failed", {
+              provider: credential.provider,
+              model: credential.model,
+              reason: providerFailure,
+            });
+            continue;
+          }
+          if (semanticAudit.preservesMeaning === false) {
+            candidate = {
+              ...candidate,
+              translation: semanticAudit.correctedTranslation,
+              interfaceText: semanticAudit.repairedInterfaceText,
+              tokens: semanticAudit.repairedTokens,
+              formAlternatives: null,
+            };
+          }
+          const interfaceAudit = await auditInterfaceTextSemantics(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            candidate.translation,
+            candidate.interfaceText,
+            candidate.sourceLang,
+            targetLang,
+            interfaceLang,
+            // A corrected Known Language sentence needs its own fresh review.
+            candidate.interfaceText === originalInterfaceText
+              ? interfaceConsensus
+              : undefined,
+            TEXT_FIRST_DELIVERY,
+          );
+          if (interfaceAudit === null) {
+            providerFailure = `${credential.provider}_interface_semantic_audit`;
+            console.error("translation provider attempt failed", {
+              provider: credential.provider,
+              model: credential.model,
+              reason: providerFailure,
+            });
             continue;
           }
           candidate = {
             ...candidate,
-            mode: "none",
-            translation: text,
-            interfaceText: literalInterface,
-            tokens: [],
-            explanation: null,
-            confidence: null,
-            formAlternatives: null,
+            interfaceText: interfaceAudit.interfaceText,
+            tokens: interfaceAudit.repairedTokens ?? candidate.tokens,
           };
         }
-      }
-      if (hindiFutureNeedsAudit(candidate, targetLang)) {
-        const futureAudit = await auditHindiFutureTranslation(
-          credential,
-          text,
-          candidate.translation,
-          candidate.sourceLang,
-          interfaceLang,
-        );
-        if (futureAudit === null) {
-          providerFailure = `${credential.provider}_hindi_future_audit`;
-          console.error("translation provider attempt failed", {
-            provider: credential.provider,
-            model: credential.model,
-            reason: providerFailure,
-          });
-          continue;
+        if (candidate.mode === "none" && candidate.sourceLang === targetLang) {
+          const correctionAudit = await auditSameLanguageCorrection(
+            credential,
+            text,
+            targetLang,
+            interfaceLang,
+          );
+          if (correctionAudit === null) {
+            providerFailure = `${credential.provider}_correction_audit`;
+            console.error("translation provider attempt failed", {
+              provider: credential.provider,
+              model: credential.model,
+              reason: providerFailure,
+            });
+            continue;
+          }
+          if (correctionAudit.hasError) {
+            candidate = {
+              ...candidate,
+              mode: "correction",
+              translation: correctionAudit.correctedText,
+              explanation: correctionAudit.explanation,
+              confidence: correctionAudit.confidence,
+              tokens: correctionAudit.tokens!,
+              formAlternatives: null,
+            };
+          }
         }
-        candidate = { ...futureAudit, formAlternatives: null };
-      }
-      const needsFormAudit = formContext !== undefined &&
-        missingFormAlternativesNeedsAudit(
-          candidate,
-          targetLang,
-          formContext,
-          attempt,
-        );
-      if (needsFormAudit) {
-        const audit = await auditGrammaticalForm(
-          semanticCredential,
-          text,
-          trustedSourceMeaning,
-          candidate.translation,
-          candidate.sourceLang,
-          targetLang,
-          interfaceLang,
-          formContext!,
-        );
-        const auditedCandidate = resolveOptionalFormAudit(
-          candidate,
-          audit,
-          formContext!,
-        );
-        if (auditedCandidate === null) {
-          providerFailure = `${credential.provider}_invalid_form_audit`;
-          continue;
-        }
-        candidate = auditedCandidate;
-      }
-      if (candidate.formAlternatives && formContext) {
-        candidate.formAlternatives = normalizeFormSubject(
-          candidate.formAlternatives,
-          formContext,
-          text,
-          candidate.sourceLang,
-        );
-      }
-      if (
-        sourceEvidenceNeedsRetry({
-          result: candidate,
-          sourceText: text,
-          targetLang,
-          context,
-          formContext,
-        })
-      ) {
-        retrySourceLang = sourceEvidenceLanguage({
-          result: candidate,
-          sourceText: text,
-          targetLang,
-          context,
-          formContext,
-        });
-        previousSourceClassificationConflict = true;
-        lastFailedSourceLang = candidate.sourceLang;
-        providerFailure = `${credential.provider}_source_evidence_conflict`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      if (translationNeedsRetry(candidate, targetLang, text)) {
-        retrySourceLang = sourceEvidenceLanguage({
-          result: candidate,
-          sourceText: text,
-          targetLang,
-          context,
-          formContext,
-        });
-        previousSourceClassificationConflict =
-          candidate.sourceClassificationConflict === true;
-        lastFailedSourceLang = candidate.sourceLang;
-        providerFailure = previousSourceClassificationConflict
-          ? `${credential.provider}_source_misclassified`
-          : `${credential.provider}_untranslated`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      if (!TEXT_FIRST_DELIVERY && wordMetadataNeedsRetry(candidate)) {
-        providerFailure = `${credential.provider}_incomplete_word_metadata`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
-      }
-      if (
-        !TEXT_FIRST_DELIVERY && wordGlossMetadataNeedsRepair(
-          candidate,
-          targetLang,
-          interfaceLang,
-          text,
-        )
-      ) {
-        const repairedTokens = await repairWordMetadata(
-          credential,
-          candidate.translation,
-          targetLang,
-          interfaceLang,
-        );
-        if (repairedTokens === null) {
-          providerFailure = `${credential.provider}_word_metadata_repair`;
-          console.error("translation provider attempt failed", {
-            provider: credential.provider,
-            model: credential.model,
-            reason: providerFailure,
-          });
-          continue;
-        }
-        candidate.tokens = repairedTokens;
         if (
-          wordGlossMetadataNeedsRepair(
+          candidate.mode === "correction" && candidate.sourceLang === targetLang
+        ) {
+          const verdict = await auditTranslationMeaningConsensus(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            candidate.translation,
+            candidate.sourceLang,
+            targetLang,
+          );
+          if (verdict === null) {
+            providerFailure =
+              `${credential.provider}_correction_meaning_unverified`;
+            continue;
+          }
+          if (!verdict.preservesMeaning) {
+            // The authored sentence is already in the learning language. A
+            // rejected speculative correction must not turn readable source
+            // text into a permanent failure. Preserve it and verify the known-
+            // language lane separately against the original source anchor.
+            const literalInterface = targetLang === interfaceLang
+              ? text
+              : await repairInterfaceText(
+                credential,
+                text,
+                targetLang,
+                interfaceLang,
+              );
+            if (
+              literalInterface === null ||
+              !preservesLiteralCharacters(text, literalInterface)
+            ) {
+              providerFailure =
+                `${credential.provider}_literal_interface_repair`;
+              continue;
+            }
+            const interfaceVerdict = targetLang === interfaceLang
+              ? null
+              : await auditTranslationMeaningConsensus(
+                semanticCredential,
+                text,
+                trustedSourceMeaning,
+                literalInterface,
+                targetLang,
+                interfaceLang,
+              );
+            if (
+              targetLang !== interfaceLang &&
+              (interfaceVerdict === null || !interfaceVerdict.preservesMeaning)
+            ) {
+              providerFailure =
+                `${credential.provider}_literal_interface_meaning`;
+              continue;
+            }
+            candidate = {
+              ...candidate,
+              mode: "none",
+              translation: text,
+              interfaceText: literalInterface,
+              tokens: [],
+              explanation: null,
+              confidence: null,
+              formAlternatives: null,
+            };
+          }
+        }
+        if (hindiFutureNeedsAudit(candidate, targetLang)) {
+          const futureAudit = await auditHindiFutureTranslation(
+            credential,
+            text,
+            candidate.translation,
+            candidate.sourceLang,
+            interfaceLang,
+          );
+          if (futureAudit === null) {
+            providerFailure = `${credential.provider}_hindi_future_audit`;
+            console.error("translation provider attempt failed", {
+              provider: credential.provider,
+              model: credential.model,
+              reason: providerFailure,
+            });
+            continue;
+          }
+          candidate = { ...futureAudit, formAlternatives: null };
+        }
+        const needsFormAudit = formContext !== undefined &&
+          missingFormAlternativesNeedsAudit(
+            candidate,
+            targetLang,
+            formContext,
+            attempt,
+          );
+        if (needsFormAudit) {
+          const audit = await auditGrammaticalForm(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            candidate.translation,
+            candidate.sourceLang,
+            targetLang,
+            interfaceLang,
+            formContext!,
+          );
+          const auditedCandidate = resolveOptionalFormAudit(
+            candidate,
+            audit,
+            formContext!,
+          );
+          if (auditedCandidate === null) {
+            providerFailure = `${credential.provider}_invalid_form_audit`;
+            continue;
+          }
+          candidate = auditedCandidate;
+        }
+        if (candidate.formAlternatives && formContext) {
+          candidate.formAlternatives = normalizeFormSubject(
+            candidate.formAlternatives,
+            formContext,
+            text,
+            candidate.sourceLang,
+          );
+        }
+        if (
+          sourceEvidenceNeedsRetry({
+            result: candidate,
+            sourceText: text,
+            targetLang,
+            context,
+            formContext,
+            trustedSourceLang,
+          })
+        ) {
+          retrySourceLang = sourceEvidenceLanguage({
+            result: candidate,
+            sourceText: text,
+            targetLang,
+            context,
+            formContext,
+            trustedSourceLang,
+          });
+          previousSourceClassificationConflict = true;
+          lastFailedSourceLang = candidate.sourceLang;
+          providerFailure = `${credential.provider}_source_evidence_conflict`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        if (translationNeedsRetry(candidate, targetLang, text)) {
+          retrySourceLang = sourceEvidenceLanguage({
+            result: candidate,
+            sourceText: text,
+            targetLang,
+            context,
+            formContext,
+            trustedSourceLang,
+          });
+          previousSourceClassificationConflict =
+            candidate.sourceClassificationConflict === true;
+          lastFailedSourceLang = candidate.sourceLang;
+          providerFailure = previousSourceClassificationConflict
+            ? `${credential.provider}_source_misclassified`
+            : `${credential.provider}_untranslated`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        if (!TEXT_FIRST_DELIVERY && wordMetadataNeedsRetry(candidate)) {
+          providerFailure = `${credential.provider}_incomplete_word_metadata`;
+          console.error("translation provider attempt failed", {
+            provider: credential.provider,
+            model: credential.model,
+            reason: providerFailure,
+          });
+          continue;
+        }
+        if (
+          !TEXT_FIRST_DELIVERY && wordGlossMetadataNeedsRepair(
             candidate,
             targetLang,
             interfaceLang,
             text,
           )
         ) {
-          providerFailure = `${credential.provider}_word_metadata_copied`;
+          const repairedTokens = await repairWordMetadata(
+            credential,
+            candidate.translation,
+            targetLang,
+            interfaceLang,
+          );
+          if (repairedTokens === null) {
+            providerFailure = `${credential.provider}_word_metadata_repair`;
+            console.error("translation provider attempt failed", {
+              provider: credential.provider,
+              model: credential.model,
+              reason: providerFailure,
+            });
+            continue;
+          }
+          candidate.tokens = repairedTokens;
+          if (
+            wordGlossMetadataNeedsRepair(
+              candidate,
+              targetLang,
+              interfaceLang,
+              text,
+            )
+          ) {
+            providerFailure = `${credential.provider}_word_metadata_copied`;
+            console.error("translation provider attempt failed", {
+              provider: credential.provider,
+              model: credential.model,
+              reason: providerFailure,
+            });
+            continue;
+          }
+        }
+        if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
+          const repaired = await repairInterfaceText(
+            credential,
+            candidate.translation,
+            targetLang,
+            interfaceLang,
+          );
+          if (
+            repaired !== null &&
+            preservesLiteralCharacters(text, candidate.translation) &&
+            preservesLiteralCharacters(text, repaired)
+          ) {
+            candidate.interfaceText = repaired;
+            result = candidate;
+            break;
+          }
+          providerFailure = `${credential.provider}_interface_repair`;
           console.error("translation provider attempt failed", {
             provider: credential.provider,
             model: credential.model,
@@ -1403,54 +1486,65 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-      }
-      if (interfaceOutputNeedsRetry(candidate, targetLang, interfaceLang)) {
-        const repaired = await repairInterfaceText(
-          credential,
-          candidate.translation,
-          targetLang,
-          interfaceLang,
-        );
         if (
-          repaired !== null &&
-          preservesLiteralCharacters(text, candidate.translation) &&
-          preservesLiteralCharacters(text, repaired)
+          !preservesLiteralCharacters(text, candidate.translation) ||
+          !preservesLiteralCharacters(text, candidate.interfaceText)
         ) {
-          candidate.interfaceText = repaired;
-          result = candidate;
-          break;
+          providerFailure = `${credential.provider}_literal_character_changed`;
+          continue;
         }
-        providerFailure = `${credential.provider}_interface_repair`;
-        console.error("translation provider attempt failed", {
-          provider: credential.provider,
-          model: credential.model,
-          reason: providerFailure,
-        });
-        continue;
+        console.log(
+          `translation provider succeeded via ${providerName(credential)}`,
+        );
+        result = candidate;
+        break;
       }
-      if (
-        !preservesLiteralCharacters(text, candidate.translation) ||
-        !preservesLiteralCharacters(text, candidate.interfaceText)
-      ) {
-        providerFailure = `${credential.provider}_literal_character_changed`;
-        continue;
-      }
-      console.log(
-        `translation provider succeeded via ${providerName(credential)}`,
-      );
-      result = candidate;
-      break;
+      if (result !== null) break;
     }
-    if (result !== null) break;
+    return { result, reason: providerFailure };
+  };
+  if (result === null) {
+    const primary = providerKeys[0];
+    // Different model, same privacy policy. Account/gateway independence is
+    // available only when a separately configured native route exists.
+    const alternate = providerKeys[1] ??
+      {
+        ...primary,
+        model: primary.provider === "openrouter"
+          ? OPENROUTER_SEMANTIC_REVIEW_MODEL
+          : OPENAI_SEMANTIC_REVIEW_MODEL,
+      };
+    const selected = await firstAccepted(
+      (signal) => generateReadable([{ ...primary, signal }], 2),
+      (signal) => generateReadable([{ ...alternate, signal }], 1),
+      {
+        budgetMs: Math.max(
+          1,
+          (primary.deadlineMs ?? performance.now() + 8000) - performance.now(),
+        ),
+      },
+    );
+    result = selected.result;
+    providerFailure = selected.reason;
   }
   if (result === null) {
     console.error("translation provider failed after retry", {
       reason: providerFailure,
     });
-    return json({
-      error: "translation_unavailable",
-      reason: providerFailure,
-    }, 502);
+    const retryAfter = Math.max(
+      0,
+      ...providerKeys.map((key) =>
+        Math.ceil(((key.backoff?.untilMs ?? 0) - Date.now()) / 1000)
+      ),
+    );
+    return json(
+      {
+        error: "translation_unavailable",
+        reason: providerFailure,
+      },
+      retryAfter > 0 ? 429 : 502,
+      retryAfter > 0 ? { "Retry-After": String(retryAfter) } : {},
+    );
   }
 
   if (TEXT_FIRST_DELIVERY) {
@@ -1462,42 +1556,72 @@ Deno.serve(async (req) => {
         masculineTokens: [],
       };
     }
-    const published = await admin.rpc("publish_message_readable_variant", {
-      p_message_id: messageId,
-      p_viewer_id: requesterId,
-      p_target_lang: targetLang,
-      p_interface_lang: interfaceLang,
-      p_language_revision: prepared.languageRevision,
-      p_source_hash: sourceHash,
-      p_result: readable,
-      p_cache_contract_version: CACHE_CONTRACT_VERSION,
-    });
+    const published = isWorker
+      ? await admin.rpc("leased_translation_action", {
+        p_job_id: internalJobId,
+        p_lease_token: jobLease,
+        p_action: "readable",
+        p_payload: {
+          result: readable,
+          contractVersion: CACHE_CONTRACT_VERSION,
+        },
+      })
+      : await admin.rpc("publish_message_readable_variant", {
+        p_message_id: messageId,
+        p_viewer_id: requesterId,
+        p_target_lang: targetLang,
+        p_interface_lang: interfaceLang,
+        p_language_revision: prepared.languageRevision,
+        p_source_hash: sourceHash,
+        p_result: readable,
+        p_cache_contract_version: CACHE_CONTRACT_VERSION,
+      });
     if (published.error) return json({ error: "translation_unavailable" }, 500);
     if (published.data !== true) {
       return json({ error: "translation_stale" }, 409);
     }
+    if (isWorker && !resumedReadable) {
+      const yielded = await admin.rpc("leased_translation_action", {
+        p_job_id: internalJobId,
+        p_lease_token: jobLease,
+        p_action: "word_help",
+      });
+      if (yielded.error || yielded.data !== true) {
+        return json({ error: "translation_stale" }, 409);
+      }
+      return json({ status: "word_help_queued" }, 202);
+    }
     const enriched = await completeWordHelp(
-      providerKeys,
+      providerKeys.map((credential) => ({
+        ...credential,
+        deadlineMs: performance.now() + 15000,
+      })),
       result,
       targetLang,
       interfaceLang,
       text,
     );
-    if (!enriched) return json({ error: "word_help_pending" }, 503);
+    if (!enriched) {
+      const retryAfter = Math.max(
+        0,
+        ...providerKeys.map((key) =>
+          Math.ceil(((key.backoff?.untilMs ?? 0) - Date.now()) / 1000)
+        ),
+      );
+      return json(
+        { error: "word_help_pending" },
+        retryAfter > 0 ? 429 : 503,
+        retryAfter > 0 ? { "Retry-After": String(retryAfter) } : {},
+      );
+    }
     result = enriched;
   }
   const completion = isWorker
-    ? await admin.rpc("complete_message_translation_job", {
+    ? await admin.rpc("leased_translation_action", {
       p_job_id: internalJobId,
-      p_translation_text: result.translation,
-      p_interface_text: result.interfaceText,
-      p_source_lang: result.sourceLang,
-      p_aid_mode: result.mode,
-      p_explanation: result.explanation,
-      p_confidence: result.confidence,
-      p_tokens: result.tokens,
-      p_form_alternatives: result.formAlternatives,
-      p_cache_contract_version: CACHE_CONTRACT_VERSION,
+      p_lease_token: jobLease,
+      p_action: "complete",
+      p_payload: { ...result, contractVersion: CACHE_CONTRACT_VERSION },
     })
     : await admin.rpc("complete_message_translation", {
       p_message_id: messageId,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/state/auth_state.dart';
@@ -12,6 +13,25 @@ import 'unread_chat_state.dart';
 typedef MarkReadFn =
     Future<void> Function(List<String> ids, {required bool receiptVisible});
 typedef WatchReadsFn = Stream<List<Map<String, dynamic>>> Function();
+
+typedef ClearReadNotificationsFn =
+    Future<void> Function(String userId, String chatId, List<String> ids);
+final clearReadNotificationsProvider = Provider<ClearReadNotificationsFn>((
+  ref,
+) {
+  return (userId, chatId, ids) async {
+    try {
+      await const MethodChannel('blab/notifications').invokeMethod<void>(
+        'clearReadNotifications',
+        {'userId': userId, 'chatId': chatId, 'messageIds': ids},
+      );
+    } on MissingPluginException {
+      // Non-Android preview.
+    } on PlatformException {
+      // Notification clearing must not block reading.
+    }
+  };
+});
 
 /// Per-chat function pointer for marking ids read. Overridable in tests.
 final markReadFnProvider = Provider.family<MarkReadFn, String>((ref, chatId) {
@@ -74,6 +94,10 @@ class MessageReadsNotifier extends Notifier<Set<String>> {
   }
 
   void reportVisible(String id) {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId != null) {
+      unawaited(ref.read(clearReadNotificationsProvider)(userId, chatId, [id]));
+    }
     final privacy = ref.read(readReceiptsTransportStateProvider);
     if (privacy.isLoaded && !privacy.enabled) return;
     if (!_pending.add(id)) return;

@@ -24,7 +24,7 @@ final translateMessageFnProvider = Provider<TargetedTranslateMessageFn>((ref) {
 });
 
 final translationLoadingTimeoutProvider = Provider<Duration>(
-  (ref) => const Duration(seconds: 10),
+  (ref) => const Duration(seconds: 8),
 );
 
 final translationLifecycleDeadlineProvider = Provider<Duration>(
@@ -267,24 +267,69 @@ class MessageTranslationsNotifier
     _lateCacheRecoveryTimers.remove(key)?.cancel();
     final delay = ref.read(translationLateCacheRecoveryDelayProvider);
     if (delay <= Duration.zero) return;
-    _lateCacheRecoveryTimers[key] = Timer(delay * (1 << attempt), () {
-      _lateCacheRecoveryTimers.remove(key);
-      unawaited(() async {
-        try {
-          final cached = await ref
-              .read(chatServiceProvider)
-              .fetchCachedTranslation(
-                messageId: messageId,
-                targetLang: targetLang,
-                interfaceLang: interfaceLang,
-              );
-          if (!ref.mounted ||
-              _sourceTexts[key] != text ||
-              state[key] is AsyncData<MessageTranslation>) {
-            return;
-          }
-          if (cached == null) {
-            if (attempt < 5) {
+    _lateCacheRecoveryTimers[key] = Timer(
+      delay * (1 << attempt.clamp(0, 3)),
+      () {
+        _lateCacheRecoveryTimers.remove(key);
+        unawaited(() async {
+          try {
+            final cached = await ref
+                .read(chatServiceProvider)
+                .fetchCachedTranslation(
+                  messageId: messageId,
+                  targetLang: targetLang,
+                  interfaceLang: interfaceLang,
+                );
+            if (!ref.mounted ||
+                _sourceTexts[key] != text ||
+                state[key] is AsyncData<MessageTranslation>) {
+              return;
+            }
+            if (cached == null) {
+              final pending = await ref
+                  .read(chatServiceProvider)
+                  .isMessageTranslationPending(
+                    messageId: messageId,
+                    targetLang: targetLang,
+                    interfaceLang: interfaceLang,
+                  );
+              if (!ref.mounted ||
+                  _sourceTexts[key] != text ||
+                  state[key] is AsyncData<MessageTranslation>) {
+                return;
+              }
+              state = {
+                ...state,
+                key: AsyncError(
+                  pending
+                      ? const MessageTranslationPending()
+                      : MessageTranslationFailed('preparation_failed'),
+                  StackTrace.current,
+                ),
+              };
+              if (pending && attempt < 10) {
+                _scheduleLateCacheRecovery(
+                  key: key,
+                  messageId: messageId,
+                  text: text,
+                  targetLang: targetLang,
+                  interfaceLang: interfaceLang,
+                  attempt: attempt + 1,
+                );
+              }
+              return;
+            }
+            final value = _translationFromCache(cached);
+            _recordSourceLang(messageId, value);
+            state = {...state, key: AsyncData(value)};
+          } catch (_) {
+            // The visible Retry state remains available when cache recovery
+            // cannot reach a result. Read-only retries bridge missed Realtime
+            // events without starting AI work or hiding an actionable error.
+            if (ref.mounted &&
+                _sourceTexts[key] == text &&
+                state[key] is! AsyncData<MessageTranslation> &&
+                attempt < 10) {
               _scheduleLateCacheRecovery(
                 key: key,
                 messageId: messageId,
@@ -294,31 +339,10 @@ class MessageTranslationsNotifier
                 attempt: attempt + 1,
               );
             }
-            return;
           }
-          final value = _translationFromCache(cached);
-          _recordSourceLang(messageId, value);
-          state = {...state, key: AsyncData(value)};
-        } catch (_) {
-          // The visible Retry state remains available when cache recovery
-          // cannot reach a result. Read-only retries bridge missed Realtime
-          // events without starting AI work or hiding an actionable error.
-          if (ref.mounted &&
-              _sourceTexts[key] == text &&
-              state[key] is! AsyncData<MessageTranslation> &&
-              attempt < 5) {
-            _scheduleLateCacheRecovery(
-              key: key,
-              messageId: messageId,
-              text: text,
-              targetLang: targetLang,
-              interfaceLang: interfaceLang,
-              attempt: attempt + 1,
-            );
-          }
-        }
-      }());
-    });
+        }());
+      },
+    );
   }
 
   void _recordSourceLang(String messageId, MessageTranslation translation) {
@@ -404,7 +428,7 @@ class MessageTranslationsNotifier
         // The server may keep retrying, but that must not renew the visible
         // loading deadline indefinitely. Realtime/read-only cache recovery
         // still accepts its late result without another provider invocation.
-        var preparationPending = false;
+        var preparationPending = true;
         try {
           preparationPending = await ref
               .read(chatServiceProvider)
@@ -420,9 +444,9 @@ class MessageTranslationsNotifier
           state = {
             ...state,
             key: AsyncError(
-              MessageTranslationFailed(
-                preparationPending ? 'preparation_delayed' : 'timeout',
-              ),
+              preparationPending
+                  ? const MessageTranslationPending()
+                  : MessageTranslationFailed('timeout'),
               StackTrace.current,
             ),
           };

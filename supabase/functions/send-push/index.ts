@@ -41,7 +41,10 @@ function base64Url(value: Uint8Array | string): string {
     : value;
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(
+    /=+$/,
+    "",
+  );
 }
 
 function privateKeyBytes(pem: string): Uint8Array {
@@ -55,7 +58,9 @@ function privateKeyBytes(pem: string): Uint8Array {
 
 async function firebaseAccessToken(): Promise<string> {
   const nowMs = Date.now();
-  if (cachedAccessToken !== null && cachedAccessToken.expiresAt > nowMs + 60_000) {
+  if (
+    cachedAccessToken !== null && cachedAccessToken.expiresAt > nowMs + 60_000
+  ) {
     return cachedAccessToken.value;
   }
   const now = Math.floor(nowMs / 1000);
@@ -103,7 +108,9 @@ async function firebaseAccessToken(): Promise<string> {
     throw new Error(`oauth_${response.status}_${providerCode}`);
   }
   if (typeof body.access_token !== "string") throw new Error("oauth_invalid");
-  const expiresIn = typeof body.expires_in === "number" ? body.expires_in : 3600;
+  const expiresIn = typeof body.expires_in === "number"
+    ? body.expires_in
+    : 3600;
   cachedAccessToken = {
     value: body.access_token,
     expiresAt: nowMs + expiresIn * 1000,
@@ -156,7 +163,9 @@ async function recordAuthenticationFailure(
 }
 
 Deno.serve(async (request) => {
-  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (request.method !== "POST") {
+    return json({ error: "method_not_allowed" }, 405);
+  }
   if (
     PUSH_WEBHOOK_SECRET.length < 24 ||
     request.headers.get("x-blab-push-secret") !== PUSH_WEBHOOK_SECRET
@@ -191,6 +200,17 @@ Deno.serve(async (request) => {
     ? claimedRows[0] as ClaimedPushEvent | undefined
     : undefined;
   if (claimed === undefined) return json({ status: "already_processed" });
+
+  if (claimed.event_type === "chat_message") {
+    const { data: source, error: sourceError } = await supabase
+      .from("push_notification_events").select("source_key")
+      .eq("id", claimed.event_id).single();
+    if (sourceError || !source) {
+      await completeClaimedEvent(supabase, eventId, "source_lookup_failed");
+      return json({ error: "source_lookup_failed" }, 500);
+    }
+    claimed.message_id = source.source_key;
+  }
 
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
@@ -237,7 +257,9 @@ Deno.serve(async (request) => {
     let providerCode = "unreachable";
     try {
       const fcm = await fetch(
-        `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(FIREBASE_PROJECT_ID)}/messages:send`,
+        `https://fcm.googleapis.com/v1/projects/${
+          encodeURIComponent(FIREBASE_PROJECT_ID)
+        }/messages:send`,
         {
           method: "POST",
           headers: {
@@ -282,5 +304,9 @@ Deno.serve(async (request) => {
     p_event_id: eventId,
     p_last_error: failures === 0 ? null : `${failures} delivery failures`,
   });
-  return json({ status: "processed", attempted: tokens?.length ?? 0, failures });
+  return json({
+    status: "processed",
+    attempted: tokens?.length ?? 0,
+    failures,
+  });
 });

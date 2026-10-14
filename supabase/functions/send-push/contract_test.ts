@@ -22,7 +22,10 @@ const event = {
 };
 
 Deno.test("accepts direct and Database Webhook event IDs", () => {
-  assert(eventIdFromWebhook({ eventId: event.event_id }) === event.event_id, "direct");
+  assert(
+    eventIdFromWebhook({ eventId: event.event_id }) === event.event_id,
+    "direct",
+  );
   assert(
     eventIdFromWebhook({ record: { id: event.event_id } }) === event.event_id,
     "webhook record",
@@ -88,4 +91,10 @@ Deno.test("only explicit UNREGISTERED responses retire a token", () => {
   assert(code === "UNREGISTERED", "extract error code");
   assert(isStaleFcmToken(code), "unregistered is stale");
   assert(!isStaleFcmToken("INVALID_ARGUMENT"), "payload error is not stale");
+});
+
+Deno.test("notification identity isolates account, chat and read message", () => {
+  const value = buildFcmMessage({...event, message_id: "read-message"}, "token", false);
+  assert(value.message.android.notification.tag === `blab:${event.recipient_id}:${event.chat_id}:read-message`, "precise cancellation tag");
+  assert(value.message.data.messageId === "read-message", "message identity retained with previews off");
 });

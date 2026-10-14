@@ -1,0 +1,286 @@
+[
+  {
+    "message_id": "845cb444-dd92-46ea-8a70-12ea1a948f85",
+    "chat_id": "171bf020-6176-450b-9f9a-be47d510e95f",
+    "source": "Ich lerne heute Deutsch.",
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3408,
+      "00000000-0000-4000-8000-00000000000a": 3689
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 5961,
+      "00000000-0000-4000-8000-00000000000a": 5961
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Ich lerne heute Deutsch.",
+        "interfaceText": "I am learning German today.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Ich lerne heute Deutsch.",
+        "interfaceText": "I am learning German today.",
+        "formAlternatives": null
+      }
+    },
+    "jobs": [
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 1,
+        "last_error": null
+      },
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 0,
+        "last_error": null
+      }
+    ]
+  },
+  {
+    "message_id": "a10a6508-bd1f-46ac-9822-91ee59c0d725",
+    "chat_id": "171bf020-6176-450b-9f9a-be47d510e95f",
+    "source": "Sehr schnell",
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2233,
+      "00000000-0000-4000-8000-00000000000b": 2233
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000b": 3398,
+      "00000000-0000-4000-8000-00000000000a": 3398
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Sehr schnell",
+        "interfaceText": "Very fast",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Sehr schnell",
+        "interfaceText": "Very fast",
+        "formAlternatives": null
+      }
+    },
+    "jobs": [
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 0,
+        "last_error": null
+      },
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 1,
+        "last_error": null
+      }
+    ]
+  },
+  {
+    "message_id": "42611524-cd56-4b9b-8af2-cff733a3d1e0",
+    "chat_id": "171bf020-6176-450b-9f9a-be47d510e95f",
+    "source": "Nein",
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 1965,
+      "00000000-0000-4000-8000-00000000000b": 2244
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2857,
+      "00000000-0000-4000-8000-00000000000b": 2857
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Nein",
+        "interfaceText": "No",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "none",
+        "confidence": null,
+        "sourceLang": "de",
+        "explanation": null,
+        "translation": "Nein",
+        "interfaceText": "No",
+        "formAlternatives": null
+      }
+    },
+    "jobs": [
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 1,
+        "last_error": null
+      },
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 0,
+        "last_error": null
+      }
+    ]
+  },
+  {
+    "message_id": "2db0b3f5-60a2-4c1d-88d7-097e7326883f",
+    "chat_id": "171bf020-6176-450b-9f9a-be47d510e95f",
+    "source": "We meet at six.",
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2619,
+      "00000000-0000-4000-8000-00000000000b": 2888
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 3842,
+      "00000000-0000-4000-8000-00000000000b": 3842
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Wir treffen uns um sechs.",
+        "interfaceText": "We meet at six.",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Wir treffen uns um sechs.",
+        "interfaceText": "We meet at six.",
+        "formAlternatives": null
+      }
+    },
+    "jobs": [
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 1,
+        "last_error": null
+      },
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 0,
+        "last_error": null
+      }
+    ]
+  },
+  {
+    "message_id": "168a90c3-a9d8-4938-b2ab-d7066eb47ac4",
+    "chat_id": "171bf020-6176-450b-9f9a-be47d510e95f",
+    "source": "Not seven",
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2758,
+      "00000000-0000-4000-8000-00000000000b": 3303
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 3924,
+      "00000000-0000-4000-8000-00000000000b": 3924
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Nicht sieben",
+        "interfaceText": "Not seven",
+        "formAlternatives": null
+      },
+      "00000000-0000-4000-8000-00000000000b": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Nicht sieben",
+        "interfaceText": "Not seven",
+        "formAlternatives": null
+      }
+    },
+    "jobs": [
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 1,
+        "last_error": null
+      },
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 0,
+        "last_error": null
+      }
+    ]
+  },
+  {
+    "message_id": "30dc2d2e-999e-4a57-81c1-89417320a39d",
+    "chat_id": "171bf020-6176-450b-9f9a-be47d510e95f",
+    "source": "The red book?",
+    "readable_ms": {
+      "00000000-0000-4000-8000-00000000000a": 2572
+    },
+    "complete_ms": {
+      "00000000-0000-4000-8000-00000000000a": 4305,
+      "00000000-0000-4000-8000-00000000000b": 4305
+    },
+    "outputs": {
+      "00000000-0000-4000-8000-00000000000a": {
+        "mode": "translation",
+        "confidence": null,
+        "sourceLang": "en",
+        "explanation": null,
+        "translation": "Das rote Buch?",
+        "interfaceText": "The red book?",
+        "formAlternatives": null
+      }
+    },
+    "jobs": [
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000a",
+        "status": "ready",
+        "phase": "word_help",
+        "attempts": 1,
+        "last_error": null
+      },
+      {
+        "viewer_id": "00000000-0000-4000-8000-00000000000b",
+        "status": "ready",
+        "phase": "sentence",
+        "attempts": 1,
+        "last_error": null
+      }
+    ]
+  }
+]

@@ -10,16 +10,22 @@ export interface ClaimedPushEvent {
   interface_language: string;
   chat_id: string;
   original_body: string | null;
+  message_id?: string;
 }
 
 export interface FcmMessage {
   message: {
     token: string;
     notification: { title: string; body: string };
-    data: { type: PushEventType; chatId: string };
+    data: {
+      type: PushEventType;
+      chatId: string;
+      messageId?: string;
+      receiverId: string;
+    };
     android: {
       priority: "high";
-      notification: { channel_id: "messages"; sound: "default" };
+      notification: { channel_id: "messages"; sound: "default"; tag?: string };
     };
   };
 }
@@ -67,10 +73,24 @@ export function buildFcmMessage(
     message: {
       token,
       notification: { title, body },
-      data: { type: event.event_type, chatId: event.chat_id },
+      data: {
+        type: event.event_type,
+        chatId: event.chat_id,
+        receiverId: event.recipient_id,
+        ...(event.message_id ? { messageId: event.message_id } : {}),
+      },
       android: {
         priority: "high",
-        notification: { channel_id: "messages", sound: "default" },
+        notification: {
+          channel_id: "messages",
+          sound: "default",
+          ...(event.message_id
+            ? {
+              tag:
+                `blab:${event.recipient_id}:${event.chat_id}:${event.message_id}`,
+            }
+            : {}),
+        },
       },
     },
   };
@@ -112,7 +132,9 @@ export function fcmErrorCode(value: unknown): string {
       if (typeof code === "string") return code;
     }
   }
-  return typeof errorRecord.status === "string" ? errorRecord.status : "unknown";
+  return typeof errorRecord.status === "string"
+    ? errorRecord.status
+    : "unknown";
 }
 
 export function isStaleFcmToken(code: string): boolean {

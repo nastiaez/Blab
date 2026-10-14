@@ -1,6 +1,7 @@
 {
   "@@locale": "en",
   "appName": "Blab",
+  "wordHelpPending": "Word help is not ready yet.",
   "unsupportedLanguageHint": "Blab doesn’t speak this one yet.",
   "back": "Back",
   "apply": "Apply",

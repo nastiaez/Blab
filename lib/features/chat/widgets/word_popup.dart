@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/models/message_token.dart';
 import '../../../shared/services/tts_service.dart';
 
@@ -71,7 +72,7 @@ const Color _kPopupStroke = BlabColors.chatDivider;
 /// [topInset] is the minimum global-Y the popup's top edge is allowed to
 /// reach — used to keep the card from drawing on top of the chat header.
 /// PRD US-018, BUG-009.
-void showWordPopup(
+void Function(MessageToken?) showWordPopup(
   BuildContext context, {
   required MessageToken token,
   required Offset wordTopLeft,
@@ -83,10 +84,11 @@ void showWordPopup(
   _dismissCurrent();
 
   final overlayState = Overlay.of(context, rootOverlay: true);
+  var currentToken = token;
   late OverlayEntry entry;
   entry = OverlayEntry(
     builder: (ctx) => _WordPopupOverlay(
-      token: token,
+      token: currentToken,
       wordTopLeft: wordTopLeft,
       wordSize: wordSize,
       languageCode: languageCode,
@@ -101,6 +103,15 @@ void showWordPopup(
   _currentEntry = entry;
   _currentTts = tts;
   overlayState.insert(entry);
+  return (updated) {
+    if (_currentEntry != entry) return;
+    if (updated == null) {
+      _dismissCurrent();
+      return;
+    }
+    currentToken = updated;
+    entry.markNeedsBuild();
+  };
 }
 
 class _WordPopupOverlay extends StatefulWidget {
@@ -456,6 +467,14 @@ class _PopupCardState extends State<_PopupCard> {
                     speakerButton,
                   ],
                 ),
+                if (!hasGloss) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    context.l10n.wordHelpPending,
+                    key: const ValueKey('word-help-pending'),
+                    style: const TextStyle(fontSize: 13, color: _kPopupMuted),
+                  ),
+                ],
                 if (hasGloss) ...[
                   const SizedBox(height: 10),
                   Container(

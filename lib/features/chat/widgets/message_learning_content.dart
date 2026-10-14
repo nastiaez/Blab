@@ -228,7 +228,8 @@ class MessageLearningContent extends StatelessWidget {
           targetLanguageCode: generatedLanguageCode,
           readingScript: readingScript,
         );
-        final displayWidget = displayText == authoredText
+        final displayWidget =
+            mode == ChatMode.normal && displayText == authoredText
             ? Text(displayText, style: primaryStyle)
             : generatedMessageText(
                 value.translation,
