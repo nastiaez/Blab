@@ -16,6 +16,41 @@ export type FetchLike = (
 
 const DEFAULT_PROVIDER_TIMEOUT_MS = 20_000;
 
+export type ProviderMetric = {
+  provider: string;
+  model: string;
+  status: number;
+  durationMs: number;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  cachedPromptTokens: number | null;
+};
+
+export function measuredUsage(payload: unknown): Pick<
+  ProviderMetric,
+  "promptTokens" | "completionTokens" | "cachedPromptTokens"
+> {
+  const value = payload as {
+    usage?: {
+      prompt_tokens?: unknown;
+      completion_tokens?: unknown;
+      prompt_tokens_details?: { cached_tokens?: unknown };
+    };
+  } | null;
+  const integer = (v: unknown) =>
+    typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : null;
+  const promptTokens = integer(value?.usage?.prompt_tokens);
+  const cached = integer(value?.usage?.prompt_tokens_details?.cached_tokens);
+  return {
+    promptTokens,
+    completionTokens: integer(value?.usage?.completion_tokens),
+    cachedPromptTokens:
+      cached !== null && promptTokens !== null && cached <= promptTokens
+        ? cached
+        : null,
+  };
+}
+
 function chatCompletionEndpoint(credential: ProviderCredential): string {
   return credential.provider === "openrouter"
     ? "https://openrouter.ai/api/v1/chat/completions"
@@ -25,8 +60,13 @@ function chatCompletionEndpoint(credential: ProviderCredential): string {
 export async function fetchChatCompletion(
   credential: ProviderCredential,
   body: Record<string, unknown>,
-  options: { timeoutMs?: number; fetchImpl?: FetchLike } = {},
+  options: {
+    timeoutMs?: number;
+    fetchImpl?: FetchLike;
+    onMetric?: (metric: ProviderMetric) => void;
+  } = {},
 ): Promise<Response> {
+  const started = performance.now();
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort("provider_timeout"),
@@ -34,7 +74,7 @@ export async function fetchChatCompletion(
   );
   const fetchImpl = options.fetchImpl ?? fetch;
   try {
-    return await fetchImpl(chatCompletionEndpoint(credential), {
+    const response = await fetchImpl(chatCompletionEndpoint(credential), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -50,6 +90,31 @@ export async function fetchChatCompletion(
           : {}),
       }),
     });
+    let payload: unknown = null;
+    if (response.headers.get("Content-Type")?.includes("application/json")) {
+      try {
+        payload = await response.clone().json();
+      } catch {
+        if (controller.signal.aborted) {
+          throw new ProviderFetchError("provider_timeout");
+        }
+      }
+    }
+    const metric: ProviderMetric = {
+      provider: credential.provider,
+      model: credential.model,
+      status: response.status,
+      durationMs: Math.round(performance.now() - started),
+      ...measuredUsage(payload),
+    };
+    // Usage-only telemetry; never log prompts, messages or credentials.
+    try {
+      if (options.onMetric) options.onMetric(metric);
+      else console.log("blab_provider_metric", metric);
+    } catch {
+      // Observability must not change an otherwise valid translation.
+    }
+    return response;
   } catch (error) {
     if (controller.signal.aborted) {
       throw new ProviderFetchError("provider_timeout");

@@ -95,9 +95,7 @@ class _LifecyclePreviewScreenState extends State<_LifecyclePreviewScreen> {
                       outgoing: false,
                       resolved: _pairedResolved,
                       reduceMotion: reduceMotion,
-                      pendingContent: const IncomingTranslationPlaceholder(
-                        semanticsLabel: 'Translating…',
-                      ),
+                      pendingContent: const Text('Ich bringe Kaffee mit.'),
                       finalContent: const Text('I’ll bring coffee.'),
                     ),
                     if (_showBatch) ...[
@@ -108,9 +106,7 @@ class _LifecyclePreviewScreenState extends State<_LifecyclePreviewScreen> {
                         outgoing: false,
                         resolved: _firstBatchResolved,
                         reduceMotion: reduceMotion,
-                        pendingContent: const IncomingTranslationPlaceholder(
-                          semanticsLabel: 'Translating…',
-                        ),
+                        pendingContent: const Text('Wir sehen uns um sieben.'),
                         finalContent: const Text('See you at seven.'),
                       ),
                       const SizedBox(height: 6),
@@ -119,9 +115,7 @@ class _LifecyclePreviewScreenState extends State<_LifecyclePreviewScreen> {
                         outgoing: false,
                         resolved: _secondBatchResolved,
                         reduceMotion: reduceMotion,
-                        pendingContent: const IncomingTranslationPlaceholder(
-                          semanticsLabel: 'Translating…',
-                        ),
+                        pendingContent: const Text('Ich schicke die Adresse.'),
                         finalContent: const Text('I’ll send the address.'),
                       ),
                     ],
@@ -188,7 +182,7 @@ class _LifecycleBubble extends StatelessWidget {
             unchanged: false,
             reduceMotion: reduceMotion,
             outgoing: outgoing,
-            keepAuthoredDuringFastHold: outgoing,
+            keepAuthoredDuringFastHold: true,
             waveBaseColor: textColor.withValues(alpha: 0.48),
             waveHighlightColor: Colors.white,
           ),

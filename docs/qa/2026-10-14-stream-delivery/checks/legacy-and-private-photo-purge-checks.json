@@ -1,0 +1,10 @@
+{
+  "auth_deleted_with_client_owned_file": true,
+  "message-media_original_removed": true,
+  "stream-private-media_original_removed": true,
+  "old_legacy_link_no_longer_serves": true,
+  "new_private_link_no_longer_serves": true,
+  "partner_owned_photo_preserved": true,
+  "partner_account_preserved": true,
+  "durable_photo_cleanup_done": true
+}

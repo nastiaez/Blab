@@ -243,7 +243,10 @@ ProviderContainer _chatScreenContainer(ChatService service) {
         _UnsupportedPushGateway(),
       ),
       pushTokenRepositoryProvider.overrideWithValue(_NoopPushTokenRepository()),
-      translateMessageFnProvider.overrideWithValue((messageId) async {
+      translateMessageFnProvider.overrideWithValue((
+        messageId, {
+        targetLang,
+      }) async {
         throw MessageTranslationFailed('unexpected_live_translation');
       }),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
@@ -478,5 +481,27 @@ void main() {
     final state = container.read(chatMessagesProvider('chat-1'));
     expect(state.hasError, isFalse);
     expect(state.requireValue.single.originalText, 'Cached message');
+    await cache.saveMessages('chat-1', [
+      ...state.requireValue,
+      Message(
+        id: 'background-arrival',
+        chatId: 'chat-1',
+        isOutgoing: false,
+        originalText: 'Received while backgrounded',
+        translation: '',
+        sentAt: DateTime.utc(2026, 8, 29, 13),
+        status: MessageStatus.delivered,
+      ),
+    ]);
+    await container
+        .read(chatMessagesProvider('chat-1').notifier)
+        .recoverBackgroundArrivals();
+    expect(
+      container
+          .read(chatMessagesProvider('chat-1'))
+          .requireValue
+          .map((m) => m.id),
+      ['message-1', 'background-arrival'],
+    );
   });
 }

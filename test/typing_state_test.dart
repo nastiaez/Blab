@@ -35,6 +35,41 @@ class _FakeTypingTransport implements TypingTransport {
 
 void main() {
   test(
+    'disposing during route resolution closes late transport without listening or sending',
+    () async {
+      final pending = Completer<TypingTransport>();
+      final fake = _FakeTypingTransport();
+      final transport = RoutedTypingTransport(
+        localUserId: 'me',
+        resolve: () => pending.future,
+      );
+      await transport.close();
+      pending.complete(fake);
+      await transport.send(true);
+      expect(fake.controller.hasListener, false);
+      expect(fake.controller.isClosed, true);
+      expect(fake.sent, isEmpty);
+    },
+  );
+  test('resolved route forwards typing then stops on disposal', () async {
+    final fake = _FakeTypingTransport();
+    final transport = RoutedTypingTransport(
+      localUserId: 'me',
+      resolve: () async => fake,
+    );
+    final events = <TypingEvent>[];
+    final subscription = transport.events.listen(events.add);
+    await transport.send(true);
+    fake.controller.add(const TypingEvent(userId: 'partner', isTyping: true));
+    await Future<void>.delayed(Duration.zero);
+    expect(events.single.userId, 'partner');
+    expect(fake.sent, [true]);
+    await transport.close();
+    await transport.send(false);
+    expect(fake.sent, [true]);
+    await subscription.cancel();
+  });
+  test(
     'retained send callback rechecks privacy immediately before send',
     () async {
       final fake = _FakeTypingTransport();

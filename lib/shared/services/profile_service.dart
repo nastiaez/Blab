@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/languages.dart';
 import '../models/onboarding_stage.dart';
 import '../models/reading_script.dart';
+import 'local_profile_cache.dart';
 
 class UserProfile {
   const UserProfile({
@@ -77,6 +78,7 @@ class ProfileService {
   }
 
   Future<String> updateDisplayName(String displayName) async {
+    final account = _client.auth.currentUser?.id;
     final value = await _client.rpc(
       'update_my_display_name',
       params: {'p_display_name': displayName},
@@ -84,6 +86,7 @@ class ProfileService {
     if (value is! String || value.isEmpty) {
       throw StateError('invalid_profile_response');
     }
+    await _invalidateCachedProfile(account);
     return value;
   }
 
@@ -97,6 +100,7 @@ class ProfileService {
   }
 
   Future<String> updateInterfaceLanguage(String languageCode) async {
+    final account = _client.auth.currentUser?.id;
     final value = await _client.rpc(
       'update_my_interface_language',
       params: {'p_interface_language': languageCode},
@@ -104,6 +108,7 @@ class ProfileService {
     if (value is! String || value.isEmpty) {
       throw StateError('invalid_profile_response');
     }
+    await _invalidateCachedProfile(account);
     return value;
   }
 
@@ -117,6 +122,7 @@ class ProfileService {
   }
 
   Future<String> updateReadingScript(String value) async {
+    final account = _client.auth.currentUser?.id;
     final row = await _client
         .from('profiles')
         .update({'reading_script': value})
@@ -127,6 +133,7 @@ class ProfileService {
     if (saved is! String || saved.isEmpty) {
       throw StateError('invalid_profile_response');
     }
+    await _invalidateCachedProfile(account);
     return saved;
   }
 
@@ -134,6 +141,7 @@ class ProfileService {
     required List<String> languageCodes,
     required String primaryCode,
   }) async {
+    final account = _client.auth.currentUser?.id;
     await _client
         .from('profiles')
         .update({
@@ -141,38 +149,55 @@ class ProfileService {
           'primary_known_language': primaryCode,
         })
         .eq('id', _uid);
+    await _invalidateCachedProfile(account);
   }
 
   Future<OnboardingProgress> acknowledgeOnboarding({
     int version = currentOnboardingVersion,
   }) async {
+    final account = _client.auth.currentUser?.id;
     final value = await _client.rpc(
       'acknowledge_my_onboarding',
       params: {'p_version': version},
     );
-    return _onboardingProgress(value);
+    final progress = _onboardingProgress(value);
+    await _invalidateCachedProfile(account);
+    return progress;
   }
 
   Future<OnboardingProgress> confirmOnboardingName(
     String displayName, {
     int version = currentOnboardingVersion,
   }) async {
+    final account = _client.auth.currentUser?.id;
     final value = await _client.rpc(
       'confirm_my_onboarding_name',
       params: {'p_version': version, 'p_display_name': displayName},
     );
-    return _onboardingProgress(value);
+    final progress = _onboardingProgress(value);
+    await _invalidateCachedProfile(account);
+    return progress;
   }
 
   Future<OnboardingProgress> confirmOnboardingLanguage(
     String languageCode, {
     int version = currentOnboardingVersion,
   }) async {
+    final account = _client.auth.currentUser?.id;
     final value = await _client.rpc(
       'confirm_my_onboarding_language',
       params: {'p_version': version, 'p_language': languageCode},
     );
-    return _onboardingProgress(value);
+    final progress = _onboardingProgress(value);
+    await _invalidateCachedProfile(account);
+    return progress;
+  }
+
+  Future<void> _invalidateCachedProfile(String? account) async {
+    if (account == null) return;
+    try {
+      await LocalProfileCache(account).clear();
+    } catch (_) {}
   }
 
   OnboardingProgress _onboardingProgress(Object? value) {

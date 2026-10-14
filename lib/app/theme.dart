@@ -17,7 +17,17 @@ final ThemeData blabTheme = ThemeData(
   ],
   colorScheme: blabMaterialColorScheme,
   textTheme: blabMaterialTextTheme,
-  pageTransitionsTheme: const PageTransitionsTheme(),
+  pageTransitionsTheme: PageTransitionsTheme(
+    builders: {
+      ...const PageTransitionsTheme().builders,
+      // Keep Flutter's native Android push/pop and predictive Back. Match the
+      // transition's uncovered background to the app instead of flashing the
+      // default white Material surface between warm-canvas pages.
+      TargetPlatform.android: const PredictiveBackPageTransitionsBuilder(
+        fallbackColor: BlabColors.appBackground,
+      ),
+    },
+  ),
   scaffoldBackgroundColor: BlabColors.appBackground,
   appBarTheme: const AppBarThemeData(
     backgroundColor: BlabColors.appBackground,

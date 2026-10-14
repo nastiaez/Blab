@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'blab_local_notifications.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,21 +11,48 @@ import '../data/supabase_config.dart';
 enum PushAuthorizationStatus { unavailable, notDetermined, denied, authorized }
 
 class PushOpenEvent {
-  const PushOpenEvent({required this.type, required this.chatId});
+  const PushOpenEvent({
+    required this.type,
+    required this.chatId,
+    this.receiverId,
+  });
 
   final String type;
   final String chatId;
+  final String? receiverId;
 
   static PushOpenEvent? fromData(Map<String, dynamic> data) {
-    final type = data['type'];
+    final vendorMessage =
+        data['blab_transport'] == 'stream' &&
+        data['type'] == 'message.new' &&
+        data['channel_type'] == 'blab';
+    final type = vendorMessage ? 'chat_message' : data['type'];
     final chatId = data['chatId'];
+    final receiverId = data['receiverId'];
+    // Stream adds reserved routing fields after rendering our template.
+    // They must agree with the receiver-bound Blab route, never override it.
+    if (vendorMessage &&
+        (receiverId == null ||
+            data['channel_id'] != chatId ||
+            data['receiver_id'] != receiverId ||
+            data['messageId'] is! String ||
+            !_uuid.hasMatch(data['messageId'] as String) ||
+            data['message_id'] != data['messageId'])) {
+      return null;
+    }
     if ((type != 'chat_message' && type != 'invite_claimed') ||
         type is! String ||
         chatId is! String ||
-        !_uuid.hasMatch(chatId)) {
+        !_uuid.hasMatch(chatId) ||
+        (receiverId != null &&
+            (receiverId is! String || !_uuid.hasMatch(receiverId)))) {
       return null;
     }
-    return PushOpenEvent(type: type, chatId: chatId);
+    return PushOpenEvent(
+      type: type,
+      chatId: chatId,
+      receiverId: receiverId as String?,
+    );
   }
 
   static final _uuid = RegExp(
@@ -98,23 +126,54 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
 
   @override
   Future<void> deleteToken() async {
-    if (isSupported) await _messaging.deleteToken();
+    if (!isSupported) return;
+    try {
+      await BlabLocalNotifications.cancelAll();
+    } finally {
+      await _messaging.deleteToken();
+    }
   }
 
   @override
   Future<PushOpenEvent?> initialOpenEvent() async {
     if (!isSupported) return null;
+    if (const bool.fromEnvironment('BLAB_STREAM_REVIEW')) {
+      final local = await BlabLocalNotifications.initialOpen();
+      if (local != null) return PushOpenEvent.fromData(local);
+    }
     final message = await _messaging.getInitialMessage();
     return message == null ? null : PushOpenEvent.fromData(message.data);
   }
 
   @override
-  Stream<PushOpenEvent> get onOpenEvent => isSupported
-      ? FirebaseMessaging.onMessageOpenedApp
-            .map((message) => PushOpenEvent.fromData(message.data))
-            .where((event) => event != null)
-            .cast<PushOpenEvent>()
-      : const Stream.empty();
+  Stream<PushOpenEvent> get onOpenEvent {
+    if (!isSupported) return const Stream.empty();
+    late final StreamController<PushOpenEvent> controller;
+    final subscriptions = <StreamSubscription>[];
+    void add(Map<String, dynamic> data) {
+      final event = PushOpenEvent.fromData(data);
+      if (event != null) controller.add(event);
+    }
+
+    controller = StreamController<PushOpenEvent>(
+      onListen: () {
+        subscriptions.add(
+          FirebaseMessaging.onMessageOpenedApp.listen(
+            (message) => add(message.data),
+          ),
+        );
+        if (const bool.fromEnvironment('BLAB_STREAM_REVIEW')) {
+          subscriptions.add(BlabLocalNotifications.opens.listen(add));
+        }
+      },
+      onCancel: () async {
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+      },
+    );
+    return controller.stream;
+  }
 
   @override
   Future<void> openSystemSettings() async {

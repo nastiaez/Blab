@@ -1,0 +1,18 @@
+{
+  "app": "1731706",
+  "message_id": "71000000-0000-4000-8000-000000000014",
+  "scope": "Local authenticated endpoints + actual Stream CDN with synthetic repository icon; not Android/photo/offline acceptance.",
+  "checks": {
+    "authenticated_upload_ready": true,
+    "same_pixels_reuse_upload": true,
+    "partner_cannot_steal_upload_identity": true,
+    "spoofed_image_type_rejected": true,
+    "empty_caption_photo_accepted": true,
+    "same_photo_command_reuses_acknowledgment": true,
+    "canonical_author_is_authenticated_sender": true,
+    "canonical_attachment_not_caller_url": true,
+    "full_resolution_original_bytes_preserved": false
+  },
+  "original_byte_size": 252052,
+  "downloaded_byte_size": 245162
+}

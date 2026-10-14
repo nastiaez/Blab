@@ -1,0 +1,35 @@
+{
+  "app": "1731706",
+  "scope": "Live final channel-type permissions in development review app; no production users/history. Server commands remain authoritative.",
+  "changed_types": [
+    "blab",
+    "commerce",
+    "gaming",
+    "livestream",
+    "messaging",
+    "team"
+  ],
+  "checks": {
+    "gaming_normal_grants_sealed": true,
+    "gaming_client_cannot_create_channel": true,
+    "livestream_normal_grants_sealed": true,
+    "livestream_client_cannot_create_channel": true,
+    "messaging_normal_grants_sealed": true,
+    "messaging_client_cannot_create_channel": true,
+    "team_normal_grants_sealed": true,
+    "team_client_cannot_create_channel": true,
+    "agent_normal_grants_sealed": true,
+    "agent_client_cannot_create_channel": true,
+    "blab_normal_grants_sealed": true,
+    "blab_client_cannot_create_channel": true,
+    "commerce_normal_grants_sealed": true,
+    "commerce_client_cannot_create_channel": true,
+    "authorized_member_reads": true,
+    "nonmember_cannot_read": true,
+    "direct_client_send_denied": true
+  },
+  "references": [
+    "https://getstream.io/chat/docs/node/chat-permission-policies/",
+    "https://getstream.io/chat/docs/php/channel-features/"
+  ]
+}

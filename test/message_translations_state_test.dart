@@ -26,7 +26,9 @@ ProviderContainer _container({
 }) {
   return ProviderContainer(
     overrides: [
-      translateMessageFnProvider.overrideWithValue(translateFn),
+      translateMessageFnProvider.overrideWithValue(
+        (id, {targetLang}) => translateFn(id),
+      ),
       if (setConversationToneFn != null)
         setConversationToneFnProvider.overrideWithValue(setConversationToneFn),
       if (chatService != null)
@@ -260,6 +262,56 @@ MessageTranslation _translation(String text) => MessageTranslation(
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test(
+    'cache miss carries the viewed target independently for each mode',
+    () async {
+      final requested = <String?>[];
+      final container = ProviderContainer(
+        overrides: [
+          chatServiceProvider.overrideWithValue(_ControlledCacheChatService()),
+          translateMessageFnProvider.overrideWithValue((
+            id, {
+            targetLang,
+          }) async {
+            requested.add(targetLang);
+            return _translation(targetLang == 'de' ? 'Hallo' : 'Hello');
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'en',
+        interfaceLang: 'en',
+      );
+      expect(requested, ['de', 'en']);
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|de|en']
+            ?.value
+            ?.translation,
+        'Hallo',
+      );
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|en|en']
+            ?.value
+            ?.translation,
+        'Hello',
+      );
+    },
+  );
 
   test('one quiet retry resolves without exposing the first failure', () async {
     var calls = 0;
@@ -783,6 +835,11 @@ void main() {
 
       final state = container.read(messageTranslationsProvider('chat-1'));
       expect(state['text-message|de|en']?.value?.translation, 'Hallo');
+      expect(state['text-message|en|en']?.value?.translation, 'Hello');
+      expect(
+        state['caption-message|en|en']?.value?.translation,
+        'A quiet park',
+      );
       expect(
         state['caption-message|de|en']?.value?.translation,
         'Ein ruhiger Park',
@@ -1138,7 +1195,9 @@ void main() {
     final live = Completer<MessageTranslation>();
     final container = ProviderContainer(
       overrides: [
-        translateMessageFnProvider.overrideWithValue((id) => live.future),
+        translateMessageFnProvider.overrideWithValue(
+          (id, {targetLang}) => live.future,
+        ),
         chatServiceProvider.overrideWithValue(_ControlledCacheChatService()),
         translationLoadingTimeoutProvider.overrideWithValue(
           const Duration(milliseconds: 10),
@@ -1558,6 +1617,59 @@ void main() {
     expect(entry, isA<AsyncData<MessageTranslation>>());
     expect(entry!.value!.translation, 'Hallo');
   });
+
+  test(
+    'completed word help upgrades readable text and late partial cannot downgrade it',
+    () {
+      final container = _container(
+        translateFn: (id) async => _translation('Hallo'),
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(
+        messageTranslationsProvider('chat-1').notifier,
+      );
+      const partial = MessageTranslation(
+        translation: 'Hallo',
+        interfaceText: 'Hello',
+        interfaceLang: 'en',
+        sourceLang: 'en',
+        tokens: [],
+        wordMetadataReady: false,
+      );
+      notifier.hydrateFromDb(
+        {'m1': partial},
+        'de',
+        'en',
+        replaceExisting: true,
+      );
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+            .value!
+            .wordMetadataReady,
+        isFalse,
+      );
+      notifier.hydrateFromDb(
+        {'m1': _translation('Hallo')},
+        'de',
+        'en',
+        replaceExisting: true,
+      );
+      notifier.hydrateFromDb(
+        {'m1': partial},
+        'de',
+        'en',
+        replaceExisting: true,
+      );
+      expect(
+        container
+            .read(messageTranslationsProvider('chat-1'))['m1|de|en']!
+            .value!
+            .wordMetadataReady,
+        isTrue,
+      );
+    },
+  );
 
   test('database hydration replaces an in-flight translation', () async {
     final live = Completer<MessageTranslation>();

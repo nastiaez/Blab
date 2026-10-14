@@ -6,13 +6,23 @@
     "delete-account": true,
     "translate-message": true,
     "prepare-message-jobs": true,
-    "send-push": false
+    "send-push": false,
+    "stream-token": true,
+    "stream-channel": true,
+    "stream-events": false,
+    "reconcile-stream-events": true,
+    "stream-message": true,
+    "stream-media": true,
+    "stream-activity": true,
+    "stream-device": true
   },
   "required_secrets": [
     "OPEN_ROUTER_KEY",
     "PUSH_WEBHOOK_SECRET",
     "FIREBASE_PROJECT_ID",
     "FIREBASE_CLIENT_EMAIL",
-    "FIREBASE_PRIVATE_KEY"
+    "FIREBASE_PRIVATE_KEY",
+    "STREAM_API_KEY",
+    "STREAM_API_SECRET"
   ]
 }

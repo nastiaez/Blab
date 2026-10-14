@@ -65,7 +65,7 @@ final pushNotificationGatewayProvider = Provider<PushNotificationGateway>(
 );
 
 final pushTokenRepositoryProvider = Provider<PushTokenRepository>(
-  (ref) => SupabasePushTokenRepository(ref.watch(supabaseClientProvider)),
+  (ref) => createPushTokenRepository(ref.watch(supabaseClientProvider)),
 );
 
 class PushNotificationsNotifier extends Notifier<PushNotificationState> {
@@ -78,6 +78,7 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
   Future<void>? _permissionRequest;
   String? _registeredUserId;
   bool? _registeredPreviewsEnabled;
+  Future<void> _registration = Future<void>.value();
 
   PushNotificationGateway get _gateway =>
       ref.read(pushNotificationGatewayProvider);
@@ -264,6 +265,9 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
 
   Future<void> prepareForSignOut() async {
     await _waitUntilHydrated();
+    try {
+      await _registration;
+    } catch (_) {}
     if (!state.isSupported) return;
     String? token = _registeredToken;
     try {
@@ -324,18 +328,31 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
   Future<void> _registerToken(String token) async {
     final userId = ref.read(currentUserIdProvider);
     if (!state.isAuthorized || userId == null) return;
+    final previews = state.previewsEnabled;
+    final prior = _registration;
+    final work = prior.catchError((Object _) {}).then((_) async {
+      if (!ref.mounted || ref.read(currentUserIdProvider) != userId) return;
+      await _registerTokenForIdentity(token, userId, previews);
+    });
+    _registration = work;
+    await work;
+  }
+
+  Future<void> _registerTokenForIdentity(
+    String token,
+    String userId,
+    bool previews,
+  ) async {
     if (_registeredToken == token &&
         _registeredUserId == userId &&
-        _registeredPreviewsEnabled == state.previewsEnabled) {
+        _registeredPreviewsEnabled == previews) {
       return;
     }
-    await _repository.register(
-      token: token,
-      previewsEnabled: state.previewsEnabled,
-    );
+    await _repository.register(token: token, previewsEnabled: previews);
+    if (!ref.mounted || ref.read(currentUserIdProvider) != userId) return;
     _registeredToken = token;
     _registeredUserId = userId;
-    _registeredPreviewsEnabled = state.previewsEnabled;
+    _registeredPreviewsEnabled = previews;
     if (kDebugMode) {
       debugPrint('Push token registered for the active account.');
     }
@@ -352,6 +369,10 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
 
   void _handleOpenEvent(PushOpenEvent event) {
     if (!ref.mounted) return;
+    if (event.receiverId != null &&
+        event.receiverId != ref.read(currentUserIdProvider)) {
+      return;
+    }
     if (kDebugMode) {
       debugPrint(
         'Push tap received: type=${event.type}, chatId=${event.chatId}',

@@ -24,6 +24,40 @@ class LocalChatHistoryCache {
   static const _maxAttachmentBytes = 20 * 1024 * 1024;
   static final Map<String, Future<void>> _fullAttachmentQueues = {};
 
+  /// Local viewing preference; pending synchronization must not hide history
+  /// or roll back the view when transport fails.
+  Future<({ChatMode mode, bool pendingSync})?> loadChatMode(
+    String chatId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(
+      cachedChatModeStorageKey(userId: userId, chatId: chatId),
+    );
+    if (raw == null) return null;
+    try {
+      final value = jsonDecode(raw) as Map<String, dynamic>;
+      if (value['mode'] != 'normal' && value['mode'] != 'practice') return null;
+      return (
+        mode: chatModeFromDb(value['mode'] as String),
+        pendingSync: value['pendingSync'] == true,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveChatMode(
+    String chatId,
+    ChatMode mode, {
+    required bool pendingSync,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      cachedChatModeStorageKey(userId: userId, chatId: chatId),
+      jsonEncode({'mode': chatModeToDb(mode), 'pendingSync': pendingSync}),
+    );
+  }
+
   Future<List<int>?> loadAttachmentBytes(String attachmentId) {
     return _serializeFullAttachmentOperation(() async {
       final prefs = await SharedPreferences.getInstance();
@@ -94,6 +128,7 @@ class LocalChatHistoryCache {
 
   Future<List<Chat>> loadChats() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final raw = prefs.getString(cachedChatsStorageKey(userId));
     if (raw == null) return const [];
     try {
@@ -169,7 +204,15 @@ class LocalChatHistoryCache {
       final cached = Map<String, dynamic>.from(row)
         ..['source_text'] = sourceText
         ..['_cached_at'] = cachedAt + cacheOrder++;
-      byVariant[_preparedTranslationVariantKey(cached)] = cached;
+      final variant = _preparedTranslationVariantKey(cached);
+      final prior = byVariant[variant];
+      if (prior != null &&
+          prior['source_version'] == cached['source_version'] &&
+          prior['word_metadata_ready'] != false &&
+          cached['word_metadata_ready'] == false) {
+        continue;
+      }
+      byVariant[variant] = cached;
     }
     final newestByMessage = <String, int>{};
     for (final row in byVariant.values) {
@@ -202,6 +245,7 @@ class LocalChatHistoryCache {
     String chatId,
   ) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final raw = prefs.getString(
       cachedPreparedTranslationsStorageKey(userId: userId, chatId: chatId),
     );
@@ -386,6 +430,7 @@ class LocalChatHistoryCache {
 
   Future<List<Message>> loadMessages(String chatId) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
     final raw = prefs.getString(
       cachedMessagesStorageKey(userId: userId, chatId: chatId),
     );

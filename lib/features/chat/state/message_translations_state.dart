@@ -15,9 +15,12 @@ import '../message_translation_lifecycle.dart';
 typedef TranslateMessageFn =
     Future<MessageTranslation> Function(String messageId);
 
-final translateMessageFnProvider = Provider<TranslateMessageFn>((ref) {
+typedef TargetedTranslateMessageFn =
+    Future<MessageTranslation> Function(String messageId, {String? targetLang});
+final translateMessageFnProvider = Provider<TargetedTranslateMessageFn>((ref) {
   final translator = ref.watch(messageTranslatorProvider);
-  return (id) => translator.translate(messageId: id);
+  return (id, {targetLang}) =>
+      translator.translate(messageId: id, targetLang: targetLang);
 });
 
 final translationLoadingTimeoutProvider = Provider<Duration>(
@@ -101,6 +104,9 @@ MessageTranslation _translationFromCache(CachedMessageTranslation cached) {
     interfaceLang: cached.interfaceLang,
     sourceLang: cached.sourceLang,
     tokens: sanitizedTokens,
+    wordMetadataReady: !cached.tokens.any(
+      (token) => token['wordMetadataReady'] == false,
+    ),
     mode: switch (cached.mode) {
       'correction' => LearningAidMode.correction,
       'none' => LearningAidMode.none,
@@ -172,6 +178,7 @@ class MessageTranslationsNotifier
   MessageTranslationsNotifier(this.chatId);
 
   final String chatId;
+  int _prefetchEpoch = 0;
   final Map<String, String> _sourceTexts = <String, String>{};
 
   /// Last source language any resolution recorded for a message, keyed by
@@ -187,6 +194,7 @@ class MessageTranslationsNotifier
   final Map<String, Timer> _lateCacheRecoveryTimers = <String, Timer>{};
   final Map<String, DateTime> _autoRetryBlockedUntil = <String, DateTime>{};
   StreamSubscription<MessageTranslationChange>? _translationSub;
+  Timer? _cachePersistTimer;
   Set<String> _watchedMessageIds = const <String>{};
   String? _watchedLocaleKey;
   Future<void> _liveTranslationTail = Future<void>.value();
@@ -194,6 +202,7 @@ class MessageTranslationsNotifier
   @override
   Map<String, AsyncValue<MessageTranslation>> build() {
     ref.watch(currentUserIdProvider);
+    ++_prefetchEpoch;
     _sourceTexts.clear();
     for (final timer in _retryTimers.values) {
       timer.cancel();
@@ -212,6 +221,8 @@ class MessageTranslationsNotifier
     }
     _lateCacheRecoveryTimers.clear();
     _translationSub?.cancel();
+    _cachePersistTimer?.cancel();
+    _cachePersistTimer = null;
     _translationSub = null;
     _watchedMessageIds = const <String>{};
     _watchedLocaleKey = null;
@@ -236,6 +247,7 @@ class MessageTranslationsNotifier
       }
       _lateCacheRecoveryTimers.clear();
       unawaited(_translationSub?.cancel());
+      _cachePersistTimer?.cancel();
     });
     return const {};
   }
@@ -434,6 +446,7 @@ class MessageTranslationsNotifier
       return;
     }
     _watchedLocaleKey = localeKey;
+    _cachePersistTimer?.cancel();
     unawaited(_translationSub?.cancel());
     _translationSub = ref
         .read(chatServiceProvider)
@@ -445,16 +458,44 @@ class MessageTranslationsNotifier
           if (!_watchedMessageIds.contains(change.messageId)) return;
           final key = translationEntryKey(
             change.messageId,
-            targetLang,
+            change.targetLang,
             interfaceLang,
           );
           _cancelLoadingTimeout(key);
           hydrateFromDb(
             {change.messageId: _translationFromCache(change.translation)},
-            targetLang,
+            change.targetLang,
             interfaceLang,
             replaceExisting: true,
           );
+          // Coalesce incoming readable/word-help changes into one bounded
+          // cache refresh. Both lanes and the final metadata survive restart;
+          // one request per individual word/bubble is unnecessary.
+          if (textFirstDeliveryEnabled) {
+            _cachePersistTimer?.cancel();
+            _cachePersistTimer = Timer(const Duration(milliseconds: 100), () {
+              if (!ref.mounted || _watchedLocaleKey != localeKey) return;
+              final sources = <String, String>{
+                for (final id in _watchedMessageIds)
+                  if (_sourceTexts[translationEntryKey(
+                        id,
+                        targetLang,
+                        interfaceLang,
+                      )]
+                      case final String text)
+                    id: text,
+              };
+              unawaited(
+                _prefetchFromDb(
+                  _watchedMessageIds.toList(),
+                  targetLang,
+                  interfaceLang,
+                  retryMisses: false,
+                  sourceTexts: sources,
+                ),
+              );
+            });
+          }
           try {
             if (!ref.exists(chatListProvider)) return;
             unawaited(
@@ -535,6 +576,11 @@ class MessageTranslationsNotifier
       final key = translationEntryKey(entry.key, targetLang, interfaceLang);
       _recordSourceLang(entry.key, entry.value);
       final existing = updates[key];
+      if (existing is AsyncData<MessageTranslation> &&
+          existing.value.wordMetadataReady &&
+          !entry.value.wordMetadataReady) {
+        continue;
+      }
       if (!replaceExisting && existing is AsyncData<MessageTranslation>) {
         continue;
       }
@@ -545,12 +591,40 @@ class MessageTranslationsNotifier
     if (changed) state = updates;
   }
 
-  /// Fire-and-forget DB prefetch for one loaded message page. Safe to call
-  /// repeatedly — already-hydrated keys are skipped.
+  /// A verified prepared package owns both views, not just the selected lane.
+  void _hydratePreparedSibling(
+    Map<String, dynamic> row,
+    String targetLang,
+    String interfaceLang,
+    String? sourceText,
+  ) {
+    final id = row['message_id'];
+    final learning = row['learning_language'];
+    final sibling = targetLang == learning ? interfaceLang : learning;
+    if (id is! String ||
+        sibling is! String ||
+        sibling.isEmpty ||
+        sibling == targetLang) {
+      return;
+    }
+    if (sourceText != null) {
+      _sourceTexts[translationEntryKey(id, sibling, interfaceLang)] =
+          sourceText;
+    }
+    hydrateFromDb(
+      {id: _translationFromPreparedPackage(row, targetLang: sibling)},
+      sibling,
+      interfaceLang,
+      replaceExisting: true,
+    );
+  }
+
+  /// Read-only cache hydration for a loaded page; no provider generation.
   Future<void> prefetchFromDb(
     List<String> messageIds,
     String targetLang,
     String interfaceLang, {
+    bool retryMisses = true,
     String? packageLearningLanguage,
     int? packageLanguageRevision,
     Map<String, String> sourceTexts = const <String, String>{},
@@ -558,7 +632,7 @@ class MessageTranslationsNotifier
     messageIds,
     targetLang,
     interfaceLang,
-    retryMisses: true,
+    retryMisses: retryMisses,
     packageLearningLanguage: packageLearningLanguage,
     packageLanguageRevision: packageLanguageRevision,
     sourceTexts: sourceTexts,
@@ -574,16 +648,22 @@ class MessageTranslationsNotifier
     Map<String, String> sourceTexts = const <String, String>{},
   }) async {
     if (messageIds.isEmpty) return;
+    final epoch = _prefetchEpoch;
+    final userId = ref.read(currentUserIdProvider);
+    bool current() =>
+        ref.mounted &&
+        epoch == _prefetchEpoch &&
+        ref.read(currentUserIdProvider) == userId;
     for (final entry in sourceTexts.entries) {
       _sourceTexts[translationEntryKey(entry.key, targetLang, interfaceLang)] =
           entry.value;
     }
-    final userId = ref.read(currentUserIdProvider);
     if (userId != null) {
       try {
         final localRows = await LocalChatHistoryCache(
           userId,
         ).loadPreparedTranslations(chatId);
+        if (!current()) return;
         final localById = <String, MessageTranslation>{};
         for (final row in localRows) {
           final id = row['message_id'];
@@ -604,6 +684,12 @@ class MessageTranslationsNotifier
             row,
             targetLang: targetLang,
           );
+          _hydratePreparedSibling(
+            row,
+            targetLang,
+            interfaceLang,
+            sourceTexts[id],
+          );
         }
         hydrateFromDb(localById, targetLang, interfaceLang);
       } catch (_) {
@@ -623,12 +709,14 @@ class MessageTranslationsNotifier
           chatId: chatId,
           messageIds: messageIds,
         );
+        if (!current()) return;
         if (userId != null && prepared.isNotEmpty) {
           await LocalChatHistoryCache(userId).savePreparedTranslations(
             chatId,
             prepared,
             sourceTexts: sourceTexts,
           );
+          if (!current()) return;
         }
       } catch (_) {
         // Older test doubles and pre-migration environments do not expose
@@ -648,12 +736,22 @@ class MessageTranslationsNotifier
           continue;
         }
         byId[id] = _translationFromPreparedPackage(row, targetLang: targetLang);
+        _hydratePreparedSibling(
+          row,
+          targetLang,
+          interfaceLang,
+          sourceTexts[id],
+        );
       }
+      // Ready packages are sufficient to paint both cached modes. Do not hold
+      // them behind the optional legacy-cache network lookup.
+      hydrateFromDb(byId, targetLang, interfaceLang, replaceExisting: true);
       final rows = await service.fetchCachedTranslationsForMessages(
         messageIds: messageIds,
         targetLang: targetLang,
         interfaceLang: interfaceLang,
       );
+      if (!current()) return;
       for (final entry in rows.entries) {
         byId.putIfAbsent(entry.key, () => _translationFromCache(entry.value));
       }
@@ -823,7 +921,7 @@ class MessageTranslationsNotifier
         final remaining = lifecycleDeadline - stopwatch.elapsed;
         if (remaining <= Duration.zero) break;
         try {
-          return await fn(id).timeout(remaining);
+          return await fn(id, targetLang: targetLang).timeout(remaining);
         } catch (error, stack) {
           lastError = error;
           lastStack = stack;

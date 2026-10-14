@@ -111,9 +111,10 @@ Deno.test("automatic-form migration rejects every legacy completion contract", a
     "the edge function must declare the latest database completion contract",
   );
   assert(
-    edgeFunction.match(
-      /p_cache_contract_version: CACHE_CONTRACT_VERSION/g,
-    )?.length === 2,
+    edgeFunction.slice(edgeFunction.indexOf("const completion = isWorker"))
+      .match(
+        /p_cache_contract_version: CACHE_CONTRACT_VERSION/g,
+      )?.length === 2,
     "foreground and worker RPC calls must both send the current contract",
   );
 });

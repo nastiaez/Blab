@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import '../../../shared/data/local_storage_keys.dart';
 
 typedef FetchOnboardingRefreshEnabled = Future<bool> Function();
 
@@ -25,8 +28,32 @@ final fetchOnboardingRefreshEnabledProvider =
 
 final onboardingRefreshEnabledProvider = FutureProvider<bool>((ref) async {
   if (ref.watch(onboardingRefreshPreviewProvider)) return true;
+  SharedPreferences? preferences;
   try {
-    return await ref.watch(fetchOnboardingRefreshEnabledProvider)();
+    preferences = await SharedPreferences.getInstance();
+  } catch (_) {}
+  final saved = preferences?.getBool(kCachedOnboardingRolloutKey);
+  final fetch = ref.watch(fetchOnboardingRefreshEnabledProvider);
+  if (saved != null) {
+    unawaited(() async {
+      try {
+        final fresh = await fetch().timeout(const Duration(seconds: 8));
+        if (!ref.mounted) return;
+        final written = await preferences!.setBool(
+          kCachedOnboardingRolloutKey,
+          fresh,
+        );
+        if (written && ref.mounted && fresh != saved) ref.invalidateSelf();
+      } catch (_) {}
+    }());
+    return saved;
+  }
+  try {
+    final fresh = await fetch().timeout(const Duration(seconds: 8));
+    try {
+      await preferences?.setBool(kCachedOnboardingRolloutKey, fresh);
+    } catch (_) {}
+    return fresh;
   } catch (_) {
     return kDebugMode;
   }

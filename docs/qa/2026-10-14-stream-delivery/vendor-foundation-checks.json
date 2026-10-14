@@ -1,0 +1,14 @@
+{
+  "isolated_app": "1731706",
+  "checks": {
+    "server_provision_users": true,
+    "server_provision_channel": true,
+    "member_can_send": true,
+    "recipient_can_read": true,
+    "nonmember_cannot_read": true,
+    "user_cannot_create_channel": true,
+    "message_limit_enforced": true,
+    "rejected_message_not_delivered": true
+  },
+  "scope": "Stream API fixture checks; not Supabase endpoint, Android, migration, or production verification"
+}

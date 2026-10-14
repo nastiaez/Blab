@@ -81,4 +81,26 @@ void main() {
     );
     expect(s.packageCalls, 0);
   });
+
+  test(
+    'a lagging projection cannot claim the notified message is cached',
+    () async {
+      final service = _Service();
+      await expectLater(
+        prefetchPushedChat(
+          chatId: 'chat-1',
+          service: service,
+          cache: LocalChatHistoryCache('alice'),
+          expectedMessageId: 'newer-than-projection',
+          accountStillCurrent: () => true,
+        ),
+        throwsStateError,
+      );
+      expect(
+        await LocalChatHistoryCache('alice').loadMessages('chat-1'),
+        isEmpty,
+      );
+      expect(service.packageCalls, 0);
+    },
+  );
 }

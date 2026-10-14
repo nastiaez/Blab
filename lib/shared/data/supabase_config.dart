@@ -21,6 +21,10 @@ class SupabaseConfig {
   );
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
   static const String sentryEnvironment = String.fromEnvironment('SENTRY_ENV');
+  static const int localApiPort = int.fromEnvironment(
+    'BLAB_LOCAL_API_PORT',
+    defaultValue: 54321,
+  );
 
   static BlabEnvironment get environment =>
       parseEnvironment(environmentName) ??
@@ -42,7 +46,28 @@ class SupabaseConfig {
       };
 
   static bool get pushNotificationsEnabled =>
-      pushNotificationsEnabledFor(environmentName);
+      pushNotificationsEnabledFor(environmentName) || isolatedPushReviewEnabled;
+
+  static bool get isolatedPushReviewEnabled => isolatedPushReviewAllowed(
+    requested: const bool.fromEnvironment('BLAB_LOCAL_PUSH_REVIEW'),
+    streamEnabled: const bool.fromEnvironment('BLAB_STREAM_REVIEW'),
+    environment: environmentName,
+    apiPort: localApiPort,
+    firebaseProject: firebaseProjectId,
+  );
+
+  static bool isolatedPushReviewAllowed({
+    required bool requested,
+    required bool streamEnabled,
+    required String environment,
+    required int apiPort,
+    required String firebaseProject,
+  }) =>
+      requested &&
+      streamEnabled &&
+      parseEnvironment(environment) == BlabEnvironment.local &&
+      apiPort != 54321 &&
+      firebaseProject.isNotEmpty;
 
   static String? validationError({
     required String environment,
@@ -53,6 +78,7 @@ class SupabaseConfig {
     required String firebaseProjectId,
     required String sentryDsn,
     required String sentryEnvironment,
+    int localApiPort = 54321,
   }) {
     final suppliedValues = <String, String>{
       'SUPABASE_PROJECT_REF': projectRef,
@@ -89,8 +115,10 @@ class SupabaseConfig {
       if (projectRef != 'local' ||
           uri.scheme != 'http' ||
           !localHosts.contains(uri.host) ||
-          uri.port != 54321) {
-        return 'Local builds must use the local Supabase project on port 54321.';
+          localApiPort < 1024 ||
+          localApiPort > 65535 ||
+          uri.port != localApiPort) {
+        return 'Local builds must use the configured loopback Supabase project.';
       }
       if (sentryEnvironment != 'local') {
         return 'SENTRY_ENV must match BLAB_ENV.';
@@ -139,6 +167,7 @@ class SupabaseConfig {
       firebaseProjectId: firebaseProjectId,
       sentryDsn: sentryDsn,
       sentryEnvironment: sentryEnvironment,
+      localApiPort: localApiPort,
     );
     if (error != null) throw StateError(error);
   }

@@ -100,12 +100,14 @@ class MessageTranslation {
     this.confidence,
     this.formAlternatives,
     this.formAlternativesList,
+    this.wordMetadataReady = true,
   });
   final String translation;
   final String interfaceText;
   final String interfaceLang;
   final String sourceLang;
   final List<MessageToken> tokens;
+  final bool wordMetadataReady;
   final LearningAidMode mode;
   final String? explanation;
   final CorrectionConfidence? confidence;
@@ -146,8 +148,15 @@ class MessageTranslator {
   final MessageTranslateInvoke? _invoke;
   final Duration _timeout;
 
-  Future<MessageTranslation> translate({required String messageId}) async {
-    return _translate(messageId: messageId, forceRefresh: false);
+  Future<MessageTranslation> translate({
+    required String messageId,
+    String? targetLang,
+  }) async {
+    return _translate(
+      messageId: messageId,
+      forceRefresh: false,
+      targetLang: targetLang,
+    );
   }
 
   Future<MessageTranslation> translateFresh({required String messageId}) async {
@@ -157,6 +166,7 @@ class MessageTranslator {
   Future<MessageTranslation> _translate({
     required String messageId,
     required bool forceRefresh,
+    String? targetLang,
   }) async {
     if (messageId.trim().isEmpty) {
       throw MessageTranslationFailed('invalid_message_id');
@@ -169,6 +179,7 @@ class MessageTranslator {
                   ? _defaultInvoke(
                       messageId: messageId.trim(),
                       forceRefresh: forceRefresh,
+                      targetLang: targetLang,
                     )
                   : invoke(messageId: messageId.trim()))
               .timeout(_timeout);
@@ -320,12 +331,17 @@ List<GrammaticalFormAlternatives> parseGrammaticalFormAlternativesList(
 Future<Map<String, dynamic>> _defaultInvoke({
   required String messageId,
   bool forceRefresh = false,
+  String? targetLang,
 }) async {
   FunctionResponse response;
   try {
     response = await Supabase.instance.client.functions.invoke(
       'translate-message',
-      body: {'messageId': messageId, if (forceRefresh) 'forceRefresh': true},
+      body: {
+        'messageId': messageId,
+        if (forceRefresh) 'forceRefresh': true,
+        'targetLang': ?targetLang,
+      },
     );
   } on FunctionException catch (error) {
     final details = error.details;
@@ -355,6 +371,10 @@ Future<Map<String, dynamic>> _defaultInvoke({
     throw MessageTranslationFailed(reason ?? 'invoke_failed');
   }
   final data = response.data;
+  if (targetLang != null &&
+      (data is! Map || data['targetLang'] != targetLang)) {
+    throw MessageTranslationFailed('translation_target_mismatch');
+  }
   if (data is Map<String, dynamic>) return data;
   if (data is Map) return Map<String, dynamic>.from(data);
   throw StateError('unexpected_payload');

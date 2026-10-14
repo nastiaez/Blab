@@ -1,0 +1,11 @@
+{
+  "case": "simple_fresh_en_to_de",
+  "source": "I am studying German today.",
+  "pipeline": "two-context/cache-prefix candidate, serial source anchor",
+  "status": 200,
+  "duration_ms": 15106,
+  "target": "Ich lerne heute Deutsch.",
+  "mode": "translation",
+  "error": null,
+  "scope": "Single synthetic fixture, not population latency percentile or quality acceptance"
+}

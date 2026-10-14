@@ -561,11 +561,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _anchorOldestUnread() {
     if (!mounted || _unreadDividerAnchored) return;
-    final context = _unreadDividerKey.currentContext;
+    final messages =
+        ref.read(chatMessagesProvider(widget.chatId)).value ??
+        const <Message>[];
+    final unread =
+        messages
+            .where((message) => _sessionUnreadIds.contains(message.id))
+            .toList()
+          ..sort((a, b) => a.sentAt.compareTo(b.sentAt));
+    if (unread.isEmpty) return;
+    final context = _messageAnchorKeys[unread.first.id]?.currentContext;
     if (context == null) return;
     _unreadDividerAnchored = true;
     unawaited(
-      Scrollable.ensureVisible(context, alignment: 0, duration: Duration.zero),
+      Scrollable.ensureVisible(context, alignment: 1, duration: Duration.zero),
     );
   }
 
@@ -1055,7 +1064,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .map((era) => '${era.revision}:${era.languageCode}')
         .join(',');
     final localeKey =
-        '${chatMode.name}|$targetLang|$translationInterfaceLang|$timelineKey';
+        '$translationInterfaceLang|${learningLang.code}|$timelineKey|${chat.needsPracticeLanguageSelection}';
     if (_prefetchedLocaleKey != localeKey) {
       _prefetchedLocaleKey = localeKey;
       _prefetchedMessageIds.clear();
@@ -1076,24 +1085,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           return;
         }
         final era = eraForMessage(candidate);
-        final candidateTarget = targetForMessage(candidate);
-        if (!shouldRequestBubbleTranslation(
-          targetLanguageCode: candidateTarget,
-          text: candidate.originalText,
-          sentAt: candidate.sentAt,
-          translationCutoffAt: null,
-        )) {
-          return;
-        }
-        final variantKey =
-            '$candidateTarget|${era.languageCode}|${era.revision}';
-        variantTargets[variantKey] = candidateTarget;
-        final group = translationCandidateGroups.putIfAbsent(
-          variantKey,
-          () => <({Message message, ChatLanguageEra era})>[],
-        );
-        if (!group.any((entry) => entry.message.id == candidate.id)) {
-          group.add((message: candidate, era: era));
+        // Hydrate persisted results for both views, without generating them.
+        // Switching mode is a local presentation change, not a cache reset.
+        final targets =
+            chat.needsPracticeLanguageSelection || knownLanguages == null
+            ? <String>{}
+            : {era.languageCode, knownLanguages.primary};
+        for (final candidateTarget in targets) {
+          if (!shouldRequestBubbleTranslation(
+            targetLanguageCode: candidateTarget,
+            text: candidate.originalText,
+            sentAt: candidate.sentAt,
+            translationCutoffAt: null,
+          )) {
+            continue;
+          }
+          final variantKey =
+              '$candidateTarget|${era.languageCode}|${era.revision}';
+          variantTargets[variantKey] = candidateTarget;
+          final group = translationCandidateGroups.putIfAbsent(
+            variantKey,
+            () => <({Message message, ChatLanguageEra era})>[],
+          );
+          if (!group.any((entry) => entry.message.id == candidate.id)) {
+            group.add((message: candidate, era: era));
+          }
         }
       }
 
@@ -1154,6 +1170,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           eligible.map((entry) => entry.message.id).toList(),
           target,
           translationInterfaceLang,
+          retryMisses: target == targetLang,
           packageLearningLanguage: era.languageCode,
           packageLanguageRevision: era.revision,
           sourceTexts: {

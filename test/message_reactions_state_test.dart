@@ -7,6 +7,7 @@ import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeReactionChatService implements ChatService {
   final changes = StreamController<MessageReactionChange>.broadcast();
@@ -72,6 +73,8 @@ _listenForReactions(ProviderContainer container) {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   test('aggregates reactions and marks the current user reaction', () async {
     final service = _FakeReactionChatService()
       ..rows.addAll([

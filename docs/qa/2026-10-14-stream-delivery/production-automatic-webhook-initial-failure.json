@@ -1,0 +1,9 @@
+{
+  "source": "Actual Stream dashboard webhook log",
+  "appId": "1731734",
+  "event": "message.new",
+  "http_status": 415,
+  "at_utc": "2026-10-14T13:07:55.214Z",
+  "cause": "New vendor apps default to gzip HTTP events; receiver only accepted identity encoding",
+  "fixed_in_source": "Bounded decompression then HMAC on exact uncompressed bytes; repeat live check pending"
+}

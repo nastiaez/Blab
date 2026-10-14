@@ -1,0 +1,10 @@
+{
+  "isolated_app": "1731706",
+  "checks": {
+    "partial_edit": true,
+    "authoritative_edit_marker": true,
+    "soft_delete_preserves_restore_source": true,
+    "undo_restores_same_identity": true
+  },
+  "scope": "Actual server-side Stream fixtures; not the authenticated Blab command endpoint or Android acceptance"
+}

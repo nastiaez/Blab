@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/chat_list_state.dart';
 import '../../../shared/state/privacy_settings.dart';
+import '../../../shared/services/local_chat_signals_cache.dart';
 import 'unread_chat_state.dart';
 
 typedef MarkReadFn =
@@ -125,9 +126,10 @@ final messageReadsProvider =
 final readsForChatProvider = StreamProvider.family<Set<String>, String>((
   ref,
   chatId,
-) {
+) async* {
   if (!ref.watch(readReceiptsEnabledProvider)) {
-    return Stream.value(const <String>{});
+    yield const <String>{};
+    return;
   }
   // Re-open the realtime subscription when the signed-in user changes,
   // otherwise the channel keeps using the previous account's auth context
@@ -135,11 +137,28 @@ final readsForChatProvider = StreamProvider.family<Set<String>, String>((
   ref.watch(authSessionProvider);
   final watchReads = ref.watch(watchReadsFnProvider(chatId));
   final uid = ref.watch(readReceiptUserIdProvider);
-  return watchReads().map((rows) {
-    return rows
-        .where((r) => r['receipt_visible'] != false)
-        .where((r) => r['user_id'] != uid)
-        .map((r) => r['message_id'] as String)
-        .toSet();
-  });
+  bool current() =>
+      ref.mounted &&
+      ref.read(readReceiptsEnabledProvider) &&
+      ref.read(readReceiptUserIdProvider) == uid;
+  Set<String> ids(List<Map<String, dynamic>> rows) => rows
+      .where((r) => r['receipt_visible'] != false)
+      .where((r) => r['user_id'] != uid)
+      .map((r) => r['message_id'] as String)
+      .toSet();
+  final cache = uid == null ? null : LocalChatSignalsCache(uid, chatId);
+  final saved = await cache?.read('reads') ?? <Map<String, dynamic>>[];
+  var lastRows = saved;
+  if (!current()) return;
+  if (saved.isNotEmpty) yield ids(saved);
+  try {
+    await for (final rows in watchReads()) {
+      if (!current()) return;
+      lastRows = rows;
+      yield ids(rows);
+      await cache?.save('reads', rows);
+    }
+  } catch (_) {
+    if (current()) yield ids(lastRows);
+  }
 });

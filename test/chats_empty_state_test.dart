@@ -80,7 +80,17 @@ void main() {
     expect(find.text('Alex'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsOneWidget);
     final actionRect = tester.getRect(find.byType(FloatingActionButton));
-    expect(actionRect.width, greaterThanOrEqualTo(48));
-    expect(actionRect.height, greaterThanOrEqualTo(48));
+    // Standard Material FAB geometry, not the former compact custom shadow.
+    expect(actionRect.size, const Size(56, 56));
+    final material = tester.widget<Material>(
+      find
+          .descendant(
+            of: find.byType(FloatingActionButton),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(material.elevation, 6);
+    expect(material.shape, isA<CircleBorder>());
   });
 }

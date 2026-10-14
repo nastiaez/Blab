@@ -8,10 +8,16 @@ import '../models/chat.dart';
 import '../services/chat_service.dart';
 import '../services/local_chat_history_cache.dart';
 import '../services/message_translator.dart';
+import '../services/stream_backed_chat_service.dart';
 import 'auth_state.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) {
-  return ChatService(ref.watch(supabaseClientProvider));
+  ref.watch(currentUserIdProvider);
+  final service = createChatService(ref.watch(supabaseClientProvider));
+  if (service is StreamBackedChatService) {
+    ref.onDispose(() => unawaited(service.dispose()));
+  }
+  return service;
 });
 
 Chat _rowToChat(Map<String, dynamic> r) {

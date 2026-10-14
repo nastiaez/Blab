@@ -28,6 +28,58 @@ Widget _host(
   home: Scaffold(body: child),
 );
 void main() {
+  testWidgets('pressed toggle ink cannot paint outside the visible capsule', (
+    tester,
+  ) async {
+    const boundaryKey = ValueKey('toggle-ink-boundary');
+    await tester.pumpWidget(
+      _host(
+        UnconstrainedBox(
+          child: RepaintBoundary(
+            key: boundaryKey,
+            child: BlabChatModeToggle.segmented(
+              practice: false,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(boundaryKey),
+    );
+    Future<List<int>> pixels() => tester
+        .runAsync(() async {
+          final image = await boundary.toImage(pixelRatio: 1);
+          final bytes = await image.toByteData(format: ImageByteFormat.rawRgba);
+          image.dispose();
+          return bytes!.buffer.asUint8List().toList();
+        })
+        .then((value) => value!);
+    final before = await pixels();
+    final press = await tester.startGesture(
+      tester.getCenter(
+        find.byKey(const ValueKey('mode-toggle-segment-flash - 16')),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 80));
+    final during = await pixels();
+    final width = boundary.size.width.toInt();
+    // The 44-high accessible target has five transparent pixels above/below
+    // the 34-high pill; pressed feedback must not reach either margin.
+    for (final y in [0, 1, 2, 3, 4, 39, 40, 41, 42, 43]) {
+      final start = y * width * 4;
+      expect(
+        during.sublist(start, start + width * 4),
+        before.sublist(start, start + width * 4),
+      );
+    }
+    expect(during, isNot(equals(before)));
+    await press.up();
+    await tester.pumpAndSettle();
+  });
   testWidgets(
     'native language chip keeps the original centered 32-high label',
     (tester) async {

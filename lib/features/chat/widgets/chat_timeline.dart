@@ -248,8 +248,6 @@ class ChatTimeline extends ConsumerWidget {
               translationCutoffAt: null,
               popupTopInset: popupTopInset,
               deferTranslationResolve: deferTranslationResolve,
-              // Cached/ready text must never wait on another message's request.
-              holdIncomingUntilPrevious: false,
               isSelected: selectedMessageId == item.message.id,
               showOriginal:
                   selectedMessageId == item.message.id && showSelectedOriginal,

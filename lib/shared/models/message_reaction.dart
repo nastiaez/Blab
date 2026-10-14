@@ -53,11 +53,13 @@ MessageReactionRow? messageReactionRowFromMap(Map<String, dynamic> row) {
       createdAt is! String) {
     return null;
   }
+  final parsedDate = DateTime.tryParse(createdAt);
+  if (parsedDate == null) return null;
   return MessageReactionRow(
     messageId: messageId,
     userId: userId,
     emoji: emoji,
-    createdAt: DateTime.parse(createdAt).toLocal(),
+    createdAt: parsedDate.toLocal(),
   );
 }
 

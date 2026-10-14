@@ -1,0 +1,8 @@
+{
+  "checks": {
+    "de": true,
+    "en": false,
+    "fr": true
+  },
+  "scope": "Existing synthetic cached/known lanes, no new model requests intended"
+}

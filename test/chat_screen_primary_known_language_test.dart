@@ -440,12 +440,13 @@ ProviderContainer _containerForHeader(
         _UnsupportedPushGateway(),
       ),
       pushTokenRepositoryProvider.overrideWithValue(_NoopPushTokenRepository()),
-      translateMessageFnProvider.overrideWithValue(
-        translate ??
-            (messageId) async {
-              throw MessageTranslationFailed('unexpected_live_translation');
-            },
-      ),
+      translateMessageFnProvider.overrideWithValue((
+        messageId, {
+        targetLang,
+      }) async {
+        if (translate != null) return translate(messageId);
+        throw MessageTranslationFailed('unexpected_live_translation');
+      }),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
       if (!loadLanguageTimelineFromService)
         chatLanguageTimelineProvider.overrideWith(
@@ -467,6 +468,99 @@ ProviderContainer _containerForHeader(
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+  for (final outgoing in [false, true]) {
+    testWidgets(
+      'fast ${outgoing ? "sent" : "received"} translation keeps original visible and skips slow morph',
+      (tester) async {
+        final container = _containerForHeader(
+          _PrimaryKnownLanguageChatService(
+            pending: true,
+            chatMode: 'practice',
+            learningLanguageCode: 'de',
+            messageText: 'Fast original',
+            messageIsOutgoing: outgoing,
+          ),
+          primaryKnownLanguage: 'en',
+          knownLanguages: ['en'],
+        );
+        await tester.pumpWidget(_host(container));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('translation-fast-hold')),
+        );
+        expect(find.text('Fast original'), findsOneWidget);
+        final hold = tester.widget<Opacity>(
+          find.byKey(const ValueKey('translation-fast-hold')),
+        );
+        expect(hold.opacity, 1);
+        container
+            .read(messageTranslationsProvider('chat-1').notifier)
+            .hydrateFromDb(
+              const {
+                'msg-1': MessageTranslation(
+                  translation: 'Schnelles Ergebnis',
+                  interfaceText: 'Fast original',
+                  interfaceLang: 'en',
+                  sourceLang: 'en',
+                  tokens: [],
+                  mode: LearningAidMode.translation,
+                ),
+              },
+              'de',
+              'en',
+              replaceExisting: true,
+            );
+        await tester.pump();
+        expect(find.byKey(const ValueKey('translation-clear')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('translation-reshape-empty')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('translation-settled')),
+          findsOneWidget,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+        await tester.pump(const Duration(seconds: 20));
+      },
+    );
+  }
+  testWidgets('entry reveals the unread message, not just its divider', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final now = DateTime.now();
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        pending: true,
+        chatMode: 'normal',
+        messageText: 'The new message must be visible',
+        messageSentAt: now,
+        previousMessageSentAt: now.subtract(const Duration(minutes: 1)),
+        previousMessageIsOutgoing: false,
+        previousMessageText: List.filled(80, 'Earlier conversation.').join(' '),
+      ),
+      unreadMessageIds: ['msg-1'],
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+    );
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    final viewport = tester.getRect(find.byType(ListView).first);
+    final message = tester.getRect(
+      find.byKey(const ValueKey('message-row-reply-msg-1')),
+    );
+    expect(message.top, greaterThanOrEqualTo(viewport.top));
+    expect(message.bottom, lessThanOrEqualTo(viewport.bottom + 1));
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(seconds: 20));
+  });
   testWidgets(
     'direct chat entry has a Material Chats parent; Back closes menu before popping',
     (tester) async {
@@ -683,7 +777,10 @@ void main() {
           pushTokenRepositoryProvider.overrideWithValue(
             _NoopPushTokenRepository(),
           ),
-          translateMessageFnProvider.overrideWithValue((messageId) async {
+          translateMessageFnProvider.overrideWithValue((
+            messageId, {
+            targetLang,
+          }) async {
             throw MessageTranslationFailed('unexpected_live_translation');
           }),
           typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
@@ -758,7 +855,7 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('incoming-translation-placeholder')),
-        findsNWidgets(2),
+        findsNothing,
       );
       expect(find.byKey(const ValueKey('translation-wave')), findsOneWidget);
       expect(
@@ -766,7 +863,7 @@ void main() {
         findsNothing,
       );
       expect(find.text('Translating…'), findsNothing);
-      expect(find.text('Hello there'), findsNothing);
+      expect(find.text('Hello there'), findsWidgets);
 
       container
           .read(messageTranslationsProvider('chat-1').notifier)
@@ -788,7 +885,7 @@ void main() {
       final clear = find.byKey(const ValueKey('translation-clear'));
       await _pumpUntilFound(tester, clear);
       expect(clear, findsOneWidget);
-      expect(find.text('Hello there'), findsNothing);
+      expect(find.text('Hello there'), findsOneWidget);
       expect(find.text('Hallo zusammen'), findsNothing);
 
       await tester.pump(const Duration(milliseconds: 121));
@@ -812,7 +909,7 @@ void main() {
   );
 
   testWidgets(
-    'reduced motion keeps incoming placeholder static and swaps directly',
+    'reduced motion keeps incoming original readable and swaps directly',
     (tester) async {
       final container = _containerForHeader(
         _PrimaryKnownLanguageChatService(
@@ -830,11 +927,11 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('incoming-translation-placeholder')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
       expect(find.text('Translating…'), findsNothing);
-      expect(find.text('Reduced motion message'), findsNothing);
+      expect(find.text('Reduced motion message'), findsOneWidget);
 
       container
           .read(messageTranslationsProvider('chat-1').notifier)
@@ -873,7 +970,7 @@ void main() {
   );
 
   testWidgets(
-    'simultaneous incoming messages use only accessible bubble placeholders',
+    'simultaneous incoming messages show authored text under the shared shimmer',
     (tester) async {
       final now = DateTime.now();
       final container = _containerForHeader(
@@ -895,13 +992,13 @@ void main() {
 
       expect(
         find.byKey(const ValueKey('incoming-translation-placeholder')),
-        findsNWidgets(4),
+        findsNothing,
       );
       expect(find.text('Translating 2 messages…'), findsNothing);
       expect(find.text('Translating…'), findsNothing);
-      expect(find.bySemanticsLabel('Translating…'), findsNWidgets(2));
-      expect(find.text('First message'), findsNothing);
-      expect(find.text('Second message'), findsNothing);
+      expect(find.byKey(const ValueKey('translation-wave')), findsNWidgets(2));
+      expect(find.text('First message'), findsWidgets);
+      expect(find.text('Second message'), findsWidgets);
 
       await tester.pumpWidget(const SizedBox.shrink());
       container.dispose();
@@ -1565,7 +1662,7 @@ void main() {
     expect(service.languageTimelineFetchCount, 2);
   });
 
-  testWidgets('Normal exposes authored text while Practice still waits', (
+  testWidgets('both modes expose authored text while Practice still waits', (
     tester,
   ) async {
     final container = _containerForHeader(
@@ -1580,10 +1677,11 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(_host(container));
     await _settle(tester);
-    expect(find.text('Read this immediately'), findsNothing);
+    expect(find.text('Read this immediately'), findsWidgets);
     await tester.tap(find.byKey(const ValueKey('mode-toggle')));
     await _settle(tester);
-    expect(find.text('Read this immediately'), findsOneWidget);
+    expect(container.read(chatModeProvider('chat-1')), ChatMode.normal);
+    expect(find.text('Read this immediately'), findsWidgets);
     await tester.pumpWidget(const SizedBox.shrink());
     container.dispose();
     await tester.pump(const Duration(seconds: 20));

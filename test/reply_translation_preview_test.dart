@@ -247,12 +247,13 @@ Widget _host(ChatService service, {TranslateMessageFn? translateMessage}) {
         _UnsupportedPushGateway(),
       ),
       pushTokenRepositoryProvider.overrideWithValue(_NoopPushTokenRepository()),
-      translateMessageFnProvider.overrideWithValue(
-        translateMessage ??
-            (messageId) async {
-              throw MessageTranslationFailed('unexpected_live_translation');
-            },
-      ),
+      translateMessageFnProvider.overrideWithValue((
+        messageId, {
+        targetLang,
+      }) async {
+        if (translateMessage != null) return translateMessage(messageId);
+        throw MessageTranslationFailed('unexpected_live_translation');
+      }),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
       // Finding #1/#5 (final whole-branch review): the translation pipeline
       // now targets the reader's primary known language and gates every

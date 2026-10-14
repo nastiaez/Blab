@@ -408,3 +408,43 @@ entrypoint = "./functions/prepare-message-jobs/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/send-push/index.ts"
+
+[functions.stream-token]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/stream-token/index.ts"
+
+[functions.stream-channel]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/stream-channel/index.ts"
+
+[functions.stream-events]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/stream-events/index.ts"
+
+[functions.reconcile-stream-events]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/reconcile-stream-events/index.ts"
+
+[functions.stream-message]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/stream-message/index.ts"
+
+[functions.stream-media]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/stream-media/index.ts"
+
+[functions.stream-activity]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/stream-activity/index.ts"
+
+[functions.stream-device]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/stream-device/index.ts"

@@ -321,7 +321,10 @@ ProviderContainer _buildContainer(ChatService service, {TtsService? tts}) {
         _UnsupportedPushGateway(),
       ),
       pushTokenRepositoryProvider.overrideWithValue(_NoopPushTokenRepository()),
-      translateMessageFnProvider.overrideWithValue((messageId) async {
+      translateMessageFnProvider.overrideWithValue((
+        messageId, {
+        targetLang,
+      }) async {
         throw MessageTranslationFailed('unexpected_live_translation');
       }),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),

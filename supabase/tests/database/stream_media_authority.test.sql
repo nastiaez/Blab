@@ -1,0 +1,34 @@
+begin;
+select plan(10);
+insert into chats(id) values('73000000-0000-4000-8000-000000000001');
+insert into chat_members(chat_id,user_id,learning_language) values
+('73000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a','de'),
+('73000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000b','en');
+insert into chat_message_transports(chat_id,provider,migration_state) values('73000000-0000-4000-8000-000000000001','stream','active');
+select ok(not has_table_privilege('authenticated','stream_media_uploads','select'),'upload retry bookkeeping is private');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',true);
+set local role authenticated;
+create temp table media_fixture as select reserve_stream_media_upload('73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002',repeat('a',64),repeat('b',64)) as value;
+grant select on media_fixture to service_role;
+select is((select value->>'actorId' from media_fixture),'00000000-0000-4000-8000-00000000000a','upload actor is authenticated, not supplied');
+select is(reserve_stream_media_upload('73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002',repeat('a',64),repeat('b',64))->>'status','in_flight','upload retries cannot race one active lease');
+select throws_ok($$select reserve_stream_media_upload('73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002',repeat('c',64),repeat('b',64))$$,'P0001','idempotency_conflict','same message cannot replace original pixels');
+select throws_ok($$select authorize_stream_message_command('73000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002','send_image','')$$,'P0001','media_not_ready','photo cannot publish before verified upload');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select ok(not finish_stream_media_upload('73000000-0000-4000-8000-000000000002',gen_random_uuid(),'{"blab_asset_id":"73000000-0000-4000-8000-000000000002"}'::jsonb),'stale lease cannot replace upload result');
+select ok(finish_stream_media_upload('73000000-0000-4000-8000-000000000002',(select (value->>'leaseToken')::uuid from media_fixture),'{"blab_asset_id":"73000000-0000-4000-8000-000000000002","asset_url":"https://review.stream-io-cdn.com/fixture"}'::jsonb),'verified upload is accepted only by its server lease');
+reset role;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',true);
+set local role authenticated;
+select is(authorize_stream_message_command('73000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002','send_image','')->>'status','authorized','empty caption is valid for a prepared photo');
+insert into blocks(blocker_id,blocked_id) values('00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b');
+select throws_ok($$select reserve_stream_media_upload('73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000004',repeat('a',64),repeat('b',64))$$,'P0001','chat_blocked','blocked chat cannot upload a new photo');
+reset role;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000b","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select authorize_stream_message_command('73000000-0000-4000-8000-000000000005','73000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002','send_image','')$$,'P0001','media_not_ready','partner cannot publish the author upload as their own');
+reset role;
+select * from finish();
+rollback;

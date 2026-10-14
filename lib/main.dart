@@ -30,11 +30,17 @@ import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
 import 'shared/services/push_tap_router.dart';
 import 'shared/services/push_chat_prefetch.dart';
+import 'shared/services/blab_local_notifications.dart';
+import 'shared/services/stream_push_preparation.dart';
+import 'shared/services/push_session_identity.dart';
 import 'shared/services/push_notification_gateway.dart';
+import 'shared/services/stream_backed_chat_service.dart';
 import 'shared/services/chat_service.dart';
+import 'shared/services/cached_session_refresh.dart';
 import 'shared/services/local_chat_history_cache.dart';
 import 'shared/services/supabase_auth_service.dart';
 import 'shared/state/chat_list_state.dart';
+import 'shared/state/auth_state.dart';
 import 'shared/state/interface_language.dart';
 import 'shared/state/push_notifications_state.dart';
 
@@ -49,6 +55,16 @@ Future<void> main() async {
 Future<void> _cacheBackgroundPush(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
   final event = PushOpenEvent.fromData(message.data);
+  if (kDebugMode) {
+    debugPrint(
+      'Background push routing keys=${message.data.keys.join(",")}, accepted=${event != null}, '
+      'vendorMessage=${message.data["type"] == "message.new"}, '
+      'blabChannel=${message.data["channel_type"] == "blab"}, '
+      'chatAgrees=${message.data["channel_id"] == message.data["chatId"]}, '
+      'receiverAgrees=${message.data["receiver_id"] == message.data["receiverId"]}, '
+      'messageAgrees=${message.data["message_id"] == message.data["messageId"]}',
+    );
+  }
   if (event == null) return;
   try {
     await initializeFirebaseForPush(
@@ -65,25 +81,79 @@ Future<void> _cacheBackgroundPush(RemoteMessage message) async {
         authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       );
     }
-    await _cachePushChat(event.chatId).timeout(const Duration(seconds: 20));
+    if (message.data['blab_transport'] == 'stream') {
+      final user = Supabase.instance.client.auth.currentUser?.id;
+      if (user == null || event.receiverId != user) return;
+      final outcome = await prepareStreamPush(
+        accountStillCurrent: () async =>
+            Supabase.instance.client.auth.currentUser?.id == user &&
+            await persistedPushAccountMatches(user, SupabaseConfig.url),
+        cache: () => _cachePushChat(
+          event.chatId,
+          receiverId: event.receiverId,
+          expectedMessageId: message.data['messageId'] as String?,
+        ),
+        show: () => BlabLocalNotifications.show(message.data),
+      );
+      if (kDebugMode) {
+        debugPrint('Stream background notification: ${outcome.name}');
+      }
+    } else {
+      await _cachePushChat(
+        event.chatId,
+        receiverId: event.receiverId,
+      ).timeout(const Duration(seconds: 20));
+    }
   } catch (_) {
     // Background execution/connectivity is best effort; tap recovery remains.
   }
 }
 
-Future<void> _cachePushChat(String chatId) async {
+Future<void> _cachePushChat(
+  String chatId, {
+  String? receiverId,
+  String? expectedMessageId,
+}) async {
   final client = Supabase.instance.client;
   if (client.auth.currentSession?.isExpired == true) {
     await client.auth.refreshSession();
   }
   final userId = client.auth.currentUser?.id;
   if (userId == null) return;
-  await prefetchPushedChat(
-    chatId: chatId,
-    service: ChatService(client),
-    cache: LocalChatHistoryCache(userId),
-    accountStillCurrent: () => client.auth.currentUser?.id == userId,
-  );
+  if (receiverId != null && receiverId != userId) return;
+  // The authenticated, server-only learning projection avoids a socket and
+  // vendor session on the notification path. If not caught up, use canonical
+  // transport; never cache notification preview text as a message.
+  if (expectedMessageId != null && streamReviewEnabled) {
+    try {
+      await prefetchPushedChat(
+        chatId: chatId,
+        service: ChatService(client),
+        cache: LocalChatHistoryCache(userId),
+        expectedMessageId: expectedMessageId,
+        accountStillCurrent: () async =>
+            client.auth.currentUser?.id == userId &&
+            await persistedPushAccountMatches(userId, SupabaseConfig.url),
+      );
+      return;
+    } catch (_) {
+      if (client.auth.currentUser?.id != userId) return;
+    }
+  }
+  final service = createChatService(client, backgroundFetch: true);
+  try {
+    await prefetchPushedChat(
+      chatId: chatId,
+      service: service,
+      cache: LocalChatHistoryCache(userId),
+      expectedMessageId: expectedMessageId,
+      accountStillCurrent: () async =>
+          client.auth.currentUser?.id == userId &&
+          await persistedPushAccountMatches(userId, SupabaseConfig.url),
+    );
+  } finally {
+    if (service is StreamBackedChatService) await service.dispose();
+  }
 }
 
 Future<void> _initializeAndRunApp() async {
@@ -94,22 +164,29 @@ Future<void> _initializeAndRunApp() async {
     milliseconds: 100,
   );
   await initializeFirebaseForPush(
-    enabled: SupabaseConfig.environment != BlabEnvironment.local,
+    enabled: SupabaseConfig.pushNotificationsEnabled,
     expectedProjectId: SupabaseConfig.firebaseProjectId,
     requiredForHostedAndroid:
         SupabaseConfig.environment != BlabEnvironment.local,
   );
   if (BlabFirebaseConfig.isAndroidPlatform && Firebase.apps.isNotEmpty) {
     FirebaseMessaging.onBackgroundMessage(_cacheBackgroundPush);
+    if (streamReviewEnabled) {
+      try {
+        await BlabLocalNotifications.initialize();
+      } catch (_) {}
+    }
   }
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.publishableKey,
     authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
   );
-  await _stabilizeInitialSession(Supabase.instance.client);
   await _routeInitialAuthCallback();
   runApp(const ProviderScope(child: BlabApp()));
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_stabilizeInitialSession(Supabase.instance.client));
+  });
 }
 
 final AuthCallbackGuard _authCallbackGuard = AuthCallbackGuard();
@@ -163,20 +240,19 @@ Future<void> _openResolvedAuthCallback(
 Future<void> _stabilizeInitialSession(SupabaseClient client) async {
   final session = client.auth.currentSession;
   if (session == null || !session.isExpired) return;
-  try {
-    await client.auth.refreshSession().timeout(const Duration(seconds: 8));
-  } catch (error) {
-    if (SupabaseAuthService.isRevokedSessionError(error)) {
-      await client.auth.signOut(scope: SignOutScope.local);
-      return;
-    }
-    if (kDebugMode) {
-      debugPrint(
-        'Initial session refresh deferred: type=${error.runtimeType}, '
-        'error=$error',
-      );
-    }
-  }
+  await refreshCachedSession(
+    currentIdentity: () {
+      final current = client.auth.currentSession;
+      return current == null
+          ? null
+          : (current.user.id, current.accessToken, current.refreshToken);
+    },
+    refresh: () async {
+      await client.auth.refreshSession();
+    },
+    isRevoked: SupabaseAuthService.isRevokedSessionError,
+    signOut: () => client.auth.signOut(scope: SignOutScope.local),
+  );
 }
 
 class BlabApp extends ConsumerStatefulWidget {
@@ -251,7 +327,12 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       _receivedPushSub = FirebaseMessaging.onMessage.listen((message) {
         final event = PushOpenEvent.fromData(message.data);
         if (event != null) {
-          unawaited(_cachePushChat(event.chatId).catchError((Object _) {}));
+          unawaited(
+            _cachePushChat(
+              event.chatId,
+              receiverId: event.receiverId,
+            ).catchError((Object _) {}),
+          );
         }
       });
     }
@@ -538,6 +619,18 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       currentPendingChatId: () =>
           ref.read(pushNotificationsProvider).pendingChatId,
       invalidateChat: (_) {},
+      canOpenCachedChat: (chatId) async {
+        final userId = ref.read(currentUserIdProvider);
+        final cache = ref.read(localChatHistoryCacheProvider);
+        if (userId == null || cache == null) return false;
+        final chats = await cache.loadChats();
+        await ref
+            .read(chatMessagesProvider(chatId).notifier)
+            .recoverBackgroundArrivals();
+        return mounted &&
+            ref.read(currentUserIdProvider) == userId &&
+            chats.any((chat) => chat.id == chatId);
+      },
       prepareChat: (chatId) async {
         await ref.read(chatMessagesProvider(chatId).future);
         try {
@@ -575,5 +668,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
         debugPrintStack(stackTrace: stackTrace);
       },
     );
+    if (mounted) {
+      final next = ref.read(pushNotificationsProvider).pendingChatId;
+      if (next != null && next != pendingChatId) setState(() {});
+    }
   }
 }

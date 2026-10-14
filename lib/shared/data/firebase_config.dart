@@ -2,8 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 /// Initializes the default Android Firebase app from google-services.json.
-/// The FCM service-account private key belongs only in Supabase Edge Function
-/// secrets and is never part of the Android configuration.
+/// FCM server keys belong only in hosted server/provider credentials, never
+/// in the Android configuration.
 abstract final class BlabFirebaseConfig {
   static bool get isAndroidPlatform =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;

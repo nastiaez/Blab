@@ -1,0 +1,11 @@
+{
+  "case": "simple_fresh_en_to_de",
+  "source": "I am studying German this evening.",
+  "pipeline": "parallel candidate-blind anchor; two-context/cache-prefix candidate",
+  "status": 200,
+  "duration_ms": 12213,
+  "target": "Ich lerne heute Abend Deutsch.",
+  "mode": "translation",
+  "error": null,
+  "scope": "Single different synthetic fixture; provider/caching variability prevents attributing the timing delta solely to overlap"
+}

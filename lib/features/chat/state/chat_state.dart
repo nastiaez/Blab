@@ -244,6 +244,18 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
   }
 
+  /// Merge background-isolate arrivals without discarding an open timeline.
+  Future<void> recoverBackgroundArrivals() async {
+    final accountId = ref.read(currentUserIdProvider);
+    final cache = ref.read(localChatHistoryCacheProvider);
+    final messages = await cache?.loadMessages(chatId) ?? const <Message>[];
+    if (!ref.mounted || ref.read(currentUserIdProvider) != accountId) return;
+    for (final message in messages) {
+      _messagesById.putIfAbsent(message.id, () => message);
+    }
+    if (_messagesById.isNotEmpty) state = AsyncData(_snapshot());
+  }
+
   Future<void> refreshRecent() async {
     final accountId = ref.read(currentUserIdProvider);
     final cache = ref.read(localChatHistoryCacheProvider);
@@ -648,40 +660,131 @@ final chatMessagesProvider =
       ChatNotifier.new,
     );
 
-/// Per-chat mode (practice vs. normal). Seeded from the live chat list —
-/// when the chat row is present we use its `mode`, otherwise we default to
-/// `ChatMode.practice`. Mutating this updates only the chat with the
-/// matching `chatId`. PRD FR-23.
+/// Local-first viewing preference. Membership refreshes never replace a local
+/// choice; serialized remote writes coalesce rapid taps to the latest intent.
 class ChatModeNotifier extends Notifier<ChatMode> {
   ChatModeNotifier(this.chatId);
   final String chatId;
+  int _epoch = 0;
+  int _revision = 0;
+  bool _hasLocalChoice = false;
+  bool _needsSync = false;
+  Future<void>? _syncInFlight;
+  Future<void> _cacheWrites = Future.value();
+  LocalChatHistoryCache? _cache;
+  String? _userId;
 
   @override
   ChatMode build() {
-    final chats = ref.watch(chatListProvider).value;
-    if (chats == null) return ChatMode.practice;
-    for (final c in chats) {
-      if (c.id == chatId) return c.mode;
+    _userId = ref.watch(currentUserIdProvider);
+    final epoch = ++_epoch;
+    _revision = 0;
+    _hasLocalChoice = false;
+    _needsSync = false;
+    _syncInFlight = null;
+    _cacheWrites = Future.value();
+    final cache = _userId == null ? null : LocalChatHistoryCache(_userId!);
+    _cache = cache;
+    ref.listen(chatListProvider, (_, next) {
+      if (_hasLocalChoice) return;
+      for (final chat in next.value ?? const <Chat>[]) {
+        if (chat.id == chatId) state = chat.mode;
+      }
+    });
+    if (cache != null) {
+      ref.listen(isOnlineProvider, (_, online) {
+        if (online && _needsSync) unawaited(_synchronize());
+      });
+      unawaited(
+        () async {
+          final saved = await cache.loadChatMode(chatId);
+          if (!ref.mounted ||
+              epoch != _epoch ||
+              _hasLocalChoice ||
+              saved == null) {
+            return;
+          }
+          _hasLocalChoice = true;
+          state = saved.mode;
+          _needsSync = saved.pendingSync;
+          if (_needsSync) unawaited(_synchronize());
+        }().catchError((Object _) {}),
+      );
+    }
+    for (final chat in ref.read(chatListProvider).value ?? const <Chat>[]) {
+      if (chat.id == chatId) return chat.mode;
     }
     return ChatMode.practice;
   }
 
-  /// Optimistically flips local state before the network call resolves —
-  /// unlike [LearningLanguageNotifier], which sets state only after
-  /// success — so the mode toggle feels instant. On failure the change is
-  /// rolled back to the prior mode and the error rethrown so the caller
-  /// can surface it.
-  Future<void> set(ChatMode mode) async {
-    final previous = state;
-    state = mode; // optimistic — the toggle should feel instant
+  Future<void> set(ChatMode mode) {
+    _hasLocalChoice = true;
+    ++_revision;
+    state = mode;
+    _needsSync = true;
+    _store(mode, pendingSync: true);
+    return _synchronize();
+  }
+
+  void _store(ChatMode mode, {required bool pendingSync}) {
+    final cache = _cache;
+    if (cache == null) return;
+    _cacheWrites = _cacheWrites
+        .then((_) => cache.saveChatMode(chatId, mode, pendingSync: pendingSync))
+        .catchError((Object _) {});
+  }
+
+  Future<void> _synchronize() {
+    if (_syncInFlight != null) return _syncInFlight!;
+    if (!_needsSync || (_userId != null && !ref.read(isOnlineProvider))) {
+      return _cacheWrites;
+    }
+    final epoch = _epoch;
+    return _syncInFlight = _flush(epoch);
+  }
+
+  Future<void> _flush(int epoch) async {
+    bool current() =>
+        ref.mounted &&
+        epoch == _epoch &&
+        ref.read(currentUserIdProvider) == _userId;
     try {
-      await ref
-          .read(chatServiceProvider)
-          .setChatMode(chatId: chatId, mode: mode);
-      await ref.read(chatListProvider.notifier).refresh();
-    } catch (e) {
-      state = previous;
-      rethrow;
+      do {
+        while (current() && _needsSync) {
+          final revision = _revision;
+          final mode = state;
+          await _cacheWrites;
+          if (!current()) return;
+          try {
+            await ref
+                .read(chatServiceProvider)
+                .setChatMode(chatId: chatId, mode: mode);
+          } catch (_) {
+            if (!current()) return;
+            // Older failures cannot roll back or delay newer local intent.
+            if (revision != _revision) continue;
+            // The latest failure stays queued until reconnect or the next tap.
+            return;
+          }
+          if (!current()) return;
+          if (revision == _revision) {
+            _needsSync = false;
+            _store(mode, pendingSync: false);
+            await _cacheWrites;
+          }
+        }
+        if (current()) {
+          try {
+            await ref.read(chatListProvider.notifier).refresh();
+          } catch (_) {
+            // Background list refresh does not own the selected view.
+          }
+        }
+        // Include taps received while the list refresh was in flight in the
+        // same synchronization future, with only one remote write at a time.
+      } while (current() && _needsSync);
+    } finally {
+      if (epoch == _epoch) _syncInFlight = null;
     }
   }
 }

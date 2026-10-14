@@ -10,6 +10,9 @@ void main() {
     SharedPreferences.setMockInitialValues({
       kPrivacyTypingIndicatorsKey: false,
       kPrivacyReadReceiptsKey: false,
+      '${kCachedProfileKeyPrefix}user-a': '{"schema":1}',
+      cachedChatModeStorageKey(userId: 'user-a', chatId: 'chat-a'):
+          '{"mode":"normal","pendingSync":true}',
       pendingSendsStorageKey(userId: 'user-a', chatId: 'chat-a'):
           '[{"body":"one"}]',
       pendingSendsStorageKey(userId: 'user-b', chatId: 'chat-b'):
@@ -24,6 +27,16 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.containsKey(kPrivacyTypingIndicatorsKey), isFalse);
     expect(preferences.containsKey(kPrivacyReadReceiptsKey), isFalse);
+    expect(
+      preferences.containsKey('${kCachedProfileKeyPrefix}user-a'),
+      isFalse,
+    );
+    expect(
+      preferences.getKeys().where(
+        (key) => key.startsWith(kCachedChatModeKeyPrefix),
+      ),
+      isEmpty,
+    );
     expect(
       preferences.getKeys().where(
         (key) => key.startsWith(kPendingSendsKeyPrefix),

@@ -230,13 +230,13 @@ select is(
   jsonb_array_length(
     (select value -> 'context' from l13_prepared where label = 'with-context')
   ),
-  3,
-  'a cache miss includes recent same-chat context'
+  2,
+  'a cache miss includes the nearest two same-chat meaningful lines'
 );
 
 select is(
   (
-    select value #>> '{context,2,text}'
+    select value #>> '{context,1,text}'
     from l13_prepared
     where label = 'with-context'
   ),

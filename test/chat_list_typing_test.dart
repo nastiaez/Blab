@@ -143,7 +143,7 @@ void main() {
     final chat = _chat(withLastMessageId: true);
     final container = ProviderContainer(
       overrides: [
-        translateMessageFnProvider.overrideWithValue((id) async {
+        translateMessageFnProvider.overrideWithValue((id, {targetLang}) async {
           calls++;
           return MessageTranslation(
             translation: 'Letzte Nachricht',

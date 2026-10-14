@@ -1,0 +1,32 @@
+begin;
+select plan(8);
+insert into chats(id) values('6f000000-0000-4000-8000-000000000001');
+insert into chat_members(chat_id,user_id,learning_language) values
+('6f000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a','de'),
+('6f000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000b','en');
+insert into chat_message_transports(chat_id,provider,migration_state) values('6f000000-0000-4000-8000-000000000001','stream','active');
+select ok(not has_table_privilege('authenticated','stream_message_commands','select'),'command ledger is private');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',true);
+set local role authenticated;
+create temp table command_fixture as select authorize_stream_message_command('6f000000-0000-4000-8000-000000000002','6f000000-0000-4000-8000-000000000001','6f000000-0000-4000-8000-000000000003','send','Hello') as value;
+grant select on command_fixture to authenticated,service_role;
+select is((select value->>'actorId' from command_fixture),'00000000-0000-4000-8000-00000000000a','command actor is derived from authenticated identity');
+select is(authorize_stream_message_command('6f000000-0000-4000-8000-000000000002','6f000000-0000-4000-8000-000000000001','6f000000-0000-4000-8000-000000000003','send','Hello')->>'status','in_flight','simultaneous retry cannot duplicate an in-flight send');
+select throws_ok($$select authorize_stream_message_command('6f000000-0000-4000-8000-000000000002','6f000000-0000-4000-8000-000000000001','6f000000-0000-4000-8000-000000000003','send','Changed')$$,'P0001','idempotency_conflict','same request cannot change its payload');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select ok(finish_stream_message_command('6f000000-0000-4000-8000-000000000002',(select (value->>'leaseToken')::uuid from command_fixture),jsonb_build_object('id','6f000000-0000-4000-8000-000000000003','createdAt',now())),'server may acknowledge current lease');
+reset role;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',true);
+set local role authenticated;
+select is(authorize_stream_message_command('6f000000-0000-4000-8000-000000000002','6f000000-0000-4000-8000-000000000001','6f000000-0000-4000-8000-000000000003','send','Hello')->>'status','done','completed retry reuses accepted acknowledgment');
+insert into blocks(blocker_id,blocked_id) values('00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b');
+select throws_ok($$select authorize_stream_message_command('6f000000-0000-4000-8000-000000000004','6f000000-0000-4000-8000-000000000001','6f000000-0000-4000-8000-000000000005','send','Blocked new message')$$,'P0001','chat_blocked','either-side block forbids a new send');
+reset role;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000c","role":"authenticated"}',true);
+set local role authenticated;
+select throws_ok($$select authorize_stream_message_command('6f000000-0000-4000-8000-000000000006','6f000000-0000-4000-8000-000000000001','6f000000-0000-4000-8000-000000000007','send','Outsider')$$,'42501','chat_not_available','nonmember cannot authorize a send');
+reset role;
+select * from finish();
+rollback;

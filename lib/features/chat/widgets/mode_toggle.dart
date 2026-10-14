@@ -37,7 +37,8 @@ class ModeToggle extends ConsumerWidget {
         : ChatMode.practice;
     ref.read(chatModeResetSignalProvider(chatId).notifier).bump();
     dismissWordPopup();
-    await ref.read(chatModeProvider(chatId).notifier).set(next);
+    final persistence = ref.read(chatModeProvider(chatId).notifier).set(next);
     onModeChanged?.call(next);
+    await persistence;
   }
 }

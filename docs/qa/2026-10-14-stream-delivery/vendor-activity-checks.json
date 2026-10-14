@@ -1,0 +1,18 @@
+{
+  "scope": "Owned local authenticated endpoints + actual Stream; not Android/privacy-OFF acceptance",
+  "message_id": "71000000-0000-4000-8000-000000000017",
+  "checks": {
+    "server_command_accepted": true,
+    "command_retry_same_ack": true,
+    "durable_recovery_before_ack": true,
+    "authenticated_recipient_read": true,
+    "read_does_not_reauthor_or_edit_text": true,
+    "read_identity_not_caller_field": true,
+    "unicode_reaction_accepted": true,
+    "one_reaction_per_person": true,
+    "recipient_index_from_canonical": true,
+    "emoji_index_from_canonical": true,
+    "reaction_removal_canonical": true,
+    "typing_server_event_contract": true
+  }
+}

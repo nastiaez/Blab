@@ -53,7 +53,7 @@ void main() {
           markedRead.addAll(ids);
         }),
         translateMessageFnProvider.overrideWithValue(
-          (_) async => _translation(),
+          (_, {targetLang}) async => _translation(),
         ),
       ],
     );

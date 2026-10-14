@@ -2,6 +2,10 @@ const String kPrivacyTypingIndicatorsKey = 'privacy_typing_indicators';
 const String kPrivacyReadReceiptsKey = 'privacy_read_receipts';
 const String kPendingSendsKeyPrefix = 'pending_sends:';
 const String kCachedChatsKeyPrefix = 'cached_chats:';
+const String kCachedProfileKeyPrefix = 'cached_profile:';
+const String kCachedSignalsKeyPrefix = 'cached_signals:';
+const String kCachedOnboardingRolloutKey = 'cached_onboarding_rollout';
+const String kCachedChatModeKeyPrefix = 'cached_chat_mode:';
 const String kCachedMessagesKeyPrefix = 'cached_messages:';
 const String kCachedLanguageTimelineKeyPrefix = 'cached_language_timeline:';
 const String kCachedPreparedTranslationsKeyPrefix =
@@ -46,6 +50,11 @@ String pendingSendsStorageKey({
 }) => '$kPendingSendsKeyPrefix$userId:$chatId';
 
 String cachedChatsStorageKey(String userId) => '$kCachedChatsKeyPrefix$userId';
+
+String cachedChatModeStorageKey({
+  required String userId,
+  required String chatId,
+}) => '$kCachedChatModeKeyPrefix$userId:$chatId';
 
 String cachedMessagesStorageKey({
   required String userId,

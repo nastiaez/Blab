@@ -485,7 +485,7 @@ Deno.test("source meaning is anchored before any candidate is visible", () => {
   assert(
     prompt.includes("authored chat message") &&
       prompt.includes("plain English") &&
-      prompt.includes("before any candidate exists"),
+      prompt.includes("without seeing any candidate"),
     "the source anchor resolves the authored meaning independently",
   );
   assert(

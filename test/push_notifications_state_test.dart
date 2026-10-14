@@ -316,6 +316,31 @@ void main() {
     },
   );
 
+  test('Stream reserved fields normalize only a consistent Blab route', () {
+    final data = <String, dynamic>{
+      'type': 'message.new',
+      'blab_transport': 'stream',
+      'channel_type': 'blab',
+      'chatId': '10000000-0000-4000-8000-000000000003',
+      'channel_id': '10000000-0000-4000-8000-000000000003',
+      'receiverId': '10000000-0000-4000-8000-000000000004',
+      'receiver_id': '10000000-0000-4000-8000-000000000004',
+      'messageId': '10000000-0000-4000-8000-000000000005',
+      'message_id': '10000000-0000-4000-8000-000000000005',
+    };
+    expect(PushOpenEvent.fromData(data)?.type, 'chat_message');
+    for (final key in [
+      'channel_type',
+      'channel_id',
+      'receiver_id',
+      'message_id',
+      'blab_transport',
+    ]) {
+      expect(PushOpenEvent.fromData({...data, key: 'wrong'}), isNull);
+    }
+    expect(PushOpenEvent.fromData({...data, 'receiverId': null}), isNull);
+  });
+
   test('malformed notification data cannot become a route', () {
     expect(
       PushOpenEvent.fromData({'type': 'chat_message', 'chatId': '../profile'}),
@@ -328,5 +353,46 @@ void main() {
       }),
       isNull,
     );
+    expect(
+      PushOpenEvent.fromData({
+        'type': 'chat_message',
+        'chatId': '10000000-0000-4000-8000-000000000003',
+        'receiverId': 'not-an-account',
+      }),
+      isNull,
+    );
   });
+  test(
+    'a previous-account notification cannot open the new account chat',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      const me = '00000000-0000-4000-8000-00000000000a';
+      final gateway = _FakeGateway();
+      final container = _container(gateway, _FakeRepository(), userId: me);
+      addTearDown(container.dispose);
+      addTearDown(gateway.dispose);
+      await _loaded(container);
+      gateway.openEvents.add(
+        const PushOpenEvent(
+          type: 'chat_message',
+          chatId: '10000000-0000-4000-8000-000000000003',
+          receiverId: '00000000-0000-4000-8000-00000000000b',
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(pushNotificationsProvider).pendingChatId, isNull);
+      gateway.openEvents.add(
+        const PushOpenEvent(
+          type: 'chat_message',
+          chatId: '10000000-0000-4000-8000-000000000003',
+          receiverId: me,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        container.read(pushNotificationsProvider).pendingChatId,
+        '10000000-0000-4000-8000-000000000003',
+      );
+    },
+  );
 }

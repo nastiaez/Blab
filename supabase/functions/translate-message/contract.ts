@@ -32,6 +32,7 @@ export function preservesLiteralCharacters(
 }
 
 export const OPENROUTER_PROVIDER = {
+  sort: "latency",
   allow_fallbacks: true,
   require_parameters: true,
   data_collection: "deny",
@@ -51,6 +52,7 @@ export type TranslationContextMessage = {
   speaker: "viewer" | "partner";
   text: string;
   sourceLang?: string | null;
+  isReply?: boolean;
 };
 
 export type FormParticipantContext = {
@@ -131,6 +133,8 @@ export function providerMessages({
         .map((entry) =>
           `${entry.speaker}${
             entry.sourceLang == null ? "" : ` [source=${entry.sourceLang}]`
+          }${
+            entry.isReply === true ? " [replied-to message]" : ""
           }: ${entry.text}`
         )
         .join("\n")
@@ -1541,6 +1545,7 @@ export function parseProviderResult(
   targetLang: string,
   interfaceLang: string,
   resolvedSourceLang?: string,
+  deferWordMetadata = false,
 ): TranslationResult | null {
   let cleaned = content
     .trim()
@@ -1589,7 +1594,10 @@ export function parseProviderResult(
     explanation,
     confidence,
     tokens: Array.isArray(raw.tokens) ? raw.tokens : [],
-    formAlternatives: parseFormAlternatives(raw.formAlternatives),
+    formAlternatives: parseFormAlternatives(
+      raw.formAlternatives,
+      deferWordMetadata,
+    ),
   };
   result.translation = normalizeTargetOrthography(
     result.translation,
@@ -1839,7 +1847,10 @@ function normalizeSourceLang(value: unknown): string {
   return OTHER_SOURCE_LANG;
 }
 
-function parseFormAlternatives(value: unknown): FormAlternatives | null {
+function parseFormAlternatives(
+  value: unknown,
+  deferWordMetadata = false,
+): FormAlternatives | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
@@ -1852,11 +1863,11 @@ function parseFormAlternatives(value: unknown): FormAlternatives | null {
     typeof raw.subjectName !== "string" || raw.subjectName.trim() === "" ||
     typeof raw.subjectIsViewer !== "boolean"
   ) return null;
-  const feminineTokens = validatedCompleteTokens(
+  const feminineTokens = deferWordMetadata ? [] : validatedCompleteTokens(
     raw.feminineTokens,
     `${raw.before}${raw.feminine}${raw.after}`,
   );
-  const masculineTokens = validatedCompleteTokens(
+  const masculineTokens = deferWordMetadata ? [] : validatedCompleteTokens(
     raw.masculineTokens,
     `${raw.before}${raw.masculine}${raw.after}`,
   );
@@ -1907,10 +1918,7 @@ export function systemPrompt(
     } (${formContext.authorPrimaryKnownLanguage}); use it only as a final tie-breaker when the current text is genuinely ambiguous and compatible with that language.`;
   return `You normalize a message for a language-learning chat.
 
-${sourceInstruction}
-The viewer's learning language is ${targetName} (${targetLang}).
-The viewer's interface language is ${interfaceName} (${interfaceLang}).
-${formInstruction}${authorLanguageHint}
+Request-specific source and participant settings follow the shared rules below.
 
 Return strict JSON only:
 {
@@ -1959,7 +1967,13 @@ Rules:
 - For every mode, concatenating every tokens[].text must exactly reproduce "translation".
 - Content tokens are one translated/corrected word or one non-whitespace term at a time, never a phrase or full sentence, and include a short ${interfaceName} gloss.
 - Whitespace, punctuation, and emoji use isContent=false and omit glosses.
-- ${romanGuidance}`;
+- ${romanGuidance}
+
+Request settings:
+${sourceInstruction}
+The viewer's learning language is ${targetName} (${targetLang}).
+The viewer's interface language is ${interfaceName} (${interfaceLang}).
+${formInstruction}${authorLanguageHint}`;
 }
 
 export function interfaceRepairSystemPrompt(
@@ -1974,7 +1988,7 @@ Translate all translatable words even when the message is short. Return strict J
 }
 
 export function sourceMeaningAnchorSystemPrompt(): string {
-  return `Resolve the complete semantic meaning of one authored chat message before any candidate exists.
+  return `Resolve the complete semantic meaning of one authored chat message without seeing any candidate.
 
 Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
 
@@ -2013,7 +2027,7 @@ export function semanticTranslationAuditSystemPrompt(
 
 Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
 
-The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated from the authored message before the candidate existed. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
+The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated independently from the authored message without seeing any candidate. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
 
 Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.`;
 }

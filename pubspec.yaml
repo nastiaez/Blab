@@ -43,6 +43,7 @@ dependencies:
   connectivity_plus: ^7.1.1
   crypto: ^3.0.7
   http: ^1.6.0
+  http_parser: ^4.1.2
   shimmer: ^3.0.0
   supabase_flutter: ^2.8.0
   google_sign_in: ^6.2.1
@@ -59,6 +60,10 @@ dependencies:
   photo_manager: ^3.11.0
   emoji_picker_flutter: ^4.5.3
   image: ^4.8.0
+  stream_chat: ^10.5.0
+  stream_chat_persistence: ^10.5.0
+  uuid: ^4.5.3
+  flutter_local_notifications: ^22.3.2
 
 dev_dependencies:
   flutter_test:

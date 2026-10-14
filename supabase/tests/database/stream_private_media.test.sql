@@ -1,0 +1,43 @@
+begin;
+select plan(12);
+select ok(not has_table_privilege('authenticated','stream_private_media_assets','select'),'private upload/deletion ledger is not exposed');
+select ok(not has_function_privilege('authenticated','register_stream_private_media(uuid,uuid,text[])','execute'),'client cannot mint storage ownership');
+select is((select public from storage.buckets where id='stream-private-media'),false,'photo bucket is private');
+insert into chats(id) values('9c000000-0000-4000-8000-000000000001');
+insert into chat_members(chat_id,user_id,learning_language) values
+('9c000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a','de'),
+('9c000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000b','en');
+insert into chat_message_transports(chat_id,provider,migration_state) values('9c000000-0000-4000-8000-000000000001','stream','active');
+insert into stream_media_uploads(message_id,chat_id,actor_id,source_hash,preview_hash,status,lease_token,locked_at) values
+('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a',repeat('a',64),repeat('a',64),'processing','9c000000-0000-4000-8000-000000000003',now());
+create temp table private_path as select '9c000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-00000000000a/9c000000-0000-4000-8000-000000000002/9c000000-0000-4000-8000-000000000003/original.png'::text as path;
+grant select on private_path to service_role,authenticated;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+select ok(register_stream_private_media('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000003',array[(select path from private_path)]),'cleanup ownership is recorded before first network upload');
+select throws_ok($$select register_stream_private_media('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000003',array['another-user/photo.png'])$$,'P0001','invalid_private_paths','lease cannot claim another account object');
+select ok(finish_stream_media_upload('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000003',(select jsonb_build_object('blab_storage_bucket','stream-private-media','blab_storage_path',path,'blab_preview_storage_path',path) from private_path)),'only exact owned private references become readable');
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000000b"}',true);
+set local role authenticated;
+select ok(can_read_stream_private_media((select path from private_path)),'the actual partner can read the ready photo');
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000000c"}',true);
+select ok(not can_read_stream_private_media((select path from private_path)),'outsider cannot read or sign a guessed private path');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+update stream_private_media_assets set status='pending';
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000000b"}',true);
+set local role authenticated;
+select ok(not can_read_stream_private_media((select path from private_path)),'queued deletion revokes fresh authenticated reads before physical purge');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+set local role service_role;
+create temp table private_claim as select * from claim_stream_private_media_cleanup();
+select is((select count(*) from private_claim),1::bigint,'one object cleanup is durably leased');
+select ok(not finish_stream_private_media_cleanup((select object_path from private_claim),gen_random_uuid(),true),'stale removal cannot settle another lease');
+select ok(finish_stream_private_media_cleanup((select object_path from private_claim),(select lease_token from private_claim),true),'matching confirmed removal settles');
+reset role;
+select * from finish();
+rollback;

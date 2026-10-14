@@ -23,6 +23,79 @@ typedef CachedMessageTranslation = ({
   List<Map<String, dynamic>> tokens,
 });
 
+const textFirstDeliveryEnabled = bool.fromEnvironment(
+  'BLAB_TEXT_FIRST_DELIVERY',
+);
+
+/// Private readable rows contain both verified display lanes, but no completed
+/// word definitions. The marker survives device caching without fake tokens.
+List<MessageTranslationChange> readableTranslationChanges(
+  Map<String, dynamic> row,
+) {
+  final raw = row['result'];
+  final id = row['message_id'];
+  final target = row['target_lang'];
+  final known = row['interface_lang'];
+  if (raw is! Map ||
+      id is! String ||
+      target is! String ||
+      known is! String ||
+      raw['translation'] is! String ||
+      raw['interfaceText'] is! String ||
+      raw['sourceLang'] is! String ||
+      raw['mode'] is! String) {
+    return const [];
+  }
+  MessageTranslationChange lane(String language, bool primary) =>
+      MessageTranslationChange(
+        messageId: id,
+        targetLang: language,
+        interfaceLang: known,
+        translation: (
+          text: (primary ? raw['translation'] : raw['interfaceText']) as String,
+          interfaceText:
+              (primary ? raw['interfaceText'] : raw['translation']) as String,
+          interfaceLang: known,
+          sourceLang: raw['sourceLang'] as String,
+          mode: raw['mode'] as String,
+          explanation: raw['explanation'] as String?,
+          confidence: raw['confidence'] as String?,
+          tokens: [
+            {'wordMetadataReady': false},
+            if (primary && raw['formAlternatives'] is Map)
+              {'formAlternatives': raw['formAlternatives']},
+          ],
+        ),
+      );
+  return [lane(target, true), if (target != known) lane(known, false)];
+}
+
+Map<String, dynamic>? readablePreparedPackage(Map<String, dynamic> row) {
+  if (row['target_lang'] != row['learning_language']) return null;
+  final changes = readableTranslationChanges(row);
+  if (changes.isEmpty) return null;
+  final value = changes.first.translation;
+  return {
+    'message_id': row['message_id'],
+    'chat_id': row['chat_id'],
+    'viewer_id': row['viewer_id'],
+    'learning_language': row['learning_language'],
+    'primary_known_language': row['interface_lang'],
+    'language_revision': row['language_revision'],
+    'source_version': row['source_hash'],
+    'status': 'ready',
+    'word_metadata_ready': false,
+    'translation_text': value.text,
+    'interface_text': value.interfaceText,
+    'source_lang': value.sourceLang,
+    'aid_mode': value.mode,
+    'explanation': value.explanation,
+    'confidence': value.confidence,
+    'tokens': value.tokens,
+    'form_alternatives': (row['result'] as Map)['formAlternatives'],
+  };
+}
+
 String _newStorageSafeId() {
   final random = Random.secure();
   final bytes = List<int>.generate(16, (_) => random.nextInt(256));
@@ -43,7 +116,7 @@ String _extensionForMime(String mimeType) => switch (mimeType) {
   _ => 'jpg',
 };
 
-({Uint8List bytes, String mimeType, String extension}) _chatPreview(
+({Uint8List bytes, String mimeType, String extension}) chatImagePreview(
   PickedChatImage image,
 ) {
   // Keep animated GIFs intact. Static photos get a bounded long edge so the
@@ -517,7 +590,7 @@ class ChatService {
     final localId = clientMessageId ?? _newStorageSafeId();
     final extension = _extensionForMime(image.mimeType);
     final storagePath = '$chatId/$_uid/$localId.$extension';
-    final preview = _chatPreview(image);
+    final preview = chatImagePreview(image);
     final previewStoragePath =
         '$chatId/$_uid/$localId.preview.${preview.extension}';
     await _client.storage
@@ -925,9 +998,37 @@ class ChatService {
         .eq('status', 'ready')
         .order('message_id')
         .order('language_revision', ascending: false);
-    return (rows as List)
+    final result = (rows as List)
         .map((row) => Map<String, dynamic>.from(row as Map))
         .toList();
+    if (textFirstDeliveryEnabled) {
+      final readable = await _client
+          .from('message_readable_variants')
+          .select()
+          .eq('chat_id', chatId)
+          .eq('viewer_id', _uid)
+          .inFilter('message_id', messageIds);
+      for (final row in readable as List) {
+        final package = readablePreparedPackage(
+          Map<String, dynamic>.from(row as Map),
+        );
+        if (package != null &&
+            !result.any(
+              (complete) =>
+                  complete['message_id'] == package['message_id'] &&
+                  complete['learning_language'] ==
+                      package['learning_language'] &&
+                  complete['primary_known_language'] ==
+                      package['primary_known_language'] &&
+                  complete['language_revision'] ==
+                      package['language_revision'] &&
+                  complete['source_version'] == package['source_version'],
+            )) {
+          result.add(package);
+        }
+      }
+    }
+    return result;
   }
 
   /// Returns a bounded recent window for delivery-time preparation. The
@@ -994,7 +1095,14 @@ class ChatService {
         .eq('target_lang', targetLang)
         .eq('interface_lang', interfaceLang)
         .maybeSingle();
-    if (row == null) return null;
+    if (row == null) {
+      if (!textFirstDeliveryEnabled) return null;
+      final variants = await _readableTranslations([messageId], interfaceLang);
+      for (final change in variants) {
+        if (change.targetLang == targetLang) return change.translation;
+      }
+      return null;
+    }
     final rawTokens = row['tokens'];
     final tokens = <Map<String, dynamic>>[];
     if (rawTokens is List) {
@@ -1082,35 +1190,75 @@ class ChatService {
         channel = _client.channel(
           'message-translations:$targetLang:$interfaceLang:${DateTime.now().microsecondsSinceEpoch}',
         );
-        channel
-            .onPostgresChanges(
-              event: PostgresChangeEvent.all,
-              schema: 'public',
-              table: 'message_translations',
-              filter: PostgresChangeFilter(
-                type: PostgresChangeFilterType.eq,
-                column: 'target_lang',
-                value: targetLang,
-              ),
-              callback: (payload) {
-                if (controller.isClosed ||
-                    payload.eventType == PostgresChangeEvent.delete) {
-                  return;
+        channel.onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'message_translations',
+          callback: (payload) {
+            if (controller.isClosed ||
+                payload.eventType == PostgresChangeEvent.delete) {
+              return;
+            }
+            final change = _translationChangeFromRow(payload.newRecord);
+            if (change == null ||
+                change.interfaceLang != interfaceLang ||
+                (!textFirstDeliveryEnabled &&
+                    change.targetLang != targetLang)) {
+              return;
+            }
+            controller.add(change);
+          },
+        );
+        if (textFirstDeliveryEnabled) {
+          channel.onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'message_readable_variants',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'viewer_id',
+              value: _uid,
+            ),
+            callback: (payload) {
+              if (controller.isClosed ||
+                  payload.eventType == PostgresChangeEvent.delete) {
+                return;
+              }
+              for (final change in readableTranslationChanges(
+                payload.newRecord,
+              )) {
+                if (change.interfaceLang == interfaceLang) {
+                  controller.add(change);
                 }
-                final change = _translationChangeFromRow(payload.newRecord);
-                if (change == null || change.interfaceLang != interfaceLang) {
-                  return;
-                }
-                controller.add(change);
-              },
-            )
-            .subscribe();
+              }
+            },
+          );
+        }
+        channel.subscribe();
       },
       onCancel: () async {
         await _client.removeChannel(channel);
       },
     );
     return controller.stream;
+  }
+
+  Future<List<MessageTranslationChange>> _readableTranslations(
+    List<String> ids,
+    String interfaceLang,
+  ) async {
+    final rows = await _client
+        .from('message_readable_variants')
+        .select()
+        .eq('viewer_id', _uid)
+        .eq('interface_lang', interfaceLang)
+        .inFilter('message_id', ids);
+    return (rows as List)
+        .expand(
+          (row) =>
+              readableTranslationChanges(Map<String, dynamic>.from(row as Map)),
+        )
+        .toList();
   }
 
   /// Bulk-fetch cached translations only for the currently loaded message
@@ -1159,6 +1307,16 @@ class ChatService {
         confidence: row['confidence'] as String?,
         tokens: tokens,
       );
+    }
+    if (textFirstDeliveryEnabled) {
+      for (final change in await _readableTranslations(
+        messageIds,
+        interfaceLang,
+      )) {
+        if (change.targetLang == targetLang) {
+          result.putIfAbsent(change.messageId, () => change.translation);
+        }
+      }
     }
     return result;
   }

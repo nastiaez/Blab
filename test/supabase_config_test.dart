@@ -14,6 +14,7 @@ String? validate({
   String firebaseProjectId = 'blab-environment',
   String sentryDsn = '',
   String? sentryEnvironment,
+  int localApiPort = 54321,
 }) {
   return SupabaseConfig.validationError(
     environment: environment,
@@ -24,10 +25,51 @@ String? validate({
     firebaseProjectId: firebaseProjectId,
     sentryDsn: sentryDsn,
     sentryEnvironment: sentryEnvironment ?? environment,
+    localApiPort: localApiPort,
   );
 }
 
 void main() {
+  test(
+    'isolated local review port requires explicit loopback configuration',
+    () {
+      expect(
+        validate(
+          environment: 'local',
+          projectRef: 'local',
+          url: 'http://127.0.0.1:54441',
+        ),
+        isNotNull,
+      );
+      expect(
+        validate(
+          environment: 'local',
+          projectRef: 'local',
+          url: 'http://127.0.0.1:54441',
+          localApiPort: 54441,
+        ),
+        isNull,
+      );
+      expect(
+        validate(
+          environment: 'local',
+          projectRef: 'local',
+          url: 'http://example.test:54441',
+          localApiPort: 54441,
+        ),
+        isNotNull,
+      );
+      expect(
+        validate(
+          environment: 'local',
+          projectRef: 'local',
+          url: 'http://127.0.0.1:54321',
+          localApiPort: 54441,
+        ),
+        isNotNull,
+      );
+    },
+  );
   test('requires an explicit recognized environment', () {
     expect(
       validate(
@@ -140,4 +182,30 @@ void main() {
     expect(SupabaseConfig.pushNotificationsEnabledFor('staging'), isTrue);
     expect(SupabaseConfig.pushNotificationsEnabledFor('production'), isTrue);
   });
+  test(
+    'isolated FCM review requires explicit flags, separate local backend and matching Firebase setup',
+    () {
+      bool allowed({
+        bool requested = true,
+        bool stream = true,
+        String env = 'local',
+        int port = 54441,
+        String firebase = 'blab-nastia-ez',
+      }) => SupabaseConfig.isolatedPushReviewAllowed(
+        requested: requested,
+        streamEnabled: stream,
+        environment: env,
+        apiPort: port,
+        firebaseProject: firebase,
+      );
+      expect(allowed(), true);
+      expect(allowed(requested: false), false);
+      expect(allowed(stream: false), false);
+      expect(allowed(env: 'production'), false);
+      expect(allowed(env: 'staging'), false);
+      expect(allowed(env: ''), false);
+      expect(allowed(port: 54321), false);
+      expect(allowed(firebase: ''), false);
+    },
+  );
 }

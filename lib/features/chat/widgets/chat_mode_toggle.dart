@@ -29,48 +29,61 @@ class BlabChatModeToggle extends StatelessWidget {
       button: true,
       onTap: activate,
       child: ExcludeSemantics(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            excludeFromSemantics: true,
-            onTap: activate,
-            borderRadius: BorderRadius.circular(17),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: 129,
-                minHeight: 44,
-                maxHeight: 44,
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  key: const ValueKey('mode-toggle'),
-                  height: 34,
-                  constraints: const BoxConstraints(minWidth: 129),
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: BlabColors.chatDivider),
-                    borderRadius: BorderRadius.circular(17),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: activate,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: 129,
+              minHeight: 44,
+              maxHeight: 44,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Material(
+                type: MaterialType.transparency,
+                borderRadius: BorderRadius.circular(17),
+                child: InkWell(
+                  excludeFromSemantics: true,
+                  onTap: activate,
+                  splashFactory: NoSplash.splashFactory,
+                  overlayColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.focused)
+                        ? BlabColors.brand.withValues(alpha: 0.08)
+                        : Colors.transparent,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _CapsuleSegment(
-                        label: context.l10n.normalMode,
-                        iconName: 'chat-bubble-empty - 16',
-                        selected: !practice,
-                        minimumWidth: !practice ? 83 : 36,
-                        hugContent: hugNormal,
-                      ),
-                      const SizedBox(width: 2),
-                      _CapsuleSegment(
-                        label: context.l10n.practiceMode,
-                        iconName: 'flash - 16',
-                        selected: practice,
-                        minimumWidth: 36,
-                        hugContent: practice,
-                      ),
-                    ],
+                  borderRadius: BorderRadius.circular(17),
+                  child: Container(
+                    key: const ValueKey('mode-toggle'),
+                    height: 34,
+                    constraints: const BoxConstraints(minWidth: 129),
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: BlabColors.chatDivider),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _CapsuleSegment(
+                          label: context.l10n.normalMode,
+                          iconName: 'chat-bubble-empty - 16',
+                          selected: !practice,
+                          minimumWidth: !practice ? 83 : 36,
+                          hugContent: hugNormal,
+                          onTap: activate,
+                        ),
+                        const SizedBox(width: 2),
+                        _CapsuleSegment(
+                          label: context.l10n.practiceMode,
+                          iconName: 'flash - 16',
+                          selected: practice,
+                          minimumWidth: 36,
+                          hugContent: practice,
+                          onTap: activate,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -89,6 +102,7 @@ class _CapsuleSegment extends StatelessWidget {
     required this.selected,
     required this.minimumWidth,
     required this.hugContent,
+    required this.onTap,
   });
 
   final String label;
@@ -96,59 +110,69 @@ class _CapsuleSegment extends StatelessWidget {
   final bool selected;
   final double minimumWidth;
   final bool hugContent;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final segment = SizedBox(
       height: 44,
       child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            height: 28,
-            constraints: BoxConstraints(minWidth: minimumWidth),
-            padding: selected
-                ? const EdgeInsets.symmetric(horizontal: 8)
-                : EdgeInsets.zero,
-            decoration: BoxDecoration(
-              color: selected
-                  ? (iconName == 'flash - 16'
-                        ? BlabColors.bubbleOutgoingPractice
-                        : const Color(0xFFCDC0B6))
-                  : Colors.transparent,
+        child: Container(
+          height: 28,
+          constraints: BoxConstraints(minWidth: minimumWidth),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: selected && iconName == 'flash - 16'
+                ? const [
+                    BoxShadow(
+                      color: Color(0x1A231208),
+                      offset: Offset(0, 2),
+                      blurRadius: 6,
+                      spreadRadius: -2,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Material(
+            color: selected
+                ? (iconName == 'flash - 16'
+                      ? BlabColors.bubbleOutgoingPractice
+                      : const Color(0xFFCDC0B6))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              canRequestFocus: false,
+              excludeFromSemantics: true,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: selected && iconName == 'flash - 16'
-                  ? [
-                      const BoxShadow(
-                        color: Color(0x1A231208),
-                        offset: Offset(0, 2),
-                        blurRadius: 6,
-                        spreadRadius: -2,
+              child: Padding(
+                padding: selected
+                    ? const EdgeInsets.symmetric(horizontal: 8)
+                    : EdgeInsets.zero,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ExcludeSemantics(
+                      child: BlabIcon(
+                        name: iconName,
+                        color: selected
+                            ? BlabColors.bubbleInk
+                            : const Color(0xFF8C735F),
+                        size: 16,
                       ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ExcludeSemantics(
-                  child: BlabIcon(
-                    name: iconName,
-                    color: selected
-                        ? BlabColors.bubbleInk
-                        : const Color(0xFF8C735F),
-                    size: 16,
-                  ),
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 4),
+                      if (hugContent)
+                        _SegmentLabel(label: label)
+                      else
+                        Flexible(child: _SegmentLabel(label: label)),
+                    ],
+                  ],
                 ),
-                if (selected) ...[
-                  const SizedBox(width: 4),
-                  if (hugContent)
-                    _SegmentLabel(label: label)
-                  else
-                    Flexible(child: _SegmentLabel(label: label)),
-                ],
-              ],
+              ),
             ),
           ),
         ),

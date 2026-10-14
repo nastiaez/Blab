@@ -1,0 +1,770 @@
+{
+  "scope": "Synthetic local translation/worker measurements, mixed requests. No population percentile claim.",
+  "calls": [
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1899,
+      "promptTokens": 223,
+      "completionTokens": 22,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 5051,
+      "promptTokens": 2622,
+      "completionTokens": 174,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1665,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2183,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2577,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2987,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2457,
+      "promptTokens": 343,
+      "completionTokens": 151,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2418,
+      "promptTokens": 803,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2354,
+      "promptTokens": 220,
+      "completionTokens": 19,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2651,
+      "promptTokens": 220,
+      "completionTokens": 19,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 3273,
+      "promptTokens": 2522,
+      "completionTokens": 130,
+      "cachedPromptTokens": 2048
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 3268,
+      "promptTokens": 2522,
+      "completionTokens": 130,
+      "cachedPromptTokens": 2432
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1788,
+      "promptTokens": 357,
+      "completionTokens": 25,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1711,
+      "promptTokens": 357,
+      "completionTokens": 25,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1604,
+      "promptTokens": 289,
+      "completionTokens": 8,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2879,
+      "promptTokens": 297,
+      "completionTokens": 98,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 9676,
+      "promptTokens": 289,
+      "completionTokens": 8,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1576,
+      "promptTokens": 284,
+      "completionTokens": 26,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1597,
+      "promptTokens": 284,
+      "completionTokens": 26,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1802,
+      "promptTokens": 284,
+      "completionTokens": 26,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 4094,
+      "promptTokens": 2638,
+      "completionTokens": 214,
+      "cachedPromptTokens": 2176
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 4748,
+      "promptTokens": 2638,
+      "completionTokens": 214,
+      "cachedPromptTokens": 2560
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1490,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1630,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1807,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1378,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1503,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2097,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1659,
+      "promptTokens": 415,
+      "completionTokens": 48,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2019,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 7106,
+      "promptTokens": 2638,
+      "completionTokens": 214,
+      "cachedPromptTokens": 2560
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1282,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1666,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2799,
+      "promptTokens": 345,
+      "completionTokens": 190,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 3384,
+      "promptTokens": 345,
+      "completionTokens": 190,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1867,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2716,
+      "promptTokens": 415,
+      "completionTokens": 47,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2240,
+      "promptTokens": 805,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2489,
+      "promptTokens": 805,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 3038,
+      "promptTokens": 345,
+      "completionTokens": 190,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2333,
+      "promptTokens": 805,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1778,
+      "promptTokens": 285,
+      "completionTokens": 21,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1155,
+      "promptTokens": 220,
+      "completionTokens": 19,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2264,
+      "promptTokens": 285,
+      "completionTokens": 21,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1766,
+      "promptTokens": 285,
+      "completionTokens": 21,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 3724,
+      "promptTokens": 2638,
+      "completionTokens": 159,
+      "cachedPromptTokens": 2176
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2964,
+      "promptTokens": 2522,
+      "completionTokens": 132,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 4009,
+      "promptTokens": 2638,
+      "completionTokens": 159,
+      "cachedPromptTokens": 2560
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 3811,
+      "promptTokens": 2638,
+      "completionTokens": 159,
+      "cachedPromptTokens": 2560
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1407,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1386,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1639,
+      "promptTokens": 357,
+      "completionTokens": 25,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1449,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1558,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1397,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2148,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2162,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1559,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2257,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1649,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2846,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2048,
+      "promptTokens": 261,
+      "completionTokens": 17,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 3782,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1938,
+      "promptTokens": 343,
+      "completionTokens": 117,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2177,
+      "promptTokens": 343,
+      "completionTokens": 117,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 4506,
+      "promptTokens": 2622,
+      "completionTokens": 214,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2325,
+      "promptTokens": 828,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 3071,
+      "promptTokens": 285,
+      "completionTokens": 21,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 3525,
+      "promptTokens": 2638,
+      "completionTokens": 159,
+      "cachedPromptTokens": 2560
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1550,
+      "promptTokens": 360,
+      "completionTokens": 25,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 4519,
+      "promptTokens": 343,
+      "completionTokens": 117,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1064,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2323,
+      "promptTokens": 828,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1285,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1410,
+      "promptTokens": 406,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2508,
+      "promptTokens": 407,
+      "completionTokens": 42,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 2170,
+      "promptTokens": 284,
+      "completionTokens": 26,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2032,
+      "promptTokens": 828,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1965,
+      "promptTokens": 343,
+      "completionTokens": 117,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 4653,
+      "promptTokens": 2634,
+      "completionTokens": 256,
+      "cachedPromptTokens": 2176
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1537,
+      "promptTokens": 361,
+      "completionTokens": 25,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 2544,
+      "promptTokens": 828,
+      "completionTokens": 52,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4.1-mini",
+      "status": 200,
+      "durationMs": 1581,
+      "promptTokens": 285,
+      "completionTokens": 19,
+      "cachedPromptTokens": 0
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 3559,
+      "promptTokens": 2638,
+      "completionTokens": 175,
+      "cachedPromptTokens": 2176
+    },
+    {
+      "provider": "openrouter",
+      "model": "openai/gpt-4o-mini",
+      "status": 200,
+      "durationMs": 1226,
+      "promptTokens": 359,
+      "completionTokens": 25,
+      "cachedPromptTokens": 0
+    }
+  ]
+}

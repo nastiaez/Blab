@@ -82,41 +82,16 @@ class ChatsScreen extends ConsumerWidget {
       ),
       floatingActionButton: hasConfirmedEmptyList
           ? null
-          : Theme(
-              data: Theme.of(context).copyWith(
-                floatingActionButtonTheme: Theme.of(context)
-                    .floatingActionButtonTheme
-                    .copyWith(
-                      sizeConstraints: const BoxConstraints.tightFor(
-                        width: 44,
-                        height: 44,
-                      ),
-                    ),
-              ),
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x21231208),
-                      offset: Offset(0, 2),
-                      blurRadius: 6,
-                    ),
-                  ],
-                ),
-                child: FloatingActionButton(
-                  onPressed: () => context.push('/chats/new'),
-                  shape: const CircleBorder(),
-                  backgroundColor: BlabColors.brand,
-                  foregroundColor: BlabColors.warmInk,
-                  elevation: 0,
-                  tooltip: context.l10n.newChat,
-                  child: const BlabIcon(
-                    name: 'plus - 20',
-                    color: BlabColors.warmInk,
-                    size: 20,
-                  ),
-                ),
+          : FloatingActionButton(
+              shape: const CircleBorder(),
+              onPressed: () => context.push('/chats/new'),
+              backgroundColor: BlabColors.brand,
+              foregroundColor: BlabColors.warmInk,
+              tooltip: context.l10n.newChat,
+              child: const BlabIcon(
+                name: 'plus - 20',
+                color: BlabColors.warmInk,
+                size: 20,
               ),
             ),
       bottomNavigationBar: BlabNavigationBar(

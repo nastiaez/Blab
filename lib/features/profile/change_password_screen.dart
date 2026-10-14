@@ -121,7 +121,13 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           backgroundColor: BlabColors.appBackground,
           leading: BlabIconButton(
             icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-            onPressed: () => context.go('/profile'),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/profile');
+              }
+            },
           ),
         ),
         body: Center(

@@ -18,7 +18,6 @@ class ChatMessageRow extends ConsumerWidget {
     required this.translationCutoffAt,
     required this.popupTopInset,
     required this.deferTranslationResolve,
-    required this.holdIncomingUntilPrevious,
     required this.onLongPress,
     required this.onReply,
     required this.onJumpToMessage,
@@ -49,7 +48,6 @@ class ChatMessageRow extends ConsumerWidget {
   final DateTime? translationCutoffAt;
   final double popupTopInset;
   final bool deferTranslationResolve;
-  final bool holdIncomingUntilPrevious;
   final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onReply;
   final void Function(Message) onJumpToMessage;
@@ -162,7 +160,6 @@ class ChatMessageRow extends ConsumerWidget {
       replyToShouldTranslate: canRequestReplyTranslation,
       popupTopInset: popupTopInset,
       deferTranslationResolve: deferTranslationResolve,
-      holdIncomingUntilPrevious: holdIncomingUntilPrevious,
       reactions: reactions,
       onReact: onReact,
       isFailed: isFailed,

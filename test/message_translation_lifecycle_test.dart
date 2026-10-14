@@ -72,33 +72,6 @@ void main() {
     );
   });
 
-  test('incoming content is held only while its first result is pending', () {
-    expect(
-      shouldHoldIncomingTranslation(
-        isOutgoing: false,
-        processing: true,
-        originalWasRevealedAfterFailure: false,
-      ),
-      isTrue,
-    );
-    expect(
-      shouldHoldIncomingTranslation(
-        isOutgoing: false,
-        processing: true,
-        originalWasRevealedAfterFailure: true,
-      ),
-      isFalse,
-    );
-    expect(
-      shouldHoldIncomingTranslation(
-        isOutgoing: true,
-        processing: true,
-        originalWasRevealedAfterFailure: false,
-      ),
-      isFalse,
-    );
-  });
-
   test('no-change result keeps the exact authored line', () {
     MessageTranslation result({
       required String text,

@@ -23,11 +23,32 @@ class PushTapRouter {
     required PendingChatConsumer consumePendingChat,
     required ChatNavigator goToChat,
     Future<void> Function(String chatId)? prepareChat,
+    Future<bool> Function(String chatId)? canOpenCachedChat,
     PushTapErrorLogger? onError,
   }) async {
     if (_inFlightChatId != null) return false;
     _inFlightChatId = chatId;
     try {
+      if (canOpenCachedChat != null && await canOpenCachedChat(chatId)) {
+        if (currentPendingChatId() != chatId) return false;
+        consumePendingChat();
+        goToChat(chatId);
+        unawaited(
+          Future.wait([
+                Future<void>.sync(refreshChatList),
+                if (prepareChat != null)
+                  Future<void>.sync(() => prepareChat(chatId)),
+              ])
+              .timeout(refreshTimeout)
+              .then<void>(
+                (_) {},
+                onError: (Object error, StackTrace stackTrace) {
+                  onError?.call(error, stackTrace);
+                },
+              ),
+        );
+        return true;
+      }
       if (prepareChat == null) {
         invalidateChat(chatId);
         await refreshChatList().timeout(refreshTimeout);

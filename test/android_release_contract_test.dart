@@ -330,8 +330,9 @@ void main() {
     expect(helper, contains("'validate'"));
     expect(
       mainSource,
-      contains('enabled: SupabaseConfig.environment != BlabEnvironment.local'),
+      contains('enabled: SupabaseConfig.pushNotificationsEnabled'),
     );
+    expect(config, contains("bool.fromEnvironment('BLAB_LOCAL_PUSH_REVIEW')"));
     final sentryBootstrap = mainSource.indexOf(
       'await bootstrap(_initializeAndRunApp);',
     );

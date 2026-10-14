@@ -7,6 +7,92 @@ const _chatId = '10000000-0000-4000-8000-000000000003';
 const _otherChatId = '10000000-0000-4000-8000-000000000004';
 
 void main() {
+  test(
+    'synchronous refresh failure cannot report cached navigation as failed',
+    () async {
+      String? pending = _chatId;
+      final error = Completer<Object>();
+      expect(
+        await PushTapRouter().route(
+          chatId: _chatId,
+          currentPendingChatId: () => pending,
+          canOpenCachedChat: (_) async => true,
+          refreshChatList: () => throw StateError('offline'),
+          invalidateChat: (_) {},
+          consumePendingChat: () => pending = null,
+          goToChat: (_) {},
+          onError: (e, _) => error.complete(e),
+        ),
+        isTrue,
+      );
+      expect(await error.future, isA<StateError>());
+      expect(pending, isNull);
+    },
+  );
+  test('cached chat opens without waiting for network refresh', () async {
+    final release = Completer<void>();
+    String? pending = _chatId;
+    var navigated = false;
+    final router = PushTapRouter();
+    expect(
+      await router.route(
+        chatId: _chatId,
+        currentPendingChatId: () => pending,
+        canOpenCachedChat: (_) async => true,
+        refreshChatList: () => release.future,
+        prepareChat: (_) => release.future,
+        invalidateChat: (_) => fail('must retain cached history'),
+        consumePendingChat: () => pending = null,
+        goToChat: (_) => navigated = true,
+      ),
+      isTrue,
+    );
+    expect(navigated, isTrue);
+    expect(release.isCompleted, isFalse);
+    release.complete();
+  });
+
+  test('background refresh failure does not undo cached navigation', () async {
+    var navigated = false;
+    String? pending = _chatId;
+    final error = Completer<Object>();
+    expect(
+      await PushTapRouter().route(
+        chatId: _chatId,
+        currentPendingChatId: () => pending,
+        canOpenCachedChat: (_) async => true,
+        refreshChatList: () async => throw StateError('offline'),
+        invalidateChat: (_) {},
+        consumePendingChat: () => pending = null,
+        goToChat: (_) => navigated = true,
+        onError: (e, _) => error.complete(e),
+      ),
+      isTrue,
+    );
+    expect(await error.future, isA<StateError>());
+    expect(navigated, isTrue);
+    expect(pending, isNull);
+  });
+
+  test('changed pending tap is not opened after cached lookup', () async {
+    String? pending = _chatId;
+    expect(
+      await PushTapRouter().route(
+        chatId: _chatId,
+        currentPendingChatId: () => pending,
+        canOpenCachedChat: (_) async {
+          pending = _otherChatId;
+          return true;
+        },
+        refreshChatList: () async => fail('stale tap must not refresh'),
+        invalidateChat: (_) {},
+        consumePendingChat: () => fail('stale tap must not consume'),
+        goToChat: (_) => fail('stale tap must not navigate'),
+      ),
+      isFalse,
+    );
+  });
+
   test('refreshes chat state before consuming and navigating', () async {
     final order = <String>[];
     String? pending = _chatId;

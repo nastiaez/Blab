@@ -1,0 +1,30 @@
+{
+  "checks": {
+    "de_correct_status": true,
+    "de_requested_target": true,
+    "en_correct_status": true,
+    "en_requested_target": true,
+    "fr_correct_status": true
+  },
+  "results": {
+    "de": {
+      "status": 200,
+      "targetLang": "de",
+      "error": null,
+      "duration_ms": 96
+    },
+    "en": {
+      "status": 200,
+      "targetLang": "en",
+      "error": null,
+      "duration_ms": 62
+    },
+    "fr": {
+      "status": 403,
+      "targetLang": null,
+      "error": "translation_not_allowed",
+      "duration_ms": 52
+    }
+  },
+  "scope": "Existing synthetic message recovery; live result targets, not latency population"
+}

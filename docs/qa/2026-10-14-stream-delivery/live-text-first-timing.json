@@ -1,0 +1,9 @@
+{
+  "scope": "Single synthetic owned local review sample; not a latency distribution. Includes dispatch and polling overhead.",
+  "source": "I am studying German tomorrow.",
+  "verified_translation": "Ich lerne morgen Deutsch.",
+  "original_acknowledgment_ms": 488,
+  "readable_text_ms": 9617,
+  "complete_word_help_ms": 13075,
+  "readable_precedes_metadata": true
+}

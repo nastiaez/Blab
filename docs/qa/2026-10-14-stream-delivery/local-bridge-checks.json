@@ -1,0 +1,19 @@
+{
+  "isolated_app": "1731706",
+  "local_backend": "Blab_Stream_20261014",
+  "checks": {
+    "alice_token_identity_bound": true,
+    "alice_authorized_channel": true,
+    "bob_token_identity_bound": true,
+    "bob_authorized_channel": true,
+    "client_cannot_bypass_blabs_authorization": true,
+    "authenticated_send_acknowledged": true,
+    "same_command_reuses_acknowledgment": true,
+    "recipient_has_one_original": true,
+    "signed_event_durably_accepted": true,
+    "signed_event_retry_deduplicated": true,
+    "canonical_reconciliation_runs": true,
+    "private_learning_source_matches_original": true
+  },
+  "scope": "Authenticated local Blab endpoints and real Stream exchange with signed event fixture. Not public webhook dispatch, live AI, push or Android acceptance."
+}

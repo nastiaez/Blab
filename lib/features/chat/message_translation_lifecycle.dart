@@ -14,12 +14,6 @@ TranslationSpeedBranch translationSpeedBranch(Duration elapsed) {
   return TranslationSpeedBranch.slow;
 }
 
-bool shouldHoldIncomingTranslation({
-  required bool isOutgoing,
-  required bool processing,
-  required bool originalWasRevealedAfterFailure,
-}) => !isOutgoing && processing && !originalWasRevealedAfterFailure;
-
 bool translationResultIsUnchanged(
   String authoredText,
   MessageTranslation result,

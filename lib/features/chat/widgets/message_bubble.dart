@@ -19,7 +19,6 @@ class MessageBubble extends ConsumerStatefulWidget {
     required this.replyToShouldTranslate,
     required this.popupTopInset,
     required this.deferTranslationResolve,
-    required this.holdIncomingUntilPrevious,
     required this.onReact,
     required this.isFailed,
     required this.onLongPress,
@@ -62,7 +61,6 @@ class MessageBubble extends ConsumerStatefulWidget {
   final bool replyToShouldTranslate;
   final double popupTopInset;
   final bool deferTranslationResolve;
-  final bool holdIncomingUntilPrevious;
 
   /// [MessageInteractionTarget]'s gesture-surface inputs — applied inside
   /// this widget's build around the bubble content only (never around the
@@ -84,8 +82,6 @@ class MessageBubble extends ConsumerStatefulWidget {
 }
 
 class _BubbleState extends ConsumerState<MessageBubble> {
-  bool _incomingOriginalRevealedAfterFailure = false;
-  bool _incomingWasHeld = false;
   int _openFormChoiceIndex = 0;
 
   @override
@@ -95,8 +91,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         oldWidget.message.originalText != widget.message.originalText ||
         oldWidget.mode != widget.mode ||
         oldWidget.targetLanguageCode != widget.targetLanguageCode) {
-      _incomingOriginalRevealedAfterFailure = false;
-      _incomingWasHeld = false;
       _openFormChoiceIndex = 0;
     }
   }
@@ -123,7 +117,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
     final shouldTranslate = widget.shouldTranslate;
     final replyToShouldTranslate = widget.replyToShouldTranslate;
     final popupTopInset = widget.popupTopInset;
-    final holdIncomingUntilPrevious = widget.holdIncomingUntilPrevious;
     final onReact = widget.onReact;
     final isFailed = widget.isFailed;
     final onLongPress = widget.onLongPress;
@@ -153,9 +146,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
             translationInterfaceLanguageCode,
           )]
         : null;
-    if (!isOut && liveTranslation is AsyncError<MessageTranslation>) {
-      _incomingOriginalRevealedAfterFailure = true;
-    }
     final replyTo = message.replyTo;
     final replyTranslation =
         replyTo != null &&
@@ -353,20 +343,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       activeFormChoiceIndex: _openFormChoiceIndex,
     );
 
-    final incomingProcessing =
-        isPractice &&
-        showLearningAid &&
-        (holdIncomingUntilPrevious ||
-            liveTranslation is! AsyncData<MessageTranslation>) &&
-        liveTranslation is! AsyncError<MessageTranslation>;
-    if (shouldHoldIncomingTranslation(
-      isOutgoing: isOut,
-      processing: incomingProcessing,
-      originalWasRevealedAfterFailure: _incomingOriginalRevealedAfterFailure,
-    )) {
-      _incomingWasHeld = true;
-    }
-
     final authoredContent = buildLearningContent(
       translation: null,
       showTranslation: false,
@@ -382,38 +358,25 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         resolvedTranslation != null &&
         translationResultIsUnchanged(message.originalText, resolvedTranslation);
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
-    final retryingRevealedIncoming =
-        !isOut &&
-        _incomingOriginalRevealedAfterFailure &&
-        showLearningAid &&
-        liveTranslation is! AsyncError<MessageTranslation>;
-    final pendingContent = !isOut && !retryingRevealedIncoming
-        ? IncomingTranslationPlaceholder(
-            semanticsLabel: context.l10n.translating,
-          )
-        : authoredContent;
     final animateTranslationLifecycle =
-        isPractice &&
-        showLearningAid &&
-        liveTranslation is! AsyncError<MessageTranslation>;
+        showLearningAid && liveTranslation is! AsyncError<MessageTranslation>;
     final messageLearningContent = animateTranslationLifecycle
         ? TranslatingMessageContent(
             key: ValueKey(
               'translation-lifecycle-$targetLanguageCode-'
               '${message.originalText.hashCode}',
             ),
-            authoredContent: pendingContent,
+            authoredContent: authoredContent,
             finalContent: finalContent,
-            resolved: resolvedForLifecycle && !holdIncomingUntilPrevious,
+            resolved: resolvedForLifecycle,
             delivered:
                 message.status == MessageStatus.delivered ||
                 message.status == MessageStatus.read,
             unchanged: unchangedForLifecycle,
             reduceMotion: reducedMotion,
             outgoing: isOut,
-            showAuthoredImmediately: retryingRevealedIncoming,
             deferResolve: widget.deferTranslationResolve,
-            keepAuthoredDuringFastHold: isOut,
+            keepAuthoredDuringFastHold: true,
             animateArrival: false,
             waveBaseColor:
                 (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary)
@@ -554,9 +517,8 @@ class _BubbleState extends ConsumerState<MessageBubble> {
 
     bubbleStack = MessageArrival(
       animate:
-          _incomingWasHeld ||
           DateTime.now().difference(message.sentAt).abs() <
-              const Duration(seconds: 2),
+          const Duration(seconds: 2),
       reduceMotion: reducedMotion,
       outgoing: isOut,
       child: bubbleStack,

@@ -116,7 +116,11 @@ Deno.test("cross-language results receive a semantic audit before form and stora
   const storageIndex = source.indexOf("const completion = isWorker");
   assert(callIndex >= 0, "cross-language candidates invoke the audit");
   assert(
-    source.indexOf("await anchorSourceMeaning(") < callIndex &&
+    source.indexOf("const sourceMeaningPromise = anchorSourceMeaning(") <
+        callIndex &&
+      source.indexOf(
+          "const trustedSourceMeaning = await sourceMeaningPromise",
+        ) < callIndex &&
       callIndex < formIndex && callIndex < storageIndex,
     "meaning is audited before grammatical-form processing and storage",
   );

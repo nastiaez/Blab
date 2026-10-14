@@ -1,0 +1,5 @@
+{
+  "delete-account": true,
+  "reconcile-stream-events": true,
+  "stream-media": true
+}

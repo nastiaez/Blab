@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/state/auth_state.dart';
 import '../../../shared/state/privacy_settings.dart';
+import '../../../shared/state/chat_list_state.dart';
+import '../../../shared/services/stream_backed_chat_service.dart';
 
 const typingBroadcastEvent = 'typing';
 
@@ -94,13 +96,111 @@ class SupabaseTypingTransport implements TypingTransport {
   }
 }
 
+/// Resolve ownership before opening either connection. Closing during route
+/// resolution must not create a subscription after privacy/account disposal.
+class RoutedTypingTransport implements TypingTransport {
+  RoutedTypingTransport({
+    required this.localUserId,
+    required Future<TypingTransport> Function() resolve,
+  }) {
+    _ready = _initialize(resolve);
+  }
+  @override
+  final String localUserId;
+  final _events = StreamController<TypingEvent>.broadcast();
+  late final Future<void> _ready;
+  TypingTransport? _delegate;
+  StreamSubscription<TypingEvent>? _subscription;
+  bool _closed = false;
+  Future<void> _initialize(Future<TypingTransport> Function() resolve) async {
+    try {
+      final delegate = await resolve();
+      if (_closed) {
+        await delegate.close();
+        return;
+      }
+      _delegate = delegate;
+      _subscription = delegate.events.listen(
+        _events.add,
+        onError: _events.addError,
+      );
+    } catch (error, stack) {
+      if (!_closed) _events.addError(error, stack);
+    }
+  }
+
+  @override
+  Stream<TypingEvent> get events => _events.stream;
+  @override
+  Future<void> send(bool isTyping) async {
+    await _ready;
+    if (!_closed) await _delegate?.send(isTyping);
+  }
+
+  @override
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    await _subscription?.cancel();
+    await _delegate?.close();
+    await _events.close();
+  }
+}
+
+class StreamTypingTransport implements TypingTransport {
+  StreamTypingTransport(this.service, this.chatId, this.localUserId);
+  final StreamBackedChatService service;
+  final String chatId;
+  @override
+  final String localUserId;
+  bool _closed = false;
+  @override
+  Stream<TypingEvent> get events => service
+      .watchStreamTyping(chatId)
+      .where((event) => !_closed)
+      .map(
+        (event) => TypingEvent(
+          userId: event['user_id'] as String,
+          isTyping: event['is_typing'] as bool,
+        ),
+      );
+  @override
+  Future<void> send(bool isTyping) async {
+    if (!_closed) await service.sendStreamTyping(chatId, isTyping);
+  }
+
+  @override
+  Future<void> close() async {
+    _closed = true;
+  }
+}
+
 final typingTransportProvider = Provider.autoDispose
     .family<TypingTransport, String>((ref, chatId) {
-      final transport = SupabaseTypingTransport(
-        client: ref.watch(supabaseClientProvider),
-        chatId: chatId,
+      final client = ref.watch(supabaseClientProvider);
+      final service = ref.watch(chatServiceProvider);
+      var disposed = false;
+      final transport = RoutedTypingTransport(
+        localUserId:
+            client.auth.currentUser?.id ?? (throw StateError('not_signed_in')),
+        resolve: () async {
+          final stream =
+              service is StreamBackedChatService &&
+              await service.usesStream(chatId);
+          if (disposed) throw StateError('typing_disposed');
+          return stream
+              ? StreamTypingTransport(
+                  service,
+                  chatId,
+                  client.auth.currentUser!.id,
+                )
+              : SupabaseTypingTransport(client: client, chatId: chatId);
+        },
       );
-      ref.onDispose(() => unawaited(transport.close()));
+      ref.onDispose(() {
+        disposed = true;
+        unawaited(transport.close());
+      });
       return transport;
     });
 
