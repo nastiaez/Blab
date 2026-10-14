@@ -7,7 +7,6 @@ import '../data/languages.dart';
 import '../models/chat.dart';
 import '../services/chat_service.dart';
 import '../services/local_chat_history_cache.dart';
-import '../services/message_translator.dart';
 import '../services/stream_backed_chat_service.dart';
 import 'auth_state.dart';
 
@@ -116,7 +115,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
       final chats = rows.map(_rowToChat).toList()
         ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       unawaited(localCache?.saveChats(chats));
-      unawaited(_prepareRecentMessages(chats));
       return chats;
     } catch (error, stackTrace) {
       if (kDebugMode) {
@@ -191,7 +189,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
         state = AsyncValue.data(chats);
         unawaited(localCache?.saveChats(chats));
-        unawaited(_prepareRecentMessages(chats));
         return;
       }
     } catch (e, st) {
@@ -209,47 +206,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
         state = AsyncValue.error(e, st);
       }
     }
-  }
-
-  Future<void> _prepareRecentMessages(List<Chat> chats) async {
-    final translator = ref.read(messageTranslatorProvider);
-    final service = ref.read(chatServiceProvider);
-    // Three in-flight provider calls match the chat-open background budget
-    // while keeping delivery preparation bounded on a small device.
-    const concurrency = 3;
-    final queue = <Future<void> Function()>[];
-    for (final chat in chats) {
-      if (chat.needsPracticeLanguageSelection) continue;
-      try {
-        final ids = await service.fetchPreparationMessageIds(chat.id);
-        for (final id in ids) {
-          queue.add(() async {
-            try {
-              await translator.translate(messageId: id);
-            } catch (_) {
-              // A later chat open retries the durable job; preparation must
-              // never make the chat list itself fail.
-            }
-          });
-        }
-      } catch (_) {
-        // Offline list cache remains usable; reconnect will retry.
-      }
-    }
-    var cursor = 0;
-    Future<void> worker() async {
-      while (cursor < queue.length) {
-        final task = queue[cursor++];
-        await task();
-      }
-    }
-
-    await Future.wait(
-      List<Future<void>>.generate(
-        queue.length < concurrency ? queue.length : concurrency,
-        (_) => worker(),
-      ),
-    );
   }
 }
 

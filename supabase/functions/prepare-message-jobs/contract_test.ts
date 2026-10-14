@@ -65,3 +65,28 @@ Deno.test("worker input accepts only bounded batches and job UUIDs", () => {
   );
   assert(workerJobId({ jobId: "bad" }) === null, "invalid job ID fails");
 });
+
+Deno.test("an unrelated slow job does not delay an already claimed message", async () => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const started: string[] = [];
+  const work = settleJobs(orderedJobs(jobs), async (job) => {
+    started.push(job.id);
+    if (job.id === "a") await gate;
+    return job.id;
+  });
+  await Promise.resolve();
+  release();
+  const concurrent = started.length;
+  const outcomes = await work;
+  assert(
+    concurrent === 3,
+    "all bounded claims must start without waiting for first result",
+  );
+  assert(
+    outcomes.map((x) => x.result).join(",") === "a,b,c",
+    "result order stays deterministic",
+  );
+});

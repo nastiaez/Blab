@@ -8,6 +8,7 @@ import {
   READABLE_TRANSLATION_RESPONSE_FORMAT,
   readableProviderMessages,
   restoreAcceptedReadable,
+  textFirstDeliveryEnabled,
 } from "./readable_delivery.ts";
 
 Deno.test("readable schema removes only optional word metadata, preserving form choices", () => {
@@ -184,4 +185,13 @@ Deno.test("word-help failure leaves accepted text intact and retry never retrans
     calls !== 2 || finished?.translation !== "Hallo" ||
     finished.tokens.length !== 1
   ) throw new Error("metadata retry failed");
+});
+
+Deno.test("readable delivery defaults on and supports explicit rollback", () => {
+  for (const value of [undefined, "", "true"]) {
+    if (!textFirstDeliveryEnabled(value)) {
+      throw new Error("silent text-first opt-out");
+    }
+  }
+  if (textFirstDeliveryEnabled("false")) throw new Error("rollback ignored");
 });

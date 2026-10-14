@@ -62,13 +62,18 @@ import {
 } from "./contract.ts";
 import { independentConsensus } from "./consensus.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
-import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
+import {
+  completionBudget,
+  fetchChatCompletion,
+  ProviderFetchError,
+} from "./provider.ts";
 import {
   enrichAcceptedWordHelp,
   knownLaneIsAuthoredOriginal,
   READABLE_TRANSLATION_RESPONSE_FORMAT,
   readableProviderMessages,
   restoreAcceptedReadable,
+  textFirstDeliveryEnabled,
 } from "./readable_delivery.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -84,12 +89,14 @@ const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
 const OPENROUTER_SEMANTIC_REVIEW_MODEL =
   Deno.env.get("OPENROUTER_SEMANTIC_REVIEW_MODEL")?.trim() ||
-  "openai/gpt-4.1-mini";
+  "google/gemini-2.5-flash";
 const OPENAI_SEMANTIC_REVIEW_MODEL =
   Deno.env.get("OPENAI_SEMANTIC_REVIEW_MODEL")?.trim() || "gpt-4.1-mini";
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
 const CACHE_CONTRACT_VERSION = "minimal-source-anchor-v11";
-const TEXT_FIRST_DELIVERY = Deno.env.get("BLAB_TEXT_FIRST_DELIVERY") === "true";
+const TEXT_FIRST_DELIVERY = textFirstDeliveryEnabled(
+  Deno.env.get("BLAB_TEXT_FIRST_DELIVERY"),
+);
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -123,7 +130,7 @@ async function repairInterfaceText(
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 4000,
+      max_completion_tokens: completionBudget(learningText, "audit"),
       response_format: INTERFACE_RESPONSE_FORMAT,
       messages: [
         {
@@ -173,7 +180,7 @@ async function repairWordMetadata(
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 4000,
+      max_completion_tokens: completionBudget(acceptedTranslation, "metadata"),
       response_format: WORD_METADATA_RESPONSE_FORMAT,
       messages: [
         {
@@ -321,7 +328,7 @@ async function auditTranslationMeaningConsensus(
     try {
       response = await fetchChatCompletion(credential, {
         temperature: 0,
-        max_completion_tokens: 4000,
+        max_completion_tokens: completionBudget(candidateTranslation, "audit"),
         response_format: SEMANTIC_AUDIT_RESPONSE_FORMAT,
         messages: [
           {
@@ -488,7 +495,7 @@ async function auditSameLanguageCorrection(
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 4000,
+      max_completion_tokens: completionBudget(text, "readable"),
       response_format: CORRECTION_AUDIT_RESPONSE_FORMAT,
       messages: [
         {
@@ -539,7 +546,7 @@ async function auditHindiFutureTranslation(
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 12000,
+      max_completion_tokens: completionBudget(sourceText, "metadata"),
       response_format: TRANSLATION_RESPONSE_FORMAT,
       messages: [
         {
@@ -581,6 +588,7 @@ async function auditHindiFutureTranslation(
 async function auditGrammaticalForm(
   credential: ProviderCredential,
   sourceText: string,
+  trustedSourceMeaning: string,
   translatedText: string,
   sourceLang: string,
   targetLang: string,
@@ -600,7 +608,7 @@ async function auditGrammaticalForm(
   try {
     response = await fetchChatCompletion(credential, {
       temperature: 0,
-      max_completion_tokens: 4000,
+      max_completion_tokens: completionBudget(sourceText, "readable"),
       response_format: FORM_AUDIT_RESPONSE_FORMAT,
       messages: [
         {
@@ -615,7 +623,7 @@ async function auditGrammaticalForm(
         {
           role: "user",
           content:
-            `Source message:\n${sourceText}\n\nCandidate translation:\n${translatedText}${subjectHint}`,
+            `Independently resolved source meaning (including explicit conversational referents):\n${trustedSourceMeaning}\n\nSource message:\n${sourceText}\n\nCandidate translation:\n${translatedText}${subjectHint}`,
         },
       ],
     });
@@ -951,7 +959,10 @@ Deno.serve(async (req) => {
           : retrySourceLang ?? undefined;
         llm = await fetchChatCompletion(credential, {
           temperature: attempt === 0 ? 0 : 0.4,
-          max_completion_tokens: 12000,
+          max_completion_tokens: completionBudget(
+            text,
+            TEXT_FIRST_DELIVERY ? "readable" : "metadata",
+          ),
           response_format: TEXT_FIRST_DELIVERY
             ? READABLE_TRANSLATION_RESPONSE_FORMAT
             : TRANSLATION_RESPONSE_FORMAT,
@@ -1268,8 +1279,9 @@ Deno.serve(async (req) => {
         );
       if (needsFormAudit) {
         const audit = await auditGrammaticalForm(
-          credential,
+          semanticCredential,
           text,
+          trustedSourceMeaning,
           candidate.translation,
           candidate.sourceLang,
           targetLang,

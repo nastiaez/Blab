@@ -374,13 +374,18 @@ final GoRouter blabRouter = GoRouter(
       routes: [
         GoRoute(
           path: 'chat',
-          builder: (context, state) =>
-              const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
+          pageBuilder: (context, state) => NoTransitionPage<void>(
+            key: state.pageKey,
+            child: const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
+          ),
         ),
         GoRoute(
           path: 'chat/:id',
-          builder: (context, state) => _OnboardingGuard(
-            child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
+          pageBuilder: (context, state) => NoTransitionPage<void>(
+            key: state.pageKey,
+            child: _OnboardingGuard(
+              child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
+            ),
           ),
         ),
         GoRoute(

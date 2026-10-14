@@ -125,3 +125,15 @@ export async function fetchChatCompletion(
     clearTimeout(timeout);
   }
 }
+
+export function completionBudget(
+  text: string,
+  kind: "readable" | "audit" | "metadata",
+): number {
+  const length = [...text].length;
+  if (kind === "audit") return Math.min(4000, Math.max(768, 256 + length * 4));
+  if (kind === "metadata") {
+    return Math.min(12000, Math.max(1536, 512 + length * 24));
+  }
+  return Math.min(12000, Math.max(1536, 768 + length * 8));
+}

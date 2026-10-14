@@ -25,6 +25,7 @@ typedef CachedMessageTranslation = ({
 
 const textFirstDeliveryEnabled = bool.fromEnvironment(
   'BLAB_TEXT_FIRST_DELIVERY',
+  defaultValue: true,
 );
 
 /// Private readable rows contain both verified display lanes, but no completed

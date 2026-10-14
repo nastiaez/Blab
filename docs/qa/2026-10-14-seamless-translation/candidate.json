@@ -1,0 +1,10 @@
+{
+  "base": "cf2cfa214e966bc0eec8f25278a969ff3ad017af",
+  "branch": "fix/seamless-translation-20261014",
+  "source_patch_sha256": "5a53608441e4285dea6e00d8c2b747e9437c2c8219c63a8183c7f2b2427b1f6b",
+  "apk_sha256": "f87c5c51627cc6b73ef71cf9db53d9d534d08e6f9e463fa84a0219a1dab1238e",
+  "production_changed": false,
+  "backend_generator": "google/gemini-3.1-flash-lite",
+  "backend_independent_reviewer": "google/gemini-2.5-flash",
+  "acceptance_date": "2026-10-14"
+}

@@ -159,3 +159,8 @@ export async function enrichAcceptedWordHelp(
   }
   return enriched;
 }
+
+// Readable-first is the normal delivery contract; false is an explicit rollback.
+export function textFirstDeliveryEnabled(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() !== "false";
+}

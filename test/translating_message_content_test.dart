@@ -158,33 +158,22 @@ void main() {
     );
   });
 
-  testWidgets('medium result clears reshapes empty and lands sequentially', (
+  testWidgets('ready text replaces the shimmer without erasing or typing', (
     tester,
   ) async {
     await tester.pumpWidget(_host(resolved: false));
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpWidget(_host(resolved: true));
     await tester.pump();
-
-    expect(find.byKey(const ValueKey('translation-clear')), findsOneWidget);
-    expect(find.text('Ich komme später 😊'), findsNothing);
-
-    await tester.pump(const Duration(milliseconds: 121));
+    expect(find.text('Ich komme später 😊'), findsOneWidget);
+    expect(find.text('I will be late 😊'), findsNothing);
+    expect(find.byKey(const ValueKey('translation-settled')), findsOneWidget);
+    expect(find.byKey(const ValueKey('translation-clear')), findsNothing);
     expect(
       find.byKey(const ValueKey('translation-reshape-empty')),
-      findsOneWidget,
+      findsNothing,
     );
-    final empty = tester.widget<Opacity>(
-      find.byKey(const ValueKey('translation-reshape-empty')),
-    );
-    expect(empty.opacity, 0);
-
-    await tester.pump(const Duration(milliseconds: 150));
-    expect(find.byKey(const ValueKey('translation-land')), findsOneWidget);
-
-    await tester.pump(const Duration(milliseconds: 221));
-    expect(find.byKey(const ValueKey('translation-settled')), findsOneWidget);
-    expect(find.text('Ich komme später 😊'), findsOneWidget);
+    expect(find.byKey(const ValueKey('translation-land')), findsNothing);
   });
 
   testWidgets('unchanged result keeps exact authored content in place', (
@@ -227,7 +216,7 @@ void main() {
 
     await tester.pumpWidget(_host(resolved: true));
     await tester.pump();
-    expect(find.byKey(const ValueKey('translation-clear')), findsOneWidget);
+    expect(find.byKey(const ValueKey('translation-settled')), findsOneWidget);
   });
 
   testWidgets('two pending messages keep independent lifecycle phases', (
@@ -272,7 +261,7 @@ void main() {
     expect(
       find.descendant(
         of: first,
-        matching: find.byKey(const ValueKey('translation-clear')),
+        matching: find.byKey(const ValueKey('translation-settled')),
       ),
       findsOneWidget,
     );

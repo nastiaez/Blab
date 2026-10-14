@@ -1,0 +1,1186 @@
+diff --git a/lib/app/router.dart b/lib/app/router.dart
+index ee13681..d26c119 100644
+--- a/lib/app/router.dart
++++ b/lib/app/router.dart
+@@ -374,13 +374,18 @@ final GoRouter blabRouter = GoRouter(
+       routes: [
+         GoRoute(
+           path: 'chat',
+-          builder: (context, state) =>
+-              const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
++          pageBuilder: (context, state) => NoTransitionPage<void>(
++            key: state.pageKey,
++            child: const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
++          ),
+         ),
+         GoRoute(
+           path: 'chat/:id',
+-          builder: (context, state) => _OnboardingGuard(
+-            child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
++          pageBuilder: (context, state) => NoTransitionPage<void>(
++            key: state.pageKey,
++            child: _OnboardingGuard(
++              child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
++            ),
+           ),
+         ),
+         GoRoute(
+diff --git a/lib/features/chat/state/message_translations_state.dart b/lib/features/chat/state/message_translations_state.dart
+index 21e4a9f..366db4b 100644
+--- a/lib/features/chat/state/message_translations_state.dart
++++ b/lib/features/chat/state/message_translations_state.dart
+@@ -401,22 +401,28 @@ class MessageTranslationsNotifier
+         } catch (_) {
+           // Fall through to a visible retryable timeout state.
+         }
+-        if (await _continuePreparedWork(
+-          key: key,
+-          messageId: messageId,
+-          text: text,
+-          targetLang: targetLang,
+-          interfaceLang: interfaceLang,
+-        )) {
+-          return;
+-        }
++        // The server may keep retrying, but that must not renew the visible
++        // loading deadline indefinitely. Realtime/read-only cache recovery
++        // still accepts its late result without another provider invocation.
++        var preparationPending = false;
++        try {
++          preparationPending = await ref
++              .read(chatServiceProvider)
++              .isMessageTranslationPending(
++                messageId: messageId,
++                targetLang: targetLang,
++                interfaceLang: interfaceLang,
++              );
++        } catch (_) {}
+         if (!ref.mounted) return;
+         if (_sourceTexts[key] == text &&
+             state[key] is AsyncLoading<MessageTranslation>) {
+           state = {
+             ...state,
+             key: AsyncError(
+-              MessageTranslationFailed('timeout'),
++              MessageTranslationFailed(
++                preparationPending ? 'preparation_delayed' : 'timeout',
++              ),
+               StackTrace.current,
+             ),
+           };
+diff --git a/lib/features/chat/widgets/message_bubble.dart b/lib/features/chat/widgets/message_bubble.dart
+index 8a7470f..064595b 100644
+--- a/lib/features/chat/widgets/message_bubble.dart
++++ b/lib/features/chat/widgets/message_bubble.dart
+@@ -325,7 +325,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
+       resolvedSourceLang: resolvedSourceLang,
+       expanded: widget.isSelected && mode == ChatMode.practice,
+       showOriginal: widget.isSelected && widget.showOriginal,
+-      pendingColor: pending
++      pendingColor: pending && isPractice
+           ? (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary).withValues(
+               alpha: 0.48,
+             )
+@@ -359,7 +359,9 @@ class _BubbleState extends ConsumerState<MessageBubble> {
+         translationResultIsUnchanged(message.originalText, resolvedTranslation);
+     final reducedMotion = MediaQuery.disableAnimationsOf(context);
+     final animateTranslationLifecycle =
+-        showLearningAid && liveTranslation is! AsyncError<MessageTranslation>;
++        isPractice &&
++        showLearningAid &&
++        liveTranslation is! AsyncError<MessageTranslation>;
+     final messageLearningContent = animateTranslationLifecycle
+         ? TranslatingMessageContent(
+             key: ValueKey(
+diff --git a/lib/features/chat/widgets/translating_message_content.dart b/lib/features/chat/widgets/translating_message_content.dart
+index 105e8c2..2cfa895 100644
+--- a/lib/features/chat/widgets/translating_message_content.dart
++++ b/lib/features/chat/widgets/translating_message_content.dart
+@@ -68,15 +68,7 @@ class _MessageArrivalState extends State<MessageArrival>
+   }
+ }
+ 
+-enum _TranslationVisualPhase {
+-  fastHold,
+-  authored,
+-  wave,
+-  clear,
+-  reshape,
+-  land,
+-  settled,
+-}
++enum _TranslationVisualPhase { fastHold, authored, wave, settled }
+ 
+ class TranslatingMessageContent extends StatefulWidget {
+   const TranslatingMessageContent({
+@@ -120,11 +112,8 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+   late _TranslationVisualPhase _phase;
+   Timer? _authoredTimer;
+   Timer? _waveTimer;
+-  Timer? _reshapeTimer;
+   late final AnimationController _arrival;
+   late final AnimationController _wave;
+-  late final AnimationController _clear;
+-  late final AnimationController _land;
+   bool _resolveDeferred = false;
+ 
+   @override
+@@ -139,14 +128,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+       vsync: this,
+       duration: const Duration(milliseconds: 1700),
+     );
+-    _clear = AnimationController(
+-      vsync: this,
+-      duration: const Duration(milliseconds: 120),
+-    );
+-    _land = AnimationController(
+-      vsync: this,
+-      duration: const Duration(milliseconds: 220),
+-    );
+     _phase = _initialPhase();
+     if (_arrival.value == 0) _arrival.forward();
+     if (!widget.resolved && widget.delivered && !widget.reduceMotion) {
+@@ -208,8 +189,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+   void _resetForPending() {
+     _resolveDeferred = false;
+     _cancelWaiting();
+-    _clear.reset();
+-    _land.reset();
+     setState(() {
+       _phase = widget.delivered && !widget.reduceMotion
+           ? (widget.showAuthoredImmediately
+@@ -236,45 +215,16 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+ 
+   void _resolve() {
+     _cancelWaiting();
+-    if (widget.unchanged) {
+-      // A same-language result has no learning animation, but it must still
+-      // leave the muted pending color behind once resolution is complete.
+-      setState(() => _phase = _TranslationVisualPhase.settled);
+-      return;
+-    }
+-    if (widget.reduceMotion || _phase == _TranslationVisualPhase.fastHold) {
+-      setState(() => _phase = _TranslationVisualPhase.settled);
+-      return;
+-    }
+-    _wave.stop();
+-    _clear.reset();
+-    setState(() => _phase = _TranslationVisualPhase.clear);
+-    _clear.forward().whenComplete(_beginReshape);
+-  }
+-
+-  void _beginReshape() {
+-    if (!mounted || !widget.resolved) return;
+-    setState(() => _phase = _TranslationVisualPhase.reshape);
+-    _reshapeTimer = Timer(const Duration(milliseconds: 150), _beginLand);
+-  }
+-
+-  void _beginLand() {
+-    if (!mounted || !widget.resolved) return;
+-    _land.reset();
+-    setState(() => _phase = _TranslationVisualPhase.land);
+-    _land.forward().whenComplete(() {
+-      if (!mounted || !widget.resolved) return;
+-      setState(() => _phase = _TranslationVisualPhase.settled);
+-    });
++    // Ready sentences paint as one complete unit: no erased frame, glyph
++    // reveal, or decorative delay between verified text and the reader.
++    setState(() => _phase = _TranslationVisualPhase.settled);
+   }
+ 
+   void _cancelWaiting() {
+     _authoredTimer?.cancel();
+     _waveTimer?.cancel();
+-    _reshapeTimer?.cancel();
+     _authoredTimer = null;
+     _waveTimer = null;
+-    _reshapeTimer = null;
+     _wave.stop();
+   }
+ 
+@@ -283,8 +233,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+     _cancelWaiting();
+     _arrival.dispose();
+     _wave.dispose();
+-    _clear.dispose();
+-    _land.dispose();
+     super.dispose();
+   }
+ 
+@@ -340,34 +288,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+           ],
+         ),
+       ),
+-      _TranslationVisualPhase.clear => AnimatedBuilder(
+-        key: const ValueKey('translation-clear'),
+-        animation: _clear,
+-        child: widget.authoredContent,
+-        builder: (context, child) => _HorizontalGlyphMask(
+-          progress: _clear.value,
+-          revealing: false,
+-          child: child!,
+-        ),
+-      ),
+-      _TranslationVisualPhase.reshape => Opacity(
+-        key: const ValueKey('translation-reshape-empty'),
+-        opacity: 0,
+-        child: widget.finalContent,
+-      ),
+-      _TranslationVisualPhase.land => AnimatedBuilder(
+-        key: const ValueKey('translation-land'),
+-        animation: _land,
+-        child: widget.finalContent,
+-        builder: (context, child) => Transform.translate(
+-          offset: Offset(0, 2 * (1 - _land.value)),
+-          child: _HorizontalGlyphMask(
+-            progress: _land.value,
+-            revealing: true,
+-            child: child!,
+-          ),
+-        ),
+-      ),
+       _TranslationVisualPhase.settled => KeyedSubtree(
+         key: const ValueKey('translation-settled'),
+         child: widget.finalContent,
+@@ -397,43 +317,3 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
+     );
+   }
+ }
+-
+-class _HorizontalGlyphMask extends StatelessWidget {
+-  const _HorizontalGlyphMask({
+-    required this.progress,
+-    required this.revealing,
+-    required this.child,
+-  });
+-
+-  final double progress;
+-  final bool revealing;
+-  final Widget child;
+-
+-  @override
+-  Widget build(BuildContext context) {
+-    final edge = progress.clamp(0.0, 1.0);
+-    final featherStart = (edge - 0.035).clamp(0.0, 1.0);
+-    final featherEnd = (edge + 0.035).clamp(0.0, 1.0);
+-    final colors = revealing
+-        ? const [
+-            Colors.white,
+-            Colors.white,
+-            Colors.transparent,
+-            Colors.transparent,
+-          ]
+-        : const [
+-            Colors.transparent,
+-            Colors.transparent,
+-            Colors.white,
+-            Colors.white,
+-          ];
+-    return ShaderMask(
+-      blendMode: BlendMode.dstIn,
+-      shaderCallback: (bounds) => LinearGradient(
+-        colors: colors,
+-        stops: [0, featherStart, featherEnd, 1],
+-      ).createShader(bounds),
+-      child: child,
+-    );
+-  }
+-}
+diff --git a/lib/shared/services/chat_service.dart b/lib/shared/services/chat_service.dart
+index 9e75f36..328b1ab 100644
+--- a/lib/shared/services/chat_service.dart
++++ b/lib/shared/services/chat_service.dart
+@@ -25,6 +25,7 @@ typedef CachedMessageTranslation = ({
+ 
+ const textFirstDeliveryEnabled = bool.fromEnvironment(
+   'BLAB_TEXT_FIRST_DELIVERY',
++  defaultValue: true,
+ );
+ 
+ /// Private readable rows contain both verified display lanes, but no completed
+diff --git a/lib/shared/state/chat_list_state.dart b/lib/shared/state/chat_list_state.dart
+index ab45946..56854b2 100644
+--- a/lib/shared/state/chat_list_state.dart
++++ b/lib/shared/state/chat_list_state.dart
+@@ -7,7 +7,6 @@ import '../data/languages.dart';
+ import '../models/chat.dart';
+ import '../services/chat_service.dart';
+ import '../services/local_chat_history_cache.dart';
+-import '../services/message_translator.dart';
+ import '../services/stream_backed_chat_service.dart';
+ import 'auth_state.dart';
+ 
+@@ -116,7 +115,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
+       final chats = rows.map(_rowToChat).toList()
+         ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+       unawaited(localCache?.saveChats(chats));
+-      unawaited(_prepareRecentMessages(chats));
+       return chats;
+     } catch (error, stackTrace) {
+       if (kDebugMode) {
+@@ -191,7 +189,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
+           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+         state = AsyncValue.data(chats);
+         unawaited(localCache?.saveChats(chats));
+-        unawaited(_prepareRecentMessages(chats));
+         return;
+       }
+     } catch (e, st) {
+@@ -210,47 +207,6 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
+       }
+     }
+   }
+-
+-  Future<void> _prepareRecentMessages(List<Chat> chats) async {
+-    final translator = ref.read(messageTranslatorProvider);
+-    final service = ref.read(chatServiceProvider);
+-    // Three in-flight provider calls match the chat-open background budget
+-    // while keeping delivery preparation bounded on a small device.
+-    const concurrency = 3;
+-    final queue = <Future<void> Function()>[];
+-    for (final chat in chats) {
+-      if (chat.needsPracticeLanguageSelection) continue;
+-      try {
+-        final ids = await service.fetchPreparationMessageIds(chat.id);
+-        for (final id in ids) {
+-          queue.add(() async {
+-            try {
+-              await translator.translate(messageId: id);
+-            } catch (_) {
+-              // A later chat open retries the durable job; preparation must
+-              // never make the chat list itself fail.
+-            }
+-          });
+-        }
+-      } catch (_) {
+-        // Offline list cache remains usable; reconnect will retry.
+-      }
+-    }
+-    var cursor = 0;
+-    Future<void> worker() async {
+-      while (cursor < queue.length) {
+-        final task = queue[cursor++];
+-        await task();
+-      }
+-    }
+-
+-    await Future.wait(
+-      List<Future<void>>.generate(
+-        queue.length < concurrency ? queue.length : concurrency,
+-        (_) => worker(),
+-      ),
+-    );
+-  }
+ }
+ 
+ final chatListProvider = AsyncNotifierProvider<ChatListNotifier, List<Chat>>(
+diff --git a/supabase/functions/prepare-message-jobs/contract.ts b/supabase/functions/prepare-message-jobs/contract.ts
+index 7952a12..6c7ece9 100644
+--- a/supabase/functions/prepare-message-jobs/contract.ts
++++ b/supabase/functions/prepare-message-jobs/contract.ts
+@@ -63,16 +63,16 @@ export async function settleJobs<
+   jobs: T[],
+   run: (job: T) => Promise<R>,
+ ): Promise<Array<{ job: T; result?: R; error?: string }>> {
+-  const outcomes: Array<{ job: T; result?: R; error?: string }> = [];
+-  for (const job of jobs) {
++  // Postgres already leases at most four jobs globally. Start that bounded
++  // batch together; claiming four and running one serially wastes every slot.
++  return await Promise.all(jobs.map(async (job) => {
+     try {
+-      outcomes.push({ job, result: await run(job) });
++      return { job, result: await run(job) };
+     } catch (error) {
+-      outcomes.push({
++      return {
+         job,
+         error: error instanceof Error ? error.message : "unknown",
+-      });
++      };
+     }
+-  }
+-  return outcomes;
++  }));
+ }
+diff --git a/supabase/functions/prepare-message-jobs/contract_test.ts b/supabase/functions/prepare-message-jobs/contract_test.ts
+index 1a2db1a..e4c22fe 100644
+--- a/supabase/functions/prepare-message-jobs/contract_test.ts
++++ b/supabase/functions/prepare-message-jobs/contract_test.ts
+@@ -65,3 +65,28 @@ Deno.test("worker input accepts only bounded batches and job UUIDs", () => {
+   );
+   assert(workerJobId({ jobId: "bad" }) === null, "invalid job ID fails");
+ });
++
++Deno.test("an unrelated slow job does not delay an already claimed message", async () => {
++  let release!: () => void;
++  const gate = new Promise<void>((resolve) => {
++    release = resolve;
++  });
++  const started: string[] = [];
++  const work = settleJobs(orderedJobs(jobs), async (job) => {
++    started.push(job.id);
++    if (job.id === "a") await gate;
++    return job.id;
++  });
++  await Promise.resolve();
++  release();
++  const concurrent = started.length;
++  const outcomes = await work;
++  assert(
++    concurrent === 3,
++    "all bounded claims must start without waiting for first result",
++  );
++  assert(
++    outcomes.map((x) => x.result).join(",") === "a,b,c",
++    "result order stays deterministic",
++  );
++});
+diff --git a/supabase/functions/translate-message/contract.ts b/supabase/functions/translate-message/contract.ts
+index e47491e..f6dd9e8 100644
+--- a/supabase/functions/translate-message/contract.ts
++++ b/supabase/functions/translate-message/contract.ts
+@@ -20,7 +20,9 @@ export function preservesLiteralCharacters(
+   candidate: string,
+ ): boolean {
+   const letters = (text: string) =>
+-    text.match(/(?<![\p{L}\p{N}])[B-DF-HJ-TV-XZ](?![\p{L}\p{N}])/gu) ?? [];
++    text.match(
++      /(?<![\p{L}\p{N}])[B-DF-HJ-TV-XZ](?![\p{L}\p{N}]|['’]\p{L})/gu,
++    ) ?? [];
+   const required = letters(source).filter((letter) =>
+     recognizedAbbreviationSourceLanguage(letter) === null
+   );
+@@ -65,10 +67,13 @@ export type FormParticipantContext = {
+   authorPrimaryKnownLanguage?: string | null;
+ };
+ 
+-const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
++const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
+ const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
++const FRAGMENT_FIDELITY_RULE =
++  "Keep short elliptical replies as fragments when the author supplied a fragment. Use explicit recent context to resolve what is being contrasted, without inventing a new assertion. For example, after a meeting time of six, Not seven excludes seven as that time; it does not assert that the current clock time is not seven. Never add now, currently, a new subject, or a new event unless the source or explicit context supports it.";
+ const SEMANTIC_FIDELITY_RULE =
+-  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Preserve ambiguous isolated characters and initials literally; never expand O to ears or another guessed noun. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning.";
++  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Preserve ambiguous isolated characters and initials literally; never expand O to ears or another guessed noun. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning. " +
++  FRAGMENT_FIDELITY_RULE;
+ 
+ export function providerCredentials(env: {
+   openRouterKey?: string | null;
+@@ -128,7 +133,7 @@ export function providerMessages({
+ }): Array<{ role: "system" | "user"; content: string }> {
+   const contextText = context.length === 0
+     ? ""
+-    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, and dates. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
++    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, dates, times, and the referent of short corrections or contrasts. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
+       context
+         .map((entry) =>
+           `${entry.speaker}${
+@@ -852,7 +857,9 @@ function validatedCompleteTokens(
+           romanLetters.some((character) => !/\p{Script=Latin}/u.test(character))
+         ) return null;
+       }
+-    } else if (token.gloss !== null || token.roman !== null) {
++    } else if (
++      token.gloss !== null || token.roman !== null || /\p{L}/u.test(token.text)
++    ) {
+       return null;
+     }
+     const parsed: TranslationToken = {
+@@ -1148,7 +1155,7 @@ The current message author is the ${formContext.messageAuthor}. In direct first/
+       ? formContext.partnerName
+       : formContext.viewerName
+   }. Determine the subject before suggesting a form. Never label an incoming “you” sentence as the sender’s form.
+-Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. For suggestedForm use the affected person’s supplied name; when unclear use feminine. For example, Alice suggests feminine, Bob suggests masculine, and an ambiguous Alex defaults to feminine. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
++Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Agreement with an object, grammatical noun class, clock hour, date, number, or abstract concept is NOT participant gender: requiresChoice=false. For example Ukrainian Не дев’ята about a meeting hour agrees with the implied hour, never with the author; do not offer Не дев’ятий based on the author’s name. Use the independently resolved source meaning supplied with the request to establish the referent before deciding. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. For suggestedForm use the affected person’s supplied name; when unclear use feminine. For example, Alice suggests feminine, Bob suggests masculine, and an ambiguous Alex defaults to feminine. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
+ 
+ Return strict JSON only: {"requiresChoice":true|false,"subjectIsViewer":true|false|null,"before":"shared prefix"|null,"feminine":"shortest complete feminine fragment"|null,"masculine":"shortest complete masculine fragment"|null,"after":"shared suffix"|null,"suggestedForm":"feminine"|"masculine"|null,"feminineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null,"masculineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null}.
+ When a natural choice is required, identify the affected participant and split the target sentence around the shortest complete fragment containing every linked agreement change. Keep all identical text in before/after. For a single changing verb such as “Ти ходила/ходив до…”, return before="Ти ", feminine="ходила", masculine="ходив", and after=" до…"—never repeat the whole sentence in either option. feminineTokens and masculineTokens must each reproduce the corresponding complete sentence exactly, including the shared before/after text. Every content token is one word with a short 1-3 word ${interfaceName} gloss. Every non-Latin content token also has a non-empty Latin-script romanization. Whitespace and punctuation tokens have null gloss and roman. When no choice is required, the participant, suggestion, all four text fields, and both token arrays must be null.`;
+@@ -1667,7 +1674,11 @@ export function parseProviderResult(
+       `${alternatives.before}${alternatives.feminine}${alternatives.after}` !==
+         result.translation ||
+       alternatives.feminine === alternatives.masculine
+-    ) return null;
++    ) {
++      // Form metadata cannot discard the sentence before its independent
++      // meaning/agreement reviews. Invalid alternatives never reach clients.
++      result.formAlternatives = null;
++    }
+   }
+ 
+   let reproduced = "";
+@@ -1957,6 +1968,7 @@ Rules:
+ - For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
+ - For mode=translation, explanation/confidence are null.
+ - When the source contains an explicit future time marker, preserve that future meaning with the natural target-language tense or construction; do not default to habitual present unless that is genuinely idiomatic in ${targetName}.
++- Noun-class agreement, clock hours, dates, numbers, and objects must never create participant form choices.
+ - Set formAlternatives to null unless the target sentence genuinely requires a feminine/masculine choice for the viewer or partner. When it is required, set translation to the feminine rendering, and concatenate before + feminine + after to reproduce translation exactly. feminine and masculine must be complete, natural alternatives for the same shortest understandable affected fragment; include every linked agreement change together. feminineTokens and masculineTokens must each reproduce their complete resolved sentence exactly, including the shared before/after text, and follow the same per-word metadata rules as tokens. subjectIsViewer identifies the affected participant and subjectName is their display name. Set suggestedForm from their name, or feminine if unclear. Never encode a saved preference in this shared translation; it never changes the identity of the affected participant.
+ - This is a required output rule, not a suggestion to make wording neutral. For example, ONLY when the viewer authored English "What did you do yesterday?", Ukrainian MUST return translation="Що ти робила вчора?" and split formAlternatives into before="Що ти ", feminine="робила", masculine="робив", and after=" вчора?", with the partner as the affected subject. When the partner authored that same question, subjectIsViewer MUST instead be true and subjectName MUST be the viewer’s name. Apply the same rule to the natural feminine/masculine fragment in every supported target language; French/Hindi may need a multi-word fragment. Both complete token arrays must follow the general token rules below, including short ${interfaceName} glosses; never copy example glosses from another language.
+ - "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction or when a translated source has clear grammar, spelling, inflection, agreement, word order, missing/extra word, or wrong-word errors.
+@@ -1992,7 +2004,9 @@ export function sourceMeaningAnchorSystemPrompt(): string {
+ 
+ Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
+ 
+-Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. Do not assume a target language or a later translation; neither is provided.`;
++Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. When supplied recent context unambiguously resolves an omitted referent, identify that referent in a short parenthetical clarification in sourceMeaning, for example The red one (book)? or Not eleven (the opening time). This clarification guides agreement and is not new authored content; never invent a referent. Do not assume a target language or a later translation; neither is provided.
++
++${FRAGMENT_FIDELITY_RULE}`;
+ }
+ 
+ export function parseSourceMeaningAnchorResult(content: string): string | null {
+@@ -2027,9 +2041,11 @@ export function semanticTranslationAuditSystemPrompt(
+ 
+ Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
+ 
+-The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated independently from the authored message without seeing any candidate. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
++The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated independently from the authored message without seeing any candidate. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends. A parenthetical referent in the trusted source meaning is context, not text to insert, but the candidate must use the grammatical noun class and agreement of that referent. A masculine one cannot refer to a feminine book merely because the speaker is male.
++
++Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.
+ 
+-Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.`;
++${FRAGMENT_FIDELITY_RULE}`;
+ }
+ 
+ export type SemanticAuditResult = {
+@@ -2137,6 +2153,8 @@ Return strict JSON only: {"tokens":[{"text":"<exact segment of the accepted sent
+ Rules:
+ - Concatenating every tokens[].text must reproduce the accepted sentence exactly.
+ - Use one content token per word or non-whitespace term, never a phrase or full sentence.
++- Keep each written word intact, including attached suffixes, conjuncts, and combining marks. Never split a word into morphemes or label any letter-bearing suffix as punctuation. For example Tamil புத்தகத்தைக் is ONE content token, not புத்தகத்தை plus க்.
++- Every token containing letters must be isContent=true with its own gloss and roman. Only separators without letters may be isContent=false; those must have both gloss=null and roman=null.
+ - Every content-token gloss must be a short meaning in ${interfaceName} (${interfaceLang}); never copy the ${targetName} word merely because it already uses Latin script.
+ ${
+     acceptedInterfaceText === undefined
+diff --git a/supabase/functions/translate-message/contract_test.ts b/supabase/functions/translate-message/contract_test.ts
+index 5de652d..bffb4da 100644
+--- a/supabase/functions/translate-message/contract_test.ts
++++ b/supabase/functions/translate-message/contract_test.ts
+@@ -294,7 +294,7 @@ Deno.test("provider credentials prefer OpenRouter and fall back to OpenAI", () =
+   assert(both.length === 2, "both providers are available");
+   assert(both[0].provider === "openrouter", "OpenRouter remains first");
+   assert(
+-    both[0].model === "openai/gpt-4o-mini",
++    both[0].model === "google/gemini-3.1-flash-lite",
+     "OpenRouter uses the production model by default",
+   );
+   assert(
+@@ -3129,3 +3129,95 @@ Deno.test("literal character guard rejects guessed expansion in every display la
+     throw new Error("real one-letter word protected");
+   }
+ });
++
++Deno.test("literal guard permits French elisions while preserving quoted initials", () => {
++  for (
++    const source of [
++      "J’apporterai le livre demain.",
++      "J'apporterai le livre demain.",
++      "L’avion arrive.",
++      "D'abord, mange.",
++    ]
++  ) {
++    if (
++      !preservesLiteralCharacters(source, "I will bring the book tomorrow.")
++    ) throw new Error(`elision incorrectly protected: ${source}`);
++  }
++  if (
++    preservesLiteralCharacters("Your ‘O’ is unclear", "Your ears are unclear")
++  ) throw new Error("quoted literal protection lost");
++});
++
++Deno.test("word metadata never hides attached Tamil letters as punctuation", () => {
++  const word = "புத்தகத்தைக்";
++  const hiddenSuffix = [
++    {
++      text: "புத்தகத்தை",
++      gloss: "book",
++      roman: "puththagaththai",
++      isContent: true,
++    },
++    { text: "க்", gloss: null, roman: null, isContent: false },
++  ];
++  assert(
++    parseWordMetadataRepairResult(
++      JSON.stringify({ tokens: hiddenSuffix }),
++      word,
++    ) === null,
++    "letter-bearing suffix cannot lose its word help",
++  );
++  const intact = [{
++    text: word,
++    gloss: "the book",
++    roman: "puththagaththaik",
++    isContent: true,
++  }];
++  assert(
++    parseWordMetadataRepairResult(JSON.stringify({ tokens: intact }), word)
++      ?.length === 1,
++    "intact Tamil word remains supported",
++  );
++});
++
++Deno.test("malformed optional forms defer to required agreement audit instead of losing readable text", () => {
++  const result = parseProviderResult(
++    JSON.stringify({
++      mode: "translation",
++      sourceLang: "en",
++      translation: "Червоний?",
++      interfaceText: "The red one?",
++      explanation: null,
++      confidence: null,
++      formAlternatives: {
++        before: "",
++        feminine: "Червона",
++        masculine: "Червоний",
++        after: "?",
++        subjectName: "Alice",
++        subjectIsViewer: false,
++        suggestedForm: "feminine",
++      },
++    }),
++    "The red one?",
++    "uk",
++    "en",
++    undefined,
++    true,
++  );
++  assert(result !== null, "verified text pipeline must remain reachable");
++  assert(
++    result!.formAlternatives === null,
++    "malformed choice must not reach the client",
++  );
++  assert(
++    contract.missingFormAlternativesNeedsAudit(result!, "uk", {
++      viewerName: "Bob",
++      partnerName: "Alice",
++      messageAuthor: "viewer",
++      viewerForm: null,
++      partnerForm: null,
++      tone: "informal",
++    }, 0),
++    "dropping malformed metadata cannot bypass agreement review",
++  );
++});
+diff --git a/supabase/functions/translate-message/index.ts b/supabase/functions/translate-message/index.ts
+index 2be7160..ea2cb6c 100644
+--- a/supabase/functions/translate-message/index.ts
++++ b/supabase/functions/translate-message/index.ts
+@@ -62,13 +62,18 @@ import {
+ } from "./contract.ts";
+ import { independentConsensus } from "./consensus.ts";
+ import { workerJobId } from "../prepare-message-jobs/contract.ts";
+-import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
++import {
++  completionBudget,
++  fetchChatCompletion,
++  ProviderFetchError,
++} from "./provider.ts";
+ import {
+   enrichAcceptedWordHelp,
+   knownLaneIsAuthoredOriginal,
+   READABLE_TRANSLATION_RESPONSE_FORMAT,
+   readableProviderMessages,
+   restoreAcceptedReadable,
++  textFirstDeliveryEnabled,
+ } from "./readable_delivery.ts";
+ 
+ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+@@ -84,12 +89,14 @@ const OPENROUTER_MODEL = Deno.env.get("OPENROUTER_MODEL");
+ const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL");
+ const OPENROUTER_SEMANTIC_REVIEW_MODEL =
+   Deno.env.get("OPENROUTER_SEMANTIC_REVIEW_MODEL")?.trim() ||
+-  "openai/gpt-4.1-mini";
++  "google/gemini-2.5-flash";
+ const OPENAI_SEMANTIC_REVIEW_MODEL =
+   Deno.env.get("OPENAI_SEMANTIC_REVIEW_MODEL")?.trim() || "gpt-4.1-mini";
+ const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
+ const CACHE_CONTRACT_VERSION = "minimal-source-anchor-v11";
+-const TEXT_FIRST_DELIVERY = Deno.env.get("BLAB_TEXT_FIRST_DELIVERY") === "true";
++const TEXT_FIRST_DELIVERY = textFirstDeliveryEnabled(
++  Deno.env.get("BLAB_TEXT_FIRST_DELIVERY"),
++);
+ const CORS_HEADERS = {
+   "Access-Control-Allow-Origin": "*",
+   "Access-Control-Allow-Headers":
+@@ -123,7 +130,7 @@ async function repairInterfaceText(
+   try {
+     response = await fetchChatCompletion(credential, {
+       temperature: 0,
+-      max_completion_tokens: 4000,
++      max_completion_tokens: completionBudget(learningText, "audit"),
+       response_format: INTERFACE_RESPONSE_FORMAT,
+       messages: [
+         {
+@@ -173,7 +180,7 @@ async function repairWordMetadata(
+   try {
+     response = await fetchChatCompletion(credential, {
+       temperature: 0,
+-      max_completion_tokens: 4000,
++      max_completion_tokens: completionBudget(acceptedTranslation, "metadata"),
+       response_format: WORD_METADATA_RESPONSE_FORMAT,
+       messages: [
+         {
+@@ -321,7 +328,7 @@ async function auditTranslationMeaningConsensus(
+     try {
+       response = await fetchChatCompletion(credential, {
+         temperature: 0,
+-        max_completion_tokens: 4000,
++        max_completion_tokens: completionBudget(candidateTranslation, "audit"),
+         response_format: SEMANTIC_AUDIT_RESPONSE_FORMAT,
+         messages: [
+           {
+@@ -488,7 +495,7 @@ async function auditSameLanguageCorrection(
+   try {
+     response = await fetchChatCompletion(credential, {
+       temperature: 0,
+-      max_completion_tokens: 4000,
++      max_completion_tokens: completionBudget(text, "readable"),
+       response_format: CORRECTION_AUDIT_RESPONSE_FORMAT,
+       messages: [
+         {
+@@ -539,7 +546,7 @@ async function auditHindiFutureTranslation(
+   try {
+     response = await fetchChatCompletion(credential, {
+       temperature: 0,
+-      max_completion_tokens: 12000,
++      max_completion_tokens: completionBudget(sourceText, "metadata"),
+       response_format: TRANSLATION_RESPONSE_FORMAT,
+       messages: [
+         {
+@@ -581,6 +588,7 @@ async function auditHindiFutureTranslation(
+ async function auditGrammaticalForm(
+   credential: ProviderCredential,
+   sourceText: string,
++  trustedSourceMeaning: string,
+   translatedText: string,
+   sourceLang: string,
+   targetLang: string,
+@@ -600,7 +608,7 @@ async function auditGrammaticalForm(
+   try {
+     response = await fetchChatCompletion(credential, {
+       temperature: 0,
+-      max_completion_tokens: 4000,
++      max_completion_tokens: completionBudget(sourceText, "readable"),
+       response_format: FORM_AUDIT_RESPONSE_FORMAT,
+       messages: [
+         {
+@@ -615,7 +623,7 @@ async function auditGrammaticalForm(
+         {
+           role: "user",
+           content:
+-            `Source message:\n${sourceText}\n\nCandidate translation:\n${translatedText}${subjectHint}`,
++            `Independently resolved source meaning (including explicit conversational referents):\n${trustedSourceMeaning}\n\nSource message:\n${sourceText}\n\nCandidate translation:\n${translatedText}${subjectHint}`,
+         },
+       ],
+     });
+@@ -951,7 +959,10 @@ Deno.serve(async (req) => {
+           : retrySourceLang ?? undefined;
+         llm = await fetchChatCompletion(credential, {
+           temperature: attempt === 0 ? 0 : 0.4,
+-          max_completion_tokens: 12000,
++          max_completion_tokens: completionBudget(
++            text,
++            TEXT_FIRST_DELIVERY ? "readable" : "metadata",
++          ),
+           response_format: TEXT_FIRST_DELIVERY
+             ? READABLE_TRANSLATION_RESPONSE_FORMAT
+             : TRANSLATION_RESPONSE_FORMAT,
+@@ -1268,8 +1279,9 @@ Deno.serve(async (req) => {
+         );
+       if (needsFormAudit) {
+         const audit = await auditGrammaticalForm(
+-          credential,
++          semanticCredential,
+           text,
++          trustedSourceMeaning,
+           candidate.translation,
+           candidate.sourceLang,
+           targetLang,
+diff --git a/supabase/functions/translate-message/provider.ts b/supabase/functions/translate-message/provider.ts
+index 8196fb7..89e3900 100644
+--- a/supabase/functions/translate-message/provider.ts
++++ b/supabase/functions/translate-message/provider.ts
+@@ -125,3 +125,15 @@ export async function fetchChatCompletion(
+     clearTimeout(timeout);
+   }
+ }
++
++export function completionBudget(
++  text: string,
++  kind: "readable" | "audit" | "metadata",
++): number {
++  const length = [...text].length;
++  if (kind === "audit") return Math.min(4000, Math.max(768, 256 + length * 4));
++  if (kind === "metadata") {
++    return Math.min(12000, Math.max(1536, 512 + length * 24));
++  }
++  return Math.min(12000, Math.max(1536, 768 + length * 8));
++}
+diff --git a/supabase/functions/translate-message/provider_test.ts b/supabase/functions/translate-message/provider_test.ts
+index a7a38b6..afa1571 100644
+--- a/supabase/functions/translate-message/provider_test.ts
++++ b/supabase/functions/translate-message/provider_test.ts
+@@ -1,5 +1,9 @@
+ import { OPENROUTER_PROVIDER } from "./contract.ts";
+-import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
++import {
++  completionBudget,
++  fetchChatCompletion,
++  ProviderFetchError,
++} from "./provider.ts";
+ 
+ function assert(condition: boolean, message: string): void {
+   if (!condition) throw new Error(message);
+@@ -60,9 +64,9 @@ Deno.test("cross-language results receive a semantic audit before form and stora
+   assert(anchorStart >= 0, "the candidate-blind source anchor function exists");
+   assert(
+     source.includes("function semanticReviewCredential") &&
+-      source.includes('"openai/gpt-4.1-mini"') &&
++      source.includes('"google/gemini-2.5-flash"') &&
+       source.includes('"gpt-4.1-mini"'),
+-    "semantic review uses a stronger independent model than generation",
++    "semantic review uses a separately evaluated model distinct from generation",
+   );
+   assert(
+     anchorBlock.includes("SOURCE_MEANING_RESPONSE_FORMAT") &&
+@@ -272,3 +276,26 @@ Deno.test("same-language corrections and literal characters are gated before com
+     "repaired known-language text cannot bypass literal guard",
+   );
+ });
++
++Deno.test("short messages do not reserve a long-message completion budget", () => {
++  assert(
++    completionBudget("Bring the book tomorrow.", "readable") === 1536,
++    "short readable budget",
++  );
++  assert(
++    completionBudget("Bring the book tomorrow.", "audit") === 768,
++    "short audit budget",
++  );
++  assert(
++    completionBudget("Bring the book tomorrow.", "metadata") === 1536,
++    "short metadata budget",
++  );
++  assert(
++    completionBudget("書".repeat(2000), "readable") === 12000,
++    "long non-Latin result retains room",
++  );
++  assert(
++    completionBudget("word ".repeat(400), "metadata") === 12000,
++    "long metadata retains room",
++  );
++});
+diff --git a/supabase/functions/translate-message/readable_delivery.ts b/supabase/functions/translate-message/readable_delivery.ts
+index 9c01f11..c9273a7 100644
+--- a/supabase/functions/translate-message/readable_delivery.ts
++++ b/supabase/functions/translate-message/readable_delivery.ts
+@@ -159,3 +159,8 @@ export async function enrichAcceptedWordHelp(
+   }
+   return enriched;
+ }
++
++// Readable-first is the normal delivery contract; false is an explicit rollback.
++export function textFirstDeliveryEnabled(value: string | undefined): boolean {
++  return value?.trim().toLowerCase() !== "false";
++}
+diff --git a/supabase/functions/translate-message/readable_delivery_test.ts b/supabase/functions/translate-message/readable_delivery_test.ts
+index 18005d1..a557c7c 100644
+--- a/supabase/functions/translate-message/readable_delivery_test.ts
++++ b/supabase/functions/translate-message/readable_delivery_test.ts
+@@ -8,6 +8,7 @@ import {
+   READABLE_TRANSLATION_RESPONSE_FORMAT,
+   readableProviderMessages,
+   restoreAcceptedReadable,
++  textFirstDeliveryEnabled,
+ } from "./readable_delivery.ts";
+ 
+ Deno.test("readable schema removes only optional word metadata, preserving form choices", () => {
+@@ -185,3 +186,12 @@ Deno.test("word-help failure leaves accepted text intact and retry never retrans
+     finished.tokens.length !== 1
+   ) throw new Error("metadata retry failed");
+ });
++
++Deno.test("readable delivery defaults on and supports explicit rollback", () => {
++  for (const value of [undefined, "", "true"]) {
++    if (!textFirstDeliveryEnabled(value)) {
++      throw new Error("silent text-first opt-out");
++    }
++  }
++  if (textFirstDeliveryEnabled("false")) throw new Error("rollback ignored");
++});
+diff --git a/test/chat_list_state_test.dart b/test/chat_list_state_test.dart
+index 0e3c552..e94722f 100644
+--- a/test/chat_list_state_test.dart
++++ b/test/chat_list_state_test.dart
+@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
+ 
+ import 'package:blab/shared/models/chat.dart';
+ import 'package:blab/shared/services/chat_service.dart';
++import 'package:blab/shared/services/message_translator.dart';
+ import 'package:blab/shared/state/chat_list_state.dart';
+ 
+ class _FakeChatService implements ChatService {
+@@ -21,6 +22,12 @@ class _FakeChatService implements ChatService {
+   @override
+   Future<List<Map<String, dynamic>>> fetchChatList() async => rows;
+ 
++  @override
++  Future<List<String>> fetchPreparationMessageIds(
++    String chatId, {
++    int limit = 20,
++  }) async => ['uncached-message'];
++
+   @override
+   Stream<List<Map<String, dynamic>>> watchMyMemberships() =>
+       _memberships.stream;
+@@ -76,6 +83,34 @@ class _SetupRefreshRaceService extends _FakeChatService {
+ }
+ 
+ void main() {
++  test('list refreshes never fan out duplicate provider work', () async {
++    var calls = 0;
++    final service = _FakeChatService([
++      {'chat_id': 'c1', 'last_body': 'Hello', 'my_learning': 'de'},
++    ]);
++    final container = ProviderContainer(
++      overrides: [
++        chatServiceProvider.overrideWithValue(service),
++        messageTranslatorProvider.overrideWithValue(
++          MessageTranslator(
++            invoke: ({required messageId}) async {
++              calls++;
++              throw MessageTranslationFailed('translation_unavailable');
++            },
++          ),
++        ),
++      ],
++    );
++    addTearDown(container.dispose);
++    await container.read(chatListProvider.future);
++    for (var i = 0; i < 5; i++) {
++      await container.read(chatListProvider.notifier).refresh();
++    }
++    await Future<void>.delayed(Duration.zero);
++    expect(calls, 0);
++    expect(container.read(chatListProvider).value!.single.lastMessage, 'Hello');
++  });
++
+   setUp(() => SharedPreferences.setMockInitialValues({}));
+ 
+   test('successful setup survives a refresh started before the save', () async {
+diff --git a/test/chat_screen_primary_known_language_test.dart b/test/chat_screen_primary_known_language_test.dart
+index aac22d5..0ae477e 100644
+--- a/test/chat_screen_primary_known_language_test.dart
++++ b/test/chat_screen_primary_known_language_test.dart
+@@ -523,6 +523,8 @@ void main() {
+         );
+         await tester.pumpWidget(const SizedBox.shrink());
+         container.dispose();
++        await tester.pump();
++        container.dispose();
+         await tester.pump(const Duration(seconds: 20));
+       },
+     );
+@@ -607,6 +609,8 @@ void main() {
+       expect(find.byType(ChatScreen), findsNothing);
+       expect(find.byType(ChatsScreen), findsOneWidget);
+       await tester.pumpWidget(const SizedBox.shrink());
++      container.dispose();
++      await tester.pump();
+       router.dispose();
+       container.dispose();
+       await tester.pump();
+@@ -668,6 +672,8 @@ void main() {
+       await tester.pumpWidget(const SizedBox.shrink());
+       container.dispose();
+       await tester.pump();
++      container.dispose();
++      await tester.pump();
+     },
+   );
+ 
+@@ -717,6 +723,8 @@ void main() {
+       await tester.pumpWidget(const SizedBox.shrink());
+       container.dispose();
+       await tester.pump();
++      container.dispose();
++      await tester.pump();
+     },
+   );
+ 
+@@ -796,7 +804,6 @@ void main() {
+           ),
+         ],
+       );
+-      addTearDown(container.dispose);
+       await tester.pumpWidget(_host(container));
+       await _settle(tester);
+ 
+@@ -811,6 +818,42 @@ void main() {
+     },
+   );
+ 
++  for (final outgoing in [false, true]) {
++    testWidgets(
++      'Normal pending message is immediate full contrast: $outgoing',
++      (tester) async {
++        final container = _containerForHeader(
++          _PrimaryKnownLanguageChatService(
++            pending: true,
++            chatMode: 'normal',
++            messageIsOutgoing: outgoing,
++            messageText: 'Hello there',
++          ),
++          primaryKnownLanguage: 'en',
++          knownLanguages: const ['en'],
++        );
++        await tester.pumpWidget(_host(container));
++        await _settle(tester);
++        final text = tester.widget<Text>(find.text('Hello there'));
++        expect(
++          text.style?.color,
++          outgoing ? BlabColors.bubbleInk : BlabColors.textPrimary,
++        );
++        expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
++        expect(
++          find.byKey(const ValueKey('translation-glyph-reveal')),
++          findsNothing,
++        );
++        await tester.pump(const Duration(seconds: 2));
++        expect(find.text('Hello there'), findsOneWidget);
++        expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
++        await tester.pumpWidget(const SizedBox.shrink());
++        container.dispose();
++        await tester.pump();
++      },
++    );
++  }
++
+   testWidgets('accessibility navigation does not disable outgoing wave', (
+     tester,
+   ) async {
+@@ -882,20 +925,18 @@ void main() {
+             'en',
+             replaceExisting: true,
+           );
+-      final clear = find.byKey(const ValueKey('translation-clear'));
+-      await _pumpUntilFound(tester, clear);
+-      expect(clear, findsOneWidget);
+-      expect(find.text('Hello there'), findsOneWidget);
+-      expect(find.text('Hallo zusammen'), findsNothing);
+-
+-      await tester.pump(const Duration(milliseconds: 121));
++      await _pumpUntilFound(
++        tester,
++        find.byWidgetPredicate(
++          (widget) => widget is MessageText && widget.text == 'Hallo zusammen',
++        ),
++      );
++      expect(find.byKey(const ValueKey('translation-clear')), findsNothing);
+       expect(
+         find.byKey(const ValueKey('translation-reshape-empty')),
+-        findsOneWidget,
++        findsNothing,
+       );
+-      await tester.pump(const Duration(milliseconds: 150));
+-      expect(find.byKey(const ValueKey('translation-land')), findsOneWidget);
+-      await tester.pump(const Duration(milliseconds: 221));
++      expect(find.byKey(const ValueKey('translation-land')), findsNothing);
+       expect(
+         find.byWidgetPredicate(
+           (widget) => widget is MessageText && widget.text == 'Hallo zusammen',
+diff --git a/test/message_translations_state_test.dart b/test/message_translations_state_test.dart
+index b503ab0..8a607c8 100644
+--- a/test/message_translations_state_test.dart
++++ b/test/message_translations_state_test.dart
+@@ -1002,7 +1002,7 @@ void main() {
+   );
+ 
+   test(
+-    'active preparation keeps loading past deadline without duplicate AI calls',
++    'active preparation ends shimmer at deadline and accepts late text without duplicate AI calls',
+     () async {
+       final service = _RealtimeTranslationChatService()..pending = true;
+       var calls = 0;
+@@ -1031,9 +1031,18 @@ void main() {
+       await Future<void>.delayed(const Duration(milliseconds: 20));
+       expect(
+         container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+-        isA<AsyncLoading<MessageTranslation>>(),
++        isA<AsyncError<MessageTranslation>>(),
+       );
+       expect(calls, 0);
++      await notifier.retryTransientFailures(
++        targetLang: 'de',
++        interfaceLang: 'en',
++      );
++      expect(calls, 0);
++      expect(
++        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
++        isA<AsyncError<MessageTranslation>>(),
++      );
+       service.pending = false;
+       service.changes.add(
+         MessageTranslationChange(
+diff --git a/test/translating_message_content_test.dart b/test/translating_message_content_test.dart
+index 1df42e3..58443b4 100644
+--- a/test/translating_message_content_test.dart
++++ b/test/translating_message_content_test.dart
+@@ -158,33 +158,22 @@ void main() {
+     );
+   });
+ 
+-  testWidgets('medium result clears reshapes empty and lands sequentially', (
++  testWidgets('ready text replaces the shimmer without erasing or typing', (
+     tester,
+   ) async {
+     await tester.pumpWidget(_host(resolved: false));
+-    await tester.pump(const Duration(milliseconds: 200));
++    await tester.pump(const Duration(seconds: 2));
+     await tester.pumpWidget(_host(resolved: true));
+     await tester.pump();
+-
+-    expect(find.byKey(const ValueKey('translation-clear')), findsOneWidget);
+-    expect(find.text('Ich komme später 😊'), findsNothing);
+-
+-    await tester.pump(const Duration(milliseconds: 121));
++    expect(find.text('Ich komme später 😊'), findsOneWidget);
++    expect(find.text('I will be late 😊'), findsNothing);
++    expect(find.byKey(const ValueKey('translation-settled')), findsOneWidget);
++    expect(find.byKey(const ValueKey('translation-clear')), findsNothing);
+     expect(
+       find.byKey(const ValueKey('translation-reshape-empty')),
+-      findsOneWidget,
+-    );
+-    final empty = tester.widget<Opacity>(
+-      find.byKey(const ValueKey('translation-reshape-empty')),
++      findsNothing,
+     );
+-    expect(empty.opacity, 0);
+-
+-    await tester.pump(const Duration(milliseconds: 150));
+-    expect(find.byKey(const ValueKey('translation-land')), findsOneWidget);
+-
+-    await tester.pump(const Duration(milliseconds: 221));
+-    expect(find.byKey(const ValueKey('translation-settled')), findsOneWidget);
+-    expect(find.text('Ich komme später 😊'), findsOneWidget);
++    expect(find.byKey(const ValueKey('translation-land')), findsNothing);
+   });
+ 
+   testWidgets('unchanged result keeps exact authored content in place', (
+@@ -227,7 +216,7 @@ void main() {
+ 
+     await tester.pumpWidget(_host(resolved: true));
+     await tester.pump();
+-    expect(find.byKey(const ValueKey('translation-clear')), findsOneWidget);
++    expect(find.byKey(const ValueKey('translation-settled')), findsOneWidget);
+   });
+ 
+   testWidgets('two pending messages keep independent lifecycle phases', (
+@@ -272,7 +261,7 @@ void main() {
+     expect(
+       find.descendant(
+         of: first,
+-        matching: find.byKey(const ValueKey('translation-clear')),
++        matching: find.byKey(const ValueKey('translation-settled')),
+       ),
+       findsOneWidget,
+     );

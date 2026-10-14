@@ -1002,7 +1002,7 @@ void main() {
   );
 
   test(
-    'active preparation keeps loading past deadline without duplicate AI calls',
+    'active preparation ends shimmer at deadline and accepts late text without duplicate AI calls',
     () async {
       final service = _RealtimeTranslationChatService()..pending = true;
       var calls = 0;
@@ -1031,9 +1031,18 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
       expect(
         container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
-        isA<AsyncLoading<MessageTranslation>>(),
+        isA<AsyncError<MessageTranslation>>(),
       );
       expect(calls, 0);
+      await notifier.retryTransientFailures(
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      expect(calls, 0);
+      expect(
+        container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
+        isA<AsyncError<MessageTranslation>>(),
+      );
       service.pending = false;
       service.changes.add(
         MessageTranslationChange(

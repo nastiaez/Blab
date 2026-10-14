@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/services/chat_service.dart';
+import 'package:blab/shared/services/message_translator.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 
 class _FakeChatService implements ChatService {
@@ -20,6 +21,12 @@ class _FakeChatService implements ChatService {
 
   @override
   Future<List<Map<String, dynamic>>> fetchChatList() async => rows;
+
+  @override
+  Future<List<String>> fetchPreparationMessageIds(
+    String chatId, {
+    int limit = 20,
+  }) async => ['uncached-message'];
 
   @override
   Stream<List<Map<String, dynamic>>> watchMyMemberships() =>
@@ -76,6 +83,34 @@ class _SetupRefreshRaceService extends _FakeChatService {
 }
 
 void main() {
+  test('list refreshes never fan out duplicate provider work', () async {
+    var calls = 0;
+    final service = _FakeChatService([
+      {'chat_id': 'c1', 'last_body': 'Hello', 'my_learning': 'de'},
+    ]);
+    final container = ProviderContainer(
+      overrides: [
+        chatServiceProvider.overrideWithValue(service),
+        messageTranslatorProvider.overrideWithValue(
+          MessageTranslator(
+            invoke: ({required messageId}) async {
+              calls++;
+              throw MessageTranslationFailed('translation_unavailable');
+            },
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(chatListProvider.future);
+    for (var i = 0; i < 5; i++) {
+      await container.read(chatListProvider.notifier).refresh();
+    }
+    await Future<void>.delayed(Duration.zero);
+    expect(calls, 0);
+    expect(container.read(chatListProvider).value!.single.lastMessage, 'Hello');
+  });
+
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('successful setup survives a refresh started before the save', () async {

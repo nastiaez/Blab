@@ -941,3 +941,8 @@ Originally tracked as "Open Questions"; resolved 2026-05-28 in one batch.
 - **Typing indicators — ship or skip?** → **Ship as Signal-symmetric toggle.** Default ON. Off path = client never broadcasts. See US-040.
   - Bonus decision: **read receipts get the same Signal-symmetric toggle** (US-041), and the **"Online / last seen" feature is dropped entirely** — no toggle, no opt-out, the capability simply is not built. (Updated US-013, US-016.)
 - **Edit / delete time window — forever or limited?** → **Edit: 24 h** (Signal-style). **Delete: forever** (sender can delete any sent message at any time, propagates to recipient). (Updated US-019.)
+
+
+### Owner revision — seamless messaging, 14 October 2026
+
+Supersedes the decorative clear/reshape/land requirements in US-043/044 and FR-36/38: original text is immediately readable; Normal uses full-contrast normal chat text and never a translation shimmer. Its existing unknown-language completed translation exception is retained. Practice alone may shimmer while real work is pending, then paints the complete result immediately without typing/glyph reveals, erased/blank frames, or mandatory animation delays. Ready cached history and mode switches never replay translation motion. Chat opening presents the new screen immediately, without the previous screen's delayed fade. Delivery never waits on AI; contextual translation is separately measured, with a target of a few seconds for ordinary short messages, not a fabricated fixed delay. Recovery and actual timings must be verified with real providers and both clients.

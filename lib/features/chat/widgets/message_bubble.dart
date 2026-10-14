@@ -325,7 +325,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       resolvedSourceLang: resolvedSourceLang,
       expanded: widget.isSelected && mode == ChatMode.practice,
       showOriginal: widget.isSelected && widget.showOriginal,
-      pendingColor: pending
+      pendingColor: pending && isPractice
           ? (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary).withValues(
               alpha: 0.48,
             )
@@ -359,7 +359,9 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         translationResultIsUnchanged(message.originalText, resolvedTranslation);
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     final animateTranslationLifecycle =
-        showLearningAid && liveTranslation is! AsyncError<MessageTranslation>;
+        isPractice &&
+        showLearningAid &&
+        liveTranslation is! AsyncError<MessageTranslation>;
     final messageLearningContent = animateTranslationLifecycle
         ? TranslatingMessageContent(
             key: ValueKey(

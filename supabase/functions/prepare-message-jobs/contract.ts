@@ -63,16 +63,16 @@ export async function settleJobs<
   jobs: T[],
   run: (job: T) => Promise<R>,
 ): Promise<Array<{ job: T; result?: R; error?: string }>> {
-  const outcomes: Array<{ job: T; result?: R; error?: string }> = [];
-  for (const job of jobs) {
+  // Postgres already leases at most four jobs globally. Start that bounded
+  // batch together; claiming four and running one serially wastes every slot.
+  return await Promise.all(jobs.map(async (job) => {
     try {
-      outcomes.push({ job, result: await run(job) });
+      return { job, result: await run(job) };
     } catch (error) {
-      outcomes.push({
+      return {
         job,
         error: error instanceof Error ? error.message : "unknown",
-      });
+      };
     }
-  }
-  return outcomes;
+  }));
 }

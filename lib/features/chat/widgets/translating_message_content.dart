@@ -68,15 +68,7 @@ class _MessageArrivalState extends State<MessageArrival>
   }
 }
 
-enum _TranslationVisualPhase {
-  fastHold,
-  authored,
-  wave,
-  clear,
-  reshape,
-  land,
-  settled,
-}
+enum _TranslationVisualPhase { fastHold, authored, wave, settled }
 
 class TranslatingMessageContent extends StatefulWidget {
   const TranslatingMessageContent({
@@ -120,11 +112,8 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
   late _TranslationVisualPhase _phase;
   Timer? _authoredTimer;
   Timer? _waveTimer;
-  Timer? _reshapeTimer;
   late final AnimationController _arrival;
   late final AnimationController _wave;
-  late final AnimationController _clear;
-  late final AnimationController _land;
   bool _resolveDeferred = false;
 
   @override
@@ -138,14 +127,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
     _wave = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1700),
-    );
-    _clear = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-    );
-    _land = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
     );
     _phase = _initialPhase();
     if (_arrival.value == 0) _arrival.forward();
@@ -208,8 +189,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
   void _resetForPending() {
     _resolveDeferred = false;
     _cancelWaiting();
-    _clear.reset();
-    _land.reset();
     setState(() {
       _phase = widget.delivered && !widget.reduceMotion
           ? (widget.showAuthoredImmediately
@@ -236,45 +215,16 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
 
   void _resolve() {
     _cancelWaiting();
-    if (widget.unchanged) {
-      // A same-language result has no learning animation, but it must still
-      // leave the muted pending color behind once resolution is complete.
-      setState(() => _phase = _TranslationVisualPhase.settled);
-      return;
-    }
-    if (widget.reduceMotion || _phase == _TranslationVisualPhase.fastHold) {
-      setState(() => _phase = _TranslationVisualPhase.settled);
-      return;
-    }
-    _wave.stop();
-    _clear.reset();
-    setState(() => _phase = _TranslationVisualPhase.clear);
-    _clear.forward().whenComplete(_beginReshape);
-  }
-
-  void _beginReshape() {
-    if (!mounted || !widget.resolved) return;
-    setState(() => _phase = _TranslationVisualPhase.reshape);
-    _reshapeTimer = Timer(const Duration(milliseconds: 150), _beginLand);
-  }
-
-  void _beginLand() {
-    if (!mounted || !widget.resolved) return;
-    _land.reset();
-    setState(() => _phase = _TranslationVisualPhase.land);
-    _land.forward().whenComplete(() {
-      if (!mounted || !widget.resolved) return;
-      setState(() => _phase = _TranslationVisualPhase.settled);
-    });
+    // Ready sentences paint as one complete unit: no erased frame, glyph
+    // reveal, or decorative delay between verified text and the reader.
+    setState(() => _phase = _TranslationVisualPhase.settled);
   }
 
   void _cancelWaiting() {
     _authoredTimer?.cancel();
     _waveTimer?.cancel();
-    _reshapeTimer?.cancel();
     _authoredTimer = null;
     _waveTimer = null;
-    _reshapeTimer = null;
     _wave.stop();
   }
 
@@ -283,8 +233,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
     _cancelWaiting();
     _arrival.dispose();
     _wave.dispose();
-    _clear.dispose();
-    _land.dispose();
     super.dispose();
   }
 
@@ -340,34 +288,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
           ],
         ),
       ),
-      _TranslationVisualPhase.clear => AnimatedBuilder(
-        key: const ValueKey('translation-clear'),
-        animation: _clear,
-        child: widget.authoredContent,
-        builder: (context, child) => _HorizontalGlyphMask(
-          progress: _clear.value,
-          revealing: false,
-          child: child!,
-        ),
-      ),
-      _TranslationVisualPhase.reshape => Opacity(
-        key: const ValueKey('translation-reshape-empty'),
-        opacity: 0,
-        child: widget.finalContent,
-      ),
-      _TranslationVisualPhase.land => AnimatedBuilder(
-        key: const ValueKey('translation-land'),
-        animation: _land,
-        child: widget.finalContent,
-        builder: (context, child) => Transform.translate(
-          offset: Offset(0, 2 * (1 - _land.value)),
-          child: _HorizontalGlyphMask(
-            progress: _land.value,
-            revealing: true,
-            child: child!,
-          ),
-        ),
-      ),
       _TranslationVisualPhase.settled => KeyedSubtree(
         key: const ValueKey('translation-settled'),
         child: widget.finalContent,
@@ -394,46 +314,6 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
           child: child,
         ),
       ),
-    );
-  }
-}
-
-class _HorizontalGlyphMask extends StatelessWidget {
-  const _HorizontalGlyphMask({
-    required this.progress,
-    required this.revealing,
-    required this.child,
-  });
-
-  final double progress;
-  final bool revealing;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final edge = progress.clamp(0.0, 1.0);
-    final featherStart = (edge - 0.035).clamp(0.0, 1.0);
-    final featherEnd = (edge + 0.035).clamp(0.0, 1.0);
-    final colors = revealing
-        ? const [
-            Colors.white,
-            Colors.white,
-            Colors.transparent,
-            Colors.transparent,
-          ]
-        : const [
-            Colors.transparent,
-            Colors.transparent,
-            Colors.white,
-            Colors.white,
-          ];
-    return ShaderMask(
-      blendMode: BlendMode.dstIn,
-      shaderCallback: (bounds) => LinearGradient(
-        colors: colors,
-        stops: [0, featherStart, featherEnd, 1],
-      ).createShader(bounds),
-      child: child,
     );
   }
 }

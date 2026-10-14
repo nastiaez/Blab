@@ -1,0 +1,198 @@
+[
+  {
+    "model": "google/gemini-3.5-flash-lite",
+    "text": "I will bring the German book tomorrow.",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 404,
+    "ms": 604,
+    "valid": false,
+    "result": null,
+    "error": "No endpoints found that can handle the requested parameters. To learn more about provider routing, visit: https://openrouter.ai/docs/guides/routing/provider-selection"
+  },
+  {
+    "model": "google/gemini-3.5-flash-lite",
+    "text": "The chef is cooking dinner, not managing the company.",
+    "targetLang": "uk",
+    "interfaceLang": "en",
+    "status": 404,
+    "ms": 174,
+    "valid": false,
+    "result": null,
+    "error": "No endpoints found that can handle the requested parameters. To learn more about provider routing, visit: https://openrouter.ai/docs/guides/routing/provider-selection"
+  },
+  {
+    "model": "google/gemini-3.5-flash-lite",
+    "text": "brb, ask Pallavi 😊",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 404,
+    "ms": 214,
+    "valid": false,
+    "result": null,
+    "error": "No endpoints found that can handle the requested parameters. To learn more about provider routing, visit: https://openrouter.ai/docs/guides/routing/provider-selection"
+  },
+  {
+    "model": "google/gemini-3.5-flash-lite",
+    "text": "Ich habe gestern ein Buch gekauft.",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 404,
+    "ms": 194,
+    "valid": false,
+    "result": null,
+    "error": "No endpoints found that can handle the requested parameters. To learn more about provider routing, visit: https://openrouter.ai/docs/guides/routing/provider-selection"
+  },
+  {
+    "model": "google/gemini-3.1-flash-lite",
+    "text": "I will bring the German book tomorrow.",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 1272,
+    "valid": true,
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Ich bringe morgen das deutsche Buch mit.",
+      "interfaceText": "I will bring the German book tomorrow.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "google/gemini-3.1-flash-lite",
+    "text": "The chef is cooking dinner, not managing the company.",
+    "targetLang": "uk",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 1216,
+    "valid": true,
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Шеф-кухар готує вечерю, а не керує компанією.",
+      "interfaceText": "The chef is cooking dinner, not managing the company.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "openai/gpt-4o-mini",
+    "text": "I will bring the German book tomorrow.",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 2679,
+    "valid": true,
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Ich werde das deutsche Buch morgen mitbringen.",
+      "interfaceText": "I will bring the German book tomorrow.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "google/gemini-3.1-flash-lite",
+    "text": "brb, ask Pallavi 😊",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 1051,
+    "valid": true,
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Bin gleich zurück, frag Pallavi 😊",
+      "interfaceText": "Be right back, ask Pallavi 😊",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "openai/gpt-4o-mini",
+    "text": "The chef is cooking dinner, not managing the company.",
+    "targetLang": "uk",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 2194,
+    "valid": true,
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Шеф-кухар готує вечерю, а не керує компанією.",
+      "interfaceText": "The chef is cooking dinner, not managing the company.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "google/gemini-3.1-flash-lite",
+    "text": "Ich habe gestern ein Buch gekauft.",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 2074,
+    "valid": true,
+    "result": {
+      "mode": "none",
+      "sourceLang": "de",
+      "translation": "Ich habe gestern ein Buch gekauft.",
+      "interfaceText": "I bought a book yesterday.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "openai/gpt-4o-mini",
+    "text": "brb, ask Pallavi 😊",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 2177,
+    "valid": true,
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Ich bin gleich zurück, frag Pallavi 😊",
+      "interfaceText": "brb, ask Pallavi 😊",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  },
+  {
+    "model": "openai/gpt-4o-mini",
+    "text": "Ich habe gestern ein Buch gekauft.",
+    "targetLang": "de",
+    "interfaceLang": "en",
+    "status": 200,
+    "ms": 2380,
+    "valid": true,
+    "result": {
+      "mode": "none",
+      "sourceLang": "de",
+      "translation": "Ich habe gestern ein Buch gekauft.",
+      "interfaceText": "I bought a book yesterday.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [],
+      "formAlternatives": null
+    }
+  }
+]

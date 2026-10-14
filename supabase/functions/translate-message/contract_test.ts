@@ -294,7 +294,7 @@ Deno.test("provider credentials prefer OpenRouter and fall back to OpenAI", () =
   assert(both.length === 2, "both providers are available");
   assert(both[0].provider === "openrouter", "OpenRouter remains first");
   assert(
-    both[0].model === "openai/gpt-4o-mini",
+    both[0].model === "google/gemini-3.1-flash-lite",
     "OpenRouter uses the production model by default",
   );
   assert(
@@ -3128,4 +3128,96 @@ Deno.test("literal character guard rejects guessed expansion in every display la
   if (!preservesLiteralCharacters("I am happy", "Ich bin glücklich")) {
     throw new Error("real one-letter word protected");
   }
+});
+
+Deno.test("literal guard permits French elisions while preserving quoted initials", () => {
+  for (
+    const source of [
+      "J’apporterai le livre demain.",
+      "J'apporterai le livre demain.",
+      "L’avion arrive.",
+      "D'abord, mange.",
+    ]
+  ) {
+    if (
+      !preservesLiteralCharacters(source, "I will bring the book tomorrow.")
+    ) throw new Error(`elision incorrectly protected: ${source}`);
+  }
+  if (
+    preservesLiteralCharacters("Your ‘O’ is unclear", "Your ears are unclear")
+  ) throw new Error("quoted literal protection lost");
+});
+
+Deno.test("word metadata never hides attached Tamil letters as punctuation", () => {
+  const word = "புத்தகத்தைக்";
+  const hiddenSuffix = [
+    {
+      text: "புத்தகத்தை",
+      gloss: "book",
+      roman: "puththagaththai",
+      isContent: true,
+    },
+    { text: "க்", gloss: null, roman: null, isContent: false },
+  ];
+  assert(
+    parseWordMetadataRepairResult(
+      JSON.stringify({ tokens: hiddenSuffix }),
+      word,
+    ) === null,
+    "letter-bearing suffix cannot lose its word help",
+  );
+  const intact = [{
+    text: word,
+    gloss: "the book",
+    roman: "puththagaththaik",
+    isContent: true,
+  }];
+  assert(
+    parseWordMetadataRepairResult(JSON.stringify({ tokens: intact }), word)
+      ?.length === 1,
+    "intact Tamil word remains supported",
+  );
+});
+
+Deno.test("malformed optional forms defer to required agreement audit instead of losing readable text", () => {
+  const result = parseProviderResult(
+    JSON.stringify({
+      mode: "translation",
+      sourceLang: "en",
+      translation: "Червоний?",
+      interfaceText: "The red one?",
+      explanation: null,
+      confidence: null,
+      formAlternatives: {
+        before: "",
+        feminine: "Червона",
+        masculine: "Червоний",
+        after: "?",
+        subjectName: "Alice",
+        subjectIsViewer: false,
+        suggestedForm: "feminine",
+      },
+    }),
+    "The red one?",
+    "uk",
+    "en",
+    undefined,
+    true,
+  );
+  assert(result !== null, "verified text pipeline must remain reachable");
+  assert(
+    result!.formAlternatives === null,
+    "malformed choice must not reach the client",
+  );
+  assert(
+    contract.missingFormAlternativesNeedsAudit(result!, "uk", {
+      viewerName: "Bob",
+      partnerName: "Alice",
+      messageAuthor: "viewer",
+      viewerForm: null,
+      partnerForm: null,
+      tone: "informal",
+    }, 0),
+    "dropping malformed metadata cannot bypass agreement review",
+  );
 });

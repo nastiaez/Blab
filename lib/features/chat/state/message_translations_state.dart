@@ -401,22 +401,28 @@ class MessageTranslationsNotifier
         } catch (_) {
           // Fall through to a visible retryable timeout state.
         }
-        if (await _continuePreparedWork(
-          key: key,
-          messageId: messageId,
-          text: text,
-          targetLang: targetLang,
-          interfaceLang: interfaceLang,
-        )) {
-          return;
-        }
+        // The server may keep retrying, but that must not renew the visible
+        // loading deadline indefinitely. Realtime/read-only cache recovery
+        // still accepts its late result without another provider invocation.
+        var preparationPending = false;
+        try {
+          preparationPending = await ref
+              .read(chatServiceProvider)
+              .isMessageTranslationPending(
+                messageId: messageId,
+                targetLang: targetLang,
+                interfaceLang: interfaceLang,
+              );
+        } catch (_) {}
         if (!ref.mounted) return;
         if (_sourceTexts[key] == text &&
             state[key] is AsyncLoading<MessageTranslation>) {
           state = {
             ...state,
             key: AsyncError(
-              MessageTranslationFailed('timeout'),
+              MessageTranslationFailed(
+                preparationPending ? 'preparation_delayed' : 'timeout',
+              ),
               StackTrace.current,
             ),
           };

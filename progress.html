@@ -1437,6 +1437,7 @@
         title: 'Core learning experience',
         note: 'The part that makes Blab different',
         tasks: [
+          { id: 'core-seamless-translation', type: 'bug', label: 'Make chat sending and translation feel immediate', detail: 'Owner reported slow/missing translations, grey Normal text, replayed text reveals and delayed chat entry on 14 October. Verify both viewers, all 11 languages, bursts, reopen, failure recovery, and immediate Normal text. Awaiting screenshot/motion review.', done: false },
           { id: 'core-lifecycle-timing', type: 'ux', label: 'Finish the Practice-mode message lifecycle', detail: 'Cover fast, medium, and slow translation timing; use the approved glyph-only wave and one clean transformation.', done: true },
           { id: 'core-lifecycle-states', type: 'flow', label: 'Complete every message lifecycle branch', detail: 'Incoming, cache hit, edit, delete, photo caption, mode switch, off-screen completion, concurrent sends, and reduced motion.', done: true },
           { id: 'core-language-failure', type: 'bug', label: 'Finish the quiet retry and final Retry state', detail: 'Retry language help once for up to ten seconds, then preserve the readable original; never confuse it with send failure.', done: true },

@@ -523,6 +523,8 @@ void main() {
         );
         await tester.pumpWidget(const SizedBox.shrink());
         container.dispose();
+        await tester.pump();
+        container.dispose();
         await tester.pump(const Duration(seconds: 20));
       },
     );
@@ -607,6 +609,8 @@ void main() {
       expect(find.byType(ChatScreen), findsNothing);
       expect(find.byType(ChatsScreen), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
       router.dispose();
       container.dispose();
       await tester.pump();
@@ -668,6 +672,8 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       container.dispose();
       await tester.pump();
+      container.dispose();
+      await tester.pump();
     },
   );
 
@@ -715,6 +721,8 @@ void main() {
       expect(find.text('Normal mode'), findsNothing);
       expect(field.focusNode!.hasFocus, isTrue);
       await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+      await tester.pump();
       container.dispose();
       await tester.pump();
     },
@@ -796,7 +804,6 @@ void main() {
           ),
         ],
       );
-      addTearDown(container.dispose);
       await tester.pumpWidget(_host(container));
       await _settle(tester);
 
@@ -810,6 +817,42 @@ void main() {
       expect(find.text('Hallo'), findsNothing);
     },
   );
+
+  for (final outgoing in [false, true]) {
+    testWidgets(
+      'Normal pending message is immediate full contrast: $outgoing',
+      (tester) async {
+        final container = _containerForHeader(
+          _PrimaryKnownLanguageChatService(
+            pending: true,
+            chatMode: 'normal',
+            messageIsOutgoing: outgoing,
+            messageText: 'Hello there',
+          ),
+          primaryKnownLanguage: 'en',
+          knownLanguages: const ['en'],
+        );
+        await tester.pumpWidget(_host(container));
+        await _settle(tester);
+        final text = tester.widget<Text>(find.text('Hello there'));
+        expect(
+          text.style?.color,
+          outgoing ? BlabColors.bubbleInk : BlabColors.textPrimary,
+        );
+        expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('translation-glyph-reveal')),
+          findsNothing,
+        );
+        await tester.pump(const Duration(seconds: 2));
+        expect(find.text('Hello there'), findsOneWidget);
+        expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+        await tester.pump();
+      },
+    );
+  }
 
   testWidgets('accessibility navigation does not disable outgoing wave', (
     tester,
@@ -882,20 +925,18 @@ void main() {
             'en',
             replaceExisting: true,
           );
-      final clear = find.byKey(const ValueKey('translation-clear'));
-      await _pumpUntilFound(tester, clear);
-      expect(clear, findsOneWidget);
-      expect(find.text('Hello there'), findsOneWidget);
-      expect(find.text('Hallo zusammen'), findsNothing);
-
-      await tester.pump(const Duration(milliseconds: 121));
+      await _pumpUntilFound(
+        tester,
+        find.byWidgetPredicate(
+          (widget) => widget is MessageText && widget.text == 'Hallo zusammen',
+        ),
+      );
+      expect(find.byKey(const ValueKey('translation-clear')), findsNothing);
       expect(
         find.byKey(const ValueKey('translation-reshape-empty')),
-        findsOneWidget,
+        findsNothing,
       );
-      await tester.pump(const Duration(milliseconds: 150));
-      expect(find.byKey(const ValueKey('translation-land')), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 221));
+      expect(find.byKey(const ValueKey('translation-land')), findsNothing);
       expect(
         find.byWidgetPredicate(
           (widget) => widget is MessageText && widget.text == 'Hallo zusammen',

@@ -1,5 +1,9 @@
 import { OPENROUTER_PROVIDER } from "./contract.ts";
-import { fetchChatCompletion, ProviderFetchError } from "./provider.ts";
+import {
+  completionBudget,
+  fetchChatCompletion,
+  ProviderFetchError,
+} from "./provider.ts";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) throw new Error(message);
@@ -60,9 +64,9 @@ Deno.test("cross-language results receive a semantic audit before form and stora
   assert(anchorStart >= 0, "the candidate-blind source anchor function exists");
   assert(
     source.includes("function semanticReviewCredential") &&
-      source.includes('"openai/gpt-4.1-mini"') &&
+      source.includes('"google/gemini-2.5-flash"') &&
       source.includes('"gpt-4.1-mini"'),
-    "semantic review uses a stronger independent model than generation",
+    "semantic review uses a separately evaluated model distinct from generation",
   );
   assert(
     anchorBlock.includes("SOURCE_MEANING_RESPONSE_FORMAT") &&
@@ -270,5 +274,28 @@ Deno.test("same-language corrections and literal characters are gated before com
   assert(
     source.includes("preservesLiteralCharacters(text, repaired)"),
     "repaired known-language text cannot bypass literal guard",
+  );
+});
+
+Deno.test("short messages do not reserve a long-message completion budget", () => {
+  assert(
+    completionBudget("Bring the book tomorrow.", "readable") === 1536,
+    "short readable budget",
+  );
+  assert(
+    completionBudget("Bring the book tomorrow.", "audit") === 768,
+    "short audit budget",
+  );
+  assert(
+    completionBudget("Bring the book tomorrow.", "metadata") === 1536,
+    "short metadata budget",
+  );
+  assert(
+    completionBudget("書".repeat(2000), "readable") === 12000,
+    "long non-Latin result retains room",
+  );
+  assert(
+    completionBudget("word ".repeat(400), "metadata") === 12000,
+    "long metadata retains room",
   );
 });

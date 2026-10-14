@@ -20,7 +20,9 @@ export function preservesLiteralCharacters(
   candidate: string,
 ): boolean {
   const letters = (text: string) =>
-    text.match(/(?<![\p{L}\p{N}])[B-DF-HJ-TV-XZ](?![\p{L}\p{N}])/gu) ?? [];
+    text.match(
+      /(?<![\p{L}\p{N}])[B-DF-HJ-TV-XZ](?![\p{L}\p{N}]|['’]\p{L})/gu,
+    ) ?? [];
   const required = letters(source).filter((letter) =>
     recognizedAbbreviationSourceLanguage(letter) === null
   );
@@ -65,10 +67,13 @@ export type FormParticipantContext = {
   authorPrimaryKnownLanguage?: string | null;
 };
 
-const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
+const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
 const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+const FRAGMENT_FIDELITY_RULE =
+  "Keep short elliptical replies as fragments when the author supplied a fragment. Use explicit recent context to resolve what is being contrasted, without inventing a new assertion. For example, after a meeting time of six, Not seven excludes seven as that time; it does not assert that the current clock time is not seven. Never add now, currently, a new subject, or a new event unless the source or explicit context supports it.";
 const SEMANTIC_FIDELITY_RULE =
-  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Preserve ambiguous isolated characters and initials literally; never expand O to ears or another guessed noun. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning.";
+  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Preserve ambiguous isolated characters and initials literally; never expand O to ears or another guessed noun. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning. " +
+  FRAGMENT_FIDELITY_RULE;
 
 export function providerCredentials(env: {
   openRouterKey?: string | null;
@@ -128,7 +133,7 @@ export function providerMessages({
 }): Array<{ role: "system" | "user"; content: string }> {
   const contextText = context.length === 0
     ? ""
-    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, and dates. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
+    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, dates, times, and the referent of short corrections or contrasts. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
       context
         .map((entry) =>
           `${entry.speaker}${
@@ -852,7 +857,9 @@ function validatedCompleteTokens(
           romanLetters.some((character) => !/\p{Script=Latin}/u.test(character))
         ) return null;
       }
-    } else if (token.gloss !== null || token.roman !== null) {
+    } else if (
+      token.gloss !== null || token.roman !== null || /\p{L}/u.test(token.text)
+    ) {
       return null;
     }
     const parsed: TranslationToken = {
@@ -1148,7 +1155,7 @@ The current message author is the ${formContext.messageAuthor}. In direct first/
       ? formContext.partnerName
       : formContext.viewerName
   }. Determine the subject before suggesting a form. Never label an incoming “you” sentence as the sender’s form.
-Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. For suggestedForm use the affected person’s supplied name; when unclear use feminine. For example, Alice suggests feminine, Bob suggests masculine, and an ambiguous Alex defaults to feminine. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
+Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Agreement with an object, grammatical noun class, clock hour, date, number, or abstract concept is NOT participant gender: requiresChoice=false. For example Ukrainian Не дев’ята about a meeting hour agrees with the implied hour, never with the author; do not offer Не дев’ятий based on the author’s name. Use the independently resolved source meaning supplied with the request to establish the referent before deciding. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. For suggestedForm use the affected person’s supplied name; when unclear use feminine. For example, Alice suggests feminine, Bob suggests masculine, and an ambiguous Alex defaults to feminine. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
 
 Return strict JSON only: {"requiresChoice":true|false,"subjectIsViewer":true|false|null,"before":"shared prefix"|null,"feminine":"shortest complete feminine fragment"|null,"masculine":"shortest complete masculine fragment"|null,"after":"shared suffix"|null,"suggestedForm":"feminine"|"masculine"|null,"feminineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null,"masculineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null}.
 When a natural choice is required, identify the affected participant and split the target sentence around the shortest complete fragment containing every linked agreement change. Keep all identical text in before/after. For a single changing verb such as “Ти ходила/ходив до…”, return before="Ти ", feminine="ходила", masculine="ходив", and after=" до…"—never repeat the whole sentence in either option. feminineTokens and masculineTokens must each reproduce the corresponding complete sentence exactly, including the shared before/after text. Every content token is one word with a short 1-3 word ${interfaceName} gloss. Every non-Latin content token also has a non-empty Latin-script romanization. Whitespace and punctuation tokens have null gloss and roman. When no choice is required, the participant, suggestion, all four text fields, and both token arrays must be null.`;
@@ -1667,7 +1674,11 @@ export function parseProviderResult(
       `${alternatives.before}${alternatives.feminine}${alternatives.after}` !==
         result.translation ||
       alternatives.feminine === alternatives.masculine
-    ) return null;
+    ) {
+      // Form metadata cannot discard the sentence before its independent
+      // meaning/agreement reviews. Invalid alternatives never reach clients.
+      result.formAlternatives = null;
+    }
   }
 
   let reproduced = "";
@@ -1957,6 +1968,7 @@ Rules:
 - For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
 - For mode=translation, explanation/confidence are null.
 - When the source contains an explicit future time marker, preserve that future meaning with the natural target-language tense or construction; do not default to habitual present unless that is genuinely idiomatic in ${targetName}.
+- Noun-class agreement, clock hours, dates, numbers, and objects must never create participant form choices.
 - Set formAlternatives to null unless the target sentence genuinely requires a feminine/masculine choice for the viewer or partner. When it is required, set translation to the feminine rendering, and concatenate before + feminine + after to reproduce translation exactly. feminine and masculine must be complete, natural alternatives for the same shortest understandable affected fragment; include every linked agreement change together. feminineTokens and masculineTokens must each reproduce their complete resolved sentence exactly, including the shared before/after text, and follow the same per-word metadata rules as tokens. subjectIsViewer identifies the affected participant and subjectName is their display name. Set suggestedForm from their name, or feminine if unclear. Never encode a saved preference in this shared translation; it never changes the identity of the affected participant.
 - This is a required output rule, not a suggestion to make wording neutral. For example, ONLY when the viewer authored English "What did you do yesterday?", Ukrainian MUST return translation="Що ти робила вчора?" and split formAlternatives into before="Що ти ", feminine="робила", masculine="робив", and after=" вчора?", with the partner as the affected subject. When the partner authored that same question, subjectIsViewer MUST instead be true and subjectName MUST be the viewer’s name. Apply the same rule to the natural feminine/masculine fragment in every supported target language; French/Hindi may need a multi-word fragment. Both complete token arrays must follow the general token rules below, including short ${interfaceName} glosses; never copy example glosses from another language.
 - "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction or when a translated source has clear grammar, spelling, inflection, agreement, word order, missing/extra word, or wrong-word errors.
@@ -1992,7 +2004,9 @@ export function sourceMeaningAnchorSystemPrompt(): string {
 
 Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>"}.
 
-Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. Do not assume a target language or a later translation; neither is provided.`;
+Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. When supplied recent context unambiguously resolves an omitted referent, identify that referent in a short parenthetical clarification in sourceMeaning, for example The red one (book)? or Not eleven (the opening time). This clarification guides agreement and is not new authored content; never invent a referent. Do not assume a target language or a later translation; neither is provided.
+
+${FRAGMENT_FIDELITY_RULE}`;
 }
 
 export function parseSourceMeaningAnchorResult(content: string): string | null {
@@ -2027,9 +2041,11 @@ export function semanticTranslationAuditSystemPrompt(
 
 Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
 
-The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated independently from the authored message without seeing any candidate. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends.
+The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated independently from the authored message without seeing any candidate. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends. A parenthetical referent in the trusted source meaning is context, not text to insert, but the candidate must use the grammatical noun class and agreement of that referent. A masculine one cannot refer to a feminine book merely because the speaker is male.
 
-Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.`;
+Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.
+
+${FRAGMENT_FIDELITY_RULE}`;
 }
 
 export type SemanticAuditResult = {
@@ -2137,6 +2153,8 @@ Return strict JSON only: {"tokens":[{"text":"<exact segment of the accepted sent
 Rules:
 - Concatenating every tokens[].text must reproduce the accepted sentence exactly.
 - Use one content token per word or non-whitespace term, never a phrase or full sentence.
+- Keep each written word intact, including attached suffixes, conjuncts, and combining marks. Never split a word into morphemes or label any letter-bearing suffix as punctuation. For example Tamil புத்தகத்தைக் is ONE content token, not புத்தகத்தை plus க்.
+- Every token containing letters must be isContent=true with its own gloss and roman. Only separators without letters may be isContent=false; those must have both gloss=null and roman=null.
 - Every content-token gloss must be a short meaning in ${interfaceName} (${interfaceLang}); never copy the ${targetName} word merely because it already uses Latin script.
 ${
     acceptedInterfaceText === undefined

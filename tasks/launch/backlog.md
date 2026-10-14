@@ -118,3 +118,12 @@ The required first-language sheet now follows the owner’s warm-white, divided-
 - Do not use `Deferred` to hide a launch claim. Deferral is valid only after the feature/control is removed from UI and all relevant product, legal, and store promises.
 - Add newly discovered defects to the audit follow-up section of the active work record, then create a new backlog row with severity and dependencies. Do not expand the active item's scope without approval.
 - `L-23` produces the final `GO`, `CONDITIONAL GO`, or `NO-GO` decision.
+
+
+## Seamless messaging regression — 14 October 2026
+
+High priority, in progress; owner review pending. Fix slow/missing Practice translations, grey Normal text, text erase/reveal replay, and delayed chat entry. Hosted text-first configuration was absent; claimed translation jobs executed serially. Verify both viewers, all eleven learning languages, burst ordering, reopening, failures and actual Android motion before acceptance. `core-seamless-translation` remains unchecked.
+
+- Seamless verification update: server-job ownership/list fan-out fix and bounded pending recovery added. Funding restored by owner; 22-send/44-viewer sweeps completed. Final context/form refinements and actual-client proof in progress; owner review and production rollout remain pending.
+
+- 2026-10-14 21:05 — Exact-source funded acceptance complete:22 sends/44 readable viewer results/44 word-help packages, median2.874s/max6.256s; actual two-client context follow-ups2.918–6.756s.185 backend pass; unchanged Dart894 pass/15 skip. Tamil, fragment/form-review and malformed-optional-form regressions fixed. Actual Android/browser media retained in docs/qa/2026-10-14-seamless-translation. Funding block superseded; owner visual review, hosted rollout and integrated Firebase release still pending.
