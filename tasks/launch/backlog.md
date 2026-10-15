@@ -162,3 +162,7 @@ Emoji visual/workflow approval12822 recorded; owner requests holding it for the 
 ## Jump to latest messages —15 October2026
 
 Later, request12824. Floating down-arrow while browsing older history; return to latest without changing draft/focus. Android candidate verified; owner review pending, `later-jump-latest` unchecked. Evidence: docs/qa/2026-10-15-jump-to-latest/.
+
+## v20 delivery —15 October2026
+
+Approved12910; grammatical-form relevance, emoji composer/polish and centered jump-to-latest are integrated and Firebase20 is distributed to the existing two testers. OK/okay/shared translation rulebook retained from19. Combined proof in docs/qa/2026-10-15-reviewed-chat-release-v20. Physical-device owner manual acceptance remains pending; tracker checkboxes intentionally remain unchecked.

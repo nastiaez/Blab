@@ -33,3 +33,7 @@ Owner review of this new control remains pending. Emoji approval is preserved an
 release held as requested; no owner physical-device manual-pass checkbox changed.
 
 Owner requested horizontal center after the first review. Center revision preserves44px size and16px timeline-bottom gap. Android XML reports centerX540 on1080px display; actual centered screenshot inspected. Focused jump regression passes; no behavior changed. Earlier right-aligned placement evidence superseded. Review still pending.
+
+## Release update
+
+Approved for merge/release in12910; integrated and distributed as1.0.0(20). See ../2026-10-15-reviewed-chat-release-v20/README.md for combined verification and limits. Historical candidate-stage pending-release notes above are superseded; physical tester-phone acceptance is not claimed.

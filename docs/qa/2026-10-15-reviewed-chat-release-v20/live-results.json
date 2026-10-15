@@ -1,0 +1,456 @@
+[
+  {
+    "text": "Write to your mother",
+    "calls": 1,
+    "pass": true,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Schreib deiner Mutter",
+        "interfaceText": "Write to your mother",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Schreib",
+            "gloss": "write",
+            "roman": "Schreib",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "deiner",
+            "gloss": "your",
+            "roman": "deiner",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Mutter",
+            "gloss": "mother",
+            "roman": "Mutter",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Напиши своїй мамі",
+        "interfaceText": "Escribe a tu madre",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Напиши",
+            "gloss": "escribe",
+            "roman": "Napyshy",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "своїй",
+            "gloss": "a tu",
+            "roman": "svoyiy",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "мамі",
+            "gloss": "madre",
+            "roman": "mami",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "With this app",
+    "calls": 1,
+    "pass": true,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Mit dieser App",
+        "interfaceText": "With this app",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Mit",
+            "gloss": "with",
+            "roman": "Mit",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "dieser",
+            "gloss": "this",
+            "roman": "dieser",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "App",
+            "gloss": "app",
+            "roman": "App",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "З цим додатком",
+        "interfaceText": "Con esta aplicación",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "З",
+            "gloss": "con",
+            "roman": "Z",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "цим",
+            "gloss": "este",
+            "roman": "tsym",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "додатком",
+            "gloss": "aplicación",
+            "roman": "dodatkom",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "I am a teacher.",
+    "calls": 1,
+    "pass": true,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Ich bin Lehrerin.",
+        "interfaceText": "I am a teacher.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ich",
+            "gloss": "I",
+            "roman": "Ich",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bin",
+            "gloss": "am",
+            "roman": "bin",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Lehrerin",
+            "gloss": "teacher (female)",
+            "roman": "Lehrerin",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Ich bin ",
+          "feminine": "Lehrerin",
+          "masculine": "Lehrer",
+          "after": ".",
+          "subjectName": "Alice",
+          "subjectIsViewer": true,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Ich",
+              "gloss": "I",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "bin",
+              "gloss": "am",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "Lehrerin",
+              "gloss": "teacher (female)",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Ich",
+              "gloss": "I",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "bin",
+              "gloss": "am",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "Lehrer",
+              "gloss": "teacher (male)",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "author"
+        }
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Я вчителька.",
+        "interfaceText": "Soy profesora.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Я",
+            "gloss": "Yo",
+            "roman": "Ya",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчителька",
+            "gloss": "profesora",
+            "roman": "vchytelka",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Я ",
+          "feminine": "вчителька",
+          "masculine": "вчитель",
+          "after": ".",
+          "subjectName": "Alice",
+          "subjectIsViewer": false,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Я",
+              "gloss": "Yo",
+              "roman": "Ya",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчителька",
+              "gloss": "profesora",
+              "roman": "vchytelka",
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Я",
+              "gloss": "Yo",
+              "roman": "Ya",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчитель",
+              "gloss": "profesor",
+              "roman": "vchytel",
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "author"
+        }
+      }
+    }
+  },
+  {
+    "text": "okay",
+    "calls": 1,
+    "pass": true,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "okay",
+        "interfaceText": "okay",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "okay",
+            "gloss": "okay",
+            "roman": "okay",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "окей",
+        "interfaceText": "vale",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "окей",
+            "gloss": "vale",
+            "roman": "okei",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  }
+]

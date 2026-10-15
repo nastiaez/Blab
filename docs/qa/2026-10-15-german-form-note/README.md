@@ -116,3 +116,7 @@ Delivery: final feminine and masculine Android images successfully attached to
 the originating Telegram topic8856 as12785 and12786. Owner approval is pending;
 the tracker remains unchecked. The worktree and local fixtures are retained for
 review and subsequent integrated-main verification.
+
+## Release update
+
+Approved for merge/release in12910; integrated and distributed as1.0.0(20). See ../2026-10-15-reviewed-chat-release-v20/README.md for combined verification and limits. Historical candidate-stage pending-release notes above are superseded; physical tester-phone acceptance is not claimed.

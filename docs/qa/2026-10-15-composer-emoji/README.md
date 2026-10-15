@@ -59,3 +59,7 @@ categories, recents, skin tones, search and glyphs; no new package or GIF/sticke
 Topic8856 attachment receipts12802–12804 confirm numbered screenshots delivered; video12805.
 Owner feature-journey approval remains pending. No completion claim for owner
 manual acceptance, integration, Android integrated release or Firebase delivery.
+
+## Release update
+
+Approved for merge/release in12910; integrated and distributed as1.0.0(20). See ../2026-10-15-reviewed-chat-release-v20/README.md for combined verification and limits. Historical candidate-stage pending-release notes above are superseded; physical tester-phone acceptance is not claimed.

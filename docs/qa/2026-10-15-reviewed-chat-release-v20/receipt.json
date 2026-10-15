@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0 (20)",
+  "source_revision": "39a2eb2841646ecf4882cc00255796bb3466efef",
+  "approval_message": 12910,
+  "apk_sha256": "53fb78dd772519984acc703706408fe5a44974d0d04f02bc3153195302a47c71",
+  "signing_sha256": "1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb",
+  "firebase_app": "1:363935775546:android:c3a351249463d5f9356e03",
+  "distribution": "distributed; exact release reopened and both approved testers verified",
+  "production": {
+    "translate_message_version": 30,
+    "prepare_message_jobs_version": 9,
+    "identical_readback_files": 11,
+    "backend_verifier": "passed",
+    "anonymous_requests": "both 401"
+  },
+  "tests": {
+    "backend_passed": 179,
+    "flutter_passed": 941,
+    "flutter_skipped": 15,
+    "live_single_call_cases": 4,
+    "live_viewer_outputs": 8
+  },
+  "signed_update": {
+    "device": "emulator-5560",
+    "from": 19,
+    "to": 20,
+    "without_uninstall": true,
+    "saved_german_preference_retained": true,
+    "installed_apk_hash_matches": true,
+    "limitation": "Signed-out production baseline; not authenticated history or physical-phone proof"
+  },
+  "ci_url": "https://github.com/nastiaez/Blab/actions/runs/38739219134",
+  "download_back_hash_matches": true,
+  "firebase_release": "7vps6hlf77too",
+  "ci_conclusion": "success",
+  "testers_invited": 2,
+  "testers_accepted": 2,
+  "tester_downloads_at_verification": 0
+}
