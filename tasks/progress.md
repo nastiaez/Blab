@@ -1263,7 +1263,7 @@ Implementation checkpoint: candidate8s budget, qualified hedge,8+2 phase slots,2
 - [x] Locate exact reported production messages; reproduce fragment failure and wrong known-language lane on local backend.
 - [x] Require language as well as meaning validation for both sentence lanes; handle learner grammar without lexical-overlap rejection.
 - [x] Verify actual two-client Practice primary/long-press, context sequence and regression coverage; prepare screenshots.
-- [ ] Owner review, targeted stale-cache repair and subsequent release.
+- [x] Owner review, targeted stale-cache repair and subsequent release (v18; Telegram12720).
 
 - 2026-10-14 — Investigation: old readable row stored English under target de. v17 fixes fresh Los geht’s but existing cached output remains. Local exact sequence still rejects Wenn ich du Message senden; correction-word-overlap heuristic and overly literal meaning anchor are separate failure points. Known-language audit previously only ran for translation mode, allowing German into English long-press for corrections. No production follow-up repair applied.
 
@@ -1272,12 +1272,12 @@ Implementation checkpoint: candidate8s budget, qualified hedge,8+2 phase slots,2
 
 ### 15 October — unified Android navigation and translation follow-up ← in progress
 
-- [ ] Preference-aware meaning checker: remove lexical rejection, test correct/incorrect candidates and different viewer settings; replay the newly reported learner sentence.
-- [ ] One Practice shimmer while work is pending; no second Translating status; stop on real terminal failure and accept late results. Preserve reduced-motion accessibility.
+- [x] Preference-aware meaning checker: remove lexical rejection, test correct/incorrect candidates and different viewer settings; replay the newly reported learner sentence.
+- [x] One Practice shimmer while work is pending; no second Translating status; stop on real terminal failure and accept late results. Preserve reduced-motion accessibility.
 - [x] Audit every page route and replace the rejected native-default proposal with owner-supplied shared 150ms / 48dp slide-fade; verify Chats/+ and all ten Profile destinations on Android. Visual acceptance remains separate below.
 - [x] Reproduce and fix keyboard-open Back; verify stable list/+ and full Profile viewport on Android.
 - [ ] Diagnose latest production failure from exact job/cache data; investigate ready-but-faded separately without assuming the screenshot proves a missed update.
-- [ ] Actual Android motion/keyboard recordings, preference regressions and owner review before integration/release.
+- [x] Actual Android motion/keyboard recordings, preference regressions and owner review before integration/release (v18).
 
 Navigation research: installed Flutter3.44.8 uses PredictiveBackPageTransitionsBuilder with FadeForwards fallback450ms. Theme already selects it; two chat routes use NoTransitionPage, while new-chat/settings use Material routes. Root/tabs remain non-push navigation. Source: https://docs.flutter.dev/release/breaking-changes/default-android-page-transition and installed SDK page_transitions_theme.dart.
 
@@ -1286,3 +1286,6 @@ Navigation research: installed Flutter3.44.8 uses PredictiveBackPageTransitionsB
 - 2026-10-15 shared-motion revision: owner rejected 450ms default and specified PageRouteBuilder 150ms/48dp cubic slide-fade. Central route factory and imperative helper cover all page pushes; tabs/dialogs/sheets remain distinct. Project AGENTS.md records mandatory reuse. 904 full Flutter tests + four focused route checks pass, analysis clean; all ten Profile destinations and three chat rows/+ captured on Android. Asymmetric live checker replay: 6/6 viewer jobs ready on attempt 1 with independent learning/primary-known/interface languages; focused backend 94 checks pass. Evidence: docs/qa/2026-10-15-shared-page-motion. Await revised motion approval; stale-production repair/deployment not performed. Ready-but-faded phone incident remains un-reproduced, not claimed fixed.
 
 - 2026-10-15 07:59 — Ash explicitly approved merge and release (Telegram12720), covering shared motion and included checker/shimmer/keyboard fixes. Integrate approved packet, verify signed production update, deploy matching translation backend and distribute to existing Firebase testers.
+
+- 2026-10-15 release: v18 distributed to existing two Firebase testers; console confirms invited2/accepted2. Source2e409b59c7bf1290c512f15f6e2cd078351a3630, local/remote main synchronized. Signed v17→v18 emulator update retained German; integrated local Android chat/+ and keyboard Back/Profile verified. Full Flutter906 pass/15 skipped, focused backend157 pass; all three CI gates passed. Translate-message v28 deployed with JWT verification enabled; seven downloaded runtime files match. Three scoped messages repaired: six viewer jobs ready on first attempt, original messages untouched. Receipt: docs/qa/2026-10-15-shared-page-motion/release-v18.json.
+- New absent-incoming-bubble report is a separate follow-up, not claimed fixed in v18. Reproduced missed-event/list-preview divergence and event-enrichment failure; automatic canonical catch-up candidate under review in fix/open-chat-recovery-20261015. Exact phone-side event-loss trigger remains unconfirmed.

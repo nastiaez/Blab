@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "build": 18,
+  "source": "2e409b59c7bf1290c512f15f6e2cd078351a3630",
+  "ownerApproval": "Telegram12720",
+  "apkSha256": "c43cd7ceb6be8863795e19867ab3946f356c4b14adfa159a9a35e8af4aed7d03",
+  "signingSha256": "1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb",
+  "firebaseApp": "1:363935775546:android:c3a351249463d5f9356e03",
+  "firebaseRelease": "1hovtihrl4jk8",
+  "downloadBackMatches": true,
+  "androidUpdate": "emulator5560 v17 to v18 install-r; signed-out German retained; authenticated/physical retention not verified",
+  "integratedJourney": "emulator5558, local backend, Bob retained, chat/+ and keyboard Back/Profile repeated",
+  "backend": {
+    "translate-message": 28,
+    "readbackFiles": 7,
+    "manifestVerification": "pass",
+    "unauthenticatedCalls": 401
+  },
+  "repair": {
+    "messages": 3,
+    "viewerJobs": 6,
+    "outcome": "all ready on first attempt",
+    "originalMessagesChanged": false,
+    "backup": "repair-backup-private.json"
+  },
+  "ci": "https://github.com/nastiaez/Blab/actions/runs/38689921948",
+  "distribution": "distributed to existing 2 testers; Firebase invited2 accepted2 downloaded0 at verification",
+  "tests": {
+    "flutter": 906,
+    "skipped": 15,
+    "backendFocused": 157
+  },
+  "ciStatus": "all three required checks passed",
+  "distributedAt": "2026-10-15T06:22:27.623941+00:00"
+}
