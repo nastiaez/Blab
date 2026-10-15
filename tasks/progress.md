@@ -1289,3 +1289,13 @@ Navigation research: installed Flutter3.44.8 uses PredictiveBackPageTransitionsB
 
 - 2026-10-15 release: v18 distributed to existing two Firebase testers; console confirms invited2/accepted2. Source2e409b59c7bf1290c512f15f6e2cd078351a3630, local/remote main synchronized. Signed v17→v18 emulator update retained German; integrated local Android chat/+ and keyboard Back/Profile verified. Full Flutter906 pass/15 skipped, focused backend157 pass; all three CI gates passed. Translate-message v28 deployed with JWT verification enabled; seven downloaded runtime files match. Three scoped messages repaired: six viewer jobs ready on first attempt, original messages untouched. Receipt: docs/qa/2026-10-15-shared-page-motion/release-v18.json.
 - New absent-incoming-bubble report is a separate follow-up, not claimed fixed in v18. Reproduced missed-event/list-preview divergence and event-enrichment failure; automatic canonical catch-up candidate under review in fix/open-chat-recovery-20261015. Exact phone-side event-loss trigger remains unconfirmed.
+
+### 15 October — standalone OK/okay checker exception (candidate for next release)
+
+- [x] Record requested narrow list: `ok`, `okay`, case-insensitive with ordinary punctuation. No broader loanword list (Telegram12768–12770).
+- [x] Implement target-language-aware acceptance after independent audits; valid local-script results, wrong-language copies, source conflicts and full sentences covered.
+- [ ] Verify real-client behavior and present review evidence before integration/deployment.
+
+Candidate implemented, not merged/deployed. 162 backend tests pass; Android screenshot inspected. Live asymmetric German/Ukrainian replay: 8/8 viewer jobs ready on first attempt. Shared canonical rulebook feeds prompts and validators, generates docs/translation-rulebook.md, and CI catches stale docs. Next-release evidence in docs/qa/2026-10-15-standalone-okay. Missing-incoming-bubble candidate remains a separate review item.
+
+- 2026-10-15: Requested standalone acknowledgement fix implemented for next release; centralized translation policy, generated reference and CI drift guard. No production changes.

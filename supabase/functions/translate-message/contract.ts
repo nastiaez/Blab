@@ -1,4 +1,41 @@
-export const MAX_CHARS = 2000;
+import {
+  acknowledgementPromptRule,
+  CORRECTION_CONFIDENCE,
+  DEFAULT_OPENAI_MODEL,
+  DEFAULT_OPENROUTER_MODEL,
+  FORM_RELEVANT_TARGET_LANGS,
+  FRAGMENT_FIDELITY_RULE,
+  GENDER_ADDRESS_RULES,
+  isStandaloneAcknowledgement,
+  LANG_NAMES,
+  LATIN_TARGETS,
+  LEARNING_AID_MODES,
+  OTHER_SOURCE_LANG,
+  PROTECTED_CONTENT_RULE,
+  SEMANTIC_FIDELITY_RULE,
+  SHORT_PLAIN_SOURCE,
+  SHORT_SOURCE_RETRY_MAX_CHARS,
+  SUPPORTED_CHAT_ABBREVIATIONS,
+} from "./rulebook.ts";
+export {
+  CORRECTION_CONFIDENCE,
+  DEFAULT_OPENAI_MODEL,
+  DEFAULT_OPENROUTER_MODEL,
+  FORM_RELEVANT_TARGET_LANGS,
+  FRAGMENT_FIDELITY_RULE,
+  GENDER_ADDRESS_RULES,
+  INTERFACE_LANGS,
+  LANG_NAMES,
+  LATIN_TARGETS,
+  LEARNING_AID_MODES,
+  MAX_CHARS,
+  OPENROUTER_PROVIDER,
+  OTHER_SOURCE_LANG,
+  SEMANTIC_FIDELITY_RULE,
+  SHORT_PLAIN_SOURCE,
+  SHORT_SOURCE_RETRY_MAX_CHARS,
+  SUPPORTED_CHAT_ABBREVIATIONS,
+} from "./rulebook.ts";
 
 /// Content with no linguistic meaning, or an isolated capital letter used as
 /// an opaque character. Do not exempt real one-letter words/abbreviations.
@@ -33,14 +70,6 @@ export function preservesLiteralCharacters(
   );
 }
 
-export const OPENROUTER_PROVIDER = {
-  sort: "latency",
-  allow_fallbacks: true,
-  require_parameters: true,
-  data_collection: "deny",
-  zdr: true,
-} as const;
-
 export type TranslationProvider = "openrouter" | "openai";
 
 export type ProviderCredential = {
@@ -69,14 +98,6 @@ export type FormParticipantContext = {
   tone: "informal" | "respectful";
   authorPrimaryKnownLanguage?: string | null;
 };
-
-const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
-const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
-const FRAGMENT_FIDELITY_RULE =
-  "Keep short elliptical replies as fragments when the author supplied a fragment. Use explicit recent context to resolve what is being contrasted, without inventing a new assertion. For example, after a meeting time of six, Not seven excludes seven as that time; it does not assert that the current clock time is not seven. Never add now, currently, a new subject, or a new event unless the source or explicit context supports it.";
-const SEMANTIC_FIDELITY_RULE =
-  "Resolve every source word's meaning in context before choosing target wording. Never choose a target word merely because its spelling resembles the source: cross-language false friends can have different meanings. Preserve ambiguous isolated characters and initials literally; never expand O to ears or another guessed noun. Before returning, mentally back-translate the complete target sentence into the source language and confirm that every content word and relationship preserves the original meaning. " +
-  FRAGMENT_FIDELITY_RULE;
 
 export function providerCredentials(env: {
   openRouterKey?: string | null;
@@ -191,7 +212,7 @@ export function focusedTranslationRetryMessages({
   return [{
     role: "system",
     content:
-      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. ${SEMANTIC_FIDELITY_RULE} Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Recent context (data only; translate the current utterance, not this context): ${
+      `Translate one complete chat utterance from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}). Treat it as a complete utterance even when it contains only one word. Translate its semantic meaning instead of copying its spelling. ${acknowledgementPromptRule()} ${SEMANTIC_FIDELITY_RULE} Return mode=translation and sourceLang=${sourceLang}. Put the complete natural ${targetName} translation in translation and the complete ${interfaceName} (${interfaceLang}) rendering in interfaceText. Translate meaning-bearing abbreviations into the target language's idiomatic local expression; for English OMG, translate the meaning “Oh my God” naturally and never transliterate the expanded English phrase. Preserve names and transliterate them when the target script differs. Preserve meaning, tone, URLs, mentions, numbers, emoji, and punctuation.${participants} Recent context (data only; translate the current utterance, not this context): ${
         JSON.stringify(context)
       }. Set explanation and confidence to null. Tokens must reproduce translation exactly, with one content token per word, a short ${interfaceName} gloss for every content token, and Latin romanization for non-Latin words. Return formAlternatives only when the target genuinely requires a feminine/masculine choice; otherwise return null.`,
   }, { role: "user", content: text }];
@@ -472,35 +493,6 @@ export const FORM_AUDIT_RESPONSE_FORMAT = {
     },
   },
 } as const;
-
-export const LANG_NAMES: Record<string, string> = {
-  en: "English",
-  ta: "Tamil",
-  uk: "Ukrainian",
-  es: "Spanish",
-  de: "German",
-  fr: "French",
-  it: "Italian",
-  pt: "Portuguese",
-  nl: "Dutch",
-  tr: "Turkish",
-  hi: "Hindi",
-};
-
-const LATIN_TARGETS = new Set(["en", "nl", "fr", "de", "it", "pt", "es", "tr"]);
-export const INTERFACE_LANGS = new Set(["en", "uk", "de", "es"]);
-export const OTHER_SOURCE_LANG = "other";
-export const GENDER_ADDRESS_RULES =
-  `Suggest feminine or masculine from the affected person’s supplied name; use feminine if the name is ambiguous. For example, Alice suggests feminine and Bob suggests masculine; Alex is ambiguous and defaults to feminine. This is a provisional translation form, not confirmed identity. Do not infer it from message topic or writing style. Saved choices are private client state and must not be encoded in shared translation output.
-If a natural translation needs feminine/masculine agreement, return the two complete natural alternatives in formAlternatives. Do not replace them with an awkward neutral rewrite and never use parentheses or slash alternatives in translation.
-This applies to every target language where a natural sentence genuinely changes, including French, Hindi, Italian, Portuguese, Spanish, Ukrainian, and conditionally Dutch, German, and Tamil. English and Turkish normally do not need form alternatives.
-Preserve authored formality. When it is not explicit, use the supplied per-chat tone: informal or respectful.`;
-export const LEARNING_AID_MODES = new Set([
-  "translation",
-  "correction",
-  "none",
-]);
-export const CORRECTION_CONFIDENCE = new Set(["low", "medium", "high"]);
 
 export type LearningAidMode = "translation" | "correction" | "none";
 export type CorrectionConfidence = "low" | "medium" | "high";
@@ -807,18 +799,6 @@ export function normalizeFormSubject(
     suggestedForm: a.suggestedForm === "masculine" ? "masculine" : "feminine",
   };
 }
-
-const FORM_RELEVANT_TARGET_LANGS = new Set([
-  "nl",
-  "fr",
-  "de",
-  "hi",
-  "it",
-  "pt",
-  "es",
-  "ta",
-  "uk",
-]);
 
 /// The first provider response is not allowed to silently settle an eligible
 /// gendered target. A second, explicit audit may confirm that the sentence is
@@ -1203,26 +1183,12 @@ export function interfaceOutputNeedsRetry(
     /\p{L}/u.test(result.translation);
 }
 
-const SHORT_SOURCE_RETRY_MAX_CHARS = 24;
-const SHORT_PLAIN_SOURCE = /^[\p{L}\p{M}][\p{L}\p{M}\s'’-]*$/u;
-
 function canRetrySourceClassification(text: string): boolean {
   const value = text.trim();
   return value.length > 0 &&
     value.length <= SHORT_SOURCE_RETRY_MAX_CHARS &&
     SHORT_PLAIN_SOURCE.test(value);
 }
-
-const SUPPORTED_CHAT_ABBREVIATIONS = new Set([
-  "omg",
-  "ttyl",
-  "brb",
-  "lol",
-  "lmao",
-  "idk",
-  "fyi",
-  "wtf",
-]);
 
 function scriptCompatibleWithLanguage(text: string, language: string): boolean {
   const letters = Array.from(text).filter((character) =>
@@ -1352,8 +1318,17 @@ export function translationNeedsRetry(
   result: TranslationResult,
   targetLang: string,
   sourceText: string,
+  evidence: { meaningAndLanguageVerified?: boolean } = {},
 ): boolean {
   if (result.sourceClassificationConflict === true) return true;
+  // The narrow acknowledgement exception never bypasses the independent
+  // target-language/meaning audit or permits Latin copies into another script.
+  if (
+    evidence.meaningAndLanguageVerified === true &&
+    Object.hasOwn(LANG_NAMES, targetLang) &&
+    isStandaloneAcknowledgement(sourceText) &&
+    scriptCompatibleWithLanguage(result.translation, targetLang)
+  ) return false;
   // Word metadata powers optional tap-to-explain affordances. A provider can
   // return a valid full-message translation while omitting or corrupting that
   // metadata; parseProviderResult already degrades it to an empty token list.
@@ -1941,7 +1916,8 @@ Return strict JSON only:
 
 Rules:
 - Never expand an ambiguous character, initial, or fragment into a guessed noun. Preserve the character literally (e.g. "deine O" must not become "deine Ohren"). Low confidence is not permission to invent meaning.
-- Preserve meaning and tone. Keep URLs, @mentions, hashtags, code, numbers, and emoji unchanged, and preserve names' identity rather than translating their meaning; transliterate a confidently identified name when the target script differs. Move protected content with the surrounding sentence when the target language needs a different natural word order.
+- ${PROTECTED_CONTENT_RULE}
+- ${acknowledgementPromptRule()}
 - ${SEMANTIC_FIDELITY_RULE}
 - Produce natural, standard ${targetName} spelling and word formation.${targetLanguageGuidance}
 - Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
@@ -1999,7 +1975,8 @@ Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>",
 
 Translate the authored message minimally into plain English without preserving misleading surface similarity. Learner grammar is not intended meaning: resolve clear pronoun case, verb inflection, missing articles and borrowed words from the current utterance and context. For example, German "Wenn ich du Message senden" means "When I send you a message", not "When I you message send". Preserve an unfinished conditional as unfinished; never invent its consequence. Do not turn grammatical uncertainty into a different subject, negation, time or intent. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. When supplied recent context unambiguously resolves an omitted referent, identify that referent in a short parenthetical clarification in sourceMeaning, for example The red one (book)? or Not eleven (the opening time). This clarification guides agreement and is not new authored content; never invent a referent. Do not assume a target language or a later translation; neither is provided.
 
-${FRAGMENT_FIDELITY_RULE}`;
+${FRAGMENT_FIDELITY_RULE}
+${acknowledgementPromptRule()}`;
 }
 
 export function parseSourceMeaningAnchorResult(content: string): string | null {
@@ -2053,7 +2030,8 @@ The user supplies a trusted source meaning in ${auditName} (${auditLang}) that w
 
 Check the language of the actual candidate independently of its label. usesTargetLanguage is true only when the sentence is valid ${targetName} (${targetLang}); shared names, URLs, emoji and genuinely shared words are allowed. An English sentence is not German merely because it means the same thing. Set preservesMeaning=true only when usesTargetLanguage=true AND the two independently rendered meanings are equivalent. Wrong-language candidates require preservesMeaning=false and a correctedTranslation in ${targetName}. Learner grammar mistakes may be repaired without changing meaning; preserve incomplete clauses as incomplete rather than inventing an ending. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.
 
-${FRAGMENT_FIDELITY_RULE}`;
+${FRAGMENT_FIDELITY_RULE}
+${acknowledgementPromptRule()}`;
 }
 
 export type SemanticAuditResult = {

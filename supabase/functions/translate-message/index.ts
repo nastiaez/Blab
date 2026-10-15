@@ -1426,7 +1426,12 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-        if (translationNeedsRetry(candidate, targetLang, text)) {
+        // Reached only after the existing independent meaning/language audits.
+        if (
+          translationNeedsRetry(candidate, targetLang, text, {
+            meaningAndLanguageVerified: true,
+          })
+        ) {
           retrySourceLang = sourceEvidenceLanguage({
             result: candidate,
             sourceText: text,

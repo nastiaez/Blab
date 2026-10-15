@@ -135,3 +135,7 @@ Follow [`.codex/instructions.md`](./.codex/instructions.md) whenever work matche
 ## Shared page motion (owner instruction, 15 October 2026)
 
 Every pushed page must use the reusable `lib/app/telegram_route.dart` motion: 150ms forward/reverse, cubic ease-out, fixed 48 logical pixels (not fractional screen width), matching opacity, stationary previous page. Register declarative routes through `_blabRoute` in router.dart; imperative pages use `telegramRoute`. This includes +/invite, every chat, all Profile detail options, partner profile and photo viewer. No per-screen copies or MaterialPageRoute bypasses. Keep root tabs instantaneous and retain standard sheet/dialog semantics. Respect reduced motion. Audit new navigation against this rule and verify real Android recordings before visual approval/release. This supersedes the previous platform-default page-transition choice.
+
+## Translation rulebook
+
+Before changing translation policy, read `docs/translation-rulebook.md` and its canonical source `supabase/functions/translate-message/rulebook.ts`. Prompts and checks must import shared policy there rather than copying values. Keep the PRD as product authority. Move new configurable translation exceptions into the rulebook; preserve the documented owners for preference resolution, schemas and durable scheduling. Run `deno run --allow-write scripts/generate_translation_rulebook.ts` after changes and run backend tests. CI checks generated-document parity and prompt/validator behavior. Never edit only the generated reference.

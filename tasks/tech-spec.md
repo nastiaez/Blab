@@ -353,3 +353,15 @@ Pending Practice uses its existing shimmer even after the initial visual deadlin
 ### Owner-selected page motion — 15 October 2026
 
 Supersedes SDK-standard page motion above: pushed pages use PageRouteBuilder, 150ms both ways, cubic ease-out (1-(1-t)^3), fixed positive 48 logical-pixel horizontal travel and matching opacity. Ignore secondary animation so the previous page stays stationary. Back reverses the same curve, not a claim of exact Telegram closing easing or predictive gesture scrubbing. Root tabs, dialogs and bottom sheets retain their distinct behavior. Reduced motion skips decorative travel/fade.
+
+### 2026-10-15 — Narrow standalone OK/okay exception (candidate)
+
+Topic7420, Telegram12768–12770: keep the proposed exception limited to standalone `ok` and `okay`; interpret the repeated `ok` in12770 in the preceding OK/okay discussion. Match case-insensitively and allow surrounding whitespace and ordinary terminal punctuation (`OK!`, `okay?`, `Ok.`). Do not add taxi/hotel/radio/pizza or build an expanding loanword dictionary.
+
+This is not a universal untranslated-content exemption. Accept an unchanged candidate only when appropriate in the actual viewer-selected target language and with the intended meaning. Local-script forms such as Ukrainian `окей` remain language-specific outputs, not an instruction to transliterate arbitrary words. Preserve semantic/language validation and source-conflict guards. Sentences containing these words (`Is that okay?`, `okay, tomorrow`) remain under full translation checks; punctuation and question intent must not be lost. Normal known-language behavior, learning-aids-off, historical language era and primary-known reveal remain unchanged.
+
+Implementation acceptance: cover ok/OK/Okay/okay with punctuation, appropriate unchanged target output, Ukrainian local-script output, rejected wrong-script copies, sentences containing okay, false friends and asymmetric viewer preferences. Implemented in the candidate after independent semantic/language audits; no production deployment changed.
+
+### 2026-10-15 — Executable translation rulebook
+
+`supabase/functions/translate-message/rulebook.ts` owns shared exception configuration, supported-language sets, model/routing defaults, message/source-retry limits and common prompt fragments. `contract.ts` re-exports existing public constants for compatibility. Initial generation, focused retry, semantic audit and readable-text prompts consume this source. `docs/translation-rulebook.md` is generated using `scripts/generate_translation_rulebook.ts`; CI rejects stale output. Preference ownership is an integration contract, not a duplicate preference resolver; the rulebook explicitly indexes remaining implementation owners (schemas, scheduling, orchestration). PRD remains product authority.

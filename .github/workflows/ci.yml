@@ -35,6 +35,11 @@ jobs:
         run: flutter pub get
       - name: Verify Dart formatting
         run: dart format --output=none --set-exit-if-changed lib test
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Verify translation policy and generated rulebook
+        run: deno test --allow-env --allow-read supabase/functions/translate-message/*test.ts supabase/functions/prepare-message-jobs/*test.ts
       - name: Verify shell syntax
         run: bash -n scripts/*.sh
       - name: Analyze

@@ -1,3 +1,4 @@
+import { READABLE_PHASE_RULE } from "./rulebook.ts";
 import {
   isProtectedLiteralMessage,
   parseProviderResult,
@@ -89,14 +90,7 @@ export function knownLaneIsAuthoredOriginal(
 export function readableProviderMessages(
   messages: Array<{ role: string; content: string }>,
 ): Array<{ role: string; content: string }> {
-  const instruction =
-    "\n\nReadable-text phase: obey the supplied response schema. " +
-    "Generate the complete translated/corrected sentence, known-language sentence, " +
-    "correction explanation and all required grammatical alternatives. " +
-    "Do not generate tokens, word glosses, transliterations, feminineTokens or " +
-    "masculineTokens in this phase. A separate background job prepares word help " +
-    "from the accepted final text. Never omit a meaning, correction or required " +
-    "grammatical choice merely because its word metadata is deferred.";
+  const instruction = READABLE_PHASE_RULE;
   return messages.map((message, index) =>
     index === 0
       ? { ...message, content: message.content + instruction }

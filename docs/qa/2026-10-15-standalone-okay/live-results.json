@@ -1,0 +1,225 @@
+{
+  "chat": "5dfa08f9-eeb3-4e53-8587-17374b2ac722",
+  "rows": [
+    {
+      "source": "okay",
+      "id": "5fd4fd57-4bc0-4341-a506-473ee333424f",
+      "elapsed": 12.89,
+      "jobs": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "learning_language": "uk",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "learning_language": "de",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        }
+      ],
+      "variants": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "target_lang": "uk",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "\u0434\u043e\u0431\u0440\u0435",
+            "interfaceText": "okay",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:09.056877+00:00"
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "target_lang": "de",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "okay",
+            "interfaceText": "okay",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:09.057227+00:00"
+        }
+      ]
+    },
+    {
+      "source": "OK!",
+      "id": "92f213c1-b6d8-439c-9217-a4e37f006245",
+      "elapsed": 5.05,
+      "jobs": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "learning_language": "uk",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "learning_language": "de",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        }
+      ],
+      "variants": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "target_lang": "uk",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "\u0414\u043e\u0431\u0440\u0435!",
+            "interfaceText": "OK!",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:13.854967+00:00"
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "target_lang": "de",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "OK!",
+            "interfaceText": "OK!",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:13.854787+00:00"
+        }
+      ]
+    },
+    {
+      "source": "okay?",
+      "id": "61cd48dd-9f85-41e8-b996-18ac095ea782",
+      "elapsed": 4.98,
+      "jobs": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "learning_language": "uk",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "learning_language": "de",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        }
+      ],
+      "variants": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "target_lang": "de",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "Alles klar?",
+            "interfaceText": "Okay?",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:18.940036+00:00"
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "target_lang": "uk",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "\u0413\u0430\u0440\u0430\u0437\u0434?",
+            "interfaceText": "Okay?",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:18.945417+00:00"
+        }
+      ]
+    },
+    {
+      "source": "Is that okay?",
+      "id": "b090f153-0125-4ca3-8876-58145015f060",
+      "elapsed": 5.43,
+      "jobs": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "learning_language": "uk",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "learning_language": "de",
+          "primary_known_language": "en",
+          "status": "ready",
+          "attempts": 1,
+          "last_error": null
+        }
+      ],
+      "variants": [
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000b",
+          "target_lang": "de",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "Ist das in Ordnung?",
+            "interfaceText": "Is that okay?",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:23.808146+00:00"
+        },
+        {
+          "viewer_id": "00000000-0000-4000-8000-00000000000a",
+          "target_lang": "uk",
+          "interface_lang": "en",
+          "result": {
+            "mode": "translation",
+            "confidence": null,
+            "sourceLang": "en",
+            "explanation": null,
+            "translation": "\u0426\u0435 \u043f\u0440\u0438\u0439\u043d\u044f\u0442\u043d\u043e?",
+            "interfaceText": "Is that acceptable?",
+            "formAlternatives": null
+          },
+          "created_at": "2026-10-15T06:56:24.462837+00:00"
+        }
+      ]
+    }
+  ]
+}

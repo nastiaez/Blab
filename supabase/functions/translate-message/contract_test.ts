@@ -3303,3 +3303,95 @@ Deno.test("meaning equivalence cannot approve the wrong output language", () => 
     "an unchecked output language is not a qualified result",
   );
 });
+
+Deno.test("verified standalone OK/okay does not retry solely for identical spelling", () => {
+  for (const source of ["ok", "OK", "Okay", "okay!", "OK?", " okay... "]) {
+    const result = {
+      mode: "translation" as const,
+      sourceLang: "en",
+      translation: source.trim(),
+      interfaceText: source.trim(),
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    };
+    assert(
+      !translationNeedsRetry(result, "de", source, {
+        meaningAndLanguageVerified: true,
+      }),
+      source,
+    );
+    assert(
+      translationNeedsRetry(result, "de", source),
+      "an exception must not bypass the language/meaning audit",
+    );
+    assert(
+      translationNeedsRetry(
+        { ...result, sourceClassificationConflict: true },
+        "de",
+        source,
+        { meaningAndLanguageVerified: true },
+      ),
+      "source-conflict guard remains",
+    );
+    for (const target of ["uk", "hi", "ta", "unknown"]) {
+      assert(
+        translationNeedsRetry(result, target, source, {
+          meaningAndLanguageVerified: true,
+        }),
+        `wrong-script/unsupported target ${target}`,
+      );
+    }
+  }
+});
+
+Deno.test("OK exception never exempts sentences, other words or false friends", () => {
+  for (
+    const source of [
+      "Is that okay?",
+      "okay, tomorrow",
+      "not okay",
+      "okay okay",
+      "Taxi",
+      "Hotel",
+      "Gift",
+      "ok👍",
+      "ok@example.com",
+    ]
+  ) {
+    const result = {
+      mode: "translation" as const,
+      sourceLang: "en",
+      translation: source,
+      interfaceText: source,
+      explanation: null,
+      confidence: null,
+      tokens: [],
+      formAlternatives: null,
+    };
+    assert(
+      translationNeedsRetry(result, "de", source, {
+        meaningAndLanguageVerified: true,
+      }),
+      source,
+    );
+  }
+});
+
+Deno.test("OK local-script rendering remains an ordinary translation", () => {
+  const result = {
+    mode: "translation" as const,
+    sourceLang: "en",
+    translation: "Окей?",
+    interfaceText: "Okay?",
+    explanation: null,
+    confidence: null,
+    tokens: [],
+    formAlternatives: null,
+  };
+  assert(
+    !translationNeedsRetry(result, "uk", "Okay?"),
+    "local-script output is not an untranslated copy",
+  );
+});
