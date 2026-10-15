@@ -53,6 +53,18 @@ When the PRD and prototype disagree, the PRD wins.
 
 ## Workflow
 
+### Mandatory functionality and preference review (owner instruction, 15 October 2026)
+
+Before changing translation, correction/checker, retry, cache, or message-display logic, first read the applicable PRD journeys and exceptions, then trace the actual saved preferences through the client and server. Do not derive general behavior from one reported chat, screenshot, or language pair. German/English examples are fixtures, never product defaults or hardcoded targets.
+
+- Resolve preferences independently for each viewer: the chat's Learning Language and historical language revision, the profile's Primary Known Language (Translation language) and understood-language set, Interface Language, Normal/Practice mode, learning-aid toggle, and applicable tone/form/reading-script settings. Never use one participant's preferences for the other.
+- Practice primary output follows that viewer's applicable Learning Language. Long-press secondary text and word descriptions follow their Primary Known Language. Practice word/sentence audio follows the learning language. Interface Language controls interface copy only, never translation or definition targets.
+- Preserve Normal-mode rules: authored text for known languages; unknown incoming messages translate into the reader's Primary Known Language. Do not infer the actual message language solely from the author's profile; mixed-language messages and learner errors are valid inputs.
+- Preserve all documented exceptions, including learning aids off (original text, no new AI work), unsupported-source handling, historical completed results, and correction-mark eligibility fixed by both participants' Learning Languages at send time. Consult US-015, US-022, US-046 and FR-13/23/33/40 rather than flattening these into an unconditional rule.
+- A checker validates meaning and the dynamically requested language for each output, not a fixed language pair or word-for-word resemblance. Preserve names, quantities, negation and intended meaning; do not invent context to repair uncertain input.
+- Before implementing, record the affected preference-to-output mapping and existing behavior in the task notes. Verify both viewers with different preferences, multiple language pairs, independent setting changes, history and cache isolation. Happy-path tests with both people using the same languages are insufficient proof.
+- Explain behavior to the owner using preference names. If using a concrete language example, explicitly identify it as that user's selected setting. Record uncertainty instead of presenting an unverified screen failure as established fact.
+
 - Implementing user story `US-XYZ`: open `tasks/prd-blab.md`, work the acceptance-criteria checklist directly. Cross-reference the matching step in `tasks/progress.md` for the "Done when" rubric.
 - Cross-cutting behavior: cite the `FR-X` it satisfies.
 - Hit an ambiguity? Check PRD § Open Questions first; if not listed, ask the user rather than guessing.
@@ -119,3 +131,7 @@ Follow [`.codex/instructions.md`](./.codex/instructions.md) whenever work matche
 - Build from the integrated main revision, verify the accepted journey on Android, then deliver that exact signed artifact to the existing Firebase App Tester channel. Preserve signing identity and user data.
 - Record approval, revision, test/device evidence, artifact hash and delivery result before retiring the worktree.
 - A spec-only request authorizes documentation in a worktree, not application implementation, merge or release.
+
+## Shared page motion (owner instruction, 15 October 2026)
+
+Every pushed page must use the reusable `lib/app/telegram_route.dart` motion: 150ms forward/reverse, cubic ease-out, fixed 48 logical pixels (not fractional screen width), matching opacity, stationary previous page. Register declarative routes through `_blabRoute` in router.dart; imperative pages use `telegramRoute`. This includes +/invite, every chat, all Profile detail options, partner profile and photo viewer. No per-screen copies or MaterialPageRoute bypasses. Keep root tabs instantaneous and retain standard sheet/dialog semantics. Respect reduced motion. Audit new navigation against this rule and verify real Android recordings before visual approval/release. This supersedes the previous platform-default page-transition choice.

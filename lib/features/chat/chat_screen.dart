@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../../app/app_messenger.dart';
+import '../../app/telegram_route.dart';
 import '../../app/theme.dart';
 import '../../shared/widgets/actions/blab_icon_button.dart';
 import 'widgets/message_bubble_surface.dart';
@@ -59,7 +60,6 @@ import 'reaction_row_positioning.dart';
 import 'services/chat_image_picker.dart';
 import 'widgets/chat_composer_input.dart';
 import 'widgets/blocked_chat_bar.dart';
-import 'widgets/delayed_translation_status.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
 import 'widgets/floating_reaction_row.dart';
@@ -426,6 +426,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _inputFocus.unfocus();
       return;
     }
+    _inputFocus.unfocus();
     if (context.canPop()) {
       context.pop();
     } else {

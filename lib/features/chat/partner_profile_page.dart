@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_messenger.dart';
+import '../../app/telegram_route.dart';
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/models/chat.dart';
@@ -18,9 +19,9 @@ Future<void> showPartnerProfilePage(
   BuildContext context, {
   required Chat chat,
 }) {
-  return Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(builder: (_) => PartnerProfilePage(chat: chat)),
-  );
+  return Navigator.of(
+    context,
+  ).push<void>(telegramRoute<void>(PartnerProfilePage(chat: chat)));
 }
 
 class PartnerProfilePage extends ConsumerStatefulWidget {

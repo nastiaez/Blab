@@ -3,6 +3,7 @@ import {
   TRANSLATION_RESPONSE_FORMAT,
 } from "./contract.ts";
 import {
+  copiedForeignKnownLane,
   enrichAcceptedWordHelp,
   knownLaneIsAuthoredOriginal,
   READABLE_TRANSLATION_RESPONSE_FORMAT,
@@ -194,4 +195,34 @@ Deno.test("readable delivery defaults on and supports explicit rollback", () => 
     }
   }
   if (textFirstDeliveryEnabled("false")) throw new Error("rollback ignored");
+});
+
+Deno.test("copied foreign known-language lane is repaired before trusting semantic agreement", () => {
+  if (
+    !copiedForeignKnownLane(
+      "Kannst du mir hier replyieren",
+      "Kannst du mir hier replyieren",
+      "de",
+      "en",
+    )
+  ) throw new Error("German copied into English was not flagged");
+  if (
+    copiedForeignKnownLane(
+      "Can you reply here?",
+      "Can you reply here?",
+      "en",
+      "en",
+    )
+  ) throw new Error("genuine English original must remain valid");
+  if (
+    copiedForeignKnownLane(
+      "https://example.com",
+      "https://example.com",
+      "de",
+      "en",
+    )
+  ) throw new Error("protected literal must remain exact");
+  if (copiedForeignKnownLane("Los geht's", "Let's go", "de", "en")) {
+    throw new Error("translated known lane must not cause another request");
+  }
 });

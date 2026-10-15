@@ -360,12 +360,14 @@ export const SEMANTIC_AUDIT_RESPONSE_FORMAT = {
       properties: {
         sourceMeaning: { type: "string", minLength: 1 },
         candidateMeaning: { type: "string", minLength: 1 },
+        usesTargetLanguage: { type: "boolean" },
         preservesMeaning: { type: "boolean" },
         correctedTranslation: { type: ["string", "null"] },
       },
       required: [
         "sourceMeaning",
         "candidateMeaning",
+        "usesTargetLanguage",
         "preservesMeaning",
         "correctedTranslation",
       ],
@@ -1995,7 +1997,7 @@ export function sourceMeaningAnchorSystemPrompt(): string {
 
 Return strict JSON only: {"sourceMeaning":"<complete meaning in plain English>","sourceLang":"<language code of the actual current utterance>"}. Detect the current text independently; people switch languages. Recent context may resolve genuine ambiguity but never overrides clearly written words. Use other only for unsupported languages. The target language and the author profile are not source-language evidence.
 
-Translate the authored message minimally and literally into plain English without preserving misleading surface similarity. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. When supplied recent context unambiguously resolves an omitted referent, identify that referent in a short parenthetical clarification in sourceMeaning, for example The red one (book)? or Not eleven (the opening time). This clarification guides agreement and is not new authored content; never invent a referent. Do not assume a target language or a later translation; neither is provided.
+Translate the authored message minimally into plain English without preserving misleading surface similarity. Learner grammar is not intended meaning: resolve clear pronoun case, verb inflection, missing articles and borrowed words from the current utterance and context. For example, German "Wenn ich du Message senden" means "When I send you a message", not "When I you message send". Preserve an unfinished conditional as unfinished; never invent its consequence. Do not turn grammatical uncertainty into a different subject, negation, time or intent. Resolve every content noun, verb, modifier, negation, tense, quantity, relationship, name, tone, and protected value. Keep ambiguous characters, initials, and incomplete fragments literal; never expand "O" to "ears" or another guessed word. For a potentially ambiguous place, object, or activity, choose the exact English sense by its real-world function, but return only what the author actually said: never add likely activities, intentions, explanations, contrasts, or consequences. A similar-looking word in another language is not evidence of meaning. When supplied recent context unambiguously resolves an omitted referent, identify that referent in a short parenthetical clarification in sourceMeaning, for example The red one (book)? or Not eleven (the opening time). This clarification guides agreement and is not new authored content; never invent a referent. Do not assume a target language or a later translation; neither is provided.
 
 ${FRAGMENT_FIDELITY_RULE}`;
 }
@@ -2045,11 +2047,11 @@ export function semanticTranslationAuditSystemPrompt(
   const auditName = LANG_NAMES[auditLang];
   return `Audit one candidate translation from ${sourceName} (${sourceLang}) into ${targetName} (${targetLang}) for semantic fidelity.
 
-Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
+Return strict JSON only: {"sourceMeaning":"<complete source rendered in ${auditName}>","candidateMeaning":"<complete candidate independently back-translated into ${auditName}>","usesTargetLanguage":true|false,"preservesMeaning":true|false,"correctedTranslation":"<smallest corrected ${targetName} sentence>"|null}.
 
 The user supplies a trusted source meaning in ${auditName} (${auditLang}) that was generated independently from the authored message without seeing any candidate. Copy that anchor exactly into sourceMeaning; do not reinterpret it from the source after seeing the candidate. Separately back-translate the candidate into ${auditName} as candidateMeaning without copying wording from sourceMeaning. This internal audit language is fixed and does not change with the user's Primary Known Language. Compare nouns, verbs, modifiers, negation, tense, quantities, relationships, names, tone, and protected content. Similar spelling is not evidence of equal meaning: explicitly check cross-language false friends. A parenthetical referent in the trusted source meaning is context, not text to insert, but the candidate must use the grammatical noun class and agreement of that referent. A masculine one cannot refer to a feminine book merely because the speaker is male.
 
-Set preservesMeaning=true only when the two independently rendered meanings are equivalent. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.
+Check the language of the actual candidate independently of its label. usesTargetLanguage is true only when the sentence is valid ${targetName} (${targetLang}); shared names, URLs, emoji and genuinely shared words are allowed. An English sentence is not German merely because it means the same thing. Set preservesMeaning=true only when usesTargetLanguage=true AND the two independently rendered meanings are equivalent. Wrong-language candidates require preservesMeaning=false and a correctedTranslation in ${targetName}. Learner grammar mistakes may be repaired without changing meaning; preserve incomplete clauses as incomplete rather than inventing an ending. Then correctedTranslation must be null: do not rewrite an equivalent candidate. If the meanings differ, set preservesMeaning=false and return the smallest natural ${targetName} correction in correctedTranslation. Never return the unchanged candidate as a correction.
 
 ${FRAGMENT_FIDELITY_RULE}`;
 }
@@ -2089,6 +2091,8 @@ export function parseSemanticAuditResult(
     value.sourceMeaning.trim().length === 0 ||
     typeof value.candidateMeaning !== "string" ||
     value.candidateMeaning.trim().length === 0 ||
+    typeof value.usesTargetLanguage !== "boolean" ||
+    value.preservesMeaning === true && value.usesTargetLanguage !== true ||
     typeof value.preservesMeaning !== "boolean" ||
     value.correctedTranslation !== null &&
       typeof value.correctedTranslation !== "string"

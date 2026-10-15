@@ -1,0 +1,11 @@
+{
+  "lib/features/chat/message_presentation.dart": "3c07df9fb36383433dde4a957fdc46d821c1439ba9481a326799d7eb7f04804f",
+  "lib/features/chat/widgets/message_learning_content.dart": "6959bdff7c6f21d853295090dbe9c917637bba2c9180ff1e56742879cdd120cc",
+  "supabase/functions/translate-message/contract.ts": "d682341bbfe377d5211f5be481af6712a88293c31efee2151226d457c4444b3a",
+  "supabase/functions/translate-message/contract_test.ts": "9566dbf0f83a969459afec7a563811b665983787466246f2061ff471ea2b13f7",
+  "supabase/functions/translate-message/index.ts": "0661061c3bab58a0dabed0d3052a812e225df6007d6efafd2ef25cd075f907b3",
+  "supabase/functions/translate-message/readable_delivery.ts": "031bb6bdbc96399c15b7f4b7e0ac4487019713316c3a53f4600fa6e5f56a4049",
+  "supabase/functions/translate-message/readable_delivery_test.ts": "aa69cf2f7d68ae3a8d40b0abc8d9dd7d29ed3d6a50d93c22d06dd820f586a820",
+  "test/message_learning_content_test.dart": "df7f57156d1ad76133105a479c0058745852f74a6e86b99b8a7f9e8fd8793783",
+  "test/message_presentation_test.dart": "4a8d9061a91ccf43a8f85442fc3830fa0dd44f7b1ad59b23ec95c44c35f06503"
+}

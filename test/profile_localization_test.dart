@@ -95,6 +95,18 @@ Future<void> _pumpProfile(
 }
 
 void main() {
+  testWidgets('Profile viewport ignores keyboard insets from another route', (
+    tester,
+  ) async {
+    await _pumpProfile(tester, locale: const Locale('en'));
+    final scroll = find.byType(SingleChildScrollView).first;
+    final resting = tester.getRect(scroll);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(scroll), resting);
+  });
+
   testWidgets('German Profile chrome and language names are localized', (
     tester,
   ) async {

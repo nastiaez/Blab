@@ -157,6 +157,33 @@ void main() {
     expect(find.text('schnell'), findsNWidgets(2));
   });
 
+  testWidgets(
+    'unchanged Practice sentence reveals known language on selection',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: host(
+            const AsyncData(
+              MessageTranslation(
+                translation: "Los geht's!",
+                interfaceText: "Let's go!",
+                interfaceLang: 'en',
+                sourceLang: 'de',
+                mode: LearningAidMode.none,
+                tokens: [],
+              ),
+            ),
+            authoredText: "Los geht's!",
+            expanded: true,
+          ),
+        ),
+      );
+      expect(find.text("Let's go!"), findsOneWidget);
+      expect(find.text('Los'), findsOneWidget);
+      expect(find.text("geht's"), findsOneWidget);
+    },
+  );
+
   testWidgets('unsupported source keeps the authored text visible', (
     tester,
   ) async {
@@ -693,33 +720,35 @@ void main() {
     );
   });
 
-  testWidgets('aid mode none renders only the exact original message', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      host(
-        AsyncData(
-          result(
-            learning: 'Was machst du?',
-            interfaceText: 'What are you doing?',
-            source: 'de',
-            mode: LearningAidMode.none,
+  testWidgets(
+    'collapsed aid mode none renders only the exact original message',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          AsyncData(
+            result(
+              learning: 'Was machst du?',
+              interfaceText: 'What are you doing?',
+              source: 'de',
+              mode: LearningAidMode.none,
+            ),
           ),
+          authoredText: 'Was machst du?',
+          isOutgoing: true,
+          expanded: false,
         ),
-        authoredText: 'Was machst du?',
-        isOutgoing: true,
-      ),
-    );
+      );
 
-    expectWords(['Was', 'machst', 'du']);
-    expect(
-      tester.widget<MessageText>(find.byType(MessageText)).text,
-      'Was machst du?',
-    );
-    expect(find.text('What are you doing?'), findsNothing);
-    expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
-    expect(find.textContaining('Correction:'), findsNothing);
-  });
+      expectWords(['Was', 'machst', 'du']);
+      expect(
+        tester.widget<MessageText>(find.byType(MessageText)).text,
+        'Was machst du?',
+      );
+      expect(find.text('What are you doing?'), findsNothing);
+      expect(find.byKey(const ValueKey('translation-shimmer')), findsNothing);
+      expect(find.textContaining('Correction:'), findsNothing);
+    },
+  );
 
   testWidgets('disabled learning aids show only exact original', (
     tester,

@@ -1002,7 +1002,7 @@ void main() {
   );
 
   test(
-    'active preparation ends shimmer at deadline and accepts late text without duplicate AI calls',
+    'active preparation enters recoverable pending and accepts late text without duplicate AI calls',
     () async {
       final service = _RealtimeTranslationChatService()..pending = true;
       var calls = 0;

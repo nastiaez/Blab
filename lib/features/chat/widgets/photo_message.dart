@@ -83,9 +83,7 @@ class PhotoMessageView extends ConsumerWidget {
               // opens without a framework error surface.
               unawaited(_cacheOpenedFullAttachment(ref, attachment));
               Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => PhotoViewerScreen(imageProvider: provider),
-                ),
+                telegramRoute<void>(PhotoViewerScreen(imageProvider: provider)),
               );
             },
       child: image,

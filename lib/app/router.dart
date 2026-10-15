@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_messenger.dart';
+import 'telegram_route.dart';
 import 'email_change_feedback.dart';
 import 'ui_workbench_screen.dart';
 
@@ -139,6 +140,27 @@ Future<AuthCallbackResolution> resolveAuthCallbackUri(
       : AuthCallbackResolution.emailChange;
 }
 
+// All page pushes share the owner-selected motion; explicit tab pages stay still.
+GoRoute _blabRoute({
+  required String path,
+  GoRouterWidgetBuilder? builder,
+  GoRouterPageBuilder? pageBuilder,
+  GoRouterRedirect? redirect,
+  List<RouteBase> routes = const [],
+}) => GoRoute(
+  path: path,
+  redirect: redirect,
+  routes: routes,
+  pageBuilder:
+      pageBuilder ??
+      (builder == null
+          ? null
+          : (context, state) => TelegramPage<void>(
+              key: state.pageKey,
+              child: builder(context, state),
+            )),
+);
+
 final GoRouter blabRouter = GoRouter(
   initialLocation: '/bootstrap',
   observers: [appSnackRouteObserver],
@@ -211,26 +233,26 @@ final GoRouter blabRouter = GoRouter(
   refreshListenable: _AuthRefresh(_authStreamOrNull()),
   routes: <RouteBase>[
     if (kDebugMode) ...[
-      GoRoute(path: '/dev', builder: (context, state) => const DevMenu()),
-      GoRoute(
+      _blabRoute(path: '/dev', builder: (context, state) => const DevMenu()),
+      _blabRoute(
         path: '/dev/invite/:state',
         builder: (context, state) => InviteReviewFixture(
           state: state.pathParameters['state'] ?? 'not-found',
         ),
       ),
-      GoRoute(
+      _blabRoute(
         path: '/dev/workbench',
         builder: (context, state) => const UiWorkbenchScreen(),
       ),
     ],
-    GoRoute(
+    _blabRoute(
       path: '/bootstrap',
       builder: (context, state) => OnboardingBootstrapScreen(
         onResolved: (destination) =>
             _openOnboardingDestination(context, destination),
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/onboarding/welcome',
       builder: (context, state) => Consumer(
         builder: (context, ref, _) {
@@ -245,7 +267,7 @@ final GoRouter blabRouter = GoRouter(
         },
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/onboarding/learn',
       builder: (context, state) => Consumer(
         builder: (context, ref, _) {
@@ -264,17 +286,17 @@ final GoRouter blabRouter = GoRouter(
         },
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/signup',
       builder: (context, state) =>
           _authMethodRoute(context: context, mode: AuthMode.signUp),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/login',
       builder: (context, state) =>
           _authMethodRoute(context: context, mode: AuthMode.logIn),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/signup/email',
       builder: (context, state) => _emailAuthRoute(
         context: context,
@@ -282,20 +304,20 @@ final GoRouter blabRouter = GoRouter(
         mode: AuthMode.signUp,
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/login/email',
       builder: (context, state) =>
           _emailAuthRoute(context: context, state: state, mode: AuthMode.logIn),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/onboarding/name',
       builder: (context, state) => const _ConfirmNameRoute(),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/onboarding/language',
       builder: (context, state) => const _LanguageSetupRoute(),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth',
       builder: (context, state) {
         final q = state.uri.queryParameters;
@@ -309,23 +331,23 @@ final GoRouter blabRouter = GoRouter(
         );
       },
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/forgot',
       builder: (context, state) => ForgotPasswordScreen(
         prefilledEmail: state.uri.queryParameters['email'],
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/forgot/sent',
       builder: (context, state) => ForgotPasswordSentScreen(
         email: state.uri.queryParameters['email'] ?? '',
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/reset',
       builder: (context, state) => const ResetPasswordScreen(),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/auth/reset-invalid',
       builder: (context, state) => ResetLinkInvalidScreen(
         onRequestNewLink: () => context.go('/auth/forgot'),
@@ -335,60 +357,60 @@ final GoRouter blabRouter = GoRouter(
     // Deep-link landing for email-change confirmation. supabase_flutter
     // consumes the tokens before this builds. The authenticated user change,
     // not visiting this route, owns the success acknowledgement.
-    GoRoute(
+    _blabRoute(
       path: '/auth/email-changed',
       redirect: (context, state) {
         final signedIn = _currentSessionOrNull() != null;
         return confirmedEmailChangeDestination(signedIn: signedIn);
       },
     ),
-    GoRoute(
+    _blabRoute(
       path: '/chats',
       pageBuilder: (context, state) => NoTransitionPage<void>(
         key: state.pageKey,
         child: const _OnboardingGuard(child: ChatsScreen()),
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/chats/new',
       builder: (context, state) => _OnboardingGuard(
         child: NewChatScreen(initialToken: state.uri.queryParameters['token']),
       ),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/chats/empty',
       builder: (context, state) =>
           const _OnboardingGuard(child: ChatsScreen(preview: true)),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/share/image',
       builder: (context, state) =>
           const _OnboardingGuard(child: ShareImageScreen()),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/',
       pageBuilder: (context, state) => NoTransitionPage<void>(
         key: state.pageKey,
         child: const _OnboardingGuard(child: ChatsScreen()),
       ),
       routes: [
-        GoRoute(
+        _blabRoute(
           path: 'chat',
-          pageBuilder: (context, state) => NoTransitionPage<void>(
+          pageBuilder: (context, state) => TelegramPage<void>(
             key: state.pageKey,
             child: const _OnboardingGuard(child: ChatScreen(chatId: 'aswin')),
           ),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'chat/:id',
-          pageBuilder: (context, state) => NoTransitionPage<void>(
+          pageBuilder: (context, state) => TelegramPage<void>(
             key: state.pageKey,
             child: _OnboardingGuard(
               child: ChatScreen(chatId: state.pathParameters['id'] ?? 'aswin'),
             ),
           ),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'chat/:id/translation-preferences',
           builder: (context, state) => _OnboardingGuard(
             child: TranslationPreferencesScreen(
@@ -405,64 +427,64 @@ final GoRouter blabRouter = GoRouter(
         ),
       ],
     ),
-    GoRoute(
+    _blabRoute(
       path: '/i/:token',
       builder: (context, state) =>
           InviteResolverScreen(token: state.pathParameters['token'] ?? ''),
     ),
-    GoRoute(
+    _blabRoute(
       path: '/profile',
       pageBuilder: (context, state) => NoTransitionPage<void>(
         key: state.pageKey,
         child: const _OnboardingGuard(child: ProfileScreen()),
       ),
       routes: [
-        GoRoute(
+        _blabRoute(
           path: 'edit',
           builder: (context, state) =>
               const _OnboardingGuard(child: EditProfileScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'translation-preferences',
           builder: (context, state) =>
               const _OnboardingGuard(child: TranslationPreferencesScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'password',
           builder: (context, state) =>
               const _OnboardingGuard(child: ChangePasswordScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'email',
           builder: (context, state) =>
               const _OnboardingGuard(child: ChangeEmailScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'privacy',
           builder: (context, state) =>
               const _OnboardingGuard(child: PrivacyScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'notifications',
           builder: (context, state) =>
               const _OnboardingGuard(child: NotificationSettingsScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'interface-language',
           builder: (context, state) =>
               const _OnboardingGuard(child: InterfaceLanguageScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'known-languages',
           builder: (context, state) =>
               const _OnboardingGuard(child: KnownLanguagesScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'translation-language',
           builder: (context, state) =>
               const _OnboardingGuard(child: TranslationLanguageScreen()),
         ),
-        GoRoute(
+        _blabRoute(
           path: 'delete-account',
           builder: (context, state) =>
               const _OnboardingGuard(child: DeleteAccountScreen()),

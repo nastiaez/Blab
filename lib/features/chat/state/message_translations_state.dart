@@ -425,9 +425,9 @@ class MessageTranslationsNotifier
         } catch (_) {
           // Fall through to a visible retryable timeout state.
         }
-        // The server may keep retrying, but that must not renew the visible
-        // loading deadline indefinitely. Realtime/read-only cache recovery
-        // still accepts its late result without another provider invocation.
+        // After the initial wait, track durable work through read-only recovery.
+        // This pending state keeps the same Practice shimmer until the job
+        // settles, without another client-owned provider invocation.
         var preparationPending = true;
         try {
           preparationPending = await ref

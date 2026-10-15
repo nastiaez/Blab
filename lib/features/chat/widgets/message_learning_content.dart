@@ -215,11 +215,9 @@ class MessageLearningContent extends StatelessWidget {
           activeIndex: activeFormChoiceIndex,
         );
       }
-      if (value.mode == LearningAidMode.none || mode == ChatMode.normal) {
-        // Same-language chat (no aid needed, either mode) or normal mode
-        // (known source → exact original, unknown → translation only, no
-        // second lane): a single plain line, never the shimmer/error chrome
-        // or the expand affordance below.
+      if (mode == ChatMode.normal) {
+        // Normal has one primary lane; its optional reveal is authored text.
+        // Unchanged Practice text still uses the known-language reveal below.
         final displayText = resolveMessageDisplayText(
           authoredText: authoredText,
           value: value,

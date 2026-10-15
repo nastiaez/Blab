@@ -28,6 +28,7 @@ class ChatsScreen extends ConsumerWidget {
     final chats = chatsAsync.value;
     final hasConfirmedEmptyList = preview || (chats != null && chats.isEmpty);
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: BlabColors.chatCanvas,
       appBar: BlabAppBar(
         backgroundColor: BlabColors.chatCanvas,

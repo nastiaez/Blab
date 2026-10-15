@@ -57,6 +57,17 @@ Future<void> _pumpChats(WidgetTester tester, List<Chat> chats) async {
 }
 
 void main() {
+  testWidgets('keyboard insets never lift the Chats plus button', (
+    tester,
+  ) async {
+    await _pumpChats(tester, [_chat()]);
+    final resting = tester.getRect(find.byType(FloatingActionButton));
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(FloatingActionButton)), resting);
+  });
+
   testWidgets(
     'empty Chats explains the value without a duplicate plus action',
     (tester) async {

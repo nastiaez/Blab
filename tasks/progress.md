@@ -1256,3 +1256,33 @@ Implementation checkpoint: candidate8s budget, qualified hedge,8+2 phase slots,2
 - 2026-10-14 22:49 — Owner approved actual recovery/notification packet (12669). Integration and Firebase v17 underway. After this release, investigate consecutive incorrect/mixed German and Practice showing primary-known instead of learning language in a fresh worktree; no unseen follow-up changes included in v17.
 
 - 2026-10-14 23:04 — Approved recovery slice released as Firebase1.0.0(17) from4f8a521 after all main CI gates. Hosted migration/function readback and exact signed Android update/download-back passed; two existing testers assigned. Physical phone and live FCM remain unverified. Evidence: docs/qa/2026-10-14-translation-recovery/release-v17/receipt.json.
+
+### Mixed learner German and Practice language integrity — 14 October 2026 ← in progress
+
+- [x] Release approved recovery slice first as Firebase v17.
+- [x] Locate exact reported production messages; reproduce fragment failure and wrong known-language lane on local backend.
+- [x] Require language as well as meaning validation for both sentence lanes; handle learner grammar without lexical-overlap rejection.
+- [x] Verify actual two-client Practice primary/long-press, context sequence and regression coverage; prepare screenshots.
+- [ ] Owner review, targeted stale-cache repair and subsequent release.
+
+- 2026-10-14 — Investigation: old readable row stored English under target de. v17 fixes fresh Los geht’s but existing cached output remains. Local exact sequence still rejects Wenn ich du Message senden; correction-word-overlap heuristic and overly literal meaning anchor are separate failure points. Known-language audit previously only ran for translation mode, allowing German into English long-press for corrections. No production follow-up repair applied.
+
+- Final follow-up candidate:900 Flutter/197 backend pass; analysis clean;44/44 readable and word-help results, median1.8725s/max5.679s. Android unchanged/corrected long-press and word popup verified; Web primary inspected. Review evidence: docs/qa/2026-10-14-practice-language-integrity/README.md. Unmerged/unreleased; targeted old-cache repair pending owner review.
+
+
+### 15 October — unified Android navigation and translation follow-up ← in progress
+
+- [ ] Preference-aware meaning checker: remove lexical rejection, test correct/incorrect candidates and different viewer settings; replay the newly reported learner sentence.
+- [ ] One Practice shimmer while work is pending; no second Translating status; stop on real terminal failure and accept late results. Preserve reduced-motion accessibility.
+- [x] Audit every page route and replace the rejected native-default proposal with owner-supplied shared 150ms / 48dp slide-fade; verify Chats/+ and all ten Profile destinations on Android. Visual acceptance remains separate below.
+- [x] Reproduce and fix keyboard-open Back; verify stable list/+ and full Profile viewport on Android.
+- [ ] Diagnose latest production failure from exact job/cache data; investigate ready-but-faded separately without assuming the screenshot proves a missed update.
+- [ ] Actual Android motion/keyboard recordings, preference regressions and owner review before integration/release.
+
+Navigation research: installed Flutter3.44.8 uses PredictiveBackPageTransitionsBuilder with FadeForwards fallback450ms. Theme already selects it; two chat routes use NoTransitionPage, while new-chat/settings use Material routes. Root/tabs remain non-push navigation. Source: https://docs.flutter.dev/release/breaking-changes/default-android-page-transition and installed SDK page_transitions_theme.dart.
+
+- 2026-10-15 checkpoint: route audit complete; two chat overrides restored to platform-native Material transitions. Chats/Profile keyboard-resize regression fixed and native keyboard-open Back captured; all902 Flutter tests pass, analysis clean. Exact reported four-message sequence completes8/8 jobs on first attempt in candidate. Shimmer-only pending regression passes. Actual evidence: docs/qa/2026-10-15-navigation-keyboard. Asymmetric preference checker acceptance and owner motion review remain; no new release.
+
+- 2026-10-15 shared-motion revision: owner rejected 450ms default and specified PageRouteBuilder 150ms/48dp cubic slide-fade. Central route factory and imperative helper cover all page pushes; tabs/dialogs/sheets remain distinct. Project AGENTS.md records mandatory reuse. 904 full Flutter tests + four focused route checks pass, analysis clean; all ten Profile destinations and three chat rows/+ captured on Android. Asymmetric live checker replay: 6/6 viewer jobs ready on attempt 1 with independent learning/primary-known/interface languages; focused backend 94 checks pass. Evidence: docs/qa/2026-10-15-shared-page-motion. Await revised motion approval; stale-production repair/deployment not performed. Ready-but-faded phone incident remains un-reproduced, not claimed fixed.
+
+- 2026-10-15 07:59 — Ash explicitly approved merge and release (Telegram12720), covering shared motion and included checker/shimmer/keyboard fixes. Integrate approved packet, verify signed production update, deploy matching translation backend and distribute to existing Firebase testers.

@@ -62,6 +62,19 @@ export function restoreAcceptedReadable(
   return result;
 }
 
+export function copiedForeignKnownLane(
+  sourceText: string,
+  knownText: string,
+  sourceLang: string,
+  knownLang: string,
+): boolean {
+  return sourceLang !== knownLang && sourceLang !== "other" &&
+    !isProtectedLiteralMessage(sourceText) &&
+    /\p{L}/u.test(sourceText) &&
+    sourceText.normalize("NFKC").trim().toLocaleLowerCase() ===
+      knownText.normalize("NFKC").trim().toLocaleLowerCase();
+}
+
 export function knownLaneIsAuthoredOriginal(
   sourceText: string,
   candidate: string,

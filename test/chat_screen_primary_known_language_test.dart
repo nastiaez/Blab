@@ -874,7 +874,7 @@ void main() {
     await tester.pumpWidget(_host(container, disableAnimations: true));
     await _settle(tester);
     expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
-    expect(find.text('Translating…'), findsOneWidget);
+    expect(find.text('Translating…'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
     container.dispose();
     await tester.pump();
@@ -907,6 +907,10 @@ void main() {
       );
       expect(find.text('Translating…'), findsNothing);
       expect(find.text('Hello there'), findsWidgets);
+      await tester.pump(const Duration(seconds: 9));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('translation-wave')), findsOneWidget);
+      expect(find.text('Translating…'), findsNothing);
 
       container
           .read(messageTranslationsProvider('chat-1').notifier)

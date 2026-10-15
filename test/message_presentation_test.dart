@@ -54,6 +54,29 @@ void main() {
     },
   );
 
+  test(
+    'correct learning-language text retains known-language reveal and audio',
+    () {
+      final result = resolveMessagePresentation(
+        authoredText: "Los geht's!",
+        translation: AsyncData(
+          _translation(
+            translation: "Los geht's!",
+            interfaceText: "Let's go!",
+            sourceLang: 'de',
+            mode: LearningAidMode.none,
+          ),
+        ),
+        mode: ChatMode.practice,
+        knownLanguageCodes: const ['en'],
+        targetLanguageCode: 'de',
+      );
+      expect(result.primaryText, "Los geht's!");
+      expect(result.knownLanguageText, "Let's go!");
+      expect(result.listenText, "Los geht's!");
+    },
+  );
+
   test('normal translated text exposes exact authored original', () {
     final result = resolveMessagePresentation(
       authoredText: 'Hola',

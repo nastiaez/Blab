@@ -539,6 +539,7 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
     JSON.stringify({
       sourceMeaning: "Nous voulons visiter la librairie demain.",
       candidateMeaning: "Nous voulons visiter la librairie demain.",
+      usesTargetLanguage: true,
       preservesMeaning: true,
       correctedTranslation: null,
     }),
@@ -554,6 +555,7 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
       JSON.stringify({
         sourceMeaning: "We want to visit the library tomorrow.",
         candidateMeaning: "We want to visit the library tomorrow.",
+        usesTargetLanguage: true,
         preservesMeaning: true,
         correctedTranslation: null,
       }),
@@ -567,6 +569,7 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
     JSON.stringify({
       sourceMeaning: "Nous voulons visiter la librairie demain.",
       candidateMeaning: "Nous voulons visiter la bibliothèque demain.",
+      usesTargetLanguage: true,
       preservesMeaning: false,
       correctedTranslation: "Ми хочемо відвідати книгарню завтра.",
     }),
@@ -584,6 +587,7 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
       JSON.stringify({
         sourceMeaning: "source",
         candidateMeaning: "different",
+        usesTargetLanguage: true,
         preservesMeaning: false,
         correctedTranslation: null,
       }),
@@ -596,6 +600,7 @@ Deno.test("semantic audit parser accepts only internally consistent verdicts", (
       JSON.stringify({
         sourceMeaning: "source",
         candidateMeaning: "different",
+        usesTargetLanguage: true,
         preservesMeaning: false,
         correctedTranslation: "candidate",
       }),
@@ -3260,4 +3265,41 @@ Deno.test("learners can write short correct German despite an English profile", 
       "profile/history must not override the utterance",
     );
   }
+});
+
+Deno.test("meaning equivalence cannot approve the wrong output language", () => {
+  const verdict = {
+    sourceMeaning: "Let's go",
+    candidateMeaning: "Let's go",
+    usesTargetLanguage: false,
+    preservesMeaning: true,
+    correctedTranslation: null,
+  };
+  assert(
+    parseSemanticAuditResult(
+      JSON.stringify(verdict),
+      "Let's go",
+      "Let's go",
+    ) === null,
+    "English in the German slot must not be accepted just because meaning matches",
+  );
+  const repaired = parseSemanticAuditResult(
+    JSON.stringify({
+      ...verdict,
+      preservesMeaning: false,
+      correctedTranslation: "Los geht's",
+    }),
+    "Let's go",
+    "Let's go",
+  );
+  assert(
+    repaired?.correctedTranslation === "Los geht's",
+    "wrong-language verdict supplies the requested-language repair",
+  );
+  const missing = { ...verdict } as Record<string, unknown>;
+  delete missing.usesTargetLanguage;
+  assert(
+    parseSemanticAuditResult(JSON.stringify(missing), "Let's go") === null,
+    "an unchecked output language is not a qualified result",
+  );
 });

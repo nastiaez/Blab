@@ -40,6 +40,7 @@ class ProfileScreen extends ConsumerWidget {
         profile.value?.displayName ?? emailLocal ?? context.l10n.profile;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: BlabColors.chatCanvas,
       appBar: BlabAppBar(
         backgroundColor: BlabColors.chatCanvas,

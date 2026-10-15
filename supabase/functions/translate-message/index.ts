@@ -10,7 +10,6 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
   CORRECTION_AUDIT_RESPONSE_FORMAT,
   correctionAuditSystemPrompt,
-  correctionNeedsRetry,
   directSubjectRole,
   focusedTranslationRetryMessages,
   FORM_AUDIT_RESPONSE_FORMAT,
@@ -70,6 +69,7 @@ import {
   ProviderFetchError,
 } from "./provider.ts";
 import {
+  copiedForeignKnownLane,
   enrichAcceptedWordHelp,
   knownLaneIsAuthoredOriginal,
   READABLE_TRANSLATION_RESPONSE_FORMAT,
@@ -1083,15 +1083,8 @@ Deno.serve(async (req) => {
           });
           continue;
         }
-        if (correctionNeedsRetry(candidate, text)) {
-          providerFailure = `${credential.provider}_incomplete_correction`;
-          console.error("translation provider attempt failed", {
-            provider: credential.provider,
-            model: credential.model,
-            reason: providerFailure,
-          });
-          continue;
-        }
+        // Lexical edit distance is not a fidelity verdict for learner grammar.
+        // Every correction still requires the independent meaning/language audit.
         // The source-only request starts before generation and never receives a
         // candidate. Overlap I/O, then require its evidence before any audit.
         const sourceAnchor = await sourceMeaningPromise;
@@ -1126,6 +1119,26 @@ Deno.serve(async (req) => {
           lastFailedSourceLang = candidate.sourceLang;
           providerFailure = `${credential.provider}_source_evidence_conflict`;
           continue;
+        }
+        if (
+          copiedForeignKnownLane(
+            text,
+            candidate.interfaceText,
+            trustedSourceLang,
+            interfaceLang,
+          )
+        ) {
+          const repaired = await repairInterfaceText(
+            credential,
+            candidate.translation,
+            targetLang,
+            interfaceLang,
+          );
+          if (repaired === null) {
+            providerFailure = `${credential.provider}_copied_known_lane_repair`;
+            continue;
+          }
+          candidate = { ...candidate, interfaceText: repaired };
         }
         if (
           candidate.mode === "translation" &&
@@ -1211,6 +1224,19 @@ Deno.serve(async (req) => {
             tokens: interfaceAudit.repairedTokens ?? candidate.tokens,
           };
         }
+        const knownLaneBeforeCorrection = candidate.interfaceText;
+        const sameLanguageKnownConsensus = candidate.mode !== "translation" &&
+            targetLang !== interfaceLang
+          ? auditTranslationMeaningConsensus(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            candidate.interfaceText,
+            candidate.sourceLang,
+            interfaceLang,
+          )
+          : undefined;
+        let knownLaneAlreadyVerified = false;
         if (candidate.mode === "none" && candidate.sourceLang === targetLang) {
           const correctionAudit = await auditSameLanguageCorrection(
             credential,
@@ -1262,33 +1288,12 @@ Deno.serve(async (req) => {
             // language lane separately against the original source anchor.
             const literalInterface = targetLang === interfaceLang
               ? text
-              : await repairInterfaceText(
-                credential,
-                text,
-                targetLang,
-                interfaceLang,
-              );
-            if (
-              literalInterface === null ||
-              !preservesLiteralCharacters(text, literalInterface)
-            ) {
-              providerFailure =
-                `${credential.provider}_literal_interface_repair`;
-              continue;
-            }
+              : knownLaneBeforeCorrection;
             const interfaceVerdict = targetLang === interfaceLang
               ? null
-              : await auditTranslationMeaningConsensus(
-                semanticCredential,
-                text,
-                trustedSourceMeaning,
-                literalInterface,
-                targetLang,
-                interfaceLang,
-              );
+              : await sameLanguageKnownConsensus;
             if (
-              targetLang !== interfaceLang &&
-              (interfaceVerdict === null || !interfaceVerdict.preservesMeaning)
+              targetLang !== interfaceLang && interfaceVerdict === null
             ) {
               providerFailure =
                 `${credential.provider}_literal_interface_meaning`;
@@ -1298,13 +1303,44 @@ Deno.serve(async (req) => {
               ...candidate,
               mode: "none",
               translation: text,
-              interfaceText: literalInterface,
+              interfaceText: interfaceVerdict?.preservesMeaning === false
+                ? interfaceVerdict.correctedTranslation
+                : literalInterface,
               tokens: [],
               explanation: null,
               confidence: null,
               formAlternatives: null,
             };
+            knownLaneAlreadyVerified = true;
           }
+        }
+        if (
+          !knownLaneAlreadyVerified && candidate.mode !== "translation" &&
+          targetLang !== interfaceLang
+        ) {
+          const knownAudit = await auditInterfaceTextSemantics(
+            semanticCredential,
+            text,
+            trustedSourceMeaning,
+            candidate.translation,
+            candidate.interfaceText,
+            candidate.sourceLang,
+            targetLang,
+            interfaceLang,
+            candidate.interfaceText === knownLaneBeforeCorrection
+              ? sameLanguageKnownConsensus
+              : undefined,
+            TEXT_FIRST_DELIVERY,
+          );
+          if (knownAudit === null) {
+            providerFailure = `${credential.provider}_known_language_audit`;
+            continue;
+          }
+          candidate = {
+            ...candidate,
+            interfaceText: knownAudit.interfaceText,
+            tokens: knownAudit.repairedTokens ?? candidate.tokens,
+          };
         }
         if (hindiFutureNeedsAudit(candidate, targetLang)) {
           const futureAudit = await auditHindiFutureTranslation(

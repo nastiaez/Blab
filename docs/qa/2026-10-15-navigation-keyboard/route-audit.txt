@@ -1,0 +1,25 @@
+lib/app/router.dart:594:    onForgotPassword: (email) => context.push(
+lib/app/dev_menu.dart:100:            onPressed: () => context.push(e.path),
+lib/shared/widgets/surfaces/blab_dialog.dart:12:}) => showDialog<T>(
+lib/features/profile/change_password_screen.dart:185:                  onPressed: _busy ? null : () => context.push('/auth/forgot'),
+lib/shared/widgets/selection/blab_selection_sheet.dart:22:}) => showModalBottomSheet<T>(
+lib/features/profile/profile_screen.dart:61:                    context.push('/profile/known-languages'),
+lib/features/profile/profile_screen.dart:63:                    context.push('/profile/translation-language'),
+lib/features/profile/profile_screen.dart:77:                  onTap: () => context.push('/profile/interface-language'),
+lib/features/profile/profile_screen.dart:83:                  onTap: () => context.push('/profile/translation-preferences'),
+lib/features/profile/profile_screen.dart:89:                  onTap: () => context.push('/profile/edit'),
+lib/features/profile/profile_screen.dart:95:                  onTap: () => context.push('/profile/email'),
+lib/features/profile/profile_screen.dart:102:                    onTap: () => context.push('/profile/password'),
+lib/features/profile/profile_screen.dart:115:                  onTap: () => context.push('/profile/privacy'),
+lib/features/profile/profile_screen.dart:122:                    onTap: () => context.push('/profile/notifications'),
+lib/features/profile/profile_screen.dart:153:                  onTap: () => context.push('/profile/delete-account'),
+lib/features/chat/chat_screen.dart:1328:                      await context.push(
+lib/features/chat/chat_screen.dart:1714:                        context.push('/profile/known-languages');
+lib/features/chat/partner_profile_page.dart:22:    MaterialPageRoute<void>(builder: (_) => PartnerProfilePage(chat: chat)),
+lib/features/auth/auth_screen.dart:390:                                        : () => context.push('/auth/forgot'),
+lib/features/chat/widgets/message_bubble.dart:496:                    onChange: () => context.push(
+lib/features/chats/chats_screen.dart:74:                        onTap: () => context.push('/chat/${c.id}'),
+lib/features/chats/chats_screen.dart:88:              onPressed: () => context.push('/chats/new'),
+lib/features/chats/chats_screen.dart:161:                      onPressed: () => context.push('/chats/new'),
+lib/features/auth/forgot_password_screen.dart:60:      context.push(
+lib/features/chat/widgets/photo_message.dart:86:                MaterialPageRoute<void>(

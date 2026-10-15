@@ -1,0 +1,10 @@
+{
+  "lib/app/router.dart": "204526987d0635f369587a506ef8513aa105e04383ca08cdb181da252b30ad93",
+  "lib/app/telegram_route.dart": "04b2ba362d50f1cbf0ed6222e14855819606cacd76cc70d542e69ae9e3520ce3",
+  "lib/features/chat/partner_profile_page.dart": "31d82ca1f89eb3f7810dd2e7bde9113bdf1786c0e4b01889a69c5ba5632355ca",
+  "lib/features/chat/widgets/photo_message.dart": "51f747709e732309119a3ffce90dd2197cb8b9e210a0fd95202a19a3c329a484",
+  "lib/features/chat/chat_screen.dart": "b57c59812d3299f65dd2098268eac864d89e0930ad5c93528098148c14520f67",
+  "supabase/functions/translate-message/index.ts": "0661061c3bab58a0dabed0d3052a812e225df6007d6efafd2ef25cd075f907b3",
+  "supabase/functions/translate-message/contract.ts": "d682341bbfe377d5211f5be481af6712a88293c31efee2151226d457c4444b3a",
+  "supabase/functions/translate-message/readable_delivery.ts": "031bb6bdbc96399c15b7f4b7e0ac4487019713316c3a53f4600fa6e5f56a4049"
+}

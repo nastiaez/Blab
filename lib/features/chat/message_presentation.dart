@@ -84,7 +84,8 @@ MessagePresentation resolveMessagePresentation({
     );
     final practiceAid =
         mode == ChatMode.practice &&
-        value.mode != LearningAidMode.none &&
+        (value.mode != LearningAidMode.none ||
+            value.sourceLang == targetLanguageCode) &&
         !unsupportedSource;
     return MessagePresentation(
       primaryText: primaryText,

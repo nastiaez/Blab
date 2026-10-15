@@ -361,7 +361,8 @@ class _BubbleState extends ConsumerState<MessageBubble> {
     final animateTranslationLifecycle =
         isPractice &&
         showLearningAid &&
-        liveTranslation is! AsyncError<MessageTranslation>;
+        (liveTranslation is! AsyncError<MessageTranslation> ||
+            liveTranslation.error is MessageTranslationPending);
     final messageLearningContent = animateTranslationLifecycle
         ? TranslatingMessageContent(
             key: ValueKey(
@@ -537,18 +538,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
     final hasError = isFailed || presentation.translationFailed;
     final showUnsupportedLanguageHint =
         presentation.unsupportedSource && showLearningAid;
-    final showReducedMotionProcessing =
-        reducedMotion &&
-        isOut &&
-        isPractice &&
-        showLearningAid &&
-        liveTranslation is AsyncLoading<MessageTranslation> &&
-        (message.status == MessageStatus.delivered ||
-            message.status == MessageStatus.read);
-    if (!hasError &&
-        !presentation.translationDelayed &&
-        !showReducedMotionProcessing &&
-        !showUnsupportedLanguageHint) {
+    if (!hasError && !showUnsupportedLanguageHint) {
       return interactiveBubble;
     }
     return Column(
@@ -558,37 +548,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
           : CrossAxisAlignment.start,
       children: [
         interactiveBubble,
-        if (showReducedMotionProcessing)
-          DelayedTranslationStatus(
-            active: true,
-            status: Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                resolvedSourceLang == targetLanguageCode
-                    ? context.l10n.checking
-                    : context.l10n.translating,
-                style: const TextStyle(
-                  fontSize: 12,
-                  height: 1.25,
-                  color: BlabColors.textMuted,
-                ),
-              ),
-            ),
-            idle: const SizedBox.shrink(),
-          ),
-        if (presentation.translationDelayed)
-          Padding(
-            key: const ValueKey('translation-delayed'),
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              context.l10n.translating,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.25,
-                color: BlabColors.textMuted,
-              ),
-            ),
-          ),
         if (showUnsupportedLanguageHint)
           UnsupportedLanguageNotice(
             key: const ValueKey('unsupported-language-hint'),
