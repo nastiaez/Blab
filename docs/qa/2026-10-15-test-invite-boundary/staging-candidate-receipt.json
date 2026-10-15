@@ -1,0 +1,13 @@
+{
+  "status": "not_distributed",
+  "source_commit": "bf52c17",
+  "version": "1.0.0",
+  "build_number": 22,
+  "package": "blab.nastia.ez.test",
+  "sha256": "31a05536da8afa75f38d84817bbf610d54a163ce004db37fb37cde5d1e38e4cd",
+  "supabase_project": "tpfksdljkfnenjfdbane",
+  "firebase_app": "1:1084218779858:android:82904f8d21106e4911250b",
+  "landing_commit": "2f11154",
+  "blocker": "Vercel owner 2FA; domain link verification pending",
+  "approved_tester_count": 2
+}
