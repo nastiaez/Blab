@@ -1,0 +1,8 @@
+{
+  "lib/features/chat/state/chat_state.dart": "cd82aa7b0de39fd4dbddd997a1af461181c6674d174034cd3e165c0c1af0ab8d",
+  "test/chat_pagination_test.dart": "c056ff28d346440659663cc7ed62f912aa2a5acffb78a7f6453852ee580354b8",
+  "02-red-preview.png": "2b272a0d3e7eb69fa709ee45fe0db93c843732f481840ba4d1a4c17d945c16ef",
+  "03-green-open-chat.png": "09cae59ee348a6159999fbb4ffb2d8437887f9eb0364021b6430a6c8e31478a2",
+  "incoming-recovery.mp4": "af98191fe1c908ecbc60a832bce97c8105d42737dd6651c77b869b3967f8d4c6",
+  "01-red-open-chat.png": "73786010e1e24c4f55c63ff14070ada349df709b8ca6915c6f6949cbe13b1703"
+}

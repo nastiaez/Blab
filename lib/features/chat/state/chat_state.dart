@@ -193,6 +193,57 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         Error.throwWithStackTrace(error, stackTrace);
       }
     }
+    // US-031: list previews and timelines use independent live feeds. A
+    // successful preview is a reconciliation hint, never a message payload.
+    // Recover through the authoritative transport, preserving viewer policy.
+    Timer? recoveryTimer;
+    var disposed = false;
+    var recovering = false;
+    var recoveryRequested = false;
+    var recoveryAttempts = 0;
+    String? expectedLatestId;
+    late void Function() scheduleRecovery;
+    scheduleRecovery = () {
+      recoveryRequested = true;
+      if (disposed || recovering || recoveryTimer != null) return;
+      final delay = Duration(milliseconds: 200 * (1 << recoveryAttempts));
+      recoveryTimer = Timer(delay, () async {
+        recoveryTimer = null;
+        if (disposed) return;
+        recovering = true;
+        recoveryRequested = false;
+        try {
+          await refreshRecent();
+          if (expectedLatestId != null &&
+              !_messagesById.containsKey(expectedLatestId)) {
+            recoveryRequested = true;
+          }
+        } catch (_) {
+          recoveryRequested = true;
+        } finally {
+          recovering = false;
+          if (!disposed && recoveryRequested && ++recoveryAttempts < 5) {
+            scheduleRecovery();
+          } else {
+            recoveryAttempts = 0;
+          }
+        }
+      });
+    };
+    ref.onDispose(() {
+      disposed = true;
+      recoveryTimer?.cancel();
+    });
+    ref.listen(chatListProvider, (_, next) {
+      final latestId = next.value
+          ?.where((chat) => chat.id == chatId)
+          .firstOrNull
+          ?.lastMessageId;
+      expectedLatestId = latestId;
+      if (latestId != null && !_messagesById.containsKey(latestId)) {
+        scheduleRecovery();
+      }
+    }, fireImmediately: true);
     try {
       await for (final change in svc.watchMessageChanges(chatId)) {
         try {
@@ -230,8 +281,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
               break;
           }
         } catch (_) {
-          // Keep the channel alive. A later event or reconnect resync can
-          // repair a transient PostgREST failure for this one change.
+          // Do not require another incoming message or navigation to repair
+          // a failed event-enrichment request.
+          scheduleRecovery();
           continue;
         }
         final snapshot = _snapshot();
@@ -240,7 +292,8 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         yield snapshot;
       }
     } catch (_) {
-      // Realtime errored (e.g. offline). Keep last yielded state.
+      // Retain the snapshot, but reconcile independently of the failed feed.
+      scheduleRecovery();
     }
   }
 
@@ -272,6 +325,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       _setPagination();
     }
     final snapshot = _snapshot();
+    _reconcilePending(snapshot);
     await cache?.saveMessages(chatId, snapshot);
     if (ref.mounted && ref.read(currentUserIdProvider) == accountId) {
       state = AsyncData(snapshot);

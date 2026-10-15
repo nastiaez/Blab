@@ -1,0 +1,33 @@
+{
+  "chat": "318ed13d-395e-477d-bd2e-f5e05bcfae64",
+  "message": "16855f86-e10f-49b6-8417-f36b958ae16f",
+  "openLabels": [
+    "Back",
+    "AL\nAlice Local",
+    "Practice mode",
+    "Chat menu",
+    "Today",
+    " \n \n.\n08:17\n\u00b7\nDelivered",
+    "Ich",
+    "warte",
+    "hier",
+    "Attach",
+    "Send"
+  ],
+  "previewLabels": [
+    "AL\nAlice Local\nNow\nDie rote Blume ist hier.\n1",
+    "AL\nAlice Local\n1m\nDie rote Blume ist hier.\n1",
+    "AL\nAlice Local\n53m\nWas dann? Ich verstehe es nicht.",
+    "AL\nAlice Local\n9h\nLos geht's!",
+    "AL\nAlice Local\n9h\nI will bring the book tomorrow.\n3",
+    "AL\nAlice Local\n9h\nI will bring the book tomorrow.\n2",
+    "AL\nAlice Local\n9h\nI will bring the book tomorrow.\n8",
+    "AL\nAlice Local\n9h\nI will bring the book tomorrow.\n8",
+    "AL\nAlice Local\n9h\nI will bring the book tomorrow.\n8",
+    "AL\nAlice Local\n9h\nI will bring the book tomorrow.\n8",
+    "New chat",
+    "Chats\nTab 1 of 2",
+    "Profile\nTab 2 of 2"
+  ],
+  "injection": "local messages publication temporarily removed; prepared package events retained"
+}
