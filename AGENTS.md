@@ -139,3 +139,12 @@ Every pushed page must use the reusable `lib/app/telegram_route.dart` motion: 15
 ## Translation rulebook
 
 Before changing translation policy, read `docs/translation-rulebook.md` and its canonical source `supabase/functions/translate-message/rulebook.ts`. Prompts and checks must import shared policy there rather than copying values. Keep the PRD as product authority. Move new configurable translation exceptions into the rulebook; preserve the documented owners for preference resolution, schemas and durable scheduling. Run `deno run --allow-write scripts/generate_translation_rulebook.ts` after changes and run backend tests. CI checks generated-document parity and prompt/validator behavior. Never edit only the generated reference.
+
+## Flag conflicting or confusing rules (owner instruction, 15 October 2026)
+
+Whenever a project rule is conflicting, ambiguous, confusing, or inconsistent with another rule, prompt, configuration, implementation, or the requested behavior, highlight it in the current Blab development conversation. Do not silently choose an interpretation or hide the discrepancy in task notes.
+
+- Identify the relevant rules and their sources, explain the practical user-facing impact, and recommend a resolution briefly.
+- Apply explicit instruction precedence or an already-approved decision where it resolves the issue; explain that resolution here without asking for redundant approval.
+- If a product decision remains unresolved, ask here before changing the affected behavior. Continue independent, unblocked work.
+- Once resolved, update the canonical source and its generated reference/tests as applicable so the same confusion does not recur. Never resolve a conflict by editing only a generated document.
