@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0 (19)",
+  "source_revision": "d6cc536735704ae609a0331d8af5bee0201aec74",
+  "approval_message": 12904,
+  "apk_sha256": "fe431f14e6f60b23b62c30f0e2906de276565e08fa233d142217f5c74d5a3156",
+  "signing_sha256": "1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb",
+  "firebase_release": "4s7e66utv0jdo",
+  "firebase_app": "1:363935775546:android:c3a351249463d5f9356e03",
+  "download_back_hash_matches": true,
+  "distribution": "successful; release-specific tester list verified",
+  "production": {
+    "migration": "20261015000001",
+    "translate_message_version": 29,
+    "prepare_message_jobs_version": 8,
+    "identical_readback_files": 10,
+    "backend_verifier": "passed"
+  },
+  "tests": {
+    "backend_passed": 165,
+    "flutter_passed": 913,
+    "flutter_skipped": 15,
+    "integrated_two_way_missed_events": "passed, both open chats; local publication restored"
+  },
+  "signed_update": {
+    "device": "emulator-5560",
+    "from": 18,
+    "to": 19,
+    "without_uninstall": true,
+    "saved_german_preference_retained": true,
+    "limitation": "Signed-out baseline; not physical-device authenticated history proof"
+  },
+  "ci_url": "https://github.com/nastiaez/Blab/actions/runs/38734357360",
+  "ci_conclusion": "success",
+  "testers_invited": 2,
+  "testers_accepted": 2,
+  "tester_downloads_at_verification": 0
+}

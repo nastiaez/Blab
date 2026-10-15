@@ -1,6 +1,6 @@
-# One-call preparation and reliable open chat — candidate
+# One-call preparation and reliable open chat — released v19
 
-Owner authorization: Telegram12887/12895, 15 October 2026. Base origin/main8df0e84; dedicated branch fix/single-call-reliable-chat-20261015. Incorporates earlier missing-message and shimmer safeguards. Not merged, hosted/deployed, or released. Owner review pending.
+Owner authorization: Telegram12887/12895, 15 October 2026. Base origin/main8df0e84; dedicated branch fix/single-call-reliable-chat-20261015. Incorporates earlier missing-message and shimmer safeguards. Approved in Telegram12904, integrated and released as v19. Historical candidate-stage notes below are superseded by the release receipt.
 
 ## Implementation
 
@@ -39,3 +39,12 @@ Review evidence delivered in the same development topic: Telegram12900,12901,129
 
 ## Release authorization
 Ash approved merge and release in Telegram12904 (15 October2026). Integrate this reviewed candidate, verify signed Android update, deploy matching worker/migration and distribute to existing testers.
+
+## Completed release — 15 October 2026
+
+- Approved source `d6cc536735704ae609a0331d8af5bee0201aec74` merged and pushed to main. All three integrated CI jobs passed: https://github.com/nastiaez/Blab/actions/runs/38734357360.
+- Production migration20261015000001 applied; translate-message v29 and prepare-message-jobs v8 deployed. All10 downloaded source files identical; production backend verifier and authentication checks passed.
+- Signed1.0.0(19) replaces v18 without uninstall; German preference retained on signed-out emulator5560. This is not proof of authenticated physical-device history retention.
+- Integrated two-account Android check repeated with local live publications disabled: both open chats received and resolved both directions without navigation. Publication restored; release-v19-alice.png / release-v19-bob.png inspected.
+- Firebase release4s7e66utv0jdo distributed successfully to the two existing testers; release-specific tester membership verified,2 invited/2 accepted/0 downloaded at verification. Download-back APK hash matches the signed artifact. See release-v19.json.
+- Tests:165 backend;913 Flutter passed,15 skipped. Original phone-specific triggering event remains unproven. Physical tester installation/acceptance remains pending; do not mark that as completed by distribution alone.
