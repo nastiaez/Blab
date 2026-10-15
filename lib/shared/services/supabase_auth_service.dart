@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -131,6 +134,47 @@ class SupabaseAuthService {
       idToken: idToken,
       accessToken: accessToken,
     );
+  }
+
+  Future<AuthResponse> signInWithApple() async {
+    final rawNonce = _auth.generateRawNonce();
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+      );
+      final token = credential.identityToken;
+      if (token == null) {
+        throw const AuthException('Apple returned no identity token');
+      }
+      final response = await _auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: token,
+        nonce: rawNonce,
+      );
+      // Apple returns a name only on first authorization. Never replace a saved name.
+      final name = [
+        credential.givenName,
+        credential.familyName,
+      ].whereType<String>().where((part) => part.trim().isNotEmpty).join(' ');
+      final existingName = response.user?.userMetadata?['full_name'] as String?;
+      if (name.isNotEmpty && (existingName == null || existingName.isEmpty)) {
+        try {
+          await _auth.updateUser(UserAttributes(data: {'full_name': name}));
+        } catch (_) {
+          // Confirm name remains editable; metadata failure cannot undo authentication.
+        }
+      }
+      return response;
+    } on SignInWithAppleAuthorizationException catch (error) {
+      if (error.code == AuthorizationErrorCode.canceled) {
+        throw const SocialSignInCancelled();
+      }
+      rethrow;
+    }
   }
 
   /// True when the user has an email/password identity. Google-only

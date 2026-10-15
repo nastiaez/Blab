@@ -1,3 +1,4 @@
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'blab_local_notifications.dart';
 
@@ -91,7 +92,7 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
   @override
   bool get isSupported =>
       SupabaseConfig.pushNotificationsEnabled &&
-      BlabFirebaseConfig.isAndroidPlatform &&
+      BlabFirebaseConfig.isPushPlatform &&
       Firebase.apps.isNotEmpty;
 
   @override
@@ -117,6 +118,10 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
   @override
   Future<String?> getToken() async {
     if (!isSupported) return null;
+    if (BlabFirebaseConfig.isIosPlatform &&
+        await _messaging.getAPNSToken() == null) {
+      return null;
+    }
     return _messaging.getToken();
   }
 
@@ -177,6 +182,10 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
 
   @override
   Future<void> openSystemSettings() async {
+    if (BlabFirebaseConfig.isIosPlatform) {
+      await launchUrl(Uri.parse('app-settings:'));
+      return;
+    }
     if (!BlabFirebaseConfig.isAndroidPlatform) return;
     await _platform.invokeMethod<void>('openNotificationSettings');
   }

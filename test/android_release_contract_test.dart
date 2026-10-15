@@ -16,18 +16,20 @@ const obsoleteDebugFingerprints = <String>{
 
 void main() {
   test('hosted environment validation rejects CI-only Firebase config', () {
-    final envDir = Directory('env');
-    final firebaseDir = Directory('env/firebase/staging');
-    final stagingFile = File('env/staging.json');
-    final stagingFirebaseFile = File(
-      'env/firebase/staging/google-services.json',
+    final sandbox = Directory.systemTemp.createTempSync(
+      'blab-release-contract-',
     );
-
-    addTearDown(() {
-      if (stagingFile.existsSync()) stagingFile.deleteSync();
-      if (stagingFirebaseFile.existsSync()) stagingFirebaseFile.deleteSync();
-      if (firebaseDir.existsSync()) firebaseDir.deleteSync(recursive: true);
-    });
+    addTearDown(() => sandbox.deleteSync(recursive: true));
+    final envDir = Directory('${sandbox.path}/env');
+    final firebaseDir = Directory('${envDir.path}/firebase/staging');
+    final stagingFile = File('${envDir.path}/staging.json');
+    final stagingFirebaseFile = File(
+      '${firebaseDir.path}/google-services.json',
+    );
+    Directory('${sandbox.path}/scripts').createSync();
+    File(
+      'scripts/blab_environment.sh',
+    ).copySync('${sandbox.path}/scripts/blab_environment.sh');
 
     envDir.createSync(recursive: true);
     firebaseDir.createSync(recursive: true);
@@ -53,7 +55,7 @@ void main() {
     stagingFirebaseFile.writeAsStringSync(jsonEncode(fixture));
 
     final result = Process.runSync('bash', [
-      'scripts/blab_environment.sh',
+      '${sandbox.path}/scripts/blab_environment.sh',
       'validate',
       'staging',
     ]);

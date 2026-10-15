@@ -1,3 +1,4 @@
+import '../data/firebase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class PushTokenRepository {
@@ -55,7 +56,7 @@ class SupabasePushTokenRepository implements PushTokenRepository {
       'register_push_token',
       params: {
         'p_token': token,
-        'p_platform': 'android',
+        'p_platform': BlabFirebaseConfig.isIosPlatform ? 'ios' : 'android',
         'p_previews_enabled': previewsEnabled,
       },
     );

@@ -589,6 +589,22 @@ Widget _authMethodRoute({
             await _acknowledgeIntroAndResolve(context, ref);
           }
         },
+        onApple: () async {
+          await ref.read(socialAuthActionProvider)('apple');
+          final user = ref.read(supabaseAuthServiceProvider).currentUser;
+          await queueGuestInterfaceLanguageSync(
+            isNewAccount:
+                user != null &&
+                isNewAuthAccount(
+                  createdAt: user.createdAt,
+                  lastSignInAt: user.lastSignInAt,
+                ),
+            userId: user?.id,
+          );
+          if (context.mounted) {
+            await _acknowledgeIntroAndResolve(context, ref);
+          }
+        },
         onEmail: () => context.go(
           mode == AuthMode.signUp ? '/auth/signup/email' : '/auth/login/email',
         ),

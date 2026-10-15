@@ -19,7 +19,7 @@
 | Platform | Phase | Min version | Notes |
 |----------|-------|-------------|-------|
 | Android  | 1     | API 24 (Android 7.0) | Covers ~97% of devices |
-| iOS      | 2     | iOS 14      | Matches Flutter's current minimum |
+| iOS      | 2     | iOS 15      | Current Firebase Core/Messaging iOS packages require iOS 15; aligned during first iOS setup, 2026-10-15 |
 
 Owner clarification, 2026-10-13: retain the current Blab visual language and assets while composing reusable Flutter Material 3 controls. Android uses genuine Material navigation, SDK-standard page transitions and system/predictive Back; do not recreate these mechanisms with custom replicas. Minimal unavoidable geometry changes require screenshot/journey approval before integration. Implementation is in progress on `feat/material3-migration`, not released.
 

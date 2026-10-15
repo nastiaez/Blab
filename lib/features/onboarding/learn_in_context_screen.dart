@@ -594,6 +594,12 @@ class _VocabularyPopup extends StatelessWidget {
     final mediaQuery = MediaQuery.of(context);
     final requestedScale = mediaQuery.textScaler.scale(1);
     final popupScale = requestedScale > 1.3 ? 1.3 : requestedScale;
+    const wordStyle = TextStyle(
+      color: OnboardingTheme.warmInk,
+      fontSize: 22,
+      height: 1.15,
+      fontWeight: FontWeight.w800,
+    );
 
     return MediaQuery(
       data: mediaQuery.copyWith(textScaler: TextScaler.linear(popupScale)),
@@ -621,16 +627,20 @@ class _VocabularyPopup extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'exquisite',
-                      style: TextStyle(
-                        color: OnboardingTheme.warmInk,
-                        fontSize: 22,
-                        height: 1.15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                  Expanded(
+                    // San Francisco is wider than the approved Android font.
+                    // Keep the same popup bounds and the complete word on iOS.
+                    child: Theme.of(context).platform == TargetPlatform.iOS
+                        ? const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'exquisite',
+                              maxLines: 1,
+                              style: wordStyle,
+                            ),
+                          )
+                        : const Text('exquisite', style: wordStyle),
                   ),
                   SizedBox.square(
                     dimension: 24,

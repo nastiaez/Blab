@@ -33,6 +33,11 @@ abstract final class BlabLocalNotifications {
     await _plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
       ),
       onDidReceiveNotificationResponse: (response) {
         final value = _decode(response.payload);
@@ -82,6 +87,7 @@ abstract final class BlabLocalNotifications {
           ? data['body'] as String
           : generic,
       notificationDetails: NotificationDetails(
+        iOS: const DarwinNotificationDetails(),
         android: AndroidNotificationDetails(
           'messages',
           'Messages',

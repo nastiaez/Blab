@@ -64,8 +64,14 @@ typedef SocialAuthAction = Future<void> Function(String provider);
 final socialAuthActionProvider = Provider<SocialAuthAction>((ref) {
   final auth = ref.watch(supabaseAuthServiceProvider);
   return (provider) async {
-    if (provider != 'google') throw UnsupportedError(provider);
-    await auth.signInWithGoogle();
+    switch (provider) {
+      case 'google':
+        await auth.signInWithGoogle();
+      case 'apple':
+        await auth.signInWithApple();
+      default:
+        throw UnsupportedError(provider);
+    }
   };
 });
 

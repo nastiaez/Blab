@@ -170,7 +170,7 @@ Future<void> _initializeAndRunApp() async {
     requiredForHostedAndroid:
         SupabaseConfig.environment != BlabEnvironment.local,
   );
-  if (BlabFirebaseConfig.isAndroidPlatform && Firebase.apps.isNotEmpty) {
+  if (BlabFirebaseConfig.isPushPlatform && Firebase.apps.isNotEmpty) {
     FirebaseMessaging.onBackgroundMessage(_cacheBackgroundPush);
     if (streamReviewEnabled) {
       try {
@@ -324,7 +324,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
     } catch (_) {
       // Test environment without Supabase. Skip silently.
     }
-    if (BlabFirebaseConfig.isAndroidPlatform && Firebase.apps.isNotEmpty) {
+    if (BlabFirebaseConfig.isPushPlatform && Firebase.apps.isNotEmpty) {
       _receivedPushSub = FirebaseMessaging.onMessage.listen((message) {
         final event = PushOpenEvent.fromData(message.data);
         if (event != null) {

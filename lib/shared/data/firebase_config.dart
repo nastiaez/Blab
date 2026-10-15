@@ -1,10 +1,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
-/// Initializes the default Android Firebase app from google-services.json.
+/// Initializes the platform Firebase app from its environment configuration.
 /// FCM server keys belong only in hosted server/provider credentials, never
 /// in the Android configuration.
 abstract final class BlabFirebaseConfig {
+  static bool get isIosPlatform =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static bool get isPushPlatform => isAndroidPlatform || isIosPlatform;
+
   static bool get isAndroidPlatform =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 }
@@ -14,7 +18,7 @@ Future<bool> initializeFirebaseForPush({
   required String expectedProjectId,
   required bool requiredForHostedAndroid,
 }) async {
-  if (!enabled || !BlabFirebaseConfig.isAndroidPlatform) return false;
+  if (!enabled || !BlabFirebaseConfig.isPushPlatform) return false;
   try {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -16,6 +17,7 @@ class AuthMethodScreen extends StatefulWidget {
     required this.interfaceLanguageCode,
     required this.onBack,
     required this.onGoogle,
+    this.onApple,
     required this.onEmail,
     required this.onSwitchMode,
     required this.onChangeInterfaceLanguage,
@@ -28,6 +30,7 @@ class AuthMethodScreen extends StatefulWidget {
   final String interfaceLanguageCode;
   final VoidCallback onBack;
   final Future<void> Function() onGoogle;
+  final Future<void> Function()? onApple;
   final VoidCallback onEmail;
   final VoidCallback onSwitchMode;
   final Future<void> Function(String languageCode) onChangeInterfaceLanguage;
@@ -42,14 +45,14 @@ class _AuthMethodScreenState extends State<AuthMethodScreen> {
   bool _busy = false;
   String? _error;
 
-  Future<void> _google() async {
+  Future<void> _social(Future<void> Function() action) async {
     if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      await widget.onGoogle();
+      await action();
     } on SocialSignInCancelled {
       // Cancelling the native account picker is not an error.
     } catch (_) {
@@ -82,8 +85,18 @@ class _AuthMethodScreenState extends State<AuthMethodScreen> {
           excludeFromSemantics: true,
         ),
         loading: _busy,
-        onPressed: _busy ? null : _google,
+        onPressed: _busy ? null : () => _social(widget.onGoogle),
       ),
+      if (!kIsWeb &&
+          defaultTargetPlatform == TargetPlatform.iOS &&
+          widget.onApple != null) ...[
+        const SizedBox(height: 12),
+        BlabAuthMethodButton.onboarding(
+          label: context.l10n.continueWithApple,
+          leading: const Icon(Icons.apple, size: 22),
+          onPressed: _busy ? null : () => _social(widget.onApple!),
+        ),
+      ],
       const SizedBox(height: 12),
       BlabAuthMethodButton.onboarding(
         label: context.l10n.continueWithEmail,
