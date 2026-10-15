@@ -112,6 +112,7 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
   late _TranslationVisualPhase _phase;
   Timer? _authoredTimer;
   Timer? _waveTimer;
+  Timer? _deferredResolveTimer;
   late final AnimationController _arrival;
   late final AnimationController _wave;
   bool _resolveDeferred = false;
@@ -172,6 +173,12 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
     if (widget.resolved && !oldWidget.resolved) {
       if (widget.deferResolve && !widget.reduceMotion) {
         _resolveDeferred = true;
+        // Scroll-end delivery can be interrupted. A ready sentence must not
+        // depend forever on another notification to leave the loading state.
+        _deferredResolveTimer?.cancel();
+        _deferredResolveTimer = Timer(const Duration(milliseconds: 750), () {
+          if (mounted && widget.resolved) _resolve();
+        });
         return;
       }
       _resolve();
@@ -214,6 +221,7 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
   }
 
   void _resolve() {
+    _resolveDeferred = false;
     _cancelWaiting();
     // Ready sentences paint as one complete unit: no erased frame, glyph
     // reveal, or decorative delay between verified text and the reader.
@@ -223,6 +231,8 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
   void _cancelWaiting() {
     _authoredTimer?.cancel();
     _waveTimer?.cancel();
+    _deferredResolveTimer?.cancel();
+    _deferredResolveTimer = null;
     _authoredTimer = null;
     _waveTimer = null;
     _wave.stop();

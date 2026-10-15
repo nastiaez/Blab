@@ -894,6 +894,15 @@ class MessageTranslationsNotifier
     _cancelLoadingTimeout(key);
     _sourceTexts[key] = text;
     state = {...state, key: const AsyncLoading()};
+    // A stalled first cache request must not prevent the read-only watchdog
+    // from finding a result committed while this screen remains open.
+    _scheduleLoadingTimeout(
+      key: key,
+      messageId: messageId,
+      text: text,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+    );
     // 1. DB cache. Returns instantly when another session already
     // translated this message into this target language.
     try {

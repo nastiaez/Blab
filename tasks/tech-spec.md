@@ -368,3 +368,7 @@ Implementation acceptance: cover ok/OK/Okay/okay with punctuation, appropriate u
 ### 2026-10-15 — Open timeline reconciliation (candidate)
 
 US-031: independent chat-list updates are a missing-message hint, never message content. When that chat's latest ID is absent, fetch through its authoritative ChatService transport and merge without losing older pages. Retry a transient read with capped exponential delays (200/400/800/1600/3200ms), coalesce triggers, stop after catch-up, and cancel scheduled work on provider disposal. Event-enrichment/stream errors also request reconciliation instead of silently waiting for another message. Do not generate translations, change preferences, or copy list preview text into a bubble. This closes proven lost-event/enrichment gaps; it does not diagnose the phone's precise network failure or guarantee delivery when both independent feeds fail.
+
+### 2026-10-15 — Pending-display liveness safeguards (candidate)
+
+Start the translation loading watchdog before initial cache I/O so stalled I/O cannot prevent read-only recovery. Ready-content scroll deferral is bounded at 750ms and cancelled on pending/reset/disposal; ScrollEnd still resolves immediately. No changes to language targets, historical revision, source identity, semantic acceptance or AI initiation. Exact 22-call trace analysis is in docs/qa/2026-10-15-stuck-shimmer/README.md; call-reduction work remains separate from these client guards.

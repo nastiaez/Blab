@@ -38,6 +38,18 @@ Widget _host({
 }
 
 void main() {
+  testWidgets(
+    'ready sentence cannot shimmer indefinitely when scroll release is missed',
+    (tester) async {
+      await tester.pumpWidget(_host(resolved: false, deferResolve: true));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpWidget(_host(resolved: true, deferResolve: true));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Ich komme später 😊'), findsOneWidget);
+      expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
+    },
+  );
+
   testWidgets('new bubble arrives with the subtle rise and scale', (
     tester,
   ) async {

@@ -91,6 +91,26 @@ class _CommittedTranslationChatService implements ChatService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _HungInitialCacheChatService extends _CommittedTranslationChatService {
+  final first = Completer<CachedMessageTranslation?>();
+  @override
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) {
+    if (fetchCalls == 0) {
+      fetchCalls++;
+      return first.future;
+    }
+    return super.fetchCachedTranslation(
+      messageId: messageId,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+    );
+  }
+}
+
 class _PageTranslationChatService implements ChatService {
   List<String>? requestedIds;
 
@@ -261,6 +281,43 @@ MessageTranslation _translation(String text) => MessageTranslation(
 );
 
 void main() {
+  test(
+    'hung first cache read cannot prevent recovery of committed text',
+    () async {
+      final service = _HungInitialCacheChatService();
+      var liveCalls = 0;
+      final container = _container(
+        chatService: service,
+        loadingTimeout: const Duration(milliseconds: 5),
+        translateFn: (id) async {
+          liveCalls++;
+          return _translation('unused');
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(
+        messageTranslationsProvider('hung-cache').notifier,
+      );
+      unawaited(
+        notifier.ensure(
+          messageId: 'm1',
+          text: 'hello',
+          targetLang: 'de',
+          interfaceLang: 'en',
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      final entry = container.read(
+        messageTranslationsProvider('hung-cache'),
+      )['m1|de|en'];
+      expect(entry, isA<AsyncData<MessageTranslation>>());
+      expect(entry!.value!.translation, 'Hallo');
+      expect(liveCalls, 0);
+      service.first.complete(null);
+      await Future<void>.delayed(Duration.zero);
+    },
+  );
+
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test(

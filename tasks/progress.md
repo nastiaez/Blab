@@ -1310,3 +1310,12 @@ Candidate implemented, not merged/deployed. 162 backend tests pass; Android scre
 - Reproduced with focused red tests: lost timeline event while independent list announces latest ID; event enrichment throws after accepted message. Existing notifier never repairs either without another event/navigation.
 - Candidate: bounded read-only reconciliation on missing preview ID or failed event, retaining older history and pending-send deduplication. No route or visual changes. Full908 Flutter pass/15 skipped; extended7 recovery checks pass; analysis clean. Android red: missed live message absent while prepared-preview visible; green: same fault recovers incoming automatically, earlier bubbles retained, no duplicate. Evidence inspected and sent Telegram12742/12743. Candidate awaits owner review; not integrated/released.
 - Approved v18 source2e409b5 integrated and all CI passed; backend deployed/readback verified, six scoped viewer jobs repaired, exact signed APK uploaded/download-back verified. Released to both existing testers after investigation; this additional recovery candidate is not in v18.
+
+### 15 October — visible stuck shimmer and request amplification
+
+- [x] Inspect exact LangSmith calls and durable viewer jobs: 22 root calls, both readable rows saved ~6.34s, jobs ready first attempt.
+- [x] Reproduce hung first-cache and missed scroll-release loading holds; both red before fix, focused 57 checks green, full Flutter 908 pass / 15 skipped and static analysis clean after candidate guards.
+- [ ] Verify injected recovery on Android and present screenshots/recording before integration.
+- [ ] Separately reduce redundant generation/audit amplification without weakening meaning/language acceptance; no production change yet.
+
+Phone-specific triggering event remains unconfirmed. See docs/qa/2026-10-15-stuck-shimmer/README.md.
