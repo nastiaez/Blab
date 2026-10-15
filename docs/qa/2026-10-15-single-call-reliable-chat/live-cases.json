@@ -1,0 +1,1446 @@
+[
+  {
+    "text": "Okay",
+    "ms": 1908,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Okay",
+        "interfaceText": "Okay",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Okay",
+            "gloss": "okay",
+            "roman": "Okay",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Окей",
+        "interfaceText": "Окей",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Окей",
+            "gloss": "окей",
+            "roman": null,
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "Hii nastia when are you coming back",
+    "ms": 2982,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Hallo Nastia, wann kommst du zurück?",
+        "interfaceText": "Hi Nastia, when are you coming back?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Hallo",
+            "gloss": "Hi",
+            "roman": "Hallo",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Nastia",
+            "gloss": "Nastia",
+            "roman": "Nastia",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "wann",
+            "gloss": "when",
+            "roman": "wann",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "kommst",
+            "gloss": "are coming",
+            "roman": "kommst",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "du",
+            "gloss": "you",
+            "roman": "du",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "zurück",
+            "gloss": "back",
+            "roman": "zurück",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Привіт, Настю, коли ти повертаєшся?",
+        "interfaceText": "Привіт, Настю, коли ти повертаєшся?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Привіт",
+            "gloss": "Привіт",
+            "roman": "Pryvit",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Настю",
+            "gloss": "Настю",
+            "roman": "Nastyu",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "коли",
+            "gloss": "коли",
+            "roman": "koly",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "ти",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "повертаєшся",
+            "gloss": "повертаєшся",
+            "roman": "povertayeshsya",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "Wenn ich du Message senden",
+    "ms": 2677,
+    "results": {
+      "v0": {
+        "mode": "correction",
+        "sourceLang": "de",
+        "translation": "Wenn ich dir eine Nachricht sende",
+        "interfaceText": "When I send you a message",
+        "explanation": "Corrected grammar: 'dir' (dative) instead of 'du', added article 'eine', and corrected verb conjugation 'sende'.",
+        "confidence": "high",
+        "tokens": [
+          {
+            "text": "Wenn",
+            "gloss": "if",
+            "roman": "Wenn",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ich",
+            "gloss": "I",
+            "roman": "ich",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "dir",
+            "gloss": "to you",
+            "roman": "dir",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "eine",
+            "gloss": "a",
+            "roman": "eine",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Nachricht",
+            "gloss": "message",
+            "roman": "Nachricht",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "sende",
+            "gloss": "send",
+            "roman": "sende",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "de",
+        "translation": "Cuando te envío un mensaje",
+        "interfaceText": "Коли я надсилаю тобі повідомлення",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Cuando",
+            "gloss": "коли",
+            "roman": "Cuando",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "te",
+            "gloss": "тобі",
+            "roman": "te",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "envío",
+            "gloss": "надсилаю",
+            "roman": "envío",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "un",
+            "gloss": "один",
+            "roman": "un",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "mensaje",
+            "gloss": "повідомлення",
+            "roman": "mensaje",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "Los geht’s",
+    "ms": 1533,
+    "results": {
+      "v0": {
+        "mode": "none",
+        "sourceLang": "de",
+        "translation": "Los geht’s",
+        "interfaceText": "Let's go",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Los",
+            "gloss": "away/off",
+            "roman": "Los",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "geht’s",
+            "gloss": "it goes",
+            "roman": "geht’s",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "de",
+        "translation": "Поїхали",
+        "interfaceText": "Поїхали",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Поїхали",
+            "gloss": "поїхали",
+            "roman": "Poikhaly",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "Not seven",
+    "ms": 1658,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Nicht sieben",
+        "interfaceText": "Not seven",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Nicht",
+            "gloss": "not",
+            "roman": "Nicht",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "sieben",
+            "gloss": "seven",
+            "roman": "sieben",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Не сім",
+        "interfaceText": "Не сім",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Не",
+            "gloss": "не",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "сім",
+            "gloss": "сім",
+            "roman": null,
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "What did you do yesterday?",
+    "ms": 3444,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Що ти робила вчора?",
+        "interfaceText": "What did you do yesterday?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Що",
+            "gloss": "what",
+            "roman": "Shcho",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "you",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "робила",
+            "gloss": "did (feminine)",
+            "roman": "robyla",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "yesterday",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Що ти ",
+          "feminine": "робила",
+          "masculine": "робив",
+          "after": " вчора?",
+          "subjectName": "Bob",
+          "subjectIsViewer": false,
+          "suggestedForm": "masculine",
+          "feminineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робила",
+              "gloss": "did (feminine)",
+              "roman": "robyla",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робив",
+              "gloss": "did (masculine)",
+              "roman": "robyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Qu'as-tu fait hier ?",
+        "interfaceText": "Що ти робив вчора?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Qu'as-tu",
+            "gloss": "what did you",
+            "roman": "Qu'as-tu",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "fait",
+            "gloss": "done",
+            "roman": "fait",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "hier",
+            "gloss": "yesterday",
+            "roman": "hier",
+            "isContent": true
+          },
+          {
+            "text": " ?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "I will bring the gift tomorrow, not today.",
+    "ms": 5566,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Ich bringe das Geschenk morgen, nicht heute.",
+        "interfaceText": "I will bring the gift tomorrow, not today.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ich",
+            "gloss": "I",
+            "roman": "Ich",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bringe",
+            "gloss": "bring",
+            "roman": "bringe",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "das",
+            "gloss": "the",
+            "roman": "das",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Geschenk",
+            "gloss": "gift",
+            "roman": "Geschenk",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "morgen",
+            "gloss": "tomorrow",
+            "roman": "morgen",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "nicht",
+            "gloss": "not",
+            "roman": "nicht",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "heute",
+            "gloss": "today",
+            "roman": "heute",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "मैं कल उपहार लाऊँगी, आज नहीं।",
+        "interfaceText": "Я принесу подарунок завтра, а не сьогодні.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "मैं",
+            "gloss": "я",
+            "roman": "main",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "कल",
+            "gloss": "завтра",
+            "roman": "kal",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "उपहार",
+            "gloss": "подарунок",
+            "roman": "upahar",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "लाऊँगी",
+            "gloss": "принесу (жіночий рід)",
+            "roman": "laungi",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "आज",
+            "gloss": "сьогодні",
+            "roman": "aaj",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "नहीं",
+            "gloss": "не",
+            "roman": "nahin",
+            "isContent": true
+          },
+          {
+            "text": "।",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "मैं कल उपहार ",
+          "feminine": "लाऊँगी",
+          "masculine": "लाऊँगा",
+          "after": ", आज नहीं।",
+          "subjectName": "Alice",
+          "subjectIsViewer": false,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "मैं",
+              "gloss": "я",
+              "roman": "main",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "कल",
+              "gloss": "завтра",
+              "roman": "kal",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "उपहार",
+              "gloss": "подарунок",
+              "roman": "upahar",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "लाऊँगी",
+              "gloss": "принесу (жіночий рід)",
+              "roman": "laungi",
+              "isContent": true
+            },
+            {
+              "text": ",",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "आज",
+              "gloss": "сьогодні",
+              "roman": "aaj",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "नहीं",
+              "gloss": "не",
+              "roman": "nahin",
+              "isContent": true
+            },
+            {
+              "text": "।",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "मैं",
+              "gloss": "я",
+              "roman": "main",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "कल",
+              "gloss": "завтра",
+              "roman": "kal",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "उपहार",
+              "gloss": "подарунок",
+              "roman": "upahar",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "लाऊँगा",
+              "gloss": "принесу (чоловічий рід)",
+              "roman": "launga",
+              "isContent": true
+            },
+            {
+              "text": ",",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "आज",
+              "gloss": "сьогодні",
+              "roman": "aaj",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "नहीं",
+              "gloss": "не",
+              "roman": "nahin",
+              "isContent": true
+            },
+            {
+              "text": "।",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "author"
+        }
+      }
+    }
+  },
+  {
+    "text": "Sounds good",
+    "ms": 1518,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Klingt gut",
+        "interfaceText": "Sounds good",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Klingt",
+            "gloss": "sounds",
+            "roman": "Klingt",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "gut",
+            "gloss": "good",
+            "roman": "gut",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Klingt gut",
+        "interfaceText": "Звучить добре",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Klingt",
+            "gloss": "звучить",
+            "roman": "Klingt",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "gut",
+            "gloss": "добре",
+            "roman": "gut",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    }
+  },
+  {
+    "text": "Did you go home yesterday?",
+    "ms": 5223,
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Ти вчора ходила додому?",
+        "interfaceText": "Did you go home yesterday?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ти",
+            "gloss": "you",
+            "roman": "Ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "yesterday",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ходила",
+            "gloss": "went (feminine)",
+            "roman": "khodyla",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "додому",
+            "gloss": "home",
+            "roman": "dodomu",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "",
+          "feminine": "Ти вчора ходила додому?",
+          "masculine": "Ти вчора ходив додому?",
+          "after": "",
+          "subjectName": "Bob",
+          "subjectIsViewer": false,
+          "suggestedForm": "masculine",
+          "feminineTokens": [
+            {
+              "text": "Ти",
+              "gloss": "you",
+              "roman": "Ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ходила",
+              "gloss": "went (feminine)",
+              "roman": "khodyla",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "додому",
+              "gloss": "home",
+              "roman": "dodomu",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Ти",
+              "gloss": "you",
+              "roman": "Ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ходив",
+              "gloss": "went (masculine)",
+              "roman": "khodyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "додому",
+              "gloss": "home",
+              "roman": "dodomu",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Ти вчора ходила додому?",
+        "interfaceText": "Ти вчора ходила додому?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ти",
+            "gloss": "ти",
+            "roman": "Ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "вчора",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ходила",
+            "gloss": "ходила (жіночий рід)",
+            "roman": "khodyla",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "додому",
+            "gloss": "додому",
+            "roman": "dodomu",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "",
+          "feminine": "Ти вчора ходила додому?",
+          "masculine": "Ти вчора ходив додому?",
+          "after": "",
+          "subjectName": "Bob",
+          "subjectIsViewer": true,
+          "suggestedForm": "masculine",
+          "feminineTokens": [
+            {
+              "text": "Ти",
+              "gloss": "ти",
+              "roman": "Ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "вчора",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ходила",
+              "gloss": "ходила (жіночий рід)",
+              "roman": "khodyla",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "додому",
+              "gloss": "додому",
+              "roman": "dodomu",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Ти",
+              "gloss": "ти",
+              "roman": "Ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "вчора",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ходив",
+              "gloss": "ходив (чоловічий рід)",
+              "roman": "khodyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "додому",
+              "gloss": "додому",
+              "roman": "dodomu",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      }
+    }
+  }
+]

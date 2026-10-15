@@ -1319,3 +1319,7 @@ Candidate implemented, not merged/deployed. 162 backend tests pass; Android scre
 - [ ] Separately reduce redundant generation/audit amplification without weakening meaning/language acceptance; no production change yet.
 
 Phone-specific triggering event remains unconfirmed. See docs/qa/2026-10-15-stuck-shimmer/README.md.
+
+## 2026-10-15 — One-call translation + open-chat reliability (awaiting owner review)
+
+Owner12895 authorized implementation of all3 defects. Candidate on fix/single-call-reliable-chat-20261015: one normal request for both viewers, compact rules/context, fenced atomic batch commit; reconnect/safety reconciliation, bounded cache reads and shimmer/scroll recovery.165 backend tests,913 Flutter tests/15 skips, clean analysis;9 live cases/18 viewer outputs. Two Android accounts exchange and resolve messages without navigation even with message/translation publications deliberately disabled locally. Screenshots/recordings inspected; evidence docs/qa/2026-10-15-single-call-reliable-chat. Request count2 for2 final messages. No hosted deployment, merge or release; owner manual gate remains unchecked. Original phones' exact event trigger still unproven.

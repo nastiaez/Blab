@@ -279,7 +279,8 @@ class MessageTranslationsNotifier
                   messageId: messageId,
                   targetLang: targetLang,
                   interfaceLang: interfaceLang,
-                );
+                )
+                .timeout(const Duration(seconds: 6));
             if (!ref.mounted ||
                 _sourceTexts[key] != text ||
                 state[key] is AsyncData<MessageTranslation>) {
@@ -292,7 +293,8 @@ class MessageTranslationsNotifier
                     messageId: messageId,
                     targetLang: targetLang,
                     interfaceLang: interfaceLang,
-                  );
+                  )
+                  .timeout(const Duration(seconds: 6));
               if (!ref.mounted ||
                   _sourceTexts[key] != text ||
                   state[key] is AsyncData<MessageTranslation>) {
@@ -364,7 +366,8 @@ class MessageTranslationsNotifier
             messageId: messageId,
             targetLang: targetLang,
             interfaceLang: interfaceLang,
-          );
+          )
+          .timeout(const Duration(seconds: 6));
       if (!ref.mounted || _sourceTexts[key] != text || !pending) return false;
       if (state[key] is AsyncData<MessageTranslation>) return true;
       state = {...state, key: const AsyncLoading()};
@@ -410,7 +413,8 @@ class MessageTranslationsNotifier
                 messageId: messageId,
                 targetLang: targetLang,
                 interfaceLang: interfaceLang,
-              );
+              )
+              .timeout(const Duration(seconds: 6));
           if (!ref.mounted) return;
           if (_sourceTexts[key] != text ||
               state[key] is! AsyncLoading<MessageTranslation>) {
@@ -436,7 +440,8 @@ class MessageTranslationsNotifier
                 messageId: messageId,
                 targetLang: targetLang,
                 interfaceLang: interfaceLang,
-              );
+              )
+              .timeout(const Duration(seconds: 6));
         } catch (_) {}
         if (!ref.mounted) return;
         if (_sourceTexts[key] == text &&
@@ -877,7 +882,8 @@ class MessageTranslationsNotifier
                 messageId: messageId,
                 targetLang: targetLang,
                 interfaceLang: interfaceLang,
-              );
+              )
+              .timeout(const Duration(seconds: 6));
           if (!ref.mounted || _sourceTexts[key] != text) return;
           if (cached != null && state[key] is AsyncError<MessageTranslation>) {
             final value = _translationFromCache(cached);
@@ -912,7 +918,8 @@ class MessageTranslationsNotifier
             messageId: messageId,
             targetLang: targetLang,
             interfaceLang: interfaceLang,
-          );
+          )
+          .timeout(const Duration(seconds: 6));
       if (!ref.mounted) return;
       if (_sourceTexts[key] != text) return;
       if (cached != null) {
@@ -1002,7 +1009,8 @@ class MessageTranslationsNotifier
               messageId: messageId,
               targetLang: targetLang,
               interfaceLang: interfaceLang,
-            );
+            )
+            .timeout(const Duration(seconds: 6));
         if (!ref.mounted) return;
         if (_sourceTexts[key] != text) return;
         if (cached != null) {

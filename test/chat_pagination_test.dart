@@ -25,6 +25,7 @@ class _PaginationChatService implements ChatService {
   final changes = StreamController<MessageChange>.broadcast();
   final eventMessages = <String, Message>{};
   final requests = <({int limit, MessageCursor? before})>[];
+  int liveWatches = 0;
   bool failOlder = false;
   bool failEvent = false;
   int failRecent = 0;
@@ -64,7 +65,10 @@ class _PaginationChatService implements ChatService {
   }
 
   @override
-  Stream<MessageChange> watchMessageChanges(String chatId) => changes.stream;
+  Stream<MessageChange> watchMessageChanges(String chatId) {
+    liveWatches++;
+    return changes.stream;
+  }
 
   @override
   Future<Message?> messageFromRealtimeRow(Map<String, dynamic> row) async {
@@ -200,6 +204,38 @@ void main() {
     expect(service.requests, hasLength(1));
     await service.changes.close();
   });
+
+  test(
+    'stream error re-subscribes and receives subsequent messages without navigation',
+    () async {
+      final service = _PaginationChatService();
+      final container = ProviderContainer(
+        overrides: [
+          chatServiceProvider.overrideWithValue(service),
+          authSessionProvider.overrideWith((ref) => Stream.value(null)),
+          currentUserIdProvider.overrideWithValue('user-a'),
+        ],
+      );
+      final listener = _listenForMessages(container);
+      addTearDown(() async {
+        listener.subscription.close();
+        container.dispose();
+        await service.changes.close();
+      });
+      await listener.first;
+      await Future<void>.delayed(Duration.zero);
+      service.changes.addError(StateError('socket closed'));
+      await Future<void>.delayed(const Duration(milliseconds: 2300));
+      expect(service.liveWatches, greaterThanOrEqualTo(2));
+      service.eventMessages['m101'] = _message(101);
+      service.changes.add(const MessageChange.upsert({'id': 'm101'}));
+      await _waitFor(
+        () =>
+            container.read(chatMessagesProvider('chat-1')).value?.last.id ==
+            'm101',
+      );
+    },
+  );
 
   for (final failure in ['missing event', 'failed enrichment']) {
     test('recovers $failure without leaving the conversation', () async {

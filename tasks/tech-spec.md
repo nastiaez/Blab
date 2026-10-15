@@ -372,3 +372,11 @@ US-031: independent chat-list updates are a missing-message hint, never message 
 ### 2026-10-15 — Pending-display liveness safeguards (candidate)
 
 Start the translation loading watchdog before initial cache I/O so stalled I/O cannot prevent read-only recovery. Ready-content scroll deferral is bounded at 750ms and cancelled on pending/reset/disposal; ScrollEnd still resolves immediately. No changes to language targets, historical revision, source identity, semantic acceptance or AI initiation. Exact 22-call trace analysis is in docs/qa/2026-10-15-stuck-shimmer/README.md; call-reduction work remains separate from these client guards.
+
+### 2026-10-15 — Owner-approved single-call architecture (candidate)
+
+Supersedes earlier active multi-audit/source-anchor/hedged generation guidance: normal durable message preparation claims all eligible viewer jobs as one message/source batch, generates one structured result keyed by viewer and commits atomically under per-job lease fences. Compact rules are generated from rulebook.ts; context capped3 entries/1800 UTF-8 bytes per viewer. Existing RPC preference/history/source rules are unchanged. No independent model review, source-analysis or word-help calls; code validates structure, literal preservation and metadata. Retry actual failures only through durable scheduler (max4, Retry-After respected). Manual/legacy direct requests remain one call for their requested viewer. Protected literals require no model. The retained v11 contract tag denotes compatible stored result schema, not a requirement to run the retired source-anchor pipeline.
+
+This explicitly accepts the bundled-output trade-off: word metadata increases output size and an invalid bundle can require a bounded retry; an independent AI second opinion is no longer present. Deterministic form normalization uses only supplied complete alternatives and token metadata. Source identity and author/recipient mapping remain mandatory.
+
+Live chat resubscribes after stream failure, schedules independent10-second reconciliation while observed/online, bounds history/cache reads6 seconds, and preserves merged historical pages. Translation watchdog starts before initial I/O; scroll-end deferral bounded750ms. Evidence docs/qa/2026-10-15-single-call-reliable-chat. Release remains subject to owner visual/workflow review.

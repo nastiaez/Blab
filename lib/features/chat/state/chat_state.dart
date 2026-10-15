@@ -173,7 +173,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     }
 
     try {
-      final page = await svc.fetchMessagePage(chatId, limit: pageSize);
+      final page = await svc
+          .fetchMessagePage(chatId, limit: pageSize)
+          .timeout(const Duration(seconds: 6));
       _messagesById.clear();
       for (final message in page.messages) {
         _messagesById[message.id] = message;
@@ -197,6 +199,8 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     // successful preview is a reconciliation hint, never a message payload.
     // Recover through the authoritative transport, preserving viewer policy.
     Timer? recoveryTimer;
+    Timer? reconnectTimer;
+    Completer<void>? reconnectWait;
     var disposed = false;
     var recovering = false;
     var recoveryRequested = false;
@@ -233,6 +237,8 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     ref.onDispose(() {
       disposed = true;
       recoveryTimer?.cancel();
+      reconnectTimer?.cancel();
+      if (reconnectWait?.isCompleted == false) reconnectWait!.complete();
     });
     ref.listen(chatListProvider, (_, next) {
       final latestId = next.value
@@ -244,56 +250,93 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         scheduleRecovery();
       }
     }, fireImmediately: true);
-    try {
-      await for (final change in svc.watchMessageChanges(chatId)) {
-        try {
-          switch (change.type) {
-            case MessageChangeType.upsert:
-              final message = await svc.messageFromRealtimeRow(change.row!);
-              if (message != null) _messagesById[message.id] = message;
-              break;
-            case MessageChangeType.remove:
-              final id = change.row?['id'];
-              if (id is String) {
-                _messagesById.remove(id);
-                unawaited(
-                  ref
-                      .read(formCorrectionProvider.notifier)
-                      .mutate((s) => s.removeMessage(chatId, id))
-                      .catchError((Object _) {}),
-                );
-              }
-              break;
-            case MessageChangeType.resync:
-              final loadedCount = _messagesById.length < pageSize
-                  ? pageSize
-                  : _messagesById.length;
-              final page = await svc.fetchMessagePage(
-                chatId,
-                limit: loadedCount,
-              );
-              _messagesById
-                ..clear()
-                ..addEntries(page.messages.map((m) => MapEntry(m.id, m)));
-              _oldestCursor = page.nextCursor;
-              _hasMore = page.hasMore;
-              _setPagination();
-              break;
-          }
-        } catch (_) {
-          // Do not require another incoming message or navigation to repair
-          // a failed event-enrichment request.
-          scheduleRecovery();
-          continue;
-        }
-        final snapshot = _snapshot();
-        _reconcilePending(snapshot);
-        unawaited(localCache?.saveMessages(chatId, snapshot));
-        yield snapshot;
-      }
-    } catch (_) {
-      // Retain the snapshot, but reconcile independently of the failed feed.
+    Timer? safetyPoll;
+    var paused = false;
+    void startSafetyPoll() {
+      safetyPoll?.cancel();
+      safetyPoll = Timer.periodic(const Duration(seconds: 10), (_) {
+        if (!disposed && !paused && _online) scheduleRecovery();
+      });
+    }
+
+    startSafetyPoll();
+    ref.onCancel(() {
+      paused = true;
+      safetyPoll?.cancel();
+      recoveryTimer?.cancel();
+      recoveryTimer = null;
+      reconnectTimer?.cancel();
+    });
+    ref.onResume(() {
+      paused = false;
+      startSafetyPoll();
+      if (reconnectWait?.isCompleted == false) reconnectWait!.complete();
       scheduleRecovery();
+    });
+    ref.onDispose(() => safetyPoll?.cancel());
+    while (!disposed) {
+      try {
+        await for (final change in svc.watchMessageChanges(chatId)) {
+          if (disposed) return;
+          try {
+            switch (change.type) {
+              case MessageChangeType.upsert:
+                final message = await svc.messageFromRealtimeRow(change.row!);
+                if (message != null) _messagesById[message.id] = message;
+                break;
+              case MessageChangeType.remove:
+                final id = change.row?['id'];
+                if (id is String) {
+                  _messagesById.remove(id);
+                  unawaited(
+                    ref
+                        .read(formCorrectionProvider.notifier)
+                        .mutate((s) => s.removeMessage(chatId, id))
+                        .catchError((Object _) {}),
+                  );
+                }
+                break;
+              case MessageChangeType.resync:
+                final loadedCount = _messagesById.length < pageSize
+                    ? pageSize
+                    : _messagesById.length;
+                final page = await svc.fetchMessagePage(
+                  chatId,
+                  limit: loadedCount,
+                );
+                _messagesById
+                  ..clear()
+                  ..addEntries(page.messages.map((m) => MapEntry(m.id, m)));
+                _oldestCursor = page.nextCursor;
+                _hasMore = page.hasMore;
+                _setPagination();
+                break;
+            }
+          } catch (_) {
+            // Do not require another incoming message or navigation to repair
+            // a failed event-enrichment request.
+            scheduleRecovery();
+            continue;
+          }
+          final snapshot = _snapshot();
+          _reconcilePending(snapshot);
+          unawaited(localCache?.saveMessages(chatId, snapshot));
+          yield snapshot;
+        }
+      } catch (_) {
+        // Retain the snapshot, but reconcile independently of the failed feed.
+        scheduleRecovery();
+      }
+      if (!disposed) {
+        if (!paused) scheduleRecovery();
+        reconnectWait = Completer<void>();
+        if (!paused) {
+          reconnectTimer = Timer(const Duration(seconds: 2), () {
+            if (reconnectWait?.isCompleted == false) reconnectWait!.complete();
+          });
+        }
+        await reconnectWait.future;
+      }
     }
   }
 
@@ -314,7 +357,8 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     final cache = ref.read(localChatHistoryCacheProvider);
     final page = await ref
         .read(chatServiceProvider)
-        .fetchMessagePage(chatId, limit: pageSize);
+        .fetchMessagePage(chatId, limit: pageSize)
+        .timeout(const Duration(seconds: 6));
     if (!ref.mounted || ref.read(currentUserIdProvider) != accountId) return;
     for (final message in page.messages) {
       _messagesById[message.id] = message;
