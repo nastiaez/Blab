@@ -1390,3 +1390,11 @@ Request12824: floating down-arrow while browsing older messages, returns to late
 ## 2026-10-15 — Four reviewed updates approved for release
 
 Nastia12910 explicitly authorized merge and Firebase release of all four reviewed changes. Current main3acb005 already includes the approved standalone acknowledgement/rulebook work in v19. Integrate German participant-form relevance and emoji/centered-jump controls on current main; preserve the newer single-call translation and recovery pipeline. Form relevance is shared by its active prompt and deterministic parser, without restoring obsolete multi-call auditing. Combined verification and signed Android update pending.
+
+## 2026-10-15 — v19 shared-language persistence regression (in progress)
+
+Production four messages exhausted four attempts with batch_commit_failed; LangSmith returned outputs. Rollback-only reproduction: one normalized viewer commits, matching pair raises stale_batch. Existing translation-cache trigger prematurely marks the other leased job ready; batch rolls back all writes. Candidate scopes trigger suppression to processing leases inside atomic completion, preserving normal legacy cache notifications, per-viewer language/source/revision checks and transaction fencing. Preferences unchanged: each viewer Learning Language for Practice and Primary Known Language for secondary/word help; matching language pairs must also succeed. No hosted fix deployed yet.
+
+Correction verification: same-language SQL regression red before/green after; exact production payload+jobs succeeds with candidate functions in rollback-only transaction.165 backend checks pass. No product policy or UI change; targeted server-side restoration of the approved v19 flow. SQL regression now included in CI rather than relying on manual execution.
+
+Hotfix deployed:3e80314 merged/pushed; production migration20261015000002 applied. Exactly8 failed viewer jobs across4 affected messages granted one controlled recovery attempt (attempt counter4→3, prior four failures retained in this incident record); no quota changes or authored-message rewrites. All8 jobs now ready with null errors;8 readable results persisted. LangSmith shows4 successful completions for these4 recovery messages at12:58:17–19 UTC, with no provider errors. Physical screen confirmation remains with owners.
