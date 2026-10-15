@@ -418,3 +418,7 @@ Hosted staging provisioning, distinct Firebase app/OAuth registration, signed ap
 ### 2026-10-15 — Owner visual parity revision
 
 Owner rejected test banner and extra invite copy after actual screenshot review. Keep separate package/backend and `/i-test/test-…` routing, but use public app name/icon, invite title/card/helper/share text and unwrapped active/signed-out child layout. The access gate adds no permanent chrome or padding; only pending/denied/error states intercept access. Existing mismatch errors remain to enforce the requested boundary. Previously sent screenshots12971–12974 are superseded for visual approval. No hosted change.
+
+### 2026-10-15 — Invited test emails
+
+Owner requested preapproval of named testers before signup. Operator-only `test_app_invited_emails` grants access only to a matching verified auth email; explicit UUID membership denial/expiry takes precedence. Global test disable/expiry and account enforcement remain unchanged. Public policy remains unchanged. No invitation URL or client flag grants access. This extends the UUID-only enrollment above.
