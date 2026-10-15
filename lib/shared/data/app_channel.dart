@@ -5,7 +5,7 @@ abstract final class AppChannel {
     defaultValue: 'public',
   );
   static const isTest = name == 'test';
-  static const appName = 'Blab';
+  static const appName = isTest ? 'Blab-test' : 'Blab';
   static const scheme = isTest ? 'blab-test' : 'blab';
   static const invitePath = isTest ? 'i-test' : 'i';
   static const packageName = isTest ? 'blab.nastia.ez.test' : 'blab.nastia.ez';

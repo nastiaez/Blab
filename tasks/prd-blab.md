@@ -964,3 +964,5 @@ Owner12963 and follow-up explicitly select a separate test app with separate acc
 - Account approval is operator-owned, never a self-selected flag or Firebase download invitation. Online server authorization is authoritative; already downloaded content/screenshots cannot be remotely erased.
 - Localized test UI follows Interface Language only. All learning/known-language preferences remain per viewer and untouched.
 - Android candidate first; current repository has no iOS target. No claim of iPhone readiness, billing implementation or store launch approval.
+
+- Owner naming revision12986: visible test app name is exactly `Blab-test`; public remains `Blab`. Icon and in-app screens remain identical. This supersedes the identical launcher-name decision only.

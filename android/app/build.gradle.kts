@@ -88,7 +88,7 @@ android {
 
     defaultConfig {
         applicationId = if (isTestApp) "blab.nastia.ez.test" else "blab.nastia.ez"
-        manifestPlaceholders["blabAppLabel"] = "@string/app_name"
+        manifestPlaceholders["blabAppLabel"] = if (isTestApp) "Blab-test" else "@string/app_name"
         manifestPlaceholders["blabScheme"] = if (isTestApp) "blab-test" else "blab"
         manifestPlaceholders["blabInvitePath"] = if (isTestApp) "/i-test/" else "/i/"
         // You can update the following values to match your application needs.
