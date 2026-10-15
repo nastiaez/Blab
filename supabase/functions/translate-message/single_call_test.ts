@@ -258,3 +258,44 @@ Deno.test("complete alternatives normalize a masculine base without a repair cal
       "Що ти робив вчора?",
   );
 });
+
+Deno.test("noun-case-only forms are discarded without rejecting a readable one-call result", async () => {
+  const tokens = (text: string) =>
+    text.split(/(\s+)/).filter(Boolean).map((text) => ({
+      text,
+      isContent: !!text.trim(),
+      gloss: text.trim() ? "word" : null,
+      roman: null,
+    }));
+  const raw = {
+    ...output("Schreib deiner Mutter"),
+    interfaceText: "Write to your mother",
+    tokens: tokens("Schreib deiner Mutter"),
+    formAlternatives: {
+      before: "Schreib ",
+      feminine: "deiner",
+      masculine: "deinem",
+      after: " Mutter",
+      subjectName: "Bob",
+      subjectIsViewer: false,
+      suggestedForm: "masculine",
+      feminineTokens: tokens("Schreib deiner Mutter"),
+      masculineTokens: tokens("Schreib deinem Mutter"),
+    },
+  };
+  let calls = 0;
+  const r = await generateMessageOnce(
+    [{ ...viewer, text: "Write to your mother" }],
+    credential,
+    async () => {
+      calls++;
+      return Response.json({
+        choices: [{ message: { content: JSON.stringify({ v0: raw }) } }],
+      });
+    },
+  );
+  assert(
+    calls === 1 && r.v0.translation === "Schreib deiner Mutter" &&
+      r.v0.formAlternatives === null,
+  );
+});

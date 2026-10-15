@@ -1386,3 +1386,7 @@ Request12824: floating down-arrow while browsing older messages, returns to late
 - Center revision verified on Android (centerX540/1080) and delivered screenshot12833. Focused test passes; release remains held. Placement approval pending.
 
 - Release inventory correction12835: include standalone OK/okay translation/checker rule from fix/standalone-okay-20261015 (implemented/tested, not merged/deployed). Four main proposed updates: standalone acknowledgements, grammatical-form false-note fix, emoji composer including equal-height/no-flash polish, centered jump-to-latest. This inventory does not authorize merge or distribution.
+
+## 2026-10-15 — Four reviewed updates approved for release
+
+Nastia12910 explicitly authorized merge and Firebase release of all four reviewed changes. Current main3acb005 already includes the approved standalone acknowledgement/rulebook work in v19. Integrate German participant-form relevance and emoji/centered-jump controls on current main; preserve the newer single-call translation and recovery pipeline. Form relevance is shared by its active prompt and deterministic parser, without restoring obsolete multi-call auditing. Combined verification and signed Android update pending.

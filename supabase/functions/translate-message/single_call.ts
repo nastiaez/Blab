@@ -1,3 +1,4 @@
+import { hasParticipantFormDifference } from "./participant_forms.ts";
 import {
   isProtectedLiteralMessage,
   LANG_NAMES,
@@ -180,7 +181,16 @@ export async function generateMessageOnce(
     // returned base sentence; this never requests or invents a gloss.
     const rawResult = raw[v.key];
     const forms = rawResult.formAlternatives;
-    if (forms && forms.feminine === forms.masculine) {
+    if (
+      forms && typeof forms.before === "string" &&
+      typeof forms.feminine === "string" &&
+      typeof forms.masculine === "string" &&
+      typeof forms.after === "string" && !hasParticipantFormDifference(
+        v.targetLang,
+        forms.before + forms.feminine + forms.after,
+        forms.before + forms.masculine + forms.after,
+      )
+    ) {
       rawResult.formAlternatives = null;
     } else if (forms && Array.isArray(rawResult.tokens)) {
       const tokens = rawResult.tokens as Array<{ text: string }>;
