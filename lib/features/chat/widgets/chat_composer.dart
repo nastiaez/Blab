@@ -17,6 +17,11 @@ class ChatComposer extends StatelessWidget {
     required this.onSend,
     this.allowAttachment = true,
     this.autofocus = false,
+    this.emojiPanelOpen = false,
+    this.onToggleEmoji,
+    this.onTapText,
+    this.emojiPanel,
+    this.bottomObstruction = 0,
   });
 
   final TextEditingController controller;
@@ -33,10 +38,13 @@ class ChatComposer extends StatelessWidget {
   final VoidCallback onSend;
   final bool allowAttachment;
   final bool autofocus;
+  final bool emojiPanelOpen;
+  final VoidCallback? onToggleEmoji, onTapText;
+  final Widget? emojiPanel;
+  final double bottomObstruction;
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final overLimit = textLength > maxLength;
     final canSend = enabled && hasText && !overLimit;
     final showCounter = textLength >= counterShowAt;
@@ -51,58 +59,86 @@ class ChatComposer extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + keyboardInset),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+        bottom: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Semantics(
-                      label: context.l10n.message,
-                      child: ChatComposerInput(
-                        controller: controller,
-                        focusNode: focusNode,
-                        hintText: hintText,
-                        maxLength: maxLength,
-                        enabled: enabled,
-                        autofocus: autofocus,
-                        attachTooltip: context.l10n.attach,
-                        onAttach: onAttach,
-                        showAttachment: allowAttachment,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Semantics(
+                          label: context.l10n.message,
+                          child: ChatComposerInput(
+                            controller: controller,
+                            focusNode: focusNode,
+                            hintText: hintText,
+                            maxLength: maxLength,
+                            enabled: enabled,
+                            autofocus: autofocus,
+                            emojiPanelOpen: emojiPanelOpen,
+                            onToggleEmoji: onToggleEmoji,
+                            onTapText: onTapText,
+                            emojiTooltip: emojiPanelOpen
+                                ? context.l10n.showKeyboard
+                                : context.l10n.showEmoji,
+                            attachTooltip: context.l10n.attach,
+                            onAttach: onAttach,
+                            showAttachment: allowAttachment,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ChatSendButton(
+                        canSend: canSend,
+                        isPractice: isPractice,
+                        tooltip: context.l10n.send,
+                        onSend: onSend,
+                      ),
+                    ],
+                  ),
+                  if (showCounter)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 4, 12, 0),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '$textLength / $maxLength',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: atLimit
+                                ? BlabColors.error
+                                : BlabColors.textMuted,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  ChatSendButton(
-                    canSend: canSend,
-                    isPractice: isPractice,
-                    tooltip: context.l10n.send,
-                    onSend: onSend,
-                  ),
                 ],
               ),
-              if (showCounter)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 4, 12, 0),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '$textLength / $maxLength',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: atLimit
-                            ? BlabColors.error
-                            : BlabColors.textMuted,
-                      ),
-                    ),
-                  ),
+            ),
+            SizedBox(
+              key: const ValueKey('composer-input-obstruction'),
+              height: bottomObstruction,
+              width: double.infinity,
+              child: ClipRect(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: emojiPanel == null
+                      ? null
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: emojiPanel,
+                        ),
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,6 +10,8 @@ class BlabComposerField extends StatelessWidget {
     this.focusNode,
     this.enabled = true,
     this.autofocus = false,
+    this.keyboardType,
+    this.onTap,
     this.minLines = 1,
     this.maxLines = 5,
     this.maxLength,
@@ -20,6 +22,8 @@ class BlabComposerField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.sentences,
   });
   final Key? fieldKey;
+  final TextInputType? keyboardType;
+  final VoidCallback? onTap;
   final TextEditingController controller;
   final FocusNode? focusNode;
   final bool enabled, autofocus;
@@ -36,6 +40,8 @@ class BlabComposerField extends StatelessWidget {
     focusNode: focusNode,
     enabled: enabled,
     autofocus: autofocus,
+    keyboardType: keyboardType,
+    onTap: onTap,
     minLines: minLines,
     maxLines: maxLines,
     maxLength: maxLength,

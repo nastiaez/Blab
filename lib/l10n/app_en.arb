@@ -581,5 +581,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "showEmoji": "Show emoji",
+  "showKeyboard": "Show keyboard",
+  "jumpToLatest": "Jump to latest messages"
 }

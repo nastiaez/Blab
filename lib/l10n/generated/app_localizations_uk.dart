@@ -1325,4 +1325,13 @@ class AppLocalizationsUk extends AppLocalizations {
   String youBlockedPerson(String name) {
     return 'Ви заблокували $name';
   }
+
+  @override
+  String get showEmoji => 'Показати емодзі';
+
+  @override
+  String get showKeyboard => 'Показати клавіатуру';
+
+  @override
+  String get jumpToLatest => 'До найновіших повідомлень';
 }

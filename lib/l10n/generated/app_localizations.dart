@@ -2393,6 +2393,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You blocked {name}'**
   String youBlockedPerson(String name);
+
+  /// No description provided for @showEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Show emoji'**
+  String get showEmoji;
+
+  /// No description provided for @showKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Show keyboard'**
+  String get showKeyboard;
+
+  /// No description provided for @jumpToLatest.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to latest messages'**
+  String get jumpToLatest;
 }
 
 class _AppLocalizationsDelegate

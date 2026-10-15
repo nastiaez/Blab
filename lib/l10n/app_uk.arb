@@ -464,5 +464,8 @@
   "blockPersonConfirmation": "Ви не зможете надсилати одне одному повідомлення в цьому чаті.",
   "block": "Заблокувати",
   "unblock": "Розблокувати",
-  "youBlockedPerson": "Ви заблокували {name}"
+  "youBlockedPerson": "Ви заблокували {name}",
+  "showEmoji": "Показати емодзі",
+  "showKeyboard": "Показати клавіатуру",
+  "jumpToLatest": "До найновіших повідомлень"
 }

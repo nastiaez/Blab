@@ -1,0 +1,9 @@
+{
+  "base": "0a2e751da52799a0ff30a80f3fddf3b8c4f11bb0",
+  "branch": "design/composer-emoji-keyboard-icons-20261015",
+  "artifact": "local debug APK, not a Firebase release",
+  "sha256": "5909a8d74b63defe5bc146fa83db4a7cff2dddb0fac4a84cfd07746260377eea",
+  "device": "emulator-5556",
+  "ownerImplementationApproval": false,
+  "installedSha256": "5909a8d74b63defe5bc146fa83db4a7cff2dddb0fac4a84cfd07746260377eea"
+}

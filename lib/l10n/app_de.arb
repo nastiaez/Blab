@@ -464,5 +464,8 @@
   "blockPersonConfirmation": "Ihr könnt euch in diesem Chat keine Nachrichten senden.",
   "block": "Blockieren",
   "unblock": "Blockierung aufheben",
-  "youBlockedPerson": "Du hast {name} blockiert"
+  "youBlockedPerson": "Du hast {name} blockiert",
+  "showEmoji": "Emojis anzeigen",
+  "showKeyboard": "Tastatur anzeigen",
+  "jumpToLatest": "Zu den neuesten Nachrichten"
 }

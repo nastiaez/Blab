@@ -152,3 +152,13 @@ High priority, in progress. Owner reports repeated translation errors and missin
 ## One-call translation and live-chat recovery — 2026-10-15
 
 High priority; candidate verified, awaiting owner review. Tracker core-single-call-live-recovery remains unchecked. Scope: eliminate22-request amplification, recover missing incoming messages in both directions, and resolve stale shimmer without reopening.165 backend/913 Flutter checks,9 live cases, two-device Android + disabled-publication recovery evidence: docs/qa/2026-10-15-single-call-reliable-chat. No production deploy/merge/release. Historical per-phase/audit recommendations above are superseded for this authorized candidate by the one-call design.
+
+## Composer emoji input — 15 October 2026
+
+Non-launch feature, Later; owner approved the two SVG icons and requested implementation in Telegram12800. Dedicated current-main worktree. Inline composer picker uses the existing emoji engine; no GIF/sticker/backend changes. Android/Web review and owner manual pass pending; `later-composer-emoji` remains unchecked. No merge/release authorized by icon approval. Evidence: `docs/qa/2026-10-15-composer-emoji/`.
+
+Emoji visual/workflow approval12822 recorded; owner requests holding it for the next release, with more work to add. No immediate distribution. Owner physical-device manual test remains separate.
+
+## Jump to latest messages —15 October2026
+
+Later, request12824. Floating down-arrow while browsing older history; return to latest without changing draft/focus. Android candidate verified; owner review pending, `later-jump-latest` unchecked. Evidence: docs/qa/2026-10-15-jump-to-latest/.

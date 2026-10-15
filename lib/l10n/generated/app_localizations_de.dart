@@ -1336,4 +1336,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String youBlockedPerson(String name) {
     return 'Du hast $name blockiert';
   }
+
+  @override
+  String get showEmoji => 'Emojis anzeigen';
+
+  @override
+  String get showKeyboard => 'Tastatur anzeigen';
+
+  @override
+  String get jumpToLatest => 'Zu den neuesten Nachrichten';
 }

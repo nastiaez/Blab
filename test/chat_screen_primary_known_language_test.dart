@@ -1,3 +1,4 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:blab/app/router.dart';
 import 'package:blab/features/chats/chats_screen.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
@@ -1888,6 +1889,112 @@ void main() {
       await tester.pump(const Duration(seconds: 20));
     },
   );
+
+  testWidgets(
+    'emoji panel preserves draft and reply; Back closes panel first',
+    (tester) async {
+      final service = _PrimaryKnownLanguageChatService(
+        messageText: 'Reply to me',
+      );
+      final container = _containerForHeader(service);
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container, locale: const Locale('de')));
+      await _settle(tester);
+      final field = find.byKey(const ValueKey('composer-message-text-field'));
+      await tester.enterText(field, 'Hello world');
+      final controller = tester.widget<TextField>(field).controller!;
+      controller.selection = const TextSelection(
+        baseOffset: 6,
+        extentOffset: 11,
+      );
+      await tester.tap(find.byKey(const ValueKey('composer-emoji-toggle')));
+      await _settle(tester);
+      expect(
+        find.byKey(const ValueKey('composer-emoji-panel')),
+        findsOneWidget,
+      );
+      final picker = tester.widget<EmojiPicker>(find.byType(EmojiPicker));
+      expect(picker.config.locale.languageCode, 'de');
+      picker.onEmojiSelected!(null, const Emoji('👩🏽‍💻', 'coder'));
+      await tester.pump();
+      expect(controller.text, 'Hello 👩🏽‍💻');
+      expect(
+        find.byKey(const ValueKey('composer-emoji-panel')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('composer-emoji-toggle')));
+      await _settle(tester);
+      // With no platform IME in this harness, artwork stays during handoff.
+      expect(find.byType(EmojiPicker), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(EmojiPicker), findsNothing);
+      expect(tester.testTextInput.isVisible, isTrue);
+      expect(controller.text, 'Hello 👩🏽‍💻');
+      await tester.tap(find.byKey(const ValueKey('composer-emoji-toggle')));
+      await _settle(tester);
+      await tester.tap(field);
+      await _settle(tester);
+      // With no platform IME in this harness, artwork stays during handoff.
+      expect(find.byType(EmojiPicker), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(EmojiPicker), findsNothing);
+      expect(tester.testTextInput.isVisible, isTrue);
+      expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+      container
+          .read(replyingToProvider('chat-1').notifier)
+          .set(service.message);
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('composer-emoji-toggle')));
+      await _settle(tester);
+      await tester.binding.handlePopRoute();
+      await _settle(tester);
+      expect(find.byType(EmojiPicker), findsNothing);
+      expect(container.read(replyingToProvider('chat-1')), isNotNull);
+      expect(find.byType(ChatScreen), findsOneWidget);
+      expect(controller.text, 'Hello 👩🏽‍💻');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 20));
+    },
+  );
+
+  testWidgets('emoji and IME keep identical composer height through handoff', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(430, 900);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 24);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+    addTearDown(tester.view.reset);
+    final service = _PrimaryKnownLanguageChatService(messageText: 'Hello');
+    final container = _containerForHeader(service);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    final field = find.byKey(const ValueKey('composer-message-container'));
+    final toggle = find.byKey(const ValueKey('composer-emoji-toggle'));
+    final keyboardY = tester.getTopLeft(field).dy;
+    await tester.tap(toggle);
+    await _settle(tester);
+    expect(tester.getTopLeft(field).dy, keyboardY);
+    tester.view.viewInsets = const FakeViewPadding();
+    tester.view.padding = const FakeViewPadding(bottom: 24);
+    await _settle(tester);
+    expect(tester.getTopLeft(field).dy, keyboardY);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('composer-emoji-panel'))).height,
+      296,
+    );
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(tester.getTopLeft(field).dy, keyboardY);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 320);
+    tester.view.padding = const FakeViewPadding();
+    await _settle(tester);
+    expect(tester.getTopLeft(field).dy, keyboardY);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 20));
+  });
 
   test('avatar colors use only the refreshed palette', () {
     expect(BlabColors.avatarPalette, const [

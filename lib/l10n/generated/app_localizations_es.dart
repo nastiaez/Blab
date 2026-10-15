@@ -1330,4 +1330,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String youBlockedPerson(String name) {
     return 'Has bloqueado a $name';
   }
+
+  @override
+  String get showEmoji => 'Mostrar emojis';
+
+  @override
+  String get showKeyboard => 'Mostrar teclado';
+
+  @override
+  String get jumpToLatest => 'Ir a los mensajes más recientes';
 }

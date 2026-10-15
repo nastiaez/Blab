@@ -1354,3 +1354,35 @@ backend lifecycle/schema changes or production mutation; no merge/release.
 - 2026-10-15 — Delivered the final feminine/masculine packet to the originating
   topic (12785–12786), with successful attachment receipts. Awaiting Ash's review;
   all owner-facing acceptance checkboxes remain unchecked. No commit/push/merge.
+### Composer emoji/keyboard icons — 15 October 2026 ← in progress
+
+- [x] Inspect existing icon assets and create matching emoji/keyboard SVGs in 16/20 px sizes; inspect the standalone rendered specimen.
+- [x] Owner icon review: Nastia approved icons and requested implementation (Telegram12800, 15 October).
+- [x] Implement and verify composer emoji/keyboard toggle, cursor-aware insertion and Back/draft behavior on Web and Android. Final full suite909 pass/15 skipped; analysis clean; exact installed debug artifact verified.
+- [x] Actual Android walkthrough screenshots delivered in topic8856 (12802–12804); Web partner panel verified. Motion recording prepared. Evidence: docs/qa/2026-10-15-composer-emoji/.
+- [ ] Owner review of implemented journey; merge/release remain pending.
+
+Dedicated design/composer-emoji-keyboard-icons-20261015 worktree, current main
+0a2e751. Composer feature implemented locally; awaiting journey review. No merge or release. Review source and SVG bundle: docs/design/2026-10-15-composer-icons/.
+
+- 15 October height revision (Telegram12807/12809): owner requests equal IME/emoji height. Remove40% cap and duplicate safe-area/gap; reserve the measured input obstruction through keyboard handoff. Focused41 and full910 checks pass (15 existing skips); analysis clean. Android keyboard/panel/return toggle bounds exactly [34,1367,160,1493], verified on installed rebuilt APK. Revised screenshots and recording prepared; previous height review is superseded. No merge/release.
+
+- Equal-height revision delivered in topic8856: screenshots12811/12812, recording12813. Await revised journey review; no merge/release.
+
+- Handoff correction12818: owner spotted blank frames in12813. Keep the actual emoji artwork (not only its empty height) until Android IME covers it; ignore touches during handoff. Previous motion acceptance claim withdrawn; frame-by-frame recheck in progress. No merge/release.
+
+-12818 handoff candidate: actual picker artwork retained until IME coverage, with touch isolation and no-IME fallback.37 focused checks pass, analysis clean, Android/Web compile. Both captured transitions inspected at source-frame granularity with no blank frame; video delivered12820. Full regression910 pass/15 existing opt-in skips; owner review/merge/release remain pending. Evidence: docs/qa/2026-10-15-composer-emoji/handoff-revision/.
+
+- Owner approved emoji visuals/workflow12822; hold for the next release, no immediate distribution.
+
+### Jump to latest messages —15 October2026 ← in progress
+
+Request12824: floating down-arrow while browsing older messages, returns to latest on tap. Keep inside timeline above composer/reply/keyboard/picker; no automatic jump when receiving messages while reading history. Reuse existing up-arrow artwork rotated down (no down-named SVG in this icon set). Separate feature review pending; emoji approval remains intact.
+
+- Return-to-latest candidate verified on Android5556 and Web partner.36 focused/911 full checks pass,15 existing skips; analysis and format clean. Actual screenshots12826/12827 and motion12828 delivered. Size/placement/workflow review pending; no merge or release. Emoji approval12822 remains held for next release. Evidence: docs/qa/2026-10-15-jump-to-latest/.
+
+- Owner positioning revision: center the return-to-latest arrow horizontally above composer; preserve44px size and16px bottom gap. Updated preview in progress; previous right-aligned screenshots superseded for placement acceptance.
+
+- Center revision verified on Android (centerX540/1080) and delivered screenshot12833. Focused test passes; release remains held. Placement approval pending.
+
+- Release inventory correction12835: include standalone OK/okay translation/checker rule from fix/standalone-okay-20261015 (implemented/tested, not merged/deployed). Four main proposed updates: standalone acknowledgements, grammatical-form false-note fix, emoji composer including equal-height/no-flash polish, centered jump-to-latest. This inventory does not authorize merge or distribution.

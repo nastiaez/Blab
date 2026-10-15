@@ -59,6 +59,8 @@ import 'message_translation_lifecycle.dart';
 import 'reaction_row_positioning.dart';
 import 'services/chat_image_picker.dart';
 import 'widgets/chat_composer_input.dart';
+import 'widgets/jump_to_latest.dart';
+import 'widgets/composer_emoji_panel.dart';
 import 'widgets/blocked_chat_bar.dart';
 import 'widgets/failed_message_sheet.dart';
 import 'widgets/first_message_empty_state.dart';
@@ -125,6 +127,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _hasText = false;
   int _textLength = 0;
   double _lastBottomInset = 0;
+  bool _emojiPanelOpen = false;
+  double _emojiPanelHeight = 300;
+  bool _emojiSearchOpen = false;
+  bool _retainEmojiHeightForKeyboard = false;
+  Timer? _emojiKeyboardHandoffTimer;
   bool _translationResolveDeferred = false;
   int _lastMessageCount = 0;
   Message? _selectedMessage;
@@ -191,6 +198,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void dispose() {
     _modeAnchorTimer?.cancel();
+    _emojiKeyboardHandoffTimer?.cancel();
     _replyHighlightTimer?.cancel();
     _reactionRowDismissTimer?.cancel();
     _scroll.removeListener(_loadOlderNearTop);
@@ -412,7 +420,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+  void _showComposerKeyboard() {
+    if (_emojiPanelOpen) {
+      _inputFocus.unfocus();
+      setState(() {
+        _emojiPanelOpen = false;
+        _emojiSearchOpen = false;
+        _retainEmojiHeightForKeyboard = true;
+      });
+      _emojiKeyboardHandoffTimer?.cancel();
+      _emojiKeyboardHandoffTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _retainEmojiHeightForKeyboard = false);
+      });
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _inputFocus.requestFocus();
+      SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+    });
+  }
+
+  void _toggleComposerEmoji() {
+    if (_emojiPanelOpen) {
+      _showComposerKeyboard();
+      return;
+    }
+    final inset = MediaQuery.viewInsetsOf(context).bottom;
+    _emojiKeyboardHandoffTimer?.cancel();
+    _inputFocus.unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    setState(() {
+      if (inset > 0) _emojiPanelHeight = inset;
+      _emojiPanelOpen = true;
+      _emojiSearchOpen = false;
+      _retainEmojiHeightForKeyboard = false;
+    });
+  }
+
   void _handleChatBack() {
+    if (_emojiPanelOpen) {
+      FocusScope.of(context).unfocus();
+      setState(() => _emojiPanelOpen = false);
+      return;
+    }
     if (_chatMenuController.isOpen) {
       _chatMenuController.close();
       return;
@@ -437,6 +487,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _beginReply(Message message, {String? displayedText}) {
     if (ref.read(editingProvider(widget.chatId)) != null) return;
     _closeSelection();
+    if (_emojiPanelOpen) setState(() => _emojiPanelOpen = false);
     if (displayedText == null) {
       final known = ref.read(knownLanguagesProvider).value;
       final mode = ref.read(chatModeProvider(widget.chatId));
@@ -829,6 +880,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     HapticFeedback.mediumImpact();
     _reactionRowDismissTimer?.cancel();
     setState(() {
+      _emojiPanelOpen = false;
       _selectedMessage = message;
       _reactionRowMessage = message;
       _selectedBubbleRect = bubbleRect.shift(keyboardShift);
@@ -1187,7 +1239,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (editing?.id != _editingMessageId) {
       _editingMessageId = editing?.id;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         if (editing != null) {
+          if (_emojiPanelOpen) setState(() => _emojiPanelOpen = false);
           _input.text = editing.originalText;
           _input.selection = TextSelection.fromPosition(
             TextPosition(offset: _input.text.length),
@@ -1222,6 +1276,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // view away from wherever the user actually was, such as a message they
     // just reacted to further up the history.
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final navigationInset = MediaQuery.viewPaddingOf(context).bottom;
+    if (_retainEmojiHeightForKeyboard && bottomInset >= _emojiPanelHeight - 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_retainEmojiHeightForKeyboard) return;
+        _emojiKeyboardHandoffTimer?.cancel();
+        setState(() => _retainEmojiHeightForKeyboard = false);
+      });
+    }
+
+    if (!_emojiPanelOpen && !_retainEmojiHeightForKeyboard && bottomInset > 0) {
+      _emojiPanelHeight = bottomInset;
+    }
+    final emojiContentHeight = _emojiSearchOpen
+        ? math.min(
+            _emojiPanelHeight,
+            math.max(
+              120.0,
+              (MediaQuery.sizeOf(context).height - bottomInset) * .4,
+            ),
+          )
+        : math.max(0.0, _emojiPanelHeight - navigationInset);
+    final inputObstruction = _emojiPanelOpen && _emojiSearchOpen
+        ? emojiContentHeight + math.max(bottomInset, navigationInset)
+        : math.max(
+            math.max(bottomInset, navigationInset),
+            _emojiPanelOpen || _retainEmojiHeightForKeyboard
+                ? _emojiPanelHeight
+                : 0.0,
+          );
+
     if ((bottomInset - _lastBottomInset).abs() > 1) {
       // A keyboard that *appears* under a live selection shifts the message
       // list up by an amount we can't compensate for after the fact — the
@@ -1273,6 +1357,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return PopScope(
       canPop:
+          !_emojiPanelOpen &&
           !_chatMenuController.isOpen &&
           _selectedMessage == null &&
           replyingTo == null &&
@@ -1283,7 +1368,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       },
       child: Scaffold(
         backgroundColor: BlabColors.chatCanvas,
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         body: SafeArea(
           top: false,
           bottom: false,
@@ -1499,81 +1584,88 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                       String,
                                       List<MessageReactionSummary>
                                     >{};
-                                return ChatTimeline(
-                                  highlightedMessageId: _replyHighlightId,
-                                  chatId: widget.chatId,
-                                  partnerName: chat.partnerName,
-                                  messages: all,
-                                  reactionsByMessage: reactionsByMessage,
-                                  scrollController: _scroll,
-                                  languageCode: learningLang.code,
-                                  languageTimelineRows: languageTimelineRows,
-                                  languageTimelineReady: languageTimelineReady,
-                                  practiceSetupRequired:
-                                      chat.needsPracticeLanguageSelection,
-                                  translationInterfaceLanguageCode:
-                                      translationInterfaceLang,
-                                  unreadMessageIds: unreadIds,
-                                  unreadDividerKey: _unreadDividerKey,
-                                  messageAnchorKey: _messageAnchorKey,
-                                  hasOlderMessages: pagination.hasMore,
-                                  isLoadingOlder: pagination.isLoading,
-                                  deferTranslationResolve:
-                                      _translationResolveDeferred,
-                                  // BUG-009: keep the word popup from drawing on
-                                  // top of the chat header. Account for the
-                                  // safe-area notch as well.
-                                  popupTopInset:
-                                      MediaQuery.paddingOf(context).top +
-                                      chatHeaderHeightFor(context),
-                                  selectedMessageId: _selectedMessage?.id,
-                                  showSelectedOriginal: _showSelectedOriginal,
-                                  selectedBubbleKey: _selectedBubbleKey,
-                                  emptyState: FirstMessageEmptyState(
-                                    chat: chat,
-                                  ),
-                                  onLongPress: _selectMessage,
-                                  onReply: _beginReply,
-                                  onJumpToMessage: _jumpToQuotedMessage,
-                                  onFailedTap: (m) {
-                                    final notifier = ref.read(
-                                      chatMessagesProvider(
-                                        widget.chatId,
-                                      ).notifier,
-                                    );
-                                    showFailedMessageSheet(
-                                      context,
-                                      onAction: (action) {
-                                        switch (action) {
-                                          case FailedMessageAction.retry:
-                                            notifier.retryFailed(m.id);
-                                            break;
-                                          case FailedMessageAction.delete:
-                                            notifier.dropPending(m.id);
-                                            break;
-                                        }
-                                      },
-                                    );
-                                  },
-                                  onFailedRetry: (m) => ref
-                                      .read(
+                                return JumpToLatest(
+                                  controller: _scroll,
+                                  enabled:
+                                      _selectedMessage == null &&
+                                      !chat.needsPracticeLanguageSelection,
+                                  child: ChatTimeline(
+                                    highlightedMessageId: _replyHighlightId,
+                                    chatId: widget.chatId,
+                                    partnerName: chat.partnerName,
+                                    messages: all,
+                                    reactionsByMessage: reactionsByMessage,
+                                    scrollController: _scroll,
+                                    languageCode: learningLang.code,
+                                    languageTimelineRows: languageTimelineRows,
+                                    languageTimelineReady:
+                                        languageTimelineReady,
+                                    practiceSetupRequired:
+                                        chat.needsPracticeLanguageSelection,
+                                    translationInterfaceLanguageCode:
+                                        translationInterfaceLang,
+                                    unreadMessageIds: unreadIds,
+                                    unreadDividerKey: _unreadDividerKey,
+                                    messageAnchorKey: _messageAnchorKey,
+                                    hasOlderMessages: pagination.hasMore,
+                                    isLoadingOlder: pagination.isLoading,
+                                    deferTranslationResolve:
+                                        _translationResolveDeferred,
+                                    // BUG-009: keep the word popup from drawing on
+                                    // top of the chat header. Account for the
+                                    // safe-area notch as well.
+                                    popupTopInset:
+                                        MediaQuery.paddingOf(context).top +
+                                        chatHeaderHeightFor(context),
+                                    selectedMessageId: _selectedMessage?.id,
+                                    showSelectedOriginal: _showSelectedOriginal,
+                                    selectedBubbleKey: _selectedBubbleKey,
+                                    emptyState: FirstMessageEmptyState(
+                                      chat: chat,
+                                    ),
+                                    onLongPress: _selectMessage,
+                                    onReply: _beginReply,
+                                    onJumpToMessage: _jumpToQuotedMessage,
+                                    onFailedTap: (m) {
+                                      final notifier = ref.read(
                                         chatMessagesProvider(
                                           widget.chatId,
                                         ).notifier,
-                                      )
-                                      .retryFailed(m.id),
-                                  onReact: (m) => showReactionDetailsSheet(
-                                    context,
-                                    reactions:
-                                        reactionsByMessage[m.id] ?? const [],
-                                    partnerName: chat.partnerName,
-                                    onChangeReaction: (emoji) => ref
+                                      );
+                                      showFailedMessageSheet(
+                                        context,
+                                        onAction: (action) {
+                                          switch (action) {
+                                            case FailedMessageAction.retry:
+                                              notifier.retryFailed(m.id);
+                                              break;
+                                            case FailedMessageAction.delete:
+                                              notifier.dropPending(m.id);
+                                              break;
+                                          }
+                                        },
+                                      );
+                                    },
+                                    onFailedRetry: (m) => ref
                                         .read(
-                                          messageReactionsProvider(
+                                          chatMessagesProvider(
                                             widget.chatId,
                                           ).notifier,
                                         )
-                                        .react(messageId: m.id, emoji: emoji),
+                                        .retryFailed(m.id),
+                                    onReact: (m) => showReactionDetailsSheet(
+                                      context,
+                                      reactions:
+                                          reactionsByMessage[m.id] ?? const [],
+                                      partnerName: chat.partnerName,
+                                      onChangeReaction: (emoji) => ref
+                                          .read(
+                                            messageReactionsProvider(
+                                              widget.chatId,
+                                            ).notifier,
+                                          )
+                                          .react(messageId: m.id, emoji: emoji),
+                                    ),
                                   ),
                                 );
                               },
@@ -1674,9 +1766,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     !chat.needsPracticeLanguageSelection &&
                                     !historyUnavailable,
                                 showTopBorder: replyingTo == null,
-                                onAttach: () => _attachImage(
-                                  recipientName: chat.partnerName,
-                                ),
+                                bottomObstruction: inputObstruction,
+                                emojiPanelOpen: _emojiPanelOpen,
+                                onToggleEmoji: _toggleComposerEmoji,
+                                onTapText: _emojiPanelOpen
+                                    ? _showComposerKeyboard
+                                    : null,
+                                emojiPanel:
+                                    _emojiPanelOpen ||
+                                        _retainEmojiHeightForKeyboard
+                                    ? IgnorePointer(
+                                        ignoring: !_emojiPanelOpen,
+                                        child: ComposerEmojiPanel(
+                                          controller: _input,
+                                          maxLength: _maxMessageLength,
+                                          height: emojiContentHeight,
+                                          onSearchChanged: (open) {
+                                            if (mounted) {
+                                              setState(
+                                                () => _emojiSearchOpen = open,
+                                              );
+                                            }
+                                          },
+                                        ),
+                                      )
+                                    : null,
+                                onAttach: () {
+                                  if (_emojiPanelOpen) {
+                                    setState(() => _emojiPanelOpen = false);
+                                  }
+                                  _attachImage(recipientName: chat.partnerName);
+                                },
                                 onSend: _send,
                                 autofocus:
                                     chatIsEmpty ||

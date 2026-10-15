@@ -250,6 +250,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Header identity uses a 36 px avatar with the approved warm palette and subtle shadow; back icon → avatar and avatar → name are both 10 px; name is 15 px heavy, 18 px line height, `#46281C`
 - [ ] The entire Normal/Practice switch is one tap target; tapping anywhere on the control always flips to the other mode
 - [ ] Back navigates to Chats from every chat entry path, including notification/direct entry; an active reply is cancelled first without leaving the chat
+- [ ] While more than200 logical pixels from the newest messages, show a small floating down-arrow at the bottom-center of the timeline, above the composer/reply/keyboard/emoji panel. Tap returns to newest messages and hides the button. Preserve drafts, mode and focus; incoming messages do not force history readers to the bottom. Reduced motion uses an immediate jump
 
 ---
 
@@ -562,6 +563,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Hard limit: 2000 characters per message
 - [ ] Character counter appears below input at 1800+ characters, red at 2000
 - [ ] Send button disabled when over limit
+- [ ] The chat composer has the approved left emoji icon. Tap to replace the keyboard with an inline emoji panel; the icon becomes a keyboard to return to typing. Tapping the message field also returns to typing
+- [ ] The normal emoji panel occupies the same total bottom space as the measured keyboard, including navigation inset; switching in either direction keeps the composer level. Search may show its own text keyboard with compact results
+- [ ] Emoji picks insert at the cursor or replace selected text, preserve the draft/reply/edit target and obey the same 2000-grapheme budget; panel backspace deletes one whole emoji or the selection
+- [ ] Back closes the emoji panel before cancelling a reply or navigating away. Emoji search and accessible button labels follow Interface Language, not Learning Language
+- [ ] The panel supports repeated picks, categories, recent emojis, skin tones and search; sending keeps the panel available for the next message. No stickers/GIFs are included in this slice
 
 ---
 

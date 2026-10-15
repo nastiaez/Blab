@@ -17,6 +17,10 @@ class ChatComposerInput extends StatelessWidget {
     this.enabled = true,
     this.showAttachment = true,
     this.autofocus = false,
+    this.onToggleEmoji,
+    this.onTapText,
+    this.emojiPanelOpen = false,
+    this.emojiTooltip,
   });
 
   final TextEditingController controller;
@@ -28,6 +32,9 @@ class ChatComposerInput extends StatelessWidget {
   final bool enabled;
   final bool showAttachment;
   final bool autofocus;
+  final VoidCallback? onToggleEmoji, onTapText;
+  final bool emojiPanelOpen;
+  final String? emojiTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +48,28 @@ class ChatComposerInput extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          if (onToggleEmoji != null)
+            BlabIconButton(
+              key: const ValueKey('composer-emoji-toggle'),
+              tooltip: emojiTooltip,
+              icon: BlabIcon(
+                name: emojiPanelOpen ? 'keyboard - 20' : 'emoji-face - 20',
+                color: BlabColors.bubbleInk,
+                size: 20,
+              ),
+              onPressed: enabled ? onToggleEmoji : null,
+            ),
           Expanded(
             child: BlabComposerField(
               fieldKey: const ValueKey('composer-message-text-field'),
               controller: controller,
               focusNode: focusNode,
               enabled: enabled,
-              autofocus: autofocus,
+              autofocus: autofocus && !emojiPanelOpen,
+              keyboardType: emojiPanelOpen
+                  ? TextInputType.none
+                  : TextInputType.multiline,
+              onTap: onTapText,
               minLines: 1,
               maxLines: 5,
               maxLength: maxLength,
@@ -72,8 +94,8 @@ class ChatComposerInput extends StatelessWidget {
                   color: BlabColors.textMuted,
                   fontSize: 15,
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: onToggleEmoji == null ? 14 : 2,
                   vertical: 10,
                 ),
                 border: InputBorder.none,
