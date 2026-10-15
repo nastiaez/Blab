@@ -1,5 +1,6 @@
 import {
   acknowledgementPromptRule,
+  coreTranslationRules,
   CORRECTION_CONFIDENCE,
   DEFAULT_OPENAI_MODEL,
   DEFAULT_OPENROUTER_MODEL,
@@ -11,7 +12,6 @@ import {
   LATIN_TARGETS,
   LEARNING_AID_MODES,
   OTHER_SOURCE_LANG,
-  PROTECTED_CONTENT_RULE,
   SEMANTIC_FIDELITY_RULE,
   SHORT_PLAIN_SOURCE,
   SHORT_SOURCE_RETRY_MAX_CHARS,
@@ -1915,40 +1915,16 @@ Return strict JSON only:
 }
 
 Rules:
-- Never expand an ambiguous character, initial, or fragment into a guessed noun. Preserve the character literally (e.g. "deine O" must not become "deine Ohren"). Low confidence is not permission to invent meaning.
-- ${PROTECTED_CONTENT_RULE}
-- ${acknowledgementPromptRule()}
-- ${SEMANTIC_FIDELITY_RULE}
-- Produce natural, standard ${targetName} spelling and word formation.${targetLanguageGuidance}
-- Treat repeated letters, stretched vowels or consonants, playful capitalization, and similar chat styling as expressive spelling of the underlying language. Normalize these only while detecting the source language; never label them as unsupported or correct them as mistakes. Preserve the expressive tone in the translated line when the target language has a natural equivalent.
-- A likely personal name is not an unsupported language. Keep its identity, and when the target script differs, transliterate it rather than translating its meaning. Use conversation context and the supplied participant names when available; do not infer a name from capitalization alone.
-- Treat meaning-bearing chat abbreviations such as brb and ttyl as language: translate their meaning when the target language has a natural equivalent; otherwise preserve them.
-- A meaning-bearing chat abbreviation combined with compatible Latin-script words or names remains supported language. Translate the abbreviation naturally and preserve or transliterate names; do not label the message unsupported merely because a name follows the abbreviation.
-- Preserve paragraph breaks exactly. If the input is one paragraph, translation and interfaceText must also be one paragraph with no newline characters.
-- ${GENDER_ADDRESS_RULES.replaceAll("\n", "\n- ")}
-- First detect sourceLang, then choose exactly one mode.
-- If sourceLang differs from ${targetLang}, including sourceLang=${OTHER_SOURCE_LANG}, mode MUST be translation. Translate the entire input into ${targetName}; never summarize, omit, deduplicate, or combine repeated content.
-- mode=none and mode=correction are valid ONLY when sourceLang is ${targetLang}. Then carefully check the complete input for real learning mistakes: grammar, spelling, inflection, agreement, word order, missing/extra words, or wrong-word errors. Even one wrong word or misspelled word is enough for mode=correction. Make the smallest defensible correction and never invent missing meaning. Otherwise use mode=none.
-- Before returning mode=none, compare every subject with every verb and auxiliary for person, number, gender, and honorific agreement. A mismatch is a real correction even when the meaning remains understandable.
-- Do not correct capitalization, punctuation, slang, abbreviations, dialect, colloquial phrasing, tone, style, or another acceptable wording unless it creates a clear language error or changes the intended meaning.
-- Never create correction marks for capitalization, noun capitalization, apostrophes, commas, terminal punctuation, or spacing. Apply those mechanical fixes silently in translation/interfaceText when needed.
-- mode is determined only from sourceLang compared with the viewer's learning language. It never depends on whether the viewer authored or received the message.
-- For mode=correction, "translation" is the corrected ${targetName} text, "explanation" is one concise ${interfaceName} sentence, and confidence is low, medium, or high. Use low/medium when context makes the correction ambiguous.
-- For mode=none, "translation" exactly equals the trimmed input and explanation/confidence are null.
-- For mode=translation, explanation/confidence are null.
-- When the source contains an explicit future time marker, preserve that future meaning with the natural target-language tense or construction; do not default to habitual present unless that is genuinely idiomatic in ${targetName}.
-- Noun-class agreement, clock hours, dates, numbers, and objects must never create participant form choices.
-- Set formAlternatives to null unless the target sentence genuinely requires a feminine/masculine choice for the viewer or partner. When it is required, set translation to the feminine rendering, and concatenate before + feminine + after to reproduce translation exactly. feminine and masculine must be complete, natural alternatives for the same shortest understandable affected fragment; include every linked agreement change together. feminineTokens and masculineTokens must each reproduce their complete resolved sentence exactly, including the shared before/after text, and follow the same per-word metadata rules as tokens. subjectIsViewer identifies the affected participant and subjectName is their display name. Set suggestedForm from their name, or feminine if unclear. Never encode a saved preference in this shared translation; it never changes the identity of the affected participant.
-- This is a required output rule, not a suggestion to make wording neutral. For example, ONLY when the viewer authored English "What did you do yesterday?", Ukrainian MUST return translation="Що ти робила вчора?" and split formAlternatives into before="Що ти ", feminine="робила", masculine="робив", and after=" вчора?", with the partner as the affected subject. When the partner authored that same question, subjectIsViewer MUST instead be true and subjectName MUST be the viewer’s name. Apply the same rule to the natural feminine/masculine fragment in every supported target language; French/Hindi may need a multi-word fragment. Both complete token arrays must follow the general token rules below, including short ${interfaceName} glosses; never copy example glosses from another language.
-- "interfaceText" is the full message in ${interfaceName}, based on the corrected meaning when mode=correction or when a translated source has clear grammar, spelling, inflection, agreement, word order, missing/extra word, or wrong-word errors.
-- mode=none applies only to correction of the ${targetName} learning line. When ${interfaceName} is a different language, interfaceText must still translate the complete message into ${interfaceName}; do not copy the ${targetName} text into interfaceText.
-- If sourceLang is ${interfaceLang} and differs from ${targetLang}, "interfaceText" stays in ${interfaceName}; preserve the trimmed input when it is already correct, but fix clear language mistakes so the main chat shows clean communication.
-- If ${interfaceLang} and ${targetName} are the same language, "interfaceText" must exactly equal "translation".
-- sourceLang must be one of the listed codes, or ${OTHER_SOURCE_LANG} for any other input language.
-- For every mode, concatenating every tokens[].text must exactly reproduce "translation".
-- Content tokens are one translated/corrected word or one non-whitespace term at a time, never a phrase or full sentence, and include a short ${interfaceName} gloss.
-- Whitespace, punctuation, and emoji use isContent=false and omit glosses.
-- ${romanGuidance}
+${
+    coreTranslationRules({
+      targetName,
+      targetLang,
+      interfaceName,
+      interfaceLang,
+      targetLanguageGuidance,
+      romanGuidance,
+    })
+  }
 
 Request settings:
 ${sourceInstruction}

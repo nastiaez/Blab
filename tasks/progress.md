@@ -1299,3 +1299,5 @@ Navigation research: installed Flutter3.44.8 uses PredictiveBackPageTransitionsB
 Candidate implemented, not merged/deployed. 162 backend tests pass; Android screenshot inspected. Live asymmetric German/Ukrainian replay: 8/8 viewer jobs ready on first attempt. Shared canonical rulebook feeds prompts and validators, generates docs/translation-rulebook.md, and CI catches stale docs. Next-release evidence in docs/qa/2026-10-15-standalone-okay. Missing-incoming-bubble candidate remains a separate review item.
 
 - 2026-10-15: Requested standalone acknowledgement fix implemented for next release; centralized translation policy, generated reference and CI drift guard. No production changes.
+
+- 2026-10-15 12:15: Owner clarified rulebook scope is core translation semantics, not only exceptions/configuration. Moved the existing complete generation rule block into the canonical rulebook and generated its readable reference; no translation-policy change intended. AGENTS explicitly requires capturing whole-message/noun/name/correction/secondary/transliteration rules.

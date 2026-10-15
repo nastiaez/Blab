@@ -138,6 +138,8 @@ Every pushed page must use the reusable `lib/app/telegram_route.dart` motion: 15
 
 ## Translation rulebook
 
+The rulebook covers **core translation behaviour**, not merely technical settings or exception lists. Capture all agreed rules about whole-message translation versus retaining authored text, ordinary nouns versus names/protected content, meaning/context/word order, mixed-language input, correction eligibility, secondary translation, and transliteration/word help. Keep existing policy explicit; examples are not authorization to invent new noun-retention or partial-translation rules. New or changed core rules must be captured in the canonical rulebook and consumed by the relevant prompts/checks. Flag confusing or conflicting **translation rules** in this development conversation with their practical impact before making an unresolved product assumption.
+
 Before changing translation policy, read `docs/translation-rulebook.md` and its canonical source `supabase/functions/translate-message/rulebook.ts`. Prompts and checks must import shared policy there rather than copying values. Keep the PRD as product authority. Move new configurable translation exceptions into the rulebook; preserve the documented owners for preference resolution, schemas and durable scheduling. Run `deno run --allow-write scripts/generate_translation_rulebook.ts` after changes and run backend tests. CI checks generated-document parity and prompt/validator behavior. Never edit only the generated reference.
 
 ## Flag conflicting or confusing rules (owner instruction, 15 October 2026)
