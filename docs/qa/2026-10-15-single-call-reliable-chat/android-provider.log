@@ -1,0 +1,34 @@
+Serving functions on http://127.0.0.1:54441/functions/v1/<function-name>
+ - http://127.0.0.1:54441/functions/v1/delete-account
+ - http://127.0.0.1:54441/functions/v1/prepare-message-jobs
+ - http://127.0.0.1:54441/functions/v1/reconcile-stream-events
+ - http://127.0.0.1:54441/functions/v1/send-push
+ - http://127.0.0.1:54441/functions/v1/stream-activity
+... and 7 more functions
+Using supabase-edge-runtime-1.74.2 (compatible with Deno v2.1.4)
+serving the request with supabase/functions/prepare-message-jobs
+[Info] blab_provider_metric {
+  provider: "openrouter",
+  model: "google/gemini-3.1-flash-lite",
+  status: 200,
+  durationMs: 2208,
+  promptTokens: 3131,
+  completionTokens: 672,
+  cachedPromptTokens: 0
+}
+
+[Info] translation_message_batch_ready { messageId: "ddbbe299-516a-4cbf-87f7-bbf7e53c562b", viewers: 2 }
+
+serving the request with supabase/functions/prepare-message-jobs
+[Info] blab_provider_metric {
+  provider: "openrouter",
+  model: "google/gemini-3.1-flash-lite",
+  status: 200,
+  durationMs: 1725,
+  promptTokens: 3126,
+  completionTokens: 383,
+  cachedPromptTokens: 0
+}
+
+[Info] translation_message_batch_ready { messageId: "d4988b3b-fbf7-4cf6-bbe8-35313f8b0da7", viewers: 2 }
+

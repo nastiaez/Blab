@@ -1,0 +1,279 @@
+Check supabase/functions/prepare-message-jobs/contract_test.ts
+Check supabase/functions/translate-message/automatic_forms_test.ts
+Check supabase/functions/translate-message/cache_migration_test.ts
+Check supabase/functions/translate-message/consensus_test.ts
+Check supabase/functions/translate-message/contract_test.ts
+Check supabase/functions/translate-message/delivery_optimization_test.ts
+Check supabase/functions/translate-message/provider_metrics_test.ts
+Check supabase/functions/translate-message/provider_test.ts
+Check supabase/functions/translate-message/readable_delivery_test.ts
+Check supabase/functions/translate-message/recovery_test.ts
+Check supabase/functions/translate-message/rulebook_test.ts
+Check supabase/functions/translate-message/single_call_test.ts
+running 10 tests from ./supabase/functions/prepare-message-jobs/contract_test.ts
+claims are processed oldest first with a stable tie break ... ok (13ms)
+one failed job does not stop independent completions ... ok (523µs)
+transient failures retry with bounded delay ... ok (51µs)
+permanent failures stop immediately ... ok (18µs)
+stale revisions are discarded without retry ... ok (26µs)
+retry budget ends in a terminal failure ... ok (42µs)
+worker input accepts only bounded batches and job UUIDs ... ok (122µs)
+an unrelated slow job does not delay an already claimed message ... ok (61µs)
+failure diagnostics retain bounded reasons, never private provider text ... ok (63µs)
+retry delay respects provider Retry-After ... ok (24µs)
+running 28 tests from ./supabase/functions/translate-message/automatic_forms_test.ts
+English direct author maps to stable author role ... ok (907µs)
+English direct recipient maps to stable recipient role ... ok (58µs)
+German direct author maps to stable author role ... ok (224µs)
+German direct recipient maps to stable recipient role ... ok (29µs)
+Spanish direct author maps to stable author role ... ok (398µs)
+Spanish direct recipient maps to stable recipient role ... ok (18µs)
+French direct author maps to stable author role ... ok (191µs)
+French direct recipient maps to stable recipient role ... ok (52µs)
+Ukrainian direct author maps to stable author role ... ok (1ms)
+Ukrainian direct recipient maps to stable recipient role ... ok (40µs)
+Hindi direct author maps to stable author role ... ok (332µs)
+Hindi direct recipient maps to stable recipient role ... ok (19µs)
+Dutch direct author maps to stable author role ... ok (294µs)
+Dutch direct recipient maps to stable recipient role ... ok (56µs)
+Italian direct author maps to stable author role ... ok (868µs)
+Italian direct recipient maps to stable recipient role ... ok (23µs)
+Portuguese direct author maps to stable author role ... ok (368µs)
+Portuguese direct recipient maps to stable recipient role ... ok (14µs)
+Tamil direct author maps to stable author role ... ok (499µs)
+Tamil direct recipient maps to stable recipient role ... ok (26µs)
+Turkish direct author maps to stable author role ... ok (1ms)
+Turkish direct recipient maps to stable recipient role ... ok (17µs)
+direct role recognition is isolated to the detected language ... ok (117µs)
+wrong incoming you metadata is rebound to Bob and stable recipient role ... ok (37µs)
+existing alternatives require ownership audit too ... ok (22µs)
+shared provider prompts are invariant to private saved forms ... ok (203µs)
+normalized shared alternatives preserve name-derived provider suggestions ... ok (703µs)
+embedded and named affected people remain audit-owned ... ok (4ms)
+running 6 tests from ./supabase/functions/translate-message/cache_migration_test.ts
+automatic-form migration invalidates every legacy cache variant ... ok (2ms)
+automatic-form migration replaces invalidated preparation jobs ... ok (7ms)
+automatic-form migration rejects every legacy completion contract ... ok (872µs)
+complete-language-aids migration advances and invalidates the cache ... ok (683µs)
+translation-reliability migration replaces every stale result ... ok (423µs)
+completion RPCs preserve corrected source-interface text ... ok (176µs)
+running 2 tests from ./supabase/functions/translate-message/consensus_test.ts
+first two reviews start independently; agreement avoids third call ... ok (211µs)
+disagreement requires third review and never accepts one vote ... ok (76µs)
+running 89 tests from ./supabase/functions/translate-message/contract_test.ts
+counts user-perceived characters ... ok (3ms)
+rejects a same-language correction that drops caption content ... ok (613µs)
+accepts a complete Dutch correction with one changed word ... ok (109µs)
+focused correction audit catches a clear agreement error ... ok (1ms)
+stale correction tokens preserve the valid correction for metadata repair ... ok (84µs)
+focused correction audit contract is generic and localized ... ok (49µs)
+accepts only a message UUID ... ok (75µs)
+provider route permits every eligible ZDR endpoint ... ok (18µs)
+provider credentials prefer OpenRouter and fall back to OpenAI ... ok (58µs)
+provider messages include recent context but translate only current text ... ok (165µs)
+provider messages include bounded source evidence ... ok (83µs)
+focused short retry isolates semantic translation from source detection ... ok (338µs)
+semantic translation audit independently checks source meaning ... ok (78µs)
+source meaning is anchored before any candidate is visible ... ok (74µs)
+semantic translation audit uses one stable internal meaning language ... ok (25µs)
+semantic audit parser accepts only internally consistent verdicts ... ok (93µs)
+semantic audit consensus retries contradictions and requires agreement ... ok (298µs)
+semantic audit consensus rejects competing corrections ... ok (43µs)
+focused retry keeps its resolved source when provider parrots target ... ok (274µs)
+provider keeps private forms out while suggesting by name ... ok (46µs)
+English to Ukrainian rejects parenthetical gender alternatives ... ok (1ms)
+unresolved form forces one explicit audit before accepting a translation without alternatives ... ok (46µs)
+focused grammatical-form audit requires a participant when a choice is needed ... ok (94µs)
+focused grammatical-form audit requires complete token metadata for both renderings ... ok (103µs)
+strict form schemas require both complete token arrays ... ok (23µs)
+provider alternatives retain complete tokens for both forms ... ok (955µs)
+focused audit prompt localizes word metadata ... ok (50µs)
+confirmed alternatives must keep the audit's minimal changing fragment ... ok (45µs)
+focused audit can attach minimal alternatives to its exact feminine translation ... ok (86µs)
+confirmed audit makes feminine translation metadata canonical ... ok (54µs)
+optional form audit preserves a valid base translation when unavailable ... ok (52µs)
+prompt distinguishes author and recipient for Ukrainian questions ... ok (35µs)
+prompt preserves supplied conversation tone ... ok (18µs)
+interface repair reuses provisional form and address rules ... ok (19µs)
+provider responses use strict schemas ... ok (14µs)
+provider response schema requires word metadata ... ok (11µs)
+provider validation failures expose bounded structural reasons ... ok (192µs)
+provider keeps full text when optional token metadata is invalid ... ok (84µs)
+provider trims boundary-only token whitespace ... ok (41µs)
+provider repairs token punctuation without losing word metadata ... ok (69µs)
+provider canonicalizes punctuation-bound Latin word metadata ... ok (33µs)
+every learning language requests pronunciation metadata ... ok (97µs)
+provider discards phrase-sized content tokens ... ok (50µs)
+provider-added paragraph breaks are removed for single-paragraph input ... ok (185µs)
+provider mode drift is normalized instead of hiding translation ... ok (72µs)
+copied learning text requests an interface retry for every source ... ok (51µs)
+provider accepts a source outside the learning-language list ... ok (23µs)
+provider keeps a usable translation when optional word metadata is missing ... ok (36µs)
+non-Latin learning text requires complete word metadata ... ok (31µs)
+copied multi-word glosses require a focused metadata repair ... ok (125µs)
+source-language glosses are repaired when known language differs ... ok (71µs)
+focused word metadata repair preserves the accepted sentence ... ok (102µs)
+provider retries only when a cross-language result copies the source ... ok (23µs)
+provider retries a misclassified short source ... ok (21µs)
+source evidence retry rejects No misclassified as German ... ok (60µs)
+source evidence selects the author's language for the bounded retry ... ok (564µs)
+source evidence retry preserves genuine target-language text ... ok (22µs)
+source evidence retry recognizes an abbreviation plus a name ... ok (1ms)
+source evidence pins a recognized English abbreviation without history ... ok (48µs)
+unsupported source scripts are recognized without provider guessing ... ok (158µs)
+abbreviation plus name source evidence covers every target language ... ok (115µs)
+source classification retry preserves valid short messages ... ok (52µs)
+source classification retry excludes non-conversational and long input ... ok (707µs)
+source classification retry guidance is generic ... ok (32µs)
+auto-source prompt requests learning output with localized glosses ... ok (78µs)
+standard prompt contains no English token example for German word help ... ok (43µs)
+focused retry explicitly requires German token glosses ... ok (22µs)
+Dutch prompt requires standard closed compounds ... ok (20µs)
+Hindi prompt prefers a true future construction for one-time events ... ok (20µs)
+Hindi temporal translations receive a focused future audit ... ok (43µs)
+Dutch output normalizes tomorrow morning as a closed compound ... ok (128µs)
+prompt names every supported interface language correctly ... ok (56µs)
+author can receive a bounded same-language correction ... ok (21µs)
+same-language correction is available to any eligible viewer ... ok (31µs)
+server accepts corrected interface-language text for translated source mistakes ... ok (23µs)
+server keeps duplicate target and interface lanes identical ... ok (16µs)
+maximum character contract remains 2000 ... ok (132µs)
+word metadata repair restores paragraph separators and emoji without rewriting words ... ok (56µs)
+accepted Latin translation remains readable without optional popup metadata ... ok (17µs)
+protected literal messages bypass linguistic guessing without exempting words ... ok (1ms)
+literal character guard rejects guessed expansion in every display lane ... ok (365µs)
+literal guard permits French elisions while preserving quoted initials ... ok (770µs)
+word metadata never hides attached Tamil letters as punctuation ... ok (34µs)
+malformed optional forms defer to required agreement audit instead of losing readable text ... ok (46µs)
+learners can write short correct German despite an English profile ... ok (38µs)
+meaning equivalence cannot approve the wrong output language ... ok (42µs)
+verified standalone OK/okay does not retry solely for identical spelling ... ok (189µs)
+OK exception never exempts sentences, other words or false friends ... ok (36µs)
+OK local-script rendering remains an ordinary translation ... ok (17µs)
+running 1 test from ./supabase/functions/translate-message/delivery_optimization_test.ts
+participant changes retain the long stable language-pair prefix ... ok (324µs)
+running 3 tests from ./supabase/functions/translate-message/provider_metrics_test.ts
+cache telemetry distinguishes measured zero from absent or invalid usage ... ok (189µs)
+metrics do not consume the caller response or expose request contents ... ok (8ms)
+a failed telemetry callback cannot fail delivery ... ok (926µs)
+running 5 tests from ./supabase/functions/translate-message/provider_test.ts
+focused audits use their matching strict response schemas ... ok (1ms)
+provider fetch aborts and reports a controlled timeout ... ok (10ms)
+provider fetch preserves endpoint, signal, model, and privacy policy ...
+------- post-test output -------
+blab_provider_metric {
+  provider: "openrouter",
+  model: "openai/gpt-4o-mini",
+  status: 200,
+  durationMs: 4,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openai",
+  model: "gpt-4o-mini",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+----- post-test output end -----
+provider fetch preserves endpoint, signal, model, and privacy policy ... ok (7ms)
+short messages do not reserve a long-message completion budget ... ok (187µs)
+provider backoff prevents same-account hedge and retains Retry-After ... ok (1ms)
+running 8 tests from ./supabase/functions/translate-message/readable_delivery_test.ts
+readable schema removes only optional word metadata, preserving form choices ... ok (210µs)
+deferred metadata retains exact linked forms without inventing definitions ... ok (556µs)
+metadata resume preserves verified participant role without trusting provider role ... ok (108µs)
+readable prompt preserves source and meaning rules ... ok (272µs)
+only byte-identical authored text in its known language avoids a rewrite audit ... ok (65µs)
+word-help failure leaves accepted text intact and retry never retranslates ... ok (686µs)
+readable delivery defaults on and supports explicit rollback ... ok (28µs)
+copied foreign known-language lane is repaired before trusting semantic agreement ... ok (47µs)
+running 5 tests from ./supabase/functions/translate-message/recovery_test.ts
+fast accepted primary avoids fallback entirely ... ok (13ms)
+invalid primary immediately tries one fallback ... ok (280µs)
+slow primary is cancelled after accepted hedge ... ok (8ms)
+failed hedge cannot discard a later valid primary ... ok (17ms)
+both hung providers settle at the shared deadline ... ok (16ms)
+running 2 tests from ./supabase/functions/translate-message/rulebook_test.ts
+generated translation rulebook is current ... ok (1ms)
+acknowledgement policy is shared by retry and audit prompts ... ok (729µs)
+running 6 tests from ./supabase/functions/translate-message/single_call_test.ts
+one fetch produces both independently targeted viewer results ...
+------- post-test output -------
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 7,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+----- post-test output end -----
+one fetch produces both independently targeted viewer results ... ok (11ms)
+provider failure cannot trigger an in-request retry or hedge ...
+------- post-test output -------
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 503,
+  durationMs: 1,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+----- post-test output end -----
+provider failure cannot trigger an in-request retry or hedge ... ok (1ms)
+missing viewer, malformed tokens and truncated output are rejected without repair calls ...
+------- post-test output -------
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+----- post-test output end -----
+missing viewer, malformed tokens and truncated output are rejected without repair calls ... ok (947µs)
+context is bounded and remains untrusted data; unrelated messages cannot batch ... ok (484µs)
+protected literal messages require zero provider calls ... ok (372µs)
+complete alternatives normalize a masculine base without a repair call ...
+------- post-test output -------
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+----- post-test output end -----
+complete alternatives normalize a masculine base without a repair call ... ok (1ms)
+
+ok | 165 passed | 0 failed (533ms)
+
