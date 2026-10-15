@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0 (21)",
+  "source_revision": "bedd4f8c79eb2b3255e2913a50d4bd5c7d5bfadf",
+  "authorization_message": 12931,
+  "screenshot_messages": [
+    12940,
+    12941,
+    12942,
+    12943
+  ],
+  "apk_sha256": "d9bc4a16a0ff7827f4161c590c9f58f93cd7aec57ad308db7398585e6c2a2caf",
+  "signing_sha256": "1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb",
+  "firebase_app": "1:363935775546:android:c3a351249463d5f9356e03",
+  "distribution": "distributed; exact release reopened and both existing tester memberships verified",
+  "production": {
+    "translate_message_version": 31,
+    "prepare_message_jobs_version": 10,
+    "identical_readback_files": 12,
+    "backend_verifier": "passed",
+    "anonymous_requests": "both 401"
+  },
+  "tests": {
+    "backend_passed": 188,
+    "flutter_passed": 941,
+    "flutter_skipped": 15,
+    "atomic_shared_language_sql": "passed"
+  },
+  "signed_update": {
+    "device": "emulator-5560",
+    "from": 20,
+    "to": 21,
+    "without_uninstall": true,
+    "saved_german_preference_retained": true,
+    "installed_apk_hash_matches": true,
+    "limitation": "Signed-out production baseline; not authenticated history or physical-phone proof"
+  },
+  "ci_url": "https://github.com/nastiaez/Blab/actions/runs/38748145556",
+  "ci_conclusion": "success",
+  "download_back_hash_matches": true,
+  "firebase_release": "4354ve9mkupn8",
+  "tester_counts": {
+    "invited": 2,
+    "accepted": 2,
+    "downloaded": 0
+  },
+  "tester_membership": "both existing testers unchanged"
+}

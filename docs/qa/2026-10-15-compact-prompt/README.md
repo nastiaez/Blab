@@ -1,4 +1,4 @@
-# Compact dynamic translation request — in progress
+# Compact dynamic translation request — released v21
 
 Authorization: Ash, current development topic7420 message12931, asks to implement the reviewed optimisations, build and launch to existing testers. Dedicated current-main worktree perf/compact-translation-prompt-20261015, base0d34bf4. No client UI redesign. Preserve independent unrelated worktrees and existing tester/signing identity.
 
@@ -32,3 +32,9 @@ Android: AliceLocal emulator5556, knownEnglish/learningDutch; BobLocal5558 known
 An existing synthetic draft accidentally prefixed the first send, creating the mixed-spacing regression. Preserved the authored fixture; after the fix, only that local message's generated cache was cleared and its2 failed jobs reset for a controlled re-evaluation. Both returned ready in one call, not an authored-message deletion or production data repair. Runtime is task-owned temporary /tmp/blab-stream-backend-20261014; original translator/worker snapshot preserved /tmp/blab-pre-compact-runtime. No reset/migration of shared runtime database.
 
 Actual four final screenshots inspected and delivered to current topic in12940–12943. No UI layout/motion code changed. Owner12931 explicitly requests build/launch after this reviewed optimisation proposal; proceed with that release authorization. Physical-phone manual acceptance remains pending and no launch-tracker checkbox is marked complete. Integrated signed21/backend readback/Firebase receipts pending.
+
+## Integrated release completed
+
+Source bedd4f8c79eb2b3255e2913a50d4bd5c7d5bfadf integrated and pushed to main. All three source CI jobs passed: Quality, Android release compile and Local Supabase integration (run38748145556). Production translate-message31/prepare-message-jobs10 deployed,12 readback files match source; backend verifier and both anonymous401 checks pass. Exact signed20→21 replacement installation retained German preference without uninstall; installed and Firebase-downloaded APK hashes match. This is a signed-out baseline, not physical-phone or authenticated-history proof. Earlier two-account Android QA completed; a redundant later replay could not run after those emulators were closed, and is not counted as passing.
+
+Firebase1.0.0(21), release4354ve9mkupn8, distributed to both existing testers. Reopened exact release confirms two memberships, invited2/accepted2/downloaded0 at verification. Receipt and retained-German screenshot attached. Physical-phone acceptance remains pending. Prompt layout enables provider caching but observed cached tokens remain0; no cache discount claimed.
