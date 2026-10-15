@@ -1301,3 +1301,5 @@ Candidate implemented, not merged/deployed. 162 backend tests pass; Android scre
 - 2026-10-15: Requested standalone acknowledgement fix implemented for next release; centralized translation policy, generated reference and CI drift guard. No production changes.
 
 - 2026-10-15 12:15: Owner clarified rulebook scope is core translation semantics, not only exceptions/configuration. Moved the existing complete generation rule block into the canonical rulebook and generated its readable reference; no translation-policy change intended. AGENTS explicitly requires capturing whole-message/noun/name/correction/secondary/transliteration rules.
+
+- 2026-10-15: Ash explicitly requested merging the rulebook into main (after Telegram12849). Rulebook/acknowledgement branch passes 162 backend tests before integration; merge does not deploy backend or distribute a mobile release. LangSmith setup is separate follow-up.

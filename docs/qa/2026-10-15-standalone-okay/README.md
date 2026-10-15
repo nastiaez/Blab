@@ -1,6 +1,6 @@
 # Standalone acknowledgement and translation rulebook candidate
 
-Status: implemented/tested in fix/standalone-okay-20261015; for next release. Not merged or deployed.
+Status: implemented/tested in fix/standalone-okay-20261015; owner authorized main integration on 15 October. Backend deployment and next mobile release remain separate; not live.
 
 ## Scope
 Standalone ok/okay (case-insensitive; terminal . ! ? …) may remain unchanged only after independent language/meaning validation, supported target and script checks. Source conflicts still fail. No full-sentence, other-word, emoji-suffix or false-friend blanket exemption.
