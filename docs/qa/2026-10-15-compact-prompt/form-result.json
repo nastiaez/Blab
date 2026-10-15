@@ -1,0 +1,369 @@
+[
+  {
+    "text": "What did you do yesterday?",
+    "calls": 1,
+    "ms": 3092,
+    "usage": {
+      "prompt_tokens": 1629,
+      "completion_tokens": 862,
+      "total_tokens": 2491,
+      "cost": 0.00170025,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00170025,
+        "upstream_inference_prompt_cost": 0.00040725,
+        "upstream_inference_completions_cost": 0.001293
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Що ти робила вчора?",
+        "interfaceText": "What did you do yesterday?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Що",
+            "gloss": "what",
+            "roman": "Shcho",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "you",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "робила",
+            "gloss": "did (feminine)",
+            "roman": "robyla",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "yesterday",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Що ти ",
+          "feminine": "робила",
+          "masculine": "робив",
+          "after": " вчора?",
+          "subjectName": "Bob Local",
+          "subjectIsViewer": false,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робила",
+              "gloss": "did (feminine)",
+              "roman": "robyla",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робив",
+              "gloss": "did (masculine)",
+              "roman": "robyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Що ти робила вчора?",
+        "interfaceText": "What did you do yesterday?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Що",
+            "gloss": "what",
+            "roman": "Shcho",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "you",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "робила",
+            "gloss": "did (feminine)",
+            "roman": "robyla",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "yesterday",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Що ти ",
+          "feminine": "робила",
+          "masculine": "робив",
+          "after": " вчора?",
+          "subjectName": "Bob Local",
+          "subjectIsViewer": true,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робила",
+              "gloss": "did (feminine)",
+              "roman": "robyla",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робив",
+              "gloss": "did (masculine)",
+              "roman": "robyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      }
+    },
+    "requestBytes": 5295
+  }
+]

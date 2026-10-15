@@ -1,3 +1,4 @@
+import { compactPlan, expandCompactResponse } from "./compact_request.ts";
 import { hasParticipantFormDifference } from "./participant_forms.ts";
 import {
   isProtectedLiteralMessage,
@@ -5,12 +6,11 @@ import {
   parseProviderResult,
   preservesLiteralCharacters,
   type ProviderCredential,
-  TRANSLATION_RESPONSE_FORMAT,
   type TranslationResult,
   unsupportedSourceScript,
   wordGlossMetadataNeedsRepair,
 } from "./contract.ts";
-import { COMPACT_TRANSLATION_RULES, SINGLE_CALL_POLICY } from "./rulebook.ts";
+import { SINGLE_CALL_POLICY } from "./rulebook.ts";
 import { fetchChatCompletion, type FetchLike } from "./provider.ts";
 
 export type PreparedViewer = {
@@ -62,78 +62,7 @@ export function singleCallRequest(viewers: PreparedViewer[]) {
   ) {
     throw new Error("invalid_message_batch");
   }
-  const properties = Object.fromEntries(viewers.map((v) => {
-    const schema = JSON.parse(
-      JSON.stringify(TRANSLATION_RESPONSE_FORMAT.json_schema.schema),
-    );
-    schema.description = `Output for ${v.key}. Learning=${
-      LANG_NAMES[v.targetLang]
-    }; secondary and ALL glosses=${LANG_NAMES[v.interfaceLang]}.`;
-    schema.properties.translation.description = `Complete ${
-      LANG_NAMES[v.targetLang]
-    } sentence. For forms ALWAYS feminine rendering; suggestedForm can be masculine.`;
-    schema.properties.interfaceText.description = `Complete ${
-      LANG_NAMES[v.interfaceLang]
-    } translation, INCLUDING mode=none and correction. Never copy ${
-      LANG_NAMES[v.targetLang]
-    } if different.`;
-    schema.properties.tokens.items.properties.gloss.description =
-      `Definition ONLY in ${
-        LANG_NAMES[v.interfaceLang]
-      }, not automatically English.`;
-    return [v.key, schema];
-  }));
-  return {
-    messages: [{ role: "system", content: COMPACT_TRANSLATION_RULES }, {
-      role: "user",
-      content: JSON.stringify({
-        message: { text: viewers[0].text },
-        viewers: viewers.map((v) => {
-          const f = (v.formContext ?? {}) as Record<string, unknown>;
-          return {
-            key: v.key,
-            targetLang: v.targetLang,
-            interfaceLang: v.interfaceLang,
-            learningLanguage: LANG_NAMES[v.targetLang],
-            knownLanguage: LANG_NAMES[v.interfaceLang],
-            participants: {
-              viewerName: f.viewerName,
-              partnerName: f.partnerName,
-              messageAuthor: f.messageAuthor,
-              authorName: f.messageAuthor === "viewer"
-                ? f.viewerName
-                : f.partnerName,
-              authorIsViewer: f.messageAuthor === "viewer",
-              addresseeName: f.messageAuthor === "viewer"
-                ? f.partnerName
-                : f.viewerName,
-              addresseeIsViewer: f.messageAuthor === "partner",
-              tone: f.tone,
-            },
-            context: boundedContext(v.context),
-          };
-        }),
-      }),
-    }],
-    temperature: 0,
-    max_tokens: Math.min(
-      SINGLE_CALL_POLICY.maxOutputTokens,
-      Math.max(2500, viewers[0].text.length * 30) * viewers.length,
-    ),
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "blab_message_viewers",
-        strict: true,
-        schema: {
-          type: "object",
-          additionalProperties: false,
-          properties,
-          required: viewers.map((v) => v.key),
-        },
-      },
-    },
-  };
+  return compactPlan(viewers).request;
 }
 
 export async function generateMessageOnce(
@@ -169,7 +98,11 @@ export async function generateMessageOnce(
   if (payload.choices?.[0]?.finish_reason === "length") {
     throw new Error("provider_output_truncated");
   }
-  const raw = JSON.parse(payload.choices?.[0]?.message?.content ?? "null");
+  const raw = expandCompactResponse(
+    JSON.parse(payload.choices?.[0]?.message?.content ?? "null"),
+    viewers,
+    compactPlan(viewers),
+  );
   if (
     !raw || typeof raw !== "object" || Array.isArray(raw) ||
     Object.keys(raw).length !== viewers.length

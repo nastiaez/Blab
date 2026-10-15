@@ -1,3 +1,4 @@
+import { compactPlan } from "./compact_request.ts";
 import {
   boundedContext,
   generateMessageOnce,
@@ -38,6 +39,53 @@ const output = (translation = "Hallo") => ({
   tokens: [{ text: translation, isContent: true, gloss: "Hello", roman: null }],
   formAlternatives: null,
 });
+// Adapt established parser regression fixtures to the new wire format.
+function bundle(viewers: PreparedViewer[], values: Record<string, any>) {
+  const plan = compactPlan(viewers);
+  const sentences = new Map(), help = new Map();
+  for (const v of viewers) {
+    const r = values[v.key];
+    if (!r) continue;
+    const b = plan.bindings[v.key];
+    const f = r.formAlternatives;
+    const isAuthor = (v.formContext as any)?.messageAuthor !== "partner";
+    sentences.set(b.sentence, {
+      id: b.sentence,
+      mode: r.mode,
+      sourceLang: r.sourceLang,
+      text: r.translation,
+      confidence: r.confidence,
+      forms: f
+        ? {
+          before: f.before,
+          feminine: f.feminine,
+          masculine: f.masculine,
+          after: f.after,
+          subject: f.subjectIsViewer === isAuthor ? "sender" : "recipient",
+          suggestedForm: f.suggestedForm,
+        }
+        : null,
+    });
+    if (!sentences.has(b.secondary)) {
+      sentences.set(b.secondary, {
+        id: b.secondary,
+        mode: "none",
+        sourceLang: r.sourceLang,
+        text: r.interfaceText,
+        confidence: null,
+        forms: null,
+      });
+    }
+    help.set(b.help, {
+      id: b.help,
+      explanation: r.explanation,
+      tokens: r.tokens,
+      feminineTokens: f?.feminineTokens ?? [],
+      masculineTokens: f?.masculineTokens ?? [],
+    });
+  }
+  return { sentences: [...sentences.values()], help: [...help.values()] };
+}
 Deno.test("one fetch produces both independently targeted viewer results", async () => {
   let calls = 0;
   const second = { ...viewer, key: "v1", targetLang: "uk" };
@@ -49,8 +97,8 @@ Deno.test("one fetch produces both independently targeted viewer results", async
       const body = JSON.parse(String(init?.body));
       const data = JSON.parse(body.messages[1].content);
       assert(
-        data.viewers[0].targetLang === "de" &&
-          data.viewers[1].targetLang === "uk",
+        body.messages[0].content.includes("German") &&
+          body.messages[0].content.includes("Ukrainian"),
       );
       assert(
         !JSON.stringify(data).includes("viewerForm"),
@@ -59,7 +107,7 @@ Deno.test("one fetch produces both independently targeted viewer results", async
       return Response.json({
         choices: [{
           message: {
-            content: JSON.stringify({
+            content: JSON.stringify(bundle([viewer, second], {
               v0: output(),
               v1: {
                 ...output("Привіт"),
@@ -70,7 +118,7 @@ Deno.test("one fetch produces both independently targeted viewer results", async
                   roman: "Pryvit",
                 }],
               },
-            }),
+            })),
           },
         }],
       });
@@ -101,14 +149,18 @@ Deno.test("missing viewer, malformed tokens and truncated output are rejected wi
       {
         choices: [{
           message: {
-            content: JSON.stringify({ v0: { ...output(), tokens: [] } }),
+            content: JSON.stringify(
+              bundle([viewer], { v0: { ...output(), tokens: [] } }),
+            ),
           },
         }],
       },
       {
         choices: [{
           finish_reason: "length",
-          message: { content: JSON.stringify({ v0: output() }) },
+          message: {
+            content: JSON.stringify(bundle([viewer], { v0: output() })),
+          },
         }],
       },
     ]
@@ -244,7 +296,17 @@ Deno.test("complete alternatives normalize a masculine base without a repair cal
     async () => {
       calls++;
       return Response.json({
-        choices: [{ message: { content: JSON.stringify({ v0: raw }) } }],
+        choices: [{
+          message: {
+            content: JSON.stringify(
+              bundle([{
+                ...viewer,
+                text: "What did you do yesterday?",
+                targetLang: "uk",
+              }], { v0: raw }),
+            ),
+          },
+        }],
       });
     },
   );
@@ -290,12 +352,58 @@ Deno.test("noun-case-only forms are discarded without rejecting a readable one-c
     async () => {
       calls++;
       return Response.json({
-        choices: [{ message: { content: JSON.stringify({ v0: raw }) } }],
+        choices: [{
+          message: { content: JSON.stringify(bundle([viewer], { v0: raw })) },
+        }],
       });
     },
   );
   assert(
     calls === 1 && r.v0.translation === "Schreib deiner Mutter" &&
       r.v0.formAlternatives === null,
+  );
+});
+
+Deno.test("unchanged same-language result keeps authored spacing and aligns supplied word help", async () => {
+  const text = "Review draftIk heb twee boeken.";
+  const v = { ...viewer, text, targetLang: "nl" };
+  const raw = {
+    ...output(text),
+    mode: "none",
+    sourceLang: "nl",
+    translation: "Review draft Ik heb twee boeken.",
+    interfaceText: "Review draft I have two books.",
+    tokens: [
+      { text: "Review", gloss: "check", roman: null, isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      {
+        text: "draft",
+        gloss: "preliminary version",
+        roman: null,
+        isContent: true,
+      },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "Ik", gloss: "I", roman: null, isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "heb", gloss: "have", roman: null, isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "twee", gloss: "two", roman: null, isContent: true },
+      { text: " ", gloss: null, roman: null, isContent: false },
+      { text: "boeken", gloss: "books", roman: null, isContent: true },
+      { text: ".", gloss: null, roman: null, isContent: false },
+    ],
+  };
+  let calls = 0;
+  const result = await generateMessageOnce([v], credential, async () => {
+    calls++;
+    return Response.json({
+      choices: [{
+        message: { content: JSON.stringify(bundle([v], { v0: raw })) },
+      }],
+    });
+  });
+  assert(
+    calls === 1 && result.v0.translation === text &&
+      result.v0.tokens.map((t: any) => t.text).join("") === text,
   );
 });

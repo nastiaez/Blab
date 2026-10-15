@@ -1,0 +1,2107 @@
+[
+  {
+    "text": "Ik ben moe.",
+    "calls": 1,
+    "ms": 3318,
+    "usage": {
+      "prompt_tokens": 1690,
+      "completion_tokens": 1165,
+      "total_tokens": 2855,
+      "cost": 0.00217,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00217,
+        "upstream_inference_prompt_cost": 0.0004225,
+        "upstream_inference_completions_cost": 0.0017475
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "none",
+        "sourceLang": "nl",
+        "translation": "Ik ben moe.",
+        "interfaceText": "I'm tired.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ik",
+            "gloss": "I",
+            "roman": "ik",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ben",
+            "gloss": "am",
+            "roman": "ben",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "moe",
+            "gloss": "tired",
+            "roman": "moo",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "nl",
+        "translation": "Estoy cansada.",
+        "interfaceText": "Я втомлена.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Estoy",
+            "gloss": "я є",
+            "roman": "es-TOY",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "cansada",
+            "gloss": "втомлена",
+            "roman": "kan-SA-da",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Estoy ",
+          "feminine": "cansada",
+          "masculine": "cansado",
+          "after": ".",
+          "subjectName": "Alice",
+          "subjectIsViewer": false,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Estoy",
+              "gloss": "я є",
+              "roman": "es-TOY",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "cansada",
+              "gloss": "втомлена",
+              "roman": "kan-SA-da",
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Estoy",
+              "gloss": "я є",
+              "roman": "es-TOY",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "cansado",
+              "gloss": "втомлений",
+              "roman": "kan-SA-do",
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "author"
+        }
+      }
+    },
+    "requestBytes": 5472
+  },
+  {
+    "text": "Estoy cansado.",
+    "calls": 1,
+    "ms": 3225,
+    "usage": {
+      "prompt_tokens": 1690,
+      "completion_tokens": 1164,
+      "total_tokens": 2854,
+      "cost": 0.0021685,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0021685,
+        "upstream_inference_prompt_cost": 0.0004225,
+        "upstream_inference_completions_cost": 0.001746
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "es",
+        "translation": "Ik ben moe.",
+        "interfaceText": "I'm tired.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ik",
+            "gloss": "I",
+            "roman": "ik",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ben",
+            "gloss": "am",
+            "roman": "ben",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "moe",
+            "gloss": "tired",
+            "roman": "moo",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "none",
+        "sourceLang": "es",
+        "translation": "Estoy cansado.",
+        "interfaceText": "Я втомлений.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Estoy",
+            "gloss": "я є",
+            "roman": "es-toy",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "cansado",
+            "gloss": "втомлений",
+            "roman": "kan-sa-do",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5475
+  },
+  {
+    "text": "Ich habe ein Buch gelest.",
+    "calls": 1,
+    "ms": 3923,
+    "usage": {
+      "prompt_tokens": 1614,
+      "completion_tokens": 572,
+      "total_tokens": 2186,
+      "cost": 0.0012615,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0012615,
+        "upstream_inference_prompt_cost": 0.0004035,
+        "upstream_inference_completions_cost": 0.000858
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "correction",
+        "sourceLang": "de",
+        "translation": "Ich habe ein Buch gelesen.",
+        "interfaceText": "I have read a book.",
+        "explanation": "Das Partizip Perfekt von 'lesen' ist 'gelesen', nicht 'gelest'.",
+        "confidence": "high",
+        "tokens": [
+          {
+            "text": "Ich",
+            "gloss": "I",
+            "roman": "Ich",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "habe",
+            "gloss": "have",
+            "roman": "habe",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ein",
+            "gloss": "a",
+            "roman": "ein",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Buch",
+            "gloss": "book",
+            "roman": "Buch",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "gelesen",
+            "gloss": "read",
+            "roman": "gelesen",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "correction",
+        "sourceLang": "de",
+        "translation": "Ich habe ein Buch gelesen.",
+        "interfaceText": "I have read a book.",
+        "explanation": "Das Partizip Perfekt von 'lesen' ist 'gelesen', nicht 'gelest'.",
+        "confidence": "high",
+        "tokens": [
+          {
+            "text": "Ich",
+            "gloss": "I",
+            "roman": "Ich",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "habe",
+            "gloss": "have",
+            "roman": "habe",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ein",
+            "gloss": "a",
+            "roman": "ein",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Buch",
+            "gloss": "book",
+            "roman": "Buch",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "gelesen",
+            "gloss": "read",
+            "roman": "gelesen",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5186
+  },
+  {
+    "text": "What did you do yesterday?",
+    "calls": 1,
+    "ms": 6930,
+    "usage": {
+      "prompt_tokens": 1613,
+      "completion_tokens": 1166,
+      "total_tokens": 2779,
+      "cost": 0.00215225,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00215225,
+        "upstream_inference_prompt_cost": 0.00040325,
+        "upstream_inference_completions_cost": 0.001749
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Що ти робила вчора?",
+        "interfaceText": "What did you do yesterday?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Що",
+            "gloss": "what",
+            "roman": "Shcho",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "you",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "робила",
+            "gloss": "did (feminine)",
+            "roman": "roby-la",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "yesterday",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Що ти ",
+          "feminine": "робила",
+          "masculine": "робив",
+          "after": " вчора?",
+          "subjectName": "Bob",
+          "subjectIsViewer": false,
+          "suggestedForm": "masculine",
+          "feminineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робила",
+              "gloss": "did (feminine)",
+              "roman": "roby-la",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робив",
+              "gloss": "did (masculine)",
+              "roman": "robyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Що ти робила вчора?",
+        "interfaceText": "What did you do yesterday?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Що",
+            "gloss": "what",
+            "roman": "Shcho",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "you",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "робила",
+            "gloss": "did (feminine)",
+            "roman": "roby-la",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "вчора",
+            "gloss": "yesterday",
+            "roman": "vchora",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Що ти ",
+          "feminine": "робила",
+          "masculine": "робив",
+          "after": " вчора?",
+          "subjectName": "Bob",
+          "subjectIsViewer": true,
+          "suggestedForm": "masculine",
+          "feminineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робила",
+              "gloss": "did (feminine)",
+              "roman": "roby-la",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Що",
+              "gloss": "what",
+              "roman": "Shcho",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "ти",
+              "gloss": "you",
+              "roman": "ty",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "робив",
+              "gloss": "did (masculine)",
+              "roman": "robyv",
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "вчора",
+              "gloss": "yesterday",
+              "roman": "vchora",
+              "isContent": true
+            },
+            {
+              "text": "?",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "recipient"
+        }
+      }
+    },
+    "requestBytes": 5193
+  },
+  {
+    "text": "Write to your mother",
+    "calls": 1,
+    "ms": 2486,
+    "usage": {
+      "prompt_tokens": 1690,
+      "completion_tokens": 752,
+      "total_tokens": 2442,
+      "cost": 0.0015505,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0015505,
+        "upstream_inference_prompt_cost": 0.0004225,
+        "upstream_inference_completions_cost": 0.001128
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Schreib deiner Mutter",
+        "interfaceText": "Write to your mother",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Schreib",
+            "gloss": "write",
+            "roman": "Schreib",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "deiner",
+            "gloss": "your",
+            "roman": "deiner",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Mutter",
+            "gloss": "mother",
+            "roman": "Mutter",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Напиши своїй мамі",
+        "interfaceText": "Escríbele a tu madre",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Напиши",
+            "gloss": "escribe",
+            "roman": "Napyshy",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "своїй",
+            "gloss": "a tu",
+            "roman": "svoyiy",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "мамі",
+            "gloss": "madre",
+            "roman": "mami",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5483
+  },
+  {
+    "text": "With this app",
+    "calls": 1,
+    "ms": 2288,
+    "usage": {
+      "prompt_tokens": 1689,
+      "completion_tokens": 736,
+      "total_tokens": 2425,
+      "cost": 0.00152625,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00152625,
+        "upstream_inference_prompt_cost": 0.00042225,
+        "upstream_inference_completions_cost": 0.001104
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Mit dieser App",
+        "interfaceText": "With this app",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Mit",
+            "gloss": "with",
+            "roman": "Mit",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "dieser",
+            "gloss": "this",
+            "roman": "dieser",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "App",
+            "gloss": "app",
+            "roman": "App",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "З цим додатком",
+        "interfaceText": "Con esta aplicación",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "З",
+            "gloss": "con",
+            "roman": "Z",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "цим",
+            "gloss": "este",
+            "roman": "tsym",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "додатком",
+            "gloss": "aplicación",
+            "roman": "dodatkom",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5476
+  },
+  {
+    "text": "I am a teacher.",
+    "calls": 1,
+    "ms": 4310,
+    "usage": {
+      "prompt_tokens": 1691,
+      "completion_tokens": 1629,
+      "total_tokens": 3320,
+      "cost": 0.00286625,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00286625,
+        "upstream_inference_prompt_cost": 0.00042275,
+        "upstream_inference_completions_cost": 0.0024435
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Ich bin Lehrerin.",
+        "interfaceText": "I am a teacher.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Ich",
+            "gloss": "I",
+            "roman": "Ich",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bin",
+            "gloss": "am",
+            "roman": "bin",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Lehrerin",
+            "gloss": "teacher (female)",
+            "roman": "Lehrerin",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Ich bin ",
+          "feminine": "Lehrerin",
+          "masculine": "Lehrer",
+          "after": ".",
+          "subjectName": "Alice",
+          "subjectIsViewer": true,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Ich",
+              "gloss": "I",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "bin",
+              "gloss": "am",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "Lehrerin",
+              "gloss": "teacher (female)",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Ich",
+              "gloss": "I",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "bin",
+              "gloss": "am",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "Lehrer",
+              "gloss": "teacher (male)",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "author"
+        }
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Soy profesora.",
+        "interfaceText": "Я вчителька.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Soy",
+            "gloss": "я є",
+            "roman": "Soy",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "profesora",
+            "gloss": "вчителька",
+            "roman": "profesora",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": {
+          "before": "Soy ",
+          "feminine": "profesora",
+          "masculine": "profesor",
+          "after": ".",
+          "subjectName": "Alice",
+          "subjectIsViewer": false,
+          "suggestedForm": "feminine",
+          "feminineTokens": [
+            {
+              "text": "Soy",
+              "gloss": "я є",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "profesora",
+              "gloss": "вчителька",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "masculineTokens": [
+            {
+              "text": "Soy",
+              "gloss": "я є",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": " ",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            },
+            {
+              "text": "profesor",
+              "gloss": "вчитель",
+              "roman": null,
+              "isContent": true
+            },
+            {
+              "text": ".",
+              "gloss": null,
+              "roman": null,
+              "isContent": false
+            }
+          ],
+          "subjectRole": "author"
+        }
+      }
+    },
+    "requestBytes": 5478
+  },
+  {
+    "text": "Not seven",
+    "calls": 1,
+    "ms": 2362,
+    "usage": {
+      "prompt_tokens": 1711,
+      "completion_tokens": 802,
+      "total_tokens": 2513,
+      "cost": 0.00163075,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00163075,
+        "upstream_inference_prompt_cost": 0.00042775,
+        "upstream_inference_completions_cost": 0.001203
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Nicht um sieben.",
+        "interfaceText": "Not seven",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Nicht",
+            "gloss": "not",
+            "roman": "Nicht",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "um",
+            "gloss": "at",
+            "roman": "um",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "sieben",
+            "gloss": "seven",
+            "roman": "sieben",
+            "isContent": true
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "सात बजे नहीं।",
+        "interfaceText": "Не о сьомій.",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "सात",
+            "gloss": "сім",
+            "roman": "saat",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "बजे",
+            "gloss": "година",
+            "roman": "baje",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "नहीं",
+            "gloss": "ні",
+            "roman": "nahi",
+            "isContent": true
+          },
+          {
+            "text": "।",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5568
+  },
+  {
+    "text": "Hii Nastia when are you coming back",
+    "calls": 1,
+    "ms": 3412,
+    "usage": {
+      "prompt_tokens": 1695,
+      "completion_tokens": 1298,
+      "total_tokens": 2993,
+      "cost": 0.00237075,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00237075,
+        "upstream_inference_prompt_cost": 0.00042375,
+        "upstream_inference_completions_cost": 0.001947
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Hi Nastia, wann kommst du zurück?",
+        "interfaceText": "Hii Nastia when are you coming back",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Hi",
+            "gloss": "Hi",
+            "roman": "Hi",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Nastia",
+            "gloss": "Nastia",
+            "roman": "Nastia",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "wann",
+            "gloss": "when",
+            "roman": "wann",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "kommst",
+            "gloss": "are coming",
+            "roman": "kommst",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "du",
+            "gloss": "you",
+            "roman": "du",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "zurück",
+            "gloss": "back",
+            "roman": "zurück",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Привіт, Настю, коли ти повертаєшся?",
+        "interfaceText": "Hola Nastia, ¿cuándo vuelves?",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Привіт",
+            "gloss": "Hola",
+            "roman": "Pryvit",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Настю",
+            "gloss": "Nastia",
+            "roman": "Nastyu",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "коли",
+            "gloss": "cuándo",
+            "roman": "koly",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "ти",
+            "gloss": "tú",
+            "roman": "ty",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "повертаєшся",
+            "gloss": "vuelves",
+            "roman": "povertayeshsya",
+            "isContent": true
+          },
+          {
+            "text": "?",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5498
+  },
+  {
+    "text": "okay",
+    "calls": 1,
+    "ms": 1771,
+    "usage": {
+      "prompt_tokens": 1687,
+      "completion_tokens": 439,
+      "total_tokens": 2126,
+      "cost": 0.00108025,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00108025,
+        "upstream_inference_prompt_cost": 0.00042175,
+        "upstream_inference_completions_cost": 0.0006585
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "okay",
+        "interfaceText": "okay",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "okay",
+            "gloss": "okay",
+            "roman": "okay",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "добре",
+        "interfaceText": "vale",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "добре",
+            "gloss": "bien",
+            "roman": "dobre",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5467
+  },
+  {
+    "text": "I will bring 2 books tomorrow, not today 😊",
+    "calls": 1,
+    "ms": 4055,
+    "usage": {
+      "prompt_tokens": 1697,
+      "completion_tokens": 1594,
+      "total_tokens": 3291,
+      "cost": 0.00281525,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00281525,
+        "upstream_inference_prompt_cost": 0.00042425,
+        "upstream_inference_completions_cost": 0.002391
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "நான் நாளை 2 புத்தகங்களைக் கொண்டு வருவேன், இன்று அல்ல 😊",
+        "interfaceText": "I will bring 2 books tomorrow, not today 😊",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "நான்",
+            "gloss": "I",
+            "roman": "Naan",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "நாளை",
+            "gloss": "tomorrow",
+            "roman": "Naalai",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "2",
+            "gloss": "2",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "புத்தகங்களைக்",
+            "gloss": "books",
+            "roman": "Puthakangalai",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "கொண்டு",
+            "gloss": "bring",
+            "roman": "Kondu",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "வருவேன்",
+            "gloss": "will come",
+            "roman": "Varuven",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "இன்று",
+            "gloss": "today",
+            "roman": "Indru",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "அல்ல",
+            "gloss": "not",
+            "roman": "Alla",
+            "isContent": true
+          },
+          {
+            "text": " 😊",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "J'apporterai 2 livres demain, pas aujourd'hui 😊",
+        "interfaceText": "Traeré 2 libros mañana, no hoy 😊",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "J",
+            "gloss": "Yo",
+            "roman": "J",
+            "isContent": true
+          },
+          {
+            "text": "'",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "apporterai",
+            "gloss": "traeré",
+            "roman": "apporterai",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "2",
+            "gloss": "2",
+            "roman": "2",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "livres",
+            "gloss": "libros",
+            "roman": "livres",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "demain",
+            "gloss": "mañana",
+            "roman": "demain",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "pas",
+            "gloss": "no",
+            "roman": "pas",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "aujourd'hui",
+            "gloss": "hoy",
+            "roman": "aujourd'hui",
+            "isContent": true
+          },
+          {
+            "text": " 😊",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5498
+  },
+  {
+    "text": "Please visit https://example.com @alice #books",
+    "calls": 1,
+    "ms": 3416,
+    "usage": {
+      "prompt_tokens": 1697,
+      "completion_tokens": 1235,
+      "total_tokens": 2932,
+      "cost": 0.00227675,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.00227675,
+        "upstream_inference_prompt_cost": 0.00042425,
+        "upstream_inference_completions_cost": 0.0018525
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "results": {
+      "v0": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Per favore visita https://example.com @alice #books",
+        "interfaceText": "Please visit https://example.com @alice #books",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Per",
+            "gloss": "For",
+            "roman": "Per",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "favore",
+            "gloss": "favor",
+            "roman": "favore",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "visita",
+            "gloss": "visit",
+            "roman": "visita",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "https://example.com",
+            "gloss": "URL",
+            "roman": "https://example.com",
+            "isContent": true
+          },
+          {
+            "text": " @",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "alice",
+            "gloss": "handle",
+            "roman": "alice",
+            "isContent": true
+          },
+          {
+            "text": " #",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "books",
+            "gloss": "hashtag",
+            "roman": "books",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      },
+      "v1": {
+        "mode": "translation",
+        "sourceLang": "en",
+        "translation": "Por favor, visite https://example.com @alice #books",
+        "interfaceText": "Lütfen https://example.com @alice #books adresini ziyaret et",
+        "explanation": null,
+        "confidence": null,
+        "tokens": [
+          {
+            "text": "Por",
+            "gloss": "İçin",
+            "roman": "Por",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "favor",
+            "gloss": "iyilik",
+            "roman": "favor",
+            "isContent": true
+          },
+          {
+            "text": ", ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "visite",
+            "gloss": "ziyaret et",
+            "roman": "visite",
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "https://example.com",
+            "gloss": "URL",
+            "roman": "https://example.com",
+            "isContent": true
+          },
+          {
+            "text": " @",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "alice",
+            "gloss": "kullanıcı adı",
+            "roman": "alice",
+            "isContent": true
+          },
+          {
+            "text": " #",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "books",
+            "gloss": "etiket",
+            "roman": "books",
+            "isContent": true
+          }
+        ],
+        "formAlternatives": null
+      }
+    },
+    "requestBytes": 5513
+  }
+]
