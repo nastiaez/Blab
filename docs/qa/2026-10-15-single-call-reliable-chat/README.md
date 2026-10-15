@@ -36,3 +36,6 @@ No production writes or Firebase distribution. Main remains unchanged. Owner rev
 Debug APK SHA256: 6c75d8b29cb8456f384687b25203e121165837bbf8039149519187415d22c7c1
 
 Review evidence delivered in the same development topic: Telegram12900,12901,12902. Owner approval pending.
+
+## Release authorization
+Ash approved merge and release in Telegram12904 (15 October2026). Integrate this reviewed candidate, verify signed Android update, deploy matching worker/migration and distribute to existing testers.
