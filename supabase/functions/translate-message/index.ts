@@ -61,6 +61,7 @@ import {
   wordMetadataRepairSystemPrompt,
 } from "./contract.ts";
 import { generateMessageOnce } from "./single_call.ts";
+import { hasParticipantFormDifference } from "./participant_forms.ts";
 import { independentConsensus } from "./consensus.ts";
 import { workerJobId } from "../prepare-message-jobs/contract.ts";
 import {
@@ -793,6 +794,16 @@ Deno.serve(async (req) => {
   // know. Postgres answers with the authored text and aid mode "none"; no
   // provider call, no cache write.
   if (prepared.status === "cached" || prepared.status === "no_aid_needed") {
+    const forms = prepared
+      .formAlternatives as TranslationResult["formAlternatives"];
+    const validForms = forms && prepared.mode === "translation" &&
+        hasParticipantFormDifference(
+          String(prepared.targetLang),
+          forms.before + forms.feminine + forms.after,
+          forms.before + forms.masculine + forms.after,
+        )
+      ? forms
+      : null;
     return json({
       translation: prepared.translation,
       interfaceText: prepared.interfaceText,
@@ -803,7 +814,7 @@ Deno.serve(async (req) => {
       explanation: prepared.explanation,
       confidence: prepared.confidence,
       tokens: prepared.tokens,
-      formAlternatives: prepared.formAlternatives,
+      formAlternatives: validForms,
     });
   }
   if (prepared.status === "rate_limited") {

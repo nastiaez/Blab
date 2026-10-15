@@ -36,6 +36,7 @@ export {
   SHORT_SOURCE_RETRY_MAX_CHARS,
   SUPPORTED_CHAT_ABBREVIATIONS,
 } from "./rulebook.ts";
+import { hasParticipantFormDifference } from "./participant_forms.ts";
 
 /// Content with no linguistic meaning, or an isolated capital letter used as
 /// an opaque character. Do not exempt real one-letter words/abbreviations.
@@ -536,7 +537,7 @@ export type TranslationResult = {
   /// Internal retry signal. The provider claimed the authored input was
   /// already in the learning language, but returned a different rewrite
   /// without the metadata required for a valid correction.
-  sourceClassificationConflict?: true;
+  sourceClassificationConflict?: boolean;
 };
 
 export type FormAlternatives = {
@@ -1163,8 +1164,9 @@ The current message author is the ${formContext.messageAuthor}. In direct first/
   }. Determine the subject before suggesting a form. Never label an incoming “you” sentence as the sender’s form.
 Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Agreement with an object, grammatical noun class, clock hour, date, number, or abstract concept is NOT participant gender: requiresChoice=false. For example Ukrainian Не дев’ята about a meeting hour agrees with the implied hour, never with the author; do not offer Не дев’ятий based on the author’s name. Use the independently resolved source meaning supplied with the request to establish the referent before deciding. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. For suggestedForm use the affected person’s supplied name; when unclear use feminine. For example, Alice suggests feminine, Bob suggests masculine, and an ambiguous Alex defaults to feminine. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
 
+German possessive endings before a noun follow that noun's gender and case, not the owner's gender: "Schreib deiner Mutter" requires deiner for every recipient; deinem Mutter is ungrammatical, not a masculine participant form. Likewise "mit dieser App" never changes to diesem App based on a person's form. Both require requiresChoice=false. Distinct person nouns such as "Ich bin Lehrerin" / "Ich bin Lehrer", or third-person owner pronouns ihr/sein, can genuinely change with the affected participant. Do not change a relative (mother/father), object, or other third person's identity to match a participant preference.
 Return strict JSON only: {"requiresChoice":true|false,"subjectIsViewer":true|false|null,"before":"shared prefix"|null,"feminine":"shortest complete feminine fragment"|null,"masculine":"shortest complete masculine fragment"|null,"after":"shared suffix"|null,"suggestedForm":"feminine"|"masculine"|null,"feminineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null,"masculineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null}.
-When a natural choice is required, identify the affected participant and split the target sentence around the shortest complete fragment containing every linked agreement change. Keep all identical text in before/after. For a single changing verb such as “Ти ходила/ходив до…”, return before="Ти ", feminine="ходила", masculine="ходив", and after=" до…"—never repeat the whole sentence in either option. feminineTokens and masculineTokens must each reproduce the corresponding complete sentence exactly, including the shared before/after text. Every content token is one word with a short 1-3 word ${interfaceName} gloss. Every non-Latin content token also has a non-empty Latin-script romanization. Whitespace and punctuation tokens have null gloss and roman. When no choice is required, the participant, suggestion, all four text fields, and both token arrays must be null.`;
+When a natural choice is required, identify the affected participant and split the target sentence around the shortest complete fragment containing every linked agreement change. Keep all identical text in before/after. For a single changing verb such as “Ти ходила/ходив до…”, return before="Ти ", feminine="ходила", masculine="ходив", and after=" до…"—never repeat the whole sentence in either option. feminineTokens and masculineTokens must each reproduce the corresponding complete sentence exactly, including the shared before/after text. Every content token is one word with a short 1-3 word ${interfaceName} gloss. Every non-Latin content token also has a non-empty Latin-script romanization. Include every space as an explicit whitespace token so concatenating token text reproduces the complete sentence byte-for-byte; do not omit spaces between words. Whitespace and punctuation tokens have null gloss and roman. When no choice is required, the participant, suggestion, all four text fields, and both token arrays must be null.`;
 }
 
 /// A copied learning line is usually a provider mistake when the viewer's
@@ -1641,7 +1643,11 @@ export function parseProviderResult(
     if (
       `${alternatives.before}${alternatives.feminine}${alternatives.after}` !==
         result.translation ||
-      alternatives.feminine === alternatives.masculine
+      !hasParticipantFormDifference(
+        targetLang,
+        alternatives.before + alternatives.feminine + alternatives.after,
+        alternatives.before + alternatives.masculine + alternatives.after,
+      )
     ) {
       // Form metadata cannot discard the sentence before its independent
       // meaning/agreement reviews. Invalid alternatives never reach clients.

@@ -13,6 +13,18 @@ Current focus, begins with the invite flow, and preserves owner-confirmed task s
 The tracker’s post-launch invite-urgency exploration is deliberately separate from the
 launch rule that an unclaimed link remains valid until successfully claimed.
 
+## Participant-form relevance — 2026-10-15 (in progress)
+
+Confirmed hosted German `Schreib deiner Mutter` has incorrect recipient
+alternatives `deiner/deinem`. Reject noun-case-only choices on the server and
+client, release invalid persisted note ownership, and preserve real participant
+agreement plus valid frozen history. Dedicated current-main worktree;929 Flutter
+and210 backend checks pass, four live candidate audit cases pass and actual
+Android/browser Change/restart/two-way behavior inspected. Pending-save Back
+also retains account-owned reconciliation. Owner acceptance and release pending. Tracker
+`core-participant-form-relevance` remains unchecked. Evidence:
+`docs/qa/2026-10-15-german-form-note/README.md`.
+
 ## Completed Hindi/Tamil reading-script work — 2026-09-14
 
 Owner approved the completed account-wide `Reading script` choice for Hindi and Tamil, native by default. The existing Translation preferences row and checkmarked choice sheet are reused in Profile and eligible chats; complete cached generated sentences switch immediately, while authored/Original text and native audio remain unchanged. Alice-browser/Bob-Android and Profile evidence, automated verification, owner confirmation, commit, and the `main` push are complete under Step 2.14.

@@ -1327,3 +1327,30 @@ Owner12895 authorized implementation of all3 defects. Candidate on fix/single-ca
 ## 2026-10-15 — Approved v19 merged and released
 
 Telegram12904 approved the reviewed one-call + missing-message + shimmer candidate. Source d6cc536 merged/pushed; all integrated CI checks passed. Production migration20261015000001 and worker/functions deployed/readback verified. Exact signed1.0.0(19) downloaded back with matching hash and successfully distributed to both existing Firebase testers (2 invited/2 accepted). Integrated two-account fault-injection recovery passed; signed v18-to-v19 update retained German preference without uninstall.165 backend +913 Flutter passed/15 skipped. Evidence: docs/qa/2026-10-15-single-call-reliable-chat/release-v19.json. Earlier pending integration/release notes are superseded; owners' physical-device acceptance remains pending.
+### German participant-form relevance — 15 October 2026 ← in progress
+
+- [x] Confirm exact cached source of the reported note without altering production.
+- [x] Reject German noun-declension-only alternatives; remove only invalid local note ownership, preserving legitimate German and other-language forms (actual local Android/browser proof).
+- [x] Verify saved settings, neutral/correction results, restart, independent viewer preferences and valid persistent notes; Copy/Listen/reply consistency covered by regression suite, not fresh device audio.
+- [x] Deliver inspected actual Android review images (Telegram12785–12786); browser partner proof retained with the QA record.
+- [ ] Owner approval, integration, integrated Android verification and Firebase release.
+
+Confirmed read-only hosted `Schreib deiner Mutter` metadata incorrectly treats
+deiner/deinem as the recipient's feminine/masculine form. Two full-chat regressions
+failed before the change and pass after it. Explicit preference mapping and proof
+boundaries recorded in docs/qa/2026-10-15-german-form-note/README.md. No shared
+backend lifecycle/schema changes or production mutation; no merge/release.
+
+- 2026-10-15 — Final candidate:929 Flutter checks pass/15 environment skips,
+  210 backend checks pass, analysis/type/format/shell/whitespace clean. Four live
+  candidate form audits validate both negative German noun-case and positive
+  German/Spanish participant forms. Real Android Change/restart and independent
+  browser Ukrainian/German-interface state inspected; real two-way UI sends
+  completed4/4 viewer jobs. Fixed the same Change flow's pending-save/Back race
+  with an account-bound save owner and deterministic red-green proof. Evidence:
+  docs/qa/2026-10-15-german-form-note. Owner approval/integration/release pending;
+  no hosted rollout or physical-phone acceptance claimed.
+
+- 2026-10-15 — Delivered the final feminine/masculine packet to the originating
+  topic (12785–12786), with successful attachment receipts. Awaiting Ash's review;
+  all owner-facing acceptance checkboxes remain unchecked. No commit/push/merge.

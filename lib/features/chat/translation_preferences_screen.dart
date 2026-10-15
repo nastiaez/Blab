@@ -4,7 +4,6 @@ import '../../shared/widgets/selection/blab_selection_sheet.dart';
 import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'dart:async';
 
-import 'state/form_correction_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -135,38 +134,13 @@ class _TranslationPreferencesScreenState
           : context.l10n.tamilScript;
     }
 
-    Future<void> saveOwnForm(GrammaticalForm? value) async {
-      await ref.read(formCorrectionProvider.notifier).refreshActiveWindows();
-      await ref
-          .read(grammaticalFormPreferencesServiceProvider)
-          .setOwnForm(value);
-      await ref
-          .read(formCorrectionProvider.notifier)
-          .changePreference(subjectIsViewer: true, form: value);
-      ref.invalidate(currentProfileProvider);
-      ref.invalidate(grammaticalFormPreferencesProvider);
-      if (chatId != null) {
-        ref.invalidate(grammaticalFormPreferencesProvider(chatId));
-      }
-    }
+    Future<void> saveOwnForm(GrammaticalForm? value) => ref.read(
+      saveGrammaticalFormProvider,
+    )(subjectIsViewer: true, form: value);
 
-    Future<void> savePartnerForm(GrammaticalForm? value) async {
-      if (chatId == null) return;
-      await ref
-          .read(formCorrectionProvider.notifier)
-          .refreshActiveWindows(chatId: chatId);
-      await ref
-          .read(grammaticalFormPreferencesServiceProvider)
-          .setPartnerForm(chatId, value);
-      await ref
-          .read(formCorrectionProvider.notifier)
-          .changePreference(
-            subjectIsViewer: false,
-            form: value,
-            chatId: chatId,
-          );
-      ref.invalidate(grammaticalFormPreferencesProvider(chatId));
-    }
+    Future<void> savePartnerForm(GrammaticalForm? value) => ref.read(
+      saveGrammaticalFormProvider,
+    )(subjectIsViewer: false, form: value, chatId: chatId);
 
     Future<void> pickOwnForm() => _pickForm(
       context,

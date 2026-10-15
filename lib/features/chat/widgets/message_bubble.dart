@@ -196,8 +196,42 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       targetLanguageCode,
     );
     final stored = formLedger?.resolutions[resolutionKey];
-    final snapshot = stored?.sourceText == message.originalText ? stored : null;
-    final formChoices = resolvedTranslation?.formChoices ?? const [];
+    final formChoices =
+        resolvedTranslation?.participantFormsFor(targetLanguageCode) ??
+        const [];
+    final snapshot =
+        stored?.sourceText == message.originalText &&
+            stored!.alternatives.isParticipantRelevant(targetLanguageCode) &&
+            (resolvedTranslation == null || formChoices.isNotEmpty)
+        ? stored
+        : null;
+    if (stored != null && snapshot == null && resolvedTranslation != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          ref
+              .read(formCorrectionProvider.notifier)
+              .mutate((ledger) {
+                if (!mounted || ledger.resolutions[resolutionKey] != stored) {
+                  return ledger;
+                }
+                final current = ref
+                    .read(
+                      messageTranslationsProvider(chatId),
+                    )[translationEntryKey(
+                      message.id,
+                      targetLanguageCode,
+                      translationInterfaceLanguageCode,
+                    )]
+                    ?.asData
+                    ?.value;
+                if (current != resolvedTranslation) return ledger;
+                return ledger.removeResolution(resolutionKey);
+              })
+              .catchError((Object _) {}),
+        );
+      });
+    }
     final formAlternatives =
         (snapshot?.alternatives ??
                 (formChoices.isEmpty ? null : formChoices.first))
@@ -244,7 +278,16 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         snapshot != null &&
         resolvedForm != null &&
         snapshot.form != resolvedForm;
-    if (formLedger != null &&
+    final showLearningAid =
+        shouldTranslate &&
+        kSupportedLearningLanguages.contains(targetLanguageCode);
+    final showParticipantForm =
+        showLearningAid &&
+        !presentation.unsupportedSource &&
+        (isPractice ||
+            !knownLanguageCodes.contains(resolvedTranslation?.sourceLang));
+    if (showParticipantForm &&
+        formLedger != null &&
         (snapshot == null ||
             snapshot.form == null ||
             noteNeedsReconciliation ||
@@ -303,9 +346,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         );
       });
     }
-    final showLearningAid =
-        shouldTranslate &&
-        kSupportedLearningLanguages.contains(targetLanguageCode);
     Widget buildLearningContent({
       required AsyncValue<MessageTranslation>? translation,
       required bool showTranslation,
@@ -485,7 +525,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
                     ),
                   ),
                 ),
-                if (showLearningAid &&
+                if (showParticipantForm &&
                     formAlternatives != null &&
                     resolvedForm != null &&
                     (formLedger?.hasNote(resolutionKey) ?? false))

@@ -30,6 +30,76 @@ Message messageFor(FormResolution value) => Message(
 );
 void main() {
   test(
+    'restart drops invalid German note but preserves unrelated valid history',
+    () {
+      const invalid = FormResolution(
+        chatId: 'german-chat',
+        messageId: 'mother',
+        targetLang: 'de',
+        sourceText: 'Write to your mother',
+        alternatives: GrammaticalFormAlternatives(
+          before: 'Schreib ',
+          feminine: 'deiner',
+          masculine: 'deinem',
+          after: ' Mutter',
+          subjectName: 'Alice',
+          subjectIsViewer: true,
+        ),
+        form: GrammaticalForm.masculine,
+      );
+      final valid = record('valid');
+      final ledger = const FormCorrectionLedger()
+          .record(
+            invalid,
+            explicit: false,
+            note: true,
+            messages: [messageFor(invalid)],
+          )
+          .record(
+            valid,
+            explicit: false,
+            note: true,
+            messages: [messageFor(valid)],
+          );
+      final restored = FormCorrectionLedger.fromJson(ledger.toJson());
+      expect(restored.hasNote(invalid.key), false);
+      expect(restored.resolutions.containsKey(invalid.key), false);
+      expect(restored.hasPersonNote('german-chat', true), false);
+      expect(restored.hasNote(valid.key), true);
+      expect(restored.resolutions[valid.key]!.form, valid.form);
+    },
+  );
+  for (final mode in LearningAidMode.values) {
+    test(
+      'current neutral $mode result cannot revive an old form in Copy or quotes',
+      () {
+        final old = record('old').withForm(GrammaticalForm.masculine);
+        final ledger = const FormCorrectionLedger().record(
+          old,
+          explicit: false,
+          note: true,
+          messages: [messageFor(old)],
+        );
+        final neutral = MessageTranslation(
+          translation: 'Ти вдома?',
+          interfaceText: 'Are you home?',
+          interfaceLang: 'en',
+          sourceLang: 'en',
+          tokens: const [],
+          mode: mode,
+        );
+        final result = ledger.resolveTranslation(
+          neutral,
+          chatId: old.chatId,
+          messageId: old.messageId,
+          targetLang: old.targetLang,
+          sourceText: old.sourceText,
+        );
+        expect(identical(result, neutral), true);
+      },
+    );
+  }
+  test(
     'legacy windows stay frozen and existing snapshots can acquire first note',
     () {
       final old = record('old'), fresh = record('fresh');

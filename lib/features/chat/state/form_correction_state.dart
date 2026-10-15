@@ -123,8 +123,13 @@ class FormCorrectionLedger {
     final stored =
         resolutions[formResolutionKey(chatId, messageId, targetLang)];
     final snapshot = stored?.sourceText == sourceText ? stored : null;
-    final a = snapshot?.alternatives ?? value.formAlternatives;
-    if (a == null || value.mode == LearningAidMode.none) return value;
+    final choices = value.participantFormsFor(targetLang);
+    if (choices.isEmpty) return value;
+    final a =
+        snapshot != null &&
+            snapshot.alternatives.isParticipantRelevant(targetLang)
+        ? snapshot.alternatives
+        : choices.first;
     final text = a.resolved(snapshot?.form ?? a.suggestedForm);
     return MessageTranslation(
       translation: text,
@@ -136,6 +141,16 @@ class FormCorrectionLedger {
       explanation: value.explanation,
       confidence: value.confidence,
       formAlternatives: a,
+      wordMetadataReady: value.wordMetadataReady,
+    );
+  }
+
+  FormCorrectionLedger removeResolution(String key) {
+    if (!resolutions.containsKey(key)) return this;
+    return FormCorrectionLedger(
+      resolutions: {...resolutions}..remove(key),
+      noteTargets: {...noteTargets}..removeWhere((_, target) => target == key),
+      windows: {...windows}..removeWhere((_, window) => window.key == key),
     );
   }
 
@@ -294,7 +309,10 @@ class FormCorrectionLedger {
     for (final r in (raw['resolutions'] as List? ?? [])) {
       if (r is! Map) continue;
       final parsed = FormResolution.fromJson(Map<String, dynamic>.from(r));
-      if (parsed != null) records[parsed.key] = parsed;
+      if (parsed != null &&
+          parsed.alternatives.isParticipantRelevant(parsed.targetLang)) {
+        records[parsed.key] = parsed;
+      }
     }
     final entries = raw['windows'];
     if (entries is Map) {
@@ -320,7 +338,8 @@ class FormCorrectionLedger {
       resolutions: records,
       windows: windows,
       noteTargets: raw['notes'] is Map
-          ? Map<String, String>.from(raw['notes'])
+          ? (Map<String, String>.from(raw['notes'])
+              ..removeWhere((_, key) => !records.containsKey(key)))
           : const {},
     );
   }

@@ -192,8 +192,13 @@ class MessageLearningContent extends StatelessWidget {
         return Text(authoredText, style: primaryStyle);
       }
       final formChoices = formAlternativesOverride == null
-          ? value.formChoices
-          : [formAlternativesOverride!];
+          ? value.participantFormsFor(generatedLanguageCode)
+          : value.mode == LearningAidMode.translation &&
+                formAlternativesOverride!.isParticipantRelevant(
+                  generatedLanguageCode,
+                )
+          ? [formAlternativesOverride!]
+          : <GrammaticalFormAlternatives>[];
       if (formChoices.isNotEmpty &&
           (onFormSelected != null || resolvedForm != null)) {
         if (resolvedForm != null) {

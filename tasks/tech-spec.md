@@ -276,6 +276,17 @@ These are *study material*, not code to copy. Signal source is AGPL-3.0 — do n
 US-042 / FR-34 supersedes the chooser and expiring correction window. Retain canonical feminine server text with linked alternatives; add optional suggestedForm and stable author/recipient subjectRole metadata. Audit ownership on every bounded eligible provider attempt, including responses already containing alternatives. Viewer-relative client binding uses the message direction and actual participant names. Explicit preferences win; provisional name suggestions fall back to feminine and are not profile writes. Extend the account/device source-target ledger with one persistent annotated resolution per participant/chat; settings update these targets, while other snapshots stay frozen. Change uses the existing translation-preferences route. Existing snapshots/windows remain readable for compatibility; legacy windows cannot mutate history. Completed snapshots can acquire their first note without changing their text. Copy, Listen and quote previews resolve from the same stored form. See `docs/superpowers/specs/2026-09-11-automatic-grammatical-forms-design.md`.
 
 
+**2026-10-15 relevance hardening (candidate):** US-042 / FR-34 is unchanged.
+Use aligned server/client negative guards for German determiner-only noun
+declension, retaining independently audited person nouns/pronouns. Filter old
+readable/shared-cache alternatives and prune only invalid local note ownership;
+neutral completed results cannot revive old alternatives. Own/private-partner
+form saves are account-bound provider work rather than settings-route work,
+so leaving Settings cannot interrupt reconciliation. Current-account fencing
+prevents late effects entering another user's ledger. No schema migration or
+bulk history/cache invalidation. Evidence and remaining approval/rollout gates:
+`docs/qa/2026-10-15-german-form-note/README.md`.
+
 ### Translation latency and active-work repair (2026-10-13)
 
 Keep candidate-blind source anchoring, independent semantic review models, two agreeing audits out of at most three, strict output contracts, word help, grammatical form handling and ZDR routing unchanged. Run only the first two independent consensus reviews concurrently; invoke the third only when needed. The viewer-scoped read-only `message_translation_work_pending` RPC distinguishes current preparation from failure without exposing jobs or reserving quota. Source hash, historical language revision, account/membership and target/primary-language matching are mandatory; two-minute activity bounds prevent indefinite loading. No UI language-mode redesign.

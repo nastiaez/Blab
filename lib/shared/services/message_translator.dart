@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/translation_support.dart';
 import '../models/message_token.dart';
 import '../models/grammatical_form.dart';
+import 'participant_form_relevance.dart';
 
 enum LearningAidMode { translation, correction, none }
 
@@ -39,6 +40,13 @@ class GrammaticalFormAlternatives {
   final String? subjectRole;
   final List<MessageToken> feminineTokens;
   final List<MessageToken> masculineTokens;
+
+  bool isParticipantRelevant(String targetLanguage) =>
+      hasParticipantFormDifference(
+        targetLanguage: targetLanguage,
+        feminine: resolved(GrammaticalForm.feminine),
+        masculine: resolved(GrammaticalForm.masculine),
+      );
 
   GrammaticalFormAlternatives forMessage({
     required bool isOutgoing,
@@ -123,6 +131,14 @@ class MessageTranslation {
       (formAlternatives == null
           ? const <GrammaticalFormAlternatives>[]
           : <GrammaticalFormAlternatives>[formAlternatives!]);
+
+  List<GrammaticalFormAlternatives> participantFormsFor(
+    String targetLanguage,
+  ) => mode != LearningAidMode.translation
+      ? const []
+      : formChoices
+            .where((choice) => choice.isParticipantRelevant(targetLanguage))
+            .toList(growable: false);
 }
 
 /// Durable server work is still pending; not a terminal translation failure.

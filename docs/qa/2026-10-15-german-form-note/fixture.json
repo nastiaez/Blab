@@ -1,0 +1,325 @@
+{
+  "chat_id": "7d7dc956-eb41-4fe3-b025-62e48897a206",
+  "alice": "e374388c-50ef-4d9d-ba62-858083d7cf7b",
+  "bob": "db1262a1-5fc2-4c69-967e-02dfc2e22757",
+  "messages": [
+    {
+      "id": "951cab5a-9e39-49a5-8842-a58ec907c502",
+      "source": "Write to your mother",
+      "german": "Schreib deiner Mutter",
+      "alternatives": {
+        "before": "Schreib ",
+        "feminine": "deiner",
+        "masculine": "deinem",
+        "after": " Mutter",
+        "subjectName": "Alice",
+        "subjectIsViewer": true,
+        "subjectRole": "recipient",
+        "suggestedForm": "feminine",
+        "feminineTokens": [
+          {
+            "text": "Schreib",
+            "gloss": "schreib",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "deiner",
+            "gloss": "deiner",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Mutter",
+            "gloss": "mutter",
+            "roman": null,
+            "isContent": true
+          }
+        ],
+        "masculineTokens": [
+          {
+            "text": "Schreib",
+            "gloss": "schreib",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "deinem",
+            "gloss": "deinem",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Mutter",
+            "gloss": "mutter",
+            "roman": null,
+            "isContent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "73f39084-4af4-4b3e-bf10-17263ed970d2",
+      "source": "With this app",
+      "german": "Mit dieser App",
+      "alternatives": {
+        "before": "Mit ",
+        "feminine": "dieser",
+        "masculine": "diesem",
+        "after": " App",
+        "subjectName": "Alice",
+        "subjectIsViewer": true,
+        "subjectRole": "author",
+        "suggestedForm": "feminine",
+        "feminineTokens": [
+          {
+            "text": "Mit",
+            "gloss": "mit",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "dieser",
+            "gloss": "dieser",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "App",
+            "gloss": "app",
+            "roman": null,
+            "isContent": true
+          }
+        ],
+        "masculineTokens": [
+          {
+            "text": "Mit",
+            "gloss": "mit",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "diesem",
+            "gloss": "diesem",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "App",
+            "gloss": "app",
+            "roman": null,
+            "isContent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "2207d0fe-0405-4d1c-a6bd-4d5f22354822",
+      "source": "I am a teacher.",
+      "german": "Ich bin Lehrerin.",
+      "alternatives": {
+        "before": "Ich bin ",
+        "feminine": "Lehrerin",
+        "masculine": "Lehrer",
+        "after": ".",
+        "subjectName": "Alice",
+        "subjectIsViewer": true,
+        "subjectRole": "author",
+        "suggestedForm": "feminine",
+        "feminineTokens": [
+          {
+            "text": "Ich",
+            "gloss": "ich",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bin",
+            "gloss": "bin",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Lehrerin.",
+            "gloss": "lehrerin.",
+            "roman": null,
+            "isContent": true
+          }
+        ],
+        "masculineTokens": [
+          {
+            "text": "Ich",
+            "gloss": "ich",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bin",
+            "gloss": "bin",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Lehrer.",
+            "gloss": "lehrer.",
+            "roman": null,
+            "isContent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "d088a863-12ac-4e52-8c04-dd2a57a3535e",
+      "source": "You are a teacher.",
+      "german": "Du bist Lehrerin.",
+      "alternatives": {
+        "before": "Du bist ",
+        "feminine": "Lehrerin",
+        "masculine": "Lehrer",
+        "after": ".",
+        "subjectName": "Alice",
+        "subjectIsViewer": true,
+        "subjectRole": "recipient",
+        "suggestedForm": "feminine",
+        "feminineTokens": [
+          {
+            "text": "Du",
+            "gloss": "du",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bist",
+            "gloss": "bist",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Lehrerin.",
+            "gloss": "lehrerin.",
+            "roman": null,
+            "isContent": true
+          }
+        ],
+        "masculineTokens": [
+          {
+            "text": "Du",
+            "gloss": "du",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "bist",
+            "gloss": "bist",
+            "roman": null,
+            "isContent": true
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false
+          },
+          {
+            "text": "Lehrer.",
+            "gloss": "lehrer.",
+            "roman": null,
+            "isContent": true
+          }
+        ]
+      }
+    }
+  ],
+  "backend": "local 54441; lifecycle/schema read-only consumer; task-owned fixtures only",
+  "boundary": "rendering-only fixtures; glosses are fixture placeholders, not provider word-help proof"
+}

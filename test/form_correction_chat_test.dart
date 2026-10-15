@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/features/chat/widgets/grammatical_form_chooser.dart';
 import 'package:blab/features/chat/state/grammatical_form_preferences_state.dart';
@@ -48,6 +50,16 @@ class _BubbleExpandChatService implements ChatService {
     String text = 'hallo',
     String? translatedText,
     this.sourceLang = 'de',
+    this.learningLanguage = 'uk',
+    this.aidMode = 'translation',
+    this.alternatives = const {
+      'before': 'Ти ',
+      'feminine': 'ходила',
+      'masculine': 'ходив',
+      'after': ' вчора?',
+      'subjectName': 'Bob',
+      'subjectIsViewer': false,
+    },
     MessageStatus status = MessageStatus.delivered,
     DateTime? sentAt,
   }) : message = Message(
@@ -66,6 +78,9 @@ class _BubbleExpandChatService implements ChatService {
   final bool withReaction = false;
   final String _learningText;
   final String sourceLang;
+  final String learningLanguage;
+  final String aidMode;
+  final Map<String, dynamic>? alternatives;
   final String interfaceText = 'hello';
   final bool partnerRead = false;
   final bool translationFails = false;
@@ -77,7 +92,7 @@ class _BubbleExpandChatService implements ChatService {
       'chat_id': 'chat-1',
       'partner_id': 'bob',
       'partner_name': 'Bob',
-      'my_learning': 'uk',
+      'my_learning': learningLanguage,
       'partner_learning': 'en',
       'my_mode': mode,
       'last_body': 'hallo',
@@ -130,20 +145,11 @@ class _BubbleExpandChatService implements ChatService {
       interfaceText: interfaceText,
       interfaceLang: interfaceLang,
       sourceLang: sourceLang,
-      mode: 'translation',
+      mode: aidMode,
       explanation: null,
       confidence: null,
       tokens: <Map<String, dynamic>>[
-        {
-          'formAlternatives': {
-            'before': 'Ти ',
-            'feminine': 'ходила',
-            'masculine': 'ходив',
-            'after': ' вчора?',
-            'subjectName': 'Bob',
-            'subjectIsViewer': false,
-          },
-        },
+        if (alternatives != null) {'formAlternatives': alternatives},
       ],
     );
   }
@@ -373,6 +379,7 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 class _FormStore implements GrammaticalFormPreferencesService {
+  Future<void>? ownSaveDelay;
   GrammaticalForm? partner;
   GrammaticalForm? own;
   final List<GrammaticalForm?> ownWrites = [];
@@ -380,6 +387,7 @@ class _FormStore implements GrammaticalFormPreferencesService {
   @override
   Future<void> setOwnForm(GrammaticalForm? form) async {
     ownWrites.add(form);
+    await ownSaveDelay;
     own = form;
   }
 
@@ -422,6 +430,132 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  });
+  for (final savedForm in GrammaticalForm.values) {
+    testWidgets('German noun case is not a $savedForm participant choice', (
+      tester,
+    ) async {
+      final service = _BubbleExpandChatService(
+        text: 'Write to your mother',
+        translatedText: 'Schreib deiner Mutter',
+        sourceLang: 'en',
+        learningLanguage: 'de',
+        alternatives: const {
+          'before': 'Schreib ',
+          'feminine': 'deiner',
+          'masculine': 'deinem',
+          'after': ' Mutter',
+          'subjectName': 'Alice',
+          'subjectIsViewer': true,
+          'subjectRole': 'recipient',
+        },
+      );
+      final forms = _FormStore()..own = savedForm;
+      final container = _buildContainer(service, forms: forms);
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      expect(find.textContaining('Using feminine forms'), findsNothing);
+      expect(find.textContaining('Using masculine forms'), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is MessageText && w.text == 'Schreib deiner Mutter',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        container.read(formCorrectionProvider).requireValue.noteTargets,
+        isEmpty,
+      );
+      expect(forms.ownWrites, isEmpty);
+      expect(forms.partnerWrites, isEmpty);
+    });
+  }
+  for (final aidMode in ['translation', 'none', 'correction']) {
+    testWidgets('reopen releases an invalid German note with $aidMode result', (
+      tester,
+    ) async {
+      const alternatives = GrammaticalFormAlternatives(
+        before: 'Schreib ',
+        feminine: 'deiner',
+        masculine: 'deinem',
+        after: ' Mutter',
+        subjectName: 'Alice',
+        subjectIsViewer: true,
+        subjectRole: 'recipient',
+      );
+      final service = _BubbleExpandChatService(
+        text: 'Write to your mother',
+        translatedText: 'Schreib deiner Mutter',
+        sourceLang: 'en',
+        learningLanguage: 'de',
+        aidMode: aidMode,
+        alternatives: null,
+      );
+      final container = _buildContainer(service);
+      addTearDown(container.dispose);
+      final old = FormResolution(
+        chatId: 'chat-1',
+        messageId: service.message.id,
+        targetLang: 'de',
+        sourceText: service.message.originalText,
+        alternatives: alternatives,
+        form: GrammaticalForm.masculine,
+      );
+      await container.read(formCorrectionProvider.future);
+      await container
+          .read(formCorrectionProvider.notifier)
+          .mutate(
+            (ledger) => ledger.record(
+              old,
+              explicit: false,
+              note: true,
+              messages: [service.message],
+            ),
+          );
+      expect(
+        container.read(formCorrectionProvider).requireValue.hasNote(old.key),
+        true,
+      );
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      expect(find.textContaining('Using masculine forms'), findsNothing);
+      final ledger = container.read(formCorrectionProvider).requireValue;
+      expect(ledger.resolutions.containsKey(old.key), false);
+      expect(ledger.hasPersonNote('chat-1', true), false);
+      expect(find.textContaining('deinem'), findsNothing);
+    });
+  }
+  testWidgets('German person noun keeps legitimate saved masculine form', (
+    tester,
+  ) async {
+    final service = _BubbleExpandChatService(
+      text: 'I am a teacher.',
+      translatedText: 'Ich bin Lehrerin.',
+      sourceLang: 'en',
+      learningLanguage: 'de',
+      alternatives: const {
+        'before': 'Ich bin ',
+        'feminine': 'Lehrerin',
+        'masculine': 'Lehrer',
+        'after': '.',
+        'subjectName': 'Bob',
+        'subjectIsViewer': false,
+        'subjectRole': 'author',
+      },
+    );
+    final forms = _FormStore()..partner = GrammaticalForm.masculine;
+    final container = _buildContainer(service, forms: forms);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    expect(find.text('Using masculine forms for Bob'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is MessageText && w.text == 'Ich bin Lehrer.',
+      ),
+      findsOneWidget,
+    );
   });
   testWidgets('Copy uses the same masculine sentence as the visible bubble', (
     t,
@@ -504,6 +638,33 @@ void main() {
     expect(forms.partnerWrites, isEmpty);
     await t.pumpWidget(const SizedBox.shrink());
     c.dispose();
+  });
+  testWidgets('Change finishes saving after immediately returning to chat', (
+    t,
+  ) async {
+    final gate = Completer<void>();
+    final forms = _FormStore()..ownSaveDelay = gate.future;
+    final c = _buildContainer(
+      _BubbleExpandChatService(
+        text: 'Did you go yesterday?',
+        translatedText: 'Ти ходила вчора?',
+        sourceLang: 'en',
+      ),
+      forms: forms,
+    );
+    addTearDown(c.dispose);
+    await t.pumpWidget(_host(c));
+    await _settle(t);
+    await t.tap(find.text('Change'));
+    await _settle(t);
+    await t.tap(find.text('Masculine'));
+    await _settle(t);
+    await t.pageBack();
+    await _settle(t);
+    gate.complete();
+    await _settle(t);
+    expect(forms.own, GrammaticalForm.masculine);
+    expect(find.text('Using masculine forms for you'), findsOneWidget);
   });
   testWidgets('provisional automatic note does not save a form preference', (
     t,

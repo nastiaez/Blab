@@ -1,0 +1,218 @@
+[
+  {
+    "source": "Write to your mother",
+    "candidate": "Schreib deiner Mutter",
+    "target": "de",
+    "known": "en",
+    "status": 200,
+    "requiresChoice": false,
+    "expected": false,
+    "pass": true,
+    "ms": 1196,
+    "audit": {
+      "requiresChoice": false,
+      "subjectIsViewer": null,
+      "before": null,
+      "feminine": null,
+      "masculine": null,
+      "after": null,
+      "suggestedForm": null,
+      "feminineTokens": null,
+      "masculineTokens": null
+    },
+    "raw": "{\n  \"requiresChoice\": false,\n  \"suggestedForm\": null,\n  \"subjectIsViewer\": null,\n  \"before\": null,\n  \"feminine\": null,\n  \"masculine\": null,\n  \"after\": null,\n  \"feminineTokens\": null,\n  \"masculineTokens\": null\n}"
+  },
+  {
+    "source": "With this app",
+    "candidate": "Mit dieser App",
+    "target": "de",
+    "known": "en",
+    "status": 200,
+    "requiresChoice": false,
+    "expected": false,
+    "pass": true,
+    "ms": 792,
+    "audit": {
+      "requiresChoice": false,
+      "subjectIsViewer": null,
+      "before": null,
+      "feminine": null,
+      "masculine": null,
+      "after": null,
+      "suggestedForm": null,
+      "feminineTokens": null,
+      "masculineTokens": null
+    },
+    "raw": "{\n  \"requiresChoice\": false,\n  \"suggestedForm\": null,\n  \"subjectIsViewer\": null,\n  \"before\": null,\n  \"feminine\": null,\n  \"masculine\": null,\n  \"after\": null,\n  \"feminineTokens\": null,\n  \"masculineTokens\": null\n}"
+  },
+  {
+    "source": "I am a teacher.",
+    "candidate": "Ich bin Lehrerin.",
+    "target": "de",
+    "known": "en",
+    "status": 200,
+    "requiresChoice": true,
+    "expected": true,
+    "pass": true,
+    "ms": 2365,
+    "audit": {
+      "requiresChoice": true,
+      "subjectIsViewer": false,
+      "before": "Ich bin ",
+      "feminine": "Lehrerin",
+      "masculine": "Lehrer",
+      "after": ".",
+      "suggestedForm": "masculine",
+      "feminineTokens": [
+        {
+          "text": "Ich",
+          "gloss": "I",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "bin",
+          "gloss": "am",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "Lehrerin",
+          "gloss": "teacher",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ],
+      "masculineTokens": [
+        {
+          "text": "Ich",
+          "gloss": "I",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "bin",
+          "gloss": "am",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "Lehrer",
+          "gloss": "teacher",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ]
+    },
+    "raw": "{\n  \"requiresChoice\": true,\n  \"suggestedForm\": \"masculine\",\n  \"subjectIsViewer\": false,\n  \"before\": \"Ich bin \",\n  \"feminine\": \"Lehrerin\",\n  \"masculine\": \"Lehrer\",\n  \"after\": \".\",\n  \"feminineTokens\": [\n    {\n      \"text\": \"Ich\",\n      \"gloss\": \"I\",\n      \"roman\": null,\n      \"isContent\": true\n    },\n    {\n      \"text\": \" \",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    },\n    {\n      \"text\": \"bin\",\n      \"gloss\": \"am\",\n      \"roman\": null,\n      \"isContent\": true\n    },\n    {\n      \"text\": \" \",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    },\n    {\n      \"text\": \"Lehrerin\",\n      \"gloss\": \"teacher\",\n      \"roman\": null,\n      \"isContent\": true\n    },\n    {\n      \"text\": \".\",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    }\n  ],\n  \"masculineTokens\": [\n    {\n      \"text\": \"Ich\",\n      \"gloss\": \"I\",\n      \"roman\": null,\n      \"isContent\": true\n    },\n    {\n      \"text\": \" \",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    },\n    {\n      \"text\": \"bin\",\n      \"gloss\": \"am\",\n      \"roman\": null,\n      \"isContent\": true\n    },\n    {\n      \"text\": \" \",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    },\n    {\n      \"text\": \"Lehrer\",\n      \"gloss\": \"teacher\",\n      \"roman\": null,\n      \"isContent\": true\n    },\n    {\n      \"text\": \".\",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    }\n  ]\n}"
+  },
+  {
+    "source": "I am tired.",
+    "candidate": "Estoy cansada.",
+    "target": "es",
+    "known": "uk",
+    "status": 200,
+    "requiresChoice": true,
+    "expected": true,
+    "pass": true,
+    "ms": 1962,
+    "audit": {
+      "requiresChoice": true,
+      "subjectIsViewer": false,
+      "before": "Estoy ",
+      "feminine": "cansada",
+      "masculine": "cansado",
+      "after": ".",
+      "suggestedForm": "masculine",
+      "feminineTokens": [
+        {
+          "text": "Estoy",
+          "gloss": "Я є",
+          "roman": "Estoy",
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "cansada",
+          "gloss": "втомлена",
+          "roman": "kansada",
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ],
+      "masculineTokens": [
+        {
+          "text": "Estoy",
+          "gloss": "Я є",
+          "roman": "Estoy",
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "cansado",
+          "gloss": "втомлений",
+          "roman": "kansado",
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ]
+    },
+    "raw": "{\n  \"requiresChoice\": true,\n  \"suggestedForm\": \"masculine\",\n  \"subjectIsViewer\": false,\n  \"before\": \"Estoy \",\n  \"feminine\": \"cansada\",\n  \"masculine\": \"cansado\",\n  \"after\": \".\",\n  \"feminineTokens\": [\n    {\n      \"text\": \"Estoy\",\n      \"gloss\": \"Я є\",\n      \"roman\": \"Estoy\",\n      \"isContent\": true\n    },\n    {\n      \"text\": \" \",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    },\n    {\n      \"text\": \"cansada\",\n      \"gloss\": \"втомлена\",\n      \"roman\": \"kansada\",\n      \"isContent\": true\n    },\n    {\n      \"text\": \".\",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    }\n  ],\n  \"masculineTokens\": [\n    {\n      \"text\": \"Estoy\",\n      \"gloss\": \"Я є\",\n      \"roman\": \"Estoy\",\n      \"isContent\": true\n    },\n    {\n      \"text\": \" \",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    },\n    {\n      \"text\": \"cansado\",\n      \"gloss\": \"втомлений\",\n      \"roman\": \"kansado\",\n      \"isContent\": true\n    },\n    {\n      \"text\": \".\",\n      \"gloss\": null,\n      \"roman\": null,\n      \"isContent\": false\n    }\n  ]\n}"
+  }
+]

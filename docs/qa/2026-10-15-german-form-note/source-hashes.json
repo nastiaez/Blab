@@ -1,0 +1,12 @@
+{
+  "lib/features/chat/state/form_correction_state.dart": "32fe4b9366f4da40dac07ddbb28a2e836e65f5e39eca31a7484764d15e0df47d",
+  "lib/features/chat/state/grammatical_form_preferences_state.dart": "c4481479af27f199d11fc06fff07c436e7e784dfd4eada22d45ca32eed3c7dc0",
+  "lib/features/chat/translation_preferences_screen.dart": "e1aeb9d429b1157088ceb4447f6f0ecbcd12680781cf3ff0ccb45e7a90c62424",
+  "lib/features/chat/widgets/message_bubble.dart": "373f02b13ea30aa0af69f7372581810cb051d05bafaf4c3ab2157a2c06329f15",
+  "lib/features/chat/widgets/message_learning_content.dart": "24d8273a9323f966584522fc2fdf966f51686e112cd5e2dd691129c4affd68a0",
+  "lib/shared/services/message_translator.dart": "2d934cbf704739dc06861a019f3052690e4210f4a37a20f9abed484af5661448",
+  "lib/shared/services/participant_form_relevance.dart": "39fa5b490b1ed65047b8a5c10ffc45105f3e5566a581d5aee6aaeca1df48345d",
+  "supabase/functions/translate-message/participant_forms.ts": "2aa1b308d30e7ce8836d69b5d5fb71e10730a2962a2345b1abd1cd97ffd60cf5",
+  "supabase/functions/translate-message/contract.ts": "ba333d9615022ba82db787fabb70d7afb7cc5c2ecb84727aa04d9f94db651ec5",
+  "supabase/functions/translate-message/index.ts": "77dae47ae1c161d6c339f6065429f3ff6a94fcd38cb6bff0ace0f104ebf32686"
+}

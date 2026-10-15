@@ -1,0 +1,11 @@
+{
+  "base": "0a2e751",
+  "branch": "fix/german-form-note-20261015",
+  "android": "emulator-5556, synthetic Alice",
+  "browser": "7397, blab-gender-8856-review, synthetic Bob",
+  "apk_sha256": "10efeb43228502d344c5a71851b5089a50cf306c9db43fd660f3006e2f37f568",
+  "web_main_sha256": "d075f31b6def1344f4d1982126289cdef705ce40fe7a941fe56e118c76f6fea1",
+  "approval": "pending",
+  "production_writes": false,
+  "android_installed_hash_verified": true
+}
