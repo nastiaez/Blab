@@ -1,3 +1,4 @@
+import '../../shared/data/app_channel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,7 +7,9 @@ import 'invite_continuation.dart';
 String? inviteTokenFromReferrer(String referrer) {
   try {
     final token = Uri.splitQueryString(referrer)['invite'];
-    return token != null && RegExp(r'^[a-zA-Z0-9_-]{1,128}$').hasMatch(token)
+    return token != null &&
+            AppChannel.acceptsToken(token) &&
+            RegExp(r'^[a-zA-Z0-9_-]{1,128}$').hasMatch(token)
         ? token
         : null;
   } on FormatException {

@@ -1,0 +1,147 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
+import '../../shared/state/auth_state.dart';
+import '../../shared/state/chat_list_state.dart';
+
+final testAccessCheckProvider =
+    Provider<Future<Map<String, dynamic>> Function()>((ref) {
+      return () async =>
+          (await ref
+                  .read(supabaseClientProvider)
+                  .rpc('get_app_distribution_access'))
+              as Map<String, dynamic>;
+    });
+
+/// Test-only shell; server policies remain authoritative when offline/modified.
+class TestAccessGate extends ConsumerStatefulWidget {
+  const TestAccessGate({super.key, required this.child});
+  final Widget child;
+  @override
+  ConsumerState<TestAccessGate> createState() => _TestAccessGateState();
+}
+
+class _TestAccessGateState extends ConsumerState<TestAccessGate>
+    with WidgetsBindingObserver {
+  String? _status;
+  Timer? _poll;
+  int _generation = 0;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _poll = Timer.periodic(const Duration(seconds: 15), (_) => _check());
+    scheduleMicrotask(_check);
+  }
+
+  Future<void> _check() async {
+    if (_busy) return;
+    final generation = _generation;
+    _busy = true;
+    try {
+      final response = await ref
+          .read(testAccessCheckProvider)()
+          .timeout(const Duration(seconds: 6));
+      if (!mounted || generation != _generation) return;
+      final map = response;
+      final status = map['channel'] == 'test'
+          ? map['status'] as String?
+          : 'error';
+      if (status == 'active' && _status != 'active') {
+        // Revoked RLS reads may have emptied a retained list subscription.
+        ref.invalidate(chatListProvider);
+      }
+      setState(() => _status = status);
+    } catch (_) {
+      if (mounted && generation == _generation) {
+        setState(() => _status = 'error');
+      }
+    } finally {
+      _busy = false;
+      if (mounted && generation != _generation) scheduleMicrotask(_check);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      setState(() => _status = null);
+      _check();
+    }
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    _generation++;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userId = ref.watch(currentUserIdProvider);
+    ref.listen(currentUserIdProvider, (old, next) {
+      _generation++;
+      setState(() => _status = null);
+      scheduleMicrotask(_check);
+    });
+    final allowed =
+        _status == 'active' && userId != null ||
+        _status == 'signed_out' && userId == null;
+    final l10n = context.l10n;
+    if (allowed) return widget.child;
+    return SafeArea(
+      child: Material(
+        color: BlabColors.chatCanvas,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  switch (_status) {
+                    'ended' => l10n.testSessionEnded,
+                    'not_approved' => l10n.testAccessRequired,
+                    'error' => l10n.testAccessFailed,
+                    _ => l10n.testAccessChecking,
+                  },
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: BlabColors.warmInk,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_status != null)
+                  Text(
+                    switch (_status) {
+                      'ended' => l10n.testSessionEndedBody,
+                      'not_approved' => l10n.testAccessRequiredBody,
+                      _ => l10n.testAccessFailedBody,
+                    },
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: BlabColors.warmMuted),
+                  ),
+                if (_status != null)
+                  TextButton(onPressed: _check, child: Text(l10n.retry)),
+                if (userId != null)
+                  TextButton(
+                    onPressed: () => Supabase.instance.client.auth.signOut(),
+                    child: Text(l10n.logOut),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

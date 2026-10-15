@@ -1,3 +1,4 @@
+import '../../shared/data/app_channel.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -120,7 +121,7 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
   }
 
   Future<void> _resolve() async {
-    if (_busy || _finished) return;
+    if (_busy || _finished || !AppChannel.acceptsToken(widget.token)) return;
     if (ref.read(onlineProvider).value == false) return;
     final generation = _generation;
     final token = widget.token;
@@ -269,6 +270,9 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
         _retryWhenReady();
       }
     });
+    if (!AppChannel.acceptsToken(widget.token)) {
+      return const InviteChannelMismatchScreen();
+    }
     final offline = ref.watch(onlineProvider).value == false;
     if (_error is _InviteUsed || _isUsedError(_error)) {
       return _InviteState(
@@ -499,4 +503,17 @@ class InviteReviewFixture extends StatelessWidget {
       body: context.l10n.checkInviteLink,
     ),
   };
+}
+
+class InviteChannelMismatchScreen extends StatelessWidget {
+  const InviteChannelMismatchScreen({super.key});
+  @override
+  Widget build(BuildContext context) => _InviteState(
+    title: AppChannel.isTest
+        ? context.l10n.publicInviteOnly
+        : context.l10n.testInviteOnly,
+    body: AppChannel.isTest
+        ? context.l10n.openPublicApp
+        : context.l10n.openTestApp,
+  );
 }

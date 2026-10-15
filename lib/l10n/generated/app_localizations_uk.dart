@@ -1334,4 +1334,42 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get jumpToLatest => 'До найновіших повідомлень';
+
+  @override
+  String get testInviteOnly => 'Це запрошення для Blab Test';
+
+  @override
+  String get openTestApp =>
+      'Відкрий його в Blab Test. Попроси організатора надати доступ до тестового застосунку.';
+
+  @override
+  String get publicInviteOnly => 'Це запрошення для Blab';
+
+  @override
+  String get openPublicApp =>
+      'Відкрий його в публічному застосунку Blab. Тестові акаунти й чати окремі.';
+
+  @override
+  String get testAccessRequired => 'Потрібен доступ до тестування';
+
+  @override
+  String get testAccessRequiredBody =>
+      'Попроси організатора схвалити цей акаунт Blab Test.';
+
+  @override
+  String get testSessionEnded => 'Цей сеанс тестування завершено';
+
+  @override
+  String get testSessionEndedBody =>
+      'Твій тестовий акаунт і чати не видалено. Публічний застосунок Blab є окремим.';
+
+  @override
+  String get testAccessChecking => 'Перевіряємо доступ до тестування…';
+
+  @override
+  String get testAccessFailed => 'Не вдалося перевірити доступ до тестування';
+
+  @override
+  String get testAccessFailedBody =>
+      'Підключися до інтернету та спробуй ще раз.';
 }

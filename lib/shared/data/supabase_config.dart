@@ -1,3 +1,5 @@
+import 'app_channel.dart';
+
 enum BlabEnvironment { local, staging, production }
 
 class SupabaseConfig {
@@ -158,6 +160,11 @@ class SupabaseConfig {
   }
 
   static void ensureValid() {
+    final channelError = AppChannel.validationError(
+      AppChannel.name,
+      environmentName,
+    );
+    if (channelError != null) throw StateError(channelError);
     final error = validationError(
       environment: environmentName,
       projectRef: projectRef,

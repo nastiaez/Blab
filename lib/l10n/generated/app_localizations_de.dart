@@ -1345,4 +1345,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get jumpToLatest => 'Zu den neuesten Nachrichten';
+
+  @override
+  String get testInviteOnly => 'Diese Einladung ist für Blab Test';
+
+  @override
+  String get openTestApp =>
+      'Öffne sie in Blab Test. Bitte die Testleitung um Zugang zur Test-App.';
+
+  @override
+  String get publicInviteOnly => 'Diese Einladung ist für Blab';
+
+  @override
+  String get openPublicApp =>
+      'Öffne sie in der öffentlichen Blab-App. Testkonten und Chats sind getrennt.';
+
+  @override
+  String get testAccessRequired => 'Testzugang erforderlich';
+
+  @override
+  String get testAccessRequiredBody =>
+      'Bitte die Testleitung, dieses Blab-Test-Konto freizuschalten.';
+
+  @override
+  String get testSessionEnded => 'Diese Testsitzung ist beendet';
+
+  @override
+  String get testSessionEndedBody =>
+      'Dein Testkonto und deine Chats wurden nicht gelöscht. Die öffentliche Blab-App ist separat.';
+
+  @override
+  String get testAccessChecking => 'Testzugang wird geprüft…';
+
+  @override
+  String get testAccessFailed => 'Testzugang konnte nicht geprüft werden';
+
+  @override
+  String get testAccessFailedBody =>
+      'Verbinde dich mit dem Internet und versuche es erneut.';
 }

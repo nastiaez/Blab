@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap" rel="stylesheet" />
+    <title>You’re invited to Blab Test</title>
+    <style>
+      :root { color-scheme: light; --canvas: #FAF7F2; --ink: #46281C; --muted: #917869; --orange: #F88C5A; }
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; margin: 0; background: var(--canvas); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      main { width: min(100%, 440px); min-height: 100vh; margin: 0 auto; padding: 40px 24px 48px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      .logo { display: inline-flex; }
+      .logo img { width: 99px; height: 36px; }
+      .content { margin: 152px 0 0; }
+      h1 { margin: 0 0 14px; font-family: "Mochiy Pop One", sans-serif; font-size: 26px; line-height: 1.35; letter-spacing: -.4px; font-weight: 400; }
+      p { max-width: 300px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
+      .actions { width: 100%; display: grid; gap: 12px; margin-top: 32px; }
+      .button { width: 100%; min-height: 52px; padding: 14px 18px; border: 1px solid var(--orange); border-radius: 14px; background: var(--orange); color: var(--ink); text-decoration: none; font-size: 16px; font-weight: 600; line-height: 1.25; display: grid; place-items: center; }
+      .button:focus-visible, .logo:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="logo" href="https://www.loveblab.com/" aria-label="Blab home">
+        <img src="/blab-logo_black.svg" alt="Blab" />
+      </a>
+      <section class="content">
+        <h1>You’re invited to Blab Test</h1>
+        <p>This is a testing-only invitation. You need Blab Test and approval from the organiser. Test accounts and chats are separate from the public Blab app.</p>
+      </section>
+      <section class="actions" aria-label="Test access">
+        <p>Already installed? Open this link on your Android phone with Blab Test.</p>
+        <p>Need the test app? Ask the organiser for your private installation invitation.</p>
+      </section>
+    </main>
+  </body>
+</html>

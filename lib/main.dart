@@ -24,7 +24,8 @@ import 'features/onboarding/state/onboarding_destination_state.dart';
 import 'features/onboarding/state/onboarding_resolver.dart';
 import 'shared/state/connectivity_state.dart';
 import 'l10n/l10n.dart';
-import 'shared/data/invite_host.dart';
+import 'shared/data/app_channel.dart';
+import 'features/invite/test_access_gate.dart';
 import 'shared/data/firebase_config.dart';
 import 'shared/data/supabase_config.dart';
 import 'shared/observability/observability.dart';
@@ -505,24 +506,10 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       await _openResolvedAuthCallback(resolution);
       return;
     }
-    // Verified Android App Link: https://<host>/i/<token>
-    if (uri.scheme == 'https' &&
-        uri.host == kInviteHost &&
-        uri.pathSegments.length == 2 &&
-        uri.pathSegments.first == 'i') {
+    final inviteRoute = AppChannel.routeForInvite(uri);
+    if (inviteRoute != null) {
       _incomingInviteRevision++;
-      blabRouter.go('/i/${Uri.encodeComponent(uri.pathSegments[1])}');
-      return;
-    }
-    // Legacy custom-scheme deep link: blab://i/<token>. Kept for
-    // backwards compatibility with any closed-test links already in
-    // flight that used the pre-HTTPS scheme.
-    if (uri.scheme == 'blab' &&
-        uri.host == 'i' &&
-        uri.pathSegments.length == 1) {
-      _incomingInviteRevision++;
-      blabRouter.go('/i/${Uri.encodeComponent(uri.pathSegments.first)}');
-      return;
+      blabRouter.go(inviteRoute);
     }
   }
 
@@ -602,7 +589,11 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
         statusBarBrightness: Brightness.light,
       ),
       child: MaterialApp.router(
-        title: 'Blab',
+        title: AppChannel.appName,
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) => AppChannel.isTest
+            ? TestAccessGate(child: child ?? const SizedBox.shrink())
+            : child ?? const SizedBox.shrink(),
         theme: blabTheme,
         locale: Locale(interfaceLanguage.code),
         supportedLocales: AppLocalizations.supportedLocales,

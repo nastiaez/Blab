@@ -6,7 +6,7 @@ import 'invite_share_service.dart';
 
 import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
-import '../../shared/data/invite_host.dart';
+import '../../shared/data/app_channel.dart';
 import 'prepared_invite_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
@@ -45,7 +45,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
       _shareFailed = false;
     });
     try {
-      final link = 'https://$kInviteHost/i/$token';
+      final link = AppChannel.inviteUrl(token);
       final exposed = await shareInviteText(
         context.l10n.inviteShareMessage(link),
       );
@@ -65,7 +65,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
   Widget build(BuildContext context) {
     final online = ref.watch(isOnlineProvider);
     final invite = ref.watch(preparedInviteProvider);
-    final link = invite.token == null ? null : '$kInviteHost/i/${invite.token}';
+    final link = invite.token == null
+        ? null
+        : AppChannel.inviteUrl(invite.token!).replaceFirst('https://', '');
     final createFailure = splitInviteRecoveryMessage(
       context.l10n.couldNotCreateInvite,
       context.l10n.retry,

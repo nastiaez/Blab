@@ -406,3 +406,15 @@ Jump-to-latest request12824: listener-driven bottom-center overlay inside the ti
 ### Compact one-call wire format — 15 October 2026
 
 Owner12931 authorizes compact dynamically resolved language requests and tester delivery. The provider wire format separates unique language/tone/eligible-context sentences from learning-sentence/known-language word help. A stable schema and canonical fixed rule prefix precede deterministic sorted settings; sender/recipient and bounded context are data, not repeated per viewer. Sender/recipient form ownership is mapped back into existing viewer-relative storage by code. Existing source/revision fences, atomic batch persistence, historical cache contract, Normal/Practice and aids-off decisions remain unchanged. Runtime prompt caching is provider implicit best-effort; no padding, explicit content-storage cache or privacy-policy weakening. Record measured cached tokens, not inferred savings.
+
+### 2026-10-15 — FR-47 separate testing namespace (candidate)
+
+BLAB_APP_CHANNEL=test uses package blab.nastia.ez.test, blab-test scheme, /i-test/ links and staging-only hosted configuration. Public defaults remain package blab.nastia.ez, blab scheme and /i/. Dart and Android reject test→production; public→staging is also rejected. Separate Supabase projects isolate auth signatures, user IDs, invites, messages and storage; neither a client parameter nor binary label grants database rights. Prefix test- is server-minted, namespace-checked on claim and retained through auth continuation/referrers; URL-path edits cannot convert invite authority.
+
+app_distribution_policy defaults public so the migration alone changes no existing access. Only trusted operators can configure a test deployment, enable/expire it and register test_app_members by verified account UUID. is_account_active and member/read RLS enforce access in old clients too. The test-only shell verifies backend channel and access on entry/resume and every15s; failed checks block, rather than preserve an indefinite offline grant. Public app has no test gate. This is not hardware attestation or remote erasure; installed app content can have already been seen. No public history transfer.
+
+Hosted staging provisioning, distinct Firebase app/OAuth registration, signed app-links verification and actual deployment require separate release evidence after owner reviews the candidate. No existing production accounts are enrolled automatically.
+
+### 2026-10-15 — Owner visual parity revision
+
+Owner rejected test banner and extra invite copy after actual screenshot review. Keep separate package/backend and `/i-test/test-…` routing, but use public app name/icon, invite title/card/helper/share text and unwrapped active/signed-out child layout. The access gate adds no permanent chrome or padding; only pending/denied/error states intercept access. Existing mismatch errors remain to enforce the requested boundary. Previously sent screenshots12971–12974 are superseded for visual approval. No hosted change.

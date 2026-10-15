@@ -1,5 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
+import java.util.Base64
 import org.gradle.api.GradleException
 
 plugins {
@@ -8,6 +9,19 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val dartDefines = (project.findProperty("dart-defines") as? String).orEmpty()
+    .split(",").filter { it.isNotBlank() }.associate {
+        val decoded = String(Base64.getDecoder().decode(it))
+        val pair = decoded.split("=", limit = 2)
+        pair[0] to pair.getOrElse(1) { "" }
+    }
+val appChannel = dartDefines["BLAB_APP_CHANNEL"] ?: "public"
+if (appChannel !in listOf("public", "test")) throw GradleException("Invalid BLAB_APP_CHANNEL")
+val isTestApp = appChannel == "test"
+if (isTestApp && dartDefines["BLAB_ENV"] == "production") {
+    throw GradleException("Blab Test cannot target production")
 }
 
 // Release signing uses an owner-controlled upload key outside Git. Release
@@ -73,7 +87,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "blab.nastia.ez"
+        applicationId = if (isTestApp) "blab.nastia.ez.test" else "blab.nastia.ez"
+        manifestPlaceholders["blabAppLabel"] = "@string/app_name"
+        manifestPlaceholders["blabScheme"] = if (isTestApp) "blab-test" else "blab"
+        manifestPlaceholders["blabInvitePath"] = if (isTestApp) "/i-test/" else "/i/"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24  // tech-spec.md § Platform Targets

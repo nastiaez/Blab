@@ -82,6 +82,12 @@ sentry_environment="$(jq -er '.SENTRY_ENV' "$config_file")"
 [[ "$google_client_id" == *.apps.googleusercontent.com ]] || fail 'GOOGLE_WEB_CLIENT_ID is malformed.'
 [[ -n "$firebase_project_id" ]] || fail 'FIREBASE_PROJECT_ID is required.'
 
+app_channel="$(jq -r '.BLAB_APP_CHANNEL // "public"' "$config_file")"
+if [[ "$environment" == 'staging' ]]; then
+  [[ "$app_channel" == 'test' ]] || fail 'Staging requires BLAB_APP_CHANNEL=test.'
+else
+  [[ "$app_channel" == 'public' ]] || fail 'Production requires the public app channel.'
+fi
 production_ref='bhzcexhebjszwyqvcsxs'
 if [[ "$environment" == 'production' ]]; then
   [[ "$project_ref" == "$production_ref" ]] || fail 'Production project ref is not approved.'
@@ -101,7 +107,9 @@ if [[ "$needs_android_config" == '1' ]]; then
   configured_package="$(jq -er '.client[0].client_info.android_client_info.package_name' "$firebase_file")"
   configured_api_key="$(jq -er '.client[0].api_key[0].current_key // ""' "$firebase_file")"
   [[ "$configured_firebase_project" == "$firebase_project_id" ]] || fail 'Firebase file does not match FIREBASE_PROJECT_ID.'
-  [[ "$configured_package" == 'blab.nastia.ez' ]] || fail 'Firebase Android package must be blab.nastia.ez.'
+  expected_package='blab.nastia.ez'
+  if [[ "$environment" == 'staging' ]]; then expected_package='blab.nastia.ez.test'; fi
+  [[ "$configured_package" == "$expected_package" ]] || fail "Firebase Android package must be $expected_package."
   if [[ "$configured_firebase_project" == 'blab-ci-only' || "$configured_api_key" == *'CI_ONLY_NOT_A_REAL_FIREBASE_API_KEY'* ]]; then
     fail 'CI-only Firebase configuration cannot be used for hosted builds.'
   fi

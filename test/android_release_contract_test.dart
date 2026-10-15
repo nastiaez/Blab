@@ -34,6 +34,7 @@ void main() {
     stagingFile.writeAsStringSync(
       jsonEncode({
         'BLAB_ENV': 'staging',
+        'BLAB_APP_CHANNEL': 'test',
         'SUPABASE_PROJECT_REF': 'stagingprojectref123',
         'SUPABASE_URL': 'https://stagingprojectref123.supabase.co',
         'SUPABASE_PUBLISHABLE_KEY':
@@ -44,9 +45,12 @@ void main() {
         'SENTRY_ENV': 'staging',
       }),
     );
-    stagingFirebaseFile.writeAsStringSync(
-      File('config/ci/google-services.json').readAsStringSync(),
-    );
+    final fixture =
+        jsonDecode(File('config/ci/google-services.json').readAsStringSync())
+            as Map<String, dynamic>;
+    fixture['client'][0]['client_info']['android_client_info']['package_name'] =
+        'blab.nastia.ez.test';
+    stagingFirebaseFile.writeAsStringSync(jsonEncode(fixture));
 
     final result = Process.runSync('bash', [
       'scripts/blab_environment.sh',
@@ -87,13 +91,17 @@ void main() {
         RegExp(
           r'<intent-filter android:autoVerify="true">[\s\S]*?'
           r'android:host="loveblab\.com"[\s\S]*?'
-          r'android:pathPrefix="/i/"[\s\S]*?</intent-filter>',
+          r'android:pathPrefix="\$\{blabInvitePath\}"[\s\S]*?</intent-filter>',
         ),
       ),
     );
-    expect(statements, hasLength(1));
+    expect(statements, hasLength(2));
+    expect(
+      (statements[1] as Map)["target"]["package_name"],
+      "blab.nastia.ez.test",
+    );
 
-    final statement = statements.single as Map<String, dynamic>;
+    final statement = statements.first as Map<String, dynamic>;
     final target = statement['target'] as Map<String, dynamic>;
     final fingerprints = (target['sha256_cert_fingerprints'] as List<dynamic>)
         .cast<String>();

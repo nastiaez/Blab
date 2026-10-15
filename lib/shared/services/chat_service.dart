@@ -1,3 +1,4 @@
+import '../data/app_channel.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
@@ -1397,6 +1398,9 @@ class ChatService {
   /// token isn't recognised (404). The RPC is callable by anon callers
   /// so the landing renders even before sign-in.
   Future<InviteMetadata?> getInvite(String token) async {
+    if (!AppChannel.acceptsToken(token)) {
+      throw const PostgrestException(message: 'invite_channel_mismatch');
+    }
     final res = await _client.rpc(
       'get_invite',
       params: {'invite_token': token},
@@ -1422,6 +1426,9 @@ class ChatService {
   /// Atomically marks an invite used and creates or reuses the canonical
   /// direct chat without changing an existing pair's selected languages.
   Future<InviteClaimResult> claimInviteDetails({required String token}) async {
+    if (!AppChannel.acceptsToken(token)) {
+      throw const PostgrestException(message: 'invite_channel_mismatch');
+    }
     final res = await _client.rpc(
       'claim_invite',
       params: {'invite_token': token},

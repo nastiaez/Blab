@@ -1,3 +1,4 @@
+import '../shared/data/app_channel.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -65,6 +66,8 @@ const _publicPaths = <String>{
   '/auth/reset-invalid',
   '/auth/email-changed',
   '/i',
+  '/i-test',
+  '/invite-channel-mismatch',
 };
 
 bool _isPublic(String location) {
@@ -111,7 +114,9 @@ class AuthCallbackGuard {
 }
 
 AuthCallbackRoute classifyAuthCallbackUri(String location) {
-  final uri = location.startsWith('blab://') ? Uri.tryParse(location) : null;
+  final uri = location.startsWith('${AppChannel.scheme}://')
+      ? Uri.tryParse(location)
+      : null;
   if (uri?.host != 'auth') return AuthCallbackRoute.none;
   return switch (uri?.path) {
     '/reset' => AuthCallbackRoute.passwordRecovery,
@@ -169,7 +174,7 @@ final GoRouter blabRouter = GoRouter(
     // Custom-scheme deep links land here as `blab://auth/...` because
     // Flutter feeds the full URI to go_router. Parse and bounce to the
     // matching path so the proper route + redirect handle the rest.
-    if (loc.startsWith('blab://')) {
+    if (loc.startsWith('${AppChannel.scheme}://')) {
       final uri = Uri.tryParse(loc);
       if (uri != null && uri.host.isNotEmpty) {
         return '/${uri.host}${uri.path}';
@@ -189,7 +194,9 @@ final GoRouter blabRouter = GoRouter(
     // BlabApp compares the authenticated account before and after refresh;
     // the route alone is not proof that an email change succeeded.
     final loc = state.matchedLocation;
-    final callbackUri = loc.startsWith('blab://') ? Uri.tryParse(loc) : null;
+    final callbackUri = loc.startsWith('${AppChannel.scheme}://')
+        ? Uri.tryParse(loc)
+        : null;
     final callback = classifyAuthCallbackUri(loc);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (callback == AuthCallbackRoute.passwordRecovery &&
@@ -426,6 +433,16 @@ final GoRouter blabRouter = GoRouter(
           ),
         ),
       ],
+    ),
+    _blabRoute(
+      path: '/invite-channel-mismatch',
+      builder: (context, state) => const InviteChannelMismatchScreen(),
+    ),
+    _blabRoute(
+      path: '/i-test/:token',
+      builder: (context, state) => AppChannel.isTest
+          ? InviteResolverScreen(token: state.pathParameters['token'] ?? '')
+          : const InviteChannelMismatchScreen(),
     ),
     _blabRoute(
       path: '/i/:token',

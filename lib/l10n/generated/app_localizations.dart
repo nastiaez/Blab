@@ -2411,6 +2411,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Jump to latest messages'**
   String get jumpToLatest;
+
+  /// No description provided for @testInviteOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite is for Blab Test'**
+  String get testInviteOnly;
+
+  /// No description provided for @openTestApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open it in Blab Test. Ask the organiser for access to the test app.'**
+  String get openTestApp;
+
+  /// No description provided for @publicInviteOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite is for Blab'**
+  String get publicInviteOnly;
+
+  /// No description provided for @openPublicApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open it in the public Blab app. Test accounts and chats are separate.'**
+  String get openPublicApp;
+
+  /// No description provided for @testAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Testing access required'**
+  String get testAccessRequired;
+
+  /// No description provided for @testAccessRequiredBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the organiser to approve this Blab Test account.'**
+  String get testAccessRequiredBody;
+
+  /// No description provided for @testSessionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'This testing session has ended'**
+  String get testSessionEnded;
+
+  /// No description provided for @testSessionEndedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your test account and chats have not been deleted. The public Blab app is separate.'**
+  String get testSessionEndedBody;
+
+  /// No description provided for @testAccessChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking test access…'**
+  String get testAccessChecking;
+
+  /// No description provided for @testAccessFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t check test access'**
+  String get testAccessFailed;
+
+  /// No description provided for @testAccessFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet and try again.'**
+  String get testAccessFailedBody;
 }
 
 class _AppLocalizationsDelegate

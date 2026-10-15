@@ -467,5 +467,16 @@
   "youBlockedPerson": "Has bloqueado a {name}",
   "showEmoji": "Mostrar emojis",
   "showKeyboard": "Mostrar teclado",
-  "jumpToLatest": "Ir a los mensajes más recientes"
+  "jumpToLatest": "Ir a los mensajes más recientes",
+  "testInviteOnly": "Esta invitación es para Blab Test",
+  "openTestApp": "Ábrela en Blab Test. Pide acceso a la app de prueba al organizador.",
+  "publicInviteOnly": "Esta invitación es para Blab",
+  "openPublicApp": "Ábrela en la app pública de Blab. Las cuentas y los chats de prueba están separados.",
+  "testAccessRequired": "Se necesita acceso de prueba",
+  "testAccessRequiredBody": "Pide al organizador que autorice esta cuenta de Blab Test.",
+  "testSessionEnded": "Esta sesión de prueba ha terminado",
+  "testSessionEndedBody": "Tu cuenta y tus chats de prueba no se han eliminado. La app pública de Blab es independiente.",
+  "testAccessChecking": "Comprobando acceso de prueba…",
+  "testAccessFailed": "No se pudo comprobar el acceso de prueba",
+  "testAccessFailedBody": "Conéctate a internet e inténtalo de nuevo."
 }

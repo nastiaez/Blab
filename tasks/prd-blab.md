@@ -952,3 +952,15 @@ Originally tracked as "Open Questions"; resolved 2026-05-28 in one batch.
 ### Owner revision — seamless messaging, 14 October 2026
 
 Supersedes the decorative clear/reshape/land requirements in US-043/044 and FR-36/38: original text is immediately readable; Normal uses full-contrast normal chat text and never a translation shimmer. Its existing unknown-language completed translation exception is retained. Practice alone may shimmer while real work is pending, then paints the complete result immediately without typing/glyph reveals, erased/blank frames, or mandatory animation delays. Ready cached history and mode switches never replay translation motion. Chat opening presents the new screen immediately, without the previous screen's delayed fade. Delivery never waits on AI; contextual translation is separately measured, with a target of a few seconds for ordinary short messages, not a fabricated fixed delay. Recovery and actual timings must be verified with real providers and both clients.
+
+### Owner revision — separate Blab Test, 15 October 2026 (FR-47)
+
+Owner12963 and follow-up explicitly select a separate test app with separate accounts/chats. This supersedes shared public invite copy/routes only for that app; public US-024/025/037 behavior remains.
+
+- Owner visual revision after screenshot review: test app must look exactly like public Blab. No test banner, extra helper copy, altered invite titles or share wording. App name/icon and normal journeys remain identical; only the invite URL differs. Separate installation/accounts remain behind the scenes.
+- Test links contain `-test`: `https://loveblab.com/i-test/test-{token}`. Normal shared copy remains identical to public, with only the link changed. Wrong-channel and revoked-access errors remain necessary enforcement states, not persistent test decoration.
+- Test invitations are accepted only in the separate testing namespace by approved test accounts; public invitations stay public. Wrong-channel opening explains which app is needed and never claims/consumes a token.
+- Test accounts/chats do not migrate automatically to public Blab. Existing public/Firebase-v21 histories are unchanged. Testing access is separately revocable, with global and per-account expiry/disable; never deletes accounts/chats or affects public access.
+- Account approval is operator-owned, never a self-selected flag or Firebase download invitation. Online server authorization is authoritative; already downloaded content/screenshots cannot be remotely erased.
+- Localized test UI follows Interface Language only. All learning/known-language preferences remain per viewer and untouched.
+- Android candidate first; current repository has no iOS target. No claim of iPhone readiness, billing implementation or store launch approval.

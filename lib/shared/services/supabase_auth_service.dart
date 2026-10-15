@@ -2,6 +2,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/supabase_config.dart';
+import '../data/app_channel.dart';
 
 /// Thrown when the user cancels a social sign-in flow.
 class SocialSignInCancelled implements Exception {
@@ -48,7 +49,7 @@ class SupabaseAuthService {
   Future<void> sendPasswordReset(String email) {
     return _auth.resetPasswordForEmail(
       email.trim(),
-      redirectTo: 'blab://auth/reset',
+      redirectTo: '${AppChannel.scheme}://auth/reset',
     );
   }
 
@@ -83,7 +84,7 @@ class SupabaseAuthService {
   Future<UserResponse> updateEmail(String newEmail) {
     return _auth.updateUser(
       UserAttributes(email: newEmail.trim()),
-      emailRedirectTo: 'blab://auth/email-changed',
+      emailRedirectTo: '${AppChannel.scheme}://auth/email-changed',
     );
   }
 

@@ -1,15 +1,34 @@
 {
   "rewrites": [
-    { "source": "/i/:token", "destination": "/i.html" },
-    { "source": "/delete-account", "destination": "/delete-account.html" },
-    { "source": "/dev/design-system", "destination": "/dev/design-system.html" }
+    {
+      "source": "/i-test/:token",
+      "destination": "/i-test.html"
+    },
+    {
+      "source": "/i/:token",
+      "destination": "/i.html"
+    },
+    {
+      "source": "/delete-account",
+      "destination": "/delete-account.html"
+    },
+    {
+      "source": "/dev/design-system",
+      "destination": "/dev/design-system.html"
+    }
   ],
   "headers": [
     {
       "source": "/.well-known/assetlinks.json",
       "headers": [
-        { "key": "Content-Type", "value": "application/json" },
-        { "key": "Cache-Control", "value": "public, max-age=300" }
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
       ]
     }
   ]

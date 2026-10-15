@@ -370,7 +370,9 @@
   "sendAgainIn": "Send again in {seconds}s",
   "@sendAgainIn": {
     "placeholders": {
-      "seconds": {"type": "int"}
+      "seconds": {
+        "type": "int"
+      }
     }
   },
   "sendLinkHelp": "Send the link to start chatting.",
@@ -584,5 +586,16 @@
   },
   "showEmoji": "Show emoji",
   "showKeyboard": "Show keyboard",
-  "jumpToLatest": "Jump to latest messages"
+  "jumpToLatest": "Jump to latest messages",
+  "testInviteOnly": "This invite is for Blab Test",
+  "openTestApp": "Open it in Blab Test. Ask the organiser for access to the test app.",
+  "publicInviteOnly": "This invite is for Blab",
+  "openPublicApp": "Open it in the public Blab app. Test accounts and chats are separate.",
+  "testAccessRequired": "Testing access required",
+  "testAccessRequiredBody": "Ask the organiser to approve this Blab Test account.",
+  "testSessionEnded": "This testing session has ended",
+  "testSessionEndedBody": "Your test account and chats have not been deleted. The public Blab app is separate.",
+  "testAccessChecking": "Checking test access…",
+  "testAccessFailed": "Couldn’t check test access",
+  "testAccessFailedBody": "Connect to the internet and try again."
 }

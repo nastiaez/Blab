@@ -30,7 +30,7 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
 
-    expect(manifest, contains('android:label="@string/app_name"'));
+    expect(manifest, contains(r'android:label="${blabAppLabel}"'));
     expect(manifest, contains('android:allowBackup="false"'));
     expect(manifest, contains('android:fullBackupContent="@xml/backup_rules"'));
     expect(
@@ -68,7 +68,12 @@ void main() {
       pubspec,
       matches(RegExp(r'^version: \d+\.\d+\.\d+\+\d+$', multiLine: true)),
     );
-    expect(gradle, contains('applicationId = "blab.nastia.ez"'));
+    expect(
+      gradle,
+      contains(
+        'applicationId = if (isTestApp) "blab.nastia.ez.test" else "blab.nastia.ez"',
+      ),
+    );
     expect(gradle, contains('versionCode = flutter.versionCode'));
     expect(gradle, contains('versionName = flutter.versionName'));
   });

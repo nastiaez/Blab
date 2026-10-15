@@ -80,6 +80,7 @@ jobs:
         run: |
           project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
           docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/single_call_batches.sql
+          docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/test_app_boundary.sql
       - name: Run backend integration suite
         run: scripts/local_test.sh integration
       - name: Stop disposable backend

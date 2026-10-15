@@ -281,7 +281,7 @@
   "createAccount": "Створити обліковий запис",
   "dontHaveAccountSignUp": "Ще не маєш облікового запису? Зареєструйся",
   "onboardingLegal": "Продовжуючи, ти погоджуєшся з Умовами користування та Політикою конфіденційності Blab.",
-  "onboardingLegalPrefix": "Продовжуючи, ти погоджуєшся\u00a0з ",
+  "onboardingLegalPrefix": "Продовжуючи, ти погоджуєшся з ",
   "onboardingLegalTerms": "Умовами користування",
   "onboardingLegalAnd": " та ",
   "onboardingLegalPrivacy": "Політикою конфіденційності Blab.",
@@ -467,5 +467,16 @@
   "youBlockedPerson": "Ви заблокували {name}",
   "showEmoji": "Показати емодзі",
   "showKeyboard": "Показати клавіатуру",
-  "jumpToLatest": "До найновіших повідомлень"
+  "jumpToLatest": "До найновіших повідомлень",
+  "testInviteOnly": "Це запрошення для Blab Test",
+  "openTestApp": "Відкрий його в Blab Test. Попроси організатора надати доступ до тестового застосунку.",
+  "publicInviteOnly": "Це запрошення для Blab",
+  "openPublicApp": "Відкрий його в публічному застосунку Blab. Тестові акаунти й чати окремі.",
+  "testAccessRequired": "Потрібен доступ до тестування",
+  "testAccessRequiredBody": "Попроси організатора схвалити цей акаунт Blab Test.",
+  "testSessionEnded": "Цей сеанс тестування завершено",
+  "testSessionEndedBody": "Твій тестовий акаунт і чати не видалено. Публічний застосунок Blab є окремим.",
+  "testAccessChecking": "Перевіряємо доступ до тестування…",
+  "testAccessFailed": "Не вдалося перевірити доступ до тестування",
+  "testAccessFailedBody": "Підключися до інтернету та спробуй ще раз."
 }
