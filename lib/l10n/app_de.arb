@@ -476,7 +476,7 @@
   "testAccessRequiredBody": "Bitte die Testleitung, dieses Blab-Test-Konto freizuschalten.",
   "testSessionEnded": "Diese Testsitzung ist beendet",
   "testSessionEndedBody": "Dein Testkonto und deine Chats wurden nicht gelöscht. Die öffentliche Blab-App ist separat.",
-  "testAccessChecking": "Testzugang wird geprüft…",
+  "testAccessChecking": "Verbindung wird hergestellt…",
   "testAccessFailed": "Testzugang konnte nicht geprüft werden",
   "testAccessFailedBody": "Verbinde dich mit dem Internet und versuche es erneut."
 }

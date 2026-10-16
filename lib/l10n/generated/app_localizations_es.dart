@@ -1369,7 +1369,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tu cuenta y tus chats de prueba no se han eliminado. La app pública de Blab es independiente.';
 
   @override
-  String get testAccessChecking => 'Comprobando acceso de prueba…';
+  String get testAccessChecking => 'Conectando…';
 
   @override
   String get testAccessFailed => 'No se pudo comprobar el acceso de prueba';

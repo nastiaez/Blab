@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/state/auth_state.dart';
 import '../../shared/state/chat_list_state.dart';
+import '../../shared/widgets/offline_banner.dart';
 
 final testAccessCheckProvider =
     Provider<Future<Map<String, dynamic>> Function()>((ref) {
@@ -94,6 +95,7 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
     final allowed =
         _status == 'active' && userId != null ||
         _status == 'signed_out' && userId == null;
+    final showContent = allowed || _status == null;
     final l10n = context.l10n;
     final gate = SafeArea(
       child: Material(
@@ -131,7 +133,7 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
                   ),
                 if (_status != null)
                   TextButton(onPressed: _check, child: Text(l10n.retry)),
-                if (userId != null)
+                if (userId != null && _status != null)
                   TextButton(
                     onPressed: () => Supabase.instance.client.auth.signOut(),
                     child: Text(l10n.logOut),
@@ -143,21 +145,24 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
       ),
     );
     // Keep native authentication callbacks and Navigator state alive while the
-    // server access decision is refreshed. Hidden content cannot receive focus,
-    // pointer input or accessibility actions; server RLS stays authoritative.
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ExcludeFocus(
-          excluding: !allowed,
-          child: Visibility(
-            visible: allowed,
-            maintainState: true,
-            child: widget.child,
+    // server access decision is refreshed. Pending checks are non-blocking;
+    // explicit denial/error hides content. Server RLS stays authoritative.
+    return ConnectionStatusScope(
+      connecting: _status == null,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ExcludeFocus(
+            excluding: !showContent,
+            child: Visibility(
+              visible: showContent,
+              maintainState: true,
+              child: widget.child,
+            ),
           ),
-        ),
-        if (!allowed) gate,
-      ],
+          if (!showContent) gate,
+        ],
+      ),
     );
   }
 }

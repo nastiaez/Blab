@@ -305,17 +305,12 @@ class _TranslatingMessageContentState extends State<TranslatingMessageContent>
     };
 
     if (widget.reduceMotion) return content;
-    final measured = AnimatedSize(
-      duration: const Duration(milliseconds: 150),
-      curve: const Cubic(0.22, 0.72, 0.24, 1),
-      alignment: alignment,
-      clipBehavior: Clip.none,
-      child: content,
-    );
-    if (!widget.animateArrival) return measured;
+    // Translation completion replaces content at its final geometry. Animating
+    // width makes right-anchored text slide horizontally after the shimmer.
+    if (!widget.animateArrival) return content;
     return AnimatedBuilder(
       animation: _arrival,
-      child: measured,
+      child: content,
       builder: (context, child) => Transform.translate(
         offset: Offset(0, 2 * (1 - _arrival.value)),
         child: Transform.scale(

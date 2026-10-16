@@ -38,6 +38,50 @@ Widget _host({
 }
 
 void main() {
+  for (final outgoing in [false, true]) {
+    testWidgets(
+      'resolved text stays stationary when width changes ($outgoing)',
+      (tester) async {
+        Widget host(bool ready) => MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: outgoing
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: TranslatingMessageContent(
+                authoredContent: const SizedBox(width: 60, height: 24),
+                finalContent: const SizedBox(
+                  key: ValueKey('ready-geometry'),
+                  width: 240,
+                  height: 48,
+                ),
+                resolved: ready,
+                delivered: true,
+                unchanged: false,
+                reduceMotion: false,
+                outgoing: outgoing,
+                animateArrival: false,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpWidget(host(false));
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pumpWidget(host(true));
+        final first = tester.getRect(
+          find.byKey(const ValueKey('ready-geometry')),
+        );
+        for (var frame = 0; frame < 12; frame++) {
+          await tester.pump(const Duration(milliseconds: 16));
+          expect(
+            tester.getRect(find.byKey(const ValueKey('ready-geometry'))),
+            first,
+          );
+        }
+      },
+    );
+  }
+
   testWidgets(
     'ready sentence cannot shimmer indefinitely when scroll release is missed',
     (tester) async {

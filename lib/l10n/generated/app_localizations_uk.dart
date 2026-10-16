@@ -1364,7 +1364,7 @@ class AppLocalizationsUk extends AppLocalizations {
       'Твій тестовий акаунт і чати не видалено. Публічний застосунок Blab є окремим.';
 
   @override
-  String get testAccessChecking => 'Перевіряємо доступ до тестування…';
+  String get testAccessChecking => 'Підключення…';
 
   @override
   String get testAccessFailed => 'Не вдалося перевірити доступ до тестування';

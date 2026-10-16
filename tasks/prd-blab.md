@@ -967,3 +967,9 @@ Owner12963 and follow-up explicitly select a separate test app with separate acc
 - Android candidate first; current repository has no iOS target. No claim of iPhone readiness, billing implementation or store launch approval.
 
 - Owner naming revision12986: visible test app name is exactly `Blab-test`; public remains `Blab`. Icon and in-app screens remain identical. This supersedes the identical launcher-name decision only.
+
+### Owner revision — stationary result and connection loading, 16 October 2026
+
+Owner13402: after the Practice shimmer, paint the complete result at its final position without horizontal movement or animated width/height interpolation. Preserve new-message arrival and reduced-motion behavior. The test-only access loading state says localized `Connecting…` with no Logout button while checking; retain server access enforcement and denied/error recovery actions.
+
+Owner13414 supersedes the full-screen pending design: keep the current routed screen visible and interactive during access refresh. Reuse the existing No connection banner slot for localized Connecting with orange (non-error) styling; never stack both banners. Keep explicit denied/error recovery and server authorization enforcement. No extra full-screen pending page.

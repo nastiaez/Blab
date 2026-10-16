@@ -1375,7 +1375,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dein Testkonto und deine Chats wurden nicht gelöscht. Die öffentliche Blab-App ist separat.';
 
   @override
-  String get testAccessChecking => 'Testzugang wird geprüft…';
+  String get testAccessChecking => 'Verbindung wird hergestellt…';
 
   @override
   String get testAccessFailed => 'Testzugang konnte nicht geprüft werden';

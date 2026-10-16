@@ -2463,7 +2463,7 @@ abstract class AppLocalizations {
   /// No description provided for @testAccessChecking.
   ///
   /// In en, this message translates to:
-  /// **'Checking test access…'**
+  /// **'Connecting…'**
   String get testAccessChecking;
 
   /// No description provided for @testAccessFailed.

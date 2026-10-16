@@ -2,11 +2,45 @@ import 'dart:async';
 import 'package:blab/features/invite/test_access_gate.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/state/auth_state.dart';
+import 'package:blab/shared/widgets/offline_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('connecting has no logout; denied access retains recovery', (
+    tester,
+  ) async {
+    final pending = Completer<Map<String, dynamic>>();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('alice'),
+          testAccessCheckProvider.overrideWithValue(() => pending.future),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const TestAccessGate(
+            child: Column(
+              children: [OfflineBanner(), Text('Private chat content')],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Connecting…'), findsOneWidget);
+    expect(find.text('Log out'), findsNothing);
+    expect(find.text('Private chat content'), findsOneWidget);
+    pending.complete({'channel': 'test', 'status': 'not_approved'});
+    await tester.pumpAndSettle();
+    expect(find.text('Testing access required'), findsOneWidget);
+    expect(find.text('Log out'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('native account picker resume preserves in-flight sign-in', (
     tester,
   ) async {
@@ -41,7 +75,7 @@ void main() {
       isTrue,
       reason: 'Access refresh must not dispose the Google callback owner',
     );
-    expect(find.text('Auth screen'), findsNothing);
+    expect(find.text('Auth screen'), findsOneWidget);
     pending.complete({'channel': 'test', 'status': status});
     await tester.pumpAndSettle();
     expect(identical(key.currentState, before), isTrue);

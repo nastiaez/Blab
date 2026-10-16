@@ -476,7 +476,7 @@
   "testAccessRequiredBody": "Pide al organizador que autorice esta cuenta de Blab Test.",
   "testSessionEnded": "Esta sesión de prueba ha terminado",
   "testSessionEndedBody": "Tu cuenta y tus chats de prueba no se han eliminado. La app pública de Blab es independiente.",
-  "testAccessChecking": "Comprobando acceso de prueba…",
+  "testAccessChecking": "Conectando…",
   "testAccessFailed": "No se pudo comprobar el acceso de prueba",
   "testAccessFailedBody": "Conéctate a internet e inténtalo de nuevo."
 }

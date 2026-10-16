@@ -1,5 +1,6 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:blab/app/router.dart';
+import 'package:blab/shared/widgets/offline_banner.dart';
 import 'package:blab/features/chats/chats_screen.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination.dart';
@@ -555,6 +556,68 @@ Future<void> runRetryOwnershipJourney(
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pump();
   container.dispose();
+}
+
+Future<void> runStationaryTranslationJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+  bool connecting = false,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  for (final outgoing in [false, true]) {
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        pending: true,
+        chatMode: 'practice',
+        learningLanguageCode: 'de',
+        messageText: 'See you soon!',
+        messageIsOutgoing: outgoing,
+      ),
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+      isOnline: true,
+    );
+    await tester.pumpWidget(
+      ConnectionStatusScope(connecting: connecting, child: _host(container)),
+    );
+    await _settle(tester);
+    if (capture != null) {
+      await capture(outgoing ? '03-sent-shimmer' : '01-received-shimmer');
+    }
+    await tester.pump(const Duration(seconds: 2));
+    container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .hydrateFromDb(
+          const {
+            'msg-1': MessageTranslation(
+              translation: 'Wir sehen uns bald!',
+              interfaceText: 'See you soon!',
+              interfaceLang: 'en',
+              sourceLang: 'en',
+              tokens: [],
+              mode: LearningAidMode.translation,
+            ),
+          },
+          'de',
+          'en',
+          replaceExisting: true,
+        );
+    await tester.pump();
+    final ready = find.byKey(const ValueKey('translation-settled'));
+    expect(ready, findsOneWidget);
+    final first = tester.getRect(ready);
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getRect(ready), first);
+    }
+    if (capture != null) {
+      await capture(outgoing ? '04-sent-ready' : '02-received-ready');
+    }
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+  }
 }
 
 void main() {

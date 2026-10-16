@@ -1575,3 +1575,21 @@ and return public/active access. Both unauthenticated endpoints return401.
 No live chat records, quotas or failure attempts reset; no synthetic production
 fixtures. This proves deployment/schema/policy parity, not a new physical-phone
 end-to-end translation run. Existing owner/manual acceptance remains pending.
+
+## 2026-10-16 — Stationary translation / Connecting — in progress
+
+Owner13402 requests shimmer-to-result without horizontal motion; follow-up
+replaces the test access loading label with Connecting. Source1297044, isolated
+worktree. Three red regressions reproduce moving result geometry and old loading
+copy. Candidate removes150ms width interpolation, retains initial message arrival
+and all translation ownership, and hides Logout only during pending access check.
+Denied/error recovery and backend access policies unchanged. Native recording,
+visual approval, merge and test release pending. Production requires separate approval.
+
+Verification update:958 passed/15 skipped, analyze clean; Android5564 synthetic chat incoming/outgoing geometry and Connecting state passed. Screenshots and recording inspected; owner review pending. No merge/release/production changes. Evidence:docs/qa/2026-10-16-stationary-translation/.
+
+Owner13414 rejected the full-screen pending page. Revised pending state to retain the visible/interactable child and pass Connecting state to the shared offline banner, using orange fill/dark readable text. Denied/error gate unchanged.46 focused tests passed and analyze clean; revised native evidence pending.
+
+Revised Android5564 journey passed, including one Connecting banner replacing offline text, chat visible and incoming/outgoing result geometry stationary. Actual screenshots and recording inspected; banner-review.mp4 and blab-banner-02-received-ready.png delivered for review. Owner approval pending; not merged or released.
+
+Owner13420 approves revised screenshot13417/recording13418 and explicitly authorizes Android+iOS test+production release of channel work. Audit: prior auth-refresh, Google sign-in, validator/retry and iOS branches have no unique commits beyond main; their untracked evidence preserved. Integrating this approved presentation slice, then version27 across existing Firebase/TestFlight destinations. No new public-store listing submission implied.

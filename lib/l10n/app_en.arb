@@ -595,7 +595,7 @@
   "testAccessRequiredBody": "Ask the organiser to approve this Blab Test account.",
   "testSessionEnded": "This testing session has ended",
   "testSessionEndedBody": "Your test account and chats have not been deleted. The public Blab app is separate.",
-  "testAccessChecking": "Checking test access…",
+  "testAccessChecking": "Connecting…",
   "testAccessFailed": "Couldn’t check test access",
   "testAccessFailedBody": "Connect to the internet and try again."
 }
