@@ -154,11 +154,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Entry points are Chats + and the no-chats `Invite someone` action; there is no contacts screen, contacts permission, or language picker before this page
-- [ ] Header: `Invite a friend`; link card: `Let’s chat on Blab` + `loveblab.com/i/{token}`; helper below the card, without a bullet: `Only one friend can use this link`
+- [ ] Header: `Invite a friend`; link card: `Let’s chat on Blab` + `loveblab.com/i/{token}`; helper below the card, without a bullet: `Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.`
 - [ ] Primary `Send invite` button has no icon and opens the native share sheet
 - [ ] The shared text is `Let’s chat on Blab` plus the invite URL
 - [ ] Returning from Copy or another app returns to this same page, not Chats; no success page is shown
-- [ ] Every exposed link is unique and remains valid until one successful claim; a fresh link is prepared after Copy or a selected share target
+- [ ] One personal link remains valid for unlimited distinct recipients until explicit Regenerate; sharing or Copy never rotates it. Regenerate link appears immediately below the helper and atomically revokes every previous link for this owner
 - [ ] The first link is prepared in the background for a signed-in online user, so the first visit normally opens ready to share
 - [ ] While offline, the standard `No connection` banner is visible and `Send invite` is disabled; no special offline card or second banner is shown
 - [ ] If preparing the next link fails while online, show inline `Couldn’t prepare a new invite. · Try again` below the card and keep `Send invite` disabled until it succeeds
@@ -576,7 +576,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As someone who cannot use an invite link, I want a clear explanation and a way back to Blab.
 
 **Acceptance Criteria:**
-- [ ] Invite links do not expire with time; an unclaimed link remains valid until one friend uses it
+- [ ] Invite links do not expire with time; a personal link remains valid for unlimited friends until its owner regenerates it
 - [ ] Invalid or unknown link: shows "We couldn’t find that invite." + "Check the link is correct, or ask for a new one." + "Go to chats"
 - [ ] A used link reopened by its claimant opens their existing chat; a used link opened by another account shows `This invite has already been claimed` + `Ask your friend for a new link.` + `Go to chats`
 - [ ] A self-opened unused link never self-claims and opens Invite a friend; a self-opened claimed link opens the resulting chat
@@ -776,7 +776,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-2B: One resolver waits for session restoration, callback classification, account onboarding state, and pending invite state before choosing a destination. Recovery and email-change callbacks resolve before ordinary onboarding; required name/language setup resolves before invite continuation or Chats
 - FR-2C: Learn in context reproduces the approved approximately 7.05-second HTML dialogue cycle, disposes safely, restarts from the beginning after backgrounding, never blocks Continue, and renders a static complete state when reduced motion is enabled
 - FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth. A successful signed-in change uses target-locale feedback with one Undo action, no close icon, a 4-second normal timeout, and navigation dismissal
-- FR-4: Invite creation never asks for a language or contacts access. A link is valid until one successful claim, with no time expiry; each exposed link is unique and a fresh link is prepared after Copy or a selected share target
+- FR-4: Invite creation never asks for a language or contacts access. A personal link is reusable by unlimited friends with no time expiry; only explicit Regenerate revokes prior links and creates a new random ID
 - FR-5: `Send invite` opens the device native share sheet with the standard Copy affordance and return behaviour; no custom share sheet or success page is used
 - FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge, and `Ready to chat · Say hi` for an unmessaged new connection until that participant selects a practice language
 - FR-7: Empty state shown when no chats exist
@@ -893,7 +893,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 - No actual push notifications (simulated in prototype)
 - No real audio playback (simulated play interaction)
 - Profile photos and file uploads are out of scope; launch profiles use initial avatars only
-- No contacts discovery, recipient-email matching, invite cancellation, or invite-management screen
+- No contacts discovery, recipient-email matching, or separate invite-management screen; inline link regeneration is supported
 - No group chats
 - No voice or video messages
 - No AI conversation partners or generated replies; AI is limited to user-controlled message translation and writing correction
@@ -973,3 +973,7 @@ Owner12963 and follow-up explicitly select a separate test app with separate acc
 Owner13402: after the Practice shimmer, paint the complete result at its final position without horizontal movement or animated width/height interpolation. Preserve new-message arrival and reduced-motion behavior. The test-only access loading state says localized `Connecting…` with no Logout button while checking; retain server access enforcement and denied/error recovery actions.
 
 Owner13414 supersedes the full-screen pending design: keep the current routed screen visible and interactive during access refresh. Reuse the existing No connection banner slot for localized Connecting with orange (non-error) styling; never stack both banners. Keep explicit denied/error recovery and server authorization enforcement. No extra full-screen pending page.
+
+## Owner revision — reusable personal invites (16 October 2026)
+
+Supersedes single-successful-claim and automatic rotation in US-008/037, FR-4 and the September invite decision. One opaque, random personal ID remains stable across shares and app restarts; no display-name requirement. Unlimited distinct recipients create their own conversation with the inviter; repeat joins reuse the same pair without resetting language settings or removing blocks. Regenerate disables all prior links for future joins, without deleting existing chats. Previously claimed legacy links retain old compatibility until regeneration; previously unclaimed links become reusable. Test namespace and approved-tester access remain enforced. New invite visuals require owner review before integration; production promotion needs approval of this new migration scope.

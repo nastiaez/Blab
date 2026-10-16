@@ -1,5 +1,4 @@
 import '../../shared/widgets/navigation/blab_app_bar.dart';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'invite_share_service.dart';
@@ -46,14 +45,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     });
     try {
       final link = AppChannel.inviteUrl(token);
-      final exposed = await shareInviteText(
-        context.l10n.inviteShareMessage(link),
-      );
-      // A link is never invalidated by sharing. Prepare another one in the
-      // background for the next invite while keeping this page in place.
-      if (mounted && exposed) {
-        unawaited(ref.read(preparedInviteProvider.notifier).consume());
-      }
+      await shareInviteText(context.l10n.inviteShareMessage(link));
     } catch (_) {
       if (mounted) setState(() => _shareFailed = true);
     } finally {
@@ -107,11 +99,23 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
                       child: Text(
-                        context.l10n.onePersonInvite,
+                        context.l10n.reusableInviteHelp,
                         style: const TextStyle(
                           color: BlabColors.warmMuted,
                           fontSize: 13,
                         ),
+                      ),
+                    ),
+                  if (invite.token != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: online && !invite.loading && !_sharing
+                            ? () => ref
+                                  .read(preparedInviteProvider.notifier)
+                                  .regenerate()
+                            : null,
+                        child: Text(context.l10n.regenerateInvite),
                       ),
                     ),
                   if (online && invite.failed) ...[

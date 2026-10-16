@@ -23,6 +23,9 @@ class FakeInvites implements ChatService {
   }
 
   @override
+  Future<InviteToken> regenerateInvite(String currentToken) => createInvite();
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -56,48 +59,39 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('failed next link disables sharing until inline retry succeeds', (
+  testWidgets('sharing keeps the personal link; regenerate replaces it', (
     tester,
   ) async {
-    final service = FakeInvites(failOnCalls: {2});
+    final service = FakeInvites();
     await openOnlineInvite(tester, service);
-    String? sharedText;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (call) async {
-          expect(call.method, 'shareInvite');
-          sharedText = (call.arguments as Map)['text'] as String;
-          return true;
-        });
-    await tester.tap(find.text('Send invite'));
+        .setMockMethodCallHandler(channel, (call) async => true);
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.text('Send invite'));
+      await tester.pumpAndSettle();
+    }
+    expect(service.calls, 1);
+    expect(find.text('loveblab.com/i/token1'), findsOneWidget);
+    await tester.tap(find.text('Regenerate link'));
     await tester.pumpAndSettle();
-    expect(sharedText, "Let's chat on Blab: https://loveblab.com/i/token1");
-    final error = find.text("Couldn't create invite.");
-    final retry = find.widgetWithText(TextButton, 'Try again.');
-    expect(error, findsOneWidget);
-    expect(retry, findsOneWidget);
-    expect(find.text('Retry'), findsNothing);
-    expect(find.text('Only one friend can use this link'), findsNothing);
-    expect(find.text('Send invite'), findsNothing);
-    final card = find.byKey(const ValueKey('invite-card'));
-    final recovery = find.byKey(const ValueKey('invite-create-recovery'));
-    expect(card, findsOneWidget);
-    expect(recovery, findsOneWidget);
-    expect(
-      tester.getTopLeft(recovery).dy - tester.getBottomLeft(card).dy,
-      inInclusiveRange(0, 16),
-    );
-    expect(find.descendant(of: recovery, matching: error), findsOneWidget);
-    expect(find.descendant(of: recovery, matching: retry), findsOneWidget);
-    expect(
-      (tester.getCenter(error).dy - tester.getCenter(retry).dy).abs(),
-      lessThan(8),
-    );
-    await tester.tap(find.text('Try again.'));
-    await tester.pumpAndSettle();
-    expect(find.text('loveblab.com/i/token3'), findsOneWidget);
-    expect(find.text("Couldn't create invite. Try again."), findsNothing);
-    expect(find.text('Send invite'), findsOneWidget);
+    expect(service.calls, 2);
+    expect(find.text('loveblab.com/i/token2'), findsOneWidget);
   });
+
+  testWidgets(
+    'failed regeneration disables sharing until authoritative refresh',
+    (tester) async {
+      final service = FakeInvites(failOnCalls: {2});
+      await openOnlineInvite(tester, service);
+      await tester.tap(find.text('Regenerate link'));
+      await tester.pumpAndSettle();
+      expect(find.text('Send invite'), findsNothing);
+      expect(find.text("Couldn't create invite."), findsOneWidget);
+      await tester.tap(find.text('Try again.'));
+      await tester.pumpAndSettle();
+      expect(find.text('Send invite'), findsOneWidget);
+    },
+  );
 
   testWidgets('dismissing native sharing preserves the current link', (
     tester,
@@ -117,7 +111,9 @@ void main() {
     await openOnlineInvite(tester, FakeInvites());
 
     final card = find.byType(DecoratedBox).first;
-    final helper = find.text('Only one friend can use this link');
+    final helper = find.text(
+      'Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.',
+    );
     expect(tester.getTopLeft(helper).dx, tester.getTopLeft(card).dx);
   });
 
@@ -154,7 +150,9 @@ void main() {
     expect(find.text('Запросити друга'), findsOneWidget);
     expect(find.text('Спілкуймося в Blab'), findsOneWidget);
     expect(
-      find.text('Це посилання може використати лише одна людина.'),
+      find.text(
+        'Діліться цим посиланням з будь-якою кількістю людей. Нове посилання вимкне старе, але наявні чати залишаться.',
+      ),
       findsOneWidget,
     );
     expect(find.text('Надіслати запрошення'), findsOneWidget);
@@ -185,7 +183,7 @@ void main() {
         expect(error, findsOneWidget);
         expect(retry, findsOneWidget);
         expect(find.text(l10n.retry), findsNothing);
-        expect(find.text(l10n.onePersonInvite), findsNothing);
+        expect(find.text(l10n.reusableInviteHelp), findsNothing);
         expect(find.text(l10n.sendInvite), findsNothing);
         final recovery = find.byKey(const ValueKey('invite-create-recovery'));
         expect(recovery, findsOneWidget);
@@ -221,8 +219,9 @@ void main() {
     await tester.tap(find.text('Send invite'));
     await tester.pumpAndSettle();
     expect(attempts, 2);
+    expect(service.calls, 1);
     expect(find.text("Couldn't open sharing. Try again."), findsNothing);
-    expect(find.text('loveblab.com/i/token2'), findsOneWidget);
+    expect(find.text('loveblab.com/i/token1'), findsOneWidget);
   });
 
   testWidgets('offline invite does not request a link or show a second error', (

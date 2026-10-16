@@ -1363,4 +1363,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get testAccessFailedBody => 'Connect to the internet and try again.';
+
+  @override
+  String get reusableInviteHelp =>
+      'Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.';
+
+  @override
+  String get regenerateInvite => 'Regenerate link';
 }

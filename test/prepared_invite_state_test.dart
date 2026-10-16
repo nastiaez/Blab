@@ -9,7 +9,7 @@ import 'new_chat_screen_test.dart' show FakeInvites;
 
 void main() {
   test(
-    'exposure retires the token offline and reconnect prepares a new one',
+    'offline regeneration preserves the token and reconnect does not rotate',
     () async {
       final online = StreamController<bool>();
       final service = FakeInvites();
@@ -28,12 +28,12 @@ void main() {
       expect(container.read(preparedInviteProvider).token, 'token1');
       online.add(false);
       await Future<void>.delayed(const Duration(milliseconds: 20));
-      await container.read(preparedInviteProvider.notifier).consume();
-      expect(container.read(preparedInviteProvider).token, isNull);
+      await container.read(preparedInviteProvider.notifier).regenerate();
+      expect(container.read(preparedInviteProvider).token, 'token1');
       expect(service.calls, 1);
       online.add(true);
       await Future<void>.delayed(const Duration(milliseconds: 20));
-      expect(container.read(preparedInviteProvider).token, 'token2');
+      expect(container.read(preparedInviteProvider).token, 'token1');
     },
   );
 }

@@ -478,5 +478,7 @@
   "testSessionEndedBody": "Tu cuenta y tus chats de prueba no se han eliminado. La app pública de Blab es independiente.",
   "testAccessChecking": "Conectando…",
   "testAccessFailed": "No se pudo comprobar el acceso de prueba",
-  "testAccessFailedBody": "Conéctate a internet e inténtalo de nuevo."
+  "testAccessFailedBody": "Conéctate a internet e inténtalo de nuevo.",
+  "reusableInviteHelp": "Comparte este enlace con tantas personas como quieras. Al regenerarlo, el enlace anterior deja de funcionar; tus chats se mantienen.",
+  "regenerateInvite": "Regenerar enlace"
 }

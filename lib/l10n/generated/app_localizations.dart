@@ -2477,6 +2477,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect to the internet and try again.'**
   String get testAccessFailedBody;
+
+  /// No description provided for @reusableInviteHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.'**
+  String get reusableInviteHelp;
+
+  /// No description provided for @regenerateInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate link'**
+  String get regenerateInvite;
 }
 
 class _AppLocalizationsDelegate

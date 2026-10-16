@@ -1372,4 +1372,11 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get testAccessFailedBody =>
       'Підключися до інтернету та спробуй ще раз.';
+
+  @override
+  String get reusableInviteHelp =>
+      'Діліться цим посиланням з будь-якою кількістю людей. Нове посилання вимкне старе, але наявні чати залишаться.';
+
+  @override
+  String get regenerateInvite => 'Створити нове посилання';
 }

@@ -1593,3 +1593,15 @@ Owner13414 rejected the full-screen pending page. Revised pending state to retai
 Revised Android5564 journey passed, including one Connecting banner replacing offline text, chat visible and incoming/outgoing result geometry stationary. Actual screenshots and recording inspected; banner-review.mp4 and blab-banner-02-received-ready.png delivered for review. Owner approval pending; not merged or released.
 
 Owner13420 approves revised screenshot13417/recording13418 and explicitly authorizes Android+iOS test+production release of channel work. Audit: prior auth-refresh, Google sign-in, validator/retry and iOS branches have no unique commits beyond main; their untracked evidence preserved. Integrating this approved presentation slice, then version27 across existing Firebase/TestFlight destinations. No new public-store listing submission implied.
+
+## 2026-10-16 — Reusable personal invitations `[ ]` ← in progress
+
+Owner requests unlimited recipients per personal link and explicit token-style regeneration. Dedicated worktree fromfe2cbca. Scope: persisted reusable ID, share without rotation, inline Regenerate, atomic revocation/claim concurrency, pair reuse, existing-chat/block preservation, all four locales. Done when: database regressions and native recipient/owner journey pass; actual UI reviewed and approved, then integrate and release. Production migration is new scope beyond approved27; prepare exact scope before requesting confirmation. Approved version27 delivery continues independently.
+
+Approved presentation release27 completed on integratedfe2cbca: all clean CI jobs passed; Firebase test8/public2 existing testers, download-back hashes equal signed artifacts; TestFlight test Owner testing+Invited friends IN_BETA_TESTING, public Owner testing IN_BETA_TESTING. Receipt:../releases/20261016-ui-27/release-receipt.json. No public-store publication; physical-phone sign-in remains unverified. New invite change is excluded from27.
+
+Reusable-invite checks:13 focused and959 full Flutter tests passed (15 skipped); analysis clean. Rollback-only PostgreSQL checks prove multiple recipients, pair reuse, explicit revocation, idempotent regeneration retry, nonowner rejection, and preservation of existing membership language/block. No hosted schema changed. Native owner preview passed; capturing full-length token screenshots for review. Clean-environment backend integration and real recipient-client messaging remain pending.
+
+Native review complete: actual Android5564 screen with full-length synthetic link captured before/after Regenerate; both images inspected. UI/provider behavior passes; no hosted migration or release of invite changes. Review packet ready.
+
+Owner13441 approves screenshots13438/13439 and exact reusable-invite rollout to Android+iOS test+production. Proceed with integration, clean backend verification, migration and signed28 distribution; no additional production approval needed for this scope.

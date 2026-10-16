@@ -44,10 +44,24 @@ class PreparedInviteNotifier extends Notifier<PreparedInvite> {
     state = PreparedInvite(token: token);
   }
 
-  Future<void> consume() async {
-    _generation++;
-    state = const PreparedInvite();
-    await prepare();
+  Future<void> regenerate() async {
+    final token = state.token;
+    if (token == null || state.loading || !ref.read(isOnlineProvider)) return;
+    final generation = ++_generation;
+    state = PreparedInvite(token: token, loading: true);
+    try {
+      final invite = await ref
+          .read(chatServiceProvider)
+          .regenerateInvite(token)
+          .timeout(const Duration(seconds: 12));
+      if (generation == _generation) {
+        state = PreparedInvite(token: invite.token);
+      }
+    } catch (_) {
+      if (generation == _generation) {
+        state = PreparedInvite(token: token, failed: true);
+      }
+    }
   }
 
   Future<void> prepare() async {

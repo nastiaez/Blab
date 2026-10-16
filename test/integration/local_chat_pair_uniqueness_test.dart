@@ -182,8 +182,8 @@ void main() {
 
         for (final invite in concurrentInvites) {
           final metadata = await ChatService(alice).getInvite(invite.token);
-          expect(metadata?.status, 'used');
-          expect(metadata?.resultingChatId, canonicalChatId);
+          expect(metadata?.status, 'valid');
+          expect(metadata?.resultingChatId, isNull);
         }
       } finally {
         if (tokens.isNotEmpty) {

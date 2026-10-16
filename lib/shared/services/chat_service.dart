@@ -1394,6 +1394,16 @@ class ChatService {
     return InviteToken(row['token'] as String);
   }
 
+  Future<InviteToken> regenerateInvite(String currentToken) async {
+    final res = await _client.rpc(
+      'regenerate_invite',
+      params: {'current_token': currentToken},
+    );
+    return InviteToken(
+      ((res as List).first as Map<String, dynamic>)['token'] as String,
+    );
+  }
+
   /// Look up an invite for the landing screen. Returns null when the
   /// token isn't recognised (404). The RPC is callable by anon callers
   /// so the landing renders even before sign-in.

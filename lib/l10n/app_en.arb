@@ -597,5 +597,7 @@
   "testSessionEndedBody": "Your test account and chats have not been deleted. The public Blab app is separate.",
   "testAccessChecking": "Connecting…",
   "testAccessFailed": "Couldn’t check test access",
-  "testAccessFailedBody": "Connect to the internet and try again."
+  "testAccessFailedBody": "Connect to the internet and try again.",
+  "reusableInviteHelp": "Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.",
+  "regenerateInvite": "Regenerate link"
 }

@@ -181,28 +181,42 @@ void main() {
           _attemptClaim(bob, raceInvite.token),
           _attemptClaim(carol, raceInvite.token),
         ]);
-        final winner = race.singleWhere((result) => result.succeeded);
-        final loser = race.singleWhere((result) => !result.succeeded);
-        chatIds.add(winner.chatId!);
-        expect(_postgrestMessage(loser.error), 'invite_already_claimed');
-
+        expect(race.every((result) => result.succeeded), isTrue);
+        expect(race.map((result) => result.chatId).toSet(), hasLength(2));
+        for (final result in race) {
+          chatIds.add(result.chatId!);
+          final members = List<Map<String, dynamic>>.from(
+            await admin
+                .from('chat_members')
+                .select('user_id')
+                .eq('chat_id', result.chatId!),
+          );
+          expect(members.map((row) => row['user_id']).toSet(), {
+            aliceId,
+            result.userId,
+          });
+        }
         final raceMetadata = await ChatService(
           fresh,
         ).getInvite(raceInvite.token);
-        expect(raceMetadata?.status, 'used');
-        expect(raceMetadata?.resultingChatId, winner.chatId);
-
-        final raceMembers = List<Map<String, dynamic>>.from(
-          await admin
-              .from('chat_members')
-              .select('user_id')
-              .eq('chat_id', winner.chatId!),
-        );
-        final raceMemberIds = raceMembers
-            .map((row) => row['user_id'] as String)
-            .toSet();
-        expect(raceMemberIds, {aliceId, winner.userId});
-        expect(raceMemberIds, isNot(contains(loser.userId)));
+        expect(raceMetadata?.status, 'valid');
+        expect(raceMetadata?.resultingChatId, isNull);
+        final replacement = await ChatService(
+          alice,
+        ).regenerateInvite(raceInvite.token);
+        tokens.add(replacement.token);
+        expect(await ChatService(fresh).getInvite(raceInvite.token), isNull);
+        final revoked = await _attemptClaim(bob, raceInvite.token);
+        expect(_postgrestMessage(revoked.error), 'invite_not_found');
+        final retry = await ChatService(
+          alice,
+        ).regenerateInvite(raceInvite.token);
+        expect(retry.token, replacement.token);
+        final repeated = await ChatService(
+          bob,
+        ).claimInviteDetails(token: replacement.token);
+        expect(repeated.chatId, race.first.chatId);
+        expect(repeated.isNewConnection, isFalse);
       } finally {
         if (tokens.isNotEmpty) {
           await admin.from('invites').delete().inFilter('token', tokens);

@@ -91,7 +91,7 @@ Service mapping:
 | Persistent storage (users, chats, messages, invite links) | **Supabase Postgres** with Row-Level Security (RLS) |
 | Real-time chat transport (US-015, US-016) | **Supabase Realtime** — Postgres change streams + Broadcast channels for typing/presence (if added later) |
 | Avatar uploads (US-011) | **Supabase Storage** |
-| Invite link valid until one successful claim, with no time expiry (FR-4) | Postgres table + RLS policy + edge function for token mint/validate |
+| Personal invite link reusable until owner regeneration, with no time expiry (FR-4) | Postgres table + RLS policy + authenticated RPCs for token mint/validate/rotate |
 | Push notifications (US-038, FR-29) | **FCM via Supabase Edge Function** trigger (Supabase has no native push) |
 
 Conventions:
@@ -424,3 +424,7 @@ Owner rejected test banner and extra invite copy after actual screenshot review.
 ### 2026-10-15 — Invited test emails
 
 Owner requested preapproval of named testers before signup. Operator-only `test_app_invited_emails` grants access only to a matching verified auth email; explicit UUID membership denial/expiry takes precedence. Global test disable/expiry and account enforcement remain unchanged. Public policy remains unchanged. No invitation URL or client flag grants access. This extends the UUID-only enrollment above.
+
+## Resolved — reusable personal invitations, 16 October 2026
+
+Owner replaces decisions13/29/30 single-use/automatic rotation. `create_invite()` returns the current reusable token, including for older clients calling it after share. `regenerate_invite(current_token)` atomically revokes all owner links; owner advisory lock serializes creation, regeneration and claims. Repeated regeneration with a revoked token returns current token, making lost-response retries safe. Claim retains canonical pair uniqueness, membership preferences and blocks. Existing unclaimed tokens become reusable; old claimed tokens are never reactivated. Server-minted128-bit random IDs preserve namespace. UI uses inline Regenerate, localized explanation and authoritative refresh after uncertain network outcome; no public name slug needed.
