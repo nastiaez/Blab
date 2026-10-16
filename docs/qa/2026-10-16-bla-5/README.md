@@ -56,13 +56,25 @@ Android emulator5566 and iOS QA simulator both pass the real chat-popup replay
 for `the`, `of`, `message` and the asymmetric German-meaning viewer. All8 actual
 screenshots inspected; six attached to Linear, Android packet delivered13642,
 iPhone sample13643. Motion unchanged, so no recording required.
-199 backend checks pass, full Flutter suite959 before the new contextual test;
-final full-suite result is recorded in the execution checkpoint. Analysis clean.
-No hosted synthetic fixture, changed provider secret, schema migration, unchanged
-client release, or production write. Production has no matching incident cache
-variant, so its proposed scope is the same two backend functions only.
+199 backend checks and961 Flutter checks pass (15 existing skips); analysis,
+format and whitespace checks pass.
 
-Production awaits the repository's16 October explicit rollout gate. The ticket's
-auto-release label conflicts with that newer explicit project instruction; do
-not silently treat implementation approval13635 as a new production rollout.
-Physical-device/live signed-in two-client end-to-end verification is not claimed.
+## Production release verified
+
+Owner13647 explicitly approved the same production scope. Integrated unchanged
+candidate11606ea into synchronized local/remote main. All three clean CI gates
+passed: https://github.com/nastiaez/Blab/actions/runs/38915719622 .
+Production translate-message33 / prepare-message-jobs12 ACTIVE, JWT checks retained.
+All14 downloaded deployed TypeScript files match the approved source byte-for-byte.
+Preflight matched the previous production source and all103 migrations; no schema,
+secrets, access settings, client artifact or production chat data changed.
+No matching incident cache variant exists in production, so no historical repair
+was performed there. The two production endpoints still reject unauthenticated
+requests with401. Fresh generation through the downloaded production source and
+the same default model returns article/preposition/noun meanings correctly for
+the incident sentence, with separate Ukrainian/German viewer meanings.
+
+Evidence boundary: this is deployed-source verification plus a fresh provider
+probe and native rendering evidence, not an authenticated production-client or
+physical-device end-to-end run. No such acceptance is claimed. Full receipts:
+/Users/aswin/clawd/projects/blab/qa-artifacts/BLA-5/receipt.json .
