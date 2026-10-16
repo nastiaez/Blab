@@ -5,6 +5,8 @@ import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'support/local_database_fixture.dart';
+
 const _enabled = bool.fromEnvironment('RUN_LOCAL_SUPABASE_INTEGRATION');
 const _url = String.fromEnvironment('SUPABASE_URL');
 const _publicKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
@@ -214,10 +216,7 @@ void main() {
         );
 
         // Isolate the manual save/edit fixture from automatically queued work.
-        await admin
-            .from('message_preparation_jobs')
-            .delete()
-            .eq('message_id', source.id);
+        await isolateDirectTranslationFixture(_url, source.id);
         final prepared = Map<String, dynamic>.from(
           await alice.rpc(
                 'request_message_translation',
