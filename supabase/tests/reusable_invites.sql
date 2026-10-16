@@ -29,6 +29,11 @@ do $$ declare c uuid; begin
  if c::text=current_setting('blab.invite.chat') then raise exception 'wrong shared conversation'; end if;
 end $$;
 reset role;
+do $$ begin
+ if (select count(*) from public.push_notification_events
+     where event_type='invite_claimed' and source_key like current_setting('blab.invite.old') || ':%') <> 2
+ then raise exception 'expected exactly one invite event per recipient despite repeated claim'; end if;
+end $$;
 insert into public.blocks(blocker_id,blocked_id) values
  ('00000000-0000-4000-8000-00000000000a','00000000-0000-4000-8000-00000000000b') on conflict do nothing;
 update public.chat_members set learning_language='de' where chat_id=current_setting('blab.invite.chat')::uuid and user_id='00000000-0000-4000-8000-00000000000b';

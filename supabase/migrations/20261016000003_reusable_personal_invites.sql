@@ -134,7 +134,15 @@ begin
       (v_chat_id, v_row.inviter_user_id, 'en', null);
   end if;
 
-  if not v_row.reusable then
+  if v_row.reusable then
+    -- One notification per recipient, not one per shared link or repeat visit.
+    insert into public.push_notification_events (
+      event_type, source_key, recipient_id, actor_id, chat_id
+    ) values (
+      'invite_claimed', v_row.token || ':' || v_uid::text,
+      v_row.inviter_user_id, v_uid, v_chat_id
+    ) on conflict (event_type, source_key, recipient_id) do nothing;
+  else
   update public.invites i
   set used_at = now(),
       used_by_user_id = v_uid,

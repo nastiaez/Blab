@@ -108,7 +108,7 @@ void main() {
           await admin
               .from('push_notification_events')
               .select('id,event_type,recipient_id,actor_id,chat_id,source_key')
-              .eq('source_key', invite.token),
+              .eq('source_key', '${invite.token}:$bobId'),
         );
         expect(inviteEvents, hasLength(1));
         expect(inviteEvents.single['event_type'], 'invite_claimed');
