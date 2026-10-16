@@ -41,3 +41,5 @@ Final focused regression:91 passed after final header/queue guard; analyzer clea
 Review packet delivered in current topic: screenshots13665–13671, video13672. Await owner approval of visuals/workflow; explicit launch intent remains recorded, but is not approval of unseen screens. No commit, push or release. Retained dependency cache and native installed apps; discarded only generated worktree build output to recover space.
 
 Owner13674 approves the delivered native visuals/workflow (screens13665–13671, motion13672). Continue clean backend checks, integration and the previously requested Android/iOS launch. Owner manual-device tracker remains unchecked; screenshot approval is not a physical-device test.
+
+Clean runner38932591319: new real authenticated client lifecycle test passes; backend suite detected the old push integration assertion still querying token:recipient instead of token:recipient:chat. Updated the exact outbox-key assertion (including chat ID) and added distinct old/new-chat notification assertions plus repeated-join deduplication. No app/backend behavior changed by this follow-up; full rerun required before integration.

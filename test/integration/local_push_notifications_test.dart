@@ -108,12 +108,13 @@ void main() {
           await admin
               .from('push_notification_events')
               .select('id,event_type,recipient_id,actor_id,chat_id,source_key')
-              .eq('source_key', '${invite.token}:$bobId'),
+              .eq('source_key', '${invite.token}:$bobId:$chatId'),
         );
         expect(inviteEvents, hasLength(1));
         expect(inviteEvents.single['event_type'], 'invite_claimed');
         expect(inviteEvents.single['recipient_id'], aliceId);
         expect(inviteEvents.single['actor_id'], bobId);
+        expect(inviteEvents.single['chat_id'], chatId);
 
         final message = await ChatService(
           alice,

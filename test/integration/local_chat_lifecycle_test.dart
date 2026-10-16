@@ -100,6 +100,21 @@ void main() {
         expect(fresh, isNot(chat));
         expect((await b.fetchMessagePage(fresh)).messages, isEmpty);
         expect(await b.claimInvite(token: token), fresh);
+        final events = await admin
+            .from('push_notification_events')
+            .select('chat_id,source_key')
+            .eq('event_type', 'invite_claimed')
+            .eq('recipient_id', alice.auth.currentUser!.id)
+            .eq('actor_id', bob.auth.currentUser!.id)
+            .inFilter('chat_id', [chat, fresh]);
+        expect(events, hasLength(2));
+        expect(events.map((e) => e['chat_id']).toSet(), {chat, fresh});
+        for (final event in events) {
+          expect(
+            event['source_key'],
+            '$token:${bob.auth.currentUser!.id}:${event['chat_id']}',
+          );
+        }
       } finally {
         for (final chat in chats) {
           await admin.from('chats').delete().eq('id', chat);
