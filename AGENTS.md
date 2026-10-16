@@ -150,3 +150,7 @@ Whenever a project rule is conflicting, ambiguous, confusing, or inconsistent wi
 - Apply explicit instruction precedence or an already-approved decision where it resolves the issue; explain that resolution here without asking for redundant approval.
 - If a product decision remains unresolved, ask here before changing the affected behavior. Continue independent, unblocked work.
 - Once resolved, update the canonical source and its generated reference/tests as applicable so the same confusion does not recur. Never resolve a conflict by editing only a generated document.
+
+## Production parity (owner instruction, 16 October 2026)
+
+For approved Blab fixes/releases, include production as well as test after verification, unless the owner explicitly limits scope. Audit and apply missing production migrations; do not stop at test-only deployment. Verify migration-ledger parity, deployed service source and production behavior. Preserve environment-specific secrets, public/test access settings, tester groups and user data. This does not authorize bypassing verification or publishing an unapproved new public store listing.
