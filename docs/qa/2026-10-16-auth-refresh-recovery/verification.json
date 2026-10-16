@@ -17,6 +17,8 @@
   "screenshots_inspected": 3,
   "telegram_delivery": "13272",
   "owner_review": "approved message13274",
-  "merged": false,
-  "released": false
+  "merged": true,
+  "released": true,
+  "source_commit": "a48919dd1d3425a9e692aa93ea76eeb55cc091fc",
+  "release_receipt": "release/receipt.json"
 }

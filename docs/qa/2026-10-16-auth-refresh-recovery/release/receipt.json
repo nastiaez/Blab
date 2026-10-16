@@ -1,0 +1,62 @@
+{
+  "approved_message": "13274",
+  "source_commit": "a48919dd1d3425a9e692aa93ea76eeb55cc091fc",
+  "ci_run": "https://github.com/nastiaez/Blab/actions/runs/38857777568",
+  "ci_status": "success",
+  "version": "1.0.0",
+  "build": 25,
+  "signer_sha256": "1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb",
+  "native_recovery": {
+    "device": "emulator-5562",
+    "source": "integrated main",
+    "result": "pass",
+    "transport": "synthetic HTTP failure and subsequent explicit renewal; real SDK/app/session provider",
+    "screenshots_inspected": 3
+  },
+  "signed_update": {
+    "device": "emulator-5564",
+    "predecessor": 24,
+    "method": "adb install -r",
+    "production": "pass: German retained",
+    "test": "pass: German retained",
+    "limitation": "reconstructed signed-out emulator baseline; no physical-device or authenticated-history retention claim"
+  },
+  "releases": [
+    {
+      "channel": "public",
+      "package": "blab.nastia.ez",
+      "firebase_project": "blab-nastia-ez",
+      "firebase_app_id": "1:363935775546:android:c3a351249463d5f9356e03",
+      "firebase_release_id": "61j2ochfmi6no",
+      "artifact": "Blab-1.0.0-25.apk",
+      "sha256": "1a702cba448f5b2549d96e2fbdc58288f0d2673cafe0159937d7689858d401b9",
+      "download_back_matches": true,
+      "intended_existing_testers": 2,
+      "distributed": true,
+      "verified_existing_testers": 2,
+      "accepted": 2,
+      "downloaded": 0
+    },
+    {
+      "channel": "test",
+      "package": "blab.nastia.ez.test",
+      "firebase_project": "blab-staging",
+      "firebase_app_id": "1:1084218779858:android:82904f8d21106e4911250b",
+      "firebase_release_id": "77jond3c0ri70",
+      "artifact": "Blab-test-1.0.0-25.apk",
+      "sha256": "69b515e92e19bddb82685cec34b87246c8845e17fe72139ed991008f15ec01c5",
+      "download_back_matches": true,
+      "intended_existing_testers": 8,
+      "distributed": true,
+      "verified_existing_testers": 8,
+      "accepted": 2,
+      "downloaded": 0
+    }
+  ],
+  "ci_checks": {
+    "Quality": "success",
+    "Local Supabase integration": "success",
+    "Android release compile": "success"
+  },
+  "verified_utc": "2026-10-16T06:03:25.592755+00:00"
+}

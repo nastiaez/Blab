@@ -21,8 +21,7 @@ outage or process termination. Confirmed retryable errors were forwarded to
 FlutterError and the session provider. Preserve session state on this typed
 failure, retain unexpected-error reporting and genuine sign-out, and prevent
 retryable server text from being classified as revoked. Tracker
-`journey-auth-refresh-recovery` remains unchecked pending owner acceptance and
-release. Focused auth14/backend188 checks pass; Android5562 deterministic HTTP
+`journey-auth-refresh-recovery` remains unchecked pending physical-device manual acceptance. Owner approved13274; Android25 released from a48919d after all3 CI gates passed to the existing public2/test8 testers. Focused auth14/backend188 checks pass; Android5562 deterministic HTTP
 outage→refresh failure→successful renewal passes, screenshots delivered13272.
 No physical/live-backend or automatic-refresh-timing acceptance claimed.
 Evidence: `docs/qa/2026-10-16-auth-refresh-recovery`.

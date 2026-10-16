@@ -86,3 +86,12 @@ still flow and account-owned data must not survive as another user's identity.
 ## Approval / delivery
 
 Owner message13274 explicitly approves merge to main and release of the reviewed recovery. Integration and signed production/test Android25 verification underway; no scope expansion or backend changes.
+
+## Released Android25 — final receipt
+
+- Approved13274; source a48919dd1d3425a9e692aa93ea76eeb55cc091fc merged/pushed to synchronized main. All three integrated CI jobs passed: Quality, Local Supabase integration, Android release compile (run38857777568).
+- Repeated the deterministic HTTP-outage/session-retention/renewal journey from main on dedicated Android5562: pass; all three screenshots inspected. The initial main harness setup used staging Google configuration and stale release-only plugin registration; restored documented production configuration and regenerated dependencies, without any source change, then the complete test passed.
+- Signed production/test25 compiled from integrated main. Both24→25 replacement installs on dedicated5564 succeed, matching the prior signing certificate and retaining German in the actual UI. No uninstall or data clear. Reconstructed signed-out emulator baseline only; retained signed-in history and physical-phone acceptance are not claimed.
+- Firebase public release61j2ochfmi6no and test77jond3c0ri70 distributed to their exact existing2/8 recipients. Reopened each release-specific URL: public2 invited/2 accepted/0 downloaded; test8 invited/2 accepted/0 downloaded. These are availability receipts, not installation claims.
+- Downloaded both Firebase binaries back; hashes match the exact verified signed APKs. Receipt in release/receipt.json records package/app/release/source/checksum mapping.
+- No backend, website download or iOS/TestFlight changes; this is an Android App Tester release. Launch tracker remains unchecked pending the owner's physical-device manual confirmation. Sentry issue retained for monitoring rather than suppressing future failures.

@@ -1466,7 +1466,7 @@ Product choice pending: separate Blab Test app/accounts/chats (recommended indep
 - 2026-10-15 — Cross-platform invitation instructions deployed in landing main825c046; Android direct APK retained and iPhone TestFlight instructions added, with channel-specific AASA routes. External TestFlight group registered for owner-provided addresses; Apple review pending. Added server-side verified-email test preapproval in dedicated worktree; 13 isolated PostgreSQL/PGlite access checks pass including self-enrollment denial, member revocation precedence, expiry, kill switch, and unchanged public access. Native invite join and external install remain unverified; no launch tracker acceptance claimed.
 
 
-## 2026-10-16 — Recoverable auth-refresh outage ← in progress
+## 2026-10-16 — Recoverable auth-refresh outage — released Android25
 
 Owner message13259 authorizes investigation/fix of Sentry FLUTTER-6. Fresh
 current-main worktree at5941bd4. Sentry confirms one production19 background
@@ -1485,3 +1485,5 @@ launch tracker journey-auth-refresh-recovery stays unchecked. Evidence:
 docs/qa/2026-10-16-auth-refresh-recovery.
 
 - Owner approved screenshots/recovery in13274 and authorized main integration and release. Preparing signed production/test Android25 from integrated main; no physical-device manual acceptance claimed.
+
+- Released Android25: approved source a48919d on synchronized main; all3 integrated CI gates38857777568 pass. Integrated native outage/retained-login/renewal passes. Signed production/test24→25 updates preserve German; Firebase exact releases61j2ochfmi6no /77jond3c0ri70 distributed and reopened with2/8 intended testers. Both download-back hashes match verified signed artifacts. No hosted/backend/website/iOS change; physical-phone/manual launch acceptance remains pending. Receipt docs/qa/2026-10-16-auth-refresh-recovery/release/receipt.json.
