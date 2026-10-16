@@ -237,6 +237,7 @@ export function expandCompactResponse(
   raw: unknown,
   viewers: PreparedViewer[],
   plan: ReturnType<typeof compactPlan>,
+  acceptance: "strict" | "nonempty" = "strict",
 ): Record<string, any> {
   const data = raw as {
     sentences?: Array<Record<string, any>>;
@@ -256,18 +257,46 @@ export function expandCompactResponse(
     }
     return result;
   };
-  const sentences = index(
-    data?.sentences,
-    plan.requested.sentences.map((s) => s.id),
-  );
-  const help = index(data?.help, plan.requested.help.map((h) => h.id));
+  const sentences = acceptance === "nonempty"
+    ? new Map(
+      (Array.isArray(data?.sentences) ? data.sentences : [])
+        .filter((s) =>
+          s && typeof s.id === "string" && typeof s.text === "string"
+        )
+        .map((s) => [s.id, s]),
+    )
+    : index(data?.sentences, plan.requested.sentences.map((s) => s.id));
+  const help = acceptance === "nonempty"
+    ? new Map(
+      (Array.isArray(data?.help) ? data.help : [])
+        .filter((h) => h && typeof h.id === "string").map((h) => [h.id, h]),
+    )
+    : index(data?.help, plan.requested.help.map((h) => h.id));
   return Object.fromEntries(viewers.map((v) => {
     const b = plan.bindings[v.key],
       s = sentences.get(b.sentence)!,
       secondary = sentences.get(b.secondary)!,
-      h = help.get(b.help)!;
-    if (s.sourceLang !== secondary.sourceLang) {
+      h = help.get(b.help) ?? { tokens: [], explanation: null };
+    if (!s || !secondary) throw new Error("missing_requested_sentence");
+    if (acceptance === "strict" && s.sourceLang !== secondary.sourceLang) {
       throw new Error("inconsistent_source_language");
+    }
+    if (acceptance === "nonempty") {
+      if (typeof s.text !== "string" || !s.text.trim()) {
+        throw new Error("invalid_translation_result");
+      }
+      if (
+        s.forms && (!["before", "after", "feminine", "masculine"].every(
+          (key) => typeof s.forms[key] === "string",
+        ))
+      ) s.forms = null;
+      for (const key of ["feminineTokens", "masculineTokens"]) {
+        if (Array.isArray(h[key])) {
+          h[key] = h[key].filter(
+            (t: any) => t && typeof t.text === "string",
+          );
+        }
+      }
     }
     // Reuse already-returned complete form metadata when the provider omits
     // the duplicate base token array. No new words or glosses are invented.
@@ -282,7 +311,8 @@ export function expandCompactResponse(
     const f = (v.formContext ?? {}) as Record<string, unknown>;
     const isAuthor = f.messageAuthor !== "partner";
     if (s.forms && !["sender", "recipient"].includes(s.forms.subject)) {
-      throw new Error("invalid_form_subject");
+      if (acceptance === "strict") throw new Error("invalid_form_subject");
+      s.forms = null;
     }
     const subjectIsViewer = s.forms?.subject === "sender"
       ? isAuthor

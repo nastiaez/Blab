@@ -1487,3 +1487,34 @@ docs/qa/2026-10-16-auth-refresh-recovery.
 - Owner approved screenshots/recovery in13274 and authorized main integration and release. Preparing signed production/test Android25 from integrated main; no physical-device manual acceptance claimed.
 
 - Released Android25: approved source a48919d on synchronized main; all3 integrated CI gates38857777568 pass. Integrated native outage/retained-login/renewal passes. Signed production/test24→25 updates preserve German; Firebase exact releases61j2ochfmi6no /77jond3c0ri70 distributed and reopened with2/8 intended testers. Both download-back hashes match verified signed artifacts. No hosted/backend/website/iOS change; physical-phone/manual launch acceptance remains pending. Receipt docs/qa/2026-10-16-auth-refresh-recovery/release/receipt.json.
+
+## 2026-10-16 — Google sign-in handoff — in progress
+
+Owner13339 requests test and production investigation; corrected address13341.
+Test backend confirms authenticated account and approved distribution access, but
+onboarding remains intro/version0. Deterministic regression reproduces access
+gate disposing its child on native account-picker resume; Google continuation
+then loses its mounted route. Candidate retains hidden route state while keeping
+access controls and focus blocked. Seven gate checks pass including original
+revocation/offline/public-backend-denial cases. Production omits this gate; the
+same root cause is not yet established there. Native proof/review/release pending.
+Approved retry-client release13332 remains outstanding in its separate worktree.
+
+- Candidate Google handoff:953 Flutter checks pass,15 existing skips; analyzer clean. Test-channel8 focused checks and public-channel handoff1 pass. Native iPhone simulator injected-return journey passes; screenshot packet being captured. Real Google-account/physical-device acceptance and release remain pending.
+
+- Final iPhone staging/test and production/public injected Google-return journeys pass; both actual screenshots inspected, test screenshot delivered13353. Awaiting owner review of the corrected handoff before integration/release; no test or production app update published yet.
+
+- Owner13356 holds the Google handoff/retry release pending Balaji translation
+  investigation. Both failures reached batch save. Strict SQL checks remained
+  after the two-rule edge rollout; fresh English typo reproduction rejects an
+  optional explanation. Candidate storage migration and safe failure diagnostics
+  prepared, not deployed. German original rejected field unknown (payload not
+  retained). Rollback-only SQL evidence and12 focused worker checks do not replace
+  full isolated DB/UI verification. See docs/qa/2026-10-16-balaji-translation/.
+
+- Owner13365 authorized the durable backend fix. Combined candidate preserves
+  shared generation but accepts/saves viewer results independently, retains safe
+  error codes and removes strict SQL content checks.198 backend tests pass.
+  No mobile binary needed for these server changes. Local Docker remains
+  unresponsive; integrated DB verification/deployment are outstanding. Google
+  handoff and explicit Retry app releases remain pending separately.

@@ -179,3 +179,25 @@ Later, request12824. Floating down-arrow while browsing older history; return to
 ## v20 delivery —15 October2026
 
 Approved12910; grammatical-form relevance, emoji composer/polish and centered jump-to-latest are integrated and Firebase20 is distributed to the existing two testers. OK/okay/shared translation rulebook retained from19. Combined proof in docs/qa/2026-10-15-reviewed-chat-release-v20. Physical-device owner manual acceptance remains pending; tracker checkboxes intentionally remain unchecked.
+
+## Google sign-in handoff — 2026-10-16 (in progress)
+
+Owner13339 reports first-login failure with later restart recovery. Authenticated
+test account is approved; onboarding did not advance. Native-resume access check
+unmounts the auth route, invalidating its async callback. Red-green widget proof
+retains route state without exposing denied content. Production channel bypasses
+the gate; separate shared-handoff verification required. Owner screenshot review,
+native proof and release remain pending.
+
+Google handoff evidence:953 Flutter passes/15 pre-existing skips,8 focused test checks/public handoff pass, analyzer clean; native iPhone staging and production journeys pass with synthetic provider transport. Screenshot13353 delivered; review/release and physical Google login pending.
+
+## Balaji translation save rejection — 16 October2026 (release hold)
+
+Owner13356 requested investigation before combined release. Both reported test
+messages exhausted4 worker attempts with batch_commit_failed. Remaining strict
+SQL save checks contradict the approved two-rule edge validator. Fresh English
+typo replay reproduces optional explanation rejection; original German payload
+was not retained, so its exact rejected field remains unknown. Candidate migration
+aligns all save paths and worker preserves safe diagnostic codes. Rollback-only
+proof does not deploy changes or recover chat rows. Full isolated SQL/integrated
+UI verification pending. Evidence: docs/qa/2026-10-16-balaji-translation/.

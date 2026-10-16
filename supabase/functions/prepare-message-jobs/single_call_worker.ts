@@ -1,3 +1,4 @@
+import { commitViewers } from "./commit_viewers.ts";
 import {
   generateMessageOnce,
   type PreparedViewer,
@@ -74,23 +75,46 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
     const results = await generateMessageOnce(
       pending.map((p) => p.viewer),
       credential,
+      undefined,
+      true,
     );
-    const completion = await admin.rpc("complete_translation_message_batch", {
-      p_results: pending.map(({ job, viewer }) => ({
+    const completions = await commitViewers(
+      admin.rpc.bind(admin),
+      pending.map(({ job, viewer }) => ({
         jobId: job.id,
         lease: job.lease_token,
-        result: {
-          ...results[viewer.key],
-          contractVersion: SINGLE_CALL_POLICY.contractVersion,
-        },
+        result: results[viewer.key]
+          ? {
+            ...results[viewer.key],
+            contractVersion: SINGLE_CALL_POLICY.contractVersion,
+          }
+          : null,
       })),
-    });
-    if (completion.error || completion.data !== true) {
-      throw new Error("batch_commit_failed");
+    );
+    for (const completion of completions) {
+      if (!completion.error) continue;
+      const job = pending.find((p) => p.job.id === completion.jobId)!.job;
+      const outcome = planJobOutcome({
+        status: 503,
+        retryAfterSeconds: 0,
+        attempts: job.attempts,
+      });
+      await admin.rpc("leased_translation_action", {
+        p_job_id: job.id,
+        p_lease_token: job.lease_token,
+        p_action: "finish",
+        p_payload: {
+          outcome: outcome.kind,
+          reason: completion.error,
+          delaySeconds: outcome.kind === "retry" ? outcome.delaySeconds : 0,
+        },
+      });
     }
-    console.log("translation_message_batch_ready", {
+    console.log("translation_message_batch_settled", {
       messageId: jobs[0].message_id,
       viewers: pending.length,
+      ready: completions.filter((c) => !c.error).length,
+      failed: completions.filter((c) => c.error).length,
     });
   } catch (e) {
     const reason = e instanceof Error && /^[a-zA-Z0-9_]+$/.test(e.message)

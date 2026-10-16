@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:blab/features/invite/test_access_gate.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/state/auth_state.dart';
@@ -6,6 +7,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('native account picker resume preserves in-flight sign-in', (
+    tester,
+  ) async {
+    var status = 'signed_out';
+    Completer<Map<String, dynamic>>? pending;
+    final key = GlobalKey<_SignInProbeState>();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserIdProvider.overrideWithValue(null),
+          testAccessCheckProvider.overrideWithValue(
+            () async => pending == null
+                ? {'channel': 'test', 'status': status}
+                : pending.future,
+          ),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: TestAccessGate(child: _SignInProbe(key: key)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final before = key.currentState!;
+    pending = Completer<Map<String, dynamic>>();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(
+      before.mounted,
+      isTrue,
+      reason: 'Access refresh must not dispose the Google callback owner',
+    );
+    expect(find.text('Auth screen'), findsNothing);
+    pending.complete({'channel': 'test', 'status': status});
+    await tester.pumpAndSettle();
+    expect(identical(key.currentState, before), isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets(
     'server revocation and network failure hide an already-open test app',
     (tester) async {
@@ -101,4 +142,15 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+}
+
+class _SignInProbe extends StatefulWidget {
+  const _SignInProbe({super.key});
+  @override
+  State<_SignInProbe> createState() => _SignInProbeState();
+}
+
+class _SignInProbeState extends State<_SignInProbe> {
+  @override
+  Widget build(BuildContext context) => const Text('Auth screen');
 }

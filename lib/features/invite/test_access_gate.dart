@@ -95,8 +95,7 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
         _status == 'active' && userId != null ||
         _status == 'signed_out' && userId == null;
     final l10n = context.l10n;
-    if (allowed) return widget.child;
-    return SafeArea(
+    final gate = SafeArea(
       child: Material(
         color: BlabColors.chatCanvas,
         child: Center(
@@ -142,6 +141,23 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
           ),
         ),
       ),
+    );
+    // Keep native authentication callbacks and Navigator state alive while the
+    // server access decision is refreshed. Hidden content cannot receive focus,
+    // pointer input or accessibility actions; server RLS stays authoritative.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ExcludeFocus(
+          excluding: !allowed,
+          child: Visibility(
+            visible: allowed,
+            maintainState: true,
+            child: widget.child,
+          ),
+        ),
+        if (!allowed) gate,
+      ],
     );
   }
 }
