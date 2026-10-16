@@ -84,6 +84,9 @@ Deno.serve(async (req) => {
     memberError || !members || members.length !== 2 ||
     !members.some((m) => m.user_id === userId)
   ) return json({ error: "chat_not_available" }, 403);
+  const { data: lifecycle, error: lifecycleError } = await client.from("chats")
+    .select("left_at").eq("id", chatId).single();
+  if (lifecycleError) return json({ error: "chat_state_unavailable" }, 503);
   const ids = members.map((m) => m.user_id as string);
   const { data: profiles, error: profileError } = await client.from("profiles")
     .select("id,display_name").in("id", ids);
@@ -115,7 +118,7 @@ Deno.serve(async (req) => {
     // Blocking remains symmetric for sending, while existing history is readable.
     await server.request(`channels/blab/${chatId}`, {
       data: {
-        frozen: blocked === true,
+        frozen: blocked === true || lifecycle.left_at !== null,
         blab_chat_id: chatId,
         config_overrides: {
           grants: {

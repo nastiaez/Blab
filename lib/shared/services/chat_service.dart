@@ -884,6 +884,14 @@ class ChatService {
   /// Note: `chat_list` is a view — Supabase Realtime can't stream it directly.
   /// Use the one-shot fetcher [fetchChatList] in a polling loop tied to the
   /// source tables. Later tasks wire that up via Riverpod.
+  Future<void> deleteChat(String chatId) async {
+    await _client.rpc('delete_chat', params: {'p_chat_id': chatId});
+  }
+
+  Future<void> leaveChat(String chatId) async {
+    await _client.rpc('leave_chat', params: {'p_chat_id': chatId});
+  }
+
   Future<List<Map<String, dynamic>>> fetchChatList() async {
     final rows = await _client.from('chat_list').select().eq('viewer_id', _uid);
     return (rows as List).cast<Map<String, dynamic>>();

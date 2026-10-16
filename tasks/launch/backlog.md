@@ -233,3 +233,10 @@ and return public/active access. Both unauthenticated endpoints return401.
 No live chat records, quotas or failure attempts reset; no synthetic production
 fixtures. This proves deployment/schema/policy parity, not a new physical-phone
 end-to-end translation run. Existing owner/manual acceptance remains pending.
+
+
+## Chat lifecycle — 16 October 2026, in progress
+
+Owner requests Leave in Safety and confirmed swipe Delete on Android/iOS. Leave closes messaging for both, retains Left chat history and requires a fresh invite. Personal deletion does not leave; a genuinely new incoming message restores the chat without restoring earlier cleared history. Fresh reinvite creates a distinct conversation. Dedicated worktree; UI screenshot review, both-platform verification and owner manual acceptance pending. Tracker remains unchecked. No merge or release yet.
+
+Owner13674 approves the delivered native visuals/workflow (screens13665–13671, motion13672). Continue clean backend checks, integration and the previously requested Android/iOS launch. Owner manual-device tracker remains unchecked; screenshot approval is not a physical-device test.

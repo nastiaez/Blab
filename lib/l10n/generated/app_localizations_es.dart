@@ -1384,4 +1384,39 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get regenerateInvite => 'Regenerar enlace';
+
+  @override
+  String get leaveChat => 'Salir del chat';
+
+  @override
+  String get leftChat => 'Chat cerrado';
+
+  @override
+  String get leaveChatQuestion => '¿Salir del chat?';
+
+  @override
+  String get leaveChatConfirmation =>
+      'Ninguno de los dos podrá enviar mensajes aquí. El historial se conserva. Envía otra invitación para empezar un chat nuevo.';
+
+  @override
+  String get couldNotLeaveChat =>
+      'No se pudo salir del chat. Inténtalo de nuevo.';
+
+  @override
+  String get deleteChat => 'Eliminar chat';
+
+  @override
+  String get deleteChatQuestion => '¿Eliminar el chat?';
+
+  @override
+  String get deleteChatConfirmation =>
+      'El chat y su historial se eliminan solo para ti. Un mensaje nuevo de la otra persona hará que el chat vuelva a aparecer.';
+
+  @override
+  String get couldNotDeleteChat =>
+      'No se pudo eliminar el chat. Inténtalo de nuevo.';
+
+  @override
+  String get deleteLeftChatConfirmation =>
+      'Esto elimina el chat y su historial solo para ti. La otra persona conserva su copia.';
 }

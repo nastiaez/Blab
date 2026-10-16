@@ -31,6 +31,10 @@ Chat _rowToChat(Map<String, dynamic> r) {
   return Chat(
     id: r['chat_id'] as String,
     partnerId: r['partner_id'] as String?,
+    leftAt: DateTime.tryParse(r['left_at'] as String? ?? ''),
+    historyClearedAt: DateTime.tryParse(
+      r['history_cleared_at'] as String? ?? '',
+    ),
     partnerName: name,
     partnerInitial: name == '?' ? '?' : name[0].toUpperCase(),
     learningLanguage: myLearn,
@@ -149,6 +153,8 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
       }
       return Chat(
         id: chat.id,
+        leftAt: chat.leftAt,
+        historyClearedAt: chat.historyClearedAt,
         partnerId: chat.partnerId,
         partnerName: chat.partnerName,
         partnerInitial: chat.partnerInitial,
@@ -168,6 +174,36 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
     }).toList();
     state = AsyncValue.data(updated);
     unawaited(ref.read(localChatHistoryCacheProvider)?.saveChats(updated));
+  }
+
+  Future<void> deleteChat(String chatId) async {
+    await ref.read(chatServiceProvider).deleteChat(chatId);
+    _selectionRevision++;
+    final chats = state.value;
+    if (chats != null) {
+      final updated = chats.where((chat) => chat.id != chatId).toList();
+      state = AsyncValue.data(updated);
+      await ref.read(localChatHistoryCacheProvider)?.saveChats(updated);
+    }
+    await ref.read(localChatHistoryCacheProvider)?.clearChatHistory(chatId);
+    await refresh();
+  }
+
+  Future<void> leaveChat(String chatId) async {
+    await ref.read(chatServiceProvider).leaveChat(chatId);
+    _selectionRevision++;
+    final chats = state.value;
+    if (chats != null) {
+      final updated = chats
+          .map(
+            (chat) =>
+                chat.id == chatId ? chat.withLeftAt(DateTime.now()) : chat,
+          )
+          .toList();
+      state = AsyncValue.data(updated);
+      await ref.read(localChatHistoryCacheProvider)?.saveChats(updated);
+    }
+    await refresh();
   }
 
   void _scheduleRefresh() {
@@ -230,7 +266,10 @@ final blockedUserIdsProvider = StreamProvider<Set<String>>((ref) {
 /// screen intentionally renders [chatListProvider] directly so a blocked
 /// conversation remains available as its recovery surface.
 List<Chat> filterShareableChats(List<Chat> chats, Set<String> blocked) => chats
-    .where((c) => c.partnerId == null || !blocked.contains(c.partnerId))
+    .where(
+      (c) =>
+          !c.isLeft && (c.partnerId == null || !blocked.contains(c.partnerId)),
+    )
     .toList();
 
 /// Chats that are safe to present as immediate send targets.

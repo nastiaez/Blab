@@ -521,6 +521,31 @@ void main() {
       expect(await cache.loadAttachmentBytes('oversized'), isNull);
     },
   );
+  test('personal deletion clears only this account and conversation', () async {
+    final cache = await _seedPhotoConversation();
+    final prefs = await SharedPreferences.getInstance();
+    final pendingKey = pendingSendsStorageKey(
+      userId: 'alice',
+      chatId: 'chat-1',
+    );
+    await prefs.setString(pendingKey, 'queued');
+    final otherOwnerKey = cachedMessagesStorageKey(
+      userId: 'bob',
+      chatId: 'chat-1',
+    );
+    final otherChatKey = cachedMessagesStorageKey(
+      userId: 'alice',
+      chatId: 'chat-2',
+    );
+    await prefs.setString(otherOwnerKey, 'partner history');
+    await prefs.setString(otherChatKey, 'other conversation');
+    await cache.clearChatHistory('chat-1');
+    expect(await cache.loadMessages('chat-1'), isEmpty);
+    expect(prefs.getString(pendingKey), isNull);
+    expect(prefs.getString(otherOwnerKey), 'partner history');
+    expect(prefs.getString(otherChatKey), 'other conversation');
+    expect(await cache.loadAttachmentBytes('attachment-1'), isNull);
+  });
 }
 
 Future<LocalChatHistoryCache> _seedPhotoConversation() async {

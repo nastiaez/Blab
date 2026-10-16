@@ -82,7 +82,8 @@ class ChatHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final partnerTyping =
-        ref.watch(partnerTypingProvider(chat.id)).value ?? false;
+        !chat.isLeft &&
+        (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
     return ChatHeaderFrame(
       onBack: onBack,
       identity: ChatHeaderIdentity(

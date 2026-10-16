@@ -1,0 +1,33 @@
+{
+  "images": [
+    {
+      "file": "01-android-safety.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13665\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    },
+    {
+      "file": "02-android-leave-confirmation.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13666\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    },
+    {
+      "file": "03-android-left-chat.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13667\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    },
+    {
+      "file": "04-android-delete-confirmation.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13668\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    },
+    {
+      "file": "05-iphone-left-chat.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13669\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    },
+    {
+      "file": "06-iphone-delete-confirmation.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13670\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    },
+    {
+      "file": "07-iphone-deleted-chat.png",
+      "result": "{\n  \"ok\": true,\n  \"messageId\": \"13671\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+    }
+  ],
+  "video": "{\n  \"ok\": true,\n  \"messageId\": \"13672\",\n  \"chatId\": \"-1003767595888\",\n  \"receipt\": {\n    \"threadId\": \"8856\"\n  },\n  \"sourceReplyRoute\": \"current-source\"\n}"
+}

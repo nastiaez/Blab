@@ -480,5 +480,15 @@
   "testAccessFailed": "No se pudo comprobar el acceso de prueba",
   "testAccessFailedBody": "Conéctate a internet e inténtalo de nuevo.",
   "reusableInviteHelp": "Comparte este enlace con tantas personas como quieras. Al regenerarlo, el enlace anterior deja de funcionar; tus chats se mantienen.",
-  "regenerateInvite": "Regenerar enlace"
+  "regenerateInvite": "Regenerar enlace",
+  "leaveChat": "Salir del chat",
+  "leftChat": "Chat cerrado",
+  "leaveChatQuestion": "¿Salir del chat?",
+  "leaveChatConfirmation": "Ninguno de los dos podrá enviar mensajes aquí. El historial se conserva. Envía otra invitación para empezar un chat nuevo.",
+  "couldNotLeaveChat": "No se pudo salir del chat. Inténtalo de nuevo.",
+  "deleteChat": "Eliminar chat",
+  "deleteChatQuestion": "¿Eliminar el chat?",
+  "deleteChatConfirmation": "El chat y su historial se eliminan solo para ti. Un mensaje nuevo de la otra persona hará que el chat vuelva a aparecer.",
+  "couldNotDeleteChat": "No se pudo eliminar el chat. Inténtalo de nuevo.",
+  "deleteLeftChatConfirmation": "Esto elimina el chat y su historial solo para ti. La otra persona conserva su copia."
 }

@@ -83,6 +83,7 @@ jobs:
           docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/test_app_boundary.sql
           docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/translation_storage_acceptance.sql
           docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/reusable_invites.sql
+          docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/chat_lifecycle.sql
       - name: Run backend integration suite
         run: scripts/local_test.sh integration
       - name: Stop disposable backend

@@ -2247,3 +2247,114 @@ Future<void> runContextualWordHelpJourney(
     await tester.pump(const Duration(seconds: 20));
   }
 }
+
+class _LifecycleService extends _PrimaryKnownLanguageChatService {
+  _LifecycleService()
+    : super(partnerName: 'Bob', messageText: 'See you tomorrow!');
+  bool left = false;
+  bool hidden = false;
+  int leaveCalls = 0;
+  int deleteCalls = 0;
+  @override
+  Future<List<Map<String, dynamic>>> fetchChatList() async {
+    final rows = await super.fetchChatList();
+    if (hidden) return [];
+    return rows
+        .map(
+          (row) => {
+            ...row,
+            if (left)
+              'left_at': DateTime.utc(2026, 10, 16, 15).toIso8601String(),
+          },
+        )
+        .toList();
+  }
+
+  @override
+  Future<void> leaveChat(String chatId) async {
+    leaveCalls++;
+    left = true;
+  }
+
+  @override
+  Future<void> deleteChat(String chatId) async {
+    deleteCalls++;
+    hidden = true;
+  }
+}
+
+// Actual production widgets; synthetic service responses. Database tests separately
+// prove lifecycle/RLS. This journey is also run on Android and iOS for UI review.
+Future<void> runChatLifecycleJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  final service = _LifecycleService();
+  final container = _containerForHeader(service);
+  await tester.pumpWidget(_host(container, theme: blabTheme));
+  await _settle(tester);
+  await tester.tap(find.text('Bob').first);
+  await _settle(tester);
+  final leaveAction = find.byKey(const ValueKey('partner-leave-action'));
+  await tester.ensureVisible(leaveAction);
+  await _settle(tester);
+  expect(leaveAction, findsOneWidget);
+  if (capture != null) await capture('01-safety-leave');
+  await tester.tap(leaveAction);
+  await _settle(tester);
+  expect(find.text('Leave chat?'), findsOneWidget);
+  if (capture != null) await capture('02-leave-confirmation');
+  await tester.tap(find.text('Cancel'));
+  await _settle(tester);
+  expect(service.leaveCalls, 0);
+  await tester.tap(leaveAction);
+  await _settle(tester);
+  await tester.tap(find.widgetWithText(TextButton, 'Leave chat').last);
+  await _settle(tester);
+  expect(service.leaveCalls, 1);
+  expect(find.byKey(const ValueKey('left-chat-bar')), findsOneWidget);
+  expect(find.byType(MessageInteractionTarget), findsWidgets);
+  if (capture != null) await capture('03-left-chat-history');
+  // A receiver gets the same server-backed terminal state.
+  await tester.pumpWidget(const SizedBox.shrink());
+  await _settle(tester);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        theme: blabTheme,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: const ChatsScreen(),
+      ),
+    ),
+  );
+  await _settle(tester);
+  expect(find.text('Left chat'), findsOneWidget);
+  if (capture != null) await capture('04-chats-left-state');
+  service.left = false;
+  await container.read(chatListProvider.notifier).refresh();
+  await _settle(tester);
+  if (capture != null) await capture('04b-active-chat-before-delete');
+  final row = find.byKey(const ValueKey('delete-chat-chat-1'));
+  await tester.drag(row, const Offset(-360, 0));
+  await _settle(tester);
+  expect(find.text('Delete chat?'), findsOneWidget);
+  if (capture != null) await capture('05-delete-confirmation');
+  await tester.tap(find.text('Cancel'));
+  await _settle(tester);
+  expect(service.deleteCalls, 0);
+  expect(row, findsOneWidget);
+  await tester.drag(row, const Offset(-360, 0));
+  await _settle(tester);
+  await tester.tap(find.widgetWithText(TextButton, 'Delete chat').last);
+  await _settle(tester);
+  expect(service.deleteCalls, 1);
+  expect(row, findsNothing);
+  if (capture != null) await capture('06-deleted-chat');
+  await tester.pumpWidget(const SizedBox.shrink());
+  container.dispose();
+  await tester.pump(const Duration(seconds: 20));
+}

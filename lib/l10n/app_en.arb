@@ -599,5 +599,15 @@
   "testAccessFailed": "Couldn’t check test access",
   "testAccessFailedBody": "Connect to the internet and try again.",
   "reusableInviteHelp": "Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.",
-  "regenerateInvite": "Regenerate link"
+  "regenerateInvite": "Regenerate link",
+  "leaveChat": "Leave chat",
+  "leftChat": "Left chat",
+  "leaveChatQuestion": "Leave chat?",
+  "leaveChatConfirmation": "Leaving ends messaging for both of you. Your history stays. Invite again to start a new chat.",
+  "couldNotLeaveChat": "Couldn’t leave chat. Try again.",
+  "deleteChat": "Delete chat",
+  "deleteChatQuestion": "Delete chat?",
+  "deleteChatConfirmation": "This removes the chat and its history for you only. A new message from the other person will bring the chat back.",
+  "couldNotDeleteChat": "Couldn’t delete chat. Try again.",
+  "deleteLeftChatConfirmation": "This removes the chat and its history for you only. The other person keeps their copy."
 }

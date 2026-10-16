@@ -19,13 +19,15 @@ class ChatListTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hasActualMessage = chat.lastMessageId != null;
     final partnerTyping =
+        !chat.isLeft &&
         hasActualMessage &&
         !chat.isNewInvite &&
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
     // A newly accepted connection carries the same visual weight as an
     // unread incoming message until this participant chooses a language.
     final hasUnread =
-        chat.unreadCount > 0 || chat.needsPracticeLanguageSelection;
+        !chat.isLeft &&
+        (chat.unreadCount > 0 || chat.needsPracticeLanguageSelection);
     final timestamp = relativeTime(chat.timestamp, context.l10n);
     return InkWell(
       onTap: onTap,
@@ -72,7 +74,9 @@ class ChatListTile extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          !hasActualMessage
+                          chat.isLeft
+                              ? context.l10n.leftChat
+                              : !hasActualMessage
                               ? context.l10n.newConnectionSayHi
                               : partnerTyping
                               ? context.l10n.typing

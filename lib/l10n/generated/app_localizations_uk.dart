@@ -1379,4 +1379,37 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get regenerateInvite => 'Створити нове посилання';
+
+  @override
+  String get leaveChat => 'Вийти з чату';
+
+  @override
+  String get leftChat => 'Чат завершено';
+
+  @override
+  String get leaveChatQuestion => 'Вийти з чату?';
+
+  @override
+  String get leaveChatConfirmation =>
+      'Ви обоє більше не зможете надсилати повідомлення тут. Історія залишиться. Надішліть нове запрошення, щоб почати новий чат.';
+
+  @override
+  String get couldNotLeaveChat => 'Не вдалося вийти з чату. Спробуйте ще раз.';
+
+  @override
+  String get deleteChat => 'Видалити чат';
+
+  @override
+  String get deleteChatQuestion => 'Видалити чат?';
+
+  @override
+  String get deleteChatConfirmation =>
+      'Чат та його історію буде видалено лише для вас. Нове повідомлення від іншої людини поверне чат до списку.';
+
+  @override
+  String get couldNotDeleteChat => 'Не вдалося видалити чат. Спробуйте ще раз.';
+
+  @override
+  String get deleteLeftChatConfirmation =>
+      'Чат та його історію буде видалено лише для вас. Інша людина збереже свою копію.';
 }

@@ -13,6 +13,7 @@ import '../../l10n/l10n.dart';
 import '../../shared/models/chat.dart';
 import '../../shared/state/chat_list_state.dart';
 import 'widgets/block_confirmation_dialog.dart';
+import 'widgets/chat_lifecycle_dialog.dart';
 import 'widgets/partner_report_dialog.dart';
 
 Future<void> showPartnerProfilePage(
@@ -35,6 +36,8 @@ class PartnerProfilePage extends ConsumerStatefulWidget {
 
 class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
   bool? _blockedOverride;
+  bool _leaving = false;
+  bool _left = false;
 
   Chat get chat => widget.chat;
 
@@ -169,6 +172,28 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
     }
   }
 
+  Future<void> _leave() async {
+    if (_leaving || _left || chat.isLeft) return;
+    final confirmed = await showChatLifecycleConfirmation(
+      context,
+      title: context.l10n.leaveChatQuestion,
+      message: context.l10n.leaveChatConfirmation,
+      confirmLabel: context.l10n.leaveChat,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _leaving = true);
+    try {
+      await ref.read(chatListProvider.notifier).leaveChat(chat.id);
+      if (!mounted) return;
+      setState(() => _left = true);
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) showAppSnack(context.l10n.couldNotLeaveChat);
+    } finally {
+      if (mounted) setState(() => _leaving = false);
+    }
+  }
+
   Future<void> _unblock() async {
     try {
       await ref.read(chatServiceProvider).unblockUser(chat.partnerId!);
@@ -265,6 +290,15 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
                         : context.l10n.blockPerson(chat.partnerName),
                     destructive: !isBlocked,
                     onTap: isBlocked ? _unblock : _block,
+                  ),
+                  BlabIconLabelRow.partnerSafety(
+                    key: const Key('partner-leave-action'),
+                    icon: Icons.logout,
+                    label: _left || chat.isLeft
+                        ? context.l10n.leftChat
+                        : context.l10n.leaveChat,
+                    destructive: true,
+                    onTap: _leaving || _left || chat.isLeft ? null : _leave,
                   ),
                 ],
               ),

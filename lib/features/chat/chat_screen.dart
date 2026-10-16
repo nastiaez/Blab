@@ -214,7 +214,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.jumpTo(0);
   }
 
+  bool get _chatIsLeft =>
+      ref
+          .read(chatListProvider)
+          .value
+          ?.any((chat) => chat.id == widget.chatId && chat.isLeft) ??
+      false;
+
   void _showRequiredLanguageSheetIfNeeded(Chat chat) {
+    if (chat.isLeft) return;
     if (!chat.needsPracticeLanguageSelection || _requiredLanguageSheetVisible) {
       return;
     }
@@ -485,6 +493,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _beginReply(Message message, {String? displayedText}) {
+    if (_chatIsLeft) return;
     if (ref.read(editingProvider(widget.chatId)) != null) return;
     _closeSelection();
     if (_emojiPanelOpen) setState(() => _emojiPanelOpen = false);
@@ -631,6 +640,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _send() async {
+    if (_chatIsLeft) return;
     final text = _input.text;
     if (text.trim().isEmpty) return;
     // Defensive — TextField.maxLength enforces this, but guard anyway.
@@ -664,6 +674,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _attachImage({required String recipientName}) async {
+    if (_chatIsLeft) return;
     FocusScope.of(context).unfocus();
     PickedChatImage? image;
     try {
@@ -1122,7 +1133,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _prefetchedLocaleKey = localeKey;
       _prefetchedMessageIds.clear();
     }
-    final loadedMessages = messagesAsync.value ?? const <Message>[];
+    bool afterHistoryClear(Message message) =>
+        chat.historyClearedAt == null ||
+        message.sentAt.isAfter(chat.historyClearedAt!);
+    final loadedMessages = (messagesAsync.value ?? const <Message>[])
+        .where(afterHistoryClear)
+        .toList();
     final translationCandidateGroups =
         <String, List<({Message message, ChatLanguageEra era})>>{};
     final variantTargets = <String, String>{};
@@ -1258,8 +1274,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     // On message append, the list extends upward (index 0 = newest), so as
     // long as the user is near position 0 we keep them pinned to the
     // bottom; if they've scrolled up to read history, we leave them alone.
-    final currentCount = messagesAsync.value?.length ?? 0;
-    final chatIsEmpty = messagesAsync.value?.isEmpty == true;
+    final currentCount = loadedMessages.length;
+    final chatIsEmpty = messagesAsync.hasValue && loadedMessages.isEmpty;
     if (currentCount != _lastMessageCount) {
       _lastMessageCount = currentCount;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1502,7 +1518,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             // initial yield (e.g. user toggled airplane mode),
                             // keep showing the last-known messages rather than
                             // collapsing to the loading shimmer.
-                            final knownMessages = messagesAsync.value;
+                            final knownMessages = messagesAsync.value
+                                ?.where(afterHistoryClear)
+                                .toList();
                             final pending = ref.watch(
                               pendingSendsProvider(widget.chatId),
                             );
@@ -1529,7 +1547,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     .map((m) => m.id)
                                     .toSet();
                                 final pendingVisible = pending
-                                    .where((p) => !messageIds.contains(p.id))
+                                    .where(
+                                      (p) =>
+                                          afterHistoryClear(p) &&
+                                          !messageIds.contains(p.id),
+                                    )
                                     .toList();
                                 // Optimistic delete overlay: hide anything the
                                 // user just deleted, instantly, without waiting
@@ -1544,6 +1566,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 // in-flight ids, so re-running it per rebuild is
                                 // safe. PRD US-030, US-031.
                                 if (online &&
+                                    !chat.isLeft &&
                                     pendingVisible.any(
                                       (m) => m.status == MessageStatus.pending,
                                     )) {
@@ -1675,7 +1698,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                   ),
-                  if (!isPartnerBlocked && replyingTo != null)
+                  if (!chat.isLeft && !isPartnerBlocked && replyingTo != null)
                     ComposerReplyBar(
                       message: replyingTo,
                       partnerName: chat.partnerName,
@@ -1683,7 +1706,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           .read(replyingToProvider(widget.chatId).notifier)
                           .clear(),
                     ),
-                  if (!isPartnerBlocked && editing != null)
+                  if (!chat.isLeft && !isPartnerBlocked && editing != null)
                     ComposerEditBar(
                       onClose: () => ref
                           .read(editingProvider(widget.chatId).notifier)
@@ -1694,6 +1717,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     child: _selectedMessage != null
                         ? MessageActionRow(
                             message: _selectedMessage!,
+                            readOnly: chat.isLeft,
                             mode: chatMode,
                             hasOriginal: activePresentation.canRevealOriginal,
                             canListen:
@@ -1730,6 +1754,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 learningLang.code,
                               );
                             },
+                          )
+                        : chat.isLeft
+                        ? Container(
+                            key: const ValueKey('left-chat-bar'),
+                            width: double.infinity,
+                            decoration: const BoxDecoration(
+                              color: BlabColors.chatSurface,
+                              border: Border(
+                                top: BorderSide(color: BlabColors.chatDivider),
+                              ),
+                            ),
+                            child: SafeArea(
+                              top: false,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 22,
+                                ),
+                                child: Text(
+                                  context.l10n.leftChat,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: BlabColors.warmMuted,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ),
                           )
                         : isPartnerBlocked
                         ? BlockedChatBar(
@@ -1837,7 +1889,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                 ),
-              if (_reactionRowMessage != null &&
+              if (!chat.isLeft &&
+                  _reactionRowMessage != null &&
                   _selectedBubbleRect != null &&
                   _selectedPressPosition != null &&
                   canReplyToMessage(_reactionRowMessage!))

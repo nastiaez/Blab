@@ -126,6 +126,32 @@ class LocalChatHistoryCache {
     );
   }
 
+  Future<void> clearChatHistory(String chatId) async {
+    final messages = await loadMessages(chatId);
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in [
+      cachedMessagesStorageKey(userId: userId, chatId: chatId),
+      pendingSendsStorageKey(userId: userId, chatId: chatId),
+      cachedPreparedTranslationsStorageKey(userId: userId, chatId: chatId),
+      cachedLanguageTimelineStorageKey(userId: userId, chatId: chatId),
+    ]) {
+      await prefs.remove(key);
+    }
+    for (final message in messages) {
+      final attachment = message.attachment;
+      if (attachment == null) continue;
+      await prefs.remove(
+        cachedAttachmentStorageKey(userId: userId, attachmentId: attachment.id),
+      );
+      await prefs.remove(
+        cachedAttachmentPreviewStorageKey(
+          userId: userId,
+          attachmentId: attachment.id,
+        ),
+      );
+    }
+  }
+
   Future<List<Chat>> loadChats() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
@@ -470,6 +496,8 @@ class LocalChatHistoryCache {
     'isNewInvite': chat.isNewInvite,
     'needsPracticeLanguageSelection': chat.needsPracticeLanguageSelection,
     'startedAt': chat.startedAt?.toIso8601String(),
+    'leftAt': chat.leftAt?.toIso8601String(),
+    'historyClearedAt': chat.historyClearedAt?.toIso8601String(),
   };
 
   static Chat? _chatFromJson(Map<String, dynamic> row) {
@@ -486,6 +514,10 @@ class LocalChatHistoryCache {
     if (timestamp == null) return null;
     return Chat(
       id: id,
+      leftAt: DateTime.tryParse(row['leftAt'] as String? ?? ''),
+      historyClearedAt: DateTime.tryParse(
+        row['historyClearedAt'] as String? ?? '',
+      ),
       partnerId: row['partnerId'] as String?,
       partnerName: name,
       partnerInitial: name.isEmpty ? '?' : name[0].toUpperCase(),

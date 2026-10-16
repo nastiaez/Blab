@@ -485,12 +485,30 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   /// genuine server rejection (still online) flips the row to
   /// [MessageStatus.failed] so the user gets the retry sheet, while a
   /// network drop mid-send leaves it queued for the next reconnect flush.
+  bool _lifecycleAllowsQueuedSend(String localId) {
+    final chat = ref
+        .read(chatListProvider)
+        .value
+        ?.where((chat) => chat.id == chatId)
+        .firstOrNull;
+    if (chat?.isLeft == true) return false;
+    final cutoff = chat?.historyClearedAt;
+    if (cutoff == null) return true;
+    final queued = ref
+        .read(pendingSendsProvider(chatId))
+        .where((message) => message.id == localId)
+        .firstOrNull;
+    return queued != null && queued.sentAt.isAfter(cutoff);
+  }
+
   Future<void> _attemptSend(
     String localId,
     String body, {
     String? replyToId,
   }) async {
-    if (_inFlight.contains(localId)) return;
+    if (_inFlight.contains(localId) || !_lifecycleAllowsQueuedSend(localId)) {
+      return;
+    }
     if (!_online) return;
     _inFlight.add(localId);
     var simulatedFailure = false;
@@ -549,7 +567,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     required String caption,
     String? replyToId,
   }) async {
-    if (_inFlight.contains(localId)) return;
+    if (_inFlight.contains(localId) || !_lifecycleAllowsQueuedSend(localId)) {
+      return;
+    }
     if (!_online) return;
     _inFlight.add(localId);
     var simulatedFailure = false;

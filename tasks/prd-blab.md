@@ -977,3 +977,12 @@ Owner13414 supersedes the full-screen pending design: keep the current routed sc
 ## Owner revision — reusable personal invites (16 October 2026)
 
 Supersedes single-successful-claim and automatic rotation in US-008/037, FR-4 and the September invite decision. One opaque, random personal ID remains stable across shares and app restarts; no display-name requirement. Unlimited distinct recipients create their own conversation with the inviter; repeat joins reuse the same pair without resetting language settings or removing blocks. Regenerate disables all prior links for future joins, without deleting existing chats. Previously claimed legacy links retain old compatibility until regeneration; previously unclaimed links become reusable. Test namespace and approved-tester access remain enforced. New invite visuals require owner review before integration; production promotion needs approval of this new migration scope.
+
+
+## Chat lifecycle — owner request 13655, 16 October 2026
+
+- Add Leave chat in the existing partner profile Safety section, using the current row/dialog visual system.
+- Leaving is terminal for that conversation: history remains visible to both participants, both see exactly “Left chat”, and neither can send new text/photos/replies or restart the conversation in place.
+- A new invite after leaving creates a separate fresh conversation with independent language setup; old messages stay in the closed conversation. Repeat invites to an active pair still reuse that active chat. Account-level blocks are never cleared or bypassed.
+- Chats supports swipe-left Delete with a confirmation modal. Deletion is viewer-scoped; the other participant’s retained history is not erased. Owner clarified in this topic: deleting does not end messaging for the other person; a new incoming message brings the chat back, without restoring the deleting viewer’s earlier cleared history.
+- Native Android and iOS evidence must show leave confirmation, both closed-chat states, swipe/delete confirmation, deletion and fresh reinvite. Existing offline history, learning-language history and per-viewer preferences remain intact.

@@ -1634,3 +1634,10 @@ No production data repair (reported variant absent), secrets/schema change or
 client release.961 Flutter/199 backend checks pass,15 existing skips. Physical
 and authenticated production-client E2E acceptance not claimed.
 Evidence:docs/qa/2026-10-16-bla-5.
+
+
+## 2026-10-16 — Leave/delete chat lifecycle `[ ]` ← in progress
+
+Owner13655 requests Android+iOS leave, terminal “Left chat” state, swipe-to-delete confirmation and fresh reinvite. Dedicated worktree from8f94aa8. Leave retains history for both and denies new sends server-side, including older clients. Deletion is viewer-only; a new incoming message restores the chat without restoring earlier cleared history. Implement lifecycle authority, preserve block policy and history isolation, verify both viewers and native screenshots/gesture recording, then obtain implementation review before integration/release. Launch request is recorded; unseen UI is not approved.
+
+Owner13674 approves the delivered native visuals/workflow (screens13665–13671, motion13672). Continue clean backend checks, integration and the previously requested Android/iOS launch. Owner manual-device tracker remains unchecked; screenshot approval is not a physical-device test.

@@ -2489,6 +2489,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Regenerate link'**
   String get regenerateInvite;
+
+  /// No description provided for @leaveChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave chat'**
+  String get leaveChat;
+
+  /// No description provided for @leftChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Left chat'**
+  String get leftChat;
+
+  /// No description provided for @leaveChatQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave chat?'**
+  String get leaveChatQuestion;
+
+  /// No description provided for @leaveChatConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving ends messaging for both of you. Your history stays. Invite again to start a new chat.'**
+  String get leaveChatConfirmation;
+
+  /// No description provided for @couldNotLeaveChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t leave chat. Try again.'**
+  String get couldNotLeaveChat;
+
+  /// No description provided for @deleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat'**
+  String get deleteChat;
+
+  /// No description provided for @deleteChatQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete chat?'**
+  String get deleteChatQuestion;
+
+  /// No description provided for @deleteChatConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the chat and its history for you only. A new message from the other person will bring the chat back.'**
+  String get deleteChatConfirmation;
+
+  /// No description provided for @couldNotDeleteChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t delete chat. Try again.'**
+  String get couldNotDeleteChat;
+
+  /// No description provided for @deleteLeftChatConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the chat and its history for you only. The other person keeps their copy.'**
+  String get deleteLeftChatConfirmation;
 }
 
 class _AppLocalizationsDelegate

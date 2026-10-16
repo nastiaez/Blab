@@ -1519,6 +1519,9 @@
           { id: 'release-owner-pass', type: 'check', label: 'Record owner confirmation for every launch gate', detail: 'Only then mark the tracker complete and make the final go/no-go decision.' }
         ]
       }
+      { title: 'Leave and delete chats', note: 'Owner requested 16 October; implementation review pending', tasks: [
+        { id: 'chat-lifecycle-leave-delete', type: 'ux', label: 'Leave a chat for both people; swipe-delete only your copy, with new incoming messages restoring it.', detail: 'Android and iOS: retained Left chat history, no new sends, confirmed personal deletion and a fresh chat after reinviting. Actual screenshot review and owner device acceptance pending.', done: false }
+      ] },
     ];
 
     const laterGroups = [

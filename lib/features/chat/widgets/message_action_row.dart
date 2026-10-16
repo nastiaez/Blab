@@ -22,6 +22,7 @@ class MessageActionRow extends StatelessWidget {
     this.canListen = false,
     this.isOriginalVisible = false,
     this.now,
+    this.readOnly = false,
   });
 
   final Message message;
@@ -31,6 +32,7 @@ class MessageActionRow extends StatelessWidget {
   final bool canListen;
   final bool isOriginalVisible;
   final DateTime? now;
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +44,15 @@ class MessageActionRow extends StatelessWidget {
       now: now,
     );
     final items = actions
+        .where(
+          (action) =>
+              !readOnly ||
+              ![
+                MessageAction.reply,
+                MessageAction.edit,
+                MessageAction.delete,
+              ].contains(action),
+        )
         .map((action) => _itemFor(context, action, isOriginalVisible))
         .toList();
     return Container(

@@ -480,5 +480,15 @@
   "testAccessFailed": "Testzugang konnte nicht geprüft werden",
   "testAccessFailedBody": "Verbinde dich mit dem Internet und versuche es erneut.",
   "reusableInviteHelp": "Teile diesen Link mit beliebig vielen Personen. Ein neuer Link deaktiviert den alten, nicht deine bestehenden Chats.",
-  "regenerateInvite": "Link neu erstellen"
+  "regenerateInvite": "Link neu erstellen",
+  "leaveChat": "Chat verlassen",
+  "leftChat": "Chat verlassen",
+  "leaveChatQuestion": "Chat verlassen?",
+  "leaveChatConfirmation": "Danach könnt ihr beide hier keine Nachrichten mehr senden. Der Verlauf bleibt erhalten. Mit einer neuen Einladung beginnt ein neuer Chat.",
+  "couldNotLeaveChat": "Der Chat konnte nicht verlassen werden. Versuche es erneut.",
+  "deleteChat": "Chat löschen",
+  "deleteChatQuestion": "Chat löschen?",
+  "deleteChatConfirmation": "Der Chat und sein Verlauf werden nur für dich entfernt. Eine neue Nachricht der anderen Person bringt den Chat zurück.",
+  "couldNotDeleteChat": "Der Chat konnte nicht gelöscht werden. Versuche es erneut.",
+  "deleteLeftChatConfirmation": "Dadurch werden der Chat und sein Verlauf nur für dich entfernt. Die andere Person behält ihre Kopie."
 }

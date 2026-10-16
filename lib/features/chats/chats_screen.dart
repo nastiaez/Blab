@@ -1,12 +1,16 @@
 import '../../shared/widgets/navigation/blab_app_bar.dart';
 import '../../shared/widgets/actions/blab_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../app/theme.dart';
+import '../../app/app_messenger.dart';
+import '../../features/chat/widgets/chat_lifecycle_dialog.dart';
+import '../../shared/models/chat.dart';
 import '../../shared/widgets/navigation/blab_navigation_bar.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/state/chat_list_state.dart';
@@ -21,6 +25,25 @@ class ChatsScreen extends ConsumerWidget {
 
   /// When true, always renders the empty state (used by dev preview route).
   final bool preview;
+
+  Future<bool> _delete(BuildContext context, WidgetRef ref, Chat chat) async {
+    final confirmed = await showChatLifecycleConfirmation(
+      context,
+      title: context.l10n.deleteChatQuestion,
+      message: chat.isLeft
+          ? context.l10n.deleteLeftChatConfirmation
+          : context.l10n.deleteChatConfirmation,
+      confirmLabel: context.l10n.deleteChat,
+    );
+    if (!confirmed || !context.mounted) return false;
+    try {
+      await ref.read(chatListProvider.notifier).deleteChat(chat.id);
+      return true;
+    } catch (_) {
+      if (context.mounted) showAppSnack(context.l10n.couldNotDeleteChat);
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,9 +92,47 @@ class ChatsScreen extends ConsumerWidget {
                     ),
                     itemBuilder: (context, i) {
                       final c = chats[i];
-                      return ChatListTile(
-                        chat: c,
-                        onTap: () => context.push('/chat/${c.id}'),
+                      return Semantics(
+                        customSemanticsActions: {
+                          CustomSemanticsAction(
+                            label: context.l10n.deleteChat,
+                          ): () =>
+                              _delete(context, ref, c),
+                        },
+                        child: Dismissible(
+                          key: ValueKey('delete-chat-${c.id}'),
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (_) => _delete(context, ref, c),
+                          background: Container(
+                            color: BlabColors.error,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  context.l10n.deleteChat,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          child: ColoredBox(
+                            color: BlabColors.chatCanvas,
+                            child: ChatListTile(
+                              chat: c,
+                              onTap: () => context.push('/chat/${c.id}'),
+                            ),
+                          ),
+                        ),
                       );
                     },
                   ),

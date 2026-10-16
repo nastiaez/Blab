@@ -27,9 +27,36 @@ class Chat {
     this.startedAt,
     this.partnerId,
     this.translationCutoffAt,
+    this.leftAt,
+    this.historyClearedAt,
   });
 
   final String id;
+  final DateTime? leftAt;
+  final DateTime? historyClearedAt;
+  bool get isLeft => leftAt != null;
+
+  Chat withLeftAt(DateTime when) => Chat(
+    id: id,
+    partnerId: partnerId,
+    partnerName: partnerName,
+    partnerInitial: partnerInitial,
+    learningLanguage: learningLanguage,
+    mode: mode,
+    partnerNativeLanguage: partnerNativeLanguage,
+    partnerLearningLanguage: partnerLearningLanguage,
+    lastMessage: lastMessage,
+    lastMessageTranslation: lastMessageTranslation,
+    lastMessageId: lastMessageId,
+    timestamp: timestamp,
+    unreadCount: unreadCount,
+    isNewInvite: isNewInvite,
+    needsPracticeLanguageSelection: false,
+    startedAt: startedAt,
+    translationCutoffAt: translationCutoffAt,
+    leftAt: when,
+    historyClearedAt: historyClearedAt,
+  );
 
   /// The partner's user id. Needed to block / report them. Null for mock
   /// chats that predate the chat-list view exposing it.
