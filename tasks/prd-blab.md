@@ -282,6 +282,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Shared-correction eligibility is fixed when the message is created, remains unchanged after either participant changes language, and is false for messages created before this rule ships
 - [ ] Correct target-language writing remains clean; uncertain author corrections are labeled "Possible correction" and do not invent missing meaning
 - [ ] Sender and receiver reuse the same correction cache variant when their learning and primary known languages match
+- [ ] Use only two response acceptance rules: loose readable structure identifying requested sentences, and nonempty translation text. Allow extra fields and missing optional metadata; word help or form metadata must not reject the sentence. (Owner, 2026-10-16.)
 - [ ] Translation words are tappable and definitions use the reader's primary Known Language
 - [ ] Reaction badges overlap the bubble edge nearest the conversation center: right edge for incoming messages and left edge for outgoing messages; every badge uses `#FFFCF8` fill and `#DCD2C8` outline, with a subtle shadow in Practice only
 - [ ] Tapping a learning-language word opens its word description; tapping empty bubble padding does nothing; message actions require long press

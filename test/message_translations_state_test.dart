@@ -29,6 +29,9 @@ ProviderContainer _container({
       translateMessageFnProvider.overrideWithValue(
         (id, {targetLang}) => translateFn(id),
       ),
+      retryMessageFnProvider.overrideWithValue(
+        (id, {targetLang}) => translateFn(id),
+      ),
       if (setConversationToneFn != null)
         setConversationToneFnProvider.overrideWithValue(setConversationToneFn),
       if (chatService != null)
@@ -376,7 +379,7 @@ void main() {
       chatService: _ControlledCacheChatService(),
       translateFn: (id) async {
         calls++;
-        if (calls == 1) throw MessageTranslationFailed('temporary');
+        if (calls == 1) throw MessageTranslationFailed('invoke_failed');
         return _translation('Hallo');
       },
     );
@@ -404,7 +407,7 @@ void main() {
       chatService: _ControlledCacheChatService(),
       translateFn: (id) async {
         calls++;
-        throw MessageTranslationFailed('temporary');
+        throw MessageTranslationFailed('invoke_failed');
       },
     );
     addTearDown(container.dispose);
@@ -432,7 +435,7 @@ void main() {
       chatService: _ControlledCacheChatService(cachedByMessageId: cached),
       translateFn: (id) async {
         calls++;
-        throw MessageTranslationFailed('temporary');
+        throw MessageTranslationFailed('invoke_failed');
       },
     );
     addTearDown(container.dispose);
@@ -511,6 +514,8 @@ void main() {
 
   test('automatic retry leaves permanent failures untouched', () async {
     const permanentReasons = [
+      'preparation_failed',
+      'translation_pending',
       'invalid_message_id',
       'translation_not_allowed',
       'translation_stale',
@@ -549,7 +554,7 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 5));
 
-      expect(calls, 2, reason: reason);
+      expect(calls, 1, reason: reason);
       expect(
         container.read(messageTranslationsProvider('chat-1'))['m1|de|en'],
         isA<AsyncError<MessageTranslation>>(),
@@ -623,7 +628,7 @@ void main() {
       translateFn: (id) async {
         calls++;
         await Future<void>.delayed(const Duration(milliseconds: 40));
-        throw MessageTranslationFailed('temporary');
+        throw MessageTranslationFailed('invoke_failed');
       },
     );
     addTearDown(container.dispose);
@@ -1780,6 +1785,66 @@ void main() {
     live.complete(_translation('Hallo'));
     await inFlight;
   });
+
+  test(
+    'terminal failure requires explicit retry; reconnect never uses it',
+    () async {
+      var automaticCalls = 0;
+      var manualCalls = 0;
+      final container = ProviderContainer(
+        overrides: [
+          chatServiceProvider.overrideWithValue(_ControlledCacheChatService()),
+          translateMessageFnProvider.overrideWithValue((
+            id, {
+            targetLang,
+          }) async {
+            automaticCalls++;
+            throw MessageTranslationFailed('preparation_failed');
+          }),
+          retryMessageFnProvider.overrideWithValue((id, {targetLang}) async {
+            expect(id, 'm1');
+            expect(targetLang, 'de');
+            manualCalls++;
+            throw MessageTranslationFailed('preparation_failed');
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(
+        messageTranslationsProvider('retry-chat').notifier,
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      await notifier.retryTransientFailures(
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      expect(automaticCalls, 1);
+      expect(manualCalls, 0);
+      await notifier.retry(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      expect(
+        manualCalls,
+        1,
+        reason: 'one tap is one attempt, not a quiet retry loop',
+      );
+      expect(automaticCalls, 1);
+    },
+  );
 
   test('manual retry replaces only the failed translation entry', () async {
     var failedMessageCalls = 0;

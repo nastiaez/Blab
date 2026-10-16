@@ -426,6 +426,7 @@ ProviderContainer _containerForHeader(
   List<String> knownLanguages = const ['uk'],
   bool isOnline = false,
   Future<MessageTranslation> Function(String messageId)? translate,
+  TargetedTranslateMessageFn? retryTranslate,
 }) {
   return ProviderContainer(
     overrides: [
@@ -448,6 +449,8 @@ ProviderContainer _containerForHeader(
         if (translate != null) return translate(messageId);
         throw MessageTranslationFailed('unexpected_live_translation');
       }),
+      if (retryTranslate != null)
+        retryMessageFnProvider.overrideWithValue(retryTranslate),
       typingTransportProvider('chat-1').overrideWithValue(_NoopTyping()),
       if (!loadLanguageTimelineFromService)
         chatLanguageTimelineProvider.overrideWith(
@@ -468,7 +471,98 @@ ProviderContainer _containerForHeader(
   );
 }
 
+// Runs the real chat widgets with synthetic failure/success responses. SQL tests
+// separately prove durable admission; no private chat or paid model call is used.
+Future<void> runRetryOwnershipJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  var blockedRequests = 0;
+  var explicitRequests = 0;
+  ProviderContainer create() => _containerForHeader(
+    _PrimaryKnownLanguageChatService(
+      chatMode: 'practice',
+      messageText: "You're watching broke girls without me",
+      messageIsOutgoing: true,
+    ),
+    isOnline: true,
+    primaryKnownLanguage: 'en',
+    knownLanguages: ['en'],
+    translate: (_) async {
+      blockedRequests++;
+      throw MessageTranslationFailed('preparation_failed');
+    },
+    retryTranslate: (id, {targetLang}) async {
+      expect(targetLang, 'de');
+      explicitRequests++;
+      return const MessageTranslation(
+        translation: 'Du schaust ohne mich 2 Broke Girls.',
+        interfaceText: "You're watching broke girls without me",
+        interfaceLang: 'en',
+        sourceLang: 'en',
+        tokens: [],
+      );
+    },
+  );
+  var container = create();
+  await tester.pumpWidget(_host(container));
+  await _settle(tester);
+  expect(
+    find.byKey(const ValueKey('translation-message-retry')),
+    findsOneWidget,
+  );
+  expect(blockedRequests, 1);
+  if (capture != null) await capture('01-terminal-failure');
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
+  container.dispose();
+  container = create();
+  await tester.pumpWidget(_host(container));
+  await _settle(tester);
+  expect(
+    find.byKey(const ValueKey('translation-message-retry')),
+    findsOneWidget,
+  );
+  expect(
+    blockedRequests,
+    2,
+    reason: 'new session gets one terminal response, not quiet retries',
+  );
+  await container
+      .read(messageTranslationsProvider('chat-1').notifier)
+      .retryTransientFailures(targetLang: 'de', interfaceLang: 'en');
+  await _settle(tester);
+  expect(blockedRequests, 2);
+  expect(explicitRequests, 0);
+  if (capture != null) await capture('02-reopened-no-retry');
+  await tester.tap(find.byKey(const ValueKey('translation-message-retry')));
+  await _settle(tester);
+  expect(explicitRequests, 1);
+  await tester.pump(const Duration(seconds: 3));
+  await _settle(tester);
+  expect(find.byKey(const ValueKey('translation-message-retry')), findsNothing);
+  expect(find.text('schaust'), findsOneWidget);
+  expect(
+    container
+        .read(messageTranslationsProvider('chat-1'))['msg-1|de|en']
+        ?.value
+        ?.translation,
+    'Du schaust ohne mich 2 Broke Girls.',
+  );
+  if (capture != null) await capture('03-explicit-retry-success');
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
+  container.dispose();
+}
+
 void main() {
+  testWidgets('failed translation reopen and explicit retry journey', (
+    tester,
+  ) async {
+    await runRetryOwnershipJourney(tester);
+  });
   setUp(() => SharedPreferences.setMockInitialValues({}));
   for (final outgoing in [false, true]) {
     testWidgets(

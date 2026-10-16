@@ -1,0 +1,14 @@
+{
+  "supabase/functions/translate-message/participant_forms.ts": "2aa1b308d30e7ce8836d69b5d5fb71e10730a2962a2345b1abd1cd97ffd60cf5",
+  "supabase/functions/translate-message/contract.ts": "f35f2ef735f42982f9ec935c58610e535184301b3a04847ad7deeaa4e8413654",
+  "supabase/functions/translate-message/compact_request.ts": "3ebfc1ac5d98fc8adabeba1cfe35083397648b5696bd6ac9076a2825618add23",
+  "supabase/functions/translate-message/consensus.ts": "8273cb270aecb5434c80a8a86a9e7cb6af5c53ffb902832fe4c52988494995e1",
+  "supabase/functions/translate-message/single_call.ts": "80eac9a7e61eed66e00187cd32251f564ecbccf3fb6d7cb9a17cabfd46369578",
+  "supabase/functions/translate-message/rulebook.ts": "cb5abe9f575e0fdac9339978214ee6ec34d921a206324234f0ff7a3a5928e0b3",
+  "supabase/functions/translate-message/index.ts": "fb0b48ac90ce711866c0ec828a70b506031849c53f232c5abb2ae2d8efdc3903",
+  "supabase/functions/translate-message/provider.ts": "aa691255823c6babb8a4607f182be757734c61c201013feea893a3eca0bb3a83",
+  "supabase/functions/translate-message/readable_delivery.ts": "870eb15aab88ad79113bc274867fd5a25c3f0c731d133ee625c3d76166865687",
+  "supabase/functions/prepare-message-jobs/contract.ts": "1e64c6bbee8792765404bf5691969c162a0d56ad88cb4b1aa58697b5775b09f0",
+  "supabase/functions/prepare-message-jobs/single_call_worker.ts": "08409397341234b9c62d1c65f0e115d036f75f4f8f58b419cdb3f7f65c2eea79",
+  "supabase/functions/prepare-message-jobs/index.ts": "a083d5e70022912422a877183d67b9af6ede245abd4154800c1b63dda730bf87"
+}
