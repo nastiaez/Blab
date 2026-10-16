@@ -201,3 +201,19 @@ was not retained, so its exact rejected field remains unknown. Candidate migrati
 aligns all save paths and worker preserves safe diagnostic codes. Rollback-only
 proof does not deploy changes or recover chat rows. Full isolated SQL/integrated
 UI verification pending. Evidence: docs/qa/2026-10-16-balaji-translation/.
+
+## Release completed — 16 October 2026
+
+Owner13370 authorizes launch; screenshots13353 and retry13327/13328 reviewed.
+Clean CI cafe860 passes all three jobs (quality, Android release compilation,
+local backend integration): https://github.com/nastiaez/Blab/actions/runs/38875756223.
+Version26 distributed through existing Firebase channels: test8 / public2 testers,
+release-specific invited counts verified; both download-back hashes match.
+iOS26 assigned to existing groups. Test internal and external IN_BETA_TESTING;
+Apple beta review APPROVED. Public existing internal Owner testing IN_BETA_TESTING.
+No App Store publication or replacement/expiration of prior TestFlight builds.
+Test translation backend deployed and both incident messages recovered for both
+viewers with one controlled extra attempt each. Production backend unchanged.
+Physical-device Google sign-in and owner manual acceptance remain unverified;
+manual tracker checkboxes remain unchecked. Receipt and hashes:
+projects/blab/releases/20261016-recovery-26/receipt.json and artifacts.json.

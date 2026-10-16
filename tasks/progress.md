@@ -1524,3 +1524,38 @@ Approved retry-client release13332 remains outstanding in its separate worktree.
   recovered without deleting volumes; local storage SQL and18 retry-ownership
   checks pass together. Combined backend198 pass; analyzer clean. Google/Retry
   topic integration prepared; release still pending native/integrated checks.
+
+- Combined runtime integrated at7b36dab;71dba94 only updates two integration
+  fixtures to isolate direct requests from queued worker ownership. No runtime
+  differences between those revisions.955 Flutter/198 backend checks and18 SQL
+  ownership assertions pass; both native Android Google-return configurations
+  and Retry reopen/reconnect/manual journey pass. Staging storage migration
+  20261016000002 and functions translate-message9/prepare-message-jobs5 deployed;
+  all14 downloaded TypeScript files match. Authenticated boundary smoke passes.
+  Both incident messages now ready for both viewers after one controlled extra
+  attempt (cumulative attempts5); no allowance reset. Four signed26 artifacts
+  prepared; iOS uploads VALID, Android download-back hashes match. Distribution
+  held until final clean CI38874190053 settles. Production backend unchanged.
+
+- Final fixture-only revision cafe860 uses the disposable local database test
+  connection for queue cleanup; application table permissions remain unchanged.
+  Focused translation-security and message-replies integration checks pass on
+  the recovered local service. Local test-boundary Carol fixture needed test
+  membership; first cold realtime attempt timed out, warm rerun passed. Final
+  clean CI: https://github.com/nastiaez/Blab/actions/runs/38875756223 (pending).
+
+## Release completed — 16 October 2026
+
+Owner13370 authorizes launch; screenshots13353 and retry13327/13328 reviewed.
+Clean CI cafe860 passes all three jobs (quality, Android release compilation,
+local backend integration): https://github.com/nastiaez/Blab/actions/runs/38875756223.
+Version26 distributed through existing Firebase channels: test8 / public2 testers,
+release-specific invited counts verified; both download-back hashes match.
+iOS26 assigned to existing groups. Test internal and external IN_BETA_TESTING;
+Apple beta review APPROVED. Public existing internal Owner testing IN_BETA_TESTING.
+No App Store publication or replacement/expiration of prior TestFlight builds.
+Test translation backend deployed and both incident messages recovered for both
+viewers with one controlled extra attempt each. Production backend unchanged.
+Physical-device Google sign-in and owner manual acceptance remain unverified;
+manual tracker checkboxes remain unchecked. Receipt and hashes:
+projects/blab/releases/20261016-recovery-26/receipt.json and artifacts.json.

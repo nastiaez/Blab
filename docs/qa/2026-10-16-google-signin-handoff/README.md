@@ -53,3 +53,44 @@ The previously approved retry-client release13332 remains separate and pending;
 its test backend protection is already deployed. No production changes deployed.
 
 Production preparation initially lacked its ignored plist in main; stopped that run and prepared from the existing iOS signing worktree configuration. No provider or hosted configuration was changed. Final production native run passes.
+
+## Integrated release verification, 16 October
+
+Owner13370 authorized launch. Integrated runtime7b36dab passes native Android
+Google return in staging/public configurations and the retry-ownership journey.
+955 Flutter checks pass,15 skips; analyzer clean.71dba94 changes only integration
+test fixtures (manual completion must not compete with background queued jobs).
+Signed Android26 test/public and iOS26 test/public artifacts are retained under
+../releases/20261016-recovery-26 relative to the project container. Exact
+artifact hashes and limits are in its artifacts.json and receipt.json.
+iOS generated Swift package reset its platform to13.0; corrected the generated
+manifest to the existing project minimum15.0 before native archive. Both native
+identity guards pass and both Apple uploads process as VALID. No tracked iOS
+configuration change or minimum-platform increase was introduced.
+Android staged download-back matches both signed files. Test25→26 preserves
+German on reconstructed signed-out baseline; public21→26 preserves German but
+uses the newer onboarding introduced after21. No authenticated-history or
+physical-device Google picker acceptance claimed. Final CI/distribution pending.
+
+- Final fixture-only revision cafe860 uses the disposable local database test
+  connection for queue cleanup; application table permissions remain unchanged.
+  Focused translation-security and message-replies integration checks pass on
+  the recovered local service. Local test-boundary Carol fixture needed test
+  membership; first cold realtime attempt timed out, warm rerun passed. Final
+  clean CI: https://github.com/nastiaez/Blab/actions/runs/38875756223 (pending).
+
+## Release completed — 16 October 2026
+
+Owner13370 authorizes launch; screenshots13353 and retry13327/13328 reviewed.
+Clean CI cafe860 passes all three jobs (quality, Android release compilation,
+local backend integration): https://github.com/nastiaez/Blab/actions/runs/38875756223.
+Version26 distributed through existing Firebase channels: test8 / public2 testers,
+release-specific invited counts verified; both download-back hashes match.
+iOS26 assigned to existing groups. Test internal and external IN_BETA_TESTING;
+Apple beta review APPROVED. Public existing internal Owner testing IN_BETA_TESTING.
+No App Store publication or replacement/expiration of prior TestFlight builds.
+Test translation backend deployed and both incident messages recovered for both
+viewers with one controlled extra attempt each. Production backend unchanged.
+Physical-device Google sign-in and owner manual acceptance remain unverified;
+manual tracker checkboxes remain unchecked. Receipt and hashes:
+projects/blab/releases/20261016-recovery-26/receipt.json and artifacts.json.
