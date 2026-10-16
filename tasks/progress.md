@@ -1519,3 +1519,8 @@ Approved retry-client release13332 remains outstanding in its separate worktree.
   unresponsive; integrated DB verification/deployment are outstanding. Google
   handoff and explicit Retry app releases remain pending separately.
 - 2026-10-16: Nonempty-only translation acceptance in progress in isolated worktree. Owner13294 supersedes content-rejection gates; preserve per-viewer language preferences and history. Two-rule acceptance implemented: readable loose structure plus nonempty sentence. All four recorded failure responses replay successfully with title word help retained; 192 backend tests pass. Owner13309 authorized testing deployment: staging translate-message7 and prepare-message-jobs4 ACTIVE; all12 downloaded source files match candidate, four recorded replies replay successfully, authenticated endpoint probe passes. Shared test backend covers Android/iOS without new binaries. Production, main integration, fresh live-provider/physical-client acceptance and history repair remain untouched.
+
+- Owner13370 explicitly authorized recovery and Google sign-in launch. Docker
+  recovered without deleting volumes; local storage SQL and18 retry-ownership
+  checks pass together. Combined backend198 pass; analyzer clean. Google/Retry
+  topic integration prepared; release still pending native/integrated checks.

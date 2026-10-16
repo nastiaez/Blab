@@ -983,8 +983,9 @@ class MessageTranslationsNotifier
           lastStack = stack;
           if (error is TimeoutException ||
               explicitRetry ||
-              !isAutomaticTranslationRetryAllowed(error))
+              !isAutomaticTranslationRetryAllowed(error)) {
             break;
+          }
         }
       }
       if (lastError is TimeoutException || lastError == null) {

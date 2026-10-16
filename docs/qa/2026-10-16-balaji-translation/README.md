@@ -96,3 +96,7 @@ Disk pressure observed(~1GiB free) but not proven as the hang cause.
 Candidate storage SQL test now PASSES on local Blab_Stream_Clean database:
 lease fencing, optional metadata acceptance, structure/nonempty rejection,
 normalization/helper permissions. Fixture transaction rolls back.
+
+Combined retry migration and storage checks pass on recovered local DB; all18
+retry-ownership assertions pass. Combined backend198 pass; analyzer clean.
+CI now runs storage acceptance after clean migration replay to prevent recurrence.
