@@ -15,6 +15,12 @@ final supabaseAuthServiceProvider = Provider<SupabaseAuthService>(
 final authSessionProvider = StreamProvider<Session?>((ref) {
   final auth = ref.watch(supabaseAuthServiceProvider);
   return auth.onAuthStateChange
+      // US-031: transport failures are not account/session transitions. Keep
+      // the last session until a real auth event (including sign-out) arrives.
+      .handleError(
+        (Object _, StackTrace _) {},
+        test: (error) => error is AuthRetryableFetchException,
+      )
       .map((event) => event.session)
       .distinct((a, b) => a?.accessToken == b?.accessToken);
 });

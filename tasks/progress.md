@@ -1464,3 +1464,24 @@ Product choice pending: separate Blab Test app/accounts/chats (recommended indep
 - Owner approved the native iOS sign-up layout including Apple in Telegram13161 (2026-10-15 22:00 Berlin). Visual review gate cleared; integrate current reviewed source and deliver signed Android production/test updates. Social account/device push verification remains separate, not waived by layout approval.
 
 - 2026-10-15 — Cross-platform invitation instructions deployed in landing main825c046; Android direct APK retained and iPhone TestFlight instructions added, with channel-specific AASA routes. External TestFlight group registered for owner-provided addresses; Apple review pending. Added server-side verified-email test preapproval in dedicated worktree; 13 isolated PostgreSQL/PGlite access checks pass including self-enrollment denial, member revocation precedence, expiry, kill switch, and unchanged public access. Native invite join and external install remain unverified; no launch tracker acceptance claimed.
+
+
+## 2026-10-16 — Recoverable auth-refresh outage ← in progress
+
+Owner message13259 authorizes investigation/fix of Sentry FLUTTER-6. Fresh
+current-main worktree at5941bd4. Sentry confirms one production19 background
+event/user; underlying transport message remains privacy-redacted. Red-green
+checks reproduce incorrect fatal reporting and session-provider errors. Candidate
+retains session on typed retryable failures, preserves unexpected errors and
+actual sign-out, and excludes retryable failures from text-based revocation.
+Final951 Flutter checks pass (15 existing skips); focused auth14/backend188
+checks and final analysis pass. Native deterministic failed HTTP refresh and
+successful reconnect pass on dedicated Android5562; actual screenshots01–03
+inspected and delivered13272. Automatic-refresh timing/live backend and physical
+device acceptance are not claimed. No
+UI/copy/language-policy change; hosted services and existing worktrees untouched.
+Owner screenshot/journey acceptance, integration and release remain pending;
+launch tracker journey-auth-refresh-recovery stays unchecked. Evidence:
+docs/qa/2026-10-16-auth-refresh-recovery.
+
+- Owner approved screenshots/recovery in13274 and authorized main integration and release. Preparing signed production/test Android25 from integrated main; no physical-device manual acceptance claimed.

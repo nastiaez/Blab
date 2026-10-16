@@ -106,6 +106,7 @@ class SupabaseAuthService {
   }
 
   static bool isRevokedSessionError(Object error) {
+    if (error is AuthRetryableFetchException) return false;
     if (error is! AuthException) return false;
     final message = error.message.toLowerCase();
     return message.contains('refresh token') &&

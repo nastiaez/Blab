@@ -1,0 +1,22 @@
+{
+  "base": "5941bd43e967e5ad46c4f36adbb673adff9d355b",
+  "branch": "fix/auth-refresh-recovery-20261016",
+  "source_sha256": {
+    "lib/main.dart": "75c3729176e841bf02fd94f502bc4915c45e0376588b95b979eb7383f12cf5fd",
+    "lib/shared/state/auth_state.dart": "bf0a4759edde395632edc5430d5103f1bec354fd3875b0b0ee12b411a69504d2",
+    "lib/shared/services/supabase_auth_service.dart": "cb5ed4143ae3a1462da00d64aba32e10410750cd68ab519ebf815d84754f7717",
+    "test/auth_refresh_recovery_test.dart": "2aa6b6992b4e91be57a91101a95993f2ff5556b74b188033efcfd06d0f737180",
+    "integration_test/auth_refresh_recovery_native_test.dart": "3947c02b71dfa10f0e96f2f06eccdd69b9af090b424d1900f784226a014f4141"
+  },
+  "flutter_passed": 951,
+  "flutter_skipped": 15,
+  "focused_passed": 14,
+  "backend_passed": 188,
+  "native_scenario_passed": true,
+  "native_transport": "mocked HTTP outage and successful explicit renewal; real SDK/app listeners",
+  "screenshots_inspected": 3,
+  "telegram_delivery": "13272",
+  "owner_review": "approved message13274",
+  "merged": false,
+  "released": false
+}

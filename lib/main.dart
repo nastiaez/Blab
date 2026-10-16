@@ -362,6 +362,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   }
 
   void _handleAuthStreamError(Object error, StackTrace stackTrace) {
+    // US-031: a failed refresh keeps the cached session; the SDK retries it.
+    // Reporting this through FlutterError incorrectly marks it as a crash.
+    if (error is AuthRetryableFetchException) return;
     if (SupabaseAuthService.isRevokedSessionError(error)) {
       unawaited(_clearRevokedSession());
       return;

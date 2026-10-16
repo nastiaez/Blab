@@ -190,6 +190,8 @@ Private delivery uses the existing Firebase App Tester channel. Worktree impleme
 
 ## Resolved Decisions
 
+- **2026-10-16 — Retryable auth refresh failures (US-031):** Supabase `AuthRetryableFetchException` is a recoverable transport/server failure, not a session transition or a Flutter crash. The root listener retains the session without reporting a fatal error; the session provider ignores only this typed stream error, preserving its last value. Genuine sign-out and token-refresh events continue to propagate, unexpected errors remain reported, and retryable errors cannot be classified as revoked based on message text. Rely on the SDK's existing bounded retry/auto-refresh rather than adding a competing retry loop. No language preferences, cache ownership, navigation, or interface copy change.
+
 - **2026-10-14 — Stream command authority (implementation in progress):** do not rely on Stream's before-send webhook for mandatory Blab authorization: the vendor documents fail-open behavior on timeout/unavailability. Route mutations through authenticated Blab endpoints that enforce membership, symmetric blocking, author identity, the edit window and idempotency; restrict final Stream client permissions accordingly. Stream remains canonical for message contents; a server-only, source-versioned learning projection feeds existing private translation contracts. Signed webhook identities are durably deduplicated; reconcile against current canonical Stream snapshots rather than trusting arrival order. Immediate asynchronous dispatch plus periodic recovery, no AI on delivery path. Existing chats stay Supabase-owned until per-chat migration is explicitly verified and activated.
  (log)
 

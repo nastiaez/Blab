@@ -13,6 +13,20 @@ Current focus, begins with the invite flow, and preserves owner-confirmed task s
 The tracker’s post-launch invite-urgency exploration is deliberately separate from the
 launch rule that an unclaimed link remains valid until successfully claimed.
 
+## Temporary auth-refresh outage — 2026-10-16 (in progress)
+
+Owner message13259 requests investigation and repair of Sentry FLUTTER-6.
+One production19 event/user, paused/background app; no evidence of a widespread
+outage or process termination. Confirmed retryable errors were forwarded to
+FlutterError and the session provider. Preserve session state on this typed
+failure, retain unexpected-error reporting and genuine sign-out, and prevent
+retryable server text from being classified as revoked. Tracker
+`journey-auth-refresh-recovery` remains unchecked pending owner acceptance and
+release. Focused auth14/backend188 checks pass; Android5562 deterministic HTTP
+outage→refresh failure→successful renewal passes, screenshots delivered13272.
+No physical/live-backend or automatic-refresh-timing acceptance claimed.
+Evidence: `docs/qa/2026-10-16-auth-refresh-recovery`.
+
 ## Participant-form relevance — 2026-10-15 (in progress)
 
 Confirmed hosted German `Schreib deiner Mutter` has incorrect recipient
