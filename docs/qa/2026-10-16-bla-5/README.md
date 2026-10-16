@@ -66,4 +66,3 @@ Production awaits the repository's16 October explicit rollout gate. The ticket's
 auto-release label conflicts with that newer explicit project instruction; do
 not silently treat implementation approval13635 as a new production rollout.
 Physical-device/live signed-in two-client end-to-end verification is not claimed.
-
