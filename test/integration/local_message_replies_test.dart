@@ -213,6 +213,11 @@ void main() {
           throwsA(isA<PostgrestException>()),
         );
 
+        // Isolate the manual save/edit fixture from automatically queued work.
+        await admin
+            .from('message_preparation_jobs')
+            .delete()
+            .eq('message_id', source.id);
         final prepared = Map<String, dynamic>.from(
           await alice.rpc(
                 'request_message_translation',

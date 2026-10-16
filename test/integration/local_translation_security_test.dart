@@ -223,6 +223,12 @@ void main() {
           ),
         );
 
+        // This fixture completes the direct request itself; queued worker work
+        // must not compete with it under the shared ownership guard.
+        await admin
+            .from('message_preparation_jobs')
+            .delete()
+            .eq('message_id', message.id);
         final prepared = _map(
           await alice.rpc(
             'request_message_translation',
@@ -297,6 +303,10 @@ void main() {
         final raceMessage = await ChatService(
           bob,
         ).sendMessage(chatId: chatId, body: 'Before edit');
+        await admin
+            .from('message_preparation_jobs')
+            .delete()
+            .eq('message_id', raceMessage.id);
         final racePrepared = _map(
           await alice.rpc(
             'request_message_translation',
