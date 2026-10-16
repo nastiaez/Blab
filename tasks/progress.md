@@ -1608,3 +1608,23 @@ Owner13441 approves screenshots13438/13439 and exact reusable-invite rollout to 
 
 
 Release28 completed after approval13441: app9189e8c plus backend correctionca9f8a3 (client source identical). Clean CI38887856140 all gates success; notification regression fixed with per-recipient idempotent outbox events. Migration103 deployed/verified both environments with exact installed-function source comparisons. Signed Android27→28 upgrades preserve settings; Firebase download-back hashes match; distributed test9/public2. Both iOS28 variants VALID and IN_BETA_TESTING in existing approved groups (test includes external friends). Receipt:../releases/20261016-invites-28/release-receipt.json. Native recipient/physical-device messaging and actual push delivery remain unverified, so the broader journey checkbox stays open despite completed release.
+
+
+## 2026-10-16 — BLA-5 contextual word meanings `[ ]` ← in progress
+
+Owner13635 approves exact per-token contextual-meaning wording after takeover13621.
+Staging read-only evidence confirms stored Ukrainian noun meanings on English
+function words. Shared canonical compact/metadata-repair prompt updated in an
+isolated current-main worktree; sentence acceptance and preference ownership
+unchanged. Metadata version is separate from the sentence contract; preserve
+completed history and prepare only targeted token repair. Default-model fresh
+reported sentence now returns article/preposition/noun meanings; preliminary
+local override did not pass. Native Android+iOS real chat-popup replay passes;
+all8 screenshots inspected; Android packet13642 and iPhone sample13643 delivered.
+Staging translate-message10 / prepare-message-jobs6 ACTIVE; all14 downloaded
+sources match. Targeted shared/prepared token repair passed rollback rehearsal
+and compare-and-swap, preserving all non-token fields.199 backend checks pass;
+final client checks recorded in checkpoint. No new app binary or schema change.
+> **Blocked:** awaiting explicit production rollout approval under16 October
+> project gate; Auto-release label does not silently waive this newer gate.
+Evidence:docs/qa/2026-10-16-bla-5.

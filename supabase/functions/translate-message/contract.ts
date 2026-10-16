@@ -17,6 +17,7 @@ import {
   SHORT_PLAIN_SOURCE,
   SHORT_SOURCE_RETRY_MAX_CHARS,
   SUPPORTED_CHAT_ABBREVIATIONS,
+  WORD_HELP_POLICY,
 } from "./rulebook.ts";
 export {
   CORRECTION_CONFIDENCE,
@@ -2147,7 +2148,7 @@ Rules:
 - Use one content token per word or non-whitespace term, never a phrase or full sentence.
 - Keep each written word intact, including attached suffixes, conjuncts, and combining marks. Never split a word into morphemes or label any letter-bearing suffix as punctuation. For example Tamil புத்தகத்தைக் is ONE content token, not புத்தகத்தை plus க்.
 - Every token containing letters must be isContent=true with its own gloss and roman. Only separators without letters may be isContent=false; those must have both gloss=null and roman=null.
-- Every content-token gloss must be a short meaning in ${interfaceName} (${interfaceLang}); never copy the ${targetName} word merely because it already uses Latin script.
+- Requested meanings language: ${interfaceName} (${interfaceLang}). ${WORD_HELP_POLICY.rule}
 ${
     acceptedInterfaceText === undefined
       ? ""

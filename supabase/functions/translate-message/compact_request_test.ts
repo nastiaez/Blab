@@ -4,7 +4,8 @@ import {
   expandCompactResponse,
 } from "./compact_request.ts";
 import { type PreparedViewer, singleCallRequest } from "./single_call.ts";
-import { COMPACT_TRANSLATION_RULES } from "./rulebook.ts";
+import { COMPACT_TRANSLATION_RULES, WORD_HELP_POLICY } from "./rulebook.ts";
+import { wordMetadataRepairSystemPrompt } from "./contract.ts";
 const assert = (ok: unknown, message = "assertion failed") => {
   if (!ok) throw new Error(message);
 };
@@ -38,6 +39,38 @@ const viewers: PreparedViewer[] = [
     },
   },
 ];
+Deno.test("word meanings use the same contextual rule in generation and metadata repair", () => {
+  for (
+    const [targetLang, interfaceLang] of [["en", "uk"], ["de", "es"], [
+      "ta",
+      "en",
+    ]]
+  ) {
+    const request = singleCallRequest([{
+      ...viewers[0],
+      targetLang,
+      interfaceLang,
+    }]);
+    const generation = request.messages[0].content;
+    const repair = wordMetadataRepairSystemPrompt(
+      targetLang,
+      interfaceLang,
+      "accepted sentence",
+    );
+    assert(generation.includes(WORD_HELP_POLICY.rule));
+    assert(repair.includes(WORD_HELP_POLICY.rule));
+    assert(
+      WORD_HELP_POLICY.rule.includes("briefly explain its grammatical role"),
+    );
+    assert(
+      WORD_HELP_POLICY.rule.includes("never a neighboring word's meaning"),
+    );
+    assert(
+      WORD_HELP_POLICY.rule.includes("Keep repeated occurrences separate"),
+    );
+    assert(repair.includes("The sentence is immutable"));
+  }
+});
 Deno.test("four distinct languages share one message, stable schema and compact rules", () => {
   const p = compactPlan(viewers);
   assert(p.requested.sentences.length === 4 && p.requested.help.length === 2);

@@ -1,0 +1,178 @@
+{
+  "wordHelpPolicy": "contextual-word-meanings-v1",
+  "source": "Ich warte auf den Bus.",
+  "viewers": [
+    {
+      "key": "v0",
+      "messageId": "german-function-words",
+      "sourceHash": "probe",
+      "text": "Ich warte auf den Bus.",
+      "targetLang": "de",
+      "interfaceLang": "en",
+      "formContext": {
+        "viewerName": "Alice",
+        "partnerName": "Bob",
+        "messageAuthor": "viewer",
+        "tone": "informal"
+      }
+    },
+    {
+      "key": "v1",
+      "messageId": "german-function-words",
+      "sourceHash": "probe",
+      "text": "Ich warte auf den Bus.",
+      "targetLang": "de",
+      "interfaceLang": "uk",
+      "formContext": {
+        "viewerName": "Bob",
+        "partnerName": "Alice",
+        "messageAuthor": "partner",
+        "tone": "informal"
+      }
+    }
+  ],
+  "result": {
+    "v0": {
+      "mode": "none",
+      "sourceLang": "de",
+      "translation": "Ich warte auf den Bus.",
+      "interfaceText": "I'm waiting for the bus.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Ich",
+          "gloss": "I",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "warte",
+          "gloss": "wait",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "auf",
+          "gloss": "for",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "den",
+          "gloss": "the",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "Bus",
+          "gloss": "bus",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ],
+      "formAlternatives": null
+    },
+    "v1": {
+      "mode": "none",
+      "sourceLang": "de",
+      "translation": "Ich warte auf den Bus.",
+      "interfaceText": "Я чекаю на автобус.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Ich",
+          "gloss": "Я",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "warte",
+          "gloss": "чекаю",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "auf",
+          "gloss": "на",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "den",
+          "gloss": "знахідний відмінок (accusative case)",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "Bus",
+          "gloss": "автобус",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ],
+      "formAlternatives": null
+    }
+  }
+}

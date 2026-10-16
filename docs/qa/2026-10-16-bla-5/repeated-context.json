@@ -1,0 +1,298 @@
+{
+  "wordHelpPolicy": "contextual-word-meanings-v1",
+  "source": "I left the bank and sat on the river bank.",
+  "viewers": [
+    {
+      "key": "v0",
+      "messageId": "repeated-context",
+      "sourceHash": "probe",
+      "text": "I left the bank and sat on the river bank.",
+      "targetLang": "en",
+      "interfaceLang": "uk",
+      "formContext": {
+        "viewerName": "Alice",
+        "partnerName": "Bob",
+        "messageAuthor": "viewer",
+        "tone": "informal"
+      }
+    },
+    {
+      "key": "v1",
+      "messageId": "repeated-context",
+      "sourceHash": "probe",
+      "text": "I left the bank and sat on the river bank.",
+      "targetLang": "en",
+      "interfaceLang": "es",
+      "formContext": {
+        "viewerName": "Bob",
+        "partnerName": "Alice",
+        "messageAuthor": "partner",
+        "tone": "informal"
+      }
+    }
+  ],
+  "result": {
+    "v0": {
+      "mode": "none",
+      "sourceLang": "en",
+      "translation": "I left the bank and sat on the river bank.",
+      "interfaceText": "Я пішла з банку і сіла на березі річки.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "I",
+          "gloss": "Я",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "left",
+          "gloss": "пішла/пішов",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "—",
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "bank",
+          "gloss": "банку",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "and",
+          "gloss": "і",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "sat",
+          "gloss": "сіла/сів",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "on",
+          "gloss": "на",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "—",
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "river",
+          "gloss": "річки",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "bank",
+          "gloss": "березі",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ],
+      "formAlternatives": null
+    },
+    "v1": {
+      "mode": "none",
+      "sourceLang": "en",
+      "translation": "I left the bank and sat on the river bank.",
+      "interfaceText": "Salí del banco y me senté en la orilla del río.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "I",
+          "gloss": "Yo",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "left",
+          "gloss": "salí",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "el",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "bank",
+          "gloss": "banco",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "and",
+          "gloss": "y",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "sat",
+          "gloss": "me senté",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "on",
+          "gloss": "en",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "la",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "river",
+          "gloss": "río",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "bank",
+          "gloss": "orilla",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        }
+      ],
+      "formAlternatives": null
+    }
+  }
+}

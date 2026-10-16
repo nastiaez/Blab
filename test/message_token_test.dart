@@ -66,4 +66,15 @@ void main() {
     expect(tokens.single.nativeText, 'வணக்கம்');
     expect(tokens.single.spokenText, 'வணக்கம்');
   });
+  test('repeated bank occurrences retain their own contextual meanings', () {
+    final tokens = messageTokensForText(
+      'bank bank',
+      metadata: const [
+        MessageToken(text: 'bank', gloss: 'banco'),
+        MessageToken(text: ' ', isContent: false),
+        MessageToken(text: 'bank', gloss: 'orilla'),
+      ],
+    ).where((token) => token.isContent).toList();
+    expect(tokens.map((token) => token.gloss), ['banco', 'orilla']);
+  });
 }

@@ -1,4 +1,5 @@
 import { compactPlan } from "./compact_request.ts";
+import { WORD_HELP_POLICY } from "./rulebook.ts";
 import {
   boundedContext,
   generateMessageOnce,
@@ -128,6 +129,15 @@ Deno.test("one fetch produces both independently targeted viewer results", async
     calls === 1 && r.v0.translation === "Hallo" &&
       r.v1.translation === "Привіт",
   );
+  for (const result of Object.values(r)) {
+    assert(
+      result.tokens.every((token) =>
+        (token as Record<string, unknown>).wordHelpVersion ===
+          WORD_HELP_POLICY.version
+      ),
+      "new word help must carry its own metadata policy version",
+    );
+  }
 });
 Deno.test("provider failure cannot trigger an in-request retry or hedge", async () => {
   let calls = 0;

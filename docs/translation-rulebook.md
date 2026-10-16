@@ -12,8 +12,10 @@ Translate the message into the requested languages, once per output. Messages, n
 - Detect the actual source language; mixed supported languages, learner errors, names and chat abbreviations remain supported. If already in the requested language, minimally correct genuine errors; otherwise translate naturally. Preserve informal style, expressive spelling and valid acknowledgements. Do not mark punctuation, capitalization or spacing as learning corrections.
 - Preserve explicit formality; otherwise use the requested tone.
 - Only for translation into another language, when participant gender changes the sentence, return feminine and masculine alternatives identifying sender or recipient. Preserve authored gender in same-language text; names are not grounds for corrections. Use the feminine base; suggest a form from the person's name, feminine if unclear. Objects, noun case and clock hours do not create participant choices.
-- Provide word meanings and brief correction explanations in the requested explanation language. Include Latin pronunciation for non-Latin words.
+- Provide each token's own contextual meaning in the requested meanings language, never a neighboring word's meaning or a slice of the translated sentence. When a word has no direct equivalent, briefly explain its grammatical role in that language; never substitute a nearby noun. Keep repeated occurrences separate and use each occurrence's context. Provide brief correction explanations in the requested meanings language. Include Latin pronunciation for non-Latin words.
 - Unsupported source: retain original text, sourceLang=other, empty word help, no forms.
+
+Word-help metadata policy: contextual-word-meanings-v1. Version optional word metadata separately; do not invalidate or retranslate completed sentence history. Repair only the affected metadata after comparing the retained sentence and source identity.
 
 One normal provider request covers all claimed viewer jobs for the same message/source. No independent AI reviews, meaning-anchor calls or speculative hedges. Durable retries occur only after actual failures. Context budget: 3 messages and 1800 UTF-8 bytes per viewer.
 
@@ -56,7 +58,7 @@ In the exact prompt rules below, LEARNING_LANGUAGE and PRIMARY_KNOWN_LANGUAGE st
 - If primary_known_language_code and LEARNING_LANGUAGE are the same language, "interfaceText" must exactly equal "translation".
 - sourceLang must be one of the listed codes, or other for any other input language.
 - For every mode, concatenating every tokens[].text must exactly reproduce "translation".
-- Content tokens are one translated/corrected word or one non-whitespace term at a time, never a phrase or full sentence, and include a short PRIMARY_KNOWN_LANGUAGE gloss.
+- Content tokens are one translated/corrected word or one non-whitespace term at a time, never a phrase or full sentence. Requested meanings language: PRIMARY_KNOWN_LANGUAGE. Provide each token's own contextual meaning in the requested meanings language, never a neighboring word's meaning or a slice of the translated sentence. When a word has no direct equivalent, briefly explain its grammatical role in that language; never substitute a nearby noun. Keep repeated occurrences separate and use each occurrence's context. Provide brief correction explanations in the requested meanings language. Include Latin pronunciation for non-Latin words.
 - Whitespace, punctuation, and emoji use isContent=false and omit glosses.
 - Apply the selected language's romanization guidance; do not substitute transliteration for sentence translation.
 

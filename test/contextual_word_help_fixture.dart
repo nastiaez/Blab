@@ -1,0 +1,503 @@
+// Retained live-provider response; see docs/qa/2026-10-16-bla-5.
+const contextualWordHelpFixture = r'''{
+  "wordHelpPolicy": "contextual-word-meanings-v1",
+  "source": "You don't have the full translation of the message. Also, I can't listen to the whole message or sentence.",
+  "viewers": [
+    {
+      "key": "v0",
+      "messageId": "reported",
+      "sourceHash": "probe",
+      "text": "You don't have the full translation of the message. Also, I can't listen to the whole message or sentence.",
+      "targetLang": "en",
+      "interfaceLang": "uk",
+      "formContext": {
+        "viewerName": "Alice",
+        "partnerName": "Bob",
+        "messageAuthor": "viewer",
+        "tone": "informal"
+      }
+    },
+    {
+      "key": "v1",
+      "messageId": "reported",
+      "sourceHash": "probe",
+      "text": "You don't have the full translation of the message. Also, I can't listen to the whole message or sentence.",
+      "targetLang": "en",
+      "interfaceLang": "de",
+      "formContext": {
+        "viewerName": "Bob",
+        "partnerName": "Alice",
+        "messageAuthor": "partner",
+        "tone": "informal"
+      }
+    }
+  ],
+  "result": {
+    "v0": {
+      "mode": "none",
+      "sourceLang": "en",
+      "translation": "You don't have the full translation of the message. Also, I can't listen to the whole message or sentence.",
+      "interfaceText": "У тебе немає повного перекладу повідомлення. Крім того, я не можу прослухати все повідомлення чи речення.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "You",
+          "gloss": "ти",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "don't",
+          "gloss": "не",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "have",
+          "gloss": "мати",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "артикль",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "full",
+          "gloss": "повний",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "translation",
+          "gloss": "переклад",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "of",
+          "gloss": "прийменник",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "артикль",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "message.",
+          "gloss": "повідомлення",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "Also,",
+          "gloss": "також",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "I",
+          "gloss": "я",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "can't",
+          "gloss": "не можу",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "listen",
+          "gloss": "слухати",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "to",
+          "gloss": "прийменник",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "артикль",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "whole",
+          "gloss": "весь",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "message",
+          "gloss": "повідомлення",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "or",
+          "gloss": "або",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "sentence.",
+          "gloss": "речення",
+          "roman": null,
+          "isContent": true
+        }
+      ],
+      "formAlternatives": null
+    },
+    "v1": {
+      "mode": "none",
+      "sourceLang": "en",
+      "translation": "You don't have the full translation of the message. Also, I can't listen to the whole message or sentence.",
+      "interfaceText": "Du hast nicht die vollständige Übersetzung der Nachricht. Außerdem kann ich mir nicht die ganze Nachricht oder den ganzen Satz anhören.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "You",
+          "gloss": "Du",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "don't",
+          "gloss": "nicht",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "have",
+          "gloss": "haben",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "der/die/das",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "full",
+          "gloss": "vollständig",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "translation",
+          "gloss": "Übersetzung",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "of",
+          "gloss": "von",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "der/die/das",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "message.",
+          "gloss": "Nachricht",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "Also,",
+          "gloss": "Außerdem",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "I",
+          "gloss": "ich",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "can't",
+          "gloss": "können nicht",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "listen",
+          "gloss": "zuhören",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "to",
+          "gloss": "zu",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "the",
+          "gloss": "der/die/das",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "whole",
+          "gloss": "ganz",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "message",
+          "gloss": "Nachricht",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "or",
+          "gloss": "oder",
+          "roman": null,
+          "isContent": true
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false
+        },
+        {
+          "text": "sentence.",
+          "gloss": "Satz",
+          "roman": null,
+          "isContent": true
+        }
+      ],
+      "formAlternatives": null
+    }
+  }
+}''';

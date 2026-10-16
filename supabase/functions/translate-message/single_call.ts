@@ -8,7 +8,7 @@ import {
   type TranslationResult,
   unsupportedSourceScript,
 } from "./contract.ts";
-import { SINGLE_CALL_POLICY } from "./rulebook.ts";
+import { SINGLE_CALL_POLICY, WORD_HELP_POLICY } from "./rulebook.ts";
 import { fetchChatCompletion, type FetchLike } from "./provider.ts";
 
 export type PreparedViewer = {
@@ -212,6 +212,22 @@ export async function generateMessageOnce(
               "viewer"
             ? "recipient"
             : "author");
+      }
+      // Version optional word help separately from the immutable sentence
+      // contract, so metadata-only repair never retranslates completed history.
+      const versioned = <T>(tokens: T[]) =>
+        tokens.map((token) => ({
+          ...token,
+          wordHelpVersion: WORD_HELP_POLICY.version,
+        }));
+      r.tokens = versioned(r.tokens);
+      if (r.formAlternatives) {
+        r.formAlternatives.feminineTokens = versioned(
+          r.formAlternatives.feminineTokens,
+        );
+        r.formAlternatives.masculineTokens = versioned(
+          r.formAlternatives.masculineTokens,
+        );
       }
       results[v.key] = r;
     } catch (error) {

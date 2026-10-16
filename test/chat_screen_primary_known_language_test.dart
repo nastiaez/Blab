@@ -32,6 +32,8 @@ import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
+import 'package:blab/shared/models/message_token.dart';
+import 'package:blab/features/chat/widgets/word_popup.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -379,11 +381,13 @@ Widget _host(
   bool disableAnimations = false,
   bool accessibleNavigation = false,
   Locale? locale,
+  ThemeData? theme,
 }) {
   return UncontrolledProviderScope(
     container: container,
     child: MaterialApp(
       locale: locale,
+      theme: theme,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Builder(
@@ -2163,4 +2167,83 @@ void main() {
       Color(0xFF5F3C4B),
     ]);
   });
+}
+
+// Replays retained live-provider word help through the real chat screen.
+Future<void> runContextualWordHelpJourney(
+  WidgetTester tester,
+  Map<String, dynamic> fixture, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  final results = fixture['result'] as Map<String, dynamic>;
+  for (final key in ['v0', 'v1']) {
+    final primary = key == 'v0' ? 'uk' : 'de';
+    final raw = results[key] as Map<String, dynamic>;
+    final text = raw['translation'] as String;
+    final tokens = (raw['tokens'] as List).map((value) {
+      final token = value as Map<String, dynamic>;
+      return MessageToken(
+        text: token['text'] as String,
+        gloss: token['gloss'] as String?,
+        romanization: token['roman'] as String?,
+        isContent: token['isContent'] as bool,
+      );
+    }).toList();
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        pending: true,
+        chatMode: 'practice',
+        learningLanguageCode: 'en',
+        messageText: text,
+        messageIsOutgoing: key == 'v0',
+      ),
+      primaryKnownLanguage: primary,
+      knownLanguages: [primary],
+      isOnline: true,
+    );
+    await tester.pumpWidget(
+      _host(
+        container,
+        locale: key == 'v0' ? const Locale('en') : const Locale('uk'),
+        theme: blabTheme,
+      ),
+    );
+    await _settle(tester);
+    container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .hydrateFromDb(
+          {
+            'msg-1': MessageTranslation(
+              translation: text,
+              interfaceText: raw['interfaceText'] as String,
+              interfaceLang: primary,
+              sourceLang: 'en',
+              tokens: tokens,
+              mode: LearningAidMode.none,
+            ),
+          },
+          'en',
+          primary,
+          replaceExisting: true,
+        );
+    await tester.pump(const Duration(seconds: 2));
+    for (final word in key == 'v0' ? ['the', 'of', 'message'] : ['message']) {
+      await tester.tap(find.text(word).first);
+      await _settle(tester);
+      final expected = tokens
+          .firstWhere((t) => t.text.replaceAll('.', '') == word)
+          .gloss!;
+      expect(find.byKey(const ValueKey('word-popup-card')), findsOneWidget);
+      expect(find.text(expected), findsOneWidget);
+      if (word != 'message') expect(expected, isNot('повідомлення'));
+      if (capture != null) await capture('$primary-$word');
+      dismissWordPopup();
+      await tester.pump();
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+    await tester.pump(const Duration(seconds: 20));
+  }
 }
