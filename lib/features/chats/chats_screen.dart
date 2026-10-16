@@ -38,7 +38,10 @@ class ChatsScreen extends ConsumerWidget {
     if (!confirmed || !context.mounted) return false;
     try {
       await ref.read(chatListProvider.notifier).deleteChat(chat.id);
-      return true;
+      // A new incoming message may already have restored the personal row.
+      // Do not animate that live conversation out of the list again.
+      return !(ref.read(chatListProvider).value?.any((c) => c.id == chat.id) ??
+          false);
     } catch (_) {
       if (context.mounted) showAppSnack(context.l10n.couldNotDeleteChat);
       return false;

@@ -11,6 +11,12 @@ void main() {
   ) async {
     await journey.runChatLifecycleJourney(tester);
   });
+  testWidgets(
+    'incoming message restores chat while delete confirmation completes',
+    (tester) async {
+      await journey.runChatLifecycleJourney(tester, restoreDuringDelete: true);
+    },
+  );
   for (final locale in ['en', 'de', 'es', 'uk']) {
     testWidgets('$locale confirmation remains reachable at large text', (
       tester,

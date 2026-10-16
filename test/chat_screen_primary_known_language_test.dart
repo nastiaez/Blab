@@ -2249,8 +2249,9 @@ Future<void> runContextualWordHelpJourney(
 }
 
 class _LifecycleService extends _PrimaryKnownLanguageChatService {
-  _LifecycleService()
+  _LifecycleService({this.restoreDuringDelete = false})
     : super(partnerName: 'Bob', messageText: 'See you tomorrow!');
+  final bool restoreDuringDelete;
   bool left = false;
   bool hidden = false;
   int leaveCalls = 0;
@@ -2279,7 +2280,7 @@ class _LifecycleService extends _PrimaryKnownLanguageChatService {
   @override
   Future<void> deleteChat(String chatId) async {
     deleteCalls++;
-    hidden = true;
+    hidden = !restoreDuringDelete;
   }
 }
 
@@ -2288,10 +2289,11 @@ class _LifecycleService extends _PrimaryKnownLanguageChatService {
 Future<void> runChatLifecycleJourney(
   WidgetTester tester, {
   Future<void> Function(String)? capture,
+  bool restoreDuringDelete = false,
 }) async {
   SharedPreferences.setMockInitialValues({});
   VisibilityDetectorController.instance.updateInterval = Duration.zero;
-  final service = _LifecycleService();
+  final service = _LifecycleService(restoreDuringDelete: restoreDuringDelete);
   final container = _containerForHeader(service);
   await tester.pumpWidget(_host(container, theme: blabTheme));
   await _settle(tester);
@@ -2352,7 +2354,8 @@ Future<void> runChatLifecycleJourney(
   await tester.tap(find.widgetWithText(TextButton, 'Delete chat').last);
   await _settle(tester);
   expect(service.deleteCalls, 1);
-  expect(row, findsNothing);
+  expect(row, restoreDuringDelete ? findsOneWidget : findsNothing);
+  expect(tester.takeException(), isNull);
   if (capture != null) await capture('06-deleted-chat');
   await tester.pumpWidget(const SizedBox.shrink());
   container.dispose();
