@@ -142,7 +142,7 @@ Deno.test("provider failure cannot trigger an in-request retry or hedge", async 
   }
   assert(failed && calls === 1);
 });
-Deno.test("missing viewer, malformed tokens and truncated output are rejected without repair calls", async () => {
+Deno.test("missing requested sentence, empty translation and unreadable output are rejected without repair calls", async () => {
   for (
     const payload of [
       { choices: [{ message: { content: "{}" } }] },
@@ -150,7 +150,7 @@ Deno.test("missing viewer, malformed tokens and truncated output are rejected wi
         choices: [{
           message: {
             content: JSON.stringify(
-              bundle([viewer], { v0: { ...output(), tokens: [] } }),
+              bundle([viewer], { v0: output("   ") }),
             ),
           },
         }],
@@ -159,7 +159,7 @@ Deno.test("missing viewer, malformed tokens and truncated output are rejected wi
         choices: [{
           finish_reason: "length",
           message: {
-            content: JSON.stringify(bundle([viewer], { v0: output() })),
+            content: "{unreadable",
           },
         }],
       },
@@ -406,4 +406,126 @@ Deno.test("unchanged same-language result keeps authored spacing and aligns supp
     calls === 1 && result.v0.translation === text &&
       result.v0.tokens.map((t: any) => t.text).join("") === text,
   );
+});
+
+Deno.test("nonempty acceptance keeps a multiword title and tolerates missing optional word help", async () => {
+  const v = { ...viewer, text: "You're watching broke girls without me" };
+  for (
+    const tokens of [
+      [
+        {
+          text: "Du schaust ohne mich ",
+          gloss: null,
+          roman: null,
+          isContent: false,
+        },
+        {
+          text: "2 Broke Girls",
+          gloss: "2 Broke Girls",
+          roman: null,
+          isContent: true,
+        },
+        { text: ".", gloss: null, roman: null, isContent: false },
+      ],
+      [],
+      [null, { unexpected: true }],
+    ]
+  ) {
+    let calls = 0;
+    const r = await generateMessageOnce([v], credential, async () => {
+      calls++;
+      return Response.json({
+        choices: [{
+          message: {
+            content: JSON.stringify(
+              bundle([v], {
+                v0: {
+                  ...output("Du schaust ohne mich 2 Broke Girls."),
+                  tokens,
+                },
+              }),
+            ),
+          },
+        }],
+      });
+    });
+    assert(
+      calls === 1 && r.v0.translation === "Du schaust ohne mich 2 Broke Girls.",
+    );
+    if (tokens.length === 3 && tokens[0] !== null) {
+      assert(r.v0.tokens.length === 3);
+    }
+  }
+});
+
+Deno.test("nonempty acceptance does not veto copied text, changed literals or correction metadata", async () => {
+  for (
+    const values of [
+      { ...output("Hello"), interfaceText: "Hello", tokens: [] },
+      { ...output("Expanded O"), tokens: [] },
+      {
+        ...output("Hallo"),
+        sourceLang: "de",
+        mode: "correction",
+        explanation: null,
+        confidence: null,
+      },
+    ]
+  ) {
+    const r = await generateMessageOnce(
+      [viewer],
+      credential,
+      async () =>
+        Response.json({
+          choices: [{
+            message: {
+              content: JSON.stringify(bundle([viewer], { v0: values })),
+            },
+          }],
+        }),
+    );
+    assert(r.v0.translation === values.translation);
+  }
+});
+
+Deno.test("missing help and conflicting source labels cannot block routed nonempty sentences", async () => {
+  const data = bundle([viewer], { v0: output() });
+  data.help = [];
+  data.sentences[1].sourceLang = "de";
+  const r = await generateMessageOnce(
+    [viewer],
+    credential,
+    async () =>
+      Response.json({
+        choices: [{ message: { content: JSON.stringify(data) } }],
+      }),
+  );
+  assert(r.v0.translation === "Hallo" && r.v0.tokens.length === 0);
+});
+
+Deno.test("loose structure accepts extra fields, extra outputs and optional omissions", async () => {
+  const data = bundle([viewer], { v0: output() });
+  data.sentences.push({ id: "unrequested", text: "ignore me", extra: true });
+  data.sentences.push(null);
+  for (const sentence of data.sentences) {
+    if (!sentence) continue;
+    delete sentence.mode;
+    delete sentence.confidence;
+    delete sentence.forms;
+  }
+  const r = await generateMessageOnce(
+    [viewer],
+    credential,
+    async () =>
+      Response.json({
+        choices: [{
+          finish_reason: "length",
+          message: {
+            content: "```json\n" +
+              JSON.stringify({ ...data, extraField: 42, help: null }) + "\n```",
+          },
+        }],
+      }),
+  );
+  assert(r.v0.translation === "Hallo" && r.v0.tokens.length === 0);
 });

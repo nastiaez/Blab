@@ -1524,6 +1524,7 @@ export function parseProviderResult(
   interfaceLang: string,
   resolvedSourceLang?: string,
   deferWordMetadata = false,
+  acceptance: "strict" | "nonempty" = "strict",
 ): TranslationResult | null {
   let cleaned = content
     .trim()
@@ -1577,6 +1578,26 @@ export function parseProviderResult(
       deferWordMetadata,
     ),
   };
+  if (acceptance === "nonempty") {
+    // US-015: optional metadata cannot veto a nonempty sentence.
+    result.tokens = result.tokens.filter((token): token is TranslationToken => {
+      if (!token || typeof token !== "object" || Array.isArray(token)) {
+        return false;
+      }
+      const t = token as Record<string, unknown>;
+      return typeof t.text === "string" && typeof t.isContent === "boolean" &&
+        (t.gloss === null || typeof t.gloss === "string") &&
+        (t.roman === null || typeof t.roman === "string");
+    });
+    if (result.tokens.map((t: any) => t.text).join("") !== result.translation) {
+      result.tokens = repairTokensToTranslation(
+        result.tokens,
+        result.translation,
+        targetLang,
+      ) ?? [];
+    }
+    return result;
+  }
   result.translation = normalizeTargetOrthography(
     result.translation,
     targetLang,

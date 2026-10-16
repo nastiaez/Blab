@@ -4,11 +4,9 @@ import {
   isProtectedLiteralMessage,
   LANG_NAMES,
   parseProviderResult,
-  preservesLiteralCharacters,
   type ProviderCredential,
   type TranslationResult,
   unsupportedSourceScript,
-  wordGlossMetadataNeedsRepair,
 } from "./contract.ts";
 import { SINGLE_CALL_POLICY } from "./rulebook.ts";
 import { fetchChatCompletion, type FetchLike } from "./provider.ts";
@@ -95,13 +93,14 @@ export async function generateMessageOnce(
   });
   if (!response.ok) throw new Error(`provider_http_${response.status}`);
   const payload = await response.json();
-  if (payload.choices?.[0]?.finish_reason === "length") {
-    throw new Error("provider_output_truncated");
-  }
   const raw = expandCompactResponse(
-    JSON.parse(payload.choices?.[0]?.message?.content ?? "null"),
+    JSON.parse(
+      String(payload.choices?.[0]?.message?.content ?? "null")
+        .trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""),
+    ),
     viewers,
     compactPlan(viewers),
+    SINGLE_CALL_POLICY.acceptance,
   );
   if (
     !raw || typeof raw !== "object" || Array.isArray(raw) ||
@@ -113,6 +112,11 @@ export async function generateMessageOnce(
     // Deterministically expand fragment-only form tokens from the already
     // returned base sentence; this never requests or invents a gloss.
     const rawResult = raw[v.key];
+    if (Array.isArray(rawResult.tokens)) {
+      rawResult.tokens = rawResult.tokens.filter((t: any) =>
+        t && typeof t.text === "string"
+      );
+    }
     const forms = rawResult.formAlternatives;
     if (
       forms && typeof forms.before === "string" &&
@@ -170,29 +174,12 @@ export async function generateMessageOnce(
       source,
       v.targetLang,
       v.interfaceLang,
+      undefined,
+      false,
+      SINGLE_CALL_POLICY.acceptance,
     );
-    if (
-      !r || r.sourceClassificationConflict || !r.interfaceText.trim() ||
-      !preservesLiteralCharacters(source, r.translation) ||
-      !preservesLiteralCharacters(source, r.interfaceText)
-    ) {
+    if (!r || !r.translation.trim()) {
       throw new Error("invalid_translation_result");
-    }
-    if (
-      r.sourceLang !== "other" &&
-      (r.tokens.length === 0 ||
-        wordGlossMetadataNeedsRepair(r, v.targetLang, v.interfaceLang, source))
-    ) {
-      throw new Error("invalid_word_help");
-    }
-    if (
-      v.targetLang !== v.interfaceLang && r.interfaceText === r.translation &&
-      (source.match(/\p{L}+/gu)?.length ?? 0) > 1 && r.sourceLang !== "other"
-    ) {
-      throw new Error("copied_language_lane");
-    }
-    if (raw[v.key].formAlternatives && !r.formAlternatives) {
-      throw new Error("invalid_form_alternatives");
     }
     if (r.formAlternatives) {
       const f = r.formAlternatives;

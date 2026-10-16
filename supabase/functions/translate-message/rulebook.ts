@@ -202,6 +202,7 @@ Run: deno run --allow-write scripts/generate_translation_rulebook.ts
 PRD remains authoritative for product behavior. This module owns the shared policy constants and prompt fragments below; validators import them directly.
 
 ## Active single-call runtime rules
+Only two response acceptance rules: (1) readable JSON containing the requested sentence outputs, allowing extra fields/outputs and omitted optional metadata; (2) nonempty translation text. Word help, copied wording, language heuristics and form metadata must not reject the sentence. Transport failures remain errors; optional fields are handled safely.
 ${COMPACT_TRANSLATION_RULES}
 
 One normal provider request covers all claimed viewer jobs for the same message/source. No independent AI reviews, meaning-anchor calls or speculative hedges. Durable retries occur only after actual failures. Context budget: ${SINGLE_CALL_POLICY.contextMessages} messages and ${SINGLE_CALL_POLICY.contextUtf8Bytes} UTF-8 bytes per viewer.
@@ -281,6 +282,7 @@ Do not duplicate policy values in new prompts or validators. Move any newly conf
 // Owner-approved single-call policy (15 October 2026). The full reference above
 // remains the policy catalogue; this is its runtime projection for message batches.
 export const SINGLE_CALL_POLICY = {
+  acceptance: "nonempty",
   contextMessages: 3,
   contextUtf8Bytes: 1800,
   timeoutMs: 20000,
