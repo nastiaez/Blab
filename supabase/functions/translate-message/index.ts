@@ -766,18 +766,12 @@ Deno.serve(async (req) => {
     if (body.targetLang !== undefined && typeof body.targetLang !== "string") {
       return json({ error: "invalid_target_language" }, 400);
     }
-    const explicitTarget = typeof body.targetLang === "string";
     const response = await userClient.rpc(
-      explicitTarget
-        ? "request_message_translation_variant"
-        : forceRefresh
-        ? "request_message_translation_fresh"
-        : "request_message_translation",
+      "request_message_translation_variant",
       {
         p_message_id: messageId,
-        ...(explicitTarget
-          ? { p_target_lang: body.targetLang, p_force_refresh: forceRefresh }
-          : {}),
+        p_target_lang: body.targetLang ?? null,
+        p_force_refresh: forceRefresh,
       },
     );
     preparedData = response.data;
@@ -826,6 +820,13 @@ Deno.serve(async (req) => {
       429,
       { "Retry-After": String(retryAfter) },
     );
+  }
+  if (prepared.status === "failed" || prepared.status === "pending") {
+    return json({
+      error: prepared.status === "failed"
+        ? "preparation_failed"
+        : "translation_pending",
+    }, 409);
   }
   if (prepared.status === "stale") {
     return json({ error: "translation_stale" }, 409);
@@ -944,6 +945,11 @@ Deno.serve(async (req) => {
     }
   }
   if (result === null) {
+    if (!isWorker && typeof prepared.attemptId === "string") {
+      const saved = await admin.from("message_translation_attempts")
+        .update({ status: "failed" }).eq("id", prepared.attemptId);
+      if (saved.error) console.error("translation failure persistence failed");
+    }
     console.error("translation provider failed after retry", {
       reason: providerFailure,
     });
@@ -955,7 +961,7 @@ Deno.serve(async (req) => {
     );
     return json(
       {
-        error: "translation_unavailable",
+        error: isWorker ? "translation_unavailable" : "preparation_failed",
         reason: providerFailure,
       },
       retryAfter > 0 ? 429 : 502,
@@ -1028,6 +1034,10 @@ Deno.serve(async (req) => {
   }
   if (completed !== true) {
     return json({ error: "translation_stale" }, 409);
+  }
+  if (!isWorker && typeof prepared.attemptId === "string") {
+    await admin.from("message_translation_attempts")
+      .update({ status: "completed" }).eq("id", prepared.attemptId);
   }
   return json({ ...result, interfaceLang, targetLang });
 });

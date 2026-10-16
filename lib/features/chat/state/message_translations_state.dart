@@ -23,6 +23,13 @@ final translateMessageFnProvider = Provider<TargetedTranslateMessageFn>((ref) {
       translator.translate(messageId: id, targetLang: targetLang);
 });
 
+// Only the user-triggered Retry action may restart terminal server work.
+final retryMessageFnProvider = Provider<TargetedTranslateMessageFn>((ref) {
+  final translator = ref.watch(messageTranslatorProvider);
+  return (id, {targetLang}) =>
+      translator.translateFresh(messageId: id, targetLang: targetLang);
+});
+
 final translationLoadingTimeoutProvider = Provider<Duration>(
   (ref) => const Duration(seconds: 8),
 );
@@ -864,6 +871,7 @@ class MessageTranslationsNotifier
     required String targetLang,
     required String interfaceLang,
     bool priority = false,
+    bool explicitRetry = false,
   }) async {
     if (!containsMeaningBearingText(text)) return;
     final key = translationEntryKey(messageId, targetLang, interfaceLang);
@@ -957,7 +965,9 @@ class MessageTranslationsNotifier
     // full of uncached bubbles cannot fan out into concurrent provider calls.
     // The function performs its own cache check and persists a verified result
     // before returning success.
-    final fn = ref.read(translateMessageFnProvider);
+    final fn = ref.read(
+      explicitRetry ? retryMessageFnProvider : translateMessageFnProvider,
+    );
     final lifecycleDeadline = ref.read(translationLifecycleDeadlineProvider);
     Future<MessageTranslation> translateWithQuietRetry(String id) async {
       final stopwatch = Stopwatch()..start();
@@ -971,7 +981,10 @@ class MessageTranslationsNotifier
         } catch (error, stack) {
           lastError = error;
           lastStack = stack;
-          if (error is TimeoutException) break;
+          if (error is TimeoutException ||
+              explicitRetry ||
+              !isAutomaticTranslationRetryAllowed(error))
+            break;
         }
       }
       if (lastError is TimeoutException || lastError == null) {
@@ -1150,6 +1163,7 @@ class MessageTranslationsNotifier
       text: text,
       targetLang: targetLang,
       interfaceLang: interfaceLang,
+      explicitRetry: true,
     );
   }
 }

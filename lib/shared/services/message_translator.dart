@@ -180,8 +180,15 @@ class MessageTranslator {
     );
   }
 
-  Future<MessageTranslation> translateFresh({required String messageId}) async {
-    return _translate(messageId: messageId, forceRefresh: true);
+  Future<MessageTranslation> translateFresh({
+    required String messageId,
+    String? targetLang,
+  }) async {
+    return _translate(
+      messageId: messageId,
+      forceRefresh: true,
+      targetLang: targetLang,
+    );
   }
 
   Future<MessageTranslation> _translate({
