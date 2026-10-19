@@ -49,3 +49,13 @@ Nastia14169 approves the delivered Android implementation and explicitly
 requests commit and merge to main. Source integration authorized; no hosted
 migration/configuration or distribution is authorized. Remaining database,
 iOS and real-download gates stay pending for rollout readiness.
+
+## Main integration
+
+Approved source committed and fast-forward merged/pushed to main10e51ef.
+Local/remote main verified equal. Post-integration native six-state replay passes;
+normal-size capture inspected, same approved rendering. Reused the debug test
+artifact built from the unchanged source whose runtime/test hashes match merged
+main (source-sha256.json); no new runtime changes. Emulator was restarted after
+an unresponsive shell; reproducible candidate intermediates removed to recover
+disk space, retained APK/source/screenshots untouched. No release or hosted change.
