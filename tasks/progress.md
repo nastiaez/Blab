@@ -1646,11 +1646,12 @@ Approved slice integrated atc02857f, local/remote main synchronized. All3 clean 
 
 Owner13688 explicitly approves the exact production scope. Migration04 and stream-channel are deployed and verified (ledger104, tested SQL/source parity, JWT protection, anonymous calls401). Public Android29 distributed to the existing2 testers with matching download-back hash; public iPhone29 assigned to existing Owner testing and verified IN_BETA_TESTING. Owner physical/manual acceptance remains separate and pending. · 2026-10-16
 
-## Connection-notice removal · 2026-10-19 ← in progress
+## Connection-notice removal · 2026-10-19 · integrated, release queued
 
 - Scope: US-031 owner revision; remove both global banners across all shared consumers, preserve offline/access behavior and separate update-notice candidate.
 - [x] Android fixture screenshots inspected for access refresh and offline state; no status strip or reserved height.
-- [ ] Explicit screenshot approval before integration/distribution.
-- Verification: focused access/connectivity/send checks 35 passed; invite/reconnect checks 34 passed; Android native fixture passed with identical online/offline geometry. Static analysis clean; full Flutter suite 968 passed / 16 environment-gated skips. Screenshot delivered to topic 8856 (message 13962); owner approval and integration/distribution pending.
+- [x] Source integration explicitly authorized after screenshot delivery (13986).
+- [ ] Distribution held for the next batch (13977); no release authorized.
+- Verification: focused access/connectivity/send checks 35 passed; invite/reconnect checks 34 passed; Android native fixture passed with identical online/offline geometry. Static analysis clean; full Flutter suite 968 passed / 16 environment-gated skips. Screenshot delivered to topic 8856 (message 13962); main integration authorized in 13986; distribution held.
 
 - 2026-10-19 · 13977: hold distribution and batch with further work. Shared pending-release index: `/Users/aswin/clawd/projects/blab/release/pending-updates.md`. Visual approval/main integration remain separate; local commit checkpoint only.

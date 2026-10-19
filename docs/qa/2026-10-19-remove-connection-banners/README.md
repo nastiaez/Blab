@@ -10,4 +10,4 @@ Evidence boundary: Android fixture uses actual Chats screen and TestAccessGate w
 
 Verification: static analysis clean; 35 focused checks and 34 invite/recovery checks pass. Native emulator fixture passed; both PNGs inspected, identical (SHA1 13638b81396f5fb137effc6790f4e411e0a7220b). Full Flutter suite: 968 passed, 16 environment-gated skips, zero failures.
 
-Review: offline screenshot delivered to topic 8856, message 13962; explicit visual approval pending. No merge, push or distribution authorized by unseen screenshots.
+Review: offline screenshot delivered to topic 8856, message 13962. Message 13986 explicitly authorizes committing/pushing this change to main after review delivery. This authorizes source integration only; message 13977 continues to hold app distribution for a later batch. No separate claim of owner device testing.
