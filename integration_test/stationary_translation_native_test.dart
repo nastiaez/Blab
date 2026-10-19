@@ -6,7 +6,9 @@ import '../test/chat_screen_primary_known_language_test.dart' as journey;
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets('stationary translation and Connecting review', (tester) async {
+  testWidgets('stationary translation during silent access refresh', (
+    tester,
+  ) async {
     if (Platform.isAndroid) await binding.convertFlutterSurfaceToImage();
     Future<void> capture(String name) async {
       await tester.pump();
@@ -22,7 +24,7 @@ void main() {
       tester,
       connecting: true,
       capture: (name) async {
-        expect(find.text('Connecting…'), findsOneWidget);
+        expect(find.text('Connecting…'), findsNothing);
         expect(find.text('No connection'), findsNothing);
         await capture('banner-$name');
       },

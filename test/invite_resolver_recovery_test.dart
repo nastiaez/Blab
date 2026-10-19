@@ -381,7 +381,7 @@ void main() {
     connection.add(false);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.textContaining('No connection'), findsOneWidget);
+    expect(find.textContaining('No connection'), findsNothing);
     connection.add(true);
     await tester.pumpAndSettle();
     expect(find.text('chat:reconnected'), findsOneWidget);

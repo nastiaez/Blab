@@ -133,7 +133,7 @@ void main() {
     }
   });
 
-  testWidgets('offline live region exposes its localized label once', (
+  testWidgets('offline notice slot has no visible or announced status', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -149,11 +149,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final node = tester.getSemantics(
-      find.bySemanticsLabel(RegExp('No connection')),
-    );
-    expect('No connection'.allMatches(node.label), hasLength(1));
-    expect(node.flagsCollection.isLiveRegion, isTrue);
+    expect(find.bySemanticsLabel(RegExp('No connection')), findsNothing);
+    expect(find.text('No connection'), findsNothing);
+    expect(tester.getSize(find.byType(OfflineBanner)).height, 0);
     semantics.dispose();
   });
 }

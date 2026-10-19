@@ -433,3 +433,7 @@ Owner replaces decisions13/29/30 single-use/automatic rotation. `create_invite()
 ## Resolved — chat lifecycle, 16 October 2026
 
 Terminal `chats.left_at/left_by` and both memberships' `chat_left_at` drive existing realtime watchers. Authenticated `leave_chat` and invite claim use the same pair advisory lock; active-pair partial uniqueness permits retained closed histories plus one new conversation. New legacy writes and Stream command/media reservations take a shared chat-row lock and reject terminal chats, while leave serializes with an exclusive row lock. Preauthorized vendor work may reconcile history, never reopen messaging. Personal `delete_chat` sets only that viewer's hidden timestamp and history cutoff; SELECT RLS and client rendering enforce the cutoff. Only a genuinely newer incoming message unhides the membership. Reinvite after a personal clear closes the former pair and creates a fresh one without deleting partner history. No translation or block policy is changed. Screenshot review, native verification and owner manual acceptance remain release gates.
+
+## Connection-notice removal · 2026-10-19
+
+Owner removed global Connecting/No connection banners (US-031). Keep the shared notice slot zero-height and silent; retain connectivity providers, queue/reconnect, access authorization/error recovery, and per-message feedback unchanged. The unmerged update-notice candidate remains separate and must retain its action when integrated.

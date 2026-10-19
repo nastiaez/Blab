@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('connecting has no logout; denied access retains recovery', (
+  testWidgets('access check is silent; denied access retains recovery', (
     tester,
   ) async {
     final pending = Completer<Map<String, dynamic>>();
@@ -30,7 +30,8 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.text('Connecting…'), findsOneWidget);
+    expect(find.text('Connecting…'), findsNothing);
+    expect(find.text('No connection'), findsNothing);
     expect(find.text('Log out'), findsNothing);
     expect(find.text('Private chat content'), findsOneWidget);
     pending.complete({'channel': 'test', 'status': 'not_approved'});

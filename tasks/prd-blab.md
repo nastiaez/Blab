@@ -500,14 +500,14 @@ This document captures the full scope as prototyped across 4 phone flows.
 ---
 
 ### US-031: Offline / no-connection state
-**Description:** As a user without internet, I want clear feedback that the app is offline.
+**Description:** As a user without internet, I want messages to queue and cached chats to remain usable without global connection banners. Revised by owner, 2026-10-19.
 
 **Acceptance Criteria:**
-- [ ] Thin banner under the nav bar reads "No connection — messages will send when you're back online" with a gray background
-- [ ] Banner appears on connectivity loss within 3 seconds, disappears within 3 seconds of recovery
+- [ ] No global "Connecting…" or "No connection" banner, text or spinner on launch, resume, access refresh, or connection loss; no empty banner space
+- [ ] Connectivity monitoring, tester-access checks and message-level pending/failure feedback remain unchanged; update-available notices are a separate feature
 - [ ] Composed messages queue locally and auto-send on reconnect
 - [ ] Chat list still opens; existing chats render from local cache
-- [ ] Invite a friend uses the same top banner, keeps its normal layout, and disables `Send invite` while offline
+- [ ] Invite a friend keeps its normal layout without a connection banner and disables `Send invite` while offline
 - [ ] A valid invite opened in the installed app before a connection loss is preserved and claimed automatically on recovery; if the user leaves, its finished chat appears unread in Chats
 
 ---
