@@ -1403,4 +1403,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteLeftChatConfirmation =>
       'This removes the chat and its history for you only. The other person keeps their copy.';
+
+  @override
+  String get updateAvailable => 'Update available';
+
+  @override
+  String get updateAvailableHint => 'Open the app download page';
+
+  @override
+  String get updateOpenFailed => 'Couldn’t open the update. Please try again.';
+
+  @override
+  String get updateAction => 'Update';
 }

@@ -1,0 +1,6 @@
+{
+  "lib/shared/widgets/offline_banner.dart": "4f28b44aedb4c3113198f9d94aca64c25e313799727424112be3d17ae91a69b6",
+  "lib/shared/state/app_update_state.dart": "1b47fc6228d3acdeb83233f44cc69e7db21df3eedc345f7bef34f4dd5c5ebc23",
+  "test/app_update_notice_test.dart": "622b34bf8e217fc2432bcb82c8cc595e3e3724f0fce8e50540fcd85f4ec773dd",
+  "test/app_update_refresh_test.dart": "451605eb576ab9fb331b86ac9aabed67e640fa38649d10a6e2c58013507512c1"
+}

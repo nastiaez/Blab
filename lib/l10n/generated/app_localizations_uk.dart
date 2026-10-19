@@ -1412,4 +1412,17 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get deleteLeftChatConfirmation =>
       'Чат та його історію буде видалено лише для вас. Інша людина збереже свою копію.';
+
+  @override
+  String get updateAvailable => 'Доступне оновлення';
+
+  @override
+  String get updateAvailableHint => 'Відкрити сторінку завантаження застосунку';
+
+  @override
+  String get updateOpenFailed =>
+      'Не вдалося відкрити оновлення. Спробуйте ще раз.';
+
+  @override
+  String get updateAction => 'Оновити';
 }

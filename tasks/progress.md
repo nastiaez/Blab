@@ -1655,3 +1655,11 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Verification: focused access/connectivity/send checks 35 passed; invite/reconnect checks 34 passed; Android native fixture passed with identical online/offline geometry. Static analysis clean; full Flutter suite 968 passed / 16 environment-gated skips. Screenshot delivered to topic 8856 (message 13962); main integration authorized in 13986; distribution held.
 
 - 2026-10-19 · 13977: hold distribution and batch with further work. Shared pending-release index: `/Users/aswin/clawd/projects/blab/release/pending-updates.md`. Visual approval/main integration remain separate; local commit checkpoint only.
+
+## BLA-15 compact update notice · 2026-10-19 · [ ] ← in progress
+
+- Nastia approved Paper option D in 14157 and requested implementation in 14160: 48px peach banner, compact 32px orange button, 8px corners, warm 14px/20px text. Preserve a 48px invisible action target. Earlier tall/text-only variants are superseded.
+- Reconciled onto current origin/main 790926b in feat/bla15-compact-update-20261019, leaving the dirty October 17 candidate intact. Connection/access notices remain silent per revised US-031; corrected stale FR-26 wording accordingly.
+- Focused update/refresh tests pass (4); static analysis clean; full suite972 passed/16 skipped. Native Android six-state journey and 32px-face/48px-target checks pass. Actual English screenshot inspected against Paper and delivered14162; implementation approval pending. No merge, hosted configuration, migration or distribution. Evidence: docs/qa/2026-10-19-compact-update/README.md.
+- Nastia14169 explicitly approves the actual Android implementation and requests commit/merge to main. Integration authorized; distribution remains held. Remaining migration/security/iOS/handoff gates concern rollout readiness, not this approved source integration.
+- Done when the approved shape is verified on Android, reviewed as actual app screenshots, remaining migration/security/iOS/handoff checks pass, and the exact scope is authorized for integration/release. Distribution remains held for a later approved batch.

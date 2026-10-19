@@ -798,7 +798,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-23: Translations toggle scoped per chat (phone3 vs phone4 separate state)
 - FR-24: Word popup audio uses on-device TTS only — no external API. When TTS unavailable for the language, speaker icon stays in place but renders disabled (40% opacity, no tap, no tooltip, no text)
 - FR-25: Delivery failure shows `Not sent · Tap to try again`; language-help failure shows `Couldn’t translate · Retry`. Both are `#C62828` text-only rows below the bubble with no standalone icon; pending remains a clock
-- FR-26: Offline banner appears within 3s of connectivity loss; composed messages queue and auto-send on reconnect. Invite a friend uses the same banner and disables Send invite while offline; a pending valid invite claim resumes automatically on reconnection
+- FR-26: Connection/access checks remain silent with no global connection banner or reserved strip (owner revision 2026-10-19, US-031). Composed messages queue and auto-send on reconnect. Invite a friend disables Send invite while offline; a pending valid invite claim resumes automatically on reconnection. Optional update-available notices remain separate.
 - FR-27: Loading skeletons on first paint of chat list and chat view; failures use inline retry, not full-screen blockers
 - FR-28: All interactive elements have semantic labels; tap targets ≥ 44pt; contrast ≥ WCAG AA; respects system font scaling through 200%. The temporary five-action launch row uses 16 px icons, 11 px labels, and two-line wrapping under enlarged text rather than clipping or truncating
 - FR-29: Push permission requested after first chat opens, not at launch

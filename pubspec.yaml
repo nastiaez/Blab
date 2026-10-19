@@ -65,6 +65,7 @@ dependencies:
   uuid: ^4.5.3
   flutter_local_notifications: ^22.3.2
   sign_in_with_apple: ^8.2.0
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

@@ -490,5 +490,9 @@
   "deleteChatQuestion": "¿Eliminar el chat?",
   "deleteChatConfirmation": "El chat y su historial se eliminan solo para ti. Un mensaje nuevo de la otra persona hará que el chat vuelva a aparecer.",
   "couldNotDeleteChat": "No se pudo eliminar el chat. Inténtalo de nuevo.",
-  "deleteLeftChatConfirmation": "Esto elimina el chat y su historial solo para ti. La otra persona conserva su copia."
+  "deleteLeftChatConfirmation": "Esto elimina el chat y su historial solo para ti. La otra persona conserva su copia.",
+  "updateAvailable": "Actualización disponible",
+  "updateAvailableHint": "Abrir la página de descarga de la app",
+  "updateOpenFailed": "No se pudo abrir la actualización. Inténtalo de nuevo.",
+  "updateAction": "Actualizar"
 }

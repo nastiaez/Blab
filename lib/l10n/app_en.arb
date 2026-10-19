@@ -609,5 +609,9 @@
   "deleteChatQuestion": "Delete chat?",
   "deleteChatConfirmation": "This removes the chat and its history for you only. A new message from the other person will bring the chat back.",
   "couldNotDeleteChat": "Couldn’t delete chat. Try again.",
-  "deleteLeftChatConfirmation": "This removes the chat and its history for you only. The other person keeps their copy."
+  "deleteLeftChatConfirmation": "This removes the chat and its history for you only. The other person keeps their copy.",
+  "updateAvailable": "Update available",
+  "updateAvailableHint": "Open the app download page",
+  "updateOpenFailed": "Couldn’t open the update. Please try again.",
+  "updateAction": "Update"
 }

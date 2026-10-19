@@ -2549,6 +2549,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This removes the chat and its history for you only. The other person keeps their copy.'**
   String get deleteLeftChatConfirmation;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateAvailable;
+
+  /// No description provided for @updateAvailableHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the app download page'**
+  String get updateAvailableHint;
+
+  /// No description provided for @updateOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open the update. Please try again.'**
+  String get updateOpenFailed;
+
+  /// No description provided for @updateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateAction;
 }
 
 class _AppLocalizationsDelegate

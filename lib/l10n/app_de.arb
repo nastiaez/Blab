@@ -490,5 +490,9 @@
   "deleteChatQuestion": "Chat löschen?",
   "deleteChatConfirmation": "Der Chat und sein Verlauf werden nur für dich entfernt. Eine neue Nachricht der anderen Person bringt den Chat zurück.",
   "couldNotDeleteChat": "Der Chat konnte nicht gelöscht werden. Versuche es erneut.",
-  "deleteLeftChatConfirmation": "Dadurch werden der Chat und sein Verlauf nur für dich entfernt. Die andere Person behält ihre Kopie."
+  "deleteLeftChatConfirmation": "Dadurch werden der Chat und sein Verlauf nur für dich entfernt. Die andere Person behält ihre Kopie.",
+  "updateAvailable": "Update verfügbar",
+  "updateAvailableHint": "Downloadseite der App öffnen",
+  "updateOpenFailed": "Das Update konnte nicht geöffnet werden. Bitte versuche es erneut.",
+  "updateAction": "Aktualisieren"
 }
