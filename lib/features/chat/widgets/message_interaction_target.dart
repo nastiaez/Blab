@@ -15,9 +15,11 @@ class MessageInteractionTarget extends StatefulWidget {
     required this.onLongPress,
     required this.onFailedTap,
     this.onSwipeReply,
+    this.onDoubleTap,
     required this.child,
   });
 
+  final VoidCallback? onDoubleTap;
   final bool isFailed;
   final void Function(Rect bubbleRect, Offset pressPosition) onLongPress;
   final VoidCallback onFailedTap;
@@ -107,6 +109,7 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
         behavior: HitTestBehavior.opaque,
         onLongPressStart: _handleLongPressStart,
         onTap: null,
+        onDoubleTap: widget.isFailed ? null : widget.onDoubleTap,
         onHorizontalDragStart: _canSwipeReply ? _startSwipe : null,
         onHorizontalDragUpdate: _canSwipeReply ? _updateSwipe : null,
         onHorizontalDragEnd: _canSwipeReply ? (_) => _finishSwipe() : null,

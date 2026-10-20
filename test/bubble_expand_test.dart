@@ -379,14 +379,13 @@ Future<BoxDecoration> _reactionDecoration(
   await tester.pumpWidget(_host(container));
   await _settle(tester);
 
-  final badge = find.byKey(const ValueKey('my-reaction-❤️'));
-  final decoration = tester
-      .widgetList<Container>(
-        find.descendant(of: badge, matching: find.byType(Container)),
-      )
-      .map((container) => container.decoration)
-      .whereType<BoxDecoration>()
-      .singleWhere((decoration) => decoration.shape == BoxShape.circle);
+  final decoration =
+      tester
+              .widget<Container>(
+                find.byKey(const ValueKey('message-reaction-pill')),
+              )
+              .decoration!
+          as BoxDecoration;
 
   await tester.pumpWidget(const SizedBox.shrink());
   container.dispose();
@@ -456,7 +455,7 @@ void main() {
   });
 
   testWidgets(
-    'reaction badges sit on the inner edge of incoming and outgoing bubbles',
+    'reaction pills grow inward from incoming and outgoing outer corners',
     (tester) async {
       Future<({Rect badge, Rect bubble})> geometry(bool isOutgoing) async {
         final service = _BubbleExpandChatService(
@@ -469,7 +468,9 @@ void main() {
         await _settle(tester);
 
         final geometry = (
-          badge: tester.getRect(find.byKey(const ValueKey('my-reaction-❤️'))),
+          badge: tester.getRect(
+            find.byKey(const ValueKey('message-reaction-pill')),
+          ),
           bubble: tester.getRect(
             find.byKey(
               ValueKey(
@@ -487,8 +488,8 @@ void main() {
       final incoming = await geometry(false);
       final outgoing = await geometry(true);
 
-      expect(incoming.badge.center.dx, greaterThan(incoming.bubble.center.dx));
-      expect(outgoing.badge.center.dx, lessThan(outgoing.bubble.center.dx));
+      expect(incoming.badge.left, closeTo(incoming.bubble.left + 6, 0.1));
+      expect(outgoing.badge.right, closeTo(outgoing.bubble.right - 6, 0.1));
     },
   );
 

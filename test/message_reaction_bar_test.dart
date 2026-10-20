@@ -25,10 +25,20 @@ void main() {
 
     expect(find.text('❤️'), findsOneWidget);
     expect(find.text('😂'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
     expect(find.byKey(const ValueKey('my-reaction-❤️')), findsOneWidget);
 
     await tester.tap(find.text('❤️'));
     expect(tapped, isTrue);
+    final pill = tester.getRect(
+      find.byKey(const ValueKey('message-reaction-pill')),
+    );
+    expect(pill.width, greaterThan(pill.height));
+    expect(pill.height, 32);
+    expect(
+      tester.getCenter(find.text('3')).dx,
+      greaterThan(tester.getCenter(find.text('😂')).dx),
+    );
+    expect(find.text('2'), findsNothing);
   });
 }

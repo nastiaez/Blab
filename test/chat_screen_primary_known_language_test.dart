@@ -1,3 +1,5 @@
+import 'package:blab/features/chat/state/message_reactions_state.dart';
+import 'package:blab/shared/models/message_reaction.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:blab/app/router.dart';
 import 'package:blab/shared/widgets/offline_banner.dart';
@@ -442,6 +444,7 @@ ProviderContainer _containerForHeader(
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue('alice'),
       isOnlineProvider.overrideWithValue(isOnline),
+      onlineProvider.overrideWith((_) => Stream.value(isOnline)),
       typingIndicatorsEnabledProvider.overrideWithValue(false),
       pushNotificationGatewayProvider.overrideWithValue(
         _UnsupportedPushGateway(),
@@ -625,6 +628,11 @@ Future<void> runStationaryTranslationJourney(
 }
 
 void main() {
+  testWidgets('BLA-21 double-tap toggles own heart in both modes/directions', (
+    tester,
+  ) async {
+    await runDoubleTapHeartJourney(tester);
+  });
   testWidgets('failed translation reopen and explicit retry journey', (
     tester,
   ) async {
@@ -2360,4 +2368,148 @@ Future<void> runChatLifecycleJourney(
   await tester.pumpWidget(const SizedBox.shrink());
   container.dispose();
   await tester.pump(const Duration(seconds: 20));
+}
+
+class _HeartChatService extends _PrimaryKnownLanguageChatService {
+  _HeartChatService({required bool outgoing, required String mode})
+    : super(messageIsOutgoing: outgoing, chatMode: mode, messageText: 'Hallo');
+  @override
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async {
+    if (targetLang == 'de' && interfaceLang == 'uk') {
+      return (
+        text: 'Hallo',
+        interfaceText: 'Привіт',
+        interfaceLang: 'uk',
+        sourceLang: 'de',
+        mode: 'translation',
+        explanation: null,
+        confidence: null,
+        tokens: <Map<String, dynamic>>[],
+      );
+    }
+    return super.fetchCachedTranslation(
+      messageId: messageId,
+      targetLang: targetLang,
+      interfaceLang: interfaceLang,
+    );
+  }
+
+  final reactionRows = <Map<String, dynamic>>[
+    {
+      'message_id': 'msg-1',
+      'user_id': 'bob',
+      'emoji': '❤️',
+      'created_at': '2026-10-20T10:00:00Z',
+    },
+  ];
+  @override
+  Future<List<Map<String, dynamic>>> fetchMessageReactions(
+    String chatId,
+  ) async => List.of(reactionRows);
+  @override
+  Stream<MessageReactionChange> watchMessageReactionChanges(String chatId) =>
+      const Stream.empty();
+  @override
+  Future<void> upsertMessageReaction({
+    required String chatId,
+    required String messageId,
+    required String emoji,
+  }) async {
+    reactionRows.removeWhere(
+      (r) => r['message_id'] == messageId && r['user_id'] == 'alice',
+    );
+    reactionRows.add({
+      'message_id': messageId,
+      'user_id': 'alice',
+      'emoji': emoji,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
+  @override
+  Future<void> deleteMessageReaction({required String messageId}) async {
+    reactionRows.removeWhere(
+      (r) => r['message_id'] == messageId && r['user_id'] == 'alice',
+    );
+  }
+}
+
+Future<void> runDoubleTapHeartJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  for (final mode in ['normal', 'practice']) {
+    for (final outgoing in [false, true]) {
+      final service = _HeartChatService(outgoing: outgoing, mode: mode);
+      final container = _containerForHeader(service);
+      await tester.pumpWidget(_host(container, theme: blabTheme));
+      await _settle(tester);
+      await tester.runAsync(
+        () async => Future<void>.delayed(const Duration(milliseconds: 300)),
+      );
+      await _settle(tester);
+      final target = find.byType(MessageInteractionTarget).first;
+      final suffix = '$mode-${outgoing ? 'outgoing' : 'incoming'}';
+      Future<void> doubleTap() async {
+        await tester.tap(target);
+        await tester.pump(const Duration(milliseconds: 70));
+        await tester.tap(target);
+        await _settle(tester);
+      }
+
+      await doubleTap();
+      var hearts = container
+          .read(messageReactionsProvider('chat-1'))
+          .value!['msg-1']!;
+      expect(hearts.single.emoji, '❤️');
+      expect(hearts.single.count, 2);
+      expect(hearts.single.reactedByMe, isTrue);
+      if (capture != null) await capture('01-heart-added-$suffix');
+      await doubleTap();
+      hearts = container
+          .read(messageReactionsProvider('chat-1'))
+          .value!['msg-1']!;
+      expect(hearts.single.count, 1);
+      expect(hearts.single.reactedByMe, isFalse);
+      expect(service.reactionRows.single['user_id'], 'bob');
+      if (capture != null) await capture('02-own-heart-removed-$suffix');
+      await container
+          .read(messageReactionsProvider('chat-1').notifier)
+          .react(messageId: 'msg-1', emoji: '😂');
+      await _settle(tester);
+      final mixed = container
+          .read(messageReactionsProvider('chat-1'))
+          .value!['msg-1']!;
+      expect(
+        mixed.map((reaction) => reaction.emoji),
+        containsAll(['❤️', '😂']),
+      );
+      expect(find.text('2'), findsOneWidget);
+      final pillRect = tester.getRect(
+        find.byKey(const ValueKey('message-reaction-pill')),
+      );
+      expect(pillRect.left, greaterThanOrEqualTo(0));
+      expect(
+        pillRect.right,
+        lessThanOrEqualTo(
+          tester.view.physicalSize.width / tester.view.devicePixelRatio,
+        ),
+      );
+      if (capture != null) await capture('03-mixed-reactions-$suffix');
+      await tester.longPress(target);
+      await _settle(tester);
+      expect(
+        find.byKey(const ValueKey('message-action-reply')),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      container.dispose();
+    }
+  }
 }

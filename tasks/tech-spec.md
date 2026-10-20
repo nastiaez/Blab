@@ -437,3 +437,13 @@ Terminal `chats.left_at/left_by` and both memberships' `chat_left_at` drive exis
 ## Connection-notice removal · 2026-10-19
 
 Owner removed global Connecting/No connection banners (US-031). Keep the shared notice slot zero-height and silent; retain connectivity providers, queue/reconnect, access authorization/error recovery, and per-message feedback unchanged. The unmerged update-notice candidate remains separate and must retain its action when integrated.
+
+
+## Resolved — BLA-21 · 20 October 2026
+
+Thread an optional quick-heart callback from ChatScreen through timeline/row/bubble to MessageInteractionTarget's double-tap recognizer. Keep badge tap opening details. Reuse existing reaction notifier and server commands; rollback on failure. No translation pipeline or preference changes.
+
+
+### BLA-21 shared reaction pill · owner14372
+
+One capsule renders distinct aggregated emojis and sum(count) on the right. Server permits one reaction per person/message. Retain32px visible/44px touch height, existing colors and Practice shadow. Anchor incoming left/outgoing right at lower outer bubble corner so variable-width pill grows inward without clipping short messages. No state, server or preference changes.

@@ -59,6 +59,7 @@ class ChatTimeline extends ConsumerWidget {
     required this.onFailedTap,
     required this.onFailedRetry,
     required this.onReact,
+    this.onDoubleTapHeart,
     required this.selectedMessageId,
     required this.showSelectedOriginal,
     required this.selectedBubbleKey,
@@ -93,6 +94,7 @@ class ChatTimeline extends ConsumerWidget {
   final void Function(Message) onFailedTap;
   final void Function(Message) onFailedRetry;
   final void Function(Message) onReact;
+  final void Function(Message)? onDoubleTapHeart;
   final String? selectedMessageId;
   final bool showSelectedOriginal;
   final GlobalKey selectedBubbleKey;
@@ -261,6 +263,9 @@ class ChatTimeline extends ConsumerWidget {
               onFailedTap: () => onFailedTap(item.message),
               onFailedRetry: () => onFailedRetry(item.message),
               onReact: () => onReact(item.message),
+              onDoubleTapHeart: onDoubleTapHeart == null
+                  ? null
+                  : () => onDoubleTapHeart!(item.message),
             ),
           );
         }
