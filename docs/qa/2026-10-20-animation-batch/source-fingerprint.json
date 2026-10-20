@@ -1,0 +1,22 @@
+{
+  "base": "161cf77",
+  "branch": "feat/reviewed-animations-20261020",
+  "uncommitted": true,
+  "artifact": "/Users/aswin/clawd/projects/blab/qa-artifacts/2026-10-20-reviewed-animations/Blab-test-reviewed-animations-profile.apk",
+  "sha256": "13e948c836100370397c7c4cdd988f0aa463f2476720fd287aa26f0a6bc8c2ca",
+  "environment": "staging",
+  "package": "blab.nastia.ez.test",
+  "mode": "profile",
+  "onboardingPreviewFlag": true,
+  "source": {
+    "lib/features/onboarding/learn_in_context_screen.dart": "ee27f87e1b66323ade5938a2609b25152c4e778a84a12a28a9b9c85f7d780a1e",
+    "lib/features/onboarding/learning_dialogue_timeline.dart": "93bbd0db241b2863cc079323b6f162ea3f97e964842ec5418223d8c27a07cf62",
+    "lib/features/onboarding/widgets/blab_wordmark_animation.dart": "e1086cc26e26dbf7bafb0f8fb73052c44202276e03f81bc9b07a9f1944abaff4"
+  },
+  "holdProof": {
+    "heldFramesIdentical": true,
+    "releaseAdvances": true
+  },
+  "distribution": "held",
+  "iOS": "not verified"
+}
