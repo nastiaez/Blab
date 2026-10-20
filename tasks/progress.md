@@ -1706,4 +1706,4 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 
 - Actual screenshots approved14386/14424/14427. Explicit commit/merge and continued delivery hold14438. Scope excludes all other unmerged work.
 - Feature commits d68ae7c (opening), 7b2de58 plus3acf00a (reactions/evidence), af6318a (offline/ended-session). Shared test/docs append conflicts resolved preserving both journeys; no production services changed.
-- Combined regression/native checks in progress. Live two-account synchronization/expiry and physical-device acceptance remain separate outstanding release checks; fixtures do not prove them. No launch-tracker checkbox promoted.
+- Combined analysis clean; full suite976 passed/16 environment-gated skips. Integrated Android replay pending. Live two-account synchronization/expiry and physical-device acceptance remain separate outstanding release checks; fixtures do not prove them. No launch-tracker checkbox promoted.
