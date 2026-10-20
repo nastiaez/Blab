@@ -42,6 +42,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Existing signed-in accounts below the current onboarding version see the introduction once without losing their session
 - [ ] Welcome uses the approved Paper composition and copy; Learn reproduces the approved HTML dialogue animation and vocabulary popup
 - [ ] Continue never waits for the animation cycle and routes through the central onboarding resolver
+- [ ] Hold the animated conversation to pause it; release resumes from the same point. No tap-toggle or added controls. Reading holds are longer and exquisite in the incoming sentence uses normal weight (BLA-7, owner14478).
 - [ ] Reduced motion shows the final corrected dialogue and open popup without looping motion
 - [ ] Completing the refreshed introduction is persisted per account after authentication; a failed acknowledgement safely replays it
 

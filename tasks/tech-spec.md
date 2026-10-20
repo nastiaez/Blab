@@ -452,3 +452,8 @@ One capsule renders distinct aggregated emojis and sum(count) on the right. Serv
 ## Resolved — BLA-16 · 20 October 2026
 
 Leave _status unchanged on test-access transport failure and on resume. Owner correction (20 October): ended status must not replace the chat with a session-ended screen; retain chat/draft through expiry and offline resume. Not-approved/configuration mismatch remain blocking. Server-side authorization remains authoritative for commands. On restored active access, invalidate chatListProvider after the reveal frame to avoid invalidating paused dependent subscriptions. No authentication, RLS, queue storage, translation or production changes.
+
+## Reviewed animation batch ·20 October2026
+
+- Logo:450ms initial a/handoff hold,950ms motion,1.40s total. l joins at35% of motion; exact letter paths unchanged.
+- Onboarding:13.75s playback maps onto existing7.75s phase motion, extending only reading phases. Conversation pointer down stops controller immediately; last release/cancel resumes current phase. Continue and reduced-motion final state remain usable; no translation or auth changes.

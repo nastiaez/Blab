@@ -2,6 +2,22 @@ import 'package:blab/features/onboarding/learning_dialogue_timeline.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('playback extends reading holds but preserves transition timing', () {
+    expect(learningDialoguePlaybackCycle.inMilliseconds, 13750);
+    expect(
+      learningDialoguePlaybackElapsed(const Duration(milliseconds: 2260)),
+      const Duration(milliseconds: 760),
+    );
+    expect(
+      learningDialoguePlaybackElapsed(const Duration(milliseconds: 3460)),
+      const Duration(milliseconds: 1960),
+    );
+    expect(
+      learningDialoguePlaybackElapsed(const Duration(milliseconds: 12410)),
+      const Duration(milliseconds: 6410),
+    );
+  });
+
   test('keeps the approved sequence with longer reply reading time', () {
     expect(learningDialogueCycle, const Duration(milliseconds: 7750));
 

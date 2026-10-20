@@ -1709,3 +1709,10 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Combined analysis clean; full suite976 passed/16 environment-gated skips. Integrated Android replay passes at main934a0e0; opening, reaction-toggle/pill and offline/ended-session retained-draft journeys verified with controlled responses. Representative captures inspected. Delivery remains held. Live two-account synchronization/expiry and physical-device acceptance remain separate outstanding release checks; fixtures do not prove them. No launch-tracker checkbox promoted.
 
 - 20 October integration completion: approved batch merged/pushed at934a0e0, local/remote main synchronized; post-integration Android3-journey replay passes. Documentation-only evidence commit follows; live two-account and release rollout gates remain.
+
+## Reviewed animation batch ·20 October2026 ·in progress
+
+- Request14478 approves logo clip14476 and asks both animations be built, confirming Reels-style hold-to-pause requirement first. Dedicated branchfeat/reviewed-animations-20261020 from current main161cf77.
+- Applied only approved logo1.40s with brief solo a and onboarding13.75s reading cycle/regular-weight exquisite/press-hold resume. Native hold behavior recheck and combined profile artifact in progress; no commit/merge/distribution inferred.
+
+- Combined candidate built from main application entry, installed with replacement against staging/test with explicit onboarding preview flag. Actual five-second hold yields pixel-identical content captures; release advances.19 focused and981 full checks pass/16 environment skips; analysis clean. Main/profile artifact recorded privately; no commit/merge/release.

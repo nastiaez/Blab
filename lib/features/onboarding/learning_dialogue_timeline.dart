@@ -1,6 +1,32 @@
 import 'package:flutter/animation.dart';
 
 const learningDialogueCycle = Duration(milliseconds: 7750);
+const learningDialoguePlaybackCycle = Duration(milliseconds: 13750);
+
+// Extend reading holds without slowing the existing message/shimmer motion.
+Duration learningDialoguePlaybackElapsed(Duration playback) {
+  var time =
+      playback.inMilliseconds % learningDialoguePlaybackCycle.inMilliseconds;
+  var added = 0;
+  for (final hold in const [
+    (410, 760, 1500),
+    (2450, 3250, 1500),
+    (3410, 4610, 1000),
+    (4610, 6410, 2000),
+  ]) {
+    final start = hold.$1 + added;
+    final length = hold.$2 - hold.$1 + hold.$3;
+    if (time < start) break;
+    if (time < start + length) {
+      return Duration(
+        milliseconds:
+            hold.$1 + ((time - start) * (hold.$2 - hold.$1) / length).floor(),
+      );
+    }
+    added += hold.$3;
+  }
+  return Duration(milliseconds: time - added);
+}
 
 const _learningDialogueArrivalCurve = Cubic(0.16, 1, 0.3, 1);
 

@@ -15,9 +15,9 @@ class BlabWordmarkAnimation extends StatefulWidget {
     super.key,
   });
 
-  static const handoffHold = Duration(milliseconds: 350);
-  static const motionDuration = Duration(milliseconds: 1600);
-  static const duration = Duration(milliseconds: 1950);
+  static const handoffHold = Duration(milliseconds: 450);
+  static const motionDuration = Duration(milliseconds: 950);
+  static const duration = Duration(milliseconds: 1400);
 
   final bool animate;
   final VoidCallback? onCompleted;
@@ -92,13 +92,13 @@ class _WordmarkFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final aIntro = _progress(t, 0, 0.08, Curves.easeOutCubic);
-    final aSettle = _progress(t, 0.25, 0.42, Curves.easeInOutCubic);
-    final lWalk = _progress(t, 0.25, 0.42, Curves.easeOutCubic);
+    final aSettle = _progress(t, 0.35, 0.50, Curves.easeInOutCubic);
+    final lWalk = _progress(t, 0.35, 0.50, Curves.easeOutCubic);
     final firstB = _progress(t, 0.52, 0.65, Curves.easeOutCubic);
     final lastB = _progress(t, 0.72, 0.94, Curves.easeInOutCubic);
     final finalSettle = _progress(t, 0.94, 1, Curves.easeOutCubic);
 
-    final eyebrowRaise = _progress(t, 0.27, 0.40, Curves.easeOutCubic);
+    final eyebrowRaise = _progress(t, 0.37, 0.49, Curves.easeOutCubic);
     final eyebrowLower = _progress(t, 0.68, 0.76, Curves.easeInOutCubic);
     final eyebrow = eyebrowRaise * (1 - eyebrowLower);
 
@@ -128,7 +128,7 @@ class _WordmarkFrame extends StatelessWidget {
             _letter(
               key: const Key('blab-l'),
               svg: _lSvg,
-              opacity: _progress(t, 0.25, 0.31, Curves.easeOut),
+              opacity: _progress(t, 0.35, 0.41, Curves.easeOut),
               dx: _lerp(-44, 0, lWalk),
               dy: -math.sin(lWalk * math.pi * 2).abs() * 4.5 + duckY,
               rotation: math.sin(lWalk * math.pi * 2) * 0.06,

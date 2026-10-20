@@ -34,6 +34,75 @@ Widget _app({
 }
 
 void main() {
+  testWidgets('holding pauses reading and release resumes without restarting', (
+    tester,
+  ) async {
+    var continued = false;
+    await tester.pumpWidget(_app(onContinue: () => continued = true));
+    await tester.pump(const Duration(milliseconds: 9610));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      1,
+    );
+    final hold = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('learning-animation-hold-target'))),
+    );
+    await tester.pump(const Duration(seconds: 5));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      1,
+    );
+    await hold.up();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      1,
+      reason: 'Resume must keep the current popup, not restart the loop',
+    );
+    await tester.pump(const Duration(seconds: 4));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      0,
+    );
+    await tester.tap(find.text('Continue'));
+    expect(continued, isTrue);
+  });
+
+  testWidgets('canceling a hold resumes motion and keeps navigation usable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(onContinue: () {}));
+    await tester.pump(const Duration(milliseconds: 9610));
+    final hold = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('learning-animation-hold-target'))),
+    );
+    await tester.pump(const Duration(seconds: 5));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      1,
+    );
+    await hold.cancel();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 5));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      0,
+    );
+  });
+
   testWidgets('renders the approved content and Continue never waits', (
     tester,
   ) async {
@@ -63,7 +132,12 @@ void main() {
 
     expect(find.byKey(const Key('learning-outgoing-message')), findsOneWidget);
     expect(find.byKey(const Key('learning-incoming-message')), findsOneWidget);
-    expect(find.byKey(const Key('vocabulary-popup')), findsOneWidget);
+    expect(
+      tester
+          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
+          .opacity,
+      1,
+    );
     expect(find.text('exquisite'), findsNWidgets(2));
     expect(find.text('vorzüglich'), findsOneWidget);
 
@@ -90,7 +164,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_app(onContinue: () {}));
-    await tester.pump(const Duration(milliseconds: 1960));
+    await tester.pump(const Duration(milliseconds: 3460));
     final authoredRect = tester.getRect(
       find.byKey(const Key('learning-outgoing-message')),
     );

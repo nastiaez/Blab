@@ -38,6 +38,8 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
   late final AnimationController _controller;
   final LayerLink _vocabularyAnchor = LayerLink();
   bool _audioPlaying = false;
+  final Set<int> _heldPointers = {};
+  bool _foreground = true;
 
   @override
   void initState() {
@@ -45,7 +47,7 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
     WidgetsBinding.instance.addObserver(this);
     _controller = AnimationController(
       vsync: this,
-      duration: learningDialogueCycle,
+      duration: learningDialoguePlaybackCycle,
     );
   }
 
@@ -58,10 +60,13 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _foreground = true;
       _syncMotionPreference(restart: true);
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
+      _foreground = false;
+      _heldPointers.clear();
       _controller.stop();
       _controller.value = 0;
       unawaited(widget.onStopAudio());
@@ -72,7 +77,7 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
     if (MediaQuery.disableAnimationsOf(context)) {
       _controller.stop();
       _controller.value = 0;
-    } else if (restart) {
+    } else if (restart && _foreground && _heldPointers.isEmpty) {
       _controller.repeat();
     }
   }
@@ -181,24 +186,42 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
   }
 
   Widget _buildConversation() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final reduced = MediaQuery.disableAnimationsOf(context);
-        final elapsed = Duration(
-          milliseconds:
-              (_controller.value * learningDialogueCycle.inMilliseconds)
-                  .round(),
-        );
-        return _LearningConversation(
-          elapsed: elapsed,
-          reducedMotion: reduced,
-          anchor: _vocabularyAnchor,
-          audioPlaying: _audioPlaying,
-          onPlayAudio: _playAudio,
-        );
+    return Listener(
+      key: const Key('learning-animation-hold-target'),
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (event) {
+        _heldPointers.add(event.pointer);
+        _controller.stop();
       },
+      onPointerUp: (event) => _releaseHold(event.pointer),
+      onPointerCancel: (event) => _releaseHold(event.pointer),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final reduced = MediaQuery.disableAnimationsOf(context);
+          final elapsed = learningDialoguePlaybackElapsed(
+            Duration(
+              milliseconds:
+                  (_controller.value *
+                          learningDialoguePlaybackCycle.inMilliseconds)
+                      .round(),
+            ),
+          );
+          return _LearningConversation(
+            elapsed: elapsed,
+            reducedMotion: reduced,
+            anchor: _vocabularyAnchor,
+            audioPlaying: _audioPlaying,
+            onPlayAudio: _playAudio,
+          );
+        },
+      ),
     );
+  }
+
+  void _releaseHold(int pointer) {
+    _heldPointers.remove(pointer);
+    if (_heldPointers.isEmpty) _syncMotionPreference(restart: true);
   }
 
   Future<void> _changeLanguage() async {
@@ -565,7 +588,7 @@ class _IncomingBubble extends StatelessWidget {
                     color: OnboardingTheme.ink,
                     fontSize: 16,
                     height: 1.5,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.normal,
                   ),
                 ),
               ),
