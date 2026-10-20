@@ -1,0 +1,16 @@
+/tmp/bla16-full.log
+05:06 +970 ~16: /Users/aswin/clawd/projects/blab/blab-bla16-offline-access-20261020/test/stream_message_paging_test.dart: same-timestamp rows use deterministic identity ordering
+05:06 +971 ~16: loading /Users/aswin/clawd/projects/blab/blab-bla16-offline-access-20261020/test/composer_emoji_panel_test.dart
+05:07 +971 ~16: /Users/aswin/clawd/projects/blab/blab-bla16-offline-access-20261020/test/composer_emoji_panel_test.dart: emoji insertion replaces selection and respects grapheme budget
+05:07 +972 ~16: /Users/aswin/clawd/projects/blab/blab-bla16-offline-access-20261020/test/composer_emoji_panel_test.dart: backspace removes full joined emoji, flag, and selection
+05:07 +973 ~16: All tests passed!
+
+/tmp/bla16-analyze.log
+No issues found! (ran in 6.3s)
+
+/tmp/bla16-native2.log
+I/flutter ( 5024): 00:39 +2: All tests passed!
+All tests passed.
+
+/tmp/bla16-final-journey.log
+00:01 +1: All tests passed!

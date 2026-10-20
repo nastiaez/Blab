@@ -1,0 +1,9 @@
+{
+  "lib/features/invite/test_access_gate.dart": "ee516c3c5503e2a1fbcb36597773cd7a7702f3395399650a3294d500e5f3dce6",
+  "tasks/prd-blab.md": "ea753f79d91539456e37c6f930ebfd4f4243ee26d30d22889dbbb1358a6e5d63",
+  "tasks/progress.md": "8c3df9eb794ab043c1e42507b35dc3c4776d1b2ecdddb3f3420906ed8381d362",
+  "tasks/tech-spec.md": "a3e14a3da14b578510daf1350fab91ba91030b6c7c259c6b213a8e7aac267f69",
+  "test/chat_screen_primary_known_language_test.dart": "b3c01d38595ef0e1cc013c4d9c010fcc892e79a83324fd1b184d4a000b2558f9",
+  "test/test_access_gate_test.dart": "6c7981378fbe4ada973f90d8f8afdec11f5d224753fcff1ae56307100918dd21",
+  "integration_test/offline_access_native_test.dart": "78f61b7e744a48fc4f1c4d7637419a84c1314b56faa3987343454e47239ba2a5"
+}

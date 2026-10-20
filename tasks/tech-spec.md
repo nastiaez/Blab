@@ -437,3 +437,8 @@ Terminal `chats.left_at/left_by` and both memberships' `chat_left_at` drive exis
 ## Connection-notice removal · 2026-10-19
 
 Owner removed global Connecting/No connection banners (US-031). Keep the shared notice slot zero-height and silent; retain connectivity providers, queue/reconnect, access authorization/error recovery, and per-message feedback unchanged. The unmerged update-notice candidate remains separate and must retain its action when integrated.
+
+
+## Resolved — BLA-16 · 20 October 2026
+
+Leave _status unchanged on test-access transport failure and on resume. Owner correction (20 October): ended status must not replace the chat with a session-ended screen; retain chat/draft through expiry and offline resume. Not-approved/configuration mismatch remain blocking. Server-side authorization remains authoritative for commands. On restored active access, invalidate chatListProvider after the reveal frame to avoid invalidating paused dependent subscriptions. No authentication, RLS, queue storage, translation or production changes.

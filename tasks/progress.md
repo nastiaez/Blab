@@ -1663,3 +1663,14 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Focused update/refresh tests pass (4); static analysis clean; full suite972 passed/16 skipped. Native Android six-state journey and 32px-face/48px-target checks pass. Actual English screenshot delivered14162 and approved14169. Committed/fast-forward merged and pushed as10e51ef; post-integration Android six-state replay passes, source hashes match, actual screenshot inspected. No hosted configuration, migration or distribution. Evidence: docs/qa/2026-10-19-compact-update/README.md.
 - Nastia14169 explicitly approves the actual Android implementation and requests commit/merge to main. Integration authorized; distribution remains held. Remaining migration/security/iOS/handoff gates concern rollout readiness, not this approved source integration.
 - Done when the approved shape is verified on Android, reviewed as actual app screenshots, remaining migration/security/iOS/handoff checks pass, and the exact scope is authorized for integration/release. Distribution remains held for a later approved batch.
+
+
+## BLA-16 · 2026-10-20 · [ ] ← in progress
+
+- Transport errors/timeouts retain the last test-access decision and mounted chat/draft. Superseded for ended status by owner correction: retain chat/draft with no session-ended screen; not-approved/configuration mismatch remain blocking. Restore retained subtree before refreshing chat subscriptions, avoiding a Riverpod paused-subscription assertion. Focused access/chat packet45 passed; static analysis clean. Android recovery replay passed; full suite973 pass/16 environment skips. Captures14355–14357 await review.
+- [x] Android controlled-response journey passed; final captures individually inspected and delivered.
+- [x] Automated regression packet resolved; see QA record for exact counts and environment boundaries.
+- [ ] Actual screenshot/manual review and live two-account service verification remain before promotion; no commit, main integration or release inferred.
+- Dedicated worktree based on origin/main22157a3. Distribution remains held for the next approved batch.
+
+- 2026-10-20 owner correction: remove session-ended takeover, retain mounted chat and exact draft on expiry/offline resume/restoration. Focused 45 checks pass; revised Android replay passes, expiry capture inspected; full suite973 pass/16 environment skips, analysis clean. No integration/distribution. Previous ended-screen screenshot14356 rejected.
