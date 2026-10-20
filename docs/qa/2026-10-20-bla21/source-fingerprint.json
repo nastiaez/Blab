@@ -1,0 +1,13 @@
+{
+  "lib/features/chat/chat_screen.dart": "7e24ca899a1675b3f9bc6f7ba905931ebd66213e6635d273ba02d8a3cbe88b45",
+  "lib/features/chat/widgets/chat_timeline.dart": "1439bf416649d6e03389256bfc06f153d183977afedf675ef4e4b20b097f94d1",
+  "lib/features/chat/widgets/message_bubble.dart": "d62f2afb006b1ed20badeb37ed3af1588192a7f4c7b8a96c3474528aac4a8348",
+  "lib/features/chat/widgets/message_interaction_target.dart": "8556e095ae7910b872ccb8f2c45cd780f1f4e3fc638b56cc961dd3bb64217019",
+  "lib/features/chat/widgets/message_row.dart": "abefa8dd3eeba557fb125dca518a9d5cff4df884af5e83d86e1f5a3b159ee66d",
+  "tasks/prd-blab.md": "f1119bff653433c8cb8fee638a9ead96ba469abe840851ae5f6f2bf9b86e85f9",
+  "tasks/progress.md": "1df8de510eaf084964d6dadd7e2235900ecc60a79f74c409dda17e04fbd55c89",
+  "tasks/tech-spec.md": "c60978a99a338f0046ccef1d550461379908d379e0159695b91fbfdcd3c8a5cc",
+  "test/chat_screen_primary_known_language_test.dart": "77b381b9327323f7f1f2f31024121480d5bfe67008e4175539f48e0abb5df0cb",
+  "test/message_interaction_target_test.dart": "89d4e4f8d378df5e9826a30773bf77a2bbb882688519e784d2d93fab8fdc8387",
+  "integration_test/double_tap_heart_native_test.dart": "22a14c0e23e065dd818f5a0c4defc320a5713fa86c0f68a54edf82bccb9ee96e"
+}
