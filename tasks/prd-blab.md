@@ -284,7 +284,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Sender and receiver reuse the same correction cache variant when their learning and primary known languages match
 - [ ] Use only two response acceptance rules: loose readable structure identifying requested sentences, and nonempty translation text. Allow extra fields and missing optional metadata; word help or form metadata must not reject the sentence. (Owner, 2026-10-16.)
 - [ ] Translation words are tappable and definitions use the reader's primary Known Language
-- [ ] Reaction badges overlap the bubble edge nearest the conversation center: right edge for incoming messages and left edge for outgoing messages; every badge uses `#FFFCF8` fill and `#DCD2C8` outline, with a subtle shadow in Practice only
+- [ ] Reaction pills overlap the lower outer bubble corner and grow inward toward the conversation center (left anchored for incoming, right anchored for outgoing) so wider mixed reactions remain onscreen on short messages; one shared oval pill uses `#FFFCF8` fill and `#DCD2C8` outline, with a subtle shadow in Practice only; distinct emojis sit side by side and the total number of reacting people appears inside the pill on the right (owner14372, 20 October 2026), including a count of1; no floating per-emoji number badges
 - [ ] Tapping a learning-language word opens its word description; tapping empty bubble padding does nothing; message actions require long press
 - [ ] Practice long press temporarily reveals the reader's primary-known-language translation below the existing divider; Normal conditionally offers Original for the exact authored text
 - [ ] With learning aids disabled, authored text is shown and no new AI request is made
@@ -337,6 +337,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to edit, copy, reply to, or delete my own messages.
 
 **Acceptance Criteria:**
+- [ ] Double-tap a delivered incoming or outgoing message to toggle your heart reaction; repeating removes your heart, never the other participant’s. A different own reaction is replaced by a heart. Single word taps, long press, swipe reply and failed-message recovery retain their existing behavior (BLA-21, owner clarification 2026-10-20).
 - [ ] Long press opens the floating reaction row plus composer-replacement action row; the reaction row sits below by default, moves above when there is no room below, and overlaps only a viewport-filling message; tapping empty bubble padding does nothing and tapping a learning word still opens its definition
 - [ ] Practice actions: Reply | Edit | Copy | Listen | Delete; Normal actions: Reply | Edit | Copy | Original | Delete, with conditional actions hidden when ineligible
 - [ ] Practice long press temporarily reveals the primary-known-language translation; Normal Original temporarily reveals exact authored text below the existing divider
@@ -356,6 +357,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to reply to or copy messages from my chat partner.
 
 **Acceptance Criteria:**
+- [ ] Double-tap a delivered incoming or outgoing message to toggle your heart reaction; repeating removes your heart, never the other participant’s. A different own reaction is replaced by a heart. Single word taps, long press, swipe reply and failed-message recovery retain their existing behavior (BLA-21, owner clarification 2026-10-20).
 - [ ] Long press opens the floating reaction row plus composer-replacement action row; the reaction row sits below by default, moves above when there is no room below, and overlaps only a viewport-filling message; tapping empty bubble padding does nothing and tapping a learning word still opens its definition
 - [ ] Practice actions: Reply | Copy | Listen | Report; Normal actions: Reply | Copy | Original | Report, with conditional actions hidden when ineligible
 - [ ] Copy and Reply use the complete primary text currently presented in chat; a translation failure therefore uses the readable authored text

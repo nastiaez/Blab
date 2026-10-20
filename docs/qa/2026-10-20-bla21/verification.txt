@@ -1,0 +1,16 @@
+/tmp/bla21-full.log
+05:00 +972 ~16 -1: loading /Users/aswin/clawd/projects/blab/blab-bla21-double-tap-heart-20261019/test/composer_emoji_panel_test.dart
+05:03 +972 ~16 -1: /Users/aswin/clawd/projects/blab/blab-bla21-double-tap-heart-20261019/test/composer_emoji_panel_test.dart: emoji insertion replaces selection and respects grapheme budget
+05:03 +973 ~16 -1: /Users/aswin/clawd/projects/blab/blab-bla21-double-tap-heart-20261019/test/composer_emoji_panel_test.dart: backspace removes full joined emoji, flag, and selection
+05:03 +974 ~16 -1: Some tests failed.
+Failing tests:
+
+/tmp/bla21-golden-recovered.log
+00:01 +1: All tests passed!
+
+/tmp/bla21-analyze.log
+No issues found! (ran in 8.7s)
+
+/tmp/bla21-native5.log
+I/flutter ( 4471): 00:31 +2: All tests passed!
+All tests passed.

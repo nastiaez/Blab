@@ -1676,6 +1676,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                           ).notifier,
                                         )
                                         .retryFailed(m.id),
+                                    onDoubleTapHeart:
+                                        chat.isLeft || isPartnerBlocked
+                                        ? null
+                                        : (m) async {
+                                            _closeSelection();
+                                            try {
+                                              await ref
+                                                  .read(
+                                                    messageReactionsProvider(
+                                                      widget.chatId,
+                                                    ).notifier,
+                                                  )
+                                                  .react(
+                                                    messageId: m.id,
+                                                    emoji: '❤️',
+                                                  );
+                                            } catch (_) {
+                                              // The notifier restores the previous reaction on failure.
+                                            }
+                                          },
                                     onReact: (m) => showReactionDetailsSheet(
                                       context,
                                       reactions:

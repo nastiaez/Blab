@@ -1673,3 +1673,20 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - [x] Full regression packet971 pass/16 skips plus intentional CTA golden update and passing comparison; no unresolved automated failure. First attempt stalled; final evidence is full packet + targeted resolved golden check.
 - [ ] Source integration, integrated Android and held batch distribution remain separate gates.
 - Evidence: docs/qa/2026-10-19-bla18/README.md. No main edits, commits or release.
+## BLA-21 · 2026-10-20 · [ ] ← in progress
+
+- Double-tap toggles own heart through existing serialized optimistic reaction state. Repeating removes only own heart; another own emoji is replaced. No quick reaction for failed/pending messages or left/blocked chats. Long-press details and word/swipe gestures remain separate.
+- [x] Android controlled-response journey passed; final captures individually inspected and delivered.
+- [x] Automated regression packet resolved; see QA record for exact counts and environment boundaries.
+- [ ] Actual screenshot/manual review and live two-account service verification remain before promotion; no commit, main integration or release inferred.
+- Dedicated worktree based on origin/main22157a3. Distribution remains held for the next approved batch.
+
+
+### BLA-21 reaction-pill revision · owner14372 · 20 October 2026
+
+- Replace circular emoji chips/floating counters with one32px-high white pill: adjacent distinct emojis and total reacting people on the right, including1. Existing one-reaction-per-user aggregation means sum(count) is the people total.
+- Keep colors, border, Practice shadow and44px touch height. Details tap and double-tap toggle unchanged.
+- Rejected initial wider-pill captures: clipped with real Android fonts on narrow messages. Grow inward from lower outer bubble corner, matching supplied reference, without resizing bubble. Added native bounds assertions and updated obsolete circle/inner-corner assertions.
+- [x] Android final replay passes; single/mixed outgoing and incoming bounds checked. Updated screenshots14381/14382 delivered after inspection.
+- [x] Shared-pill/bubble packet31 pass; analysis clean. Final full suite975 passed/16 environment skips after obsolete assertions repaired.
+- [x] Actual mixed-pill screenshot14382 approved by Nastia14386; Android candidate built. Live two-account verification remains outstanding. No commit, merge or distribution.

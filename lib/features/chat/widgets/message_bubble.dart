@@ -20,6 +20,7 @@ class MessageBubble extends ConsumerStatefulWidget {
     required this.popupTopInset,
     required this.deferTranslationResolve,
     required this.onReact,
+    this.onDoubleTapHeart,
     required this.isFailed,
     required this.onLongPress,
     required this.onFailedTap,
@@ -73,6 +74,7 @@ class MessageBubble extends ConsumerStatefulWidget {
   final VoidCallback? onSwipeReply;
   final void Function(Message) onJumpToMessage;
   final VoidCallback onReact;
+  final VoidCallback? onDoubleTapHeart;
   final bool isSelected;
   final bool showOriginal;
   final GlobalKey? selectedBubbleKey;
@@ -543,10 +545,10 @@ class _BubbleState extends ConsumerState<MessageBubble> {
           if (reactions.isNotEmpty)
             Positioned(
               bottom: -reactionBadgeOverlap,
-              // Reactions sit on the bubble edge nearest the conversation's
-              // center: left for sent messages, right for received messages.
-              left: isOut ? 14 : null,
-              right: isOut ? null : 14,
+              // A shared pill grows inward from the outer bubble edge,
+              // keeping mixed reactions visible even on a very short message.
+              left: isOut ? null : 0,
+              right: isOut ? 0 : null,
               child: MessageReactionBar(
                 reactions: reactions,
                 isOutgoing: isOut,
@@ -572,6 +574,9 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       isFailed: isFailed,
       onLongPress: onLongPress,
       onFailedTap: onFailedTap,
+      onDoubleTap: message.status == MessageStatus.pending
+          ? null
+          : widget.onDoubleTapHeart,
       onSwipeReply: onSwipeReply,
       child: bubbleStack,
     );

@@ -24,6 +24,7 @@ class ChatMessageRow extends ConsumerWidget {
     required this.onFailedTap,
     required this.onFailedRetry,
     required this.onReact,
+    this.onDoubleTapHeart,
     required this.isSelected,
     required this.showOriginal,
     this.selectedBubbleKey,
@@ -54,6 +55,7 @@ class ChatMessageRow extends ConsumerWidget {
   final VoidCallback onFailedTap;
   final VoidCallback onFailedRetry;
   final VoidCallback onReact;
+  final VoidCallback? onDoubleTapHeart;
   final bool isSelected;
   final bool showOriginal;
   final GlobalKey? selectedBubbleKey;
@@ -162,6 +164,7 @@ class ChatMessageRow extends ConsumerWidget {
       deferTranslationResolve: deferTranslationResolve,
       reactions: reactions,
       onReact: onReact,
+      onDoubleTapHeart: onDoubleTapHeart,
       isFailed: isFailed,
       onLongPress: onLongPress,
       onFailedTap: onFailedTap,
