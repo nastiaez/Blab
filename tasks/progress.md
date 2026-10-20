@@ -1690,3 +1690,14 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - [x] Android final replay passes; single/mixed outgoing and incoming bounds checked. Updated screenshots14381/14382 delivered after inspection.
 - [x] Shared-pill/bubble packet31 pass; analysis clean. Final full suite975 passed/16 environment skips after obsolete assertions repaired.
 - [x] Actual mixed-pill screenshot14382 approved by Nastia14386; Android candidate built. Live two-account verification remains outstanding. No commit, merge or distribution.
+
+
+## BLA-16 · 2026-10-20 · [ ] ← in progress
+
+- Transport errors/timeouts retain the last test-access decision and mounted chat/draft. Superseded for ended status by owner correction: retain chat/draft with no session-ended screen; not-approved/configuration mismatch remain blocking. Restore retained subtree before refreshing chat subscriptions, avoiding a Riverpod paused-subscription assertion. Focused access/chat packet45 passed; static analysis clean. Android recovery replay passed; full suite973 pass/16 environment skips. Captures14355–14357 await review.
+- [x] Android controlled-response journey passed; final captures individually inspected and delivered.
+- [x] Automated regression packet resolved; see QA record for exact counts and environment boundaries.
+- [ ] Actual screenshot/manual review and live two-account service verification remain before promotion; no commit, main integration or release inferred.
+- Dedicated worktree based on origin/main22157a3. Distribution remains held for the next approved batch.
+
+- 2026-10-20 owner correction: remove session-ended takeover, retain mounted chat and exact draft on expiry/offline resume/restoration. Focused 45 checks pass; revised Android replay passes, expiry capture inspected; full suite973 pass/16 environment skips, analysis clean. No integration/distribution. Previous ended-screen screenshot14356 rejected.

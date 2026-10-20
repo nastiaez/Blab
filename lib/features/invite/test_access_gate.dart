@@ -53,15 +53,21 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
       final status = map['channel'] == 'test'
           ? map['status'] as String?
           : 'error';
-      if (status == 'active' && _status != 'active') {
-        // Revoked RLS reads may have emptied a retained list subscription.
-        ref.invalidate(chatListProvider);
-      }
+      final refreshChats = status == 'active' && _status != 'active';
       setState(() => _status = status);
-    } catch (_) {
-      if (mounted && generation == _generation) {
-        setState(() => _status = 'error');
+      if (refreshChats) {
+        // Restore the retained subtree before invalidating its subscriptions.
+        // Revoked RLS reads may have emptied the list while it was hidden.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && generation == _generation && _status == 'active') {
+            ref.invalidate(chatListProvider);
+          }
+        });
       }
+    } catch (_) {
+      // US-031 / BLA-16: transport failure is not an access decision.
+      // Keep cached chat usable, or retain an explicit denial until a
+      // successful server check changes it. Server policies still apply.
     } finally {
       _busy = false;
       if (mounted && generation != _generation) scheduleMicrotask(_check);
@@ -71,7 +77,6 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      setState(() => _status = null);
       _check();
     }
   }
@@ -93,7 +98,7 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
       scheduleMicrotask(_check);
     });
     final allowed =
-        _status == 'active' && userId != null ||
+        (_status == 'active' || _status == 'ended') && userId != null ||
         _status == 'signed_out' && userId == null;
     final showContent = allowed || _status == null;
     final l10n = context.l10n;
@@ -146,7 +151,10 @@ class _TestAccessGateState extends ConsumerState<TestAccessGate>
     );
     // Keep native authentication callbacks and Navigator state alive while the
     // server access decision is refreshed. Pending checks are non-blocking;
-    // explicit denial/error hides content. Server RLS stays authoritative.
+    // An ended session retains chat/draft; server policies still reject any
+    // unauthorized commands. Unapproved accounts/configuration errors hide
+    // content. Transport
+    // failures retain the last decision. Server RLS stays authoritative.
     return ConnectionStatusScope(
       connecting: _status == null,
       child: Stack(

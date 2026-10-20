@@ -1,3 +1,4 @@
+import 'package:blab/features/invite/test_access_gate.dart';
 import 'package:blab/features/chat/state/message_reactions_state.dart';
 import 'package:blab/shared/models/message_reaction.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -434,6 +435,7 @@ ProviderContainer _containerForHeader(
   bool isOnline = false,
   Future<MessageTranslation> Function(String messageId)? translate,
   TargetedTranslateMessageFn? retryTranslate,
+  Future<Map<String, dynamic>> Function()? accessCheck,
 }) {
   return ProviderContainer(
     overrides: [
@@ -445,6 +447,8 @@ ProviderContainer _containerForHeader(
       currentUserIdProvider.overrideWithValue('alice'),
       isOnlineProvider.overrideWithValue(isOnline),
       onlineProvider.overrideWith((_) => Stream.value(isOnline)),
+      if (accessCheck != null)
+        testAccessCheckProvider.overrideWithValue(accessCheck),
       typingIndicatorsEnabledProvider.overrideWithValue(false),
       pushNotificationGatewayProvider.overrideWithValue(
         _UnsupportedPushGateway(),
@@ -628,6 +632,11 @@ Future<void> runStationaryTranslationJourney(
 }
 
 void main() {
+  testWidgets('BLA-16 offline and ended session preserve chat and draft', (
+    tester,
+  ) async {
+    await runOfflineAccessJourney(tester);
+  });
   testWidgets('BLA-21 double-tap toggles own heart in both modes/directions', (
     tester,
   ) async {
@@ -948,6 +957,8 @@ void main() {
           authSessionProvider.overrideWith((ref) => Stream.value(null)),
           currentUserIdProvider.overrideWithValue('alice'),
           isOnlineProvider.overrideWithValue(false),
+          if (accessCheck != null)
+            testAccessCheckProvider.overrideWithValue(accessCheck),
           typingIndicatorsEnabledProvider.overrideWithValue(false),
           pushNotificationGatewayProvider.overrideWithValue(
             _UnsupportedPushGateway(),
@@ -2512,4 +2523,81 @@ Future<void> runDoubleTapHeartJourney(
       container.dispose();
     }
   }
+}
+
+Future<void> runOfflineAccessJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  var offline = false;
+  var status = 'active';
+  final container = _containerForHeader(
+    _PrimaryKnownLanguageChatService(messageText: 'Hallo'),
+    accessCheck: () async {
+      if (offline) throw Exception('Injected offline access-check failure');
+      return {'channel': 'test', 'status': status};
+    },
+  );
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        theme: blabTheme,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: const TestAccessGate(child: ChatScreen(chatId: 'chat-1')),
+      ),
+    ),
+  );
+  await _settle(tester);
+  final field = find.byType(TextField).first;
+  await tester.enterText(field, 'I will send this when I reconnect');
+  FocusManager.instance.primaryFocus?.unfocus();
+  await _settle(tester);
+  offline = true;
+  await tester.pump(const Duration(seconds: 15));
+  await _settle(tester);
+  expect(find.text('Couldn’t check test access'), findsNothing);
+  expect(find.byType(ChatScreen), findsOneWidget);
+  expect(
+    tester.widget<TextField>(field).controller!.text,
+    'I will send this when I reconnect',
+  );
+  if (capture != null) await capture('01-offline-chat-and-draft');
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  await _settle(tester);
+  expect(
+    tester.widget<TextField>(field).controller!.text,
+    'I will send this when I reconnect',
+  );
+  offline = false;
+  status = 'ended';
+  await tester.pump(const Duration(seconds: 15));
+  await _settle(tester);
+  expect(find.text('This testing session has ended'), findsNothing);
+  expect(find.byType(TextField), findsWidgets);
+  expect(
+    tester.widget<TextField>(field).controller!.text,
+    'I will send this when I reconnect',
+  );
+  if (capture != null) await capture('02-ended-session-retains-chat');
+  offline = true;
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  await _settle(tester);
+  expect(find.text('This testing session has ended'), findsNothing);
+  offline = false;
+  status = 'active';
+  await tester.pump(const Duration(seconds: 15));
+  await _settle(tester);
+  expect(
+    tester.widget<TextField>(field).controller!.text,
+    'I will send this when I reconnect',
+  );
+  if (capture != null) await capture('03-restored-with-draft');
+  await tester.pumpWidget(const SizedBox.shrink());
+  container.dispose();
 }

@@ -82,46 +82,55 @@ void main() {
     expect(identical(key.currentState, before), isTrue);
     await tester.pumpWidget(const SizedBox.shrink());
   });
-  testWidgets(
-    'server revocation and network failure hide an already-open test app',
-    (tester) async {
-      var status = 'active';
-      var fail = false;
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            currentUserIdProvider.overrideWithValue('alice'),
-            testAccessCheckProvider.overrideWithValue(() async {
-              if (fail) throw Exception('offline');
-              return {'channel': 'test', 'status': status};
-            }),
-          ],
-          child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: const TestAccessGate(child: Text('Private chat content')),
-          ),
+  testWidgets('ended sessions and network failures retain readable chat', (
+    tester,
+  ) async {
+    var status = 'active';
+    var fail = false;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('alice'),
+          testAccessCheckProvider.overrideWithValue(() async {
+            if (fail) throw Exception('offline');
+            return {'channel': 'test', 'status': status};
+          }),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const TestAccessGate(child: Text('Private chat content')),
         ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Private chat content'), findsOneWidget);
-      status = 'ended';
-      await tester.pump(const Duration(seconds: 15));
-      await tester.pumpAndSettle();
-      expect(find.text('Private chat content'), findsNothing);
-      expect(find.text('This testing session has ended'), findsOneWidget);
-      status = 'active';
-      await tester.tap(find.text('Retry'));
-      await tester.pumpAndSettle();
-      expect(find.text('Private chat content'), findsOneWidget);
-      fail = true;
-      await tester.pump(const Duration(seconds: 15));
-      await tester.pumpAndSettle();
-      expect(find.text('Private chat content'), findsNothing);
-      expect(find.text('Couldn’t check test access'), findsOneWidget);
-      await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Private chat content'), findsOneWidget);
+    status = 'ended';
+    await tester.pump(const Duration(seconds: 15));
+    await tester.pumpAndSettle();
+    expect(find.text('Private chat content'), findsOneWidget);
+    expect(find.text('This testing session has ended'), findsNothing);
+    status = 'active';
+    await tester.pump(const Duration(seconds: 15));
+    await tester.pumpAndSettle();
+    expect(find.text('Private chat content'), findsOneWidget);
+    fail = true;
+    await tester.pump(const Duration(seconds: 15));
+    await tester.pumpAndSettle();
+    expect(find.text('Private chat content'), findsOneWidget);
+    expect(find.text('Couldn’t check test access'), findsNothing);
+    fail = false;
+    status = 'ended';
+    await tester.pump(const Duration(seconds: 15));
+    await tester.pumpAndSettle();
+    fail = true;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(find.text('Private chat content'), findsOneWidget);
+    expect(find.text('This testing session has ended'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets('public backend cannot unlock the test app', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

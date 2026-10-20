@@ -508,7 +508,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] No global "Connecting…" or "No connection" banner, text or spinner on launch, resume, access refresh, or connection loss; no empty banner space
 - [ ] Connectivity monitoring, tester-access checks and message-level pending/failure feedback remain unchanged; update-available notices are a separate feature
 - [ ] Composed messages queue locally and auto-send on reconnect
-- [ ] Chat list still opens; existing chats render from local cache
+- [ ] Chat list still opens; existing chats render from local cache. Transport failures in test-access refresh never replace chat with a blocking error; ended sessions retain the chat and draft without a session-ended screen; not-approved or configuration-mismatch decisions remain blocking across offline refresh/resume (BLA-16, owner correction 20 October). Server-side command authorization remains unchanged.
 - [ ] Invite a friend keeps its normal layout without a connection banner and disables `Send invite` while offline
 - [ ] A valid invite opened in the installed app before a connection loss is preserved and claimed automatically on recovery; if the user leaves, its finished chat appears unread in Chats
 

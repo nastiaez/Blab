@@ -447,3 +447,8 @@ Thread an optional quick-heart callback from ChatScreen through timeline/row/bub
 ### BLA-21 shared reaction pill · owner14372
 
 One capsule renders distinct aggregated emojis and sum(count) on the right. Server permits one reaction per person/message. Retain32px visible/44px touch height, existing colors and Practice shadow. Anchor incoming left/outgoing right at lower outer bubble corner so variable-width pill grows inward without clipping short messages. No state, server or preference changes.
+
+
+## Resolved — BLA-16 · 20 October 2026
+
+Leave _status unchanged on test-access transport failure and on resume. Owner correction (20 October): ended status must not replace the chat with a session-ended screen; retain chat/draft through expiry and offline resume. Not-approved/configuration mismatch remain blocking. Server-side authorization remains authoritative for commands. On restored active access, invalidate chatListProvider after the reveal frame to avoid invalidating paused dependent subscriptions. No authentication, RLS, queue storage, translation or production changes.
