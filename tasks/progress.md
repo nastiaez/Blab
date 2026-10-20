@@ -1669,7 +1669,7 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 
 - Implemented localized Get started only on Welcome, preserving later Continue and existing navigation.
 - [x] Android four-locale CTA/callback check passed; all final captures inspected.
-- [ ] Actual screenshot review; English evidence delivered 14332.
+- [x] Actual opening screenshot14406 approved by Nastia14424.
 - [x] Full regression packet971 pass/16 skips plus intentional CTA golden update and passing comparison; no unresolved automated failure. First attempt stalled; final evidence is full packet + targeted resolved golden check.
 - [ ] Source integration, integrated Android and held batch distribution remain separate gates.
 - Evidence: docs/qa/2026-10-19-bla18/README.md. No main edits, commits or release.
@@ -1689,7 +1689,7 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Rejected initial wider-pill captures: clipped with real Android fonts on narrow messages. Grow inward from lower outer bubble corner, matching supplied reference, without resizing bubble. Added native bounds assertions and updated obsolete circle/inner-corner assertions.
 - [x] Android final replay passes; single/mixed outgoing and incoming bounds checked. Updated screenshots14381/14382 delivered after inspection.
 - [x] Shared-pill/bubble packet31 pass; analysis clean. Final full suite975 passed/16 environment skips after obsolete assertions repaired.
-- [x] Actual mixed-pill screenshot14382 approved by Nastia14386; Android candidate built. Live two-account verification remains outstanding. No commit, merge or distribution.
+- [x] Actual mixed-pill screenshot14382 approved by Nastia14386; Android candidate built. Live two-account verification remains outstanding. Committed for approved batch; distribution held.
 
 
 ## BLA-16 · 2026-10-20 · [ ] ← in progress
@@ -1701,3 +1701,9 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Dedicated worktree based on origin/main22157a3. Distribution remains held for the next approved batch.
 
 - 2026-10-20 owner correction: remove session-ended takeover, retain mounted chat and exact draft on expiry/offline resume/restoration. Focused 45 checks pass; revised Android replay passes, expiry capture inspected; full suite973 pass/16 environment skips, analysis clean. No integration/distribution. Previous ended-screen screenshot14356 rejected.
+
+## Approved BLA-18 / BLA-21 / BLA-16 integration · 20 October 2026
+
+- Actual screenshots approved14386/14424/14427. Explicit commit/merge and continued delivery hold14438. Scope excludes all other unmerged work.
+- Feature commits d68ae7c (opening), 7b2de58 plus3acf00a (reactions/evidence), af6318a (offline/ended-session). Shared test/docs append conflicts resolved preserving both journeys; no production services changed.
+- Combined regression/native checks in progress. Live two-account synchronization/expiry and physical-device acceptance remain separate outstanding release checks; fixtures do not prove them. No launch-tracker checkbox promoted.

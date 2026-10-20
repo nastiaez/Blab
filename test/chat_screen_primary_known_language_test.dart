@@ -957,8 +957,6 @@ void main() {
           authSessionProvider.overrideWith((ref) => Stream.value(null)),
           currentUserIdProvider.overrideWithValue('alice'),
           isOnlineProvider.overrideWithValue(false),
-          if (accessCheck != null)
-            testAccessCheckProvider.overrideWithValue(accessCheck),
           typingIndicatorsEnabledProvider.overrideWithValue(false),
           pushNotificationGatewayProvider.overrideWithValue(
             _UnsupportedPushGateway(),
