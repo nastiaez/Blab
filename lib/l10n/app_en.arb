@@ -613,5 +613,6 @@
   "updateAvailable": "Update available",
   "updateAvailableHint": "Open the app download page",
   "updateOpenFailed": "Couldn’t open the update. Please try again.",
-  "updateAction": "Update"
+  "updateAction": "Update",
+  "onboardingGetStarted": "Get started"
 }

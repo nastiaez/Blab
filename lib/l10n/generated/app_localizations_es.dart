@@ -1432,4 +1432,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get updateAction => 'Actualizar';
+
+  @override
+  String get onboardingGetStarted => 'Comenzar';
 }

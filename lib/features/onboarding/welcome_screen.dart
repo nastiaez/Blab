@@ -63,7 +63,7 @@ class WelcomeScreen extends StatelessWidget {
                             18 + MediaQuery.paddingOf(context).bottom,
                           ),
                           child: BlabButton.onboarding(
-                            label: context.l10n.continueAction,
+                            label: context.l10n.onboardingGetStarted,
                             onPressed: onContinue,
                           ),
                         ),
@@ -105,7 +105,7 @@ class WelcomeScreen extends StatelessWidget {
                               18 + MediaQuery.paddingOf(context).bottom,
                             ),
                             child: BlabButton.onboarding(
-                              label: context.l10n.continueAction,
+                              label: context.l10n.onboardingGetStarted,
                               onPressed: onContinue,
                             ),
                           ),

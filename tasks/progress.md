@@ -1663,3 +1663,13 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Focused update/refresh tests pass (4); static analysis clean; full suite972 passed/16 skipped. Native Android six-state journey and 32px-face/48px-target checks pass. Actual English screenshot delivered14162 and approved14169. Committed/fast-forward merged and pushed as10e51ef; post-integration Android six-state replay passes, source hashes match, actual screenshot inspected. No hosted configuration, migration or distribution. Evidence: docs/qa/2026-10-19-compact-update/README.md.
 - Nastia14169 explicitly approves the actual Android implementation and requests commit/merge to main. Integration authorized; distribution remains held. Remaining migration/security/iOS/handoff gates concern rollout readiness, not this approved source integration.
 - Done when the approved shape is verified on Android, reviewed as actual app screenshots, remaining migration/security/iOS/handoff checks pass, and the exact scope is authorized for integration/release. Distribution remains held for a later approved batch.
+
+
+## BLA-18 opening CTA · 2026-10-20 · [ ] ← in progress
+
+- Implemented localized Get started only on Welcome, preserving later Continue and existing navigation.
+- [x] Android four-locale CTA/callback check passed; all final captures inspected.
+- [ ] Actual screenshot review; English evidence delivered 14332.
+- [x] Full regression packet971 pass/16 skips plus intentional CTA golden update and passing comparison; no unresolved automated failure. First attempt stalled; final evidence is full packet + targeted resolved golden check.
+- [ ] Source integration, integrated Android and held batch distribution remain separate gates.
+- Evidence: docs/qa/2026-10-19-bla18/README.md. No main edits, commits or release.

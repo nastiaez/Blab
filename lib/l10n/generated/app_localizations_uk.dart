@@ -1425,4 +1425,7 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get updateAction => 'Оновити';
+
+  @override
+  String get onboardingGetStarted => 'Розпочати';
 }

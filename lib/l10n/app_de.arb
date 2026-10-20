@@ -494,5 +494,6 @@
   "updateAvailable": "Update verfügbar",
   "updateAvailableHint": "Downloadseite der App öffnen",
   "updateOpenFailed": "Das Update konnte nicht geöffnet werden. Bitte versuche es erneut.",
-  "updateAction": "Aktualisieren"
+  "updateAction": "Aktualisieren",
+  "onboardingGetStarted": "Los geht’s"
 }

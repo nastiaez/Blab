@@ -494,5 +494,6 @@
   "updateAvailable": "Доступне оновлення",
   "updateAvailableHint": "Відкрити сторінку завантаження застосунку",
   "updateOpenFailed": "Не вдалося відкрити оновлення. Спробуйте ще раз.",
-  "updateAction": "Оновити"
+  "updateAction": "Оновити",
+  "onboardingGetStarted": "Розпочати"
 }

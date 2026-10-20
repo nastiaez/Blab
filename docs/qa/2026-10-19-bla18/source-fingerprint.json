@@ -1,0 +1,17 @@
+{
+  "docs/qa/2026-09-30-onboarding-auth-refresh/430/welcome.png": "aa3a9458654b85c267f9f84e6c68f95f74bc38ab91b87fcf89a9da823be00c1b",
+  "integration_test/onboarding_native_test.dart": "bc5c40c9186820c94ba150c7bb494f45184b0708525e733ef6b184a449af8803",
+  "lib/features/onboarding/welcome_screen.dart": "7ba87b08b694fe8fc2894367926c5fd46bb3c719a1ff926a6569a8e5cacc6d49",
+  "lib/l10n/app_de.arb": "1736aa1e2223308ed75c39ca979af96b456339fc59c7eb88abe764be6d846e3c",
+  "lib/l10n/app_en.arb": "5aa5bc2a99a67d918cd8e79157e8a8f22e6c82c399d80ef2989eb884bfb51876",
+  "lib/l10n/app_es.arb": "52b473a850e1c843cbecd0efc39209fd70107073a509eea0ca1fe4a7c82df52b",
+  "lib/l10n/app_uk.arb": "1623a30a2a11f79964f2bcb6d4faf5a2160c2e333bc6a6058c51292353c3fefb",
+  "lib/l10n/generated/app_localizations.dart": "2dcf0637968c9b79c9fa2ff2be02d2bac996b07ed8fa357c4f33691764508e9b",
+  "lib/l10n/generated/app_localizations_de.dart": "985bfc6538afd656f8e5d37b432f81c4c8e015c50893793c9758f29ba37f0a52",
+  "lib/l10n/generated/app_localizations_en.dart": "658c42da6d8d58668c45a841f14470501f30c9375df24b2f696ad6a8c4c3556e",
+  "lib/l10n/generated/app_localizations_es.dart": "a54d207dcb8756e3f21ec365210b48dedfd44edf962ca58acbe0e8764f51a355",
+  "lib/l10n/generated/app_localizations_uk.dart": "6fd297210a9c95651f1672ddb5e2b341e245c7e887d9ab0d8563631370ab7f12",
+  "tasks/progress.md": "1ce184a50c167417a045c680c3cf0da24e7dd8e557450b4480dffe9c9260484d",
+  "test/onboarding/welcome_screen_test.dart": "35274d6517a84fed5993b951ad4588356f9d53732958c970756497a808b78fd2",
+  "integration_test/get_started_native_test.dart": "f75707acd8e10effc964fa81864730fef95d53fa7aa770320000a7ce69bcf8c4"
+}

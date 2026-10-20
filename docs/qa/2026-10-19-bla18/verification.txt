@@ -1,0 +1,14 @@
+/tmp/bla18-full2.log
+05:02 +970 ~16 -1: /Users/aswin/clawd/projects/blab/blab-bla18-get-started-20261019/test/composer_emoji_panel_test.dart: backspace removes full joined emoji, flag, and selection
+05:02 +971 ~16 -1: Some tests failed.
+Failing tests:
+
+/tmp/bla18-golden-verify.log
+00:01 +1: All tests passed!
+
+/tmp/bla18-analyze.log
+No issues found! (ran in 8.4s)
+
+/tmp/bla18-resume-native2.log
+I/flutter ( 3603): 00:10 +2: All tests passed!
+All tests passed.

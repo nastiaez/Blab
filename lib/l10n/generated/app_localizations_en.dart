@@ -1415,4 +1415,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateAction => 'Update';
+
+  @override
+  String get onboardingGetStarted => 'Get started';
 }

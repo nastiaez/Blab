@@ -33,7 +33,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('EN'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Get started'), findsOneWidget);
     expect(
       find.byKey(const Key('welcome-reading-nook-illustration')),
       findsOneWidget,
@@ -58,11 +58,11 @@ void main() {
     expect(button.height, 56);
   });
 
-  testWidgets('Continue advances immediately', (tester) async {
+  testWidgets('Get started advances immediately', (tester) async {
     var calls = 0;
     await tester.pumpWidget(_app(onContinue: () => calls++));
 
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.text('Get started'));
     expect(calls, 1);
   });
 }

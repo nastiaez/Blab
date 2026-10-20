@@ -32,7 +32,7 @@ void main() {
 
     await waitFor(find.byKey(const Key('welcome-reading-nook-illustration')));
     await capture('01-welcome');
-    await tester.tap(find.text('Continue'));
+    await tester.tap(find.text('Get started'));
     await tester.pump(const Duration(seconds: 1));
     await waitFor(find.byKey(const Key('learning-incoming-message')));
     final popup = find.byKey(const Key('vocabulary-popup'));

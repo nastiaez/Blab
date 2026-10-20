@@ -1438,4 +1438,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get updateAction => 'Aktualisieren';
+
+  @override
+  String get onboardingGetStarted => 'Los geht’s';
 }
