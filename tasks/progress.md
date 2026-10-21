@@ -2017,3 +2017,14 @@ solo-a idle shortened,790ms decorative duration. Source0b6305a reconciled with
 currentmain9bf8494 in441f544. Full reconciled gates and signed Blab-test34 build/
 actual screen-transition verification pending. No main integration, distribution
 or cold-start acceptance claimed yet. No production/backend change.
+
+
+### Opening application build15048 ·result ·21 October
+
+Supersedes in-progress entry: approved change0b6305a merged/pushed in459afbf.
+Full1031 checks pass16 skips; analysis clean. Signed Blab-test Android34 built
+from integrated main; exact33→34 update retainsDE and firstInstallTime on fresh
+5580. Actual signed-out Welcome handoff and no-replay warm resume inspected;
+recording15060 delivered. No authenticated/physical-phone/iOS acceptance claim.
+Build complete, not distributed; backend/production/notices untouched. Receipt:
+parent releases/20261021-launch34/receipt.json. No roadmap checkbox promoted.
