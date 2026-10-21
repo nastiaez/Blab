@@ -387,6 +387,7 @@
   "linkCopied": "Link copied",
   "copyLink": "Copy link",
   "pasteInChat": "Now paste it in a chat",
+  "groupPracticingLanguage": "Practicing {language}",
   "practicingLanguage": "You're practicing {language}.",
   "shareYourInvite": "Share your invite link.",
   "validUntil": "Valid until {date}.",
@@ -614,5 +615,112 @@
   "updateAvailableHint": "Open the app download page",
   "updateOpenFailed": "Couldn’t open the update. Please try again.",
   "updateAction": "Update",
-  "onboardingGetStarted": "Get started"
+  "onboardingGetStarted": "Get started",
+  "newGroup": "New group",
+  "groupName": "Group name",
+  "inviteFriendsAfterCreating": "Invite friends after creating the group.",
+  "createGroup": "Create group",
+  "inviteFriends": "Invite friends",
+  "groupInvitation": "Group invitation",
+  "anyoneCanJoinGroup": "Anyone with this link can join {name}.",
+  "@anyoneCanJoinGroup": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newLink": "New link",
+  "joinGroup": "Join group",
+  "groupMemberCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@groupMemberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupHistoryAfterJoin": "You’ll see messages sent after you join.",
+  "invalidGroupName": "Enter a group name.",
+  "couldNotCreateGroup": "Couldn’t create the group. Try again.",
+  "couldNotOpenGroupInvite": "Couldn’t open this invitation.",
+  "groupInvitationUnavailable": "This group invitation is no longer available.",
+  "groupFull": "This group is full.",
+  "couldNotJoinGroup": "Couldn’t join the group. Try again.",
+  "noGroupMessages": "No messages yet",
+  "inviteFriendsToStart": "Invite friends and start chatting.",
+  "joinAction": "Join",
+  "rejectAction": "Reject",
+  "joinToChatInGroup": "Join to chat in {name}.",
+  "@joinToChatInGroup": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotRejectGroupInvite": "Couldn’t reject the invitation. Try again.",
+  "groupInfo": "Group info",
+  "groupMembersTitle": "Members",
+  "seeAll": "See all",
+  "editGroupName": "Edit name",
+  "groupOwner": "Owner",
+  "makeGroupOwner": "Make owner",
+  "couldNotUpdateGroup": "Couldn’t update the group. Try again.",
+  "groupMemberYou": "{name} (you)",
+  "@groupMemberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupSharedMedia": "Shared media",
+  "groupNoPhotos": "No photos yet",
+  "acceptToReply": "Accept to reply to {name}",
+  "acceptRequest": "Accept",
+  "waitingForAcceptance": "Waiting for acceptance",
+  "messageMember": "Message",
+  "unblockAndMessage": "Unblock and message",
+  "@acceptToReply": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewRequestMessage": "View message",
+  "viewRequestMessageHelp": "View the message before deciding to accept.",
+  "leaveGroup": "Leave group",
+  "groupOwnerLeaveTitle": "Choose a new owner first",
+  "groupOwnerLeaveBody": "Before you leave, go to Members and make someone else the group owner.",
+  "gotIt": "Got it",
+  "groupNotificationsOn": "On",
+  "groupNotificationsOff": "Off",
+  "leaveGroupQuestion": "Leave group?",
+  "leaveGroupBody": "The group will disappear from your chats. You can join again with an invitation.",
+  "closeGroup": "Close group",
+  "closeGroupQuestion": "Close group?",
+  "closeGroupBody": "You’re the last member. Leaving will close this group and disable its invite link.",
+  "removeGroupMember": "Remove from group",
+  "removeGroupMemberQuestion": "Remove member?",
+  "removeGroupMemberBody": "{name} will lose access to this group and will need a new invitation to rejoin.",
+  "@removeGroupMemberBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGroup": "Delete group",
+  "groupMemberJoined": "{name} joined the group.",
+  "@groupMemberJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGroupQuestion": "Delete group?",
+  "deleteGroupConfirmation": "This removes the group chat and its history for you only. A new message will bring the group back."
 }

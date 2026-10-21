@@ -310,6 +310,7 @@
   "linkCopied": "Посилання скопійовано",
   "copyLink": "Копіювати посилання",
   "pasteInChat": "Тепер встав його в чат",
+  "groupPracticingLanguage": "Практика: {language}",
   "practicingLanguage": "Ти практикуєш {language}.",
   "shareYourInvite": "Поділися посиланням на запрошення.",
   "validUntil": "Дійсне до {date}.",
@@ -495,5 +496,91 @@
   "updateAvailableHint": "Відкрити сторінку завантаження застосунку",
   "updateOpenFailed": "Не вдалося відкрити оновлення. Спробуйте ще раз.",
   "updateAction": "Оновити",
-  "onboardingGetStarted": "Розпочати"
+  "onboardingGetStarted": "Розпочати",
+  "newGroup": "Нова група",
+  "groupName": "Назва групи",
+  "inviteFriendsAfterCreating": "Запросіть друзів після створення групи.",
+  "createGroup": "Створити групу",
+  "inviteFriends": "Запросити друзів",
+  "groupInvitation": "Запрошення до групи",
+  "anyoneCanJoinGroup": "Кожен, хто має це посилання, може приєднатися до {name}.",
+  "newLink": "Нове посилання",
+  "joinGroup": "Приєднатися до групи",
+  "groupMemberCount": "{count, plural, =1{1 учасник} other{{count} учасників}}",
+  "groupHistoryAfterJoin": "Ви побачите повідомлення, надіслані після приєднання.",
+  "invalidGroupName": "Введіть назву групи.",
+  "couldNotCreateGroup": "Не вдалося створити групу. Спробуйте ще раз.",
+  "couldNotOpenGroupInvite": "Не вдалося відкрити це запрошення.",
+  "groupInvitationUnavailable": "Це запрошення до групи більше недоступне.",
+  "groupFull": "Ця група заповнена.",
+  "couldNotJoinGroup": "Не вдалося приєднатися до групи. Спробуйте ще раз.",
+  "noGroupMessages": "Повідомлень ще немає",
+  "inviteFriendsToStart": "Запросіть друзів і почніть спілкування.",
+  "joinAction": "Приєднатися",
+  "rejectAction": "Відхилити",
+  "joinToChatInGroup": "Приєднайся, щоб спілкуватися в {name}.",
+  "couldNotRejectGroupInvite": "Не вдалося відхилити запрошення. Спробуй ще раз.",
+  "groupInfo": "Про групу",
+  "groupMembersTitle": "Учасники",
+  "seeAll": "Переглянути всіх",
+  "editGroupName": "Змінити назву",
+  "groupOwner": "Власник",
+  "makeGroupOwner": "Зробити власником",
+  "couldNotUpdateGroup": "Не вдалося оновити групу. Спробуй ще раз.",
+  "groupMemberYou": "{name} (ти)",
+  "@groupMemberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupSharedMedia": "Спільні медіа",
+  "groupNoPhotos": "Фото ще немає",
+  "acceptToReply": "Прийми, щоб відповісти {name}",
+  "acceptRequest": "Прийняти",
+  "waitingForAcceptance": "Очікуємо на прийняття",
+  "messageMember": "Повідомлення",
+  "unblockAndMessage": "Розблокувати й написати",
+  "@acceptToReply": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewRequestMessage": "Переглянути повідомлення",
+  "viewRequestMessageHelp": "Переглянь повідомлення, перш ніж прийняти запит.",
+  "leaveGroup": "Вийти з групи",
+  "groupOwnerLeaveTitle": "Спочатку виберіть нового власника",
+  "groupOwnerLeaveBody": "Перш ніж вийти, відкрийте список учасників і зробіть когось іншого власником групи.",
+  "gotIt": "Зрозуміло",
+  "groupNotificationsOn": "Увімкнено",
+  "groupNotificationsOff": "Вимкнено",
+  "leaveGroupQuestion": "Вийти з групи?",
+  "leaveGroupBody": "Група зникне з твоїх чатів. За запрошенням ти зможеш приєднатися знову.",
+  "closeGroup": "Закрити групу",
+  "closeGroupQuestion": "Закрити групу?",
+  "closeGroupBody": "Ти останній учасник. Після виходу групу буде закрито, а посилання-запрошення вимкнено.",
+  "removeGroupMember": "Видалити з групи",
+  "removeGroupMemberQuestion": "Видалити учасника?",
+  "removeGroupMemberBody": "{name} втратить доступ до цієї групи. Для повернення знадобиться нове запрошення.",
+  "@removeGroupMemberBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGroup": "Видалити групу",
+  "groupMemberJoined": "{name} приєднався(-лася) до групи.",
+  "@groupMemberJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGroupQuestion": "Видалити групу?",
+  "deleteGroupConfirmation": "Груповий чат та його історію буде видалено лише для тебе. Після нового повідомлення група з’явиться знову."
 }

@@ -84,10 +84,25 @@ class ChatHeader extends ConsumerWidget {
     final partnerTyping =
         !chat.isLeft &&
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
+    final learningName = localizedLanguageName(
+      context.l10n,
+      ref.watch(learningLanguageProvider(chat.id)).code,
+    );
     return ChatHeaderFrame(
+      group: chat.isGroup,
+      groupName: chat.partnerName,
+      learningCaption: context.l10n.groupPracticingLanguage(
+        Localizations.localeOf(context).languageCode == 'es'
+            ? learningName.toLowerCase()
+            : learningName,
+      ),
       onBack: onBack,
       identity: ChatHeaderIdentity(
         name: chat.partnerName,
+        group: chat.isGroup,
+        subtitle: chat.isGroup
+            ? context.l10n.groupMemberCount(chat.memberCount)
+            : null,
         typing: partnerTyping,
         onTap: onTapPartner,
       ),
@@ -150,11 +165,99 @@ class ChatHeaderFrame extends StatelessWidget {
     required this.modeControl,
     required this.menuButton,
     required this.onBack,
+    this.group = false,
+    this.learningCaption,
+    this.groupName = '',
   });
+  final bool group;
+  final String groupName;
+  final String? learningCaption;
   final Widget identity, modeControl, menuButton;
   final VoidCallback onBack;
   @override
   Widget build(BuildContext context) {
+    if (group) {
+      final large = MediaQuery.textScalerOf(context).scale(1) > 1.5;
+      return Material(
+        color: BlabColors.chatSurface,
+        child: SafeArea(
+          bottom: false,
+          child: Container(
+            key: const ValueKey('group-conversation-header'),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: BlabColors.chatDivider)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 60),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: BlabIconButton(
+                            tooltip: context.l10n.back,
+                            padding: EdgeInsets.zero,
+                            onPressed: onBack,
+                            icon: const BlabIcon(
+                              name: 'nav-arrow-left - 20',
+                              color: BlabColors.warmInk,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: identity),
+                        SizedBox(width: 48, height: 48, child: menuButton),
+                        const SizedBox(width: 4),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: large
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              learningCaption ?? '',
+                              style: groupHeaderCaptionStyle,
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: modeControl,
+                              ),
+                            ),
+                          ],
+                        )
+                      : SizedBox(
+                          height: 38,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  learningCaption ?? '',
+                                  style: groupHeaderCaptionStyle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              modeControl,
+                            ],
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final stacked = chatHeaderIsStacked(context);
     final back = SizedBox(
       width: 44,
@@ -229,10 +332,14 @@ class ChatHeaderIdentity extends StatelessWidget {
     required this.name,
     required this.onTap,
     this.typing = false,
+    this.subtitle,
+    this.group = false,
   });
+  final bool group;
   final String name;
   final VoidCallback onTap;
   final bool typing;
+  final String? subtitle;
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
@@ -241,15 +348,18 @@ class ChatHeaderIdentity extends StatelessWidget {
       children: [
         BlabAvatar(
           name: name,
-          size: 36,
-          fontSize: 12,
-          shadows: const [
-            BoxShadow(
-              color: Color(0x21231208),
-              offset: Offset(0, 2),
-              blurRadius: 4,
-            ),
-          ],
+          fill: group ? BlabColors.warmInk : null,
+          size: group ? 34 : 36,
+          fontSize: group ? 11 : 12,
+          shadows: group
+              ? const []
+              : const [
+                  BoxShadow(
+                    color: Color(0x21231208),
+                    offset: Offset(0, 2),
+                    blurRadius: 4,
+                  ),
+                ],
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -259,16 +369,27 @@ class ChatHeaderIdentity extends StatelessWidget {
             children: [
               Text(
                 _capitaliseName(name),
-                maxLines: 1,
+                maxLines: group ? 2 : 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.2,
-                  letterSpacing: 0.25,
-                  fontWeight: FontWeight.w800,
+                style: TextStyle(
+                  fontSize: group ? 18 : 15,
+                  height: group ? 22 / 18 : 1.2,
+                  letterSpacing: group ? 0 : 0.25,
+                  fontWeight: group ? FontWeight.w700 : FontWeight.w800,
                   color: BlabColors.sendButton,
                 ),
               ),
+              if (subtitle != null && !typing)
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: group ? 12 : 11,
+                    height: group ? 16 / 12 : null,
+                    color: group
+                        ? const Color(0xFF6F5C50)
+                        : BlabColors.warmMuted,
+                  ),
+                ),
               if (typing)
                 Padding(
                   padding: const EdgeInsets.only(top: 1),

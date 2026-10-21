@@ -10,15 +10,22 @@ import '../../../shared/models/chat.dart';
 import '../../../shared/util/relative_time.dart';
 
 class ChatListTile extends ConsumerWidget {
-  const ChatListTile({super.key, required this.chat, required this.onTap});
+  const ChatListTile({
+    super.key,
+    required this.chat,
+    required this.onTap,
+    this.invitation = false,
+  });
 
   final Chat chat;
   final VoidCallback onTap;
+  final bool invitation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasActualMessage = chat.lastMessageId != null;
+    final hasActualMessage = chat.lastMessageId != null || invitation;
     final partnerTyping =
+        !invitation &&
         !chat.isLeft &&
         hasActualMessage &&
         !chat.isNewInvite &&
@@ -74,10 +81,14 @@ class ChatListTile extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          chat.isLeft
+                          invitation
+                              ? context.l10n.groupInvitation
+                              : chat.isLeft
                               ? context.l10n.leftChat
                               : !hasActualMessage
-                              ? context.l10n.newConnectionSayHi
+                              ? chat.isGroup
+                                    ? context.l10n.noGroupMessages
+                                    : context.l10n.newConnectionSayHi
                               : partnerTyping
                               ? context.l10n.typing
                               : chat.lastMessage,

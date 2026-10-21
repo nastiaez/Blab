@@ -1,0 +1,21 @@
+begin;
+delete from public.message_preparation_jobs;
+update public.app_distribution_policy set channel='public',testing_enabled=true;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000000a"}',true);
+set local role authenticated;
+select set_config('test.group',(select chat_id::text from public.create_group('Deferred output proof')),true);
+select public.set_learning_language(current_setting('test.group')::uuid,'de');
+insert into public.messages(chat_id,sender_id,body) values(current_setting('test.group')::uuid,auth.uid(),'Continue a bounded generation later');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+create temp table first_claim as select * from public.claim_message_preparation_jobs_for_worker(1);
+do $$declare j record; current_job record; begin
+ if (select count(*) from first_claim)<>1 then raise exception 'missing initial lease'; end if;
+ select * into j from first_claim;
+ perform public.defer_message_preparation_leases(jsonb_build_array(jsonb_build_object('id',j.id,'lease',j.lease_token)));
+ if not exists(select 1 from public.message_preparation_jobs where id=j.id and status='queued' and attempts=0 and lease_token is null) then raise exception 'batch continuation spent failure budget'; end if;
+ select * into current_job from public.claim_message_preparation_jobs_for_worker(1);
+ if current_job.id<>j.id or current_job.attempts<>1 or current_job.lease_token=j.lease_token then raise exception 'continuation did not receive fresh lease'; end if;
+ if public.leased_translation_action(j.id,j.lease_token,'prepare')->>'status'<>'stale' then raise exception 'deferred old lease remained valid'; end if;
+end $$;
+rollback;

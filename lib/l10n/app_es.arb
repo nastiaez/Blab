@@ -310,6 +310,7 @@
   "linkCopied": "Enlace copiado",
   "copyLink": "Copiar enlace",
   "pasteInChat": "Ahora pégalo en un chat",
+  "groupPracticingLanguage": "Practicando {language}",
   "practicingLanguage": "Estás practicando {language}.",
   "shareYourInvite": "Comparte tu enlace de invitación.",
   "validUntil": "Válido hasta {date}.",
@@ -495,5 +496,91 @@
   "updateAvailableHint": "Abrir la página de descarga de la app",
   "updateOpenFailed": "No se pudo abrir la actualización. Inténtalo de nuevo.",
   "updateAction": "Actualizar",
-  "onboardingGetStarted": "Comenzar"
+  "onboardingGetStarted": "Comenzar",
+  "newGroup": "Nuevo grupo",
+  "groupName": "Nombre del grupo",
+  "inviteFriendsAfterCreating": "Invita a amigos después de crear el grupo.",
+  "createGroup": "Crear grupo",
+  "inviteFriends": "Invitar a amigos",
+  "groupInvitation": "Invitación al grupo",
+  "anyoneCanJoinGroup": "Cualquiera con este enlace puede unirse a {name}.",
+  "newLink": "Nuevo enlace",
+  "joinGroup": "Unirse al grupo",
+  "groupMemberCount": "{count, plural, =1{1 miembro} other{{count} miembros}}",
+  "groupHistoryAfterJoin": "Verás los mensajes enviados después de unirte.",
+  "invalidGroupName": "Introduce un nombre para el grupo.",
+  "couldNotCreateGroup": "No se pudo crear el grupo. Inténtalo de nuevo.",
+  "couldNotOpenGroupInvite": "No se pudo abrir esta invitación.",
+  "groupInvitationUnavailable": "Esta invitación al grupo ya no está disponible.",
+  "groupFull": "Este grupo está lleno.",
+  "couldNotJoinGroup": "No se pudo unir al grupo. Inténtalo de nuevo.",
+  "noGroupMessages": "Aún no hay mensajes",
+  "inviteFriendsToStart": "Invita a amigos y empieza a chatear.",
+  "joinAction": "Unirme",
+  "rejectAction": "Rechazar",
+  "joinToChatInGroup": "Únete para chatear en {name}.",
+  "couldNotRejectGroupInvite": "No se pudo rechazar la invitación. Inténtalo de nuevo.",
+  "groupInfo": "Información del grupo",
+  "groupMembersTitle": "Miembros",
+  "seeAll": "Ver todos",
+  "editGroupName": "Editar nombre",
+  "groupOwner": "Propietario",
+  "makeGroupOwner": "Hacer propietario",
+  "couldNotUpdateGroup": "No se pudo actualizar el grupo. Inténtalo de nuevo.",
+  "groupMemberYou": "{name} (tú)",
+  "@groupMemberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupSharedMedia": "Archivos compartidos",
+  "groupNoPhotos": "Aún no hay fotos",
+  "acceptToReply": "Acepta para responder a {name}",
+  "acceptRequest": "Aceptar",
+  "waitingForAcceptance": "Esperando aceptación",
+  "messageMember": "Mensaje",
+  "unblockAndMessage": "Desbloquear y enviar mensaje",
+  "@acceptToReply": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "viewRequestMessage": "Ver mensaje",
+  "viewRequestMessageHelp": "Lee el mensaje antes de decidir si lo aceptas.",
+  "leaveGroup": "Salir del grupo",
+  "groupOwnerLeaveTitle": "Elige primero un nuevo propietario",
+  "groupOwnerLeaveBody": "Antes de salir, ve a Miembros y haz que otra persona sea propietaria del grupo.",
+  "gotIt": "Entendido",
+  "groupNotificationsOn": "Activadas",
+  "groupNotificationsOff": "Desactivadas",
+  "leaveGroupQuestion": "¿Salir del grupo?",
+  "leaveGroupBody": "El grupo desaparecerá de tus chats. Puedes volver a unirte con una invitación.",
+  "closeGroup": "Cerrar grupo",
+  "closeGroupQuestion": "¿Cerrar el grupo?",
+  "closeGroupBody": "Eres la última persona del grupo. Si sales, el grupo se cerrará y se desactivará su enlace de invitación.",
+  "removeGroupMember": "Eliminar del grupo",
+  "removeGroupMemberQuestion": "¿Eliminar miembro?",
+  "removeGroupMemberBody": "{name} perderá el acceso a este grupo y necesitará una nueva invitación para volver a unirse.",
+  "@removeGroupMemberBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGroup": "Eliminar grupo",
+  "groupMemberJoined": "{name} se unió al grupo.",
+  "@groupMemberJoined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteGroupQuestion": "¿Eliminar grupo?",
+  "deleteGroupConfirmation": "Esto elimina el chat del grupo y su historial solo para ti. Un mensaje nuevo hará que el grupo vuelva a aparecer."
 }

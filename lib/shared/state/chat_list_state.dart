@@ -9,6 +9,9 @@ import '../services/chat_service.dart';
 import '../services/local_chat_history_cache.dart';
 import '../services/stream_backed_chat_service.dart';
 import 'auth_state.dart';
+import '../../features/chat/state/pending_sends_state.dart';
+import '../../features/chat/state/message_translations_state.dart';
+import '../../features/chat/state/unread_chat_state.dart';
 
 final chatServiceProvider = Provider<ChatService>((ref) {
   ref.watch(currentUserIdProvider);
@@ -57,6 +60,10 @@ Chat _rowToChat(Map<String, dynamic> r) {
     unreadCount: (r['unread_count'] as int?) ?? 0,
     needsPracticeLanguageSelection:
         r['needs_practice_language_selection'] as bool? ?? false,
+    kind: r['chat_kind'] == 'group' ? ChatKind.group : ChatKind.direct,
+    memberCount: (r['member_count'] as int?) ?? 2,
+    ownerId: r['owner_id'] as String?,
+    aiStartedAt: DateTime.tryParse(r['ai_started_at'] as String? ?? ''),
   );
 }
 
@@ -170,6 +177,10 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
         isNewInvite: chat.isNewInvite,
         startedAt: chat.startedAt,
         translationCutoffAt: chat.translationCutoffAt,
+        kind: chat.kind,
+        memberCount: chat.memberCount,
+        ownerId: chat.ownerId,
+        aiStartedAt: chat.aiStartedAt,
       );
     }).toList();
     state = AsyncValue.data(updated);
@@ -223,7 +234,29 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
         if (selectionRevision != _selectionRevision) continue;
         final chats = rows.map(_rowToChat).toList()
           ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        final changedGroups = <String>[];
+        for (final old in state.asData?.value ?? const <Chat>[]) {
+          if (!old.isGroup) continue;
+          final current = chats
+              .where((entry) => entry.id == old.id)
+              .firstOrNull;
+          if (current == null || current.aiStartedAt != old.aiStartedAt) {
+            if (ref.exists(pendingSendsProvider(old.id))) {
+              await ref
+                  .read(pendingSendsProvider(old.id).notifier)
+                  .discardForMembershipChange();
+            }
+            await localCache?.clearChatHistory(old.id);
+            if (!ref.mounted) return;
+            changedGroups.add(old.id);
+          }
+        }
         state = AsyncValue.data(chats);
+        for (final id in changedGroups) {
+          ref.invalidate(messageTranslationsProvider(id));
+          ref.invalidate(chatLanguageTimelineProvider(id));
+          ref.invalidate(chatUnreadMessageIdsProvider(id));
+        }
         unawaited(localCache?.saveChats(chats));
         return;
       }

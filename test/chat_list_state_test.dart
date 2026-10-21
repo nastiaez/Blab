@@ -11,6 +11,9 @@ import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
+import 'package:blab/features/chat/state/pending_sends_state.dart';
+import 'package:blab/features/chat/state/message_translations_state.dart';
+import 'package:blab/shared/models/message.dart';
 
 class _FakeChatService implements ChatService {
   _FakeChatService(this.rows);
@@ -83,6 +86,64 @@ class _SetupRefreshRaceService extends _FakeChatService {
 }
 
 void main() {
+  test(
+    'new group membership discards old in-memory outbox and translations',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final row = <String, dynamic>{
+        'chat_id': 'group',
+        'chat_kind': 'group',
+        'ai_started_at': '2026-10-19T00:00:00Z',
+        'last_body': 'Original',
+      };
+      final service = _FakeChatService([row]);
+      final container = ProviderContainer(
+        overrides: [
+          chatServiceProvider.overrideWithValue(service),
+          currentUserIdProvider.overrideWithValue('alice'),
+          localChatHistoryCacheProvider.overrideWithValue(
+            LocalChatHistoryCache('alice'),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(chatListProvider.future);
+      container
+          .read(pendingSendsProvider('group').notifier)
+          .add(
+            Message(
+              id: 'old-pending',
+              chatId: 'group',
+              isOutgoing: true,
+              originalText: 'Old membership draft',
+              translation: '',
+              sentAt: DateTime.utc(2026, 10, 19),
+              status: MessageStatus.pending,
+            ),
+          );
+      container
+          .read(messageTranslationsProvider('group').notifier)
+          .hydrateFromDb(
+            const {
+              'old': MessageTranslation(
+                translation: 'Old private translation',
+                interfaceText: 'Original',
+                interfaceLang: 'en',
+                sourceLang: 'de',
+                tokens: [],
+              ),
+            },
+            'de',
+            'en',
+          );
+      expect(container.read(pendingSendsProvider('group')), hasLength(1));
+      expect(container.read(messageTranslationsProvider('group')), isNotEmpty);
+      row['ai_started_at'] = '2026-10-20T00:00:00Z';
+      await container.read(chatListProvider.notifier).refresh();
+      expect(container.read(pendingSendsProvider('group')), isEmpty);
+      expect(container.read(messageTranslationsProvider('group')), isEmpty);
+    },
+  );
   test('list refreshes never fan out duplicate provider work', () async {
     var calls = 0;
     final service = _FakeChatService([

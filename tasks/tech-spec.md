@@ -100,7 +100,7 @@ Conventions:
 - Migrations live under `supabase/migrations/` (Supabase CLI). PR-reviewed; never edit prod via dashboard.
 - Generate Dart types from the Postgres schema with `supabase gen types` → checked in under `lib/shared/models/db/`.
 
-**Out of scope for backend:** language matching/discovery, payments, voice/video, group chats, and AI-generated conversation partners. Message translation is implemented through the authenticated `translate-message` Edge Function and OpenRouter.
+**Out of scope for backend:** language matching/discovery, payments, voice/video, and AI-generated conversation partners. Group-chat backend work is limited to the approved BLA-14 specification (`docs/specs/2026-10-19-group-feature.md`); do not infer broader social/discovery behavior. Message translation is implemented through the authenticated `translate-message` Edge Function and OpenRouter.
 
 Message translation and word metadata come from the authenticated translation service and are cached by message, learning language, and primary known language. The popup itself makes no network or model request: it reads the cached per-word gloss and Latin-script transliteration, while audio stays on-device TTS (FR-11, FR-24, FR-33).
 
@@ -457,3 +457,107 @@ Leave _status unchanged on test-access transport failure and on resume. Owner co
 
 - Logo:450ms initial a/handoff hold,950ms motion,1.40s total. l joins at35% of motion; exact letter paths unchanged.
 - Onboarding:13.75s playback maps onto existing7.75s phase motion, extending only reading phases. Conversation pointer down stops controller immediately; last release/cancel resumes current phase. Continue and reduced-motion final state remain usable; no translation or auth changes.
+
+## BLA-14 conversation candidate · 19 October 2026
+
+Reuse the established PostgreSQL text-message transport and ChatScreen; do not
+enable Stream group transport implicitly. Snapshot non-sender group recipients
+when a message is accepted, serialized with membership by the chat-row lock.
+Group aggregate read RPC exposes only the sender's fully-read message IDs,
+never partial reader identities. Snapshot remains unchanged after joins; no
+other recipients means no automatic read status. Client privacy OFF continues
+to suppress read transport/display. Group history SELECT is constrained by the
+viewer's join boundary. Group messages never qualify for two-person shared
+correction marks, including two-member groups; legacy shared learning rows are
+author-only while per-viewer private variants retain their established keys.
+No new translation targets, policies, prompts or AI-provider work are introduced.
+This is local candidate engineering, not acceptance of all group journeys.
+
+### BLA-14 recovery · 20 October 2026
+
+Group information uses the existing native shared controls, supplied SVG icons
+and page motion. Member menus anchor to their tapped row, not a fixed screen
+coordinate. Rename reopens from the refreshed chat identity and preserves input
+on failure. Required language selection receives an explicit request-preview
+presentation (View message/help), independent of the unchanged translation
+preference mapping documented in the conversation QA record. Viewing does not
+call acceptance; the database suppresses all pending-request receipts.
+The disposable groups backend was rebuilt from all 108 migration files, fixing
+the retained manual-application/ledger drift in migrations 5 and 6.
+
+### BLA-14 owner notice · approved slice 14432
+
+Reuse the isolated dependent groups worktree: the group screen/authority
+contracts are still uncommitted and absent from main. Preserve that work rather
+than copying a dirty checkout into another branch. Reconcile current main before
+integration. The approved p-6-0 Paper alert uses showBlabDialog and
+BlabConfirmationDialog with the exact warm 28px surface,40px horizontal inset,
+20/15/14px type and48px dismiss target. Interface Language alone owns its four
+localized strings. No translation, database mutation or automatic owner selection
+is performed by opening/dismissing the notice. The notice is shown only to the
+current owner with other members; regular/sole-member departure is a separate
+unfinished group lifecycle slice, never the direct-chat leave RPC.
+
+### BLA-14 completion ·14489 ·20 October
+
+Group notification state is per chat_members row and per account, persisted via
+an active-membership RPC. Mute is checked when queueing and when claiming queued
+group pushes; it does not alter other participants or direct-chat behavior.
+Notifications use the existing warm row and a two-choice popup, not a new screen.
+Shared photos listen to real message/attachment changes, including initial and
+reconnect resync. Thumbnails keep the Paper78px preview/10px radius variant;
+chat-photo defaults remain12px. The storage history policy must allow the active
+uploader's own path before attachment metadata exists (storage upsert SELECT),
+without opening orphaned objects or pre-join attachments to other members.
+Storage and Realtime are enabled only in the isolated groups backend. No hosted
+changes. Native settings/media evidence uses real upload/download/readback and
+live subscriptions, not simulated image or synchronization responses.
+
+Web attachment selection uses image_picker's browser file chooser and XFile
+bytes; native retains the established photo_manager sheet. Browser cancellation
+must leave the chat unchanged and allow immediate reselection. Roster now listens
+to RLS-scoped chat_members snapshots and refetches the display-only roster RPC
+after changes, including initial/reconnect refresh. No permission widening.
+
+Live-learning acceptance is separate from private-request UI/privacy proof.
+Configured application provider returned HTTP402 payment required in local direct
+translation testing; no successful asymmetric-language or automatic-worker proof
+is claimed. Device notification dispatch likewise remains unverified without the
+local FCM credential. Lifecycle history semantics remain a required open choice.
+
+Browser media preferences use a shared2Mi-character full/preview cache budget
+across accounts, not the native20MB full-file LRU. Trim legacy media when loading
+chats/history and serialize media saves; never evict auth, drafts/unsent messages
+or text metadata. Originals remain server-backed; oversized media caching is
+best-effort. Group information/photo/notification reads have an8s timeout and
+bounded requests. Request14530 supersedes the full-page Retry fallback: group
+identity always renders; saved account/chat-scoped roster, photo manifest and
+own mute setting survive transient failures. Recovery retries every10s only
+after failure, with source-table/reconnect refreshes and disposal cancellation.
+Authoritative42501 clears cached group information rather than granting stale
+access. First-load failures keep known metadata, not invented members/photos.
+Channel names use monotonic sequence IDs; timestamp-only names can collide for
+simultaneous browser observers. Actual membership watcher is RLS-filtered CDC,
+not a table stream whose initial REST failure can permanently end observation.
+
+
+### Group lifecycle and AI boundary —14578, in progress
+
+Keep the existing dependent group worktree and isolated Blab_Groups_20261019 runtime; do not copy dirty contracts into main. Lifecycle serializes against the group row. Departure deletes active membership and private prepared/readable/job/attempt bindings, retaining canonical originals and immutable read-recipient snapshots. A separate private departure record denies removed-user tokens created before removal; rotation creates a genuinely newer token. Last-member exit closes the group and revokes invitations. Join stamps joined_at using clock_timestamp; clients cannot change it.
+
+Original history RLS permits current group members, independently of AI eligibility. Group AI requires message created_at >= current membership joined_at; initial language backfill is filtered before job insertion, learning-era resolution and private package/readable access/write paths enforce the same cutoff. Client Chat.aiStartedAt is persisted account-scoped and gates rendering, prefetched translations, quotes and selected-message actions. Fresh joins clear saved chat learning snapshots; authoritative departure/rejoin list refresh clears stale snapshots. Direct-chat historical language behavior remains unchanged.
+
+Cost batching redesign is still pending; see docs/specs/2026-10-20-group-ai-cost-and-membership.md. Local lifecycle SQL and client cached-translation regression pass; not yet whole-feature acceptance.
+
+
+### Group completion implementation checkpoint14578
+
+The previously pending cost redesign is now local source: message-level leases, exact output-contract deduplication, service-only source/contract-keyed artifacts and private author/recipient result bindings. At most four distinct contracts per token-bounded generation; at most four generations before yielding unprocessed viewers without decrementing their failure allowance. Durable periodic dispatch resumes deferred work. Preparation and independent private commits use bounded100-viewer RPC arrays with per-viewer completion isolation. Interactive group misses defer to that durable owner, not a competing provider call. Existing direct-chat pipeline stays separate.
+
+Canonical paginated group_joined rows are server-only, localized at display time, excluded from AI/unread/ordinary pushes/human previews, and do not impersonate a group author. User-private departure hints permit revocation delivery even after content RLS denies access. Original-only rendering and clearing both disk and in-memory learning/outbox state fence a new membership epoch; disposed language fetches cannot overwrite its cache.
+
+Account-erasure fallback is distinct from ordinary Leave: transfer to a remaining member or delete an empty group so a permanent account deletion does not fail the owner FK or erase remaining members' group. Queued push claims must match current membership timing. These last SQL safeguards009/010 are authored, not applied/tested while Docker is blocked. Final native source must be rebuilt; earlier packaged QA APK is superseded after the memory-boundary fix. See completion-14578 QA for gates; no acceptance/release claim.
+
+## Group conversation approved composition ·21 October2026
+
+Implement14898 as group-only variants of shared chat components rather than a second message-rendering pipeline. Resolve membership epoch, historical Learning Language, Primary Known Language, mode, aid toggle, tone/form and reading script unchanged before presentation. Interface Language alone owns the header caption/composer labels. Incoming metadata/spacing/name/avatars change, never cached output eligibility or AI scheduling. Accessible title measurement can grow the identity row; the utility row stacks at large text. Retain platform font rendering.32px initials avatars use the existing warm palette, group-local stable name hashing with plum Alice fixture; do not add photo upload/product scope. Existing local groups backend remains owned by the preserved BLA14 worktree; this UI worktree is read-only consumer, with no function/background dispatch enabled.

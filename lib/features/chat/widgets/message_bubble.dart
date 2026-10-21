@@ -30,8 +30,11 @@ class MessageBubble extends ConsumerStatefulWidget {
     required this.onJumpToMessage,
     this.onSwipeReply,
     this.selectedBubbleKey,
+    this.groupConversation = false,
+    this.isFirstInGroup = true,
   });
 
+  final bool groupConversation, isFirstInGroup;
   final String chatId;
   final String partnerName;
   final Message message;
@@ -178,6 +181,21 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       targetLanguageCode: targetLanguageCode,
       readingScript: readingScript,
     );
+    var groupMinWidth = 0.0;
+    if (widget.groupConversation && !isOut) {
+      final measure = TextPainter(
+        text: TextSpan(
+          text: presentation.primaryText,
+          style: DefaultTextStyle.of(context).style.merge(
+            const TextStyle(fontSize: 16, height: 23 / 16, letterSpacing: 0),
+          ),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      if (measure.width > (maxWidth - 26) * .9) groupMinWidth = maxWidth;
+      measure.dispose();
+    }
     final canRetryTranslation =
         liveTranslation is AsyncError<MessageTranslation>;
     void retryTranslation() {
@@ -353,6 +371,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       required bool showTranslation,
       bool pending = false,
     }) => MessageLearningContent(
+      groupConversation: widget.groupConversation,
       authoredText: message.originalText,
       translation: translation,
       showTranslation: showTranslation,
@@ -470,17 +489,42 @@ class _BubbleState extends ConsumerState<MessageBubble> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  constraints: BoxConstraints(
+                    minWidth: groupMinWidth,
+                    maxWidth: maxWidth,
+                  ),
                   child: MessageBubbleSurface(
                     outgoing: isOut,
                     practice: isPractice,
                     fill: bubbleColor,
                     outline: bubbleOutline,
                     radius: radius,
+                    padding: widget.groupConversation
+                        ? const EdgeInsets.fromLTRB(12, 10, 12, 8)
+                        : const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (widget.groupConversation &&
+                            !isOut &&
+                            widget.isFirstInGroup &&
+                            message.senderName != null) ...[
+                          Text(
+                            message.senderName!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              height: 16 / 12,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0,
+                              color: Color(0xFF9B6550),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                         if (replyTo != null) ...[
                           ReplyPreview(
                             replyTo: replyTo,
@@ -513,13 +557,16 @@ class _BubbleState extends ConsumerState<MessageBubble> {
                         if (message.originalText.trim().isNotEmpty)
                           messageLearningContent,
                         if (isLastInGroup || message.isEdited) ...[
-                          const SizedBox(height: 4),
+                          SizedBox(
+                            height: widget.groupConversation && isOut ? 6 : 4,
+                          ),
                           Align(
                             alignment: Alignment.centerRight,
                             child: MessageMeta(
                               chatId: chatId,
                               message: message,
                               isOutgoing: isOut,
+                              groupConversation: widget.groupConversation,
                             ),
                           ),
                         ],

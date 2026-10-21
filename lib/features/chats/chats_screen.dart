@@ -18,6 +18,7 @@ import '../../shared/widgets/blab_icon.dart';
 import '../../shared/widgets/offline_banner.dart';
 import '../../shared/widgets/skeletons.dart';
 import 'widgets/chat_list_tile.dart';
+import '../groups/pending_group_invitations.dart';
 
 /// PRD US-006, US-007, US-026.
 class ChatsScreen extends ConsumerWidget {
@@ -48,11 +49,40 @@ class ChatsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _startChat(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.group_outlined),
+            title: Text(context.l10n.newGroup),
+            onTap: () {
+              Navigator.pop(sheetContext);
+              context.push('/groups/new');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_add_alt_1_outlined),
+            title: Text(context.l10n.inviteFriend),
+            onTap: () {
+              Navigator.pop(sheetContext);
+              context.push('/chats/new');
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatsAsync = ref.watch(chatListProvider);
     final chats = chatsAsync.value;
-    final hasConfirmedEmptyList = preview || (chats != null && chats.isEmpty);
+    final invitations = ref.watch(pendingGroupInvitationsProvider).value ?? [];
+    final hasConfirmedEmptyList =
+        preview || (chats != null && chats.isEmpty && invitations.isEmpty);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: BlabColors.chatCanvas,
@@ -80,21 +110,30 @@ class ChatsScreen extends ConsumerWidget {
                         ref.read(chatListProvider.notifier).refresh(),
                   );
                 }
-                if (chats.isEmpty) return const ChatsEmptyState();
+                if (chats.isEmpty && invitations.isEmpty) {
+                  return const ChatsEmptyState();
+                }
                 return RefreshIndicator(
                   color: BlabColors.brand,
-                  onRefresh: () =>
-                      ref.read(chatListProvider.notifier).refresh(),
+                  onRefresh: () async {
+                    ref.invalidate(pendingGroupInvitationsProvider);
+                    await ref.read(chatListProvider.notifier).refresh();
+                  },
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: chats.length,
+                    itemCount: chats.length + invitations.length,
                     separatorBuilder: (context, i) => Divider(
                       height: 1,
                       indent: 76,
                       color: BlabColors.chatDivider,
                     ),
                     itemBuilder: (context, i) {
-                      final c = chats[i];
+                      if (i < invitations.length) {
+                        return PendingGroupInvitationTile(
+                          invitation: invitations[i],
+                        );
+                      }
+                      final c = chats[i - invitations.length];
                       return Semantics(
                         customSemanticsActions: {
                           CustomSemanticsAction(
@@ -149,7 +188,7 @@ class ChatsScreen extends ConsumerWidget {
           ? null
           : FloatingActionButton(
               shape: const CircleBorder(),
-              onPressed: () => context.push('/chats/new'),
+              onPressed: () => _startChat(context),
               backgroundColor: BlabColors.brand,
               foregroundColor: BlabColors.warmInk,
               tooltip: context.l10n.newChat,

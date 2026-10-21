@@ -74,6 +74,13 @@ cd /path/to/Blab
 flutter pub get
 ```
 
+Linked worktrees do not inherit ignored Android configuration. Before running
+an Android client, restore the owner-controlled `android/app/google-services.json`
+for that client's application ID from the project's existing local configuration.
+Keep it ignored; do not replace it with a CI fixture for real push testing.
+The local Android launcher resolves the SDK from `ANDROID_SDK_ROOT`,
+`ANDROID_HOME`, then `android/local.properties` before the macOS default.
+
 For local AI translation, create the ignored function environment file if it
 does not already exist, then add a development-only OpenRouter key:
 

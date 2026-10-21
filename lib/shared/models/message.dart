@@ -6,7 +6,7 @@ import 'message_token.dart';
 /// PRD US-016 (read receipts) + US-031 (offline / failure).
 enum MessageStatus { pending, delivered, read, failed }
 
-enum MessageType { text, image }
+enum MessageType { text, image, groupJoined }
 
 class MessageAttachment {
   const MessageAttachment({
@@ -94,6 +94,8 @@ class Message {
     this.replyTo,
     this.isEdited = false,
     this.languagesMatchedAtSend = false,
+    this.senderId,
+    this.senderName,
   });
 
   final String id;
@@ -102,6 +104,8 @@ class Message {
   /// `true` if Nastia (the current user) sent this message; `false` if the
   /// partner sent it.
   final bool isOutgoing;
+  final String? senderId;
+  final String? senderName;
 
   /// Exact authored text. This is always the primary bubble content and is
   /// never replaced by either interface- or learning-language output.
@@ -147,6 +151,8 @@ class Message {
       id: id,
       chatId: chatId,
       isOutgoing: isOutgoing,
+      senderId: senderId,
+      senderName: senderName,
       originalText: originalText ?? this.originalText,
       translation: translation ?? this.translation,
       tokens: tokens ?? this.tokens,

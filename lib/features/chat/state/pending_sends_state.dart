@@ -96,6 +96,15 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
     await _writeChain;
   }
 
+  /// Drain persisted writes before discarding the previous membership's outbox.
+  Future<void> discardForMembershipChange() async {
+    await _hydration;
+    if (!ref.mounted) return;
+    _canonicalIds.addAll(_latest.map((message) => message.id));
+    _replace(const []);
+    await _persist();
+  }
+
   /// Append a new pending message to the queue.
   void add(Message m) {
     _replace([..._latest, m]);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,9 +15,180 @@ import '../state/auth_state.dart';
 /// Supabase remains authoritative; this store is only used to paint history
 /// while offline or while a realtime reconnect is in flight (US-031, FR-41).
 class LocalChatHistoryCache {
-  LocalChatHistoryCache(this.userId);
+  LocalChatHistoryCache(this.userId, {int? mediaCacheCharacterBudget})
+    : _mediaCacheCharacterBudget =
+          mediaCacheCharacterBudget ?? (kIsWeb ? 2 * 1024 * 1024 : null);
 
   final String userId;
+  final int? _mediaCacheCharacterBudget;
+  static Future<void> _browserMediaQueue = Future<void>.value();
+
+  String _groupMembersKey(String chatId) =>
+      'cached_group_members:$userId:$chatId';
+
+  Future<List<Map<String, dynamic>>?> loadGroupMembers(String chatId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_groupMembersKey(chatId));
+    if (raw == null) return null;
+    try {
+      final rows = jsonDecode(raw) as List;
+      return rows.map((row) => Map<String, dynamic>.from(row as Map)).toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveGroupMembers(
+    String chatId,
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _groupMembersKey(chatId),
+      jsonEncode([
+        for (final row in rows)
+          {
+            'user_id': row['user_id'],
+            'display_name': row['display_name'],
+            'is_owner': row['is_owner'],
+          },
+      ]),
+    );
+  }
+
+  Future<void> clearGroupMembers(String chatId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_groupMembersKey(chatId));
+    await prefs.remove('cached_group_photos:$userId:$chatId');
+    await prefs.remove('cached_group_notifications:$userId:$chatId');
+  }
+
+  Future<bool?> loadGroupNotifications(String chatId) async =>
+      (await SharedPreferences.getInstance()).getBool(
+        'cached_group_notifications:$userId:$chatId',
+      );
+
+  Future<void> saveGroupNotifications(String chatId, bool enabled) async {
+    await (await SharedPreferences.getInstance()).setBool(
+      'cached_group_notifications:$userId:$chatId',
+      enabled,
+    );
+  }
+
+  Future<void> saveGroupPhotos(
+    String chatId,
+    List<MessageAttachment> photos,
+  ) async {
+    await (await SharedPreferences.getInstance()).setString(
+      'cached_group_photos:$userId:$chatId',
+      jsonEncode([
+        for (final p in photos)
+          {
+            'id': p.id,
+            'messageId': p.messageId,
+            'storageBucket': p.storageBucket,
+            'storagePath': p.storagePath,
+            'mimeType': p.mimeType,
+            'byteSize': p.byteSize,
+            'url': p.url,
+            'previewStoragePath': p.previewStoragePath,
+            'previewMimeType': p.previewMimeType,
+            'previewByteSize': p.previewByteSize,
+            'previewUrl': p.previewUrl,
+          },
+      ]),
+    );
+  }
+
+  Future<List<MessageAttachment>?> loadGroupPhotos(String chatId) async {
+    final raw = (await SharedPreferences.getInstance()).getString(
+      'cached_group_photos:$userId:$chatId',
+    );
+    if (raw == null) return null;
+    try {
+      final result = <MessageAttachment>[];
+      for (final p in jsonDecode(raw) as List) {
+        result.add(
+          MessageAttachment(
+            id: p['id'] as String,
+            messageId: p['messageId'] as String,
+            chatId: chatId,
+            storageBucket: p['storageBucket'] as String,
+            storagePath: p['storagePath'] as String,
+            mimeType: p['mimeType'] as String,
+            byteSize: p['byteSize'] as int,
+            url: p['url'] as String?,
+            previewStoragePath: p['previewStoragePath'] as String?,
+            previewMimeType: p['previewMimeType'] as String?,
+            previewByteSize: p['previewByteSize'] as int?,
+            previewUrl: p['previewUrl'] as String?,
+            previewBytes: await loadAttachmentPreviewBytes(p['id'] as String),
+          ),
+        );
+      }
+      return result;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Browser preferences share a small origin-wide quota with authentication,
+  /// drafts and history. Only server-backed photo caches may be evicted here.
+  /// Serialize across accounts and previews/full files to prevent racing writes
+  /// from each independently consuming the remaining quota.
+  Future<void> _budgetBrowserMedia({String? key, List<int>? bytes}) async {
+    final budget = _mediaCacheCharacterBudget;
+    if (budget == null) return;
+    final result = _browserMediaQueue.then((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = bytes == null ? null : base64Encode(bytes);
+      if (key != null) await prefs.remove(key);
+      final mediaKeys = prefs
+          .getKeys()
+          .where(
+            (candidate) =>
+                candidate.startsWith(kCachedAttachmentKeyPrefix) ||
+                candidate.startsWith(kCachedAttachmentPreviewKeyPrefix),
+          )
+          .toList();
+      int characters(String candidate) {
+        final value = prefs.get(candidate);
+        return candidate.length + (value is String ? value.length : 0);
+      }
+
+      var used = mediaKeys.fold<int>(0, (n, item) => n + characters(item));
+      final incoming = encoded == null ? 0 : encoded.length + key!.length;
+      // An oversized original remains on the server and visible in memory;
+      // never let it evict messages or break subsequent preference writes.
+      final canStore = incoming <= budget;
+      while (mediaKeys.isNotEmpty &&
+          used + (canStore ? incoming : 0) > budget) {
+        final victim = mediaKeys.removeAt(0);
+        used -= characters(victim);
+        await prefs.remove(victim);
+      }
+      if (key == null || encoded == null || !canStore) return;
+      try {
+        await prefs.setString(key, encoded);
+      } catch (_) {
+        // Legacy caches or other origin data may already fill the quota. Make
+        // room using only regenerable media; photo caching stays best-effort.
+        for (final victim in mediaKeys) {
+          await prefs.remove(victim);
+        }
+        try {
+          await prefs.setString(key, encoded);
+        } catch (_) {
+          await prefs.remove(key);
+        }
+      }
+    });
+    _browserMediaQueue = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return result;
+  }
 
   // Keep opened full-resolution files useful across restarts without allowing
   // them to grow the app-private cache forever. Synced previews stay with the
@@ -93,6 +265,15 @@ class LocalChatHistoryCache {
 
   Future<void> saveAttachmentBytes(String attachmentId, List<int> bytes) async {
     if (bytes.isEmpty) return;
+    if (_mediaCacheCharacterBudget != null) {
+      return _budgetBrowserMedia(
+        key: cachedAttachmentStorageKey(
+          userId: userId,
+          attachmentId: attachmentId,
+        ),
+        bytes: bytes,
+      );
+    }
     await _serializeFullAttachmentOperation(() async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(
@@ -108,6 +289,15 @@ class LocalChatHistoryCache {
     List<int> bytes,
   ) async {
     if (bytes.isEmpty) return;
+    if (_mediaCacheCharacterBudget != null) {
+      return _budgetBrowserMedia(
+        key: cachedAttachmentPreviewStorageKey(
+          userId: userId,
+          attachmentId: attachmentId,
+        ),
+        bytes: bytes,
+      );
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       cachedAttachmentPreviewStorageKey(
@@ -127,6 +317,7 @@ class LocalChatHistoryCache {
   }
 
   Future<void> clearChatHistory(String chatId) async {
+    await clearGroupMembers(chatId);
     final messages = await loadMessages(chatId);
     final prefs = await SharedPreferences.getInstance();
     for (final key in [
@@ -153,6 +344,7 @@ class LocalChatHistoryCache {
   }
 
   Future<List<Chat>> loadChats() async {
+    await _budgetBrowserMedia();
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
     final raw = prefs.getString(cachedChatsStorageKey(userId));
@@ -455,6 +647,7 @@ class LocalChatHistoryCache {
   }
 
   Future<List<Message>> loadMessages(String chatId) async {
+    await _budgetBrowserMedia();
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
     final raw = prefs.getString(
@@ -483,6 +676,10 @@ class LocalChatHistoryCache {
   static Map<String, dynamic> _chatToJson(Chat chat) => {
     'id': chat.id,
     'partnerId': chat.partnerId,
+    'kind': chat.kind.name,
+    'memberCount': chat.memberCount,
+    'ownerId': chat.ownerId,
+    'aiStartedAt': chat.aiStartedAt?.toIso8601String(),
     'partnerName': chat.partnerName,
     'learningLanguage': chat.learningLanguage.code,
     'mode': chat.mode.name,
@@ -519,6 +716,10 @@ class LocalChatHistoryCache {
         row['historyClearedAt'] as String? ?? '',
       ),
       partnerId: row['partnerId'] as String?,
+      kind: row['kind'] == 'group' ? ChatKind.group : ChatKind.direct,
+      memberCount: (row['memberCount'] as num?)?.toInt() ?? 2,
+      ownerId: row['ownerId'] as String?,
+      aiStartedAt: DateTime.tryParse(row['aiStartedAt'] as String? ?? ''),
       partnerName: name,
       partnerInitial: name.isEmpty ? '?' : name[0].toUpperCase(),
       learningLanguage: learning,
@@ -544,6 +745,8 @@ class LocalChatHistoryCache {
     'id': message.id,
     'chatId': message.chatId,
     'isOutgoing': message.isOutgoing,
+    'senderId': message.senderId,
+    'senderName': message.senderName,
     'originalText': message.originalText,
     'sentAt': message.sentAt.toIso8601String(),
     'status': message.status.name,
@@ -571,6 +774,8 @@ class LocalChatHistoryCache {
             'id': message.replyTo!.id,
             'chatId': message.replyTo!.chatId,
             'isOutgoing': message.replyTo!.isOutgoing,
+            'senderId': message.replyTo!.senderId,
+            'senderName': message.replyTo!.senderName,
             'originalText': message.replyTo!.originalText,
             'sentAt': message.replyTo!.sentAt.toIso8601String(),
             'type': message.replyTo!.type.name,
@@ -634,6 +839,8 @@ class LocalChatHistoryCache {
           id: reply['id'] as String,
           chatId: reply['chatId'] as String? ?? chatId,
           isOutgoing: reply['isOutgoing'] as bool? ?? false,
+          senderId: reply['senderId'] as String?,
+          senderName: reply['senderName'] as String?,
           originalText: reply['originalText'] as String? ?? '',
           translation: '',
           sentAt: replyTime,
@@ -648,6 +855,8 @@ class LocalChatHistoryCache {
       id: id,
       chatId: chatId,
       isOutgoing: row['isOutgoing'] as bool? ?? false,
+      senderId: row['senderId'] as String?,
+      senderName: row['senderName'] as String?,
       originalText: originalText,
       translation: '',
       sentAt: sentAt,
@@ -655,7 +864,11 @@ class LocalChatHistoryCache {
         (value) => value.name == row['status'],
         orElse: () => MessageStatus.delivered,
       ),
-      type: row['type'] == 'image' ? MessageType.image : MessageType.text,
+      type: row['type'] == 'groupJoined'
+          ? MessageType.groupJoined
+          : row['type'] == 'image'
+          ? MessageType.image
+          : MessageType.text,
       attachment: attachment,
       replyTo: replyTo,
       isEdited: row['isEdited'] as bool? ?? false,

@@ -1,4 +1,4 @@
-import { commitViewers } from "./commit_viewers.ts";
+import { commitGroupViewers, commitViewers } from "./commit_viewers.ts";
 import {
   generateMessageOnce,
   type PreparedViewer,
@@ -6,6 +6,8 @@ import {
 import { providerCredentials } from "../translate-message/contract.ts";
 import { SINGLE_CALL_POLICY } from "../translate-message/rulebook.ts";
 import { planJobOutcome } from "./contract.ts";
+import { generateGroupOutputs, isGroupViewer } from "./group_outputs.ts";
+import type { TranslationResult } from "../translate-message/contract.ts";
 export type LeasedJob = {
   id: string;
   message_id: string;
@@ -24,14 +26,19 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
   const pending: Array<{ job: LeasedJob; viewer: PreparedViewer }> = [];
   const backoff = { untilMs: 0 };
   try {
+    const prepared = await admin.rpc("prepare_translation_viewers", {
+      p_leases: jobs.map((job) => ({ id: job.id, lease: job.lease_token })),
+    });
+    if (prepared.error || !Array.isArray(prepared.data)) {
+      throw new Error("prepare_failed");
+    }
+    const preparedById = new Map(
+      prepared.data.map((
+        r: { id: string; prepared: unknown },
+      ) => [r.id, r.prepared]),
+    );
     for (const job of jobs) {
-      const reply = await admin.rpc("leased_translation_action", {
-        p_job_id: job.id,
-        p_lease_token: job.lease_token,
-        p_action: "prepare",
-      });
-      if (reply.error) throw new Error("prepare_failed");
-      const p = reply.data as Record<string, unknown>;
+      const p = preparedById.get(job.id) as Record<string, unknown>;
       if (p?.status === "cached" || p?.status === "no_aid_needed") continue;
       if (p?.status !== "ready") {
         await admin.rpc("leased_translation_action", {
@@ -62,35 +69,80 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
       });
     }
     if (!pending.length) return;
-    const credential = providerCredentials({
-      openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
-      openAiKey: Deno.env.get("OPENAI_API_KEY"),
-      openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
-      openAiModel: Deno.env.get("OPENAI_MODEL"),
-      environment: Deno.env.get("BLAB_ENV"),
-      openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
-    })[0];
-    if (!credential) throw new Error("missing_provider_key");
-    credential.backoff = backoff;
-    const results = await generateMessageOnce(
-      pending.map((p) => p.viewer),
-      credential,
-      undefined,
-      true,
-    );
-    const completions = await commitViewers(
-      admin.rpc.bind(admin),
-      pending.map(({ job, viewer }) => ({
-        jobId: job.id,
-        lease: job.lease_token,
-        result: results[viewer.key]
-          ? {
-            ...results[viewer.key],
-            contractVersion: SINGLE_CALL_POLICY.contractVersion,
+    const viewers = pending.map((p) => p.viewer);
+    const deferred = new Set<string>();
+    const generate = async (vs: PreparedViewer[]) => {
+      const credential = providerCredentials({
+        openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
+        openAiKey: Deno.env.get("OPENAI_API_KEY"),
+        openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
+        openAiModel: Deno.env.get("OPENAI_MODEL"),
+        environment: Deno.env.get("BLAB_ENV"),
+        openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
+      })[0];
+      if (!credential) throw new Error("missing_provider_key");
+      credential.backoff = backoff;
+      return await generateMessageOnce(vs, credential, undefined, true);
+    };
+    const artifact = async (
+      v: PreparedViewer,
+      key: string,
+      result?: TranslationResult,
+    ) => {
+      const reply = await admin.rpc("group_translation_artifact", {
+        p_message_id: v.messageId,
+        p_variant_key: key,
+        p_source_hash: v.sourceHash,
+        p_result: result ?? null,
+      });
+      if (reply.error) throw new Error("artifact_unavailable");
+      return reply.data as TranslationResult | null;
+    };
+    const results = viewers.every(isGroupViewer)
+      ? await generateGroupOutputs(viewers, {
+        generate,
+        cached: (v, key) => artifact(v, key),
+        save: async (v, key, result) => {
+          await artifact(v, key, result);
+        },
+        renew: async () => {
+          const reply = await admin.rpc("renew_message_preparation_leases", {
+            p_leases: pending.map(({ job }) => ({
+              id: job.id,
+              lease: job.lease_token,
+            })),
+          });
+          if (reply.error || reply.data !== true) {
+            throw new Error("lease_expired");
           }
-          : null,
-      })),
-    );
+        },
+        defer: async (vs) => {
+          for (const v of vs) deferred.add(v.key);
+          const reply = await admin.rpc("defer_message_preparation_leases", {
+            p_leases: pending.filter((p) => deferred.has(p.viewer.key)).map((
+              { job },
+            ) => ({ id: job.id, lease: job.lease_token })),
+          });
+          if (reply.error) throw new Error("defer_failed");
+        },
+      })
+      : await generate(viewers);
+    const completions =
+      await (viewers.every(isGroupViewer) ? commitGroupViewers : commitViewers)(
+        admin.rpc.bind(admin),
+        pending.filter((p) => !deferred.has(p.viewer.key)).map((
+          { job, viewer },
+        ) => ({
+          jobId: job.id,
+          lease: job.lease_token,
+          result: results[viewer.key]
+            ? {
+              ...results[viewer.key],
+              contractVersion: SINGLE_CALL_POLICY.contractVersion,
+            }
+            : null,
+        })),
+      );
     for (const completion of completions) {
       if (!completion.error) continue;
       const job = pending.find((p) => p.job.id === completion.jobId)!.job;

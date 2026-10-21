@@ -1632,6 +1632,12 @@ abstract class AppLocalizations {
   /// **'Now paste it in a chat'**
   String get pasteInChat;
 
+  /// No description provided for @groupPracticingLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Practicing {language}'**
+  String groupPracticingLanguage(Object language);
+
   /// No description provided for @practicingLanguage.
   ///
   /// In en, this message translates to:
@@ -2579,6 +2585,354 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get started'**
   String get onboardingGetStarted;
+
+  /// No description provided for @newGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get newGroup;
+
+  /// No description provided for @groupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get groupName;
+
+  /// No description provided for @inviteFriendsAfterCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite friends after creating the group.'**
+  String get inviteFriendsAfterCreating;
+
+  /// No description provided for @createGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get createGroup;
+
+  /// No description provided for @inviteFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite friends'**
+  String get inviteFriends;
+
+  /// No description provided for @groupInvitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Group invitation'**
+  String get groupInvitation;
+
+  /// No description provided for @anyoneCanJoinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with this link can join {name}.'**
+  String anyoneCanJoinGroup(String name);
+
+  /// No description provided for @newLink.
+  ///
+  /// In en, this message translates to:
+  /// **'New link'**
+  String get newLink;
+
+  /// No description provided for @joinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join group'**
+  String get joinGroup;
+
+  /// No description provided for @groupMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 member} other{{count} members}}'**
+  String groupMemberCount(int count);
+
+  /// No description provided for @groupHistoryAfterJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ll see messages sent after you join.'**
+  String get groupHistoryAfterJoin;
+
+  /// No description provided for @invalidGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a group name.'**
+  String get invalidGroupName;
+
+  /// No description provided for @couldNotCreateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t create the group. Try again.'**
+  String get couldNotCreateGroup;
+
+  /// No description provided for @couldNotOpenGroupInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open this invitation.'**
+  String get couldNotOpenGroupInvite;
+
+  /// No description provided for @groupInvitationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This group invitation is no longer available.'**
+  String get groupInvitationUnavailable;
+
+  /// No description provided for @groupFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This group is full.'**
+  String get groupFull;
+
+  /// No description provided for @couldNotJoinGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t join the group. Try again.'**
+  String get couldNotJoinGroup;
+
+  /// No description provided for @noGroupMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get noGroupMessages;
+
+  /// No description provided for @inviteFriendsToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite friends and start chatting.'**
+  String get inviteFriendsToStart;
+
+  /// No description provided for @joinAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get joinAction;
+
+  /// No description provided for @rejectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get rejectAction;
+
+  /// No description provided for @joinToChatInGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join to chat in {name}.'**
+  String joinToChatInGroup(String name);
+
+  /// No description provided for @couldNotRejectGroupInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t reject the invitation. Try again.'**
+  String get couldNotRejectGroupInvite;
+
+  /// No description provided for @groupInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Group info'**
+  String get groupInfo;
+
+  /// No description provided for @groupMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get groupMembersTitle;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get seeAll;
+
+  /// No description provided for @editGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get editGroupName;
+
+  /// No description provided for @groupOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get groupOwner;
+
+  /// No description provided for @makeGroupOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Make owner'**
+  String get makeGroupOwner;
+
+  /// No description provided for @couldNotUpdateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t update the group. Try again.'**
+  String get couldNotUpdateGroup;
+
+  /// No description provided for @groupMemberYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (you)'**
+  String groupMemberYou(String name);
+
+  /// No description provided for @groupSharedMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared media'**
+  String get groupSharedMedia;
+
+  /// No description provided for @groupNoPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet'**
+  String get groupNoPhotos;
+
+  /// No description provided for @acceptToReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept to reply to {name}'**
+  String acceptToReply(String name);
+
+  /// No description provided for @acceptRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get acceptRequest;
+
+  /// No description provided for @waitingForAcceptance.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for acceptance'**
+  String get waitingForAcceptance;
+
+  /// No description provided for @messageMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messageMember;
+
+  /// No description provided for @unblockAndMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock and message'**
+  String get unblockAndMessage;
+
+  /// No description provided for @viewRequestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'View message'**
+  String get viewRequestMessage;
+
+  /// No description provided for @viewRequestMessageHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'View the message before deciding to accept.'**
+  String get viewRequestMessageHelp;
+
+  /// No description provided for @leaveGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get leaveGroup;
+
+  /// No description provided for @groupOwnerLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new owner first'**
+  String get groupOwnerLeaveTitle;
+
+  /// No description provided for @groupOwnerLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you leave, go to Members and make someone else the group owner.'**
+  String get groupOwnerLeaveBody;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @groupNotificationsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get groupNotificationsOn;
+
+  /// No description provided for @groupNotificationsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get groupNotificationsOff;
+
+  /// No description provided for @leaveGroupQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group?'**
+  String get leaveGroupQuestion;
+
+  /// No description provided for @leaveGroupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The group will disappear from your chats. You can join again with an invitation.'**
+  String get leaveGroupBody;
+
+  /// No description provided for @closeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Close group'**
+  String get closeGroup;
+
+  /// No description provided for @closeGroupQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Close group?'**
+  String get closeGroupQuestion;
+
+  /// No description provided for @closeGroupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re the last member. Leaving will close this group and disable its invite link.'**
+  String get closeGroupBody;
+
+  /// No description provided for @removeGroupMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from group'**
+  String get removeGroupMember;
+
+  /// No description provided for @removeGroupMemberQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove member?'**
+  String get removeGroupMemberQuestion;
+
+  /// No description provided for @removeGroupMemberBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will lose access to this group and will need a new invitation to rejoin.'**
+  String removeGroupMemberBody(String name);
+
+  /// No description provided for @deleteGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group'**
+  String get deleteGroup;
+
+  /// No description provided for @groupMemberJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined the group.'**
+  String groupMemberJoined(String name);
+
+  /// No description provided for @deleteGroupQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete group?'**
+  String get deleteGroupQuestion;
+
+  /// No description provided for @deleteGroupConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the group chat and its history for you only. A new message will bring the group back.'**
+  String get deleteGroupConfirmation;
 }
 
 class _AppLocalizationsDelegate

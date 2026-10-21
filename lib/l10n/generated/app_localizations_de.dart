@@ -854,6 +854,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get pasteInChat => 'Füge ihn jetzt in einen Chat ein';
 
   @override
+  String groupPracticingLanguage(Object language) {
+    return '$language üben';
+  }
+
+  @override
   String practicingLanguage(Object language) {
     return 'Du übst $language.';
   }
@@ -1441,4 +1446,211 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Los geht’s';
+
+  @override
+  String get newGroup => 'Neue Gruppe';
+
+  @override
+  String get groupName => 'Gruppenname';
+
+  @override
+  String get inviteFriendsAfterCreating =>
+      'Lade nach dem Erstellen Freunde ein.';
+
+  @override
+  String get createGroup => 'Gruppe erstellen';
+
+  @override
+  String get inviteFriends => 'Freunde einladen';
+
+  @override
+  String get groupInvitation => 'Gruppeneinladung';
+
+  @override
+  String anyoneCanJoinGroup(String name) {
+    return 'Jeder mit diesem Link kann $name beitreten.';
+  }
+
+  @override
+  String get newLink => 'Neuer Link';
+
+  @override
+  String get joinGroup => 'Gruppe beitreten';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Mitglieder',
+      one: '1 Mitglied',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupHistoryAfterJoin =>
+      'Du siehst Nachrichten, die nach deinem Beitritt gesendet werden.';
+
+  @override
+  String get invalidGroupName => 'Gib einen Gruppennamen ein.';
+
+  @override
+  String get couldNotCreateGroup =>
+      'Die Gruppe konnte nicht erstellt werden. Versuche es erneut.';
+
+  @override
+  String get couldNotOpenGroupInvite =>
+      'Diese Einladung konnte nicht geöffnet werden.';
+
+  @override
+  String get groupInvitationUnavailable =>
+      'Diese Gruppeneinladung ist nicht mehr verfügbar.';
+
+  @override
+  String get groupFull => 'Diese Gruppe ist voll.';
+
+  @override
+  String get couldNotJoinGroup =>
+      'Der Gruppe konnte nicht beigetreten werden. Versuche es erneut.';
+
+  @override
+  String get noGroupMessages => 'Noch keine Nachrichten';
+
+  @override
+  String get inviteFriendsToStart => 'Lade Freunde ein und beginne zu chatten.';
+
+  @override
+  String get joinAction => 'Beitreten';
+
+  @override
+  String get rejectAction => 'Ablehnen';
+
+  @override
+  String joinToChatInGroup(String name) {
+    return 'Tritt bei, um in $name zu chatten.';
+  }
+
+  @override
+  String get couldNotRejectGroupInvite =>
+      'Die Einladung konnte nicht abgelehnt werden. Versuche es erneut.';
+
+  @override
+  String get groupInfo => 'Gruppeninfo';
+
+  @override
+  String get groupMembersTitle => 'Mitglieder';
+
+  @override
+  String get seeAll => 'Alle anzeigen';
+
+  @override
+  String get editGroupName => 'Name bearbeiten';
+
+  @override
+  String get groupOwner => 'Inhaber';
+
+  @override
+  String get makeGroupOwner => 'Zum Inhaber machen';
+
+  @override
+  String get couldNotUpdateGroup =>
+      'Die Gruppe konnte nicht aktualisiert werden. Versuche es erneut.';
+
+  @override
+  String groupMemberYou(String name) {
+    return '$name (du)';
+  }
+
+  @override
+  String get groupSharedMedia => 'Geteilte Medien';
+
+  @override
+  String get groupNoPhotos => 'Noch keine Fotos';
+
+  @override
+  String acceptToReply(String name) {
+    return 'Akzeptiere, um $name zu antworten';
+  }
+
+  @override
+  String get acceptRequest => 'Akzeptieren';
+
+  @override
+  String get waitingForAcceptance => 'Warten auf Annahme';
+
+  @override
+  String get messageMember => 'Nachricht';
+
+  @override
+  String get unblockAndMessage => 'Entsperren und Nachricht senden';
+
+  @override
+  String get viewRequestMessage => 'Nachricht ansehen';
+
+  @override
+  String get viewRequestMessageHelp =>
+      'Sieh dir die Nachricht an, bevor du sie annimmst.';
+
+  @override
+  String get leaveGroup => 'Gruppe verlassen';
+
+  @override
+  String get groupOwnerLeaveTitle => 'Wähle zuerst einen neuen Besitzer';
+
+  @override
+  String get groupOwnerLeaveBody =>
+      'Gehe vor dem Verlassen zu Mitglieder und mache jemand anderen zum Gruppenbesitzer.';
+
+  @override
+  String get gotIt => 'Verstanden';
+
+  @override
+  String get groupNotificationsOn => 'Ein';
+
+  @override
+  String get groupNotificationsOff => 'Aus';
+
+  @override
+  String get leaveGroupQuestion => 'Gruppe verlassen?';
+
+  @override
+  String get leaveGroupBody =>
+      'Die Gruppe verschwindet aus deinen Chats. Mit einer Einladung kannst du wieder beitreten.';
+
+  @override
+  String get closeGroup => 'Gruppe schließen';
+
+  @override
+  String get closeGroupQuestion => 'Gruppe schließen?';
+
+  @override
+  String get closeGroupBody =>
+      'Du bist das letzte Mitglied. Wenn du gehst, wird die Gruppe geschlossen und ihr Einladungslink deaktiviert.';
+
+  @override
+  String get removeGroupMember => 'Aus Gruppe entfernen';
+
+  @override
+  String get removeGroupMemberQuestion => 'Mitglied entfernen?';
+
+  @override
+  String removeGroupMemberBody(String name) {
+    return '$name verliert den Zugriff auf diese Gruppe und benötigt eine neue Einladung, um wieder beizutreten.';
+  }
+
+  @override
+  String get deleteGroup => 'Gruppe löschen';
+
+  @override
+  String groupMemberJoined(String name) {
+    return '$name ist der Gruppe beigetreten.';
+  }
+
+  @override
+  String get deleteGroupQuestion => 'Gruppe löschen?';
+
+  @override
+  String get deleteGroupConfirmation =>
+      'Dadurch werden der Gruppenchat und sein Verlauf nur für dich entfernt. Bei einer neuen Nachricht erscheint die Gruppe wieder.';
 }

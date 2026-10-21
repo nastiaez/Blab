@@ -13,12 +13,15 @@ Message messageFromRow(
       attachmentsByMessageId[row['id'] as String] ?? const [];
   final type = switch (row['message_type'] as String? ?? 'text') {
     'image' => MessageType.image,
+    'group_joined' => MessageType.groupJoined,
     _ => MessageType.text,
   };
   return Message(
     id: row['id'] as String,
     chatId: row['chat_id'] as String,
     isOutgoing: senderId == currentUserId,
+    senderId: senderId,
+    senderName: row['sender_name'] as String?,
     originalText: row['body'] as String,
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),
@@ -79,6 +82,8 @@ Message _replyPreviewFromRow(
     id: row['id'] as String,
     chatId: row['chat_id'] as String,
     isOutgoing: row['sender_id'] == currentUserId,
+    senderId: row['sender_id'] as String?,
+    senderName: row['sender_name'] as String?,
     originalText: deleted ? 'Deleted message' : row['body'] as String,
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),

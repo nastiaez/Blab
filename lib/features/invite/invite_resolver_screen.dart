@@ -17,6 +17,7 @@ import '../../shared/widgets/offline_banner.dart';
 import 'invite_continuation.dart';
 import 'invite_error_actions.dart';
 import 'invite_install_referrer.dart';
+import '../groups/pending_group_invitations.dart';
 
 /// Resolves an app link. A browser or store page never claims an invite;
 /// claiming starts here only after a signed-in recipient reaches the app.
@@ -143,14 +144,7 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
           .timeout(const Duration(seconds: 12));
       if (!mounted || !isCurrent()) return;
       if (metadata == null) {
-        await clearPendingInvite(matchingToken: token);
-        await clearInstallInviteCandidate(token);
-        if (mounted && isCurrent()) {
-          setState(() {
-            _error = _InviteNotFound();
-            _finished = true;
-          });
-        }
+        await _resolveGroupInvite(token: token, generation: generation);
         return;
       }
       final userId = ref.read(currentUserIdProvider);
@@ -271,6 +265,57 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
         }
       }
     }
+  }
+
+  Future<void> _resolveGroupInvite({
+    required String token,
+    required int generation,
+  }) async {
+    final metadata = await ref
+        .read(chatServiceProvider)
+        .getGroupInvite(token)
+        .timeout(const Duration(seconds: 12));
+    if (!mounted || generation != _generation) return;
+    if (metadata == null) {
+      await clearPendingInvite(matchingToken: token);
+      await clearInstallInviteCandidate(token);
+      if (mounted && generation == _generation) {
+        setState(() {
+          _error = _InviteNotFound();
+          _finished = true;
+        });
+      }
+      return;
+    }
+    final userId = ref.read(currentUserIdProvider);
+    await savePendingInvite(token);
+    await retireInstallInvite();
+    if (!mounted || generation != _generation) return;
+    if (userId == null) {
+      _finished = true;
+      context.go(InviteContinuation(token: token).authLocation());
+      return;
+    }
+    if (!await _canContinueForSignedInUser(
+      userId: userId,
+      generation: generation,
+    )) {
+      return;
+    }
+    if (!mounted || generation != _generation) return;
+    if (!metadata.isMember) {
+      await ref.read(chatServiceProvider).registerGroupInvitation(token);
+    }
+    await clearPendingInvite(matchingToken: token);
+    if (!mounted ||
+        generation != _generation ||
+        ref.read(currentUserIdProvider) != userId) {
+      return;
+    }
+    ref.invalidate(pendingGroupInvitationsProvider);
+    ref.invalidate(onboardingDestinationProvider);
+    _finished = true;
+    context.go(metadata.isMember ? '/chat/${metadata.chatId}' : '/chats');
   }
 
   @override

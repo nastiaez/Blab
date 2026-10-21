@@ -1,8 +1,12 @@
 import { LANG_NAMES, TRANSLATION_RESPONSE_FORMAT } from "./contract.ts";
-import { COMPACT_TRANSLATION_RULES, SINGLE_CALL_POLICY } from "./rulebook.ts";
+import {
+  COMPACT_TRANSLATION_RULES,
+  GROUP_TRANSLATION_RULE,
+  SINGLE_CALL_POLICY,
+} from "./rulebook.ts";
 import type { PreparedViewer } from "./single_call.ts";
 
-type ContextLine = { sender: "sender" | "recipient"; message: string };
+type ContextLine = { sender: string; message: string };
 type Context = { previous?: ContextLine[]; reply_to?: ContextLine };
 type Sentence = { id: string; language: string; tone: string; context: string };
 type Help = { id: string; sentence: string; words: string; meanings: string };
@@ -110,9 +114,11 @@ function contextFor(v: PreparedViewer): Context {
   );
   for (const entry of priority) {
     const line = {
-      sender: (entry.speaker === f.messageAuthor
-        ? "sender"
-        : "recipient") as ContextLine["sender"],
+      sender: f.group === true && typeof entry.speakerName === "string"
+        ? entry.speakerName
+        : (entry.speaker === f.messageAuthor
+          ? "sender"
+          : "recipient") as ContextLine["sender"],
       message: entry.text,
       reply: entry.isReply === true,
     };
@@ -126,8 +132,9 @@ function contextFor(v: PreparedViewer): Context {
   const lines = eligible.map((entry) =>
     chosen.find((line) =>
       line.message === entry.text &&
-      line.sender ===
-        (entry.speaker === f.messageAuthor ? "sender" : "recipient") &&
+      line.sender === (f.group === true && typeof entry.speakerName === "string"
+          ? entry.speakerName
+          : (entry.speaker === f.messageAuthor ? "sender" : "recipient")) &&
       line.reply === (entry.isReply === true)
     )
   ).filter((x) => x !== undefined);
@@ -208,7 +215,13 @@ export function compactPlan(viewers: PreparedViewer[]) {
       messages: [
         {
           role: "system",
-          content: COMPACT_TRANSLATION_RULES + "\nRequested outputs: " +
+          content: COMPACT_TRANSLATION_RULES +
+            (viewers.some((v) =>
+                (v.formContext as Record<string, unknown>)?.group === true
+              )
+              ? "\n" + GROUP_TRANSLATION_RULE
+              : "") +
+            "\nRequested outputs: " +
             JSON.stringify(requested),
         },
         {

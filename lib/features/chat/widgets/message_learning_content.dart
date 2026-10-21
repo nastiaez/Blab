@@ -73,8 +73,10 @@ class MessageLearningContent extends StatelessWidget {
     this.formExplanation,
     this.readingScript = ReadingScript.native,
     this.translationLanguageCode,
+    this.groupConversation = false,
   });
 
+  final bool groupConversation;
   final String authoredText;
   final AsyncValue<MessageTranslation>? translation;
   final bool showTranslation;
@@ -128,7 +130,8 @@ class MessageLearningContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final primaryStyle = TextStyle(
       fontSize: 16,
-      height: 1.5,
+      height: groupConversation ? 23 / 16 : 1.5,
+      letterSpacing: groupConversation ? 0 : null,
       color:
           pendingColor ??
           (isOutgoing ? BlabColors.bubbleInk : BlabColors.textPrimary),

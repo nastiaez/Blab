@@ -76,6 +76,11 @@ class _PrimaryKnownLanguageChatService implements ChatService {
     this.messageIsOutgoing = false,
     this.chatMode = 'normal',
     this.translationCutoffAt,
+    this.groupAiStartedAt,
+    this.messageType = MessageType.text,
+    this.messageSenderName,
+    String? messageSenderId,
+    String? previousMessageSenderId,
     this.preparedPackages = const [],
     this.languageTimeline = const [],
     this.messageText = 'Hallo',
@@ -87,6 +92,9 @@ class _PrimaryKnownLanguageChatService implements ChatService {
          id: 'msg-1',
          chatId: 'chat-1',
          isOutgoing: messageIsOutgoing,
+         type: messageType,
+         senderName: messageSenderName,
+         senderId: messageSenderId,
          originalText: messageText,
          translation: '',
          sentAt: messageSentAt ?? DateTime.utc(2026, 8, 3, 12),
@@ -96,6 +104,8 @@ class _PrimaryKnownLanguageChatService implements ChatService {
            ? null
            : Message(
                id: 'msg-0',
+               senderName: messageSenderName,
+               senderId: previousMessageSenderId ?? messageSenderId,
                chatId: 'chat-1',
                isOutgoing: previousMessageIsOutgoing,
                originalText: previousMessageText,
@@ -118,6 +128,9 @@ class _PrimaryKnownLanguageChatService implements ChatService {
   final bool messageIsOutgoing;
   String chatMode;
   final DateTime? translationCutoffAt;
+  final DateTime? groupAiStartedAt;
+  final MessageType messageType;
+  final String? messageSenderName;
   final List<Map<String, dynamic>> preparedPackages;
   final List<Map<String, dynamic>> languageTimeline;
   final String messageText;
@@ -139,6 +152,8 @@ class _PrimaryKnownLanguageChatService implements ChatService {
       'partner_learning': 'en',
       'my_mode': chatMode,
       'translation_cutoff_at': translationCutoffAt?.toIso8601String(),
+      if (groupAiStartedAt != null) 'chat_kind': 'group',
+      'ai_started_at': groupAiStartedAt?.toIso8601String(),
       'last_body': message.originalText,
       'last_at': message.sentAt.toIso8601String(),
       'last_message_id': message.id,
@@ -389,6 +404,7 @@ Widget _host(
   bool accessibleNavigation = false,
   Locale? locale,
   ThemeData? theme,
+  double textScale = 1,
 }) {
   return UncontrolledProviderScope(
     container: container,
@@ -400,6 +416,7 @@ Widget _host(
       home: Builder(
         builder: (context) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
             disableAnimations: disableAnimations,
             accessibleNavigation: accessibleNavigation,
           ),
@@ -642,6 +659,97 @@ Future<void> runStationaryTranslationJourney(
 }
 
 void main() {
+  for (final locale in ['en', 'de', 'es', 'uk']) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets('group layout narrow $locale scale$scale', (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        VisibilityDetectorController.instance.updateInterval = Duration.zero;
+        tester.view.physicalSize = const Size(320, 867);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final container = _containerForHeader(
+          _PrimaryKnownLanguageChatService(
+            partnerName: 'A group with a very long conversation title',
+            groupAiStartedAt: DateTime.utc(2026, 8, 4),
+            messageSenderName: 'Alexandra Verylongfamilyname',
+            messageText:
+                'This longer original message should wrap and remain readable without horizontal clipping.',
+          ),
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          _host(
+            container,
+            theme: blabTheme,
+            locale: Locale(locale),
+            textScale: scale,
+          ),
+        );
+        await _settle(tester);
+        expect(
+          find.byKey(const ValueKey('group-conversation-header')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('composer-message-text-field')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
+  }
+  testWidgets(
+    'approved group UI groups sender identity and preserves message priority',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      VisibilityDetectorController.instance.updateInterval = Duration.zero;
+      tester.view.physicalSize = const Size(390, 867);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          partnerName: 'Live group translation',
+          groupAiStartedAt: DateTime.utc(2026, 8, 4),
+          messageSenderName: 'Alice Local',
+          messageSenderId: 'alice-local',
+          messageText: 'Wir sehen uns um zehn.',
+          previousMessageText: 'Ich bringe die Tickets mit.',
+          previousMessageIsOutgoing: false,
+          previousMessageSentAt: DateTime.utc(2026, 8, 3, 11, 59),
+        ),
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container, theme: blabTheme));
+      await _settle(tester);
+      expect(find.text('Alice Local'), findsOneWidget);
+      expect(find.text('AL'), findsOneWidget);
+      final label = tester.widget<Text>(find.text('Alice Local'));
+      expect(label.style?.fontSize, 12);
+      expect(label.style?.fontWeight, FontWeight.w500);
+      expect(label.style?.color, const Color(0xFF9B6550));
+      expect(find.text('Practicing German'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('group-conversation-header')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('composer-message-container')))
+            .height,
+        48,
+      );
+      final rows = tester
+          .widgetList<ChatMessageRow>(find.byType(ChatMessageRow))
+          .toList();
+      expect(rows.where((r) => r.isFirstInGroup), hasLength(1));
+      expect(rows.where((r) => r.isLastInGroup), hasLength(1));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   testWidgets('BLA-16 offline and ended session preserve chat and draft', (
     tester,
   ) async {
@@ -651,6 +759,74 @@ void main() {
     tester,
   ) async {
     await runDoubleTapHeartJourney(tester);
+  });
+  testWidgets(
+    'join activity is a localized note, never a bubble or AI request',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      VisibilityDetectorController.instance.updateInterval = Duration.zero;
+      var calls = 0;
+      final container = _containerForHeader(
+        _PrimaryKnownLanguageChatService(
+          groupAiStartedAt: DateTime.utc(2026, 8, 1),
+          messageType: MessageType.groupJoined,
+          messageSenderName: 'Nora',
+          messageText: '',
+        ),
+        translate: (_) async {
+          calls++;
+          throw MessageTranslationFailed('system_activity_requested_ai');
+        },
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      expect(find.text('Nora joined the group.'), findsOneWidget);
+      expect(find.byType(MessageBubble), findsNothing);
+      expect(calls, 0);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+  testWidgets('rejoined group keeps old cached translations original-only', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    VisibilityDetectorController.instance.updateInterval = Duration.zero;
+    var calls = 0;
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        groupAiStartedAt: DateTime.utc(2026, 8, 4),
+        messageSentAt: DateTime.utc(2026, 8, 3, 12),
+        messageText: 'Hallo',
+      ),
+      translate: (_) async {
+        calls++;
+        throw MessageTranslationFailed('historical_work_forbidden');
+      },
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    container
+        .read(messageTranslationsProvider('chat-1').notifier)
+        .hydrateFromDb(
+          const {
+            'msg-1': MessageTranslation(
+              translation: 'OLD PRIVATE TRANSLATION',
+              interfaceText: 'OLD PRIVATE TRANSLATION',
+              interfaceLang: 'uk',
+              sourceLang: 'de',
+              tokens: [],
+            ),
+          },
+          'uk',
+          'uk',
+        );
+    await _settle(tester);
+    expect(find.textContaining('OLD PRIVATE TRANSLATION'), findsNothing);
+    expect(find.textContaining('Hallo'), findsWidgets);
+    expect(calls, 0);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('failed translation reopen and explicit retry journey', (
     tester,
