@@ -15,9 +15,9 @@ class BlabWordmarkAnimation extends StatefulWidget {
     super.key,
   });
 
-  static const handoffHold = Duration(milliseconds: 450);
-  static const motionDuration = Duration(milliseconds: 950);
-  static const duration = Duration(milliseconds: 1400);
+  static const handoffHold = Duration.zero;
+  static const motionDuration = Duration(milliseconds: 790);
+  static const duration = Duration(milliseconds: 790);
 
   final bool animate;
   final VoidCallback? onCompleted;
@@ -85,9 +85,20 @@ class _BlabWordmarkAnimationState extends State<BlabWordmarkAnimation>
 }
 
 class _WordmarkFrame extends StatelessWidget {
-  const _WordmarkFrame({required this.t});
+  const _WordmarkFrame({required double t}) : _elapsed = t;
 
-  final double t;
+  final double _elapsed;
+
+  // Remove only 160ms of the deployed solo-a idle interval. Every frame
+  // before that idle and every subsequent letter movement retain their pace.
+  double get t {
+    final elapsedMs = _elapsed * 790;
+    if (elapsedMs <= 76) return elapsedMs / 950;
+    if (elapsedMs < 172.5) {
+      return (76 + (elapsedMs - 76) * (256.5 / 96.5)) / 950;
+    }
+    return (elapsedMs + 160) / 950;
+  }
 
   @override
   Widget build(BuildContext context) {

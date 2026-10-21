@@ -6,7 +6,7 @@ void main() {
   testWidgets('a has a solo beat before l joins', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: BlabWordmarkAnimation()));
     await tester.pump(BlabWordmarkAnimation.handoffHold);
-    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 120));
     Opacity letterOpacity(String key) => tester.widget<Opacity>(
       find
           .ancestor(of: find.byKey(Key(key)), matching: find.byType(Opacity))
@@ -14,7 +14,7 @@ void main() {
     );
     expect(letterOpacity('blab-l').opacity, 0);
     expect(letterOpacity('blab-first-b').opacity, 0);
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 100));
     expect(letterOpacity('blab-l').opacity, greaterThan(0));
   });
 
@@ -25,8 +25,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: BlabWordmarkAnimation(onCompleted: () => completed++)),
     );
-    await tester.pump(const Duration(milliseconds: 450));
-    await tester.pump(const Duration(milliseconds: 950));
+    await tester.pump(const Duration(milliseconds: 0));
+    await tester.pump(const Duration(milliseconds: 790));
     await tester.pump(const Duration(milliseconds: 16));
     expect(completed, 1);
     await tester.pump(const Duration(seconds: 2));
