@@ -146,7 +146,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Acceptance Criteria:**
 - [ ] If no chats, show the approved two-friends pixel illustration + "Start your first chat" + "Practice a language through real conversations." + "Invite a friend" button
 - [ ] The empty state has no duplicate "+" action; the button navigates to Invite a friend
-- [ ] A successfully claimed invite bypasses this state and opens the resulting chat directly
+- [ ] A successfully claimed invite bypasses the empty state and shows the new connection in Chats after authentication; tapping that chat opens its initial practice-language choice (US-025, BLA-6 clarification21 October).
 
 ---
 
@@ -430,7 +430,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Acceptance Criteria:**
 - [ ] The recipient uses the standard email sign-up or login page; no invite-specific account page, account-confirmation prompt, or phone-number flow is added
 - [ ] Opening a valid link while signed out preserves the most recently opened invite through sign-up, login, app close, and return
-- [ ] After successful authentication, Blab claims the saved invite and opens the resulting chat directly
+- [ ] After successful authentication, Blab claims the saved invite and opens Chats without a practice-language prompt. The new connection remains unread; tapping that chat opens its required language choice. Explicit signed-in invite-link navigation may still open its specific chat directly (BLA-6 clarification, topic8856,21 October).
 - [ ] If two links are opened before authentication, only the most recently opened link is claimed; earlier links remain valid
 - [ ] A browser or store-page visit never claims an invite
 

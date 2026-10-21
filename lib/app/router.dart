@@ -441,13 +441,18 @@ final GoRouter blabRouter = GoRouter(
     _blabRoute(
       path: '/i-test/:token',
       builder: (context, state) => AppChannel.isTest
-          ? InviteResolverScreen(token: state.pathParameters['token'] ?? '')
+          ? InviteResolverScreen(
+              token: state.pathParameters['token'] ?? '',
+              returnToChats: state.uri.queryParameters['entry'] == 'chats',
+            )
           : const InviteChannelMismatchScreen(),
     ),
     _blabRoute(
       path: '/i/:token',
-      builder: (context, state) =>
-          InviteResolverScreen(token: state.pathParameters['token'] ?? ''),
+      builder: (context, state) => InviteResolverScreen(
+        token: state.pathParameters['token'] ?? '',
+        returnToChats: state.uri.queryParameters['entry'] == 'chats',
+      ),
     ),
     _blabRoute(
       path: '/profile',
@@ -533,7 +538,7 @@ Future<void> _openOnboardingDestination(
     context.go(
       token == null
           ? '/chats'
-          : InviteContinuation(token: token).resolverLocation,
+          : InviteContinuation(token: token).postAuthResolverLocation,
     );
     return;
   }

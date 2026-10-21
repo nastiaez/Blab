@@ -43,6 +43,7 @@ class InviteContinuation {
   ).toString();
 
   String get resolverLocation => '/i/${Uri.encodeComponent(token!.trim())}';
+  String get postAuthResolverLocation => '$resolverLocation?entry=chats';
 }
 
 Future<void> savePendingInvite(String token) async {

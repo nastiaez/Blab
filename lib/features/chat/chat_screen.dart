@@ -168,6 +168,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   double? _modeAnchorOffset;
   bool _modeAnchorAtBottom = false;
   bool _requiredLanguageSheetVisible = false;
+  bool _leavingRequiredLanguageSetup = false;
   ChatModeTip? _visibleModeTip;
   int _modeAnchorGeneration = 0;
   Timer? _modeAnchorTimer;
@@ -223,7 +224,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _showRequiredLanguageSheetIfNeeded(Chat chat) {
     if (chat.isLeft) return;
-    if (!chat.needsPracticeLanguageSelection || _requiredLanguageSheetVisible) {
+    if (!chat.needsPracticeLanguageSelection ||
+        _requiredLanguageSheetVisible ||
+        _leavingRequiredLanguageSetup) {
       return;
     }
     _requiredLanguageSheetVisible = true;
@@ -238,6 +241,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
         if (!mounted) return;
         if (picked == null) {
+          // US-027: route teardown can rebuild this chat after the sheet pops.
+          // Do not schedule another sheet while returning to Chats.
+          _leavingRequiredLanguageSetup = true;
           context.go('/chats');
           return;
         }

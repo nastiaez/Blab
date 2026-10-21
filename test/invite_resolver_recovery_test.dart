@@ -68,6 +68,7 @@ Future<GoRouter> _mount(
   Future<OnboardingDestination>? onboardingDestinationFuture,
   bool mutableUser = false,
   bool observeChatGuard = false,
+  bool returnToChats = false,
   Future<OnboardingDestination> Function()? resolveDestination,
 }) async {
   final router = GoRouter(
@@ -75,8 +76,10 @@ Future<GoRouter> _mount(
     routes: [
       GoRoute(
         path: '/i/:token',
-        builder: (_, state) =>
-            InviteResolverScreen(token: state.pathParameters['token']!),
+        builder: (_, state) => InviteResolverScreen(
+          token: state.pathParameters['token']!,
+          returnToChats: returnToChats,
+        ),
       ),
       GoRoute(
         path: '/auth',
@@ -156,6 +159,27 @@ void _expectCloseAction(WidgetTester tester) {
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  for (final used in [false, true]) {
+    testWidgets('post-login invitation lands in Chats (used: $used)', (
+      tester,
+    ) async {
+      await _mount(
+        tester,
+        userId: 'bob',
+        returnToChats: true,
+        lookup: (token) async => _metadata(
+          token,
+          status: used ? 'used' : 'valid',
+          usedBy: used ? 'bob' : null,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('chats'), findsOneWidget);
+      expect(find.textContaining('chat:'), findsNothing);
+      expect(await loadPendingInvite(), isNull);
+    });
+  }
 
   testWidgets('claim retires cached pending-invite setup before opening chat', (
     tester,

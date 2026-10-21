@@ -62,6 +62,10 @@ void main() {
     expect(decoded.learningLanguage, continuation.learningLanguage);
     expect(decoded.canResume, isTrue);
     expect(continuation.resolverLocation, '/i/token%2Fwith%20spaces');
+    expect(
+      continuation.postAuthResolverLocation,
+      '/i/token%2Fwith%20spaces?entry=chats',
+    );
   });
 
   test('continuation needs only a token, not a language', () {

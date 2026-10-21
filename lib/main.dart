@@ -414,7 +414,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
         _incomingInviteRevision == 0 &&
         installToken != null &&
         !blabRouter.routeInformationProvider.value.uri.path.startsWith('/i/')) {
-      blabRouter.go(InviteContinuation(token: installToken).resolverLocation);
+      blabRouter.go(
+        InviteContinuation(token: installToken).postAuthResolverLocation,
+      );
     }
     _initialInviteLinksReady = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -454,7 +456,9 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
         return;
       }
       if (openInvite) {
-        blabRouter.go(InviteContinuation(token: token).resolverLocation);
+        blabRouter.go(
+          InviteContinuation(token: token).postAuthResolverLocation,
+        );
       } else if (ref.read(isOnlineProvider)) {
         await resumePendingInvite(claim: ref.read(inviteClaimActionProvider));
       }
