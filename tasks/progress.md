@@ -1993,3 +1993,12 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 
 - User14947 authorizes final verification/integration/Blab-test delivery after actual conversation evidence14923. Full walkthrough14962–14967/14969 sent; independent122-migration fresh setup,15 SQL suites,211 worker tests and combined Android create/join/info/ownership/lifecycle checks pass. Existing1025 client/49 focused gates remain applicable to unchanged app source. Owner-manual completion remains unchecked.
 - Staging requires17 group migrations plus updated functions before signed test delivery. Production excluded; target existing nine-testers cohort. No unrelated pending features to be included. Integration/distribution in progress. QA:`docs/qa/2026-10-21-group-final-14947/README.md`.
+
+- Owner steering after walkthrough: hide the entire Shared media section when confirmed empty; reveal it after the first photo. Group-info refinement is being verified before the same test update, not a separate release.
+
+
+## Final group refinements ·21 October2026
+
+Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
+
+Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15002. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.

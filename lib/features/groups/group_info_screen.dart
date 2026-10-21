@@ -930,6 +930,9 @@ class _GroupMedia extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final photos = ref.watch(groupPhotosProvider(chatId));
+    if (!all && photos.hasValue && photos.value!.isEmpty) {
+      return const SizedBox.shrink();
+    }
     final content = photos.when(
       loading: () => const LinearProgressIndicator(),
       error: (_, _) => TextButton(

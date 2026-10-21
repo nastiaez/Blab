@@ -31,6 +31,7 @@ class _Groups implements ChatService {
   bool denyRoster = false;
   bool failRoster = false;
   bool failMediaRead = false;
+  List<MessageAttachment> photos = [];
   bool failMuteRead = false;
   Completer<List<Map<String, dynamic>>>? stalledRoster;
   @override
@@ -69,7 +70,7 @@ class _Groups implements ChatService {
   @override
   Future<List<MessageAttachment>> fetchGroupPhotos(String id) async {
     if (failMediaRead) throw StateError('network unavailable');
-    return [];
+    return photos;
   }
 
   @override
@@ -153,6 +154,38 @@ void main() {
   }
 
   testWidgets(
+    'empty shared media hides; first photo reveals it; removing the last hides it',
+    (tester) async {
+      final groups = await mount(tester);
+      final scope = ProviderScope.containerOf(
+        tester.element(find.byType(GroupInfoScreen)),
+      );
+      expect(find.text('SHARED MEDIA · 0'), findsNothing);
+      expect(find.text('No photos yet'), findsNothing);
+      groups.photos = [
+        const MessageAttachment(
+          id: 'photo',
+          messageId: 'message',
+          chatId: 'group',
+          storageBucket: 'chat-photos',
+          storagePath: 'test.jpg',
+          mimeType: 'image/jpeg',
+          byteSize: 100,
+        ),
+      ];
+      scope.invalidate(groupPhotosProvider('group'));
+      await tester.pumpAndSettle();
+      expect(find.text('SHARED MEDIA · 1'), findsOneWidget);
+      groups.photos = [];
+      scope.invalidate(groupPhotosProvider('group'));
+      await tester.pumpAndSettle();
+      expect(find.text('SHARED MEDIA · 0'), findsNothing);
+      expect(find.text('No photos yet'), findsNothing);
+      expect(find.text('MEMBERS · 3'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'first unavailable roster preserves the group page, not a blank Retry screen',
     (tester) async {
       await mount(tester, failRoster: true);
@@ -192,7 +225,8 @@ void main() {
     await tester.pump(const Duration(seconds: 9));
     await tester.pumpAndSettle();
     expect(find.text('On'), findsOneWidget);
-    expect(find.text('No photos yet'), findsOneWidget);
+    expect(find.text('No photos yet'), findsNothing);
+    expect(find.text('SHARED MEDIA · 0'), findsNothing);
     expect(find.text('Retry'), findsNothing);
     groups.failMediaRead = false;
     groups.failMuteRead = false;
@@ -378,7 +412,8 @@ void main() {
       await mount(tester, count: count);
       expect(find.text('MEMBERS · $count'), findsOneWidget);
       expect(find.text('Member 0 (you)'), findsOneWidget);
-      expect(find.text('No photos yet'), findsOneWidget);
+      expect(find.text('No photos yet'), findsNothing);
+      expect(find.text('SHARED MEDIA · 0'), findsNothing);
       if (count > 5) {
         await tester.tap(find.text('See all'));
         await tester.pumpAndSettle();

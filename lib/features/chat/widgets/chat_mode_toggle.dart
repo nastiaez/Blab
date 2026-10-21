@@ -10,8 +10,10 @@ class BlabChatModeToggle extends StatelessWidget {
     super.key,
     required this.practice,
     required this.onChanged,
+    this.compact = false,
   });
   final bool practice;
+  final bool compact;
   final ValueChanged<bool>? onChanged;
   @override
   Widget build(BuildContext context) {
@@ -33,8 +35,8 @@ class BlabChatModeToggle extends StatelessWidget {
           behavior: HitTestBehavior.translucent,
           onTap: activate,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minWidth: 129,
+            constraints: BoxConstraints(
+              minWidth: compact ? 80 : 129,
               minHeight: 44,
               maxHeight: 44,
             ),
@@ -56,7 +58,7 @@ class BlabChatModeToggle extends StatelessWidget {
                   child: Container(
                     key: const ValueKey('mode-toggle'),
                     height: 34,
-                    constraints: const BoxConstraints(minWidth: 129),
+                    constraints: BoxConstraints(minWidth: compact ? 80 : 129),
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
                       border: Border.all(color: BlabColors.chatDivider),
@@ -69,8 +71,9 @@ class BlabChatModeToggle extends StatelessWidget {
                           label: context.l10n.normalMode,
                           iconName: 'chat-bubble-empty - 16',
                           selected: !practice,
-                          minimumWidth: !practice ? 83 : 36,
-                          hugContent: hugNormal,
+                          minimumWidth: !practice && !compact ? 83 : 36,
+                          hugContent: !compact && hugNormal,
+                          showLabel: !compact,
                           onTap: activate,
                         ),
                         const SizedBox(width: 2),
@@ -79,7 +82,8 @@ class BlabChatModeToggle extends StatelessWidget {
                           iconName: 'flash - 16',
                           selected: practice,
                           minimumWidth: 36,
-                          hugContent: practice,
+                          hugContent: practice && !compact,
+                          showLabel: !compact,
                           onTap: activate,
                         ),
                       ],
@@ -98,6 +102,7 @@ class BlabChatModeToggle extends StatelessWidget {
 class _CapsuleSegment extends StatelessWidget {
   const _CapsuleSegment({
     required this.label,
+    required this.showLabel,
     required this.iconName,
     required this.selected,
     required this.minimumWidth,
@@ -105,6 +110,7 @@ class _CapsuleSegment extends StatelessWidget {
     required this.onTap,
   });
 
+  final bool showLabel;
   final String label;
   final String iconName;
   final bool selected;
@@ -163,7 +169,7 @@ class _CapsuleSegment extends StatelessWidget {
                         size: 16,
                       ),
                     ),
-                    if (selected) ...[
+                    if (selected && showLabel) ...[
                       const SizedBox(width: 4),
                       if (hugContent)
                         _SegmentLabel(label: label)

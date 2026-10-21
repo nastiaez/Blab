@@ -730,7 +730,17 @@ void main() {
       expect(label.style?.fontSize, 12);
       expect(label.style?.fontWeight, FontWeight.w500);
       expect(label.style?.color, const Color(0xFF9B6550));
-      expect(find.text('Practicing German'), findsOneWidget);
+      expect(find.text('Practicing German'), findsNothing);
+      final headerRect = tester.getRect(
+        find.byKey(const ValueKey('group-conversation-header')),
+      );
+      final modeRect = tester.getRect(
+        find.byKey(const ValueKey('mode-toggle')),
+      );
+      final titleRect = tester.getRect(find.text('Live group translation'));
+      expect(headerRect.height, 60);
+      expect(modeRect.center.dy, closeTo(headerRect.center.dy, 1));
+      expect(titleRect.bottom, greaterThan(modeRect.top));
       expect(
         find.byKey(const ValueKey('group-conversation-header')),
         findsOneWidget,

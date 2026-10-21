@@ -1005,3 +1005,10 @@ Supersedes single-successful-claim and automatic rotation in US-008/037, FR-4 an
 ## Group conversation visual exception · approved14898 ·21 October2026
 
 Paper page p-7-0 artboard5A5-0 (sender-name revision14894) is the approved group-only UI specification. US-013's one-row/36px/15px header and Practice composer guidance remain unchanged for1:1. Groups instead use the two-row60+46px header,34px group avatar,18px title, localized compact practicing-language label and existing mode control. Composer placeholder is localized Message in both modes,48px input/send. Incoming runs show12px/16px500 muted#9B6550 names on the first bubble and32px avatar on the last; join/date/other sender boundaries reset grouping. Own messages omit names/avatars. Metadata12px, incoming body16/23. Preserve all translation/history/gesture/privacy behavior. See group-feature specification and QA record; design approval is not approval of unseen app implementation.
+
+
+## Final group refinements ·21 October2026
+
+Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
+
+Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15002. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.
