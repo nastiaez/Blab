@@ -2007,3 +2007,13 @@ Verified on Android5560 and390×867 Web: native conversation and information jou
 ### Group final delivery ·14947 ·21 October
 
 Engineering, source integration and test distribution complete: compact one-row header/no language caption, confirmed-empty media hidden; actual screenshots15001/15003. Combined Blab-test33 from3ef97cf distributed to existing9 through Firebase; downloaded binary matches tested SHA570e4931…99a4a. Signed update keepsDE preference/install data; staging122 migrations and2 functions verified with no production changes. Receipt: docs/qa/2026-10-21-group-final-14947/README.md and external releases/20261021-groups-combined33/delivery-receipt.json. Manual phone acceptance remains pending; do not infer roadmap acceptance from automation.
+
+
+### Approved shorter solo-a opening ·15048 ·21 October ·in progress
+
+Nastia accepted actual motion recording15028 in15044 and requested application
+build15048. Original deployed letter choreography retained exactly; only the
+solo-a idle shortened,790ms decorative duration. Source0b6305a reconciled with
+currentmain9bf8494 in441f544. Full reconciled gates and signed Blab-test34 build/
+actual screen-transition verification pending. No main integration, distribution
+or cold-start acceptance claimed yet. No production/backend change.
