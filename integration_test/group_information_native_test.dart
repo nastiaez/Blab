@@ -78,7 +78,16 @@ void main() {
     }
 
     await until(find.text('Alice Local (you)'));
-    await until(find.text('No photos yet'));
+    for (
+      var i = 0;
+      i < 100 && !container.read(groupPhotosProvider(id)).hasValue;
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(container.read(groupPhotosProvider(id)).value, isEmpty);
+    expect(find.text('No photos yet'), findsNothing);
+    expect(find.text('SHARED MEDIA · 0'), findsNothing);
     expect(find.text('Bob Local'), findsOneWidget);
     expect(find.text('Carol Local'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));

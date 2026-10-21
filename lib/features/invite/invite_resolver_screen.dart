@@ -22,9 +22,14 @@ import '../groups/pending_group_invitations.dart';
 /// Resolves an app link. A browser or store page never claims an invite;
 /// claiming starts here only after a signed-in recipient reaches the app.
 class InviteResolverScreen extends ConsumerStatefulWidget {
-  const InviteResolverScreen({super.key, required this.token});
+  const InviteResolverScreen({
+    super.key,
+    required this.token,
+    this.returnToChats = false,
+  });
 
   final String token;
+  final bool returnToChats;
 
   @override
   ConsumerState<InviteResolverScreen> createState() =>
@@ -51,7 +56,10 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
   @override
   void didUpdateWidget(InviteResolverScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.token != widget.token) _start();
+    if (oldWidget.token != widget.token ||
+        oldWidget.returnToChats != widget.returnToChats) {
+      _start();
+    }
   }
 
   @override
@@ -176,7 +184,11 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
         _finished = true;
         if (metadata.status == 'used' && metadata.resultingChatId != null) {
           ref.invalidate(onboardingDestinationProvider);
-          context.go('/chat/${metadata.resultingChatId}');
+          context.go(
+            widget.returnToChats
+                ? '/chats'
+                : '/chat/${metadata.resultingChatId}',
+          );
         } else {
           context.go('/chats/new?token=${Uri.encodeComponent(token)}');
         }
@@ -233,7 +245,7 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
       // The route guard must re-resolve after retiring the pending invite.
       // Otherwise its cached pendingInvite result keeps the chat behind setup.
       ref.invalidate(onboardingDestinationProvider);
-      context.go('/chat/$chatId');
+      context.go(widget.returnToChats ? '/chats' : '/chat/$chatId');
     } catch (error) {
       if (!mounted || !isCurrent()) return;
       if (_isUsedError(error) || _isNotFoundError(error)) {

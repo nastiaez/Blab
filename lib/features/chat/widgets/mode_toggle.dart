@@ -18,14 +18,17 @@ class ModeToggle extends ConsumerWidget {
     this.onBeforeToggle,
     this.onModeChanged,
     this.enabled = true,
+    this.compact = false,
   });
   final String chatId;
   final bool enabled;
+  final bool compact;
   final VoidCallback? onBeforeToggle;
   final ValueChanged<ChatMode>? onModeChanged;
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       BlabChatModeToggle.segmented(
+        compact: compact,
         practice: ref.watch(chatModeProvider(chatId)) == ChatMode.practice,
         onChanged: enabled ? (_) => _toggle(context, ref) : null,
       );

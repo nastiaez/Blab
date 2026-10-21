@@ -1,4 +1,8 @@
 import 'package:blab/features/invite/test_access_gate.dart';
+import 'package:blab/features/auth/auth_screen.dart';
+import 'package:blab/features/onboarding/onboarding_bootstrap_screen.dart';
+import 'package:blab/features/invite/invite_continuation.dart';
+import 'package:blab/shared/data/app_channel.dart';
 import 'package:blab/features/chat/state/message_reactions_state.dart';
 import 'package:blab/shared/models/message_reaction.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
@@ -453,12 +457,18 @@ ProviderContainer _containerForHeader(
   Future<MessageTranslation> Function(String messageId)? translate,
   TargetedTranslateMessageFn? retryTranslate,
   Future<Map<String, dynamic>> Function()? accessCheck,
+  EmailAuthAction? emailAuth,
+  Future<OnboardingDestination> Function()? resolveDestination,
 }) {
   return ProviderContainer(
     overrides: [
+      if (emailAuth != null)
+        emailAuthActionProvider.overrideWithValue(emailAuth),
       chatServiceProvider.overrideWithValue(service),
       onboardingDestinationProvider.overrideWith(
-        (_) async => OnboardingDestination.chats,
+        (_) async => resolveDestination == null
+            ? OnboardingDestination.chats
+            : resolveDestination(),
       ),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue('alice'),
@@ -720,7 +730,17 @@ void main() {
       expect(label.style?.fontSize, 12);
       expect(label.style?.fontWeight, FontWeight.w500);
       expect(label.style?.color, const Color(0xFF9B6550));
-      expect(find.text('Practicing German'), findsOneWidget);
+      expect(find.text('Practicing German'), findsNothing);
+      final headerRect = tester.getRect(
+        find.byKey(const ValueKey('group-conversation-header')),
+      );
+      final modeRect = tester.getRect(
+        find.byKey(const ValueKey('mode-toggle')),
+      );
+      final titleRect = tester.getRect(find.text('Live group translation'));
+      expect(headerRect.height, 60);
+      expect(modeRect.center.dy, closeTo(headerRect.center.dy, 1));
+      expect(titleRect.bottom, greaterThan(modeRect.top));
       expect(
         find.byKey(const ValueKey('group-conversation-header')),
         findsOneWidget,
@@ -2774,4 +2794,170 @@ Future<void> runOfflineAccessJourney(
   if (capture != null) await capture('03-restored-with-draft');
   await tester.pumpWidget(const SizedBox.shrink());
   container.dispose();
+}
+
+class _PracticeEntryService extends _PrimaryKnownLanguageChatService {
+  _PracticeEntryService()
+    : super(
+        needsPracticeLanguageSelection: true,
+        messageText: 'Hello',
+        learningLanguageCode: 'en',
+      );
+  String? savedLanguage;
+  int attempts = 0;
+  bool failNextSave = false;
+  int claims = 0;
+  @override
+  Future<InviteMetadata?> getInvite(String token) async => InviteMetadata(
+    token: token,
+    inviterUserId: 'bob',
+    inviterName: 'Bob',
+    inviterLearningLanguage: 'en',
+    expiresAt: DateTime(2099),
+    status: 'valid',
+  );
+  @override
+  Future<InviteClaimResult> claimInviteDetails({required String token}) async {
+    claims++;
+    return const InviteClaimResult(chatId: 'chat-1', isNewConnection: true);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchChatList() async {
+    final rows = await super.fetchChatList();
+    rows.single['needs_practice_language_selection'] = savedLanguage == null;
+    rows.single['my_learning'] = savedLanguage ?? 'en';
+    return rows;
+  }
+
+  @override
+  Future<void> setLearningLanguage({
+    required String chatId,
+    required String langCode,
+  }) async {
+    attempts++;
+    if (failNextSave) {
+      failNextSave = false;
+      throw StateError('injected save failure');
+    }
+    savedLanguage = langCode;
+  }
+}
+
+/// BLA-6: actual Chats → ChatScreen journey; service responses are controlled.
+/// Persistence here is a service readback, not live database evidence.
+Future<void> runPracticeEntryJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+  bool afterLogin = false,
+  bool withPendingInvite = false,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  if (withPendingInvite) {
+    await savePendingInvite(AppChannel.isTest ? 'test-bla6' : 'bla6');
+  }
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  final service = _PracticeEntryService();
+  var loginCalls = 0;
+  final container = _containerForHeader(
+    service,
+    knownLanguages: ['en'],
+    primaryKnownLanguage: 'en',
+    emailAuth: (_) async => loginCalls++,
+    isOnline: withPendingInvite,
+    resolveDestination: () async => await loadPendingInvite() == null
+        ? OnboardingDestination.chats
+        : OnboardingDestination.pendingInvite,
+  );
+  if (afterLogin) container.read(openingAnimationGateProvider).claim();
+  final router = GoRouter(
+    routes: blabRouter.configuration.routes,
+    initialLocation: afterLogin ? '/auth?mode=login' : '/chats',
+  );
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(
+        theme: blabTheme,
+        routerConfig: router,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+      ),
+    ),
+  );
+  await _settle(tester);
+  if (afterLogin) {
+    await tester.enterText(find.byType(TextField).at(0), 'qa@blab.test');
+    await tester.enterText(find.byType(TextField).at(1), 'Blab-local-123!');
+    final submit = find.text('Log in').last;
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    await _settle(tester);
+    expect(loginCalls, 1);
+    if (withPendingInvite) expect(service.claims, greaterThanOrEqualTo(1));
+  }
+  expect(find.byType(ChatsScreen), findsOneWidget);
+  expect(find.text('Choose a language to practice'), findsNothing);
+  if (capture != null) await capture('01-chats-no-language-prompt');
+  await tester.tap(find.text('Bob'));
+  await _settle(tester);
+  expect(find.text('Choose a language to practice'), findsOneWidget);
+  expect(
+    tester
+        .widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Start practicing'),
+        )
+        .onPressed,
+    isNull,
+  );
+  if (capture != null) await capture('02-choose-inside-chat');
+  await tester.tap(find.text('English'));
+  await _settle(tester);
+  expect(service.attempts, 0);
+  await tester.binding.handlePopRoute();
+  await _settle(tester);
+  expect(find.byType(ChatsScreen), findsOneWidget);
+  expect(service.savedLanguage, isNull);
+  await tester.tap(find.text('Bob'));
+  await _settle(tester);
+  expect(
+    tester
+        .widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Start practicing'),
+        )
+        .onPressed,
+    isNull,
+  );
+  await tester.tap(find.text('English'));
+  await _settle(tester);
+  service.failNextSave = true;
+  await tester.tap(find.text('Start practicing'));
+  await _settle(tester);
+  expect(find.text('Choose a language to practice'), findsOneWidget);
+  expect(service.savedLanguage, isNull);
+  if (capture != null) await capture('03-injected-save-failure');
+  await tester.tap(find.text('Start practicing'));
+  await _settle(tester);
+  expect(service.savedLanguage, 'en');
+  expect(service.attempts, 2);
+  expect(find.text('Choose a language to practice'), findsNothing);
+  expect(find.byType(ChatScreen), findsOneWidget);
+  await tester.pump(const Duration(seconds: 5));
+  await _settle(tester);
+  if (capture != null) await capture('04-confirmed-chat');
+  await tester.binding.handlePopRoute();
+  await _settle(tester);
+  expect(find.byType(ChatsScreen), findsOneWidget);
+  await container.read(chatListProvider.notifier).refresh();
+  await tester.tap(find.text('Bob'));
+  await _settle(tester);
+  expect(find.byType(ChatScreen), findsOneWidget);
+  expect(find.text('Choose a language to practice'), findsNothing);
+  expect(service.attempts, 2);
+  if (capture != null) await capture('05-reopened-no-repeat');
+  await tester.pumpWidget(const SizedBox.shrink());
+  router.dispose();
+  container.dispose();
+  await tester.pump();
 }

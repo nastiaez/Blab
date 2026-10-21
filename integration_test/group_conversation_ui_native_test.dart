@@ -85,7 +85,7 @@ void main() {
     expect(find.text('Alice Local'), findsNWidgets(2));
     expect(find.text('AL'), findsNWidgets(2));
     expect(find.text('Live group translation'), findsOneWidget);
-    expect(find.text('Practicando alemán'), findsOneWidget);
+    expect(find.text('Practicando alemán'), findsNothing);
     expect(
       find.byWidgetPredicate(
         (w) =>

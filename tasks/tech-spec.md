@@ -561,3 +561,10 @@ Account-erasure fallback is distinct from ordinary Leave: transfer to a remainin
 ## Group conversation approved composition ·21 October2026
 
 Implement14898 as group-only variants of shared chat components rather than a second message-rendering pipeline. Resolve membership epoch, historical Learning Language, Primary Known Language, mode, aid toggle, tone/form and reading script unchanged before presentation. Interface Language alone owns the header caption/composer labels. Incoming metadata/spacing/name/avatars change, never cached output eligibility or AI scheduling. Accessible title measurement can grow the identity row; the utility row stacks at large text. Retain platform font rendering.32px initials avatars use the existing warm palette, group-local stable name hashing with plum Alice fixture; do not add photo upload/product scope. Existing local groups backend remains owned by the preserved BLA14 worktree; this UI worktree is read-only consumer, with no function/background dispatch enabled.
+
+
+## Final group refinements ·21 October2026
+
+Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
+
+Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15003. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.

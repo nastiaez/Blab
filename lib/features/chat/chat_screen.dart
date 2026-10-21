@@ -185,6 +185,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   double? _modeAnchorOffset;
   bool _modeAnchorAtBottom = false;
   bool _requiredLanguageSheetVisible = false;
+  bool _leavingRequiredLanguageSetup = false;
   ChatModeTip? _visibleModeTip;
   int _modeAnchorGeneration = 0;
   Timer? _modeAnchorTimer;
@@ -244,7 +245,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     bool previewRequest = false,
   }) {
     if (chat.isLeft) return;
-    if (!chat.needsPracticeLanguageSelection || _requiredLanguageSheetVisible) {
+    if (!chat.needsPracticeLanguageSelection ||
+        _requiredLanguageSheetVisible ||
+        _leavingRequiredLanguageSetup) {
       return;
     }
     _requiredLanguageSheetVisible = true;
@@ -260,6 +263,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         );
         if (!mounted) return;
         if (picked == null) {
+          // US-027: route teardown can rebuild this chat after the sheet pops.
+          // Do not schedule another sheet while returning to Chats.
+          _leavingRequiredLanguageSetup = true;
           context.go('/chats');
           return;
         }
@@ -2108,34 +2114,12 @@ double chatHeaderIdentityHeightFor(BuildContext context) {
   return math.max(56, scale.scale(15) * 1.2 + scale.scale(12) * 1.43 + 1);
 }
 
-const groupHeaderCaptionStyle = TextStyle(
-  fontSize: 12,
-  height: 16 / 12,
-  letterSpacing: 0,
-  color: Color(0xFF6F5C50),
-);
 double groupChatIdentityHeightFor(BuildContext context, {String name = ''}) {
   final scaler = MediaQuery.textScalerOf(context);
-  final painter = TextPainter(
-    text: TextSpan(
-      text: name,
-      style: const TextStyle(
-        fontSize: 18,
-        height: 22 / 18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0,
-      ),
-    ),
-    textDirection: Directionality.of(context),
-    textScaler: scaler,
-    maxLines: 2,
-  )..layout(maxWidth: math.max(80, MediaQuery.sizeOf(context).width - 144));
-  final height = math.max(
-    60.0,
-    painter.height + 2 + scaler.scale(12) * 16 / 12 + 8,
+  return math.max(
+    60,
+    scaler.scale(18) * 22 / 18 + scaler.scale(12) * 16 / 12 + 8,
   );
-  painter.dispose();
-  return height;
 }
 
 double chatHeaderHeightFor(
@@ -2144,10 +2128,7 @@ double chatHeaderHeightFor(
   String name = '',
 }) {
   if (group) {
-    return groupChatIdentityHeightFor(context, name: name) +
-        (MediaQuery.textScalerOf(context).scale(1) > 1.5
-            ? MediaQuery.textScalerOf(context).scale(12) * 16 / 12 + 44 + 8
-            : 46);
+    return groupChatIdentityHeightFor(context, name: name);
   }
   if (!chatHeaderIsStacked(context)) return kChatHeaderHeight;
   final scale = MediaQuery.textScalerOf(context);
