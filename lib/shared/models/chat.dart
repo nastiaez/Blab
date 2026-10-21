@@ -2,6 +2,8 @@ import '../data/languages.dart';
 
 enum ChatMode { normal, practice }
 
+enum ChatKind { direct, group }
+
 ChatMode chatModeFromDb(String? value) =>
     value == 'normal' ? ChatMode.normal : ChatMode.practice;
 
@@ -29,11 +31,23 @@ class Chat {
     this.translationCutoffAt,
     this.leftAt,
     this.historyClearedAt,
+    this.kind = ChatKind.direct,
+    this.memberCount = 2,
+    this.ownerId,
+    this.aiStartedAt,
   });
 
   final String id;
   final DateTime? leftAt;
   final DateTime? historyClearedAt;
+  final ChatKind kind;
+  final int memberCount;
+  final String? ownerId;
+  final DateTime? aiStartedAt;
+  bool allowsAiFor(DateTime sentAt) =>
+      !isGroup ||
+      (!isLeft && aiStartedAt != null && !sentAt.isBefore(aiStartedAt!));
+  bool get isGroup => kind == ChatKind.group;
   bool get isLeft => leftAt != null;
 
   Chat withLeftAt(DateTime when) => Chat(
@@ -56,6 +70,10 @@ class Chat {
     translationCutoffAt: translationCutoffAt,
     leftAt: when,
     historyClearedAt: historyClearedAt,
+    kind: kind,
+    memberCount: memberCount,
+    ownerId: ownerId,
+    aiStartedAt: aiStartedAt,
   );
 
   /// The partner's user id. Needed to block / report them. Null for mock

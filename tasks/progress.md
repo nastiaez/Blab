@@ -1722,3 +1722,273 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Actual route/screenshots accepted14580; release requested14829 for Blab-test only. Exact per-app Firebase/TestFlight validation, unchanged approved compact banner. Focused4 and full982 checks pass/16 environment skips; analysis clean.
 - Integrated signed Android31 verification and existing-audience Firebase distribution in progress. No production app/backend changes or notice activation authorized. Physical returning-tester download/install remains unverified; owner tracker stays unchecked.
 - Completed Android-only Blab-test delivery: integrated source eea850a, signed31 replaces reconstructed signed30 without clearing data and preserves DE preference. Exact package/signature verified; cold launch and rendered Welcome inspected. Integrated focused4 checks pass. Firebase release0q6ps79gkat30 distributed to exactly the same9 testers as30; downloaded artifact SHA256 matches d8f459dc112254402c82323e4799df8d29842c23917a3c4fa8cef77f35a4c8fe. Canonical private receipt: ../releases/20261021-bla15-test31/receipt.json. No production/iOS release, notice activation or physical-phone acceptance claimed. Prior in-progress distribution note superseded.
+## BLA-14 groups · slice 1 (create → invite → join) `[ ]` ← in progress
+
+- Scope: approved BLA-14 group specification, sections 2–3. Create a group,
+  share/revoke its reusable link, and join it idempotently with a server-enforced
+  100-member cap and post-join history boundary.
+- Out of scope: group messaging, roster/owner management, and private member
+  requests. Each remains a separately reviewed journey slice.
+- 2026-10-19: BLA-14 explicitly supersedes the former group-chat non-goal in
+  the PRD/tech-spec for this bounded scope. Dedicated worktree is
+  `feat/bla-14-groups-20261019`; implementation evidence and visual approval
+  are still required before integration or release.
+- Environment blocker resolved (2026-10-19, request 14101): restored the
+  existing ignored Firebase configuration, resolved Android SDK from local
+  properties, booted emulator-5554, and recovered unresponsive Docker Desktop.
+  Dedicated local backend `Blab_Groups_20261019` on 57321/57322 applies all
+  105 migrations cleanly; existing local stacks/data remain preserved.
+- Native create/invite/join harness passes using real locally authenticated
+  Alice/Bob clients. Database readback confirms both memberships. Three
+  screenshots inspected; focused client regressions 47 passed. Rollback SQL
+  verifies create, repeated join, invite reuse/rotation and owner permission.
+- This resolves the environment, not feature acceptance. New-link UI,
+  failure/recovery states, capacity/history security, actual app entry/deep-link
+  integration, full prototype parity and full-suite gates remain unfinished.
+  No visual approval, merge, production migration or release claimed.
+- 2026-10-19, 14111: remove the explanatory text beneath Group name on the
+  create screen; leave field, header and action unchanged. This correction
+  supersedes that helper in the Paper creation reference.
+- 2026-10-19: group invite now reuses the personal invite card/layout; tapping
+  the card/link copies the full HTTPS invitation with confirmation. Separate
+  Copy link action removed; group-specific title/help retained.
+- 2026-10-19, 14119: remove the zero-spacing header overrides from create
+  and join so both inherit the same back/title geometry as Invite a friend
+  and Invite friends. No global header changes.
+- 2026-10-19, 14124: replace standalone group acceptance with the existing
+  request pattern. Opening a shared group link records an account-private,
+  unread invitation in Chats, not membership. Its row opens a chat-style
+  invitation preview with Join / Reject. Back preserves the row; viewing
+  clears only its unread badge; Reject removes only the recipient's pending
+  invitation. Join alone adds membership and retires the row. No group history
+  is visible before joining. Reopening a rejected shared link may invite again.
+- Pending-invitation migration applied only to isolated local backend (106
+  migrations). Rollback SQL covers idempotency, view-vs-join, account isolation,
+  rejection and join cleanup. Resolver and focused client suite: 46 pass;
+  full static analysis clean. Paper request references extended with group
+  variants, leaving the existing private-request designs unchanged.
+- 2026-10-19, 14155: latest reviewed recipient pages accepted; defer the
+  additional group-identification proposals from 14147. Continue the approved
+  group conversation slice (in progress), reusing the existing chat controls.
+  No main integration or release authorized by this implementation request.
+- Group conversation candidate adds sender identity and member totals from
+  existing Paper references; names survive cache/reply rendering and distinct
+  senders cannot visually merge. Server restricts post-join message history,
+  keeps private blocks from suppressing shared-group sends, disables group
+  shared-correction eligibility and isolates legacy correction-bearing cache
+  access. Aggregate ticks use send-time recipients, with no empty-set read.
+  The old pair-wide Leave action is guarded pending the proper group flow.
+  Local rollback SQL and direct lifecycle/9 block regressions pass. Native
+  text journey passes with three actual local accounts; fixed learning callback
+  is not live AI acceptance. Two inspected captures delivered as 14164/14165.
+  Focused Flutter regressions: 67 pass; static analysis clean. Two full-suite
+  runs stalled and were canceled, so full regression remains an integration
+  blocker. Current slice is a review candidate, not a completed BLA-14 feature.
+
+## BLA-14 recovery and group-information journey · 20 October 2026 `[ ]` ← in progress
+
+- Request 14315 in topic 7420: inventory retained work and continue to completion.
+- Saved candidate recovered intact; existing uncommitted changes preserved in
+  `feat/bla-14-groups-20261019`, based on `790926b`. Current remote main is
+  `22157a3`; reconcile its later changes only after the reviewed slice is ready.
+- Baseline full Flutter suite now passes: 971 tests, 16 environment-gated skips
+  (`build/group-recovery-tests.log`). Earlier canceled runs remain historical,
+  not failures in this fresh run. Subsequent changes require fresh gates.
+- Reclaimed only regenerable Gradle 8.14 transform cache after disk exhaustion.
+  Restarted unresponsive Docker; recreated the isolated groups services from
+  retained local volumes, then clean-reset only the disposable groups QA
+  database. All 108 migrations through `20261019000006` apply from scratch;
+  group setup, group conversation and group-information/request rollback SQL
+  pass. No hosted service or real user data was changed.
+- Group info has saved roster/media/rename/owner-transfer work; Android proof
+  is being rerun. Corrected stale-name reopening, menu row anchoring and supplied
+  icons, avatar shadows, and edit-name field/button geometry against Paper.
+- Pending private language setup now uses View message and preview help from
+  Paper rather than implying acceptance. Read suppression remains server-side;
+  acceptance remains an explicit action. No translation policy change.
+- Remaining: group settings and exit/removal, real photos and full-media journey,
+  private request/accept/block/unblock Android journey, live per-viewer learning,
+  capacity concurrency, actual app-entry/share continuation and full visual parity.
+- 41 focused information/existing chat regressions pass; actual Android roster,
+  rename and owner-transfer journey passes. Three native images retained and
+  inspected. Settings/exit/media parity remains incomplete.
+- Photo metadata and storage access now share the post-join history fence;
+  local rollback regression passes, preserving author/post-join access.
+- Initial “yes” accepted manual transfer/sole-owner close and removed-member
+  old-link restriction. Subsequent question requests WhatsApp comparison;
+  its random replacement is verified. Proposed Blab oldest-member automatic
+  handover is awaiting a product selection; no exit rule implemented yet.
+- No visual approval, commit, push, main integration, hosted migration or release.
+
+### BLA-14 owner exit · Paper review requested 20 October `[ ]`
+
+- Latest steering explicitly requests a Signal-style manual owner-handover
+  proposal in Paper using existing Blab UI. This resolves the design direction
+  away from the unaccepted automatic-successor suggestion; implementation waits
+  for review of the new states, not another abstract rule question.
+- Six states designed, exported, inspected and delivered as 14374–14379:
+  owner explanation, picker empty/selected, named transfer-and-leave confirmation,
+  sole-member close, and failed-transfer retry. Paper p-5-0 in the group file.
+- Local approval boundaries: this is static design only. No owner-exit application
+  code, commit, main integration, deployment or release authorized by this design.
+- Removed rejected invitation pseudo-message and its date in Paper and local
+  Flutter source. New regression plus information tests: 8 pass. Corrected
+  implementation still needs browser/native recapture; earlier image14360 is
+  superseded. Browser create, app-entry pending invitation, Back, Reject, reopen,
+  Join and language selection were exercised with actual local Alice/Bob accounts.
+- Broader unfinished group functionality remains in the preceding recovery list.
+
+### BLA-14 single owner-leave notice · 14432 `[ ]` · implementation review
+
+- Nastia approved p-6-0 single-dismiss alert for implementation; supersedes the
+  six-screen proposal above. No new successor picker or combined transfer/leave.
+- Implemented the owner-with-other-members Leave group entry and exact warm
+  notice through shared dialog controls; Got it/Back/scrim preserve membership.
+- English/German/Spanish/Ukrainian copy is owned by Interface Language only.
+- Focused group tests:15 pass, including all four locales at1×/2× text size
+  and the macOS-browser48px action regression. Final Android local three-account
+  RPC/readback journey passes; browser Alice login/chat/header/info/notice and
+  dismissal pass. Browser measured390×900,48px dismiss action, no page overflow.
+- Actual screenshots inspected and delivered14454(Android)/14455(browser).
+  Final full suite987 pass/16 environment skips; full analysis clean.
+  Awaiting actual implementation visual/journey approval; do not check off the
+  broader group story. No commit/main integration/distribution. Actual non-owner
+  and last-member departure and other unfinished settings remain separate work.
+
+## BLA-14 remaining journeys ·14489 ·20 October `[ ]` ← in progress
+
+- Authorized to complete all remaining agreed group journeys, not release.
+- Lifecycle: normal leave, manual transfer then leave, sole-member closure,
+  removal and old-link exclusion; Delete group leaves/clears only the viewer,
+  preserving other members (Paper2LS-0). No destructive global-delete control.
+- Media/settings: persisted group notifications and accessible photo previews,
+  full media and viewer; real upload/history checks.
+- Private requests: real participant Accept/Block/Unblock, draft/retry and
+  pending receipts; live per-viewer learning and author-only corrections.
+- Acceptance: live browser/Android synchronization, notifications, deep-link
+  continuation, concurrent100-member cap, four interface locales, regressions.
+- Product question pending: departed/removed user's old-history access. Ask
+  delivered through async input; do not assume an answer from elapsed time.
+  Independent settings/media work continues while waiting.
+- Reuse dependent isolated group worktree to preserve uncommitted contracts;
+  reconcile current main before integration. Visual reviews gate promotion.
+- Settings/media implementation: persisted per-member notification preference,
+  mute at push queue/claim, live photo previews, full gallery/viewer. Real native
+  three-account upload/download/history checks pass; screenshots14497–14499
+  inspected/delivered, visual approval pending. Actual browser picker cancel/
+  reselect/send and second-account object download pass; screenshot14515.
+  Native OS picker and long-gallery/offline checks remain.
+- Two concurrent joins at99 finish at100 with one explicit full response; own
+  fixtures cleaned. Notification/history SQL pass. Final-current-source full
+  serial regression989 pass/16 environment skips after browser/roster changes;
+  latest19 targeted checks and analysis pass.
+- Android private request preview/accept/block/unblock passes; four inspected
+  screenshots14507–14510 delivered. Its learning response is simulated for
+  privacy/UI proof only, not evidence for live translations.
+- Signed-out browser invite survives existing-account login, requires explicit
+  Join and hides prejoin text (UI plus authenticated readback). Native OS
+  app-link/share and new-account continuation remain unverified.
+- Open roster refreshes on real joins and recovers after isolated Realtime
+  transport interruption. Browser gallery recovers101 real stored photos after
+  outage, scrolls past100-row page and opens final viewer/Back. Native replay
+  of latest roster/picker changes blocked by disk exhaustion then local Docker/
+  API outage; failed attempts are not passes. Native in-app gallery uses real
+  MediaStore, not a new system-picker UI. Full device-offline not proven.
+- Real independent-client text arrives live in browser Normal mode with sender
+  name; sender reads Alice's actual visible receipt. No AI success inferred.
+- Lifecycle history choice still pending. Live AI attempted: configured provider
+  returns payment-required HTTP402; no billing/provider fallback. Actual device
+  pushes unverified: local server credential absent. No hosted secrets changed.
+- QA: `docs/qa/2026-10-20-group-recovery/completion-14489.md`. No release.
+
+### Continued browser testing ·20 October `[ ]`
+
+- Actual photo-cache quota failure fixed with browser-only origin-wide2Mi-
+  character budget for full/preview media; auth, unsent text and chat metadata
+  are never evicted. Native20MB cache unchanged. Actual rebuilt browser trims
+  old media from5.197M to2.056M characters; queued text survives full reload.
+- Group roster/photos/notification reads timeout8s with existing explicit Retry,
+  no silent endless auto-retry. Actual browser Retry/retry/Back passes, unsent
+  text intact and zero new page errors.14527/14528 inspected/delivered.
+-23 cache tests +25 send/history tests +18 information tests and analysis pass.
+  Latest full rerun interrupted exit255 during renewed disk pressure, not a
+  full pass. Earlier989-pass baseline predates these final corrections.
+- Local Docker/API still unavailable; actual post-outage delivery and latest
+  native checks remain pending. Live AI402 and lifecycle history choice remain
+  unresolved. No merge/release. QA:`docs/qa/2026-10-20-group-recovery/browser-followup.md`.
+
+### Group info outage correction ·14530 `[ ]` · implementation review
+
+- Previous blank Retry-only image14528 rejected/superseded. Local Docker stuck
+  stopping; normal startup/restart failed. Recovered only hung Docker processes
+  and restarted, preserving volumes/fixture DB. API healthy again. No emulator
+  termination, database reset or hosted service changes. Outage-queued browser
+  text delivered exactly once, authenticated second-client readback confirmed.
+- Group identity no longer waits on roster. Saved account/chat roster, photos
+  manifest and own notification setting remain visible on transient failure;
+  automatic10s recovery and source/reconnect updates,8s read bounds. Explicit
+  server denial clears saved info; personal history clearing removes snapshots.
+- Raw RLS-filtered membership CDC avoids REST-initialization stream termination.
+  Monotonic channel IDs avoid browser same-clock-tick observer collisions. Real
+  independent member change appears in open browser; original fixture settings
+  restored. Controlled REST outage keeps101-photo/five-member/mute content
+  visible; automatic502→200 recovery without Retry.14538/14540 inspected/sent.
+- Final-current-source full996 pass/16 environment skips in
+  `build/group-info-unique-channels-full.log`. Analysis clean, web build passes.
+  Final controlled-outage screenshot14547 inspected/sent; local REST restored
+  and API healthy. Actual last member-name/mute fixture values restored.
+- Native final replay, actual visual acceptance and main integration/release
+  still pending. Broader group lifecycle history choice and live AI402 remain.
+  QA:`docs/qa/2026-10-20-group-recovery/group-info-resilience-14530.md`.
+
+
+### Group completion /14578 `[ ]` ← in progress
+
+- Owner confirmed the simplified defaults and authorized all remaining implementation. Current slice adds actual non-owner leave, owner-transfer enforcement, sole-member closure, removal/fresh-invite gate and rejoin original-history/AI separation. No merge/release.
+- Added isolated local migration20261020000004_group_membership_lifecycle.sql. Six rollback SQL suites pass (setup, conversation, original media, notifications, information/requests, lifecycle). Client regression injects an old cached translation after rejoin and verifies original-only display with zero provider calls. Earlier prejoin-original-denial assertions intentionally updated to the approved new behavior, not dropped.
+- Group info exposes removal, personal delete and leave using existing member menu/confirmation patterns. Native/browser journey proof and implementation visual review are pending. Current group cost scheduler still needs the >4-viewer and two-participant prompt redesign; join activity and final verification are pending. Live provider payment-required blocker remains; no paid sweeps or credentials changes.
+
+
+####14578 completion checkpoint — blocked final live validation
+
+- Implemented scalable group AI artifacts and private bindings, bounded/token-aware output batches and non-failure continuation, message-level lease ownership, bulk prepare/commit RPCs, neutral localized join activity, owner link regeneration and departure delivery hints. Existing1:1 compact generation is retained.
+- Actual browser leave/rejoin/original-only history and owner removal/old-link rejection pass; screenshots14585/14586/14591 inspected and delivered for review. Final browser join-notice/regeneration/revocation replay remains pending.
+- Latest application-source full run:1000 pass/16 environment skips (`build/group-completion-final-with-memory.log`); analysis clean. Two subsequent owner/member regeneration cases pass in the5-test focused invite file. Backend211 deterministic tests pass, including100-viewer sharing, zero-generation cache restart, partial failure reuse and bounded continuation. No live AI pass.
+- Ten SQL suites passed at checkpoints; expanded500-history case, deferred-job continuation and new queued-push/account-erasure safeguards still require final database execution.009/010 are authored but not applied. Local004–008 were manually applied; ledger reconciliation is pending.
+- Native compilation succeeded, initial APK packaging hit disk pressure; packaging from retained outputs succeeded. Its APK predates the later in-memory membership fix and is marked superseded. Final-source native journey has not run. Existing test-channel app was not modified; no main integration/distribution.
+> **Historical blocker, resolved14598:** Docker/API became unresponsive after disk exhaustion. Owner authorized recovery and technical fixes; forced restart and recreation of only the group's stateless containers preserved the database. Local FCM delivery/tap now passes. Live provider funding remains blocked. ·20 October2026
+- Resume and evidence: `docs/qa/2026-10-20-group-recovery/completion-14578.md`. Do not mark group complete, migrations reproducible, native verified or released from these partial proofs.
+
+####14598 recovery and final journey verification `[ ]` ← in progress
+
+- Authorized infrastructure recovery and autonomous technical fixes; no visual approval, main integration or distribution inferred.
+- Docker recovered without volume deletion; current groups database backed up. Reconciled already-applied004–008 ledger, applied009/010, verified all120 candidate migrations. All13 SQL suites pass on both recovered fixtures and a separate clean rebuild, including500-message history,100-member batches/deferral, stale push epochs and account erasure. Disposable replay stack retired; original fixture database retained.
+- Final-source Android lifecycle, real photo send/picker/cancel/reselect, live roster, media/viewer/per-member mute, native OS invitation explicit Join, actual system share-and-dismiss,101-photo final-page/viewer and real device-offline retained-information/recovery journeys pass. No mocked connectivity or Storage in those cases.
+- Configured local FCM from the existing matching service credential. Real message→FCM→Android notification shade→tap→correct group/message passes; device token removed afterward. Root app/gateway is real; only local push enablement bypasses the hosted-environment gate in the test harness. No hosted credentials/configuration changed.
+- Native screenshot packet14605–14608 delivered; appearance/workflow approval remains pending. First captures during modal fades were rejected and replaced with settled-frame captures.
+- Large-group deterministic AI contracts pass12 focused cases again. Provider balance is negative; no paid generation sweep or billing/provider fallback attempted. Live multilingual AI/correction acceptance remains unpassed.
+- Final candidate is reconciled onto current main6a9454f without changing main. All121 migrations replay cleanly;13 original suites plus personal-delete coverage pass on clean/recovered databases. Final1015 client checks pass/16 environment skips; analysis/Web build clean. All seven native journeys pass, including personal Delete and real notification routing. New-account browser invitation continuation and zero-history-AI readback pass. Current evidence: `docs/qa/2026-10-20-group-recovery/completion-14598.md`.
+- Group-only personal-delete copy clarified in all four locales; actual Android/browser confirmation inspected. Updated pair14617/14618 delivered; appearance/workflow approval remains pending. Task-only compiler cleanup restored1.7GiB free; database/evidence/source retained, emulator connectivity restored, local FCM token removed. No group source commit, main integration, hosted change or distribution.
+> **Superseded blocker,21 October:** The negative balance belonged to the workspace key used by group QA, not the existing Blab app-testing account. The intended account had$1.86847639 available. Request14826 resumes local verification with that existing app key; no top-up, billing or provider change. Broader group and owner-facing manual-acceptance checkboxes remain unchecked.
+
+####14826 live group acceptance ·21 October `[ ]` · awaiting visual review
+
+- Reused the preserved group worktree at6a9454f. All461 retained app/backend source fingerprints match the previously verified candidate. Remote main has independently advanced toeea850a; reconcile that approved update-routing change only after this slice's visual acceptance and before integration.
+- Recovered unresponsive Docker under the existing technical-recovery authorization; no volumes deleted. Existing groups DB/API restored. No hosted configuration/data changes.
+- Three fresh local messages executed through real database claims, the actual group worker and OpenRouter: one provider request per message, nine private viewer results, measured provider-reported total$0.0084835. Matching German outputs shared one artifact; asymmetric English/German/Spanish learning and English/Ukrainian meanings work. Author correction generated live and hidden from other members. Cached reads and independent Interface Language changes do not regenerate results.
+- Actual leave/rejoin denies both earlier completed translations while retaining originals. A fresh message afterward creates the returning member's German result. Existing local profile preferences restored. No historical queue drain or broad paid language sweep; older jobs retain their scheduling timestamps.
+- Twelve deterministic group scheduling/RPC regressions pass; analysis clean. Android evidence capture underway; initial stale generated plugin output repaired locally. Harness account-switch teardown failure retained and replaced with independent per-viewer launches, not counted as app acceptance.
+- No source commit/push, main integration, release or owner-manual completion implied. Live evidence: `docs/qa/2026-10-21-group-live-ai/receipt.json`.
+- Final continuation: fixed historical group variant recovery after both learning/known-language changes with new migration20261021000001. Red-before/green-after regression also fences old failed variants.15 SQL suites and27 worker tests pass, analysis clean. Fourth live call prepares the intentionally changed meanings language; final four-call total$0.01009475 for three messages plus one settings refresh. All three independent final Android views pass; actual final images inspected/delivered14845–14847. Funded task-only function environment removed, local profiles restored. Prior full1015 client checks remain applicable to unchanged Flutter application source. Clean122 replay and current-main reconciliation remain integration-stage gates after visual approval; no broader completion checkbox changed.
+
+## BLA14 approved group conversation UI ·14898 ·21 October `[ ]` · awaiting visual review
+
+- Dedicated feat/group-conversation-ui-20261021 based on fetched origin/main0f38911. Preserved BLA14 candidate at6a9454f untouched; dependency transferred as Git patch, clean source merge with appended progress notes retaining both histories. No main or tester31 changes.
+- Exact Paper5A5-0 revision14894 and grouping5DN-0 locked;12px muted sender labels, avatars, two-row header, metadata and composer being implemented group-only. Main1:1 variants preserved. QA/actual implementation review pending; no commit/merge/release.
+
+- Implementation finished group-only.1,025 full client checks pass/16 environment skips; final49 focused checks and analysis pass. Actual retained-group Android on isolated5560 and390×867 browser inspected against Paper; draft/keyboard/rejoin boundaries pass. Two-row header adapts at2×, popup boundary uses actual measured header. Screenshot14923 delivered. Native platform font rendering retained; no AI generation calls. Local profile/runtime restored. Uncommitted; no owner manual completion, merge or release. Evidence:`docs/qa/2026-10-21-group-conversation-ui/README.md`.
+
+## Group finalization14947 ·21 October `[ ]` ← in progress
+
+- User14947 authorizes final verification/integration/Blab-test delivery after actual conversation evidence14923. Full walkthrough14962–14967/14969 sent; independent122-migration fresh setup,15 SQL suites,211 worker tests and combined Android create/join/info/ownership/lifecycle checks pass. Existing1025 client/49 focused gates remain applicable to unchanged app source. Owner-manual completion remains unchecked.
+- Staging requires17 group migrations plus updated functions before signed test delivery. Production excluded; target existing nine-testers cohort. No unrelated pending features to be included. Integration/distribution in progress. QA:`docs/qa/2026-10-21-group-final-14947/README.md`.

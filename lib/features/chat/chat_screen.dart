@@ -1,3 +1,5 @@
+import '../groups/member_request.dart';
+import '../groups/group_info_screen.dart';
 import '../../shared/widgets/surfaces/blab_confirmation_dialog.dart';
 import 'dart:math' as math;
 import '../../shared/widgets/surfaces/blab_dialog.dart';
@@ -124,6 +126,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Timer? _replyHighlightTimer;
   final _chatMenuController = MenuController();
   final _modeControlKey = GlobalKey();
+  final _chatHeaderKey = GlobalKey();
+
+  double _renderedHeaderBottom(BuildContext context, Chat chat) {
+    final box = _chatHeaderKey.currentContext?.findRenderObject();
+    if (chat.isGroup && box is RenderBox && box.hasSize) {
+      return box.localToGlobal(Offset(0, box.size.height)).dy;
+    }
+    return MediaQuery.paddingOf(context).top +
+        chatHeaderHeightFor(
+          context,
+          group: chat.isGroup,
+          name: chat.partnerName,
+        );
+  }
+
   bool _hasText = false;
   int _textLength = 0;
   double _lastBottomInset = 0;
@@ -172,6 +189,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   int _modeAnchorGeneration = 0;
   Timer? _modeAnchorTimer;
   bool _jumpingToReply = false;
+  bool _hadResolvedChat = false;
 
   @override
   void initState() {
@@ -221,7 +239,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ?.any((chat) => chat.id == widget.chatId && chat.isLeft) ??
       false;
 
-  void _showRequiredLanguageSheetIfNeeded(Chat chat) {
+  void _showRequiredLanguageSheetIfNeeded(
+    Chat chat, {
+    bool previewRequest = false,
+  }) {
     if (chat.isLeft) return;
     if (!chat.needsPracticeLanguageSelection || _requiredLanguageSheetVisible) {
       return;
@@ -232,6 +253,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       try {
         final picked = await showRequiredPracticeLanguageSheet(
           context,
+          previewRequest: previewRequest,
           onSelected: (language) => ref
               .read(learningLanguageProvider(widget.chatId).notifier)
               .set(language),
@@ -241,7 +263,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           context.go('/chats');
           return;
         }
-        await _showModeTipOnce(ChatModeTip.practice);
+        if (!previewRequest) await _showModeTipOnce(ChatModeTip.practice);
       } finally {
         _requiredLanguageSheetVisible = false;
       }
@@ -968,17 +990,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     if (resolved == null) {
+      if (_hadResolvedChat && ref.watch(chatListProvider).asData != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.go('/chats');
+        });
+      }
       return const Scaffold(
         backgroundColor: BlabColors.chatCanvas,
         body: SafeArea(child: ChatViewSkeleton()),
       );
     }
     final chat = resolved;
+    _hadResolvedChat = true;
     final blockedUserIds =
         ref.watch(blockedUserIdsProvider).value ?? const <String>{};
     final isPartnerBlocked =
         chat.partnerId != null && blockedUserIds.contains(chat.partnerId);
-    _showRequiredLanguageSheetIfNeeded(chat);
     if (!_notificationPermissionTriggered) {
       _notificationPermissionTriggered = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -990,6 +1017,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     final messagesAsync = ref.watch(chatMessagesProvider(widget.chatId));
+    final memberRequest = chat.isGroup
+        ? null
+        : ref.watch(memberRequestProvider(widget.chatId)).value;
+    final pendingContact =
+        memberRequest != null && memberRequest['accepted_at'] == null;
+    final incomingContact =
+        pendingContact &&
+        memberRequest['recipient_id'] == ref.watch(currentUserIdProvider);
+    final requestState = chat.isGroup
+        ? null
+        : ref.watch(memberRequestProvider(widget.chatId));
+    if (chat.isGroup ||
+        requestState?.hasValue == true ||
+        requestState?.hasError == true) {
+      _showRequiredLanguageSheetIfNeeded(chat, previewRequest: incomingContact);
+    }
+    final waitingContact =
+        pendingContact &&
+        !incomingContact &&
+        (messagesAsync.value?.isNotEmpty ?? false);
+
     final historyUnavailable =
         messagesAsync.value == null && messagesAsync.hasError;
     final pagination = ref.watch(chatPaginationProvider(widget.chatId));
@@ -1058,7 +1106,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       fallbackLanguageCode: learningLang.code,
     );
     String targetForMessage(Message message) {
-      if (chat.needsPracticeLanguageSelection || knownLanguages == null) {
+      if (!chat.allowsAiFor(message.sentAt) ||
+          chat.needsPracticeLanguageSelection ||
+          knownLanguages == null) {
         return '';
       }
       final era = eraForMessage(message);
@@ -1144,7 +1194,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final variantTargets = <String, String>{};
     for (final message in loadedMessages) {
       void addIfEligible(Message candidate) {
-        if (!languageTimelineReady) return;
+        if (!languageTimelineReady || !chat.allowsAiFor(candidate.sentAt)) {
+          return;
+        }
         // Translation begins after delivery. In particular, photo captions
         // can spend a short time pending while the image uploads; starting
         // the resolver then can finish before delivery and skip the wave.
@@ -1394,6 +1446,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Column(
                 children: [
                   ChatHeader(
+                    key: _chatHeaderKey,
                     chat: chat,
                     onBeforeModeToggle: _captureModeAnchor,
                     onModeChanged: (mode) {
@@ -1450,7 +1503,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         _closeSelection();
                         return;
                       }
-                      await showPartnerProfilePage(context, chat: chat);
+                      if (chat.isGroup) {
+                        await Navigator.of(context).push<void>(
+                          telegramRoute<void>(GroupInfoScreen(chat: chat)),
+                        );
+                      } else {
+                        await showPartnerProfilePage(context, chat: chat);
+                      }
                       if (!context.mounted) return;
                       final blockedIds =
                           ref.read(blockedUserIdsProvider).value ??
@@ -1637,9 +1696,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     // BUG-009: keep the word popup from drawing on
                                     // top of the chat header. Account for the
                                     // safe-area notch as well.
-                                    popupTopInset:
-                                        MediaQuery.paddingOf(context).top +
-                                        chatHeaderHeightFor(context),
+                                    popupTopInset: _renderedHeaderBottom(
+                                      context,
+                                      chat,
+                                    ),
                                     selectedMessageId: _selectedMessage?.id,
                                     showSelectedOriginal: _showSelectedOriginal,
                                     selectedBubbleKey: _selectedBubbleKey,
@@ -1734,7 +1794,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   KeyedSubtree(
                     key: _bottomSurfaceKey,
-                    child: _selectedMessage != null
+                    child:
+                        (incomingContact || waitingContact) &&
+                            !chat.needsPracticeLanguageSelection
+                        ? MemberRequestFooter(
+                            chatId: chat.id,
+                            name: chat.partnerName,
+                            incoming: incomingContact,
+                          )
+                        : _selectedMessage != null
                         ? MessageActionRow(
                             message: _selectedMessage!,
                             readOnly: chat.isLeft,
@@ -1825,11 +1893,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 controller: _input,
                                 focusNode: _inputFocus,
                                 hasText: _hasText,
-                                hintText:
-                                    practiceHint ??
-                                    (chatIsEmpty
-                                        ? context.l10n.sayHi
-                                        : context.l10n.message),
+                                groupConversation: chat.isGroup,
+                                hintText: chat.isGroup
+                                    ? context.l10n.message
+                                    : practiceHint ??
+                                          (chatIsEmpty
+                                              ? context.l10n.sayHi
+                                              : context.l10n.message),
                                 textLength: _textLength,
                                 maxLength: _maxMessageLength,
                                 counterShowAt: _counterShowAt,
@@ -1883,10 +1953,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               if (_visibleModeTip != null)
                 Positioned(
-                  top:
-                      MediaQuery.paddingOf(context).top +
-                      chatHeaderHeightFor(context) +
-                      8,
+                  top: _renderedHeaderBottom(context, chat) + 8,
                   right: 16,
                   child: TapRegion(
                     onTapOutside: (_) => setState(() => _visibleModeTip = null),
@@ -2041,7 +2108,47 @@ double chatHeaderIdentityHeightFor(BuildContext context) {
   return math.max(56, scale.scale(15) * 1.2 + scale.scale(12) * 1.43 + 1);
 }
 
-double chatHeaderHeightFor(BuildContext context) {
+const groupHeaderCaptionStyle = TextStyle(
+  fontSize: 12,
+  height: 16 / 12,
+  letterSpacing: 0,
+  color: Color(0xFF6F5C50),
+);
+double groupChatIdentityHeightFor(BuildContext context, {String name = ''}) {
+  final scaler = MediaQuery.textScalerOf(context);
+  final painter = TextPainter(
+    text: TextSpan(
+      text: name,
+      style: const TextStyle(
+        fontSize: 18,
+        height: 22 / 18,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0,
+      ),
+    ),
+    textDirection: Directionality.of(context),
+    textScaler: scaler,
+    maxLines: 2,
+  )..layout(maxWidth: math.max(80, MediaQuery.sizeOf(context).width - 144));
+  final height = math.max(
+    60.0,
+    painter.height + 2 + scaler.scale(12) * 16 / 12 + 8,
+  );
+  painter.dispose();
+  return height;
+}
+
+double chatHeaderHeightFor(
+  BuildContext context, {
+  bool group = false,
+  String name = '',
+}) {
+  if (group) {
+    return groupChatIdentityHeightFor(context, name: name) +
+        (MediaQuery.textScalerOf(context).scale(1) > 1.5
+            ? MediaQuery.textScalerOf(context).scale(12) * 16 / 12 + 44 + 8
+            : 46);
+  }
   if (!chatHeaderIsStacked(context)) return kChatHeaderHeight;
   final scale = MediaQuery.textScalerOf(context);
   final width = MediaQuery.sizeOf(context).width - 104;

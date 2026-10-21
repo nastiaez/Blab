@@ -897,7 +897,10 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 - No real audio playback (simulated play interaction)
 - Profile photos and file uploads are out of scope; launch profiles use initial avatars only
 - No contacts discovery, recipient-email matching, or separate invite-management screen; inline link regeneration is supported
-- No group chats
+- Group chats are defined by the approved BLA-14 group-feature specification
+  (`docs/specs/2026-10-19-group-feature.md`). That specification supersedes
+  this former non-goal for its explicitly listed journeys; all other group
+  behavior remains out of scope until specified.
 - No voice or video messages
 - No AI conversation partners or generated replies; AI is limited to user-controlled message translation and writing correction
 - No language matching algorithm / discovery feed
@@ -989,3 +992,16 @@ Supersedes single-successful-claim and automatic rotation in US-008/037, FR-4 an
 - A new invite after leaving creates a separate fresh conversation with independent language setup; old messages stay in the closed conversation. Repeat invites to an active pair still reuse that active chat. Account-level blocks are never cleared or bypassed.
 - Chats supports swipe-left Delete with a confirmation modal. Deletion is viewer-scoped; the other participant’s retained history is not erased. Owner clarified in this topic: deleting does not end messaging for the other person; a new incoming message brings the chat back, without restoring the deleting viewer’s earlier cleared history.
 - Native Android and iOS evidence must show leave confirmation, both closed-chat states, swipe/delete confirmation, deletion and fresh reinvite. Existing offline history, learning-language history and per-viewer preferences remain intact.
+
+
+## Group completion — approved topic7420 /14560,14566,14578 (20 October 2026)
+
+- Use existing 1:1 preferences first, then Stream defaults, unless an explicit group decision differs. These instructions supersede the earlier proposed prejoin original-history restriction for groups only.
+- New and returning members can read older original messages/media; no historical translation/correction work. AI begins at the latest server-confirmed join and older translated results must not return through caches. Leaving/removal removes the group from Chats and ends read/send access. Rejoin starts a new membership epoch. Original history includes messages sent during absence.
+- Owner transfers ownership before leaving when others remain; final member closes the group. Members may share links; explicit Join remains required, 100-person cap includes owner. Removed members cannot use an invitation older than removal. Blocking private contact does not hide shared group messages.
+- Delete remains personal as in 1:1, not group-wide deletion. Join notices are neutral localized timeline activity, not group-authored bubbles. Share matching AI outputs while keeping corrections private.
+- Actual screenshot approval, Android proof and release remain separate from this authorization to implement.
+
+## Group conversation visual exception · approved14898 ·21 October2026
+
+Paper page p-7-0 artboard5A5-0 (sender-name revision14894) is the approved group-only UI specification. US-013's one-row/36px/15px header and Practice composer guidance remain unchanged for1:1. Groups instead use the two-row60+46px header,34px group avatar,18px title, localized compact practicing-language label and existing mode control. Composer placeholder is localized Message in both modes,48px input/send. Incoming runs show12px/16px500 muted#9B6550 names on the first bubble and32px avatar on the last; join/date/other sender boundaries reset grouping. Own messages omit names/avatars. Metadata12px, incoming body16/23. Preserve all translation/history/gesture/privacy behavior. See group-feature specification and QA record; design approval is not approval of unseen app implementation.

@@ -7,8 +7,10 @@ class MessageDeliveryStatus extends ConsumerWidget {
     required this.messageId,
     required this.intrinsicStatus,
     required this.isOutgoing,
+    this.groupConversation = false,
   });
 
+  final bool groupConversation;
   final String chatId;
   final String messageId;
   final MessageStatus intrinsicStatus;
@@ -33,7 +35,9 @@ class MessageDeliveryStatus extends ConsumerWidget {
 
     // Semantics labels paired with the icon — read receipts and online
     // indicators must not be color-only. PRD US-033.
-    final tint = BlabColors.bubbleInk.withValues(alpha: 0.5);
+    final tint = groupConversation
+        ? BlabColors.warmInk
+        : BlabColors.bubbleInk.withValues(alpha: 0.5);
     switch (status) {
       case MessageStatus.pending:
         return Semantics(

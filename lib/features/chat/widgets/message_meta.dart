@@ -75,7 +75,9 @@ class MessageMeta extends StatelessWidget {
     required this.chatId,
     required this.message,
     required this.isOutgoing,
+    this.groupConversation = false,
   });
+  final bool groupConversation;
   final String chatId;
   final Message message;
   final bool isOutgoing;
@@ -84,17 +86,32 @@ class MessageMeta extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeLabel = _formatTime(message.sentAt);
     final textColor = isOutgoing
-        ? BlabColors.bubbleInk.withValues(alpha: 0.62)
+        ? (groupConversation
+              ? BlabColors.warmInk
+              : BlabColors.bubbleInk.withValues(alpha: 0.62))
         : BlabColors.textMuted;
     final children = <Widget>[
       Text(
         message.isEdited ? '${context.l10n.edited} · $timeLabel' : timeLabel,
-        style: TextStyle(fontSize: 10, color: textColor),
+        style: TextStyle(
+          fontSize: groupConversation ? 12 : 10,
+          height: groupConversation ? 16 / 12 : null,
+          color: textColor,
+        ),
       ),
     ];
     if (message.isOutgoing) {
       children.add(const SizedBox(width: 3));
-      children.add(Text('·', style: TextStyle(fontSize: 10, color: textColor)));
+      children.add(
+        Text(
+          '·',
+          style: TextStyle(
+            fontSize: groupConversation ? 12 : 10,
+            height: groupConversation ? 16 / 12 : null,
+            color: textColor,
+          ),
+        ),
+      );
       children.add(const SizedBox(width: 3));
       children.add(
         MessageDeliveryStatus(
@@ -102,6 +119,7 @@ class MessageMeta extends StatelessWidget {
           messageId: message.id,
           intrinsicStatus: message.status,
           isOutgoing: isOutgoing,
+          groupConversation: groupConversation,
         ),
       );
     }

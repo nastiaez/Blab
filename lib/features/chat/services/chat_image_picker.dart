@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../shared/services/chat_service.dart';
 import '../widgets/gallery_picker_screen.dart';
@@ -11,6 +13,17 @@ class ChatImagePicker {
   /// sheet returns a file whether the source was a picked photo or a fresh
   /// camera capture, so the caller doesn't need to know which.
   Future<PickedChatImage?> pick(BuildContext context) async {
+    if (kIsWeb) {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked == null) return null;
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty) return null;
+      return PickedChatImage(
+        bytes: bytes,
+        mimeType: picked.mimeType ?? _mimeTypeFromName(picked.name),
+        fileName: picked.name,
+      );
+    }
     final file = await showGalleryPickerSheet(context);
     if (file == null) return null;
     final bytes = await file.readAsBytes();

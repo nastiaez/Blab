@@ -42,7 +42,9 @@ class ReplyPreview extends StatelessWidget {
         ? BlabColors.bubbleInk.withValues(alpha: 0.78)
         : BlabColors.textMuted;
 
-    final author = replyTo.isOutgoing ? context.l10n.you : partnerName;
+    final author = replyTo.isOutgoing
+        ? context.l10n.you
+        : (replyTo.senderName ?? partnerName);
     final rawPreviewText = switch (translation) {
       AsyncData<MessageTranslation>(value: final value) =>
         resolveMessageDisplayText(

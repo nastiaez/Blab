@@ -9,11 +9,13 @@ class BlabAvatar extends StatelessWidget {
     this.size = 48,
     this.fontSize = 16,
     this.initials,
+    this.fill,
     this.fontWeight = FontWeight.w800,
     this.shadows = const [
       BoxShadow(color: Color(0x2B231208), offset: Offset(0, 2), blurRadius: 6),
     ],
   });
+  final Color? fill;
   final String name;
   final String? initials;
   final double size, fontSize;
@@ -25,7 +27,7 @@ class BlabAvatar extends StatelessWidget {
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: BlabColors.avatarColorFor(name),
+      color: fill ?? BlabColors.avatarColorFor(name),
       boxShadow: shadows,
     ),
     alignment: Alignment.center,

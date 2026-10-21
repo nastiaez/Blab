@@ -36,6 +36,7 @@ final chatLanguageTimelineProvider =
             final rows = await ref
                 .read(chatServiceProvider)
                 .fetchLanguageTimeline(chatId);
+            if (!ref.mounted) return;
             await cache?.saveLanguageTimeline(chatId, rows);
             if (ref.mounted && jsonEncode(rows) != jsonEncode(recovered)) {
               ref.invalidateSelf();

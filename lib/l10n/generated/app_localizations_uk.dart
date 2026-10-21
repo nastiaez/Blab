@@ -849,6 +849,11 @@ class AppLocalizationsUk extends AppLocalizations {
   String get pasteInChat => 'Тепер встав його в чат';
 
   @override
+  String groupPracticingLanguage(Object language) {
+    return 'Практика: $language';
+  }
+
+  @override
   String practicingLanguage(Object language) {
     return 'Ти практикуєш $language.';
   }
@@ -1428,4 +1433,209 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Розпочати';
+
+  @override
+  String get newGroup => 'Нова група';
+
+  @override
+  String get groupName => 'Назва групи';
+
+  @override
+  String get inviteFriendsAfterCreating =>
+      'Запросіть друзів після створення групи.';
+
+  @override
+  String get createGroup => 'Створити групу';
+
+  @override
+  String get inviteFriends => 'Запросити друзів';
+
+  @override
+  String get groupInvitation => 'Запрошення до групи';
+
+  @override
+  String anyoneCanJoinGroup(String name) {
+    return 'Кожен, хто має це посилання, може приєднатися до $name.';
+  }
+
+  @override
+  String get newLink => 'Нове посилання';
+
+  @override
+  String get joinGroup => 'Приєднатися до групи';
+
+  @override
+  String groupMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count учасників',
+      one: '1 учасник',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get groupHistoryAfterJoin =>
+      'Ви побачите повідомлення, надіслані після приєднання.';
+
+  @override
+  String get invalidGroupName => 'Введіть назву групи.';
+
+  @override
+  String get couldNotCreateGroup =>
+      'Не вдалося створити групу. Спробуйте ще раз.';
+
+  @override
+  String get couldNotOpenGroupInvite => 'Не вдалося відкрити це запрошення.';
+
+  @override
+  String get groupInvitationUnavailable =>
+      'Це запрошення до групи більше недоступне.';
+
+  @override
+  String get groupFull => 'Ця група заповнена.';
+
+  @override
+  String get couldNotJoinGroup =>
+      'Не вдалося приєднатися до групи. Спробуйте ще раз.';
+
+  @override
+  String get noGroupMessages => 'Повідомлень ще немає';
+
+  @override
+  String get inviteFriendsToStart => 'Запросіть друзів і почніть спілкування.';
+
+  @override
+  String get joinAction => 'Приєднатися';
+
+  @override
+  String get rejectAction => 'Відхилити';
+
+  @override
+  String joinToChatInGroup(String name) {
+    return 'Приєднайся, щоб спілкуватися в $name.';
+  }
+
+  @override
+  String get couldNotRejectGroupInvite =>
+      'Не вдалося відхилити запрошення. Спробуй ще раз.';
+
+  @override
+  String get groupInfo => 'Про групу';
+
+  @override
+  String get groupMembersTitle => 'Учасники';
+
+  @override
+  String get seeAll => 'Переглянути всіх';
+
+  @override
+  String get editGroupName => 'Змінити назву';
+
+  @override
+  String get groupOwner => 'Власник';
+
+  @override
+  String get makeGroupOwner => 'Зробити власником';
+
+  @override
+  String get couldNotUpdateGroup => 'Не вдалося оновити групу. Спробуй ще раз.';
+
+  @override
+  String groupMemberYou(String name) {
+    return '$name (ти)';
+  }
+
+  @override
+  String get groupSharedMedia => 'Спільні медіа';
+
+  @override
+  String get groupNoPhotos => 'Фото ще немає';
+
+  @override
+  String acceptToReply(String name) {
+    return 'Прийми, щоб відповісти $name';
+  }
+
+  @override
+  String get acceptRequest => 'Прийняти';
+
+  @override
+  String get waitingForAcceptance => 'Очікуємо на прийняття';
+
+  @override
+  String get messageMember => 'Повідомлення';
+
+  @override
+  String get unblockAndMessage => 'Розблокувати й написати';
+
+  @override
+  String get viewRequestMessage => 'Переглянути повідомлення';
+
+  @override
+  String get viewRequestMessageHelp =>
+      'Переглянь повідомлення, перш ніж прийняти запит.';
+
+  @override
+  String get leaveGroup => 'Вийти з групи';
+
+  @override
+  String get groupOwnerLeaveTitle => 'Спочатку виберіть нового власника';
+
+  @override
+  String get groupOwnerLeaveBody =>
+      'Перш ніж вийти, відкрийте список учасників і зробіть когось іншого власником групи.';
+
+  @override
+  String get gotIt => 'Зрозуміло';
+
+  @override
+  String get groupNotificationsOn => 'Увімкнено';
+
+  @override
+  String get groupNotificationsOff => 'Вимкнено';
+
+  @override
+  String get leaveGroupQuestion => 'Вийти з групи?';
+
+  @override
+  String get leaveGroupBody =>
+      'Група зникне з твоїх чатів. За запрошенням ти зможеш приєднатися знову.';
+
+  @override
+  String get closeGroup => 'Закрити групу';
+
+  @override
+  String get closeGroupQuestion => 'Закрити групу?';
+
+  @override
+  String get closeGroupBody =>
+      'Ти останній учасник. Після виходу групу буде закрито, а посилання-запрошення вимкнено.';
+
+  @override
+  String get removeGroupMember => 'Видалити з групи';
+
+  @override
+  String get removeGroupMemberQuestion => 'Видалити учасника?';
+
+  @override
+  String removeGroupMemberBody(String name) {
+    return '$name втратить доступ до цієї групи. Для повернення знадобиться нове запрошення.';
+  }
+
+  @override
+  String get deleteGroup => 'Видалити групу';
+
+  @override
+  String groupMemberJoined(String name) {
+    return '$name приєднався(-лася) до групи.';
+  }
+
+  @override
+  String get deleteGroupQuestion => 'Видалити групу?';
+
+  @override
+  String get deleteGroupConfirmation =>
+      'Груповий чат та його історію буде видалено лише для тебе. Після нового повідомлення група з’явиться знову.';
 }

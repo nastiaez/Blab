@@ -10,6 +10,7 @@ import 'prepared_invite_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import 'invite_error_actions.dart';
+import 'invite_link_card.dart';
 
 /// A single-purpose invite screen. Links create a connection only; practice
 /// language is chosen privately when the resulting chat is opened.
@@ -94,7 +95,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _InviteCard(link: link, loading: invite.loading),
+                  InviteLinkCard(link: link, loading: invite.loading),
                   if (!invite.failed)
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
@@ -182,46 +183,6 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InviteCard extends StatelessWidget {
-  const _InviteCard({required this.link, required this.loading});
-
-  final String? link;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('invite-card'),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: BlabColors.chatSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: BlabColors.chatDivider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.l10n.inviteCardTitle,
-            style: const TextStyle(
-              color: BlabColors.warmInk,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            loading
-                ? context.l10n.creatingLink
-                : link ?? context.l10n.inviteLinkUnavailable,
-            style: const TextStyle(color: BlabColors.warmMuted, fontSize: 15),
           ),
         ],
       ),

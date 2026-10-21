@@ -368,7 +368,11 @@ serve_functions() {
 
 ensure_android_device() {
   local device="$1"
-  local sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Library/Android/sdk}}"
+  local configured_sdk=''
+  if [[ -f android/local.properties ]]; then
+    configured_sdk="$(sed -n 's/^sdk.dir=//p' android/local.properties | head -n 1)"
+  fi
+  local sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-${configured_sdk:-$HOME/Library/Android/sdk}}}"
   local adb="$sdk_root/platform-tools/adb"
   local emulator="$sdk_root/emulator/emulator"
   local avd="${BLAB_ANDROID_AVD:-Pixel_10_Pro}"

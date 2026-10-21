@@ -14,8 +14,13 @@ const _sheetHeightRatio = 567 / 932;
 Future<BlabLanguage?> showRequiredPracticeLanguageSheet(
   BuildContext context, {
   Future<void> Function(BlabLanguage language)? onSelected,
+  bool previewRequest = false,
 }) => Navigator.of(context).push(
-  _RequiredPracticeLanguageRoute(context: context, onSelected: onSelected),
+  _RequiredPracticeLanguageRoute(
+    context: context,
+    onSelected: onSelected,
+    previewRequest: previewRequest,
+  ),
 );
 
 class _RequiredPracticeLanguageRoute
@@ -23,12 +28,16 @@ class _RequiredPracticeLanguageRoute
   _RequiredPracticeLanguageRoute({
     required BuildContext context,
     Future<void> Function(BlabLanguage language)? onSelected,
+    bool previewRequest = false,
   }) : _backTop = MediaQuery.paddingOf(context).top,
        _backLabel = context.l10n.back,
        super(
          builder: (_) => _LearningLanguageSheet(
            requiredChoice: true,
-           actionLabel: context.l10n.startPracticing,
+           actionLabel: previewRequest
+               ? context.l10n.viewRequestMessage
+               : context.l10n.startPracticing,
+           help: previewRequest ? context.l10n.viewRequestMessageHelp : null,
            onSelected: onSelected,
          ),
          capturedThemes: InheritedTheme.capture(
@@ -97,11 +106,13 @@ class _LearningLanguageSheet extends StatefulWidget {
     this.requiredChoice = false,
     required this.actionLabel,
     this.onSelected,
+    this.help,
   });
 
   final BlabLanguage? initial;
   final bool requiredChoice;
   final String actionLabel;
+  final String? help;
   final Future<void> Function(BlabLanguage language)? onSelected;
 
   @override
@@ -208,7 +219,7 @@ class _LearningLanguageSheetState extends State<_LearningLanguageSheet> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      context.l10n.chooseLanguageToPracticeHelp,
+                      widget.help ?? context.l10n.chooseLanguageToPracticeHelp,
                       style: const TextStyle(
                         fontSize: 14,
                         height: 1.3,

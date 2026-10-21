@@ -22,8 +22,10 @@ class ChatComposer extends StatelessWidget {
     this.onTapText,
     this.emojiPanel,
     this.bottomObstruction = 0,
+    this.groupConversation = false,
   });
 
+  final bool groupConversation;
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool hasText;
@@ -64,7 +66,12 @@ class ChatComposer extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              padding: EdgeInsets.fromLTRB(
+                12,
+                8,
+                12,
+                groupConversation ? 0 : 8,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -78,6 +85,7 @@ class ChatComposer extends StatelessWidget {
                             controller: controller,
                             focusNode: focusNode,
                             hintText: hintText,
+                            groupConversation: groupConversation,
                             maxLength: maxLength,
                             enabled: enabled,
                             autofocus: autofocus,
@@ -96,6 +104,7 @@ class ChatComposer extends StatelessWidget {
                       const SizedBox(width: 8),
                       ChatSendButton(
                         canSend: canSend,
+                        groupConversation: groupConversation,
                         isPractice: isPractice,
                         tooltip: context.l10n.send,
                         onSend: onSend,
@@ -124,7 +133,12 @@ class ChatComposer extends StatelessWidget {
             ),
             SizedBox(
               key: const ValueKey('composer-input-obstruction'),
-              height: bottomObstruction,
+              height:
+                  groupConversation &&
+                      bottomObstruction <=
+                          MediaQuery.viewPaddingOf(context).bottom
+                  ? math.max(30.0, bottomObstruction)
+                  : bottomObstruction,
               width: double.infinity,
               child: ClipRect(
                 child: Align(

@@ -21,8 +21,10 @@ class ChatComposerInput extends StatelessWidget {
     this.onTapText,
     this.emojiPanelOpen = false,
     this.emojiTooltip,
+    this.groupConversation = false,
   });
 
+  final bool groupConversation;
   final TextEditingController controller;
   final FocusNode? focusNode;
   final String hintText;
@@ -40,17 +42,30 @@ class ChatComposerInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       key: const ValueKey('composer-message-container'),
+      constraints: BoxConstraints(minHeight: groupConversation ? 48 : 0),
       decoration: BoxDecoration(
         color: BlabColors.chatSurface,
         border: Border.all(color: BlabColors.chatDivider),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: groupConversation
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.end,
         children: [
           if (onToggleEmoji != null)
             BlabIconButton(
               key: const ValueKey('composer-emoji-toggle'),
+              constraints: groupConversation
+                  ? const BoxConstraints.tightFor(width: 44, height: 46)
+                  : null,
+              style: groupConversation
+                  ? IconButton.styleFrom(
+                      minimumSize: const Size(44, 46),
+                      maximumSize: const Size(44, 46),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    )
+                  : null,
               tooltip: emojiTooltip,
               icon: BlabIcon(
                 name: emojiPanelOpen ? 'keyboard - 20' : 'emoji-face - 20',
@@ -82,17 +97,18 @@ class ChatComposerInput extends StatelessWidget {
                     maxLength,
                   }) => null,
               textCapitalization: TextCapitalization.sentences,
-              style: const TextStyle(
-                fontSize: 15,
+              style: TextStyle(
+                fontSize: groupConversation ? 16 : 15,
+                height: groupConversation ? 20 / 16 : null,
                 color: BlabColors.textPrimary,
               ),
               decoration: InputDecoration(
                 isDense: true,
                 hintText: hintText,
                 hintMaxLines: 1,
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   color: BlabColors.textMuted,
-                  fontSize: 15,
+                  fontSize: groupConversation ? 16 : 15,
                 ),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: onToggleEmoji == null ? 14 : 2,
@@ -106,6 +122,16 @@ class ChatComposerInput extends StatelessWidget {
             const SizedBox(width: 2),
             BlabIconButton(
               key: const ValueKey('composer-attach-button'),
+              constraints: groupConversation
+                  ? const BoxConstraints.tightFor(width: 44, height: 46)
+                  : null,
+              style: groupConversation
+                  ? IconButton.styleFrom(
+                      minimumSize: const Size(44, 46),
+                      maximumSize: const Size(44, 46),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    )
+                  : null,
               tooltip: attachTooltip,
               icon: const BlabIcon(
                 name: 'media-image - 20',
@@ -129,8 +155,10 @@ class ChatSendButton extends StatelessWidget {
     required this.isPractice,
     required this.tooltip,
     required this.onSend,
+    this.groupConversation = false,
   });
 
+  final bool groupConversation;
   final bool canSend;
   final bool isPractice;
   final String tooltip;
@@ -139,13 +167,13 @@ class ChatSendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 44,
-      height: 44,
+      width: groupConversation ? 48 : 44,
+      height: groupConversation ? 48 : 44,
       child: DecoratedBox(
         key: const ValueKey('composer-send-decoration'),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          boxShadow: isPractice
+          boxShadow: isPractice && !groupConversation
               ? const [
                   BoxShadow(
                     color: Color(0x2E231208),
@@ -162,7 +190,9 @@ class ChatSendButton extends StatelessWidget {
             shape: BoxShape.circle,
             color: canSend
                 ? BlabColors.sendButton
-                : BlabColors.sendButton.withValues(alpha: 0.4),
+                : (groupConversation
+                      ? const Color(0xFFB3A69D)
+                      : BlabColors.sendButton.withValues(alpha: 0.4)),
           ),
           child: BlabIconButton(
             tooltip: tooltip,

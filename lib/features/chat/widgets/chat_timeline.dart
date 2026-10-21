@@ -106,6 +106,13 @@ class ChatTimeline extends ConsumerWidget {
       return emptyState ?? const SizedBox.expand();
     }
 
+    final group =
+        ref
+            .watch(chatListProvider)
+            .asData
+            ?.value
+            .any((chat) => chat.id == chatId && chat.isGroup) ??
+        false;
     final languageTimeline = parseChatLanguageTimeline(languageTimelineRows);
     ChatLanguageEra eraForMessage(Message message) => languageEraForMessage(
       sentAt: message.sentAt,
@@ -134,13 +141,24 @@ class ChatTimeline extends ConsumerWidget {
       final startsNewDate = prev == null || !_isSameDay(prev.sentAt, m.sentAt);
       final isFirstInGroup =
           prev == null ||
+          prev.type == MessageType.groupJoined ||
           prev.isOutgoing != m.isOutgoing ||
+          prev.senderId != m.senderId ||
           startsNewDate ||
           m.sentAt.difference(prev.sentAt).inMinutes.abs() > 2;
       final messageTopGap = isFirstInGroup ? 10.0 : 2.0;
 
       if (startsNewDate) {
         items.add(_DateDividerItem(m.sentAt));
+      }
+      if (m.type == MessageType.groupJoined) {
+        items.add(
+          _GroupJoinedItem(
+            m.senderName,
+            afterMessage: prev != null && prev.type != MessageType.groupJoined,
+          ),
+        );
+        continue;
       }
       ({DateTime? when, String? language})? visibleChange;
       while (languageChangeIndex < languageChanges.length &&
@@ -162,7 +180,9 @@ class ChatTimeline extends ConsumerWidget {
 
       final isLastInGroup =
           next == null ||
+          next.type == MessageType.groupJoined ||
           next.isOutgoing != m.isOutgoing ||
+          next.senderId != m.senderId ||
           !_isSameDay(next.sentAt, m.sentAt) ||
           next.sentAt.difference(m.sentAt).inMinutes.abs() > 2;
 
@@ -171,6 +191,13 @@ class ChatTimeline extends ConsumerWidget {
           message: m,
           isFirstInGroup: isFirstInGroup,
           isLastInGroup: isLastInGroup,
+          leadingGap:
+              group &&
+                  prev?.type == MessageType.groupJoined &&
+                  i >= 2 &&
+                  messages[i - 2].type != MessageType.groupJoined
+              ? 0
+              : null,
         ),
       );
     }
@@ -213,8 +240,29 @@ class ChatTimeline extends ConsumerWidget {
           );
         }
         final item = reversed[i];
+        if (item is _GroupJoinedItem) {
+          return Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: group ? (item.afterMessage ? 12 : 5) : 10,
+            ),
+            child: Center(
+              child: Text(
+                item.name == null
+                    ? context.l10n.someoneJoined
+                    : context.l10n.groupMemberJoined(item.name!),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: group ? const Color(0xFF6F5C50) : BlabColors.warmMuted,
+                  height: group ? 16 / 12 : null,
+                ),
+              ),
+            ),
+          );
+        }
         if (item is _DateDividerItem) {
-          return ChatDateDivider(when: item.when);
+          return ChatDateDivider(when: item.when, groupConversation: group);
         }
         if (item is _UnreadDividerItem) {
           return ChatUnreadDivider(key: unreadDividerKey, count: item.count);
@@ -235,6 +283,7 @@ class ChatTimeline extends ConsumerWidget {
             key: messageAnchorKey(item.message.id),
             child: ChatMessageRow(
               highlighted: highlightedMessageId == item.message.id,
+              leadingGap: item.leadingGap,
               chatId: chatId,
               partnerName: partnerName,
               message: item.message,
@@ -283,6 +332,12 @@ bool _isSameDay(DateTime a, DateTime b) =>
 
 sealed class _ListItem {
   const _ListItem();
+}
+
+class _GroupJoinedItem extends _ListItem {
+  const _GroupJoinedItem(this.name, {this.afterMessage = false});
+  final bool afterMessage;
+  final String? name;
 }
 
 class _DateDividerItem extends _ListItem {
@@ -341,28 +396,38 @@ class _MessageItem extends _ListItem {
     required this.message,
     required this.isFirstInGroup,
     required this.isLastInGroup,
+    this.leadingGap,
   });
+  final double? leadingGap;
   final Message message;
   final bool isFirstInGroup;
   final bool isLastInGroup;
 }
 
 class ChatDateDivider extends StatelessWidget {
-  const ChatDateDivider({super.key, required this.when});
+  const ChatDateDivider({
+    super.key,
+    required this.when,
+    this.groupConversation = false,
+  });
+  final bool groupConversation;
   final DateTime when;
 
   @override
   Widget build(BuildContext context) {
     final label = _formatDay(context, when);
     return Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 10),
+      padding: groupConversation
+          ? const EdgeInsets.only(bottom: 16)
+          : const EdgeInsets.only(top: 18, bottom: 10),
       child: Center(
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
+            height: groupConversation ? 16 / 12 : null,
             color: BlabColors.textMuted,
-            fontWeight: FontWeight.w500,
+            fontWeight: groupConversation ? FontWeight.w400 : FontWeight.w500,
           ),
         ),
       ),

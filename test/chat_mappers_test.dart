@@ -7,6 +7,7 @@ void main() {
       'id': 'msg-1',
       'chat_id': 'chat-1',
       'sender_id': 'user-1',
+      'sender_name': 'Alice',
       'body': 'hello',
       'created_at': '2026-05-30T12:00:00Z',
       'edited_at': null,
@@ -18,6 +19,9 @@ void main() {
     expect(m.id, 'msg-1');
     expect(m.chatId, 'chat-1');
     expect(m.isOutgoing, true);
+    expect(m.senderId, 'user-1');
+    expect(m.senderName, 'Alice');
+    expect(m.copyWith(status: m.status).senderName, 'Alice');
     expect(m.originalText, 'hello');
     expect(m.isEdited, false);
     expect(m.languagesMatchedAtSend, true);

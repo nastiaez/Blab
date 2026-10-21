@@ -4,6 +4,7 @@ class ChatMessageRow extends ConsumerWidget {
   const ChatMessageRow({
     super.key,
     this.highlighted = false,
+    this.leadingGap,
     required this.chatId,
     required this.partnerName,
     required this.message,
@@ -30,6 +31,7 @@ class ChatMessageRow extends ConsumerWidget {
     this.selectedBubbleKey,
   });
 
+  final double? leadingGap;
   final bool highlighted;
   final String chatId;
   final String partnerName;
@@ -63,9 +65,7 @@ class ChatMessageRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isOut = message.isOutgoing;
-    final topGap = isFirstInGroup ? 10.0 : 2.0;
     final width = MediaQuery.sizeOf(context).width;
-    final maxBubble = width * (isOut ? 0.78 : 0.72);
     final isFailed = message.status == MessageStatus.failed;
     final replyTo = message.replyTo;
 
@@ -92,6 +92,18 @@ class ChatMessageRow extends ConsumerWidget {
             primaryKnownLanguageCode: knownLanguages.primary,
           );
     final knownLanguageCodes = knownLanguages?.codes ?? [languageCode];
+    final chat = ref
+        .watch(chatListProvider)
+        .asData
+        ?.value
+        .where((entry) => entry.id == chatId)
+        .firstOrNull;
+
+    final group = chat?.isGroup ?? false;
+    final topGap = leadingGap ?? (isFirstInGroup ? (group ? 12.0 : 10.0) : 2.0);
+    final maxBubble = group
+        ? math.min(286.0, width - 64)
+        : width * (isOut ? 0.78 : 0.72);
 
     final deliveryAllowsLanguageAid =
         !isOut ||
@@ -99,6 +111,7 @@ class ChatMessageRow extends ConsumerWidget {
         message.status == MessageStatus.read;
     final canRequestTranslation =
         deliveryAllowsLanguageAid &&
+        (chat?.allowsAiFor(message.sentAt) ?? true) &&
         shouldTranslate &&
         shouldRequestTranslation(
           targetLanguageCode: targetLang,
@@ -109,6 +122,7 @@ class ChatMessageRow extends ConsumerWidget {
     final canRequestReplyTranslation =
         !practiceSetupRequired &&
         replyTo != null &&
+        (chat?.allowsAiFor(replyTo.sentAt) ?? true) &&
         shouldRequestBubbleTranslation(
           targetLanguageCode: replyTargetLang,
           text: replyTo.originalText,
@@ -151,6 +165,8 @@ class ChatMessageRow extends ConsumerWidget {
       partnerName: partnerName,
       message: message,
       maxWidth: maxBubble,
+      groupConversation: group,
+      isFirstInGroup: isFirstInGroup,
       isLastInGroup: isLastInGroup,
       languageCode: languageCode,
       targetLanguageCode: targetLang,
@@ -244,7 +260,34 @@ class ChatMessageRow extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Align(
                 alignment: isOut ? Alignment.centerRight : Alignment.centerLeft,
-                child: bubble,
+                child: group && !isOut
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: 32,
+                            child: isLastInGroup
+                                ? Semantics(
+                                    label: message.senderName ?? partnerName,
+                                    image: true,
+                                    child: BlabAvatar(
+                                      name: message.senderName ?? partnerName,
+                                      size: 32,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fill: BlabColors.avatarColorFor(
+                                        message.senderName ?? partnerName,
+                                      ),
+                                      shadows: const [],
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(child: bubble),
+                        ],
+                      )
+                    : bubble,
               ),
             ),
           ],

@@ -3,6 +3,9 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { workerBatchLimit } from "./contract.ts";
 import { type LeasedJob, runMessageBatch } from "./single_call_worker.ts";
 
+// Supabase provides this runtime global; the standalone Deno checker does not.
+declare const EdgeRuntime: { waitUntil(task: Promise<unknown>): void };
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get("BLAB_SUPABASE_SERVICE_ROLE_KEY")?.trim() ||
@@ -37,7 +40,8 @@ Deno.serve(async (request) => {
   });
   const processJobs = async () => {
     let claimed = 0;
-    while (claimed < limit) {
+    const deadline = Date.now() + 60000;
+    while (claimed < limit && Date.now() < deadline) {
       const { data, error } = await admin.rpc(
         "claim_message_preparation_jobs_for_worker",
         { p_limit: limit - claimed },

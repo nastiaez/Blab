@@ -51,15 +51,20 @@ ImageProvider<Object>? _attachmentImageProvider(MessageAttachment attachment) {
 }
 
 class PhotoMessageView extends ConsumerWidget {
-  const PhotoMessageView({super.key, required this.attachment});
+  const PhotoMessageView({
+    super.key,
+    required this.attachment,
+    this.cornerRadius = 12,
+  });
 
   final MessageAttachment attachment;
+  final double cornerRadius;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = _attachmentImageProvider(attachment);
     final image = ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(cornerRadius),
       child: SizedBox(
         width: 220,
         height: 220,

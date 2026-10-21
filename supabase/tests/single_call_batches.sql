@@ -1,10 +1,11 @@
 -- Local isolated DB only; transaction leaves no fixtures or queued requests.
 begin;
+delete from public.message_preparation_jobs;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 insert into auth.users(id,email,raw_user_meta_data) values
  ('71111111-1111-4111-8111-711111111111','batch-shared-alice@blab.test','{"name":"Batch Alice"}'),
  ('72222222-2222-4222-8222-722222222222','batch-shared-bob@blab.test','{"name":"Batch Bob"}');
-insert into chats(id) values('73333333-3333-4333-8333-733333333333');
+insert into chats(id,member_low_id,member_high_id) values('73333333-3333-4333-8333-733333333333','71111111-1111-4111-8111-711111111111','72222222-2222-4222-8222-722222222222');
 insert into chat_members(chat_id,user_id,learning_language) values
  ('73333333-3333-4333-8333-733333333333','71111111-1111-4111-8111-711111111111','de'),
  ('73333333-3333-4333-8333-733333333333','72222222-2222-4222-8222-722222222222','de');

@@ -17,7 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _Invites extends ChatService {
-  _Invites(this.lookup)
+  _Invites(this.lookup, {this.groupLookup, this.onRegister})
     : super(
         SupabaseClient(
           'http://localhost',
@@ -26,8 +26,17 @@ class _Invites extends ChatService {
         ),
       );
   final Future<InviteMetadata?> Function(String) lookup;
+  final Future<GroupInviteMetadata?> Function(String)? groupLookup;
+  final Future<void> Function(String)? onRegister;
   @override
   Future<InviteMetadata?> getInvite(String token) => lookup(token);
+  @override
+  Future<GroupInviteMetadata?> getGroupInvite(String token) async =>
+      groupLookup == null ? null : groupLookup!(token);
+  @override
+  Future<void> registerGroupInvitation(String token) async {
+    await onRegister?.call(token);
+  }
 }
 
 class _UserIdNotifier extends Notifier<String?> {
@@ -69,6 +78,8 @@ Future<GoRouter> _mount(
   bool mutableUser = false,
   bool observeChatGuard = false,
   Future<OnboardingDestination> Function()? resolveDestination,
+  Future<GroupInviteMetadata?> Function(String)? groupLookup,
+  Future<void> Function(String)? onRegister,
 }) async {
   final router = GoRouter(
     initialLocation: '/i/first',
@@ -112,7 +123,9 @@ Future<GoRouter> _mount(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        chatServiceProvider.overrideWithValue(_Invites(lookup)),
+        chatServiceProvider.overrideWithValue(
+          _Invites(lookup, groupLookup: groupLookup, onRegister: onRegister),
+        ),
         if (mutableUser)
           currentUserIdProvider.overrideWith(
             (ref) => ref.watch(_userIdProvider),
@@ -156,6 +169,39 @@ void _expectCloseAction(WidgetTester tester) {
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets(
+    'group link records a pending row and returns to Chats without joining',
+    (tester) async {
+      final registered = <String>[];
+      var claimed = false;
+      await _mount(
+        tester,
+        userId: 'bob',
+        lookup: (_) async => null,
+        groupLookup: (token) async => GroupInviteMetadata(
+          token: token,
+          chatId: 'group',
+          groupName: 'Weekend',
+          memberCount: 1,
+          status: 'valid',
+          isMember: false,
+        ),
+        onRegister: (token) async {
+          registered.add(token);
+        },
+        claim: (_) async {
+          claimed = true;
+          return 'wrong';
+        },
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('chats'), findsOneWidget);
+      expect(registered, ['first']);
+      expect(claimed, isFalse);
+      expect(await loadPendingInvite(), isNull);
+    },
+  );
 
   testWidgets('claim retires cached pending-invite setup before opening chat', (
     tester,

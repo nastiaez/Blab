@@ -19,6 +19,8 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/chat/translation_preferences_screen.dart';
 import '../features/chats/chats_screen.dart';
+import '../features/groups/create_group_screen.dart';
+import '../features/groups/group_invite_screen.dart';
 import '../features/invite/invite_continuation.dart';
 import '../features/invite/invite_resolver_screen.dart';
 import '../features/invite/new_chat_screen.dart';
@@ -383,6 +385,25 @@ final GoRouter blabRouter = GoRouter(
       builder: (context, state) => _OnboardingGuard(
         child: NewChatScreen(initialToken: state.uri.queryParameters['token']),
       ),
+    ),
+    _blabRoute(
+      path: '/groups/new',
+      builder: (context, state) =>
+          const _OnboardingGuard(child: CreateGroupScreen()),
+    ),
+    _blabRoute(
+      path: '/group/:id/invite',
+      builder: (context, state) => _OnboardingGuard(
+        child: GroupInviteScreen(
+          chatId: state.pathParameters['id'] ?? '',
+          initialToken: state.uri.queryParameters['token'],
+        ),
+      ),
+    ),
+    _blabRoute(
+      path: '/group-invite/:token',
+      builder: (context, state) =>
+          GroupJoinScreen(token: state.pathParameters['token'] ?? ''),
     ),
     _blabRoute(
       path: '/chats/empty',

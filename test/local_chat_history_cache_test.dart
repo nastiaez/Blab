@@ -15,6 +15,139 @@ String _sourceVersion(String source) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  test(
+    'join activity survives offline cache without becoming a human message',
+    () async {
+      final cache = LocalChatHistoryCache('alice');
+      await cache.saveMessages('group', [
+        Message(
+          id: 'join',
+          chatId: 'group',
+          isOutgoing: false,
+          senderId: 'nora',
+          senderName: 'Nora',
+          originalText: '',
+          translation: '',
+          sentAt: DateTime.utc(2026, 10, 20),
+          status: MessageStatus.delivered,
+          type: MessageType.groupJoined,
+        ),
+      ]);
+      final loaded = (await cache.loadMessages('group')).single;
+      expect(loaded.type, MessageType.groupJoined);
+      expect(loaded.senderName, 'Nora');
+      expect(loaded.originalText, '');
+    },
+  );
+
+  test(
+    'saved roster is account/chat scoped and personal clearing removes it',
+    () async {
+      final alice = LocalChatHistoryCache('alice');
+      final bob = LocalChatHistoryCache('bob');
+      final rows = <Map<String, dynamic>>[
+        {
+          'user_id': 'carol',
+          'display_name': 'Carol',
+          'is_owner': true,
+          'private_learning_preference': 'must-not-cache',
+        },
+      ];
+      await alice.saveGroupMembers('group', rows);
+      await alice.saveGroupMembers('other-group', rows);
+      await alice.saveGroupNotifications('group', false);
+      await alice.saveGroupPhotos('group', [
+        const MessageAttachment(
+          id: 'photo',
+          messageId: 'message',
+          chatId: 'group',
+          storageBucket: 'message-media',
+          storagePath: 'group/alice/photo.png',
+          mimeType: 'image/png',
+          byteSize: 3,
+        ),
+      ]);
+      expect(await bob.loadGroupMembers('group'), isNull);
+      expect(await bob.loadGroupPhotos('group'), isNull);
+      expect(await bob.loadGroupNotifications('group'), isNull);
+      expect(
+        (await alice.loadGroupPhotos('group'))!.single.storagePath,
+        'group/alice/photo.png',
+      );
+      expect(await alice.loadGroupNotifications('group'), isFalse);
+      expect(
+        (await alice.loadGroupMembers('group'))!.single.keys,
+        unorderedEquals(['user_id', 'display_name', 'is_owner']),
+      );
+      await alice.clearChatHistory('group');
+      expect(await alice.loadGroupMembers('group'), isNull);
+      expect(await alice.loadGroupPhotos('group'), isNull);
+      expect(await alice.loadGroupNotifications('group'), isNull);
+      expect(await alice.loadGroupMembers('other-group'), isNotNull);
+    },
+  );
+
+  test(
+    'browser media budget covers previews and full files across accounts',
+    () async {
+      final alice = LocalChatHistoryCache(
+        'alice',
+        mediaCacheCharacterBudget: 1000,
+      );
+      final bob = LocalChatHistoryCache('bob', mediaCacheCharacterBudget: 1000);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth-session', 'keep-auth');
+      final pending = pendingSendsStorageKey(userId: 'alice', chatId: 'group');
+      await prefs.setString(pending, 'keep-unsent-message');
+      await Future.wait([
+        alice.saveAttachmentBytes('full', List.filled(400, 1)),
+        bob.saveAttachmentPreviewBytes('preview', List.filled(400, 2)),
+      ]);
+      final media = prefs.getKeys().where(
+        (key) =>
+            key.startsWith(kCachedAttachmentKeyPrefix) ||
+            key.startsWith(kCachedAttachmentPreviewKeyPrefix),
+      );
+      final used = media.fold<int>(
+        0,
+        (n, key) => n + key.length + prefs.getString(key)!.length,
+      );
+      expect(used, lessThanOrEqualTo(1000));
+      expect(
+        await bob.loadAttachmentPreviewBytes('preview'),
+        List.filled(400, 2),
+      );
+      expect(prefs.getString(pending), 'keep-unsent-message');
+      expect(prefs.getString('auth-session'), 'keep-auth');
+      await alice.saveAttachmentBytes('oversized', List.filled(1000, 3));
+      expect(await alice.loadAttachmentBytes('oversized'), isNull);
+      expect(await bob.loadAttachmentPreviewBytes('preview'), isNotNull);
+    },
+  );
+
+  test(
+    'opening browser history trims legacy media without deleting chat metadata',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        cachedAttachmentPreviewStorageKey(userId: 'alice', attachmentId: 'old'),
+        base64Encode(List.filled(1000, 7)),
+      );
+      final metadataKey = cachedMessagesStorageKey(
+        userId: 'alice',
+        chatId: 'group',
+      );
+      await prefs.setString(metadataKey, '[]');
+      final cache = LocalChatHistoryCache(
+        'alice',
+        mediaCacheCharacterBudget: 1000,
+      );
+      expect(await cache.loadMessages('group'), isEmpty);
+      expect(await cache.loadAttachmentPreviewBytes('old'), isNull);
+      expect(prefs.getString(metadataKey), '[]');
+    },
+  );
+
   test('restores account-scoped messages and attachment bytes', () async {
     final cache = LocalChatHistoryCache('alice');
     final sentAt = DateTime.utc(2026, 8, 28, 10);
@@ -24,6 +157,8 @@ void main() {
         chatId: 'chat-1',
         isOutgoing: false,
         originalText: 'Привіт',
+        senderId: 'carol',
+        senderName: 'Carol',
         translation: '',
         sentAt: sentAt,
         status: MessageStatus.delivered,
@@ -57,6 +192,8 @@ void main() {
     final restored = await cache.loadMessages('chat-1');
     expect(restored, hasLength(1));
     expect(restored.single.originalText, 'Привіт');
+    expect(restored.single.senderId, 'carol');
+    expect(restored.single.senderName, 'Carol');
     expect(restored.single.languagesMatchedAtSend, true);
     expect(restored.single.replyTo?.languagesMatchedAtSend, true);
     expect(

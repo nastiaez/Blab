@@ -233,6 +233,45 @@ class InviteToken {
   final String token;
 }
 
+class GroupInviteMetadata {
+  const GroupInviteMetadata({
+    required this.token,
+    required this.chatId,
+    required this.groupName,
+    required this.memberCount,
+    required this.status,
+    required this.isMember,
+  });
+
+  final String token;
+  final String chatId;
+  final String groupName;
+  final int memberCount;
+  final String status;
+  final bool isMember;
+}
+
+class GroupJoinResult {
+  const GroupJoinResult({required this.chatId, required this.alreadyMember});
+  final String chatId;
+  final bool alreadyMember;
+}
+
+class PendingGroupInvitation {
+  const PendingGroupInvitation({
+    required this.token,
+    required this.chatId,
+    required this.groupName,
+    required this.memberCount,
+    required this.createdAt,
+    required this.unread,
+  });
+  final String token, chatId, groupName;
+  final int memberCount;
+  final DateTime createdAt;
+  final bool unread;
+}
+
 class MessageCursor {
   const MessageCursor({required this.createdAt, required this.id});
 
@@ -284,6 +323,9 @@ class PickedChatImage {
 class ChatService {
   ChatService(this._client);
   final SupabaseClient _client;
+  // Browser clocks may share a millisecond across multiple subscriptions.
+  // Each observer needs its own channel, including roster and mute observers.
+  static int _channelSequence = 0;
 
   String get _uid {
     final id = _client.auth.currentUser?.id;
@@ -360,6 +402,24 @@ class ChatService {
         ...replyRows.map((row) => row['id'] as String),
       }.toList(),
     );
+    final authors = {
+      ...pageRows,
+      ...replyRows,
+    }.map((row) => row['sender_id'] as String).toSet();
+    final names = <String, String>{};
+    if (authors.isNotEmpty) {
+      final profiles = await _client
+          .from('profiles')
+          .select('id,display_name')
+          .inFilter('id', authors.toList());
+      for (final profile in profiles) {
+        names[profile['id'] as String] =
+            profile['display_name'] as String? ?? '';
+      }
+    }
+    for (final row in [...pageRows, ...replyRows]) {
+      row['sender_name'] = names[row['sender_id']];
+    }
     return messagesFromRows(
       pageRows.reversed,
       currentUserId: _uid,
@@ -469,9 +529,7 @@ class ChatService {
     late final StreamController<MessageChange> controller;
     controller = StreamController<MessageChange>(
       onListen: () {
-        channel = _client.channel(
-          'messages:$chatId:${DateTime.now().microsecondsSinceEpoch}',
-        );
+        channel = _client.channel('messages:$chatId:${_channelSequence++}');
         channel
             .onPostgresChanges(
               event: PostgresChangeEvent.all,
@@ -535,11 +593,29 @@ class ChatService {
     return messages.firstOrNull;
   }
 
-  Stream<List<Map<String, dynamic>>> watchReads(String chatId) {
-    return _client
+  Stream<List<Map<String, dynamic>>> watchReads(String chatId) async* {
+    final chat = await _client
+        .from('chats')
+        .select('chat_kind')
+        .eq('id', chatId)
+        .single();
+    final stream = _client
         .from('message_reads')
         .stream(primaryKey: ['message_id', 'user_id'])
         .eq('chat_id', chatId);
+    if (chat['chat_kind'] != 'group') {
+      yield* stream;
+      return;
+    }
+    await for (final _ in stream) {
+      final rows = await _client.rpc(
+        'group_messages_read_by_everyone',
+        params: {'p_chat_id': chatId},
+      );
+      yield (rows as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+    }
   }
 
   Future<({String id, DateTime createdAt})> sendMessage({
@@ -736,29 +812,13 @@ class ChatService {
   }
 
   Future<List<String>> fetchUnreadMessageIds(String chatId) async {
-    final messageRows = await _client
-        .from('messages')
-        .select('id,sender_id,created_at')
-        .eq('chat_id', chatId)
-        .filter('deleted_at', 'is', null)
-        .neq('sender_id', _uid)
-        .order('created_at', ascending: true);
-    final ids = (messageRows as List)
-        .map((row) => (row as Map)['id'])
-        .whereType<String>()
+    final rows = await _client.rpc(
+      'unread_message_ids',
+      params: {'p_chat_id': chatId},
+    );
+    return (rows as List)
+        .map((row) => (row as Map)['message_id'] as String)
         .toList();
-    if (ids.isEmpty) return const [];
-    final readRows = await _client
-        .from('message_reads')
-        .select('message_id')
-        .eq('chat_id', chatId)
-        .eq('user_id', _uid)
-        .inFilter('message_id', ids);
-    final read = (readRows as List)
-        .map((row) => (row as Map)['message_id'])
-        .whereType<String>()
-        .toSet();
-    return ids.where((id) => !read.contains(id)).toList();
   }
 
   Future<void> editMessage({
@@ -892,6 +952,18 @@ class ChatService {
     await _client.rpc('leave_chat', params: {'p_chat_id': chatId});
   }
 
+  Future<void> leaveGroup(String chatId) async {
+    await _client.rpc('leave_group', params: {'p_chat_id': chatId});
+    await LocalChatHistoryCache(_uid).clearChatHistory(chatId);
+  }
+
+  Future<void> removeGroupMember(String chatId, String memberId) async {
+    await _client.rpc(
+      'remove_group_member',
+      params: {'p_chat_id': chatId, 'p_member_id': memberId},
+    );
+  }
+
   Future<List<Map<String, dynamic>>> fetchChatList() async {
     final rows = await _client.from('chat_list').select().eq('viewer_id', _uid);
     return (rows as List).cast<Map<String, dynamic>>();
@@ -899,10 +971,32 @@ class ChatService {
 
   /// Source-table watchers used to invalidate the chat list cache.
   Stream<List<Map<String, dynamic>>> watchMyMemberships() {
-    return _client
-        .from('chat_members')
-        .stream(primaryKey: ['chat_id', 'user_id'])
-        .eq('user_id', _uid);
+    final subscriptions = <StreamSubscription<List<Map<String, dynamic>>>>[];
+    late final StreamController<List<Map<String, dynamic>>> events;
+    events = StreamController<List<Map<String, dynamic>>>(
+      onListen: () {
+        for (final source in [
+          _client
+              .from('chat_members')
+              .stream(primaryKey: ['chat_id', 'user_id'])
+              .eq('user_id', _uid),
+          _client
+              .from('group_departures')
+              .stream(primaryKey: ['chat_id', 'user_id'])
+              .eq('user_id', _uid),
+        ]) {
+          subscriptions.add(
+            source.listen(events.add, onError: events.addError),
+          );
+        }
+      },
+      onCancel: () async {
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+      },
+    );
+    return events.stream;
   }
 
   /// Emits when an authorized message insert, edit, or removal can change a
@@ -925,7 +1019,28 @@ class ChatService {
                 if (!controller.isClosed) controller.add(null);
               },
             )
-            .subscribe();
+            .onPostgresChanges(
+              event: PostgresChangeEvent.update,
+              schema: 'public',
+              table: 'chats',
+              callback: (_) {
+                if (!controller.isClosed) controller.add(null);
+              },
+            )
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'chat_members',
+              callback: (_) {
+                if (!controller.isClosed) controller.add(null);
+              },
+            )
+            .subscribe((status, [error]) {
+              if (status == RealtimeSubscribeStatus.subscribed &&
+                  !controller.isClosed) {
+                controller.add(null);
+              }
+            });
       },
       onCancel: () async {
         await _client.removeChannel(channel);
@@ -1464,4 +1579,234 @@ class ChatService {
     required String token,
     String? myLearningLanguage,
   }) async => (await claimInviteDetails(token: token)).chatId;
+
+  Future<List<Map<String, dynamic>>> fetchGroupMembers(String chatId) async {
+    final rows = await _client.rpc(
+      'group_members',
+      params: {'p_chat_id': chatId},
+    );
+    return (rows as List).cast<Map<String, dynamic>>();
+  }
+
+  /// RLS-scoped membership snapshots include initial and reconnect refreshes.
+  /// The roster itself still comes from the public, display-only roster RPC.
+  Stream<void> watchGroupMemberChanges(String chatId) {
+    late final RealtimeChannel channel;
+    late final StreamController<void> changes;
+    changes = StreamController<void>(
+      onListen: () {
+        channel = _client.channel(
+          'group-members:$chatId:$_uid:${_channelSequence++}',
+        );
+        void refresh() {
+          if (!changes.isClosed) changes.add(null);
+        }
+
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'chat_members',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'chat_id',
+                value: chatId,
+              ),
+              callback: (_) => refresh(),
+            )
+            .onPostgresChanges(
+              event: PostgresChangeEvent.update,
+              schema: 'public',
+              table: 'chats',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'id',
+                value: chatId,
+              ),
+              callback: (_) => refresh(),
+            )
+            .subscribe((status, [error]) {
+              if (status == RealtimeSubscribeStatus.subscribed) refresh();
+            });
+      },
+      onCancel: () => _client.removeChannel(channel),
+    );
+    return changes.stream;
+  }
+
+  Future<bool> fetchGroupNotifications(String chatId) async {
+    final row = await _client
+        .from('chat_members')
+        .select('notifications_enabled')
+        .eq('chat_id', chatId)
+        .eq('user_id', _uid)
+        .single();
+    return row['notifications_enabled'] as bool;
+  }
+
+  Future<void> setGroupNotifications(String chatId, bool enabled) async {
+    await _client.rpc(
+      'set_group_notifications',
+      params: {'p_chat_id': chatId, 'enabled': enabled},
+    );
+  }
+
+  Stream<Map<String, dynamic>?> watchMemberRequest(String chatId) => _client
+      .from('member_contact_requests')
+      .stream(primaryKey: ['chat_id'])
+      .eq('chat_id', chatId)
+      .map((rows) => rows.firstOrNull);
+
+  Future<String> contactGroupMember(
+    String groupId,
+    String memberId, {
+    bool unblock = false,
+  }) async =>
+      await _client.rpc(
+            'contact_group_member',
+            params: {
+              'p_group_id': groupId,
+              'member_id': memberId,
+              'unblock': unblock,
+            },
+          )
+          as String;
+
+  Future<void> acceptMemberRequest(String chatId) async {
+    await _client.rpc('accept_member_request', params: {'p_chat_id': chatId});
+  }
+
+  Future<void> blockMemberRequest(String chatId) async {
+    await _client.rpc('block_member_request', params: {'p_chat_id': chatId});
+  }
+
+  Future<List<MessageAttachment>> fetchGroupPhotos(String chatId) async {
+    final photos = <MessageAttachment>[];
+    for (var offset = 0; ; offset += 100) {
+      final rows = await _client
+          .from('messages')
+          .select()
+          .eq('chat_id', chatId)
+          .eq('message_type', 'image')
+          .filter('deleted_at', 'is', null)
+          .order('created_at', ascending: false)
+          .order('id')
+          .range(offset, offset + 99);
+      final messages = await _mapMessageRows(
+        (rows as List).cast<Map<String, dynamic>>(),
+      );
+      photos.addAll(
+        messages.map((m) => m.attachment).whereType<MessageAttachment>(),
+      );
+      if (rows.length < 100) return photos;
+    }
+  }
+
+  Future<void> renameGroup(String chatId, String name) async {
+    await _client.rpc(
+      'rename_group',
+      params: {'p_chat_id': chatId, 'group_name': name},
+    );
+  }
+
+  Future<void> transferGroupOwner(String chatId, String memberId) async {
+    await _client.rpc(
+      'transfer_group_owner',
+      params: {'p_chat_id': chatId, 'member_id': memberId},
+    );
+  }
+
+  Future<String> createGroup(String name) async {
+    final res = await _client.rpc('create_group', params: {'group_name': name});
+    return ((res as List).first as Map<String, dynamic>)['chat_id'] as String;
+  }
+
+  Future<void> registerGroupInvitation(String token) async {
+    await _client.rpc(
+      'register_group_invitation',
+      params: {'invite_token': token},
+    );
+  }
+
+  Future<List<PendingGroupInvitation>> fetchPendingGroupInvitations() async {
+    final rows = await _client.rpc('list_pending_group_invitations') as List;
+    return rows
+        .map(
+          (r) => PendingGroupInvitation(
+            token: r['token'] as String,
+            chatId: r['chat_id'] as String,
+            groupName: r['group_name'] as String,
+            memberCount: r['member_count'] as int,
+            createdAt: DateTime.parse(r['created_at'] as String),
+            unread: r['viewed_at'] == null,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> viewGroupInvitation(String token) async {
+    await _client.rpc('view_group_invitation', params: {'invite_token': token});
+  }
+
+  Future<void> rejectGroupInvitation(String token) async {
+    await _client.rpc(
+      'reject_group_invitation',
+      params: {'invite_token': token},
+    );
+  }
+
+  Future<InviteToken> createGroupInvite(String chatId) async {
+    final res = await _client.rpc(
+      'create_group_invite',
+      params: {'p_chat_id': chatId},
+    );
+    return InviteToken(
+      ((res as List).first as Map<String, dynamic>)['token'] as String,
+    );
+  }
+
+  Future<InviteToken> replaceGroupInvite(String chatId) async {
+    final res = await _client.rpc(
+      'replace_group_invite',
+      params: {'p_chat_id': chatId},
+    );
+    return InviteToken(
+      ((res as List).first as Map<String, dynamic>)['token'] as String,
+    );
+  }
+
+  Future<GroupInviteMetadata?> getGroupInvite(String token) async {
+    final res = await _client.rpc(
+      'get_group_invite',
+      params: {'invite_token': token},
+    );
+    final rows = res as List;
+    if (rows.isEmpty) return null;
+    final row = rows.first as Map<String, dynamic>;
+    return GroupInviteMetadata(
+      token: row['token'] as String,
+      chatId: row['chat_id'] as String,
+      groupName: row['group_name'] as String,
+      memberCount: row['member_count'] as int,
+      status: row['status'] as String,
+      isMember: row['is_member'] as bool? ?? false,
+    );
+  }
+
+  Future<GroupJoinResult> joinGroup(String token) async {
+    final res = await _client.rpc(
+      'join_group',
+      params: {'invite_token': token},
+    );
+    final row = (res as List).first as Map<String, dynamic>;
+    if (row['already_member'] != true) {
+      await LocalChatHistoryCache(
+        _uid,
+      ).clearChatHistory(row['chat_id'] as String);
+    }
+    return GroupJoinResult(
+      chatId: row['chat_id'] as String,
+      alreadyMember: row['already_member'] as bool? ?? false,
+    );
+  }
 }
