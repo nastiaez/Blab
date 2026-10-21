@@ -1716,3 +1716,8 @@ Owner13688 explicitly approves the exact production scope. Migration04 and strea
 - Applied only approved logo1.40s with brief solo a and onboarding13.75s reading cycle/regular-weight exquisite/press-hold resume. Native hold behavior recheck and combined profile artifact in progress; no commit/merge/distribution inferred.
 
 - Combined candidate built from main application entry, installed with replacement against staging/test with explicit onboarding preview flag. Actual five-second hold yields pixel-identical content captures; release advances.19 focused and981 full checks pass/16 environment skips; analysis clean. Main/profile artifact recorded privately; no commit/merge/release.
+
+## BLA-15 private update routing · 21 October 2026
+
+- Actual route/screenshots accepted14580; release requested14829 for Blab-test only. Exact per-app Firebase/TestFlight validation, unchanged approved compact banner. Focused4 and full982 checks pass/16 environment skips; analysis clean.
+- Integrated signed Android31 verification and existing-audience Firebase distribution in progress. No production app/backend changes or notice activation authorized. Physical returning-tester download/install remains unverified; owner tracker stays unchecked.

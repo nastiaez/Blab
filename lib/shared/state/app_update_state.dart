@@ -45,28 +45,40 @@ class AppUpdateNotice {
     required String channel,
     required String platform,
   }) {
-    if (uri.userInfo.isNotEmpty || uri.hasPort || uri.fragment.isNotEmpty) {
+    if (uri.scheme != 'https' ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasPort ||
+        uri.fragment.isNotEmpty) {
       return false;
     }
+    // Public-backend builds also use private distribution before store launch.
+    const privateDestinations = {
+      (
+        'test',
+        'android',
+      ): 'https://appdistribution.firebase.google.com/testerapps/1:1084218779858:android:82904f8d21106e4911250b',
+      (
+        'public',
+        'android',
+      ): 'https://appdistribution.firebase.google.com/testerapps/1:363935775546:android:c3a351249463d5f9356e03',
+      ('test', 'ios'): 'https://testflight.apple.com/v1/app/6823316052',
+      ('public', 'ios'): 'https://testflight.apple.com/v1/app/6823314008',
+    };
+    if (uri.toString() == privateDestinations[(channel, platform)]) return true;
     if (channel == 'test' && platform == 'ios') {
-      return uri.scheme == 'https' &&
-          uri.host == 'testflight.apple.com' &&
-          (RegExp(r'^/join/[A-Za-z0-9]+$').hasMatch(uri.path) ||
-              RegExp(r'^/v1/app/\d+$').hasMatch(uri.path)) &&
+      return uri.host == 'testflight.apple.com' &&
+          RegExp(r'^/join/[A-Za-z0-9]+$').hasMatch(uri.path) &&
           !uri.hasQuery;
     }
-    if (uri.scheme != 'https') return false;
     return switch ((channel, platform)) {
-      ('test', 'android') =>
-        uri.host == 'appdistribution.firebase.google.com' &&
-            uri.path.startsWith('/testerapps/') &&
-            uri.path.length > '/testerapps/'.length,
       ('public', 'android') =>
         uri.host == 'play.google.com' &&
             uri.path == '/store/apps/details' &&
             uri.queryParameters['id'] == 'blab.nastia.ez',
       ('public', 'ios') =>
-        uri.host == 'apps.apple.com' && RegExp(r'/id\d+$').hasMatch(uri.path),
+        uri.host == 'apps.apple.com' &&
+            RegExp(r'/id6823314008$').hasMatch(uri.path) &&
+            !uri.hasQuery,
       _ => false,
     };
   }

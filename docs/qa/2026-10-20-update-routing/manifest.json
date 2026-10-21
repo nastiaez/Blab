@@ -1,0 +1,19 @@
+{
+  "base": "6a9454f1f2578d83e14a9c3cccb22538e84f9407",
+  "branch": "fix/bla15-update-destinations-20261020",
+  "tests": {
+    "focused_passed": 5,
+    "full_passed": 982,
+    "environment_skips": 16,
+    "analysis": "clean"
+  },
+  "sha256": {
+    "lib/shared/state/app_update_state.dart": "2482d984f9fd14b4ee0868f7c9da68f6e5c7f9d50c2cbb26212596d6711b3bde",
+    "lib/shared/widgets/offline_banner.dart": "4f28b44aedb4c3113198f9d94aca64c25e313799727424112be3d17ae91a69b6",
+    "test/app_update_notice_test.dart": "ab9ba98674f6053cc2f27bda950ee0e3892cac0e3e496ee2cbdca095fe55b63f",
+    "docs/qa/2026-10-20-update-routing/update_link_preview.dart": "6a9fded3e042f3590cdafb070ef12341eba3e8ab13c31959f1e7d66310c8543f",
+    "build/app/outputs/flutter-apk/app-debug.apk": "f57b2ef2ad40f696709d229b2f57a5d8657e808efa881b105c468aea9b62bd12"
+  },
+  "release": false,
+  "metadata_changed": false
+}

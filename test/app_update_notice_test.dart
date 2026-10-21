@@ -18,6 +18,14 @@ const destinations = {
       'https://play.google.com/store/apps/details?id=blab.nastia.ez',
   'public/ios': 'https://apps.apple.com/app/id6823314008',
 };
+const privateDestinations = {
+  'test/android':
+      'https://appdistribution.firebase.google.com/testerapps/1:1084218779858:android:82904f8d21106e4911250b',
+  'test/ios': 'https://testflight.apple.com/v1/app/6823316052',
+  'public/android':
+      'https://appdistribution.firebase.google.com/testerapps/1:363935775546:android:c3a351249463d5f9356e03',
+  'public/ios': 'https://testflight.apple.com/v1/app/6823314008',
+};
 Map<String, dynamic> releaseRow({
   String channel = 'test',
   String platform = 'android',
@@ -107,7 +115,10 @@ Future<void> runUpdateBannerJourney(
   await tester.pumpAndSettle();
   expect(opened, isEmpty, reason: 'Status text must not be clickable');
   // Route each configured platform/channel without navigating away from chat.
-  for (final destination in destinations.values) {
+  for (final destination in {
+    ...destinations.values,
+    ...privateDestinations.values,
+  }) {
     notice = AppUpdateNotice(Uri.parse(destination));
     container.invalidate(appUpdateNoticeProvider);
     await tester.pumpAndSettle();
@@ -172,6 +183,51 @@ Future<void> runUpdateBannerJourney(
 }
 
 void main() {
+  test('private update destinations belong to the exact installed app', () {
+    for (final entry in privateDestinations.entries) {
+      final scope = entry.key.split('/');
+      final row = {
+        ...releaseRow(channel: scope[0], platform: scope[1]),
+        'destination': entry.value,
+      };
+      expect(
+        AppUpdateNotice.resolve(
+          row,
+          installedBuild: 30,
+          channel: scope[0],
+          platform: scope[1],
+        )?.destination.toString(),
+        entry.value,
+      );
+      for (final other in privateDestinations.entries) {
+        if (other.key == entry.key) continue;
+        expect(
+          AppUpdateNotice.validDestination(
+            Uri.parse(other.value),
+            channel: scope[0],
+            platform: scope[1],
+          ),
+          isFalse,
+          reason: '${entry.key} must not open ${other.key}',
+        );
+      }
+      for (final invalid in [
+        '${entry.value}/other',
+        '${entry.value}?redirect=https://evil.com',
+        entry.value.replaceFirst('https:', 'http:'),
+        entry.value.replaceFirst('https://', 'https://user@'),
+      ]) {
+        expect(
+          AppUpdateNotice.validDestination(
+            Uri.parse(invalid),
+            channel: scope[0],
+            platform: scope[1],
+          ),
+          isFalse,
+        );
+      }
+    }
+  });
   test('older clients only, explicit toggle and valid scoped destinations', () {
     for (final entry in destinations.entries) {
       final parts = entry.key.split('/');
