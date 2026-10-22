@@ -2082,3 +2082,10 @@ original9 (3 accepted/0 downloaded), no additional/automated recipients.
 Uploaded-download bytes previously verified identical to tested APKs. Runtime
 91459ce unchanged; no new build or backend/notice changes. Tester download or
 physical installation not inferred. Canonical external receipt updated.
+
+
+### BLA-26 correction eligibility ·22 October ·candidate in progress
+
+Existing source-language invariant now checked before rendering marks, preserving historical sharing rules and exact originals.39 focused checks pass with red/green reproduction; final native/full checks pending. No prompt/cache/hosted/main/release changes. QA: docs/qa/2026-10-22-bla26-correction-eligibility/README.md.
+
+BLA26 final candidate: full1,040 pass/16 environment skips, analysis clean, Android cached-metadata fixture both viewers passes. Actual inspected receiver screenshot15361; appearance review pending. Uncommitted/unmerged/unreleased.

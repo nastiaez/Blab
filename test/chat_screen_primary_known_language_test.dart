@@ -74,6 +74,7 @@ class _PrimaryKnownLanguageChatService implements ChatService {
     this.needsPracticeLanguageSelection = false,
     this.learningLanguageCode = 'de',
     this.messageIsOutgoing = false,
+    bool languagesMatchedAtSend = false,
     this.chatMode = 'normal',
     this.translationCutoffAt,
     this.groupAiStartedAt,
@@ -92,6 +93,7 @@ class _PrimaryKnownLanguageChatService implements ChatService {
          id: 'msg-1',
          chatId: 'chat-1',
          isOutgoing: messageIsOutgoing,
+         languagesMatchedAtSend: languagesMatchedAtSend,
          type: messageType,
          senderName: messageSenderName,
          senderId: messageSenderId,
@@ -2960,4 +2962,67 @@ Future<void> runPracticeEntryJourney(
   router.dispose();
   container.dispose();
   await tester.pump();
+}
+
+class _Bla26ChatService extends _PrimaryKnownLanguageChatService {
+  _Bla26ChatService(bool outgoing)
+    : super(
+        chatMode: 'practice',
+        learningLanguageCode: 'de',
+        messageIsOutgoing: outgoing,
+        languagesMatchedAtSend: true,
+        messageText: 'Yesterday I go to the park.',
+        partnerName: 'Bob',
+      );
+  @override
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => (
+    text: 'Gestern bin ich in den Park gegangen.',
+    interfaceText: 'Yesterday I go to the park.',
+    interfaceLang: interfaceLang,
+    sourceLang: 'en',
+    mode: 'correction',
+    explanation: 'Stale source correction',
+    confidence: 'high',
+    tokens: <Map<String, dynamic>>[],
+  );
+}
+
+Future<void> runBla26CorrectionJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  for (final outgoing in [true, false]) {
+    final service = _Bla26ChatService(outgoing);
+    final container = _containerForHeader(
+      service,
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+    );
+    await tester.pumpWidget(
+      _host(container, theme: blabTheme, locale: const Locale('uk')),
+    );
+    await _settle(tester);
+    await tester.runAsync(
+      () async => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+    final target = find.byType(MessageInteractionTarget).first;
+    await tester.longPress(target);
+    await _settle(tester);
+    expect(find.text('Yesterday I go to the park.'), findsOneWidget);
+    expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+    expect(find.textContaining('Stale source correction'), findsNothing);
+    if (capture != null) {
+      await capture('bla26-${outgoing ? 'sender' : 'receiver'}');
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+  }
 }
