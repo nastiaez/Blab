@@ -61,3 +61,47 @@ for both existing apps at inspection; retain existing groups and audience only.
 
 Receipts, APKs and diagnostic media are outside Git in
 projects/blab/releases/20261022-groups38/. Preserve their distinct source revisions.
+
+
+## Final Android39 delivery checkpoint
+The initial preparation notes above are superseded for Android by this receipt.
+Source80d45b20b8953d1db91536c43ea8dd43f376155e includes the one-line confirmation
+fix. CI39814371399 is green after a failed-job-only retry of unhealthy disposable
+Supabase services; quality and Android passed first attempt. Signed test39 SHA
+0f5814f70062282c9beb683421506503dd45f7f1f882520fb63a25b3ce45e291 was
+distributed as Firebase14dci7hjf01h0 to the exact same9 existing testers after
+final wording approval. Reopened audience equality verified. Test/android
+notice38→39 activated only afterward; anonymous readback verifies other3 rows
+unchanged. Console receipt is verified, but no saved remote binary byte readback
+exists: do not conflate those evidence boundaries.
+
+Regular Android39 SHA3ede4eca79e476e1dcf7b110402eda15fbe7e0c1779d436f19faa9444987ae19
+is prepared only. Each exact signed38→39 replacement retains original install
+identity and the deliberately selected locale: German for test, Spanish for
+regular. Signed-out Welcome retained; authenticated/physical acceptance is not
+claimed. Source tree and signing identity are preserved. Both iOS39 IPAs were
+archived/exported with the existing App Store profiles and verified signatures;
+neither was uploaded. Their hashes and bundle mappings are in the external receipt.
+
+### Remaining gates and diagnostics
+Nastia will test on two Android phones; explicit pass/fail is still pending.
+No new live-AI output sweep was performed by local fixture tests. Physical checks
+include both viewers' translations, background delivery/tap, removal/rejoin privacy
+and ownership. Manual tracker checkboxes remain open.
+
+The five iOS native functional cases pass. A standard WidgetsBinding app with
+real gesture input also completes selection/search/Clear/Back. Nevertheless, native
+OS frames omit parts of the link/friend list after focus/keyboard changes, on both
+the retained simulator and fresh iPhone16 simulator61491745-4158-42C2-88CC-F1DFB025AA19.
+The new simulator's first keyboard frame also contains Apple's first-use keyboard
+tutorial and is not accepted parity evidence. Layout diagnostics report zero scroll
+and correct link bounds. Resume can restore content; this does not prove a capture-only
+fault or a shipping-app fix. No physical iPhone is connected, so an independent
+iPhone check is needed before clearing this visual gate. Renderer opt-out and
+partial-repaint experiments were diagnostic only, ineffective and reverted.
+Do not release iOS or describe its visuals as approved.
+
+Production remains untouched:18 migrations and prepare-message-jobs are staged
+in the exact plan; send-push already matches source. After phone acceptance, show
+exact production backend/app/audience scope and obtain approval. Public stores
+remain outside scope. Test39 approval does not approve production or iOS notices.

@@ -2213,3 +2213,26 @@ capture is pending. Nastia will test on two Android phones. Test38 predates
 that correction; final candidate39 pending. Physical phone acceptance, exact
 production scope and iOS delivery remain open. No production mutation or manual
 roadmap completion. QA docs/qa/2026-10-22-group-rollout/README.md.
+
+
+## Group rollout15570 · Android39 delivered / acceptance pending
+Integrated application source80d45b2 is synchronized with remote main. The exact
+source passes1057 client checks/17 environment skips, analysis/formatting and all
+GitHub gates in39814371399. A failed disposable Supabase reset (unhealthy services)
+was diagnosed from logs; failed-job-only retry passed. No app/backend source
+changed for that retry. Signed Blab-test39, unchanged signer, was uploaded and
+distributed to the same9 existing testers after its exact final notification was
+approved. Reopened Firebase release14dci7hjf01h0 proves the exact audience.
+Staging test/android notice39 is active; anonymous readback proves other3 rows
+unchanged. Signed38→39 retention preserves German/install identity for test and
+Spanish/install identity for regular on signed-out emulator baselines only.
+Nastia has two Android phones and received the installation/acceptance checklist;
+physical results are pending, so manual launch checkboxes remain open.
+Regular Android39 and both signed iOS39 packages are prepared, not distributed.
+iOS functional journeys pass but native visual frames inconsistently omit content
+even with ordinary WidgetsBinding and a fresh iPhone16 simulator. Temporary renderer
+experiments did not resolve it and were reverted; no renderer workaround promoted.
+No physical iPhone is connected to independently settle the rendering discrepancy,
+so iOS delivery remains held. Production is unchanged; exact18-migration/one-worker
+rollout still requires separate approval after phone acceptance. No public stores.
+Release receipts preserve source/hash/package/signing/CI/audience/notice states.
