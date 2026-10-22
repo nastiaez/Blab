@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:blab/shared/data/firebase_config.dart';
 import 'package:blab/shared/services/push_notification_gateway.dart';
 import 'package:flutter/material.dart';
