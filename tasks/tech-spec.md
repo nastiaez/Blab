@@ -568,3 +568,60 @@ Implement14898 as group-only variants of shared chat components rather than a se
 Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
 
 Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15003. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.
+
+
+## Group in-app invitations ·15062 ·21 October2026
+
+New group_invite_friends/send_group_invitations RPCs validate current membership, accepted direct connections, mutual block boundaries and current nonmembers on server. Individual invites reuse private pending inbox; no translation jobs. Refresh on private RLS-filtered realtime events; named invitations follow owner link rotation. Dedicated current-main worktree7e7a5a7; no shared/hosted database mutation or release authorized for this new visual slice.
+
+## Reviewed native invitation sender flow ·22 October2026 /15272
+
+Paper V15 p-B-0 is the sender UI source, including15235/15241 reductions.
+InviteLinkPanel composes native Material, TextButton.icon and FilledButton.icon;
+personal/group pages reuse it without hero art or helper copy. Existing Blab
+selection rows compose native ListTile with a plain check, and selection count
+includes1. Reset uses PopupMenuButton and AlertDialog, preserves reusable-link
+and named-invitation authority. Copy writes the full HTTPS URL; sharing invokes
+the platform sheet directly. Create group navigates to its chat; invitations
+remain optional. The friend picker scrolls as one body while Send remains fixed
+so320px/200% translations remain usable. Recipient screens/learning policy unchanged.
+Candidate is isolated, based on current main d983a6a; review precedes integration.
+
+Sender correction15313: production group route and GroupInfoScreen now instantiate
+GroupInviteLinkScreen directly. GroupInviteScreen remains unreachable from app
+entry points; earlier candidate picker/backend source is preserved, not a new
+release requirement. Preserve already-issued invitation/recipient compatibility.
+
+Reset confirmations reuse BlabConfirmationDialog with explicit chatSurface and
+the existing rounded28 border variant, avoiding the pink default without changing
+other dialogs. Optional scrollable flag defaultsfalse; only these callers optin.
+
+
+## Approved Paper V16 invitation picker ·15498 ·22 October2026
+
+Supersedes direct-link correction15313 and all later exploratory sender references.
+Paper p-C-0 states6FT-0/6GW-0/6IL-0/6JM-0 are canonical. Group details Invite
+friends and /group/:id/invite restore the existing Blab-friend picker. No global
+user discovery. Top-right Search replaces the title with a366x56px neutral
+#EEE8DF radius28 field,12px inset, native Back and Clear inside48px targets;
+gray Search friends placeholder, no username/phone lookup. Preserve selections
+through filtering/Clear/Back and external-link navigation. Invite outside Blab /
+Share a link stays above people. No section/footer dividers or Friends on Blab
+heading; list64px rows,8px gaps; pinned52px Send invite / Send invites(count).
+0 disables Send; private invitations never auto-join. Search/keyboard Back
+consumes search before leaving the picker; leaving hides keyboard. Localization
+uses Interface Language only; no learning-language/translation pipeline changes.
+Implementation authorized, actual native visual/journey acceptance still pending.
+No merge/main integration, hosted migration or release authorization.
+
+
+## Integration authorization · 22 October 2026 ·15553
+Nastia reviewed the actual Android packet15539–15543 and explicitly requested
+“check for conflicts, commit and merge to main”. This supersedes the pending
+visual/integration authorization above for this invitation slice only. No hosted
+migration, service deployment, update notice or tester distribution is authorized.
+Fetched origin/main617639c equals the reviewed candidate base: no textual merge
+conflict or intervening main changes. All reviewed source hashes match the final
+V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
+only final V16 native acceptance and its QA entry are promoted. Manual physical
+phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.

@@ -56,19 +56,19 @@ class ChatsScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
-            leading: const Icon(Icons.group_outlined),
-            title: Text(context.l10n.newGroup),
-            onTap: () {
-              Navigator.pop(sheetContext);
-              context.push('/groups/new');
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.person_add_alt_1_outlined),
             title: Text(context.l10n.inviteFriend),
             onTap: () {
               Navigator.pop(sheetContext);
               context.push('/chats/new');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.group_outlined),
+            title: Text(context.l10n.newGroup),
+            onTap: () {
+              Navigator.pop(sheetContext);
+              context.push('/groups/new');
             },
           ),
         ],

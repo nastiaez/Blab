@@ -242,3 +242,20 @@ Owner requests Leave in Safety and confirmed swipe Delete on Android/iOS. Leave 
 Owner13674 approves the delivered native visuals/workflow (screens13665–13671, motion13672). Continue clean backend checks, integration and the previously requested Android/iOS launch. Owner manual-device tracker remains unchecked; screenshot approval is not a physical-device test.
 
 Lifecycle sourcec02857f integrated and both clean CI runs pass. Integrated Android and live browser/Android pair pass; signed Android28→29 reconstructed preference retention passes per package. Test29 delivered to existing Firebase9 and TestFlight groups, Apple review approved; download-back Android hash matches. Owner13688 approved production: migration04 and stream-channel deployed/verified, public Android29 distributed to existing2 testers with matching readback, public iPhone29 in existing Owner testing group and IN_BETA_TESTING. Owner manual tracker remains unchecked. Evidence:docs/qa/2026-10-16-chat-lifecycle.
+
+
+### Group invitations inside Blab ·15062 ·in progress
+
+Owner reports group invitations require another chat app and link replacement is visually misplaced. Build private recipient picker/inbox using existing accepted1:1 connections; secondary external-link page and owner-only confirmed replacement. Current-main dedicated worktree, actual Android screenshots/owner acceptance pending. No merge/release authorized for unseen implementation.
+
+
+## Integration authorization · 22 October 2026 ·15553
+Nastia reviewed the actual Android packet15539–15543 and explicitly requested
+“check for conflicts, commit and merge to main”. This supersedes the pending
+visual/integration authorization above for this invitation slice only. No hosted
+migration, service deployment, update notice or tester distribution is authorized.
+Fetched origin/main617639c equals the reviewed candidate base: no textual merge
+conflict or intervening main changes. All reviewed source hashes match the final
+V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
+only final V16 native acceptance and its QA entry are promoted. Manual physical
+phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.

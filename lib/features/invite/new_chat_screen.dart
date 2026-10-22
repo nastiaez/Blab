@@ -1,3 +1,4 @@
+import '../../shared/widgets/surfaces/blab_confirmation_dialog.dart';
 import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,8 @@ import 'prepared_invite_state.dart';
 import '../../shared/state/connectivity_state.dart';
 import '../../shared/widgets/offline_banner.dart';
 import 'invite_error_actions.dart';
-import 'invite_link_card.dart';
+import 'invite_link_panel.dart';
+import 'package:flutter/services.dart';
 
 /// A single-purpose invite screen. Links create a connection only; practice
 /// language is chosen privately when the resulting chat is opened.
@@ -54,29 +56,57 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
     }
   }
 
+  Future<void> _resetLink() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => BlabConfirmationDialog(
+        scrollable: true,
+        backgroundColor: BlabColors.chatSurface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(28)),
+          side: BorderSide(color: BlabColors.chatDivider),
+        ),
+        title: Text(context.l10n.inviteResetTitle),
+        content: Text(context.l10n.personalInviteResetBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: BlabColors.warmInk),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.inviteResetAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await ref.read(preparedInviteProvider.notifier).regenerate();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final online = ref.watch(isOnlineProvider);
     final invite = ref.watch(preparedInviteProvider);
     final link = invite.token == null
         ? null
-        : AppChannel.inviteUrl(invite.token!).replaceFirst('https://', '');
-    final createFailure = splitInviteRecoveryMessage(
-      context.l10n.couldNotCreateInvite,
-      context.l10n.retry,
-    );
+        : AppChannel.inviteUrl(invite.token!);
     final enabled =
         online &&
         !invite.loading &&
         !_sharing &&
         !invite.failed &&
         link != null;
+    final failure = splitInviteRecoveryMessage(
+      context.l10n.couldNotCreateInvite,
+      context.l10n.retry,
+    );
     return Scaffold(
       backgroundColor: BlabColors.chatCanvas,
       appBar: BlabAppBar(
         backgroundColor: BlabColors.chatCanvas,
-        elevation: 0,
-        scrolledUnderElevation: 0,
         title: Text(
           context.l10n.inviteFriend,
           style: const TextStyle(
@@ -85,103 +115,76 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: context.l10n.chatMenu,
+            enabled: enabled,
+            onSelected: (_) => _resetLink(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'reset',
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh, size: 20),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(context.l10n.inviteResetAction)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
           const OfflineBanner(),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  InviteLinkCard(link: link, loading: invite.loading),
-                  if (!invite.failed)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        context.l10n.reusableInviteHelp,
-                        style: const TextStyle(
-                          color: BlabColors.warmMuted,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  if (invite.token != null)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: online && !invite.loading && !_sharing
-                            ? () => ref
-                                  .read(preparedInviteProvider.notifier)
-                                  .regenerate()
-                            : null,
-                        child: Text(context.l10n.regenerateInvite),
-                      ),
-                    ),
-                  if (online && invite.failed) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
+            child: InviteLinkPanel(
+              title: context.l10n.inviteCardTitle,
+              link: link,
+              loading: invite.loading,
+              sharing: _sharing,
+              onShare: enabled ? _sendInvite : null,
+              onCopy: enabled
+                  ? () async {
+                      await Clipboard.setData(ClipboardData(text: link));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(context.l10n.copied)),
+                      );
+                    }
+                  : null,
+              recovery: online && invite.failed
+                  ? Wrap(
                       key: const ValueKey('invite-create-recovery'),
                       spacing: 4,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
-                          createFailure.message,
+                          failure.message,
                           style: const TextStyle(
                             color: BlabColors.warmMuted,
                             fontSize: 13,
                           ),
                         ),
                         InviteTextAction(
-                          label: createFailure.action,
+                          label: failure.action,
                           edgeAligned: true,
                           onPressed: () => ref
                               .read(preparedInviteProvider.notifier)
                               .prepare(),
                         ),
                       ],
-                    ),
-                  ],
-                  if (_shareFailed)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        context.l10n.couldNotOpenSharing,
-                        style: const TextStyle(
-                          color: BlabColors.error,
-                          fontSize: 13,
-                        ),
+                    )
+                  : _shareFailed
+                  ? Text(
+                      context.l10n.couldNotOpenSharing,
+                      style: const TextStyle(
+                        color: BlabColors.error,
+                        fontSize: 13,
                       ),
-                    ),
-                  const Spacer(),
-                  if (!invite.failed)
-                    SizedBox(
-                      height: 52,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: BlabColors.brand,
-                          disabledBackgroundColor: BlabColors.disabledSurface,
-                          foregroundColor: BlabColors.warmInk,
-                          disabledForegroundColor: BlabColors.disabledOnSurface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: enabled ? _sendInvite : null,
-                        child: Text(
-                          _sharing
-                              ? context.l10n.openingShareSheet
-                              : context.l10n.sendInvite,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
           ),
         ],

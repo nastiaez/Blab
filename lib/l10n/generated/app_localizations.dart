@@ -1755,7 +1755,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteCardTitle.
   ///
   /// In en, this message translates to:
-  /// **'Let\'s chat on Blab'**
+  /// **'Let’s chat on Blab'**
   String get inviteCardTitle;
 
   /// No description provided for @inviteLinkUnavailable.
@@ -2933,6 +2933,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This removes the group chat and its history for you only. A new message will bring the group back.'**
   String get deleteGroupConfirmation;
+
+  /// No description provided for @groupInviteLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get groupInviteLinkTitle;
+
+  /// No description provided for @groupShareLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Share invite link'**
+  String get groupShareLink;
+
+  /// No description provided for @groupReplaceLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace invite link?'**
+  String get groupReplaceLinkTitle;
+
+  /// No description provided for @groupReplaceLinkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The old shared link will stop working. Invitations already sent in Blab stay valid.'**
+  String get groupReplaceLinkBody;
+
+  /// No description provided for @groupSearchFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'Search friends'**
+  String get groupSearchFriends;
+
+  /// No description provided for @groupFriendsOnBlab.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends on Blab'**
+  String get groupFriendsOnBlab;
+
+  /// No description provided for @groupNoFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'No other Blab friends to invite. You can still share an invite link.'**
+  String get groupNoFriends;
+
+  /// No description provided for @groupNoMatchingFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'No friends match your search.'**
+  String get groupNoMatchingFriends;
+
+  /// No description provided for @groupFriendInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Invited'**
+  String get groupFriendInvited;
+
+  /// No description provided for @groupInvitationsSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations sent.'**
+  String get groupInvitationsSent;
+
+  /// No description provided for @groupInvitationsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t send the invitations. Try again.'**
+  String get groupInvitationsFailed;
+
+  /// No description provided for @groupSendInvites.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Send invite ({count})} other{Send invites ({count})}}'**
+  String groupSendInvites(int count);
+
+  /// No description provided for @inviteShareLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link'**
+  String get inviteShareLink;
+
+  /// No description provided for @inviteViaLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite via link'**
+  String get inviteViaLink;
+
+  /// No description provided for @inviteOutsideBlab.
+  ///
+  /// In en, this message translates to:
+  /// **'For people outside Blab'**
+  String get inviteOutsideBlab;
+
+  /// No description provided for @inviteResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset invite link?'**
+  String get inviteResetTitle;
+
+  /// No description provided for @inviteResetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset link'**
+  String get inviteResetAction;
+
+  /// No description provided for @personalInviteResetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The current link will stop working. Existing chats won’t change.'**
+  String get personalInviteResetBody;
+
+  /// No description provided for @groupInviteOutsideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite outside Blab'**
+  String get groupInviteOutsideTitle;
+
+  /// No description provided for @groupShareLinkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a link'**
+  String get groupShareLinkSubtitle;
+
+  /// No description provided for @groupClearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get groupClearSearch;
 }
 
 class _AppLocalizationsDelegate

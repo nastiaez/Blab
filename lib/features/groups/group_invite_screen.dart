@@ -1,8 +1,10 @@
+import '../../shared/widgets/surfaces/blab_confirmation_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+export 'group_invite_friends_screen.dart' show GroupInviteScreen;
 import '../../l10n/l10n.dart';
 import '../../shared/data/app_channel.dart';
 import '../../shared/services/chat_service.dart';
@@ -13,14 +15,14 @@ import '../../shared/widgets/blab_avatar.dart';
 import 'package:flutter/services.dart';
 import '../invite/invite_share_service.dart';
 import '../invite/invite_continuation.dart';
-import '../invite/invite_link_card.dart';
+import '../invite/invite_link_panel.dart';
 import '../invite/request_decision_footer.dart';
 import 'pending_group_invitations.dart';
 import '../onboarding/state/onboarding_destination_state.dart';
 
 /// Owner/member share surface for an already-created BLA-14 group.
-class GroupInviteScreen extends ConsumerStatefulWidget {
-  const GroupInviteScreen({
+class GroupInviteLinkScreen extends ConsumerStatefulWidget {
+  const GroupInviteLinkScreen({
     super.key,
     required this.chatId,
     required this.initialToken,
@@ -32,13 +34,44 @@ class GroupInviteScreen extends ConsumerStatefulWidget {
   final String? groupName;
 
   @override
-  ConsumerState<GroupInviteScreen> createState() => _GroupInviteScreenState();
+  ConsumerState<GroupInviteLinkScreen> createState() =>
+      _GroupInviteLinkScreenState();
 }
 
-class _GroupInviteScreenState extends ConsumerState<GroupInviteScreen> {
+class _GroupInviteLinkScreenState extends ConsumerState<GroupInviteLinkScreen> {
   late Future<InviteToken> _token = _loadToken();
   bool _sharing = false;
   bool _regenerating = false;
+  bool _shareFailed = false;
+
+  Future<void> _confirmRegenerate() async {
+    if (_regenerating) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => BlabConfirmationDialog(
+        scrollable: true,
+        backgroundColor: BlabColors.chatSurface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(28)),
+          side: BorderSide(color: BlabColors.chatDivider),
+        ),
+        title: Text(context.l10n.inviteResetTitle),
+        content: Text(context.l10n.groupReplaceLinkBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: BlabColors.warmInk),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.inviteResetAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await _regenerate();
+  }
 
   Future<void> _regenerate() async {
     if (_regenerating) return;
@@ -60,16 +93,19 @@ class _GroupInviteScreenState extends ConsumerState<GroupInviteScreen> {
   }
 
   Future<InviteToken> _loadToken() async {
-    final existing = widget.initialToken;
-    if (existing != null && existing.isNotEmpty) return InviteToken(existing);
     return ref.read(chatServiceProvider).createGroupInvite(widget.chatId);
   }
 
   Future<void> _share(InviteToken token) async {
     if (_sharing) return;
-    setState(() => _sharing = true);
+    setState(() {
+      _sharing = true;
+      _shareFailed = false;
+    });
     try {
       await shareInviteText(AppChannel.inviteUrl(token.token));
+    } catch (_) {
+      if (mounted) setState(() => _shareFailed = true);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -80,20 +116,54 @@ class _GroupInviteScreenState extends ConsumerState<GroupInviteScreen> {
     backgroundColor: BlabColors.chatCanvas,
     appBar: BlabAppBar(
       title: Text(
-        context.l10n.inviteFriends,
+        context.l10n.groupInviteLinkTitle,
         style: const TextStyle(
           fontSize: 17,
           fontWeight: FontWeight.w700,
           color: BlabColors.warmInk,
         ),
       ),
+      actions: [
+        if (ref
+                .watch(chatListProvider)
+                .value
+                ?.any(
+                  (c) =>
+                      c.id == widget.chatId &&
+                      c.ownerId == ref.watch(currentUserIdProvider),
+                ) ??
+            false)
+          PopupMenuButton<String>(
+            tooltip: context.l10n.chatMenu,
+            onSelected: (_) => _confirmRegenerate(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'replace',
+                key: const ValueKey('regenerate-group-invite'),
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh, size: 20),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(context.l10n.inviteResetAction)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+      ],
       backgroundColor: BlabColors.chatCanvas,
     ),
     body: FutureBuilder<InviteToken>(
       future: _token,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text(context.l10n.couldNotOpenGroupInvite));
+          return Center(
+            child: TextButton.icon(
+              onPressed: () => setState(() => _token = _loadToken()),
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.retry),
+            ),
+          );
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -107,74 +177,29 @@ class _GroupInviteScreenState extends ConsumerState<GroupInviteScreen> {
                 ?.where((chat) => chat.id == widget.chatId)
                 .firstOrNull
                 ?.partnerName;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              InviteLinkCard(
-                title: context.l10n.groupInvitation,
-                link: link.replaceFirst('https://', ''),
-                loading: _regenerating,
-                onCopy: () async {
-                  if (_regenerating) return;
+        return InviteLinkPanel(
+          title: groupName ?? context.l10n.groupInvitation,
+          link: link,
+          loading: _regenerating,
+          sharing: _sharing,
+          onCopy: _regenerating || _sharing
+              ? null
+              : () async {
                   await Clipboard.setData(ClipboardData(text: link));
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(SnackBar(content: Text(context.l10n.copied)));
                 },
-              ),
-              const SizedBox(height: 16),
-              if (ref
-                      .watch(chatListProvider)
-                      .asData
-                      ?.value
-                      .any(
-                        (chat) =>
-                            chat.id == widget.chatId &&
-                            chat.ownerId == ref.watch(currentUserIdProvider),
-                      ) ??
-                  false)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    key: const ValueKey('regenerate-group-invite'),
-                    onPressed: _regenerating ? null : _regenerate,
-                    child: Text(context.l10n.regenerateInvite),
-                  ),
-                ),
-              Text(
-                groupName == null
-                    ? ''
-                    : context.l10n.anyoneCanJoinGroup(groupName),
-                style: const TextStyle(
-                  color: BlabColors.warmMuted,
-                  fontSize: 13,
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                height: 52,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  key: const ValueKey('share-group-invite-button'),
-                  onPressed: _sharing || _regenerating
-                      ? null
-                      : () => _share(snapshot.data!),
-                  child: Text(context.l10n.sendInvite),
-                ),
-              ),
-            ],
-          ),
+          onShare: _sharing || _regenerating
+              ? null
+              : () => _share(snapshot.data!),
+          recovery: _shareFailed
+              ? Text(
+                  context.l10n.couldNotOpenSharing,
+                  style: const TextStyle(color: BlabColors.error, fontSize: 13),
+                )
+              : null,
         );
       },
     ),

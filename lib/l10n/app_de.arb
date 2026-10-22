@@ -582,5 +582,33 @@
     }
   },
   "deleteGroupQuestion": "Gruppe löschen?",
-  "deleteGroupConfirmation": "Dadurch werden der Gruppenchat und sein Verlauf nur für dich entfernt. Bei einer neuen Nachricht erscheint die Gruppe wieder."
+  "deleteGroupConfirmation": "Dadurch werden der Gruppenchat und sein Verlauf nur für dich entfernt. Bei einer neuen Nachricht erscheint die Gruppe wieder.",
+  "groupInviteLinkTitle": "Einladungslink",
+  "groupShareLink": "Einladungslink teilen",
+  "groupReplaceLinkTitle": "Einladungslink ersetzen?",
+  "groupReplaceLinkBody": "Der alte geteilte Link funktioniert danach nicht mehr. Bereits in Blab gesendete Einladungen bleiben gültig.",
+  "groupSearchFriends": "Freunde suchen",
+  "groupFriendsOnBlab": "Freunde auf Blab",
+  "groupNoFriends": "Keine weiteren Blab-Freunde zum Einladen. Du kannst weiterhin einen Einladungslink teilen.",
+  "groupNoMatchingFriends": "Keine Freunde für diese Suche.",
+  "groupFriendInvited": "Eingeladen",
+  "groupInvitationsSent": "Einladungen gesendet.",
+  "groupInvitationsFailed": "Die Einladungen konnten nicht gesendet werden. Versuche es erneut.",
+  "groupSendInvites": "{count, plural, one{Einladung senden ({count})} other{Einladungen senden ({count})}}",
+  "@groupSendInvites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteShareLink": "Link teilen",
+  "inviteViaLink": "Per Link einladen",
+  "inviteOutsideBlab": "Für Personen außerhalb von Blab",
+  "inviteResetTitle": "Einladungslink zurücksetzen?",
+  "inviteResetAction": "Link zurücksetzen",
+  "personalInviteResetBody": "Der aktuelle Link funktioniert danach nicht mehr. Bestehende Chats bleiben unverändert.",
+  "groupInviteOutsideTitle": "Außerhalb von Blab einladen",
+  "groupShareLinkSubtitle": "Link teilen",
+  "groupClearSearch": "Suche löschen"
 }

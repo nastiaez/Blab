@@ -15,12 +15,15 @@ class BlabSelectionRow extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.trailing,
+    this.leading,
+    this.subtitle,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final Widget? leading, subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -32,18 +35,23 @@ class BlabSelectionRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
           onTap: onTap,
+          leading: leading,
+          subtitle: subtitle,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          minTileHeight: 48,
+          minTileHeight: leading == null ? 48 : 64,
           minVerticalPadding: 0,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+          horizontalTitleGap: leading == null ? null : 14,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: leading == null ? 16 : 12,
+          ),
           title: Text(
             label,
             style: TextStyle(
               fontSize: 15,
               height: 1.2,
-              letterSpacing: 0.25,
+              letterSpacing: leading == null ? 0.25 : 0,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
               color: BlabColors.bubbleInk,
             ),

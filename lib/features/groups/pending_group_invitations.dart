@@ -8,9 +8,19 @@ import '../../shared/models/chat.dart';
 import '../../shared/data/languages.dart';
 import '../chats/widgets/chat_list_tile.dart';
 
+final groupInvitationChangesProvider = StreamProvider<int>((ref) {
+  if (ref.watch(currentUserIdProvider) == null) return const Stream.empty();
+  var revision = 0;
+  return ref
+      .watch(chatServiceProvider)
+      .watchGroupInvitationChanges()
+      .map((_) => ++revision);
+});
+
 final pendingGroupInvitationsProvider =
     FutureProvider<List<PendingGroupInvitation>>((ref) async {
       if (ref.watch(currentUserIdProvider) == null) return [];
+      ref.watch(groupInvitationChangesProvider);
       return ref.watch(chatServiceProvider).fetchPendingGroupInvitations();
     });
 

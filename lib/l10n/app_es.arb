@@ -582,5 +582,33 @@
     }
   },
   "deleteGroupQuestion": "¿Eliminar grupo?",
-  "deleteGroupConfirmation": "Esto elimina el chat del grupo y su historial solo para ti. Un mensaje nuevo hará que el grupo vuelva a aparecer."
+  "deleteGroupConfirmation": "Esto elimina el chat del grupo y su historial solo para ti. Un mensaje nuevo hará que el grupo vuelva a aparecer.",
+  "groupInviteLinkTitle": "Enlace de invitación",
+  "groupShareLink": "Compartir enlace de invitación",
+  "groupReplaceLinkTitle": "¿Reemplazar el enlace?",
+  "groupReplaceLinkBody": "El enlace compartido anterior dejará de funcionar. Las invitaciones ya enviadas en Blab seguirán siendo válidas.",
+  "groupSearchFriends": "Buscar amigos",
+  "groupFriendsOnBlab": "Amigos en Blab",
+  "groupNoFriends": "No hay más amigos de Blab a quienes invitar. También puedes compartir un enlace.",
+  "groupNoMatchingFriends": "No hay amigos que coincidan con tu búsqueda.",
+  "groupFriendInvited": "Invitado",
+  "groupInvitationsSent": "Invitaciones enviadas.",
+  "groupInvitationsFailed": "No se pudieron enviar las invitaciones. Inténtalo de nuevo.",
+  "groupSendInvites": "{count, plural, one{Enviar invitación ({count})} other{Enviar invitaciones ({count})}}",
+  "@groupSendInvites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteShareLink": "Compartir enlace",
+  "inviteViaLink": "Invitar mediante enlace",
+  "inviteOutsideBlab": "Para personas fuera de Blab",
+  "inviteResetTitle": "¿Restablecer el enlace?",
+  "inviteResetAction": "Restablecer enlace",
+  "personalInviteResetBody": "El enlace actual dejará de funcionar. Los chats existentes no cambiarán.",
+  "groupInviteOutsideTitle": "Invitar fuera de Blab",
+  "groupShareLinkSubtitle": "Compartir un enlace",
+  "groupClearSearch": "Borrar búsqueda"
 }

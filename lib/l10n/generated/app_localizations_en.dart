@@ -916,7 +916,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newLabel => 'New';
 
   @override
-  String get inviteCardTitle => 'Let\'s chat on Blab';
+  String get inviteCardTitle => 'Let’s chat on Blab';
 
   @override
   String get inviteLinkUnavailable => 'Invite link unavailable';
@@ -1626,4 +1626,79 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteGroupConfirmation =>
       'This removes the group chat and its history for you only. A new message will bring the group back.';
+
+  @override
+  String get groupInviteLinkTitle => 'Invite link';
+
+  @override
+  String get groupShareLink => 'Share invite link';
+
+  @override
+  String get groupReplaceLinkTitle => 'Replace invite link?';
+
+  @override
+  String get groupReplaceLinkBody =>
+      'The old shared link will stop working. Invitations already sent in Blab stay valid.';
+
+  @override
+  String get groupSearchFriends => 'Search friends';
+
+  @override
+  String get groupFriendsOnBlab => 'Friends on Blab';
+
+  @override
+  String get groupNoFriends =>
+      'No other Blab friends to invite. You can still share an invite link.';
+
+  @override
+  String get groupNoMatchingFriends => 'No friends match your search.';
+
+  @override
+  String get groupFriendInvited => 'Invited';
+
+  @override
+  String get groupInvitationsSent => 'Invitations sent.';
+
+  @override
+  String get groupInvitationsFailed =>
+      'Couldn’t send the invitations. Try again.';
+
+  @override
+  String groupSendInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Send invites ($count)',
+      one: 'Send invite ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inviteShareLink => 'Share link';
+
+  @override
+  String get inviteViaLink => 'Invite via link';
+
+  @override
+  String get inviteOutsideBlab => 'For people outside Blab';
+
+  @override
+  String get inviteResetTitle => 'Reset invite link?';
+
+  @override
+  String get inviteResetAction => 'Reset link';
+
+  @override
+  String get personalInviteResetBody =>
+      'The current link will stop working. Existing chats won’t change.';
+
+  @override
+  String get groupInviteOutsideTitle => 'Invite outside Blab';
+
+  @override
+  String get groupShareLinkSubtitle => 'Share a link';
+
+  @override
+  String get groupClearSearch => 'Clear search';
 }

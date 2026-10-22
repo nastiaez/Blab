@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:blab/app/theme.dart';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/features/groups/group_info_screen.dart';
+import 'package:blab/features/groups/group_invite_screen.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/chat.dart';
@@ -100,6 +101,9 @@ class _Groups implements ChatService {
     memberCount: count,
   );
   @override
+  Future<InviteToken> createGroupInvite(String id) async =>
+      InviteToken('group-link-direct');
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -152,6 +156,29 @@ void main() {
     await tester.pumpAndSettle();
     return groups;
   }
+
+  testWidgets(
+    'Invite friends opens people picker, with separate external sharing',
+    (tester) async {
+      await mount(tester);
+      await tester.ensureVisible(find.text('Invite friends'));
+      await tester.tap(find.text('Invite friends'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GroupInviteScreen), findsOneWidget);
+      expect(find.byType(GroupInviteLinkScreen), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('group-external-invite')));
+      await tester.pumpAndSettle();
+      expect(find.text('Copy link'), findsOneWidget);
+      expect(find.text('Share link'), findsOneWidget);
+      expect(find.byKey(const ValueKey('group-friend-search')), findsNothing);
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GroupInviteScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GroupInfoScreen), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'empty shared media hides; first photo reveals it; removing the last hides it',

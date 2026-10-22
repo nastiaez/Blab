@@ -42,7 +42,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       final chatId = await service.createGroup(name);
       ref.invalidate(chatListProvider);
       if (!mounted) return;
-      context.push('/group/$chatId/invite');
+      context.go('/chat/$chatId');
     } catch (_) {
       if (mounted) setState(() => _error = context.l10n.couldNotCreateGroup);
     } finally {

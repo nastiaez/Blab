@@ -67,15 +67,23 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async => true);
     for (var i = 0; i < 3; i++) {
-      await tester.tap(find.text('Send invite'));
+      await tester.tap(find.text('Share link'));
       await tester.pumpAndSettle();
     }
     expect(service.calls, 1);
-    expect(find.text('loveblab.com/i/token1'), findsOneWidget);
-    await tester.tap(find.text('Regenerate link'));
+    expect(find.textContaining('token1'), findsOneWidget);
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset link'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<AlertDialog>(find.byType(AlertDialog)).backgroundColor,
+      BlabColors.chatSurface,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Reset link'));
     await tester.pumpAndSettle();
     expect(service.calls, 2);
-    expect(find.text('loveblab.com/i/token2'), findsOneWidget);
+    expect(find.textContaining('token2'), findsOneWidget);
   });
 
   testWidgets(
@@ -83,13 +91,24 @@ void main() {
     (tester) async {
       final service = FakeInvites(failOnCalls: {2});
       await openOnlineInvite(tester, service);
-      await tester.tap(find.text('Regenerate link'));
+      await tester.tap(find.byType(PopupMenuButton<String>));
       await tester.pumpAndSettle();
-      expect(find.text('Send invite'), findsNothing);
+      await tester.tap(find.text('Reset link'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Reset link'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('share-invite-link')),
+            )
+            .onPressed,
+        isNull,
+      );
       expect(find.text("Couldn't create invite."), findsOneWidget);
       await tester.tap(find.text('Try again.'));
       await tester.pumpAndSettle();
-      expect(find.text('Send invite'), findsOneWidget);
+      expect(find.text('Share link'), findsOneWidget);
     },
   );
 
@@ -100,64 +119,38 @@ void main() {
     await openOnlineInvite(tester, service);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async => false);
-    await tester.tap(find.text('Send invite'));
+    await tester.tap(find.text('Share link'));
     await tester.pumpAndSettle();
     expect(service.calls, 1);
-    expect(find.text('loveblab.com/i/token1'), findsOneWidget);
+    expect(find.textContaining('token1'), findsOneWidget);
     expect(find.text('Invite a friend'), findsOneWidget);
   });
 
-  testWidgets('invite helper aligns with the link card', (tester) async {
-    await openOnlineInvite(tester, FakeInvites());
-
-    final card = find.byType(DecoratedBox).first;
-    final helper = find.text(
-      'Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.',
+  testWidgets('copy writes a full link and does not rotate it', (tester) async {
+    final service = FakeInvites();
+    await openOnlineInvite(tester, service);
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
     );
-    expect(tester.getTopLeft(helper).dx, tester.getTopLeft(card).dx);
-  });
-
-  testWidgets('invite card and CTA use the approved warm palette', (
-    tester,
-  ) async {
-    await openOnlineInvite(tester, FakeInvites());
-
-    final title = find.text("Let's chat on Blab");
-    final card = tester.widget<Container>(
-      find.ancestor(of: title, matching: find.byType(Container)).first,
-    );
-    final decoration = card.decoration! as BoxDecoration;
-    final border = decoration.border! as Border;
-    final button = tester.widget<FilledButton>(find.byType(FilledButton));
-
-    expect(decoration.color, BlabColors.chatSurface);
-    expect(border.top.color, BlabColors.chatDivider);
-    expect(
-      button.style!.backgroundColor!.resolve(<WidgetState>{}),
-      BlabColors.brand,
-    );
-    expect(
-      button.style!.foregroundColor!.resolve(<WidgetState>{}),
-      BlabColors.warmInk,
-    );
-  });
-
-  testWidgets('invite creator localizes the complete visible flow', (
-    tester,
-  ) async {
-    await openOnlineInvite(tester, FakeInvites(), locale: const Locale('uk'));
-
-    expect(find.text('Запросити друга'), findsOneWidget);
-    expect(find.text('Спілкуймося в Blab'), findsOneWidget);
-    expect(
-      find.text(
-        'Діліться цим посиланням з будь-якою кількістю людей. Нове посилання вимкне старе, але наявні чати залишаться.',
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
       ),
-      findsOneWidget,
     );
-    expect(find.text('Надіслати запрошення'), findsOneWidget);
-    expect(find.text('Invite a friend'), findsNothing);
-    expect(find.text('Let’s chat on Blab'), findsNothing);
+    await tester.tap(find.text('Copy link'));
+    await tester.pumpAndSettle();
+    expect(copied, 'https://loveblab.com/i/token1');
+    expect(service.calls, 1);
+    expect(find.text('Copied'), findsOneWidget);
+    expect(find.text('Your personal invite'), findsNothing);
   });
 
   for (final locale in AppLocalizations.supportedLocales) {
@@ -205,7 +198,7 @@ void main() {
           if (++attempts == 1) throw PlatformException(code: 'unavailable');
           return true;
         });
-    await tester.tap(find.text('Send invite'));
+    await tester.tap(find.text('Share link'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't open sharing. Try again."), findsOneWidget);
     expect(
@@ -215,13 +208,13 @@ void main() {
           .color,
       BlabColors.error,
     );
-    expect(find.text('loveblab.com/i/token1'), findsOneWidget);
-    await tester.tap(find.text('Send invite'));
+    expect(find.textContaining('token1'), findsOneWidget);
+    await tester.tap(find.text('Share link'));
     await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(service.calls, 1);
     expect(find.text("Couldn't open sharing. Try again."), findsNothing);
-    expect(find.text('loveblab.com/i/token1'), findsOneWidget);
+    expect(find.textContaining('token1'), findsOneWidget);
   });
 
   testWidgets('offline invite does not request a link or show a second error', (

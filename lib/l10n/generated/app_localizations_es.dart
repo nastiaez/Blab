@@ -1646,4 +1646,80 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get deleteGroupConfirmation =>
       'Esto elimina el chat del grupo y su historial solo para ti. Un mensaje nuevo hará que el grupo vuelva a aparecer.';
+
+  @override
+  String get groupInviteLinkTitle => 'Enlace de invitación';
+
+  @override
+  String get groupShareLink => 'Compartir enlace de invitación';
+
+  @override
+  String get groupReplaceLinkTitle => '¿Reemplazar el enlace?';
+
+  @override
+  String get groupReplaceLinkBody =>
+      'El enlace compartido anterior dejará de funcionar. Las invitaciones ya enviadas en Blab seguirán siendo válidas.';
+
+  @override
+  String get groupSearchFriends => 'Buscar amigos';
+
+  @override
+  String get groupFriendsOnBlab => 'Amigos en Blab';
+
+  @override
+  String get groupNoFriends =>
+      'No hay más amigos de Blab a quienes invitar. También puedes compartir un enlace.';
+
+  @override
+  String get groupNoMatchingFriends =>
+      'No hay amigos que coincidan con tu búsqueda.';
+
+  @override
+  String get groupFriendInvited => 'Invitado';
+
+  @override
+  String get groupInvitationsSent => 'Invitaciones enviadas.';
+
+  @override
+  String get groupInvitationsFailed =>
+      'No se pudieron enviar las invitaciones. Inténtalo de nuevo.';
+
+  @override
+  String groupSendInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Enviar invitaciones ($count)',
+      one: 'Enviar invitación ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inviteShareLink => 'Compartir enlace';
+
+  @override
+  String get inviteViaLink => 'Invitar mediante enlace';
+
+  @override
+  String get inviteOutsideBlab => 'Para personas fuera de Blab';
+
+  @override
+  String get inviteResetTitle => '¿Restablecer el enlace?';
+
+  @override
+  String get inviteResetAction => 'Restablecer enlace';
+
+  @override
+  String get personalInviteResetBody =>
+      'El enlace actual dejará de funcionar. Los chats existentes no cambiarán.';
+
+  @override
+  String get groupInviteOutsideTitle => 'Invitar fuera de Blab';
+
+  @override
+  String get groupShareLinkSubtitle => 'Compartir un enlace';
+
+  @override
+  String get groupClearSearch => 'Borrar búsqueda';
 }

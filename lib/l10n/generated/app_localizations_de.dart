@@ -1653,4 +1653,79 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get deleteGroupConfirmation =>
       'Dadurch werden der Gruppenchat und sein Verlauf nur für dich entfernt. Bei einer neuen Nachricht erscheint die Gruppe wieder.';
+
+  @override
+  String get groupInviteLinkTitle => 'Einladungslink';
+
+  @override
+  String get groupShareLink => 'Einladungslink teilen';
+
+  @override
+  String get groupReplaceLinkTitle => 'Einladungslink ersetzen?';
+
+  @override
+  String get groupReplaceLinkBody =>
+      'Der alte geteilte Link funktioniert danach nicht mehr. Bereits in Blab gesendete Einladungen bleiben gültig.';
+
+  @override
+  String get groupSearchFriends => 'Freunde suchen';
+
+  @override
+  String get groupFriendsOnBlab => 'Freunde auf Blab';
+
+  @override
+  String get groupNoFriends =>
+      'Keine weiteren Blab-Freunde zum Einladen. Du kannst weiterhin einen Einladungslink teilen.';
+
+  @override
+  String get groupNoMatchingFriends => 'Keine Freunde für diese Suche.';
+
+  @override
+  String get groupFriendInvited => 'Eingeladen';
+
+  @override
+  String get groupInvitationsSent => 'Einladungen gesendet.';
+
+  @override
+  String get groupInvitationsFailed =>
+      'Die Einladungen konnten nicht gesendet werden. Versuche es erneut.';
+
+  @override
+  String groupSendInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Einladungen senden ($count)',
+      one: 'Einladung senden ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inviteShareLink => 'Link teilen';
+
+  @override
+  String get inviteViaLink => 'Per Link einladen';
+
+  @override
+  String get inviteOutsideBlab => 'Für Personen außerhalb von Blab';
+
+  @override
+  String get inviteResetTitle => 'Einladungslink zurücksetzen?';
+
+  @override
+  String get inviteResetAction => 'Link zurücksetzen';
+
+  @override
+  String get personalInviteResetBody =>
+      'Der aktuelle Link funktioniert danach nicht mehr. Bestehende Chats bleiben unverändert.';
+
+  @override
+  String get groupInviteOutsideTitle => 'Außerhalb von Blab einladen';
+
+  @override
+  String get groupShareLinkSubtitle => 'Link teilen';
+
+  @override
+  String get groupClearSearch => 'Suche löschen';
 }

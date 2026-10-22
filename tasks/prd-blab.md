@@ -155,14 +155,14 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] Entry points are Chats + and the no-chats `Invite someone` action; there is no contacts screen, contacts permission, or language picker before this page
-- [ ] Header: `Invite a friend`; link card: `Let’s chat on Blab` + `loveblab.com/i/{token}`; helper below the card, without a bullet: `Share this link with as many people as you like. Regenerating it disables the old link, not your existing chats.`
-- [ ] Primary `Send invite` button has no icon and opens the native share sheet
+- [ ] Paper V15 (p-B-0; owner feedback15235/15241, build15272) supersedes old sender visuals: header `Invite a friend`; centered `Let’s chat on Blab`, link card with explicit `Copy link`, then native `Share link`. No hero icon/background, subtitle, or helper below Share.
+- [ ] Primary `Share link` native FilledButton.icon opens the native share sheet directly; no intermediate custom sharing menu
 - [ ] The shared text is `Let’s chat on Blab` plus the invite URL
 - [ ] Returning from Copy or another app returns to this same page, not Chats; no success page is shown
-- [ ] One personal link remains valid for unlimited distinct recipients until explicit Regenerate; sharing or Copy never rotates it. Regenerate link appears immediately below the helper and atomically revokes every previous link for this owner
+- [ ] One personal link remains valid for unlimited distinct recipients until explicit Regenerate; sharing or Copy never rotates it. Reset link lives in the overflow menu behind a native confirmation and atomically revokes every previous link for this owner
 - [ ] The first link is prepared in the background for a signed-in online user, so the first visit normally opens ready to share
-- [ ] While offline, the standard `No connection` banner is visible and `Send invite` is disabled; no special offline card or second banner is shown
-- [ ] If preparing the next link fails while online, show inline `Couldn’t prepare a new invite. · Try again` below the card and keep `Send invite` disabled until it succeeds
+- [ ] While offline, the standard `No connection` banner is visible and `Share link` is disabled; no special offline card or second banner is shown
+- [ ] If preparing the next link fails while online, show inline `Couldn’t prepare a new invite. · Try again` below the card and keep `Share link` disabled until it succeeds
 
 ---
 
@@ -1012,3 +1012,68 @@ Paper page p-7-0 artboard5A5-0 (sender-name revision14894) is the approved group
 Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
 
 Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15003. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.
+
+
+## Group in-app invitations ·15062 ·21 October2026
+
+Existing accepted1:1 connections are selectable to receive individual group invitations inside Blab. Recipients see a private invitation in Chats and explicitly Join/Reject; no automatic membership or ordinary chat/AI message. External share-link action is separate. Regeneration remains owner-only in the link page overflow menu with confirmation; named in-app invitations remain valid when the shared link changes.
+
+## Owner invitation-flow revision ·22 October2026 /15272
+
+Paper V15 p-B-0, as simplified in15235/15241, governs the built sender journey.
+Chats plus lists Invite a friend first, New group second. Creating a group needs
+only a name and opens its chat, not forced member selection. Later Invite friends
+uses search, existing highlight/plain check rows, and one Send button with selected
+count (including1); external invite links are a separate upper row. Group links
+match the personal Copy/Share layout, with group name but no avatar/member count
+or helper. Share opens the phone share sheet, not Blab Chats; in-app selection
+sends private invitations and never auto-joins a recipient. Reset remains owner-only
+for groups and preserves named invitations. Actual implementation screenshots
+still need owner review; specification approval is not merge/release approval.
+
+### Superseding sender-flow correction15313 ·22 October2026
+
+The friend-picker screen (old review screenshot2/4) is removed from the active
+group invitation journey. Group details > Invite friends and /group/:id/invite
+open the existing group-name + link + Copy link + Share link screen (3/4) directly.
+Back returns to the previous context. No search, selection or Send-invite step
+is shown. This supersedes the existing-friend-picker branch above; personal
+invites, optional invitations after creation, recipient decisions and owner-only
+reset remain unchanged. Do not infer release approval or backend removal.
+
+### Reset confirmation surface correction ·22 October2026
+
+Personal and group Reset link confirmations reuse BlabConfirmationDialog with
+BlabColors.chatSurface (the existing cream surface), not Material's pink default.
+Use the existing rounded28/hairline variant; retain native buttons, scrolling,
+current copy, cancellation and reset authority. No global dialog-theme retinting.
+
+
+## Approved Paper V16 invitation picker ·15498 ·22 October2026
+
+Supersedes direct-link correction15313 and all later exploratory sender references.
+Paper p-C-0 states6FT-0/6GW-0/6IL-0/6JM-0 are canonical. Group details Invite
+friends and /group/:id/invite restore the existing Blab-friend picker. No global
+user discovery. Top-right Search replaces the title with a366x56px neutral
+#EEE8DF radius28 field,12px inset, native Back and Clear inside48px targets;
+gray Search friends placeholder, no username/phone lookup. Preserve selections
+through filtering/Clear/Back and external-link navigation. Invite outside Blab /
+Share a link stays above people. No section/footer dividers or Friends on Blab
+heading; list64px rows,8px gaps; pinned52px Send invite / Send invites(count).
+0 disables Send; private invitations never auto-join. Search/keyboard Back
+consumes search before leaving the picker; leaving hides keyboard. Localization
+uses Interface Language only; no learning-language/translation pipeline changes.
+Implementation authorized, actual native visual/journey acceptance still pending.
+No merge/main integration, hosted migration or release authorization.
+
+
+## Integration authorization · 22 October 2026 ·15553
+Nastia reviewed the actual Android packet15539–15543 and explicitly requested
+“check for conflicts, commit and merge to main”. This supersedes the pending
+visual/integration authorization above for this invitation slice only. No hosted
+migration, service deployment, update notice or tester distribution is authorized.
+Fetched origin/main617639c equals the reviewed candidate base: no textual merge
+conflict or intervening main changes. All reviewed source hashes match the final
+V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
+only final V16 native acceptance and its QA entry are promoted. Manual physical
+phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.

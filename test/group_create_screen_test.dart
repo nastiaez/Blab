@@ -46,7 +46,7 @@ class _Groups implements ChatService {
 
   @override
   Future<InviteToken> createGroupInvite(String chatId) async =>
-      InviteToken('group-token');
+      InviteToken('test-long-group-token-abcdefghijklmnop=');
 
   @override
   Future<GroupInviteMetadata?> getGroupInvite(String token) async =>
@@ -67,6 +67,49 @@ class _Groups implements ChatService {
 }
 
 void main() {
+  for (final locale in ['en', 'de', 'es', 'uk']) {
+    testWidgets('link actions and replacement confirmation at200% $locale', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = const Size(320, 740);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserIdProvider.overrideWithValue('alice'),
+            chatServiceProvider.overrideWithValue(_Groups()),
+          ],
+          child: MaterialApp(
+            locale: Locale(locale),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: const GroupInviteLinkScreen(
+              chatId: 'group-1',
+              initialToken: null,
+              groupName: 'German learners',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(PopupMenuButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('regenerate-group-invite')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final owner in [true, false]) {
     testWidgets(
       'invite link regeneration is ${owner ? 'available to owner' : 'hidden from member'}',
@@ -82,7 +125,7 @@ void main() {
             child: MaterialApp(
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
-              home: const GroupInviteScreen(
+              home: const GroupInviteLinkScreen(
                 chatId: 'group-1',
                 initialToken: 'old-group-link',
               ),
@@ -90,10 +133,17 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        if (owner) {
+          await tester.tap(find.byType(PopupMenuButton<String>));
+          await tester.pumpAndSettle();
+        }
         final action = find.byKey(const ValueKey('regenerate-group-invite'));
         if (owner) {
           expect(action, findsOneWidget);
           await tester.tap(action);
+          await tester.pumpAndSettle();
+          expect(service.rotations, 0);
+          await tester.tap(find.widgetWithText(FilledButton, 'Reset link'));
           await tester.pumpAndSettle();
           expect(service.rotations, 1);
           expect(find.textContaining('fresh-group-link'), findsOneWidget);
@@ -144,8 +194,8 @@ void main() {
           builder: (_, _) => const CreateGroupScreen(),
         ),
         GoRoute(
-          path: '/group/:id/invite',
-          builder: (_, state) => Text('invite:${state.pathParameters['id']}'),
+          path: '/chat/:id',
+          builder: (_, state) => Text('chat:${state.pathParameters['id']}'),
         ),
       ],
     );
@@ -177,7 +227,7 @@ void main() {
     expect(service.createdName, isNull);
   });
 
-  testWidgets('creates then opens the reusable group-invite surface', (
+  testWidgets('creates then opens the group chat without forcing invitations', (
     tester,
   ) async {
     final service = await mount(tester);
@@ -190,6 +240,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(service.createdName, 'Weekend plans');
-    expect(find.text('invite:group-1'), findsOneWidget);
+    expect(find.text('chat:group-1'), findsOneWidget);
   });
 }

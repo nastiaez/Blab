@@ -4,6 +4,7 @@ class BlabConfirmationDialog extends StatelessWidget {
   const BlabConfirmationDialog({
     super.key,
     this.title,
+    this.scrollable = false,
     this.content,
     this.actions,
     this.backgroundColor,
@@ -16,6 +17,7 @@ class BlabConfirmationDialog extends StatelessWidget {
       vertical: 24,
     ),
   });
+  final bool scrollable;
   final Widget? title, content;
   final List<Widget>? actions;
   final Color? backgroundColor;
@@ -26,6 +28,7 @@ class BlabConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: title,
+    scrollable: scrollable,
     content: content,
     actions: actions,
     backgroundColor: backgroundColor,

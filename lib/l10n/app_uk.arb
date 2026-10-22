@@ -582,5 +582,33 @@
     }
   },
   "deleteGroupQuestion": "Видалити групу?",
-  "deleteGroupConfirmation": "Груповий чат та його історію буде видалено лише для тебе. Після нового повідомлення група з’явиться знову."
+  "deleteGroupConfirmation": "Груповий чат та його історію буде видалено лише для тебе. Після нового повідомлення група з’явиться знову.",
+  "groupInviteLinkTitle": "Посилання-запрошення",
+  "groupShareLink": "Поділитися посиланням",
+  "groupReplaceLinkTitle": "Замінити посилання?",
+  "groupReplaceLinkBody": "Старе посилання більше не працюватиме. Запрошення, уже надіслані в Blab, залишаться чинними.",
+  "groupSearchFriends": "Знайти друзів",
+  "groupFriendsOnBlab": "Друзі в Blab",
+  "groupNoFriends": "Немає інших друзів у Blab, яких можна запросити. Ти можеш поділитися посиланням.",
+  "groupNoMatchingFriends": "Немає друзів за цим запитом.",
+  "groupFriendInvited": "Запрошено",
+  "groupInvitationsSent": "Запрошення надіслано.",
+  "groupInvitationsFailed": "Не вдалося надіслати запрошення. Спробуй ще раз.",
+  "groupSendInvites": "{count, plural, one{Надіслати запрошення ({count})} few{Надіслати запрошення ({count})} many{Надіслати запрошення ({count})} other{Надіслати запрошення ({count})}}",
+  "@groupSendInvites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteShareLink": "Поділитися посиланням",
+  "inviteViaLink": "Запросити за посиланням",
+  "inviteOutsideBlab": "Для людей поза Blab",
+  "inviteResetTitle": "Скинути посилання-запрошення?",
+  "inviteResetAction": "Скинути посилання",
+  "personalInviteResetBody": "Поточне посилання перестане працювати. Наявні чати не зміняться.",
+  "groupInviteOutsideTitle": "Запросити поза Blab",
+  "groupShareLinkSubtitle": "Поділитися посиланням",
+  "groupClearSearch": "Очистити пошук"
 }

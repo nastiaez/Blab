@@ -407,7 +407,7 @@
   "yesterday": "Yesterday",
   "now": "Now",
   "newLabel": "New",
-  "inviteCardTitle": "Let's chat on Blab",
+  "inviteCardTitle": "Let’s chat on Blab",
   "inviteLinkUnavailable": "Invite link unavailable",
   "openingShareSheet": "Opening sharing…",
   "couldNotOpenSharing": "Couldn't open sharing. Try again.",
@@ -722,5 +722,33 @@
     }
   },
   "deleteGroupQuestion": "Delete group?",
-  "deleteGroupConfirmation": "This removes the group chat and its history for you only. A new message will bring the group back."
+  "deleteGroupConfirmation": "This removes the group chat and its history for you only. A new message will bring the group back.",
+  "groupInviteLinkTitle": "Invite link",
+  "groupShareLink": "Share invite link",
+  "groupReplaceLinkTitle": "Replace invite link?",
+  "groupReplaceLinkBody": "The old shared link will stop working. Invitations already sent in Blab stay valid.",
+  "groupSearchFriends": "Search friends",
+  "groupFriendsOnBlab": "Friends on Blab",
+  "groupNoFriends": "No other Blab friends to invite. You can still share an invite link.",
+  "groupNoMatchingFriends": "No friends match your search.",
+  "groupFriendInvited": "Invited",
+  "groupInvitationsSent": "Invitations sent.",
+  "groupInvitationsFailed": "Couldn’t send the invitations. Try again.",
+  "groupSendInvites": "{count, plural, one{Send invite ({count})} other{Send invites ({count})}}",
+  "@groupSendInvites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteShareLink": "Share link",
+  "inviteViaLink": "Invite via link",
+  "inviteOutsideBlab": "For people outside Blab",
+  "inviteResetTitle": "Reset invite link?",
+  "inviteResetAction": "Reset link",
+  "personalInviteResetBody": "The current link will stop working. Existing chats won’t change.",
+  "groupInviteOutsideTitle": "Invite outside Blab",
+  "groupShareLinkSubtitle": "Share a link",
+  "groupClearSearch": "Clear search"
 }

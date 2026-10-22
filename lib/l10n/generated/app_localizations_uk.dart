@@ -1638,4 +1638,81 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get deleteGroupConfirmation =>
       'Груповий чат та його історію буде видалено лише для тебе. Після нового повідомлення група з’явиться знову.';
+
+  @override
+  String get groupInviteLinkTitle => 'Посилання-запрошення';
+
+  @override
+  String get groupShareLink => 'Поділитися посиланням';
+
+  @override
+  String get groupReplaceLinkTitle => 'Замінити посилання?';
+
+  @override
+  String get groupReplaceLinkBody =>
+      'Старе посилання більше не працюватиме. Запрошення, уже надіслані в Blab, залишаться чинними.';
+
+  @override
+  String get groupSearchFriends => 'Знайти друзів';
+
+  @override
+  String get groupFriendsOnBlab => 'Друзі в Blab';
+
+  @override
+  String get groupNoFriends =>
+      'Немає інших друзів у Blab, яких можна запросити. Ти можеш поділитися посиланням.';
+
+  @override
+  String get groupNoMatchingFriends => 'Немає друзів за цим запитом.';
+
+  @override
+  String get groupFriendInvited => 'Запрошено';
+
+  @override
+  String get groupInvitationsSent => 'Запрошення надіслано.';
+
+  @override
+  String get groupInvitationsFailed =>
+      'Не вдалося надіслати запрошення. Спробуй ще раз.';
+
+  @override
+  String groupSendInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Надіслати запрошення ($count)',
+      many: 'Надіслати запрошення ($count)',
+      few: 'Надіслати запрошення ($count)',
+      one: 'Надіслати запрошення ($count)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inviteShareLink => 'Поділитися посиланням';
+
+  @override
+  String get inviteViaLink => 'Запросити за посиланням';
+
+  @override
+  String get inviteOutsideBlab => 'Для людей поза Blab';
+
+  @override
+  String get inviteResetTitle => 'Скинути посилання-запрошення?';
+
+  @override
+  String get inviteResetAction => 'Скинути посилання';
+
+  @override
+  String get personalInviteResetBody =>
+      'Поточне посилання перестане працювати. Наявні чати не зміняться.';
+
+  @override
+  String get groupInviteOutsideTitle => 'Запросити поза Blab';
+
+  @override
+  String get groupShareLinkSubtitle => 'Поділитися посиланням';
+
+  @override
+  String get groupClearSearch => 'Очистити пошук';
 }

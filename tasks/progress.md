@@ -2107,3 +2107,76 @@ Long bilingual selections reserve an emoji strip outside the scrollable text; re
 ### Combined BLA25/26/27 test37 ·15396 ·build complete
 
 Presented fixes combined in integrated main431495a;1,041 client pass16 skips,254 backend8 steps pass, clean analysis; combined actual Android cached correction/long-reading fixtures pass and six captures inspected. Signed Blab-test37 built; exact36→37 replacement keeps original install identity and German signed-out Welcome on owned5580. Artifact/receipt parent releases/20261022-bla25-27-test37/. No upload/distribution/hosted/public/iOS/notice action. Photo logic integrated in source, still needs separate server deployment/live verification. No manual roadmap checkbox promoted.
+## Group in-app invitations ·15062 ·21 October2026
+
+In-app group invite follow-up15062 ← in progress: friend picker, private receiver invitation, secondary external link page and owner-only confirmed regeneration. Actual sender/recipient Android review and owner visual approval pending. Existing group phone acceptance remains open.
+
+
+### Group in-app invitation15062 ·candidate verified, awaiting review
+
+Sender/recipient native5560 journey passes with real local auth: select Bob, Carol remains uninvited, private Chats entry, explicit Join/Reject, membership only after Join; owner link replacement preserves Bob's named invite. Private live inbox send/reject/resend updates pass without manual invalidation.123 fresh isolated migrations;14 group SQL suites pass;20 focused UI/provider checks pass across4 locales/320px/200%; full1,046 pass17 environment skips, analysis clean. Screenshots15095–15099 and14s native clip15101 delivered/inspected. QA docs/qa/2026-10-21-group-inapp-invites/README.md. Uncommitted/unmerged/unreleased pending actual visual approval; tracker remains unchecked. No staging/production or AI generation changes.
+
+### Reviewed native invite flow15272 ·22 October2026 ·awaiting visual review
+
+Implemented latest Paper V15 (15235/15241 reductions) with shared native Copy/Share,
+owner-menu reset confirmation, existing Blab selection/check and count including1.
+Create opens group chat, invitations optional later. Isolated candidate refreshed
+from current main d983a6a; old candidate/autostash retained. Analysis clean, full1052
+pass17 environment skips; final focused30, real local inbox1, installed Android
+sender journey all pass. Four locale/320px/200% picker checks pass. Web profile
+build/browser Copy/group rendering verified; desktop native font/density adaptations
+are not identical-pixel Android proof. Actual Android15304–15307 +recording15308
+sent/inspected. QA docs/qa/2026-10-22-invite-v15. Uncommitted/unmerged/unreleased;
+actual visual approval pending; tracker stays unchecked. No hosted backend/AI changes.
+
+### Group invite correction15313 +reset surface ·22 October2026 ·review pending
+
+Both group entry points now open Copy/Share directly; sender picker15305 retired
+from the active flow. Personal/group reset reuses existing cream confirmation
+container, not pink default. Analysis clean;42 focused and final full1053 pass
+(17 environment skips), Web build/rendering pass. Installed Android direct-entry/
+Back/cream-dialog replay1 pass; actual screenshot15338 and25s walkthrough15339
+inspected/delivered, superseding old recording15308. Task emulator restarted
+without wipe after adb stall; exact final standard native run passes. QA
+ docs/qa/2026-10-22-invite-direct. No commit/main integration/backend/release;
+old candidate private-invitation source preserved but not an active sender path.
+
+
+### Reset Cancel styling15345 ·22 October2026 ·review pending
+
+Compared existing Block/Delete message/Log out popups. Personal/group reset Cancel
+now explicitly uses warmInk rather than inherited orange.44 focused checks pass;
+analysis clean; installed Android replay/captures pass and inspected. QA retained
+in docs/qa/2026-10-22-invite-cancel. No commit/integration/release. Subsequent
+UX feedback is recommendation-only: restore people picker after Invite
+friends, with external Invite via link as a separate row; not implemented yet.
+
+
+## Approved Paper V16 invitation picker ·15498 ·22 October2026
+
+Supersedes direct-link correction15313 and all later exploratory sender references.
+Paper p-C-0 states6FT-0/6GW-0/6IL-0/6JM-0 are canonical. Group details Invite
+friends and /group/:id/invite restore the existing Blab-friend picker. No global
+user discovery. Top-right Search replaces the title with a366x56px neutral
+#EEE8DF radius28 field,12px inset, native Back and Clear inside48px targets;
+gray Search friends placeholder, no username/phone lookup. Preserve selections
+through filtering/Clear/Back and external-link navigation. Invite outside Blab /
+Share a link stays above people. No section/footer dividers or Friends on Blab
+heading; list64px rows,8px gaps; pinned52px Send invite / Send invites(count).
+0 disables Send; private invitations never auto-join. Search/keyboard Back
+consumes search before leaving the picker; leaving hides keyboard. Localization
+uses Interface Language only; no learning-language/translation pipeline changes.
+Implementation authorized, actual native visual/journey acceptance still pending.
+No merge/main integration, hosted migration or release authorization.
+
+
+## Integration authorization · 22 October 2026 ·15553
+Nastia reviewed the actual Android packet15539–15543 and explicitly requested
+“check for conflicts, commit and merge to main”. This supersedes the pending
+visual/integration authorization above for this invitation slice only. No hosted
+migration, service deployment, update notice or tester distribution is authorized.
+Fetched origin/main617639c equals the reviewed candidate base: no textual merge
+conflict or intervening main changes. All reviewed source hashes match the final
+V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
+only final V16 native acceptance and its QA entry are promoted. Manual physical
+phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.

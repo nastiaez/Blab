@@ -257,6 +257,16 @@ class GroupJoinResult {
   final bool alreadyMember;
 }
 
+class GroupInviteFriend {
+  const GroupInviteFriend({
+    required this.userId,
+    required this.name,
+    this.invited = false,
+  });
+  final String userId, name;
+  final bool invited;
+}
+
 class PendingGroupInvitation {
   const PendingGroupInvitation({
     required this.token,
@@ -1719,6 +1729,63 @@ class ChatService {
   Future<String> createGroup(String name) async {
     final res = await _client.rpc('create_group', params: {'group_name': name});
     return ((res as List).first as Map<String, dynamic>)['chat_id'] as String;
+  }
+
+  Future<List<GroupInviteFriend>> fetchGroupInviteFriends(String chatId) async {
+    final rows =
+        await _client.rpc('group_invite_friends', params: {'p_chat_id': chatId})
+            as List;
+    return rows
+        .map(
+          (r) => GroupInviteFriend(
+            userId: r['user_id'] as String,
+            name: r['display_name'] as String,
+            invited: r['invited'] == true,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> sendGroupInvitations(
+    String chatId,
+    List<String> recipients,
+  ) async {
+    await _client.rpc(
+      'send_group_invitations',
+      params: {'p_chat_id': chatId, 'p_recipient_ids': recipients},
+    );
+  }
+
+  Stream<void> watchGroupInvitationChanges() {
+    late final RealtimeChannel channel;
+    late final StreamController<void> changes;
+    changes = StreamController<void>(
+      onListen: () {
+        channel = _client.channel('group-invites:$_uid:${_channelSequence++}');
+        channel
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'group_invitation_inboxes',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'user_id',
+                value: _uid,
+              ),
+              callback: (_) {
+                if (!changes.isClosed) changes.add(null);
+              },
+            )
+            .subscribe((status, [error]) {
+              if (status == RealtimeSubscribeStatus.subscribed &&
+                  !changes.isClosed) {
+                changes.add(null);
+              }
+            });
+      },
+      onCancel: () => _client.removeChannel(channel),
+    );
+    return changes.stream;
   }
 
   Future<void> registerGroupInvitation(String token) async {
