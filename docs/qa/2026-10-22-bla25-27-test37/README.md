@@ -13,3 +13,9 @@ Combined1,041-client gate, analysis,254 backend, combined native fixture and sig
 
 ## Artifact-only boundary
 The APK contains the two client fixes. The photo-notification change runs on the server, and is retained in integrated source but requires a separately authorized deployment to activate. No hosting service changed by a build request. Existing Blab-test36 synthetic DE/signed-out baseline retained for signed update testing; no physical-phone or authenticated account retention claim.
+
+## Build result15396
+
+Integrated application source431495a on synchronized main.1,041 client checks pass/16 environment skips;254 backend checks/8 steps pass; analysis clean. Combined actual Android cached correction and long-reading journeys pass; all six captures inspected. Signed staging/test Android37 APK built from main, package blab.nastia.ez.test/version1.0.0. SHA256 `e8e5629e28f88c9a7ca49703948bc05471707c29270ade46d5d9a9507de0de52`; unchanged signer `1a18ccd503847eb3eda9f423405ef46740424bc32bb850f1795a9922b27c0ffb`.
+
+Exact signed36→37 replacement installation on owned5580 passes; firstInstallTime and existing German signed-out Welcome retained. No authenticated/physical-device/iOS acceptance. Artifact and complete receipt: parent releases/20261022-bla25-27-test37/. Not uploaded/distributed, no hosted server/public app/update notice change. Photo fix is not activated by this APK; live server rollout remains separate.

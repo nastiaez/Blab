@@ -2102,3 +2102,8 @@ BLA26 final candidate: full1,040 pass/16 environment skips, analysis clean, Andr
 ### BLA-27 long-message reading ·22 October ·review candidate
 
 Long bilingual selections reserve an emoji strip outside the scrollable text; reading stays expanded during finger scrolling. Short-message placement/actions unchanged. Full1,040 checks pass/16 skips, analysis clean; Android incoming/outgoing411×914 and320×640 cached-fixture reading/scroll/More pass. Eight screenshots inspected;15366 and recording15368 delivered. No liveAI/hosted/main/release action. QA: docs/qa/2026-10-22-bla27-readable-reactions/README.md. Await actual visual/workflow approval.
+
+
+### Combined BLA25/26/27 test37 ·15396 ·build complete
+
+Presented fixes combined in integrated main431495a;1,041 client pass16 skips,254 backend8 steps pass, clean analysis; combined actual Android cached correction/long-reading fixtures pass and six captures inspected. Signed Blab-test37 built; exact36→37 replacement keeps original install identity and German signed-out Welcome on owned5580. Artifact/receipt parent releases/20261022-bla25-27-test37/. No upload/distribution/hosted/public/iOS/notice action. Photo logic integrated in source, still needs separate server deployment/live verification. No manual roadmap checkbox promoted.
