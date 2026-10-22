@@ -2961,3 +2961,85 @@ Future<void> runPracticeEntryJourney(
   container.dispose();
   await tester.pump();
 }
+
+class _Bla27LongChatService extends _PrimaryKnownLanguageChatService {
+  _Bla27LongChatService({bool outgoing = false})
+    : super(
+        chatMode: 'practice',
+        learningLanguageCode: 'de',
+        messageIsOutgoing: outgoing,
+        messageText: List.filled(
+          12,
+          'We walked through the park and talked about our plans for tomorrow.',
+        ).join(' '),
+      );
+  @override
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => (
+    text: List.filled(
+      8,
+      'Wir gingen durch den Park und sprachen über unsere Pläne für morgen.',
+    ).join(' '),
+    interfaceText: message.originalText,
+    interfaceLang: interfaceLang,
+    sourceLang: 'en',
+    mode: 'translation',
+    explanation: null,
+    confidence: null,
+    tokens: <Map<String, dynamic>>[],
+  );
+}
+
+Future<void> runBla27ReadingJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  for (final outgoing in [false, true]) {
+    final service = _Bla27LongChatService(outgoing: outgoing);
+    final container = _containerForHeader(
+      service,
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+    );
+    await tester.pumpWidget(
+      _host(container, theme: blabTheme, locale: const Locale('uk')),
+    );
+    await _settle(tester);
+    await tester.runAsync(
+      () async => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await _settle(tester);
+    final target = find.byType(MessageInteractionTarget).first;
+    // Press a visible point, not the center of an off-screen long bubble.
+    final rect = tester.getRect(target);
+    final viewport = tester.getRect(find.byType(ChatTimeline));
+    await tester.longPressAt(rect.intersect(viewport).center);
+    await _settle(tester);
+    final row = find.byKey(const ValueKey('floating-reaction-row-msg-1'));
+    expect(row, findsOneWidget);
+    final readingViewport = tester.getRect(find.byType(ChatTimeline));
+    expect(tester.getRect(row).bottom, lessThanOrEqualTo(readingViewport.top));
+    expect(find.text(service.message.originalText), findsOneWidget);
+    if (capture != null) {
+      await capture('bla27-${outgoing ? 'outgoing' : 'incoming'}-reading');
+    }
+    await tester.drag(find.byType(ChatTimeline), const Offset(0, 260));
+    await _settle(tester);
+    expect(row, findsOneWidget);
+    expect(find.text(service.message.originalText), findsOneWidget);
+    expect(find.byKey(const ValueKey('message-action-reply')), findsOneWidget);
+    if (capture != null) {
+      await capture('bla27-${outgoing ? 'outgoing' : 'incoming'}-scrolled');
+    }
+    await tester.tap(find.byKey(const ValueKey('floating-reaction-more')));
+    await _settle(tester);
+    expect(find.byType(EmojiPicker), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+  }
+}

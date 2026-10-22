@@ -2082,3 +2082,8 @@ original9 (3 accepted/0 downloaded), no additional/automated recipients.
 Uploaded-download bytes previously verified identical to tested APKs. Runtime
 91459ce unchanged; no new build or backend/notice changes. Tester download or
 physical installation not inferred. Canonical external receipt updated.
+
+
+### BLA-27 long-message reading ·22 October ·review candidate
+
+Long bilingual selections reserve an emoji strip outside the scrollable text; reading stays expanded during finger scrolling. Short-message placement/actions unchanged. Full1,040 checks pass/16 skips, analysis clean; Android incoming/outgoing411×914 and320×640 cached-fixture reading/scroll/More pass. Eight screenshots inspected;15366 and recording15368 delivered. No liveAI/hosted/main/release action. QA: docs/qa/2026-10-22-bla27-readable-reactions/README.md. Await actual visual/workflow approval.
