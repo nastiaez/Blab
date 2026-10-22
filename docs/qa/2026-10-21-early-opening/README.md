@@ -93,3 +93,20 @@ capture. Keep final APK at parent qa-artifacts/early-opening-35-final.apk; earli
 
 ## Review correction, message15166
 User reported jump glitch. Confirmed outbound15128 export dropped captured frames: only15 frames versus71 source frames before4.6s. This happened in our export, not Telegram (returned attachment matches outbound timestamps). Re-exported with fps_mode passthrough and explicit microsecond encoder timebase, retaining71 frames and source timestamps. Inspected jump contact sheet corrected-jump-export.jpg: intermediate crossing/arc/landing frames present. Delivered corrected video as document15172. No code changes; actual approval remains pending, unmerged/unreleased. This diagnoses a preview defect, not proof of zero runtime jank.
+
+## Approved integration15215 ·22 October
+
+Corrected recording15172 approved. Source fingerprint matches all8 named files.
+Implementation91459ce fast-forward integrated/pushed; local/remote main equal.
+Final Android36 public and test have no diagnostic trace flag. Full1039 pass16
+skips, clean analysis. Public30→36 reconstructed ES baseline and existing
+test35→36 DE baseline retain firstInstallTime and selected language. Complete
+cold→Welcome and HOT no-replay inspected separately for both. Original signer
+retained. Actual final recordings delivered15232(public)/15233(test).
+Canonical artifacts, logs, screenshots, full recordings and hashes:
+parent releases/20261022-earlier-opening36/receipt.json. Firebase upload drafts
+in progress; not distributed. No hosted schema/functions or notice mutation.
+Physical phone/iOS/authenticated/deep-link native acceptance not claimed.
+Initial packaging attempt failed after concurrent dependency generation changed
+the ignored plugin registrant; serial packaging after completed tests passed.
+No application changes or narrowed tests used to recover it.

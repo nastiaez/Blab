@@ -2060,3 +2060,15 @@ Nastia approved corrected full-frame recording15172 and requested this startup
 for both Blab/public and Blab-test. Approved source fingerprint reverified;
 integrating unchanged candidate, then signed Android builds and per-package
 update/cold/warm verification. No hosted schema or update notice change.
+
+### Approved startup15215 ·integrated Android36 verification
+
+Source91459ce on local/remote main. Full1039 pass16 environment skips; analysis
+clean. Signed public/test Android36 built from the same integrated source, no
+trace flag. Original signer retained. Owned5580 verifies public30→36 (reconstructed
+ES baseline) and test35→36 (existing DE), same firstInstallTime/preferences after
+replacement; full cold→Welcome and HOT no branding replay inspected for each.
+Actual installed recordings delivered15232/public and15233/test. No physical
+phone, iOS, signed-in Chats/deep-link acceptance claim. Artifacts/receipt outside
+Git at parent releases/20261022-earlier-opening36/. Firebase uploads preparing;
+no tester notifications, hosted schema/functions or update notice changed.
