@@ -52,7 +52,7 @@ Future<bool> showChatLifecycleConfirmation(
                         foregroundColor: BlabColors.warmInk,
                         minimumSize: const Size(0, 48),
                       ),
-                      child: Text(context.l10n.cancel),
+                      child: Text(dialogContext.l10n.cancel),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(dialogContext).pop(true),

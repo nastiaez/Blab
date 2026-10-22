@@ -2199,3 +2199,17 @@ real-touch visual packet remains the visual evidence; automated replay captures
 are diagnostic, not a new parity claim. No signed release or distribution created.
 Hosted migration/deployment, Firebase, update notices, physical-device/iOS and
 manual launch acceptance remain separate; tracker stays unchecked.
+
+
+## Group rollout15570 ·22 October ·in progress
+All CI gates for main44874f4 pass. Signed test38 distributed to the same9 existing
+Android testers after exact notification approval; staging123rd migration/source
+hash/RLS/realtime/anonymous denial verified and test notice38 active.4 Android
+group journeys pass. iPhone invitation/ownership pass; lifecycle reveals a disposed
+caller lookup in confirmation Cancel. One-line same-visual fix has red/green
+regression,7 focused passes and1057 full-suite passes/17 skips; corrected Android
+and iOS lifecycle plus all5 iOS native journeys pass. Independent iOS visual
+capture is pending. Nastia will test on two Android phones. Test38 predates
+that correction; final candidate39 pending. Physical phone acceptance, exact
+production scope and iOS delivery remain open. No production mutation or manual
+roadmap completion. QA docs/qa/2026-10-22-group-rollout/README.md.

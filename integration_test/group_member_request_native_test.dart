@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:blab/app/app_messenger.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/chat_screen.dart';
@@ -27,7 +28,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     const url = String.fromEnvironment('SUPABASE_URL');
     const key = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
-    if (Uri.parse(url).host != '10.0.2.2') throw StateError('Local QA only');
+    if (!['10.0.2.2', '127.0.0.1'].contains(Uri.parse(url).host)) {
+      throw StateError('Local QA only');
+    }
     await Supabase.initialize(url: url, anonKey: key);
     final bob = Supabase.instance.client;
     final dana = SupabaseClient(url, key);
@@ -108,7 +111,7 @@ void main() {
       ],
     );
     addTearDown(router.dispose);
-    await binding.convertFlutterSurfaceToImage();
+    if (Platform.isAndroid) await binding.convertFlutterSurfaceToImage();
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,

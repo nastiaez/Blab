@@ -17,6 +17,52 @@ void main() {
       await journey.runChatLifecycleJourney(tester, restoreDuringDelete: true);
     },
   );
+  testWidgets('confirmation outlives its caller during a locale rebuild', (
+    tester,
+  ) async {
+    final callerVisible = ValueNotifier(true);
+    final locale = ValueNotifier(const Locale('en'));
+    addTearDown(callerVisible.dispose);
+    addTearDown(locale.dispose);
+    await tester.pumpWidget(
+      ValueListenableBuilder<Locale>(
+        valueListenable: locale,
+        builder: (_, value, _) => MaterialApp(
+          theme: blabTheme,
+          locale: value,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: ValueListenableBuilder<bool>(
+            valueListenable: callerVisible,
+            builder: (_, visible, _) => visible
+                ? Builder(
+                    builder: (context) => TextButton(
+                      onPressed: () => showChatLifecycleConfirmation(
+                        context,
+                        title: 'Leave group?',
+                        message: 'Retain your history.',
+                        confirmLabel: 'Leave group',
+                      ),
+                      child: const Text('Open'),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    callerVisible.value = false;
+    await tester.pump();
+    locale.value = const Locale('de');
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Abbrechen'), findsOneWidget);
+    await tester.tap(find.text('Abbrechen'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsNothing);
+  });
   for (final locale in ['en', 'de', 'es', 'uk']) {
     testWidgets('$locale confirmation remains reachable at large text', (
       tester,
