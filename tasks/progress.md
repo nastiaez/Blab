@@ -2098,3 +2098,7 @@ BLA25 continuation15374: actual send-push entrypoint tests pass1/8 steps; backen
 Existing source-language invariant now checked before rendering marks, preserving historical sharing rules and exact originals.39 focused checks pass with red/green reproduction; final native/full checks pending. No prompt/cache/hosted/main/release changes. QA: docs/qa/2026-10-22-bla26-correction-eligibility/README.md.
 
 BLA26 final candidate: full1,040 pass/16 environment skips, analysis clean, Android cached-metadata fixture both viewers passes. Actual inspected receiver screenshot15361; appearance review pending. Uncommitted/unmerged/unreleased.
+
+### BLA-27 long-message reading ·22 October ·review candidate
+
+Long bilingual selections reserve an emoji strip outside the scrollable text; reading stays expanded during finger scrolling. Short-message placement/actions unchanged. Full1,040 checks pass/16 skips, analysis clean; Android incoming/outgoing411×914 and320×640 cached-fixture reading/scroll/More pass. Eight screenshots inspected;15366 and recording15368 delivered. No liveAI/hosted/main/release action. QA: docs/qa/2026-10-22-bla27-readable-reactions/README.md. Await actual visual/workflow approval.

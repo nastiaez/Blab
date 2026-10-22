@@ -1423,6 +1423,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           canRevealOriginal: false,
         );
 
+    final readingSelection =
+        _selectedMessage != null &&
+        (chatMode == ChatMode.practice || _showSelectedOriginal) &&
+        (_selectedBubbleRect?.height ?? 0) >
+            (MediaQuery.sizeOf(context).height -
+                    _renderedHeaderBottom(context, chat) -
+                    kMessageActionRowMinHeight) /
+                2;
+
+    Widget buildReactionPicker(Message reactionRowMessage) =>
+        FloatingReactionRow(
+          key: ValueKey('floating-reaction-row-${reactionRowMessage.id}'),
+          visible: _selectedMessage?.id == reactionRowMessage.id,
+          scaleAlignment: reactionRowMessage.isOutgoing
+              ? Alignment.centerRight
+              : Alignment.centerLeft,
+          selectedEmoji: _viewerReactionEmoji(reactionRowMessage.id),
+          onPick: (emoji) {
+            final message = reactionRowMessage;
+            _closeSelection();
+            ref
+                .read(messageReactionsProvider(widget.chatId).notifier)
+                .react(messageId: message.id, emoji: emoji);
+          },
+          onMore: () {
+            final message = reactionRowMessage;
+            _closeSelection();
+            showFullEmojiPickerSheet(
+              context,
+              interfaceLanguageCode: interfaceLang.code,
+              onPick: (emoji) => ref
+                  .read(messageReactionsProvider(widget.chatId).notifier)
+                  .react(messageId: message.id, emoji: emoji),
+            );
+          },
+        );
+
     if (_selectedMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _syncSelectedBubbleGeometry(_selectedMessage!.id);
@@ -1540,6 +1577,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           .dismissReminder(),
                     ),
                   const OfflineBanner(),
+                  if (readingSelection &&
+                      _reactionRowMessage != null &&
+                      !chat.isLeft &&
+                      canReplyToMessage(_reactionRowMessage!))
+                    Padding(
+                      key: const ValueKey('reading-reaction-strip'),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(
+                        child: buildReactionPicker(_reactionRowMessage!),
+                      ),
+                    ),
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
@@ -1557,7 +1605,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               notification is ScrollStartNotification &&
                               notification.dragDetails != null;
                           if (isUserDrag) _modeAnchorGeneration++;
-                          if (isUserDrag && _selectedMessage != null) {
+                          if (isUserDrag &&
+                              _selectedMessage != null &&
+                              !readingSelection) {
                             _closeSelection();
                           }
                           if (isUserDrag && !_translationResolveDeferred) {
@@ -1982,7 +2032,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                 ),
-              if (!chat.isLeft &&
+              if (!readingSelection &&
+                  !chat.isLeft &&
                   _reactionRowMessage != null &&
                   _selectedBubbleRect != null &&
                   _selectedPressPosition != null &&
@@ -2048,44 +2099,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     return Positioned(
                       top: localTop,
                       left: left,
-                      child: FloatingReactionRow(
-                        key: ValueKey(
-                          'floating-reaction-row-${reactionRowMessage.id}',
-                        ),
-                        visible: _selectedMessage?.id == reactionRowMessage.id,
-                        scaleAlignment: reactionRowMessage.isOutgoing
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        selectedEmoji: _viewerReactionEmoji(
-                          reactionRowMessage.id,
-                        ),
-                        onPick: (emoji) {
-                          final message = reactionRowMessage;
-                          _closeSelection();
-                          ref
-                              .read(
-                                messageReactionsProvider(
-                                  widget.chatId,
-                                ).notifier,
-                              )
-                              .react(messageId: message.id, emoji: emoji);
-                        },
-                        onMore: () {
-                          final message = reactionRowMessage;
-                          _closeSelection();
-                          showFullEmojiPickerSheet(
-                            context,
-                            interfaceLanguageCode: interfaceLang.code,
-                            onPick: (emoji) => ref
-                                .read(
-                                  messageReactionsProvider(
-                                    widget.chatId,
-                                  ).notifier,
-                                )
-                                .react(messageId: message.id, emoji: emoji),
-                          );
-                        },
-                      ),
+                      child: buildReactionPicker(reactionRowMessage),
                     );
                   },
                 ),
