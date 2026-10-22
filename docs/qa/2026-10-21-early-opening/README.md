@@ -110,3 +110,13 @@ Physical phone/iOS/authenticated/deep-link native acceptance not claimed.
 Initial packaging attempt failed after concurrent dependency generation changed
 the ignored plugin registrant; serial packaging after completed tests passed.
 No application changes or narrowed tests used to recover it.
+
+## Delivery15258 ·22 October
+
+Notes15234 approved15247; distribution explicitly requested15258. Both36
+Firebase releases distributed, then reopened and exact original audiences
+verified: public2 (2 accepted/0 downloaded), test9 (3 accepted/0 downloaded).
+No new/automated recipients. Exact uploaded bytes already downloaded and
+SHA256-matched to signed installed artifacts. Test release48mil4kjnicjo.
+External canonical receipt updated; runtime91459ce unchanged. No backend,
+notice or iOS action. Physical installation/download not claimed.

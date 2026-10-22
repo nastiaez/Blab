@@ -2072,3 +2072,13 @@ Actual installed recordings delivered15232/public and15233/test. No physical
 phone, iOS, signed-in Chats/deep-link acceptance claim. Artifacts/receipt outside
 Git at parent releases/20261022-earlier-opening36/. Firebase uploads preparing;
 no tester notifications, hosted schema/functions or update notice changed.
+
+### Android36 distribution15258 ·22 October
+
+Approved notes15234 accepted15247; explicit delivery15258. Both exact signed
+Android36 artifacts distributed through existing Firebase channels. Reopened
+Blab36 confirms original2 testers (2 accepted/0 downloaded); Blab-test36 confirms
+original9 (3 accepted/0 downloaded), no additional/automated recipients.
+Uploaded-download bytes previously verified identical to tested APKs. Runtime
+91459ce unchanged; no new build or backend/notice changes. Tester download or
+physical installation not inferred. Canonical external receipt updated.
