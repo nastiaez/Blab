@@ -11,6 +11,8 @@ import 'widgets/blab_wordmark_animation.dart';
 import 'widgets/onboarding_scaffold.dart';
 
 // US-001: resolving setup again must not replay the cold-launch animation.
+final openingDestinationReadyProvider = Provider<VoidCallback?>((ref) => null);
+
 final openingAnimationGateProvider = Provider((ref) => OpeningAnimationGate());
 
 class OpeningAnimationGate {
@@ -67,6 +69,10 @@ class _OnboardingBootstrapScreenState
   @override
   Widget build(BuildContext context) {
     final destination = ref.watch(onboardingDestinationProvider);
+    if (destination.hasError ||
+        destination.asData?.value == OnboardingDestination.retry) {
+      ref.read(openingDestinationReadyProvider)?.call();
+    }
     destination.whenData(_deliverWhenReady);
 
     return OnboardingScaffold(

@@ -108,4 +108,33 @@ void main() {
     expect(find.byKey(const Key('blab-last-b')), findsOneWidget);
     expect(resolved, OnboardingDestination.chats);
   });
+
+  testWidgets(
+    'bootstrap failure uncovers existing retry instead of hiding it',
+    (tester) async {
+      var ready = 0;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            openingAnimationGateProvider.overrideWithValue(
+              OpeningAnimationGate()..claim(),
+            ),
+            openingDestinationReadyProvider.overrideWithValue(() => ready++),
+            onboardingDestinationProvider.overrideWith(
+              (ref) async => throw StateError('unavailable'),
+            ),
+          ],
+          child: MaterialApp(
+            theme: blabTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: OnboardingBootstrapScreen(onResolved: (_) {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(ready, greaterThan(0));
+      expect(find.text('Retry'), findsOneWidget);
+    },
+  );
 }

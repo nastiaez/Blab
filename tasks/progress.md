@@ -2028,3 +2028,35 @@ from integrated main; exact33→34 update retainsDE and firstInstallTime on fres
 recording15060 delivered. No authenticated/physical-phone/iOS acceptance claim.
 Build complete, not distributed; backend/production/notices untouched. Receipt:
 parent releases/20261021-launch34/receipt.json. No roadmap checkbox promoted.
+
+
+### Early opening startup15089 ·candidate in progress ·21 October
+
+Dedicated fix/early-opening-20261021 from7e7a5a7; no main/release change. Paint
+opening before services, first-raster gate prevents unseen motion, exact approved
+paths drawn synchronously (nine reference-frame parity checks). Service loading
+runs alongside790ms motion; heavy destination UI mounts only after motion to
+avoid rendering contention. Failed initialization stays closed/Retry, bootstrap
+errors uncovered; no route/auth/link/notification ownership changed. Native
+signed candidate35; final source full/native cold/warm verification and actual
+owner recording approval pending. No hosted, tester or production action.
+
+
+### Early opening15089 ·review candidate result
+
+Final startup candidate remains uncommitted/unmerged from7e7a5a7. Signed35 native
+cold/full animation→Welcome and HOT no-replay captures inspected;15128 delivered.
+Synchronous approved geometry and native splash visibility gate prevent unseen
+first letters; service loading overlaps motion, heavy UI mounts afterward.
+14 focused/1039 full checks pass16 environment skips; analysis clean;9 frame
+reference parity comparisons pass. Signed34→35 retainsDE/firstInstallTime on5580.
+Main/build34 and hosted services untouched. Await actual owner review before
+commit/integration/release; physical-phone/iOS/authenticated acceptance not claimed.
+Canonical QA: docs/qa/2026-10-21-early-opening/README.md and receipt.json.
+
+### Early opening approval15215 ·22 October
+
+Nastia approved corrected full-frame recording15172 and requested this startup
+for both Blab/public and Blab-test. Approved source fingerprint reverified;
+integrating unchanged candidate, then signed Android builds and per-package
+update/cold/warm verification. No hosted schema or update notice change.

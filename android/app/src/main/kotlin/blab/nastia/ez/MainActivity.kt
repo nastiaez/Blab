@@ -19,6 +19,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var startupVisible = Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+    private val startupWaiters = mutableListOf<MethodChannel.Result>()
     private var pendingInviteShare: MethodChannel.Result? = null
     private var inviteRequest = 9104
     private var clipboardChanged = false
@@ -32,6 +34,17 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            splashScreen.setOnExitAnimationListener { splash ->
+                splash.remove()
+                // Resume Dart on the next posted UI turn after removal.
+                window.decorView.post {
+                    startupVisible = true
+                    startupWaiters.toList().forEach { it.success(null) }
+                    startupWaiters.clear()
+                }
+            }
+        }
         createMessagesNotificationChannel()
         pendingSharedImage = sharedImageFromIntent(intent)
     }
@@ -46,6 +59,16 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "blab/startup")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "awaitVisible") {
+                    result.notImplemented()
+                } else if (startupVisible) {
+                    result.success(null)
+                } else {
+                    startupWaiters.add(result)
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "blab/invite")
             .setMethodCallHandler { call, result ->
                 if (call.method == "shareInvite") {
@@ -200,6 +223,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        startupWaiters.toList().forEach { it.success(null) }
+        startupWaiters.clear()
         referrerClosers.toList().forEach { it() }
         referrerClosers.clear()
         inviteHandler.removeCallbacksAndMessages(null)

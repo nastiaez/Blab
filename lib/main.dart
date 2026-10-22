@@ -11,6 +11,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'app/app_messenger.dart';
+import 'app/early_opening.dart';
+import 'features/onboarding/onboarding_bootstrap_screen.dart';
 import 'app/email_change_feedback.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
@@ -45,7 +47,15 @@ import 'shared/state/auth_state.dart';
 import 'shared/state/interface_language.dart';
 import 'shared/state/push_notifications_state.dart';
 
+final _startupClock = Stopwatch()..start();
+void _startupTrace(String stage) {
+  if (const bool.fromEnvironment('BLAB_STARTUP_TRACE')) {
+    debugPrint('BLAB_STARTUP ${_startupClock.elapsedMilliseconds}ms $stage');
+  }
+}
+
 Future<void> main() async {
+  _startupTrace('dart-entry');
   SupabaseConfig.ensureValid();
   // Sentry uses a guarded zone on web. Flutter bindings and every async
   // startup dependency must be initialized inside that same zone.
@@ -159,17 +169,42 @@ Future<void> _cachePushChat(
 
 Future<void> _initializeAndRunApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _startupTrace('reporting-ready');
+  runApp(
+    EarlyOpening(
+      firstPaint: _waitForOpeningVisibility(),
+      initialize: _initializeAppServices,
+      application: (ready) => _PreparedApplication(onReady: ready),
+      trace: _startupTrace,
+    ),
+  );
+}
+
+Future<void> _waitForOpeningVisibility() async {
+  await WidgetsBinding.instance.waitUntilFirstFrameRasterized;
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await const MethodChannel(
+      'blab/startup',
+    ).invokeMethod<void>('awaitVisible');
+  }
+  _startupTrace('native-opening-visible');
+}
+
+Future<void> _initializeAppServices() async {
+  _startupTrace('services-start');
   // Tighten the VisibilityDetector callback cadence so scroll-into-view
   // read receipts (Step 2.2 Task 10) feel responsive.
   VisibilityDetectorController.instance.updateInterval = const Duration(
     milliseconds: 100,
   );
+  _startupTrace('firebase-start');
   await initializeFirebaseForPush(
     enabled: SupabaseConfig.pushNotificationsEnabled,
     expectedProjectId: SupabaseConfig.firebaseProjectId,
     requiredForHostedAndroid:
         SupabaseConfig.environment != BlabEnvironment.local,
   );
+  _startupTrace('firebase-ready');
   if (BlabFirebaseConfig.isPushPlatform && Firebase.apps.isNotEmpty) {
     FirebaseMessaging.onBackgroundMessage(_cacheBackgroundPush);
     if (streamReviewEnabled) {
@@ -178,16 +213,63 @@ Future<void> _initializeAndRunApp() async {
       } catch (_) {}
     }
   }
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.publishableKey,
-    authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
-  );
+  _startupTrace('account-start');
+  var accountInitialized = false;
+  try {
+    Supabase.instance.client;
+    accountInitialized = true;
+  } catch (_) {}
+  if (!accountInitialized) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.publishableKey,
+      authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
+    );
+  }
+  _startupTrace('account-ready');
   await _routeInitialAuthCallback();
-  runApp(const ProviderScope(child: BlabApp()));
+  _startupTrace('initial-link-ready');
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(_stabilizeInitialSession(Supabase.instance.client));
   });
+}
+
+class _PreparedApplication extends StatefulWidget {
+  const _PreparedApplication({required this.onReady});
+  final VoidCallback onReady;
+  @override
+  State<_PreparedApplication> createState() => _PreparedApplicationState();
+}
+
+class _PreparedApplicationState extends State<_PreparedApplication> {
+  final _gate = OpeningAnimationGate()..claim();
+  @override
+  void initState() {
+    super.initState();
+    blabRouter.routeInformationProvider.addListener(_checkRoute);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkRoute());
+  }
+
+  void _checkRoute() {
+    if (blabRouter.routeInformationProvider.value.uri.path != '/bootstrap') {
+      widget.onReady();
+    }
+  }
+
+  @override
+  void dispose() {
+    blabRouter.routeInformationProvider.removeListener(_checkRoute);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ProviderScope(
+    overrides: [
+      openingAnimationGateProvider.overrideWithValue(_gate),
+      openingDestinationReadyProvider.overrideWithValue(widget.onReady),
+    ],
+    child: const BlabApp(),
+  );
 }
 
 final AuthCallbackGuard _authCallbackGuard = AuthCallbackGuard();

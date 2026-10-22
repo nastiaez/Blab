@@ -1,0 +1,10 @@
+{
+  "android/app/src/main/kotlin/blab/nastia/ez/MainActivity.kt": "f848dbdd710c064fc60d9ed1fc0b4b2607c3e9a9fc38a0363fbf62c66baf16e3",
+  "lib/main.dart": "044d603be303581199558dde41481ad53f322a9babc8e66491de13d1ea3d8a90",
+  "lib/app/early_opening.dart": "48b6789b3ba34935b0058cee201be53435c4724f70071c3f0147238772b228cf",
+  "lib/features/onboarding/onboarding_bootstrap_screen.dart": "efbfe73c1cf04d74c83e3de275a7dd7cbacd8304bfaaf878aa354b1c9092d077",
+  "lib/features/onboarding/widgets/blab_wordmark_animation.dart": "f35ecd30d4116ef58c1e8a45dc32fc571ea0908ae76a7b6b5e12ac86082df597",
+  "lib/features/onboarding/widgets/wordmark_paths.dart": "312d08f1311ce1dabb21f2c9e3d142c53ca99c4376c06743d43692577a5843b9",
+  "pubspec.yaml": "55af47af6391f9d05dd2a961da3f6ff8c32dc1614f22c3c79be1dd94f2040e38",
+  "pubspec.lock": "c6e2d9db3efb6d193e3d5d3dd1154760a930cf37d20bb141b892b7bdc609b346"
+}

@@ -1,0 +1,41 @@
+{
+  "request": 15089,
+  "base": "7e7a5a724da67d1f2356c91ba40538a944613300",
+  "candidate_uncommitted": true,
+  "build": 35,
+  "channel": "staging/test",
+  "artifact": "../qa-artifacts/early-opening-35-final.apk",
+  "sha256": "5260f927000711b432f923c56a5c76bfdbb6422e70b6a0cbadaa2dada0c29bc1",
+  "full_tests": 1039,
+  "environment_skips": 16,
+  "focused_tests": 14,
+  "analysis": "clean",
+  "native": {
+    "device": "emulator-5580",
+    "cold_recording": "native35.mp4",
+    "warm_recording": "native35-warm.mp4",
+    "first_install_retained": "2026-10-21 17:15:53",
+    "preference_retained": "DE",
+    "native_splash_exit_coordinated": true,
+    "signed_update": "34 to35",
+    "native_first_visible_ms_after_Dart": 670,
+    "services_ready_ms_after_Dart": 760,
+    "motion_complete_ms_after_Dart": 1507,
+    "destination_visible_ms_after_Dart": 1582,
+    "android_TTID_baseline_one_run_ms": 1587,
+    "android_TTID_candidate_one_run_ms": 1005
+  },
+  "recording_delivery": 15128,
+  "delivery_trim": "Corrected export15172 preserves71 captured frames and their timestamps; original15128 dropped frames and is obsolete.",
+  "merged": false,
+  "distributed": false,
+  "backend_changed": false,
+  "limitations": [
+    "Single emulator paired timing, not physical-phone performance guarantee.",
+    "Signed-out Welcome; authenticated Chats/deep-link device acceptance and iOS not claimed.",
+    "OS/engine startup before first visible Flutter frame remains."
+  ],
+  "visual_approval": 15215,
+  "corrected_recording_delivery": 15172,
+  "recording_delivery_superseded": 15128
+}
