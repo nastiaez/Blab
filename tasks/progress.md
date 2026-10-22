@@ -2082,3 +2082,13 @@ original9 (3 accepted/0 downloaded), no additional/automated recipients.
 Uploaded-download bytes previously verified identical to tested APKs. Runtime
 91459ce unchanged; no new build or backend/notice changes. Tester download or
 physical installation not inferred. Canonical external receipt updated.
+
+
+### BLA-25 photo notifications ·22 October ·in progress
+
+Candidate in dedicated current-main worktree; Supabase message-type lookup and localized photo preview copy implemented. Nine focused/253 backend checks pass; entrypoint type-check passes. Actual Android/iOS FCM and Stream path unverified. Scoped approved cleanup recovered2.11GiB (3.19GiB free). Linear now requires reauthentication; actual notification verification still pending. No main/hosted/release change. See docs/qa/2026-10-22-bla25-photo-notifications/README.md.
+
+
+22 October continuation15335: Linear restored. Actual candidate photo payload sent via real FCM to owned Android5580; notification shade shows Alice / Фото and real tap preserves chat/receiver identity. Native test passed; screenshot inspected and delivered15350. Direct payload proof only: database source lookup, hosted deployment, Stream and iOS remain unverified. No main integration or release.
+
+BLA25 continuation15374: actual send-push entrypoint tests pass1/8 steps; backend254 pass0 failures. Locale/photo/type/identity/privacy/invite paths exercised with intercepted database/provider responses and generated dummy signing key. No real cloud access in handler tests, no runtime change/deployment. Live hosted source-to-device check remains unverified.

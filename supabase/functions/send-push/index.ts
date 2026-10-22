@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import {
   buildFcmMessage,
   type ClaimedPushEvent,
@@ -47,7 +47,7 @@ function base64Url(value: Uint8Array | string): string {
   );
 }
 
-function privateKeyBytes(pem: string): Uint8Array {
+function privateKeyBytes(pem: string): Uint8Array<ArrayBuffer> {
   const body = pem
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
@@ -127,7 +127,7 @@ function safeFailureCode(error: unknown): string {
 }
 
 async function completeClaimedEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   eventId: string,
   lastError: string,
 ): Promise<void> {
@@ -139,7 +139,7 @@ async function completeClaimedEvent(
 }
 
 async function recordAuthenticationFailure(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   eventId: string,
   tokens: Array<Record<string, unknown>>,
   failureCode: string,
@@ -210,6 +210,14 @@ Deno.serve(async (request) => {
       return json({ error: "source_lookup_failed" }, 500);
     }
     claimed.message_id = source.source_key;
+    const { data: message, error: messageError } = await supabase
+      .from("messages").select("message_type")
+      .eq("id", source.source_key).eq("chat_id", claimed.chat_id).single();
+    if (messageError || !message) {
+      await completeClaimedEvent(supabase, eventId, "message_lookup_failed");
+      return json({ error: "message_lookup_failed" }, 500);
+    }
+    claimed.message_type = message.message_type;
   }
 
   const { data: tokens, error: tokenError } = await supabase

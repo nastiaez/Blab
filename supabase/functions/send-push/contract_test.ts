@@ -94,7 +94,75 @@ Deno.test("only explicit UNREGISTERED responses retire a token", () => {
 });
 
 Deno.test("notification identity isolates account, chat and read message", () => {
-  const value = buildFcmMessage({...event, message_id: "read-message"}, "token", false);
-  assert(value.message.android.notification.tag === `blab:${event.recipient_id}:${event.chat_id}:read-message`, "precise cancellation tag");
-  assert(value.message.data.messageId === "read-message", "message identity retained with previews off");
+  const value = buildFcmMessage(
+    { ...event, message_id: "read-message" },
+    "token",
+    false,
+  );
+  assert(
+    value.message.android.notification.tag ===
+      `blab:${event.recipient_id}:${event.chat_id}:read-message`,
+    "precise cancellation tag",
+  );
+  assert(
+    value.message.data.messageId === "read-message",
+    "message identity retained with previews off",
+  );
+});
+
+Deno.test("photo previews identify media in each recipient interface language", () => {
+  for (
+    const [language, photo] of Object.entries({
+      en: "Photo",
+      de: "Foto",
+      es: "Foto",
+      uk: "Фото",
+    })
+  ) {
+    for (const original_body of ["", null, "   "]) {
+      const payload = buildFcmMessage(
+        {
+          ...event,
+          interface_language: language,
+          message_type: "image",
+          original_body,
+        },
+        "token",
+        true,
+      );
+      assert(payload.message.notification.title === "Alice", "sender title");
+      assert(
+        payload.message.notification.body === photo,
+        `${language} photo label`,
+      );
+    }
+  }
+});
+
+Deno.test("captioned photos retain authored caption; hidden previews reveal no media type", () => {
+  const photo = {
+    ...event,
+    message_type: "image" as const,
+    interface_language: "uk",
+  };
+  assert(
+    buildFcmMessage(photo, "token", true).message.notification.body ===
+      "Фото: Hello Bob How are you?",
+    "localized photo and authored caption",
+  );
+  const hidden = buildFcmMessage(photo, "token", false);
+  assert(hidden.message.notification.title === "Blab", "private title");
+  assert(
+    hidden.message.notification.body === "У вас нове повідомлення",
+    "private copy unchanged",
+  );
+  const text = buildFcmMessage(
+    { ...event, original_body: "", interface_language: "uk" },
+    "token",
+    true,
+  );
+  assert(
+    text.message.notification.body === "У вас нове повідомлення",
+    "empty text is not a photo",
+  );
 });
