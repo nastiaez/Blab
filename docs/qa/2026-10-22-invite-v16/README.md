@@ -60,3 +60,22 @@ conflict or intervening main changes. All reviewed source hashes match the final
 V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
 only final V16 native acceptance and its QA entry are promoted. Manual physical
 phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+
+## Integrated revision verification ·15553 ·22 October2026
+Source commit b7a7fe3 fast-forward integrated into local main without conflicts.
+Fresh full client suite1056 passed/17 environment skips;211 backend checks passed;
+analysis,394-file formatting and shell syntax checks clean. Retained clean-reset
+proof covers the identical123-migration source; current local ledger exactly
+matches123 committed migrations. SQL invitation/privacy suite passes in rollback.
+First replay encountered an existing local Alice/Bob fixture; retry clears only
+QA chats inside the same transaction and rolls everything back, no retained data
+reset. Initial CLI status used the default project name; read-only status via
+the isolated task project recovered existing local credentials, no service change.
+Installed Android5560 replays integrated b7a7fe3: search/selection/Clear/system
+Back, Copy/native Share and return pass; only Bob receives the invitation, Carol
+does not, membership stays1. Native log ends All tests passed. Original delivered
+real-touch visual packet remains the visual evidence; automated replay captures
+are diagnostic, not a new parity claim. No signed release or distribution created.
+Hosted migration/deployment, Firebase, update notices, physical-device/iOS and
+manual launch acceptance remain separate; tracker stays unchecked.
