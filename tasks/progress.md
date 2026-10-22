@@ -2092,3 +2092,9 @@ Candidate in dedicated current-main worktree; Supabase message-type lookup and l
 22 October continuation15335: Linear restored. Actual candidate photo payload sent via real FCM to owned Android5580; notification shade shows Alice / Фото and real tap preserves chat/receiver identity. Native test passed; screenshot inspected and delivered15350. Direct payload proof only: database source lookup, hosted deployment, Stream and iOS remain unverified. No main integration or release.
 
 BLA25 continuation15374: actual send-push entrypoint tests pass1/8 steps; backend254 pass0 failures. Locale/photo/type/identity/privacy/invite paths exercised with intercepted database/provider responses and generated dummy signing key. No real cloud access in handler tests, no runtime change/deployment. Live hosted source-to-device check remains unverified.
+
+### BLA-26 correction eligibility ·22 October ·candidate in progress
+
+Existing source-language invariant now checked before rendering marks, preserving historical sharing rules and exact originals.39 focused checks pass with red/green reproduction; final native/full checks pending. No prompt/cache/hosted/main/release changes. QA: docs/qa/2026-10-22-bla26-correction-eligibility/README.md.
+
+BLA26 final candidate: full1,040 pass/16 environment skips, analysis clean, Android cached-metadata fixture both viewers passes. Actual inspected receiver screenshot15361; appearance review pending. Uncommitted/unmerged/unreleased.

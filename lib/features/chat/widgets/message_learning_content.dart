@@ -18,8 +18,11 @@ bool shouldShowCorrectionMarks({
   required bool isOutgoing,
   required bool languagesMatchedAtSend,
   required LearningAidMode mode,
+  required String sourceLanguageCode,
+  required String learningLanguageCode,
 }) {
   return mode == LearningAidMode.correction &&
+      sourceLanguageCode == learningLanguageCode &&
       (isOutgoing || languagesMatchedAtSend);
 }
 
@@ -298,6 +301,8 @@ class MessageLearningContent extends StatelessWidget {
       isOutgoing: isOutgoing,
       languagesMatchedAtSend: languagesMatchedAtSend,
       mode: value.mode,
+      sourceLanguageCode: value.sourceLang,
+      learningLanguageCode: learningLanguageCode,
     );
 
     final formChoices = formAlternativesOverride == null

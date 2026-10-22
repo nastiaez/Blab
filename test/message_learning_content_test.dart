@@ -16,6 +16,8 @@ void main() {
     () {
       expect(
         shouldShowCorrectionMarks(
+          sourceLanguageCode: 'en',
+          learningLanguageCode: 'en',
           isOutgoing: true,
           languagesMatchedAtSend: false,
           mode: LearningAidMode.correction,
@@ -24,6 +26,8 @@ void main() {
       );
       expect(
         shouldShowCorrectionMarks(
+          sourceLanguageCode: 'en',
+          learningLanguageCode: 'en',
           isOutgoing: false,
           languagesMatchedAtSend: true,
           mode: LearningAidMode.correction,
@@ -32,6 +36,8 @@ void main() {
       );
       expect(
         shouldShowCorrectionMarks(
+          sourceLanguageCode: 'en',
+          learningLanguageCode: 'en',
           isOutgoing: false,
           languagesMatchedAtSend: false,
           mode: LearningAidMode.correction,
@@ -40,6 +46,8 @@ void main() {
       );
       expect(
         shouldShowCorrectionMarks(
+          sourceLanguageCode: 'en',
+          learningLanguageCode: 'en',
           isOutgoing: true,
           languagesMatchedAtSend: true,
           mode: LearningAidMode.translation,
@@ -1166,4 +1174,46 @@ void main() {
     expect(find.text('hallo'), findsOneWidget);
     expect(find.text('hello'), findsOneWidget);
   });
+  testWidgets(
+    'BLA26 foreign-source correction metadata never marks a translation',
+    (tester) async {
+      for (final pair in [
+        (
+          'en',
+          'de',
+          'Yesterday I go to the park.',
+          'Gestern bin ich in den Park gegangen.',
+        ),
+        ('es', 'fr', 'Yo tiene hambre.', "J’ai faim."),
+      ]) {
+        for (final outgoing in [true, false]) {
+          await tester.pumpWidget(
+            host(
+              AsyncData(
+                result(
+                  learning: pair.$4,
+                  interfaceText: pair.$3,
+                  source: pair.$1,
+                  mode: LearningAidMode.correction,
+                  explanation: 'Stale correction metadata',
+                  confidence: CorrectionConfidence.high,
+                ),
+              ),
+              authoredText: pair.$3,
+              learningCode: pair.$2,
+              isOutgoing: outgoing,
+              languagesMatchedAtSend: true,
+            ),
+          );
+          expect(find.byKey(const ValueKey('inline-correction')), findsNothing);
+          expect(find.byType(InlineCorrectionText), findsNothing);
+          expect(find.text(pair.$3), findsOneWidget);
+          expect(
+            find.textContaining('Stale correction metadata'),
+            findsNothing,
+          );
+        }
+      }
+    },
+  );
 }
