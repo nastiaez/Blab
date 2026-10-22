@@ -10,6 +10,7 @@ export interface ClaimedPushEvent {
   interface_language: string;
   chat_id: string;
   original_body: string | null;
+  message_type?: string;
   message_id?: string;
 }
 
@@ -62,11 +63,13 @@ export function buildFcmMessage(
     : copy.newMessage;
 
   if (
-    previewsEnabled && event.event_type === "chat_message" &&
-    event.original_body !== null
+    previewsEnabled && event.event_type === "chat_message"
   ) {
     title = event.actor_name.trim() || "Blab";
-    body = truncatePreview(event.original_body) || copy.newMessage;
+    const caption = truncatePreview(event.original_body ?? "");
+    body = event.message_type === "image"
+      ? caption ? truncatePreview(`${copy.photo}: ${caption}`) : copy.photo
+      : caption || copy.newMessage;
   }
 
   return {
@@ -98,22 +101,27 @@ export function buildFcmMessage(
 
 function genericCopy(language: string): {
   newMessage: string;
+  photo: string;
   inviteClaimed: string;
 } {
   return {
     de: {
+      photo: "Foto",
       newMessage: "Du hast eine neue Nachricht",
       inviteClaimed: "Dein Freund ist dem Chat beigetreten",
     },
     es: {
+      photo: "Foto",
       newMessage: "Tienes un mensaje nuevo",
       inviteClaimed: "Tu amigo se ha unido al chat",
     },
     uk: {
+      photo: "Фото",
       newMessage: "У вас нове повідомлення",
       inviteClaimed: "Ваш друг приєднався до чату",
     },
   }[language] ?? {
+    photo: "Photo",
     newMessage: "You have a new message",
     inviteClaimed: "Your friend joined the chat",
   };
