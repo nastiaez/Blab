@@ -1,0 +1,10 @@
+Final source: flutter analyze --no-pub clean; 45 focused notification tests pass.
+Native source: all service/content/communication policy Swift iOS15 simulator API checks pass;
+56 native account/privacy assertions pass. AppDelegate typecheck with real Flutter framework
+and generated-registrant stub passes (not a signed app build).
+Full initial implementation suite:1081 pass,17 environment skips before final race-hardening.
+Final full rerun stopped during global disk exhaustion (down to249MiB) and stalled concurrent
+verification; NOT a completed final-source full gate. No final full-suite success claimed.
+No full app/archive build, simulator mutation, physical-iPhone proof, APNs send, backend mutation,
+main integration, upload or distribution. Approved40–45 renderer retained without UI redesign.
+Independent review findings fixed with focused regressions. Branch source prepared, not released.

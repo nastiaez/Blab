@@ -1,0 +1,1014 @@
+[
+  {
+    "method": "GET",
+    "path": "bundleIds?filter[identifier]=blab.nastia.ez",
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "bundleIds",
+          "id": "C4XA39TJPT",
+          "attributes": {
+            "name": "Blab",
+            "identifier": "blab.nastia.ez",
+            "platform": "UNIVERSAL",
+            "seedId": "A7QWVJG835"
+          },
+          "relationships": {
+            "bundleIdCapabilities": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/C4XA39TJPT/relationships/bundleIdCapabilities",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/C4XA39TJPT/bundleIdCapabilities"
+              }
+            },
+            "profiles": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/C4XA39TJPT/relationships/profiles",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/C4XA39TJPT/profiles"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/C4XA39TJPT"
+          }
+        },
+        {
+          "type": "bundleIds",
+          "id": "Z6PKGBHAC6",
+          "attributes": {
+            "name": "Blab Test",
+            "identifier": "blab.nastia.ez.test",
+            "platform": "UNIVERSAL",
+            "seedId": "A7QWVJG835"
+          },
+          "relationships": {
+            "bundleIdCapabilities": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/relationships/bundleIdCapabilities",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/bundleIdCapabilities"
+              }
+            },
+            "profiles": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/relationships/profiles",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/profiles"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=blab.nastia.ez"
+      },
+      "meta": {
+        "paging": {
+          "total": 2,
+          "limit": 20
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds/C4XA39TJPT/bundleIdCapabilities",
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "bundleIdCapabilities",
+          "id": "C4XA39TJPT_IN_APP_PURCHASE",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "IN_APP_PURCHASE"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_IN_APP_PURCHASE/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_IN_APP_PURCHASE/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_IN_APP_PURCHASE"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "C4XA39TJPT_PUSH_NOTIFICATIONS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "PUSH_NOTIFICATIONS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_PUSH_NOTIFICATIONS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_PUSH_NOTIFICATIONS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_PUSH_NOTIFICATIONS"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "C4XA39TJPT_APPLE_ID_AUTH",
+          "attributes": {
+            "settings": [
+              {
+                "key": "APPLE_ID_AUTH_APP_CONSENT",
+                "options": [
+                  {
+                    "key": "PRIMARY_APP_CONSENT"
+                  }
+                ]
+              }
+            ],
+            "capabilityType": "APPLE_ID_AUTH"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_APPLE_ID_AUTH/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_APPLE_ID_AUTH/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_APPLE_ID_AUTH"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "C4XA39TJPT_ASSOCIATED_DOMAINS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "ASSOCIATED_DOMAINS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_ASSOCIATED_DOMAINS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_ASSOCIATED_DOMAINS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_ASSOCIATED_DOMAINS"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/C4XA39TJPT/bundleIdCapabilities"
+      },
+      "meta": {
+        "paging": {
+          "total": 4,
+          "limit": 2147483647
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIdCapabilities",
+    "status": 409,
+    "body": {
+      "errors": [
+        {
+          "id": "0c1417b2-9ce7-42db-a755-76c2a9cac329",
+          "status": "409",
+          "code": "ENTITY_ERROR.ATTRIBUTE.TYPE",
+          "title": "An attribute in the provided entity has the wrong type",
+          "detail": "'COMMUNICATION_NOTIFICATIONS' is not a valid value for the attribute 'capabilityType'. Expected one of: 'ICLOUD', 'IN_APP_PURCHASE', 'GAME_CENTER', 'PUSH_NOTIFICATIONS', 'WALLET', 'INTER_APP_AUDIO', 'MAPS', 'ASSOCIATED_DOMAINS', 'PERSONAL_VPN', 'APP_GROUPS', 'HEALTHKIT', 'HOMEKIT', 'WIRELESS_ACCESSORY_CONFIGURATION', 'APPLE_PAY', 'DATA_PROTECTION', 'SIRIKIT', 'NETWORK_EXTENSIONS', 'MULTIPATH', 'HOT_SPOT', 'NFC_TAG_READING', 'CLASSKIT', 'AUTOFILL_CREDENTIAL_PROVIDER', 'ACCESS_WIFI_INFORMATION', 'NETWORK_CUSTOM_PROTOCOL', 'COREMEDIA_HLS_LOW_LATENCY', 'SYSTEM_EXTENSION_INSTALL', 'USER_MANAGEMENT', 'APPLE_ID_AUTH'",
+          "source": {
+            "pointer": "/data/attributes/capabilityType"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIdCapabilities",
+    "status": 201,
+    "body": {
+      "data": {
+        "type": "bundleIdCapabilities",
+        "id": "C4XA39TJPT_APP_GROUPS",
+        "attributes": {
+          "settings": null,
+          "capabilityType": "APP_GROUPS"
+        },
+        "relationships": {
+          "bundleId": {
+            "data": {
+              "type": "bundleIds",
+              "id": "C4XA39TJPT"
+            },
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_APP_GROUPS/relationships/bundleId",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_APP_GROUPS/bundleId"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/C4XA39TJPT_APP_GROUPS"
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds/Z6PKGBHAC6/bundleIdCapabilities",
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_IN_APP_PURCHASE",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "IN_APP_PURCHASE"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_IN_APP_PURCHASE/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_IN_APP_PURCHASE/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_IN_APP_PURCHASE"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_PUSH_NOTIFICATIONS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "PUSH_NOTIFICATIONS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_PUSH_NOTIFICATIONS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_PUSH_NOTIFICATIONS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_PUSH_NOTIFICATIONS"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_APPLE_ID_AUTH",
+          "attributes": {
+            "settings": [
+              {
+                "key": "APPLE_ID_AUTH_APP_CONSENT",
+                "options": [
+                  {
+                    "key": "PRIMARY_APP_CONSENT"
+                  }
+                ]
+              }
+            ],
+            "capabilityType": "APPLE_ID_AUTH"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APPLE_ID_AUTH/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APPLE_ID_AUTH/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APPLE_ID_AUTH"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_ASSOCIATED_DOMAINS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "ASSOCIATED_DOMAINS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_ASSOCIATED_DOMAINS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_ASSOCIATED_DOMAINS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_ASSOCIATED_DOMAINS"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/bundleIdCapabilities"
+      },
+      "meta": {
+        "paging": {
+          "total": 4,
+          "limit": 2147483647
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIdCapabilities",
+    "status": 409,
+    "body": {
+      "errors": [
+        {
+          "id": "2ee1af38-c8fb-4f46-a179-9743ac737a68",
+          "status": "409",
+          "code": "ENTITY_ERROR.ATTRIBUTE.TYPE",
+          "title": "An attribute in the provided entity has the wrong type",
+          "detail": "'COMMUNICATION_NOTIFICATIONS' is not a valid value for the attribute 'capabilityType'. Expected one of: 'ICLOUD', 'IN_APP_PURCHASE', 'GAME_CENTER', 'PUSH_NOTIFICATIONS', 'WALLET', 'INTER_APP_AUDIO', 'MAPS', 'ASSOCIATED_DOMAINS', 'PERSONAL_VPN', 'APP_GROUPS', 'HEALTHKIT', 'HOMEKIT', 'WIRELESS_ACCESSORY_CONFIGURATION', 'APPLE_PAY', 'DATA_PROTECTION', 'SIRIKIT', 'NETWORK_EXTENSIONS', 'MULTIPATH', 'HOT_SPOT', 'NFC_TAG_READING', 'CLASSKIT', 'AUTOFILL_CREDENTIAL_PROVIDER', 'ACCESS_WIFI_INFORMATION', 'NETWORK_CUSTOM_PROTOCOL', 'COREMEDIA_HLS_LOW_LATENCY', 'SYSTEM_EXTENSION_INSTALL', 'USER_MANAGEMENT', 'APPLE_ID_AUTH'",
+          "source": {
+            "pointer": "/data/attributes/capabilityType"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIdCapabilities",
+    "status": 201,
+    "body": {
+      "data": {
+        "type": "bundleIdCapabilities",
+        "id": "Z6PKGBHAC6_APP_GROUPS",
+        "attributes": {
+          "settings": null,
+          "capabilityType": "APP_GROUPS"
+        },
+        "relationships": {
+          "bundleId": {
+            "data": {
+              "type": "bundleIds",
+              "id": "Z6PKGBHAC6"
+            },
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APP_GROUPS/relationships/bundleId",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APP_GROUPS/bundleId"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APP_GROUPS"
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds?filter[identifier]=blab.nastia.ez.NotificationContent",
+    "status": 200,
+    "body": {
+      "data": [],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=blab.nastia.ez.NotificationContent"
+      },
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 20
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIds",
+    "status": 201,
+    "body": {
+      "data": {
+        "type": "bundleIds",
+        "id": "87GFAFS7S4",
+        "attributes": {
+          "name": "blab nastia ez NotificationContent",
+          "identifier": "blab.nastia.ez.NotificationContent",
+          "platform": "UNIVERSAL",
+          "seedId": "A7QWVJG835"
+        },
+        "relationships": {
+          "bundleIdCapabilities": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [
+              {
+                "type": "bundleIdCapabilities",
+                "id": "87GFAFS7S4_IN_APP_PURCHASE"
+              }
+            ],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/87GFAFS7S4/relationships/bundleIdCapabilities",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/87GFAFS7S4/bundleIdCapabilities"
+            }
+          },
+          "profiles": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/87GFAFS7S4/relationships/profiles",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/87GFAFS7S4/profiles"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/87GFAFS7S4"
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds?filter[identifier]=blab.nastia.ez.NotificationService",
+    "status": 200,
+    "body": {
+      "data": [],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=blab.nastia.ez.NotificationService"
+      },
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 20
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIds",
+    "status": 201,
+    "body": {
+      "data": {
+        "type": "bundleIds",
+        "id": "XHQYPNTQA9",
+        "attributes": {
+          "name": "blab nastia ez NotificationService",
+          "identifier": "blab.nastia.ez.NotificationService",
+          "platform": "UNIVERSAL",
+          "seedId": "A7QWVJG835"
+        },
+        "relationships": {
+          "bundleIdCapabilities": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [
+              {
+                "type": "bundleIdCapabilities",
+                "id": "XHQYPNTQA9_IN_APP_PURCHASE"
+              }
+            ],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/XHQYPNTQA9/relationships/bundleIdCapabilities",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/XHQYPNTQA9/bundleIdCapabilities"
+            }
+          },
+          "profiles": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/XHQYPNTQA9/relationships/profiles",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/XHQYPNTQA9/profiles"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/XHQYPNTQA9"
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds?filter[identifier]=blab.nastia.ez.test",
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "bundleIds",
+          "id": "Z6PKGBHAC6",
+          "attributes": {
+            "name": "Blab Test",
+            "identifier": "blab.nastia.ez.test",
+            "platform": "UNIVERSAL",
+            "seedId": "A7QWVJG835"
+          },
+          "relationships": {
+            "bundleIdCapabilities": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/relationships/bundleIdCapabilities",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/bundleIdCapabilities"
+              }
+            },
+            "profiles": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/relationships/profiles",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/profiles"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=blab.nastia.ez.test"
+      },
+      "meta": {
+        "paging": {
+          "total": 1,
+          "limit": 20
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds/Z6PKGBHAC6/bundleIdCapabilities",
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_IN_APP_PURCHASE",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "IN_APP_PURCHASE"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_IN_APP_PURCHASE/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_IN_APP_PURCHASE/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_IN_APP_PURCHASE"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_PUSH_NOTIFICATIONS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "PUSH_NOTIFICATIONS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_PUSH_NOTIFICATIONS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_PUSH_NOTIFICATIONS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_PUSH_NOTIFICATIONS"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_APPLE_ID_AUTH",
+          "attributes": {
+            "settings": [
+              {
+                "key": "APPLE_ID_AUTH_APP_CONSENT",
+                "options": [
+                  {
+                    "key": "PRIMARY_APP_CONSENT"
+                  }
+                ]
+              }
+            ],
+            "capabilityType": "APPLE_ID_AUTH"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APPLE_ID_AUTH/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APPLE_ID_AUTH/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APPLE_ID_AUTH"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_ASSOCIATED_DOMAINS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "ASSOCIATED_DOMAINS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_ASSOCIATED_DOMAINS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_ASSOCIATED_DOMAINS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_ASSOCIATED_DOMAINS"
+          }
+        },
+        {
+          "type": "bundleIdCapabilities",
+          "id": "Z6PKGBHAC6_APP_GROUPS",
+          "attributes": {
+            "settings": null,
+            "capabilityType": "APP_GROUPS"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APP_GROUPS/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APP_GROUPS/bundleId"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/bundleIdCapabilities/Z6PKGBHAC6_APP_GROUPS"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/Z6PKGBHAC6/bundleIdCapabilities"
+      },
+      "meta": {
+        "paging": {
+          "total": 5,
+          "limit": 2147483647
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIdCapabilities",
+    "status": 409,
+    "body": {
+      "errors": [
+        {
+          "id": "e5f26157-a7d8-4768-bc8e-ca72d9a43bca",
+          "status": "409",
+          "code": "ENTITY_ERROR.ATTRIBUTE.TYPE",
+          "title": "An attribute in the provided entity has the wrong type",
+          "detail": "'COMMUNICATION_NOTIFICATIONS' is not a valid value for the attribute 'capabilityType'. Expected one of: 'ICLOUD', 'IN_APP_PURCHASE', 'GAME_CENTER', 'PUSH_NOTIFICATIONS', 'WALLET', 'INTER_APP_AUDIO', 'MAPS', 'ASSOCIATED_DOMAINS', 'PERSONAL_VPN', 'APP_GROUPS', 'HEALTHKIT', 'HOMEKIT', 'WIRELESS_ACCESSORY_CONFIGURATION', 'APPLE_PAY', 'DATA_PROTECTION', 'SIRIKIT', 'NETWORK_EXTENSIONS', 'MULTIPATH', 'HOT_SPOT', 'NFC_TAG_READING', 'CLASSKIT', 'AUTOFILL_CREDENTIAL_PROVIDER', 'ACCESS_WIFI_INFORMATION', 'NETWORK_CUSTOM_PROTOCOL', 'COREMEDIA_HLS_LOW_LATENCY', 'SYSTEM_EXTENSION_INSTALL', 'USER_MANAGEMENT', 'APPLE_ID_AUTH'",
+          "source": {
+            "pointer": "/data/attributes/capabilityType"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds?filter[identifier]=blab.nastia.ez.test.NotificationContent",
+    "status": 200,
+    "body": {
+      "data": [],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=blab.nastia.ez.test.NotificationContent"
+      },
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 20
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIds",
+    "status": 201,
+    "body": {
+      "data": {
+        "type": "bundleIds",
+        "id": "92Q97DFN56",
+        "attributes": {
+          "name": "blab nastia ez test NotificationContent",
+          "identifier": "blab.nastia.ez.test.NotificationContent",
+          "platform": "UNIVERSAL",
+          "seedId": "A7QWVJG835"
+        },
+        "relationships": {
+          "bundleIdCapabilities": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [
+              {
+                "type": "bundleIdCapabilities",
+                "id": "92Q97DFN56_IN_APP_PURCHASE"
+              }
+            ],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/92Q97DFN56/relationships/bundleIdCapabilities",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/92Q97DFN56/bundleIdCapabilities"
+            }
+          },
+          "profiles": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/92Q97DFN56/relationships/profiles",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/92Q97DFN56/profiles"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/92Q97DFN56"
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "bundleIds?filter[identifier]=blab.nastia.ez.test.NotificationService",
+    "status": 200,
+    "body": {
+      "data": [],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds?filter%5Bidentifier%5D=blab.nastia.ez.test.NotificationService"
+      },
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 20
+        }
+      }
+    }
+  },
+  {
+    "method": "POST",
+    "path": "bundleIds",
+    "status": 201,
+    "body": {
+      "data": {
+        "type": "bundleIds",
+        "id": "P88S2U4Q3X",
+        "attributes": {
+          "name": "blab nastia ez test NotificationService",
+          "identifier": "blab.nastia.ez.test.NotificationService",
+          "platform": "UNIVERSAL",
+          "seedId": "A7QWVJG835"
+        },
+        "relationships": {
+          "bundleIdCapabilities": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [
+              {
+                "type": "bundleIdCapabilities",
+                "id": "P88S2U4Q3X_IN_APP_PURCHASE"
+              }
+            ],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/P88S2U4Q3X/relationships/bundleIdCapabilities",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/P88S2U4Q3X/bundleIdCapabilities"
+            }
+          },
+          "profiles": {
+            "meta": {
+              "paging": {
+                "total": 0,
+                "limit": 2147483647
+              }
+            },
+            "data": [],
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/P88S2U4Q3X/relationships/profiles",
+              "related": "https://api.appstoreconnect.apple.com/v1/bundleIds/P88S2U4Q3X/profiles"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/bundleIds/P88S2U4Q3X"
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/bundleIds"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "profiles?limit=200",
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "profiles",
+          "id": "3VNK8NJG6Z",
+          "attributes": {
+            "profileState": "INVALID",
+            "createdDate": "2026-10-15T19:27:31.000+00:00",
+            "profileType": "IOS_APP_STORE",
+            "profileVersion": "1",
+            "name": "Blab Production App Store",
+            "uuid": "f0d288ce-2a49-4acf-850f-f2c5660a500d",
+            "platform": "IOS",
+            "expirationDate": "2027-10-15T19:10:03.000+00:00"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z/bundleId"
+              }
+            },
+            "certificates": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z/relationships/certificates",
+                "related": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z/certificates"
+              }
+            },
+            "devices": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z/relationships/devices",
+                "related": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z/devices"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/profiles/3VNK8NJG6Z"
+          }
+        },
+        {
+          "type": "profiles",
+          "id": "5CMX4KMFS9",
+          "attributes": {
+            "profileState": "INVALID",
+            "createdDate": "2026-10-15T19:27:58.000+00:00",
+            "profileType": "IOS_APP_STORE",
+            "profileVersion": "1",
+            "name": "Blab Test App Store",
+            "uuid": "f2484c36-a6c1-48ef-8a97-281aa19d88b6",
+            "platform": "IOS",
+            "expirationDate": "2027-10-15T19:10:03.000+00:00"
+          },
+          "relationships": {
+            "bundleId": {
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9/relationships/bundleId",
+                "related": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9/bundleId"
+              }
+            },
+            "certificates": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9/relationships/certificates",
+                "related": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9/certificates"
+              }
+            },
+            "devices": {
+              "meta": {
+                "paging": {
+                  "total": 0,
+                  "limit": 2147483647
+                }
+              },
+              "links": {
+                "self": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9/relationships/devices",
+                "related": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9/devices"
+              }
+            }
+          },
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/profiles/5CMX4KMFS9"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/profiles?limit=200"
+      },
+      "meta": {
+        "paging": {
+          "total": 2,
+          "limit": 200
+        }
+      }
+    }
+  }
+]

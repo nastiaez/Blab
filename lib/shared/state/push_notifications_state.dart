@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../services/ios_communication.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,6 +75,8 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
   Completer<void>? _hydrated;
   String? _registeredToken;
   bool _permissionRequested = false;
+  bool _signingOut = false;
+  Future<void> _preferenceChanges = Future<void>.value();
   bool _reminderDismissed = false;
   Future<void>? _permissionRequest;
   String? _registeredUserId;
@@ -90,7 +93,16 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
     final supported = ref.read(pushNotificationGatewayProvider).isSupported;
     _hydrated = Completer<void>();
     ref.listen<String?>(currentUserIdProvider, (previous, next) {
+      if (previous != next) {
+        unawaited(
+          IosCommunication.sync(
+            next,
+            state.previewsEnabled,
+          ).catchError((Object _) => null),
+        );
+      }
       if (previous != next && next != null) {
+        _signingOut = false;
         unawaited(_registerCurrentTokenBestEffort());
       }
     });
@@ -110,6 +122,10 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
       _reminderDismissed =
           prefs.getBool(kNotificationReminderDismissedKey) ?? false;
       final previews = prefs.getBool(kNotificationPreviewsKey) ?? true;
+      await IosCommunication.sync(
+        _signingOut ? null : ref.read(currentUserIdProvider),
+        !_signingOut && previews,
+      );
       if (!_gateway.isSupported) {
         if (ref.mounted) {
           state = PushNotificationState(
@@ -244,19 +260,46 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
     await prefs.setBool(kNotificationReminderDismissedKey, true);
   }
 
-  Future<void> setPreviewsEnabled(bool value) async {
+  Future<void> setPreviewsEnabled(bool value) {
+    final work = _preferenceChanges
+        .catchError((Object _) {})
+        .then((_) => _setPreviewsEnabled(value));
+    _preferenceChanges = work;
+    return work;
+  }
+
+  Future<void> _setPreviewsEnabled(bool value) async {
     await _waitUntilHydrated();
+    if (_signingOut) return;
+    final owner = ref.read(currentUserIdProvider);
     final previous = state.previewsEnabled;
     if (previous == value) return;
-    state = state.copyWith(previewsEnabled: value);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kNotificationPreviewsKey, value);
-    if (!state.isAuthorized) return;
+    state = state.copyWith(previewsEnabled: value);
     try {
-      await _registerCurrentToken();
+      await IosCommunication.sync(owner, value);
+      if (!ref.mounted ||
+          _signingOut ||
+          ref.read(currentUserIdProvider) != owner) {
+        return;
+      }
+      await prefs.setBool(kNotificationPreviewsKey, value);
+      if (state.isAuthorized) await _registerCurrentToken();
     } catch (_) {
-      state = state.copyWith(previewsEnabled: previous);
-      await prefs.setBool(kNotificationPreviewsKey, previous);
+      _registeredPreviewsEnabled = null;
+      if (ref.mounted &&
+          !_signingOut &&
+          ref.read(currentUserIdProvider) == owner) {
+        // Rotate again before restoring UI consent: an RPC may have committed
+        // even when its response failed. Its old epoch can no longer reveal content.
+        await IosCommunication.sync(owner, previous);
+        if (ref.mounted &&
+            !_signingOut &&
+            ref.read(currentUserIdProvider) == owner) {
+          state = state.copyWith(previewsEnabled: previous);
+          await prefs.setBool(kNotificationPreviewsKey, previous);
+        }
+      }
       rethrow;
     }
   }
@@ -264,6 +307,12 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
   Future<void> openSystemSettings() => _gateway.openSystemSettings();
 
   Future<void> prepareForSignOut() async {
+    _signingOut = true;
+    try {
+      await IosCommunication.clear();
+    } catch (_) {
+      /* Continue token revocation even if native storage fails. */
+    }
     await _waitUntilHydrated();
     try {
       await _registration;
@@ -313,7 +362,11 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
   }
 
   Future<void> _registerCurrentToken() async {
-    if (!state.isAuthorized || ref.read(currentUserIdProvider) == null) return;
+    if (_signingOut ||
+        !state.isAuthorized ||
+        ref.read(currentUserIdProvider) == null) {
+      return;
+    }
     final token = await _gateway.getToken();
     if (token == null) {
       if (kDebugMode) debugPrint('Push registration skipped: no FCM token.');
@@ -327,11 +380,16 @@ class PushNotificationsNotifier extends Notifier<PushNotificationState> {
 
   Future<void> _registerToken(String token) async {
     final userId = ref.read(currentUserIdProvider);
-    if (!state.isAuthorized || userId == null) return;
+    if (_signingOut || !state.isAuthorized || userId == null) return;
     final previews = state.previewsEnabled;
     final prior = _registration;
     final work = prior.catchError((Object _) {}).then((_) async {
-      if (!ref.mounted || ref.read(currentUserIdProvider) != userId) return;
+      if (_signingOut ||
+          !ref.mounted ||
+          ref.read(currentUserIdProvider) != userId ||
+          state.previewsEnabled != previews) {
+        return;
+      }
       await _registerTokenForIdentity(token, userId, previews);
     });
     _registration = work;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'ios_communication.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -137,6 +138,33 @@ abstract final class BlabLocalNotifications {
           artwork.lengthInBytes,
         ),
         'payload': payload,
+      });
+      return;
+    }
+    if (IosCommunication.supported) {
+      if (accountStillCurrent != null && !await accountStillCurrent()) return;
+      final capability = IosCommunication.capability;
+      if (capability == null || capability['receiverId'] != receiver) return;
+      if (data['iosPresentation'] == 'blab_communication_v1' &&
+          data['accountEpoch'] != capability['accountEpoch']) {
+        return;
+      }
+      await IosCommunication.channel.invokeMethod<void>('show', {
+        'id': id,
+        'metadata': {
+          ...capability,
+          'type': 'chat_message',
+          'chatId': chat,
+          'messageId': data['messageId'],
+          'previewsEnabled': presentation.showsIdentity,
+          'interfaceLanguage': language,
+          if (presentation.showsIdentity) ...{
+            'senderName': presentation.sender,
+            'groupTitle': presentation.groupName,
+            'blabPreviewBody': presentation.body,
+            'recipientCount': data['recipientCount'],
+          },
+        },
       });
       return;
     }

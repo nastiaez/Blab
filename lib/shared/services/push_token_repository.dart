@@ -1,4 +1,5 @@
 import '../data/firebase_config.dart';
+import 'ios_communication.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class PushTokenRepository {
@@ -52,6 +53,33 @@ class SupabasePushTokenRepository implements PushTokenRepository {
     required String token,
     required bool previewsEnabled,
   }) async {
+    if (BlabFirebaseConfig.isIosPlatform) {
+      final owner = _client.auth.currentUser?.id;
+      final capability = await IosCommunication.sync(
+        _client.auth.currentUser?.id,
+        previewsEnabled,
+      );
+      if (owner == null || _client.auth.currentUser?.id != owner) {
+        throw StateError('account_changed');
+      }
+      if (capability == null) throw StateError('notification_state_superseded');
+      {
+        try {
+          await _client.rpc(
+            'register_communication_ios_push_token',
+            params: {
+              'p_token': token,
+              'p_previews_enabled': previewsEnabled,
+              'p_account_epoch': capability['accountEpoch'],
+              'p_capability_version': 1,
+            },
+          );
+          return;
+        } on PostgrestException catch (error) {
+          if (error.code != 'PGRST202') rethrow;
+        }
+      }
+    }
     if (BlabFirebaseConfig.isAndroidPlatform) {
       try {
         await _client.rpc(

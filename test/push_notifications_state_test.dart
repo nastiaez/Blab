@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:blab/shared/services/ios_communication.dart';
 
 import 'package:blab/shared/data/local_storage_keys.dart';
 import 'package:blab/shared/services/push_notification_gateway.dart';
@@ -74,6 +76,7 @@ class _FakeRepository implements PushTokenRepository {
   final registrations = <({String token, bool previewsEnabled})>[];
   final unregistrations = <String>[];
   bool failRegistration = false;
+  bool failAfterCommit = false;
 
   @override
   Future<void> register({
@@ -82,6 +85,7 @@ class _FakeRepository implements PushTokenRepository {
   }) async {
     if (failRegistration) throw StateError('registration failed');
     registrations.add((token: token, previewsEnabled: previewsEnabled));
+    if (failAfterCommit) throw StateError('response failed after commit');
   }
 
   @override
@@ -392,6 +396,76 @@ void main() {
       expect(
         container.read(pushNotificationsProvider).pendingChatId,
         '10000000-0000-4000-8000-000000000003',
+      );
+    },
+  );
+  test(
+    'late token refresh cannot resurrect registration during sign-out',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final gateway = _FakeGateway(
+        permission: PushAuthorizationStatus.authorized,
+      );
+      final repository = _FakeRepository();
+      final container = _container(gateway, repository);
+      addTearDown(container.dispose);
+      addTearDown(gateway.dispose);
+      await _loaded(container);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final before = repository.registrations.length;
+      await container
+          .read(pushNotificationsProvider.notifier)
+          .prepareForSignOut();
+      gateway.tokenRefresh.add('late-token');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(repository.registrations.length, before);
+      expect(repository.unregistrations, isNotEmpty);
+    },
+  );
+  test(
+    'committed registration response failure rolls native preview consent back',
+    () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      SharedPreferences.setMockInitialValues({kNotificationPreviewsKey: false});
+      final nativeConsent = <bool>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(IosCommunication.channel, (call) async {
+            nativeConsent.add(
+              (call.arguments as Map)['previewsEnabled'] as bool,
+            );
+            return {
+              'accountEpoch': 'epoch',
+              'iosPresentation': 'blab_communication_v1',
+            };
+          });
+      final gateway = _FakeGateway(
+        permission: PushAuthorizationStatus.authorized,
+      );
+      final repository = _FakeRepository();
+      final container = _container(gateway, repository);
+      addTearDown(() async {
+        container.dispose();
+        await gateway.dispose();
+      });
+      await _loaded(container);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      repository.failAfterCommit = true;
+      await expectLater(
+        container
+            .read(pushNotificationsProvider.notifier)
+            .setPreviewsEnabled(true),
+        throwsStateError,
+      );
+      expect(repository.registrations.last.previewsEnabled, true);
+      expect(nativeConsent, contains(true));
+      expect(nativeConsent.last, false);
+      expect(container.read(pushNotificationsProvider).previewsEnabled, false);
+      expect(
+        (await SharedPreferences.getInstance()).getBool(
+          kNotificationPreviewsKey,
+        ),
+        false,
       );
     },
   );

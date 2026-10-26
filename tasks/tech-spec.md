@@ -625,3 +625,13 @@ conflict or intervening main changes. All reviewed source hashes match the final
 V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
 only final V16 native acceptance and its QA entry are promoted. Manual physical
 phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+## Production iOS communication notification contract ·16208 ·26 October2026
+
+Release-enabled Runner bridge and NotificationService share a fail-closed app-group account
+snapshot/epoch with the approved NotificationContent renderer. Privacy/identity transitions
+rotate epoch and purge delivered/pending notifications and Siri donations. No credentials or
+message history in app groups. Versioned per-token RPC and generic-alert/mutable-content APNs
+contract are specified in docs/qa/2026-10-26-ios-production/README.md; backend/main/deploy remain
+parent-owned. Existing legacy iOS and Android capabilities are not silently upgraded. Approved
+40–45 appearance preserved; source tests do not replace signed physical-device APNs acceptance.

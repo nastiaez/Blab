@@ -215,7 +215,15 @@ Future<void> _initializeAppServices() async {
   _startupTrace('firebase-ready');
   if (BlabFirebaseConfig.isPushPlatform && Firebase.apps.isNotEmpty) {
     FirebaseMessaging.onBackgroundMessage(_cacheBackgroundPush);
-    if (streamReviewEnabled || BlabFirebaseConfig.isAndroidPlatform) {
+    if (BlabFirebaseConfig.isIosPlatform) {
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: false,
+            badge: false,
+            sound: false,
+          );
+    }
+    if (streamReviewEnabled || BlabFirebaseConfig.isPushPlatform) {
       try {
         await BlabLocalNotifications.initialize();
       } catch (_) {}
@@ -418,6 +426,19 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       _receivedPushSub = FirebaseMessaging.onMessage.listen((message) {
         final event = PushOpenEvent.fromData(message.data);
         if (event != null) {
+          if (BlabFirebaseConfig.isIosPlatform &&
+              message.data['iosPresentation'] == 'blab_communication_v1') {
+            final owner = Supabase.instance.client.auth.currentUser?.id;
+            if (owner != null && event.receiverId == owner) {
+              unawaited(
+                BlabLocalNotifications.show(
+                  message.data,
+                  accountStillCurrent: () async =>
+                      Supabase.instance.client.auth.currentUser?.id == owner,
+                ).catchError((Object _) {}),
+              );
+            }
+          }
           unawaited(
             _cachePushChat(
               event.chatId,
