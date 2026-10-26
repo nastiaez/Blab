@@ -2319,3 +2319,10 @@ requires exact scope approval before any hosted mutation or distribution.
   no connected iPhone. DEBUG fixture is not production capability/NSE/account flow.
 - Communication feature, APNs/account/tap verification and private distribution held.
   No TestFlight/App Store upload, backend/production/Android or notice change.
+
+### Four-target icons/notifications16208 ·26 October2026 ← in progress
+Approved production execution begins from current-main dedicated checkout. Android
+launcher artwork now scoped without unrelated source; iOS real communication/NSE
+and minimal original105-schema backend compatibility are separate bounded work.
+No rollout or authenticated remote delivery completion claimed; four-target plan
+and evidence index: ../releases/20261026-all-notifications-16208/README.md.
