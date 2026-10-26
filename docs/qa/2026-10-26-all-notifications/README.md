@@ -45,3 +45,29 @@ Generated Xcode dependency cache (SourcePackages) in prior candidate removed onl
 process/storage/source-status inspection under16105 authorization; source, canonical
 screenshots, artifacts, credentials and device app data preserved. Manifest in release
 receipt directory. No broad Docker cleanup or shared-service restart.
+
+## Executed backend and signed Android41 checkpoint
+Runtime b4e9a78 fast-forward pushed and local/remote main synchronized. From its
+clean immutable checkout, both signed release41 APKs built, exact package/version
+and existing certificate verified.40→41 install-r succeeds for both; unchanged
+firstInstallTime and DE(test)/ES(public) retained after cold launch. Actual09–12
+captures opened/inspected. Final launcher drawer14 opened/inspected: both approved
+orange arrows, correct separate labels. Transient blank07/home-only13 rejected.
+This is signed-out preference/installation retention, NOT authenticated-history or
+live remote/cold-tap acceptance. No destructive app reset or password change.
+
+Authorized notification backend DEPLOYED: production107/send-push10 and staging125/
+send-push9. Only the2notification migrations and send-push, not18group migrations,
+worker/auth secrets or user-chat DML. Exact final source downloaded/byte-compared in
+both environments; unrelated functions/JWT unchanged. Hosted RLS/ACL and anonymous
+HTTP boundaries pass; production18chats/legacy1 preserved. Notices unchanged
+public37/test39/iOS off0. Final125 clean replay20SQL suites pass after preview
+hardening; original105+2notifs local ledger107 verified.
+
+All4 client distributions HELD: no Firebase upload, TestFlight IPA/upload, outgoing
+notification or notice activation. Apple authenticated Developer/Xcode setup,
+6new matching signing profiles and physical-iPhone APNs/taps remain; Android actual
+signed-in/remote/cold-tap proof remains; exact outgoing copy awaits parent approval.
+Detailed four-target actionable receipt + hashes + hosted receipts + retained logs:
+../releases/20261026-all-notifications-16208/README.md. Existing credentials used
+in place; signing files/certificates preserved, no secret values copied to Git.
