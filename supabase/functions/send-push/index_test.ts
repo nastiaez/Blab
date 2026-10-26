@@ -42,6 +42,7 @@ Deno.test("send-push resolves source media before constructing recipient preview
   let language = "uk", media = "image", body = "", previews = true;
   let eventType = "chat_message", missingMessage = false;
   let platform = "android", custom = false;
+  let chatError: { code: string; message: string } | null = null;
   let sent: any[] = [], lookups: URL[] = [];
   const response = (value: unknown) => Response.json(value);
   globalThis.fetch = (async (input, init) => {
@@ -81,6 +82,7 @@ Deno.test("send-push resolves source media before constructing recipient preview
       return response(missingMessage ? null : { message_type: media });
     }
     if (path.endsWith("/chats")) {
+      if (chatError) return Response.json(chatError, { status: 400 });
       return response({ chat_kind: "group", title: "Weekend plans" });
     }
     if (path.endsWith("/push_device_tokens")) {
@@ -207,6 +209,39 @@ Deno.test("send-push resolves source media before constructing recipient preview
         eventType = "invite_claimed";
         assertEquals((await invoke()).status, 200);
         assert("notification" in sent[0].message);
+      },
+    );
+    await t.step(
+      "legacy columns fall back but other lookup errors never send",
+      async () => {
+        eventType = "chat_message";
+        custom = true;
+        platform = "android";
+        previews = true;
+        for (const code of ["42703", "PGRST204"]) {
+          chatError = {
+            code,
+            message: "column chats.chat_kind does not exist",
+          };
+          assertEquals((await invoke()).status, 200);
+          assertEquals(sent.length, 1);
+          assert(!("notification" in sent[0].message));
+          assert(!JSON.stringify(sent[0]).includes("Weekend plans"));
+        }
+        for (
+          const error of [
+            { code: "42501", message: "permission denied" },
+            { code: "42703", message: "column unrelated does not exist" },
+            { code: "PGRST000", message: "connection failed" },
+          ]
+        ) {
+          chatError = error;
+          const result = await invoke();
+          assertEquals(result.status, 500);
+          assertEquals(await result.json(), { error: "chat_lookup_failed" });
+          assertEquals(sent.length, 0);
+        }
+        chatError = null;
       },
     );
   } finally {

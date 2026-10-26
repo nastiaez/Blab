@@ -244,10 +244,23 @@ Deno.serve(async (request) => {
       d.previews_enabled === true
     )
   ) {
-    const { data: chat } = await supabase.from("chats").select(
-      "chat_kind,title",
-    ).eq("id", claimed.chat_id).maybeSingle();
-    if (chat?.chat_kind === "group" && typeof chat.title === "string") {
+    const { data: chat, error: chatError } = await supabase.from("chats")
+      .select(
+        "chat_kind,title",
+      ).eq("id", claimed.chat_id).maybeSingle();
+    // Production's direct-only schema predates these two optional columns.
+    // Tolerate only their explicit absence, not permission/network/query failures.
+    const legacySchema = chatError !== null &&
+      (chatError.code === "42703" || chatError.code === "PGRST204") &&
+      /(?:chat_kind|title)/.test(chatError.message);
+    if (chatError && !legacySchema) {
+      await completeClaimedEvent(supabase, eventId, "chat_lookup_failed");
+      return json({ error: "chat_lookup_failed" }, 500);
+    }
+    if (
+      !chatError && chat?.chat_kind === "group" &&
+      typeof chat.title === "string"
+    ) {
       claimed.group_title = chat.title;
     }
   }
