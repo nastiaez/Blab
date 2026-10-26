@@ -2320,14 +2320,12 @@ requires exact scope approval before any hosted mutation or distribution.
 - Communication feature, APNs/account/tap verification and private distribution held.
   No TestFlight/App Store upload, backend/production/Android or notice change.
 
-<<<<<<< HEAD
 ### Four-target icons/notifications16208 ·26 October2026 ← in progress
 Approved production execution begins from current-main dedicated checkout. Android
 launcher artwork now scoped without unrelated source; iOS real communication/NSE
 and minimal original105-schema backend compatibility are separate bounded work.
 No rollout or authenticated remote delivery completion claimed; four-target plan
 and evidence index: ../releases/20261026-all-notifications-16208/README.md.
-=======
 ### iOS production communication16208 ·26 October2026 ·in progress
 - Release-enabled account/epoch/privacy bridge, service extension, approved expanded renderer,
   foreground local delivery and versioned Dart capability integration implemented in dedicated
@@ -2339,4 +2337,3 @@ and evidence index: ../releases/20261026-all-notifications-16208/README.md.
   parent-owned backend capability rollout and physical-iPhone APNs/tap acceptance. Native
   source/type checks and client tests are not end-to-end completion. Existing40–45 approved
   renderer retained without intentional UI change. Receipt: docs/qa/2026-10-26-ios-production.
->>>>>>> f1c30c6 (Implement production iOS communication notification account and service flow)
