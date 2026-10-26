@@ -108,3 +108,26 @@ Read-only review found two source blockers, both addressed before commit:
   back before UI/persisted rollback, fenced to the same current account. Regression simulates
   server registration committed then response failure while enabling previously-off previews.
 No reviewer-requested UI redesign. Signing/APNs/device gates remain open.
+
+## Independent backend source implementation · 26 October
+
+Branch feat/ios-backend-contract-16208, isolated worktree blab-ios-backend-16208,
+base8028349. Additive migration20261026000002 implements the exact registration
+contract and service-only final dispatch validation. Existing Android registration
+implementation is preserved behind a non-client-callable helper; legacy registration
+clears iOS capability/epoch atomically. No global profile opt-in.
+
+Final dispatch rechecks token owner/epoch/capability, both active accounts, message
+source/chat/sender, current sender/recipient membership, chat closure, direct blocks,
+and group mute/join-time fences. JSON row inspection and dynamic group count avoid
+planning references to group-only columns on direct-only production. Current preview
+consent and actual group title/member count come from this recheck, not stale claim data.
+Generic APNs alert is unconditional; private identity/body exists only in consented data.
+Unknown/legacy iOS and Android paths retain their previous payload behavior.
+
+Verification: focused Deno payload/handler suite includes consent changing after token
+lookup, real count, revoked epoch/error no-send/no-downgrade, legacy fallback and Android
+regressions. In-memory PGlite tests exercise the migration on minimal direct-only and
+group-shaped schemas with actual Android registration guards. These are isolated source
+fixtures, NOT replay proof of all105/124 migrations; parent owns exact disposable replay.
+No Docker, hosted backend, main, release queue, outgoing notification or deployment touched.

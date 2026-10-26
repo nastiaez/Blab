@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import {
+  buildCommunicationIosFcmMessage,
   buildCustomAndroidFcmMessage,
   buildFcmMessage,
   type ClaimedPushEvent,
@@ -223,7 +224,9 @@ Deno.serve(async (request) => {
 
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
-    .select("token,platform,previews_enabled,android_custom_notifications")
+    .select(
+      "token,platform,previews_enabled,android_custom_notifications,ios_presentation,ios_capability_version,account_epoch",
+    )
     .eq("user_id", claimed.recipient_id);
   if (tokenError) {
     await completeClaimedEvent(supabase, eventId, "token_lookup_failed");
@@ -293,6 +296,45 @@ Deno.serve(async (request) => {
     let status = "failed";
     let providerCode = "unreachable";
     try {
+      let iosPayload;
+      if (
+        device.platform === "ios" &&
+        device.ios_presentation === "blab_communication_v1" &&
+        device.ios_capability_version === 1 &&
+        typeof device.account_epoch === "string" &&
+        claimed.event_type === "chat_message"
+      ) {
+        const { data: validation, error: validationError } = await supabase.rpc(
+          "validate_communication_ios_push_dispatch",
+          {
+            p_event_id: eventId,
+            p_token: token,
+            p_account_epoch: device.account_epoch,
+          },
+        );
+        if (validationError || !validation) {
+          await supabase.rpc("finish_push_notification_delivery", {
+            p_event_id: eventId,
+            p_token_hash: tokenHash,
+            p_status: "failed",
+            p_provider_code: validationError
+              ? "dispatch_validation_failed"
+              : "dispatch_revoked",
+          });
+          if (validationError) failures++;
+          continue;
+        }
+        iosPayload = buildCommunicationIosFcmMessage(
+          {
+            ...claimed,
+            group_title: validation.group_title ?? undefined,
+            recipient_count: validation.recipient_count ?? undefined,
+          },
+          token,
+          validation.previews_enabled === true,
+          device.account_epoch,
+        );
+      }
       const fcm = await fetch(
         `https://fcm.googleapis.com/v1/projects/${
           encodeURIComponent(FIREBASE_PROJECT_ID)
@@ -304,9 +346,9 @@ Deno.serve(async (request) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(
-            device.platform === "android" &&
-              device.android_custom_notifications === true &&
-              claimed.event_type === "chat_message"
+            iosPayload ?? (device.platform === "android" &&
+                device.android_custom_notifications === true &&
+                claimed.event_type === "chat_message"
               ? buildCustomAndroidFcmMessage(
                 claimed,
                 token,
@@ -316,7 +358,7 @@ Deno.serve(async (request) => {
                 claimed,
                 token,
                 device.previews_enabled === true,
-              ),
+              )),
           ),
         },
       );

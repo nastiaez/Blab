@@ -42,6 +42,13 @@ Deno.test("send-push resolves source media before constructing recipient preview
   let language = "uk", media = "image", body = "", previews = true;
   let eventType = "chat_message", missingMessage = false;
   let platform = "android", custom = false;
+  let ios = false,
+    validation: unknown = {
+      previews_enabled: true,
+      group_title: "Actual group",
+      recipient_count: 7,
+    },
+    validationError = false;
   let chatError: { code: string; message: string } | null = null;
   let sent: any[] = [], lookups: URL[] = [];
   const response = (value: unknown) => Response.json(value);
@@ -91,7 +98,15 @@ Deno.test("send-push resolves source media before constructing recipient preview
         previews_enabled: previews,
         platform,
         android_custom_notifications: custom,
+        ios_presentation: ios ? "blab_communication_v1" : null,
+        ios_capability_version: ios ? 1 : null,
+        account_epoch: ios ? "epoch-1234567890123456" : null,
       }]);
+    }
+    if (path.endsWith("/rpc/validate_communication_ios_push_dispatch")) {
+      return validationError
+        ? Response.json({ message: "denied" }, { status: 500 })
+        : response(validation);
     }
     if (path.endsWith("/rpc/reserve_push_notification_delivery")) {
       return response(true);
@@ -242,6 +257,58 @@ Deno.test("send-push resolves source media before constructing recipient preview
           assertEquals(sent.length, 0);
         }
         chatError = null;
+      },
+    );
+    await t.step(
+      "iOS opted-in uses final authoritative consent and real group count",
+      async () => {
+        platform = "ios";
+        custom = false;
+        ios = true;
+        eventType = "chat_message";
+        previews = true;
+        body = "secret";
+        validation = {
+          previews_enabled: true,
+          group_title: "Actual group",
+          recipient_count: 7,
+        };
+        await invoke();
+        assertEquals(sent[0].message.notification, undefined);
+        assertEquals(sent[0].message.apns.payload.aps.alert.title, "Blab");
+        assertEquals(sent[0].message.data.recipientCount, "7");
+        assertEquals(sent[0].message.data.groupTitle, "Actual group");
+        validation = { previews_enabled: false };
+        await invoke();
+        for (
+          const key of [
+            "senderName",
+            "groupTitle",
+            "blabPreviewBody",
+            "recipientCount",
+          ]
+        ) assertEquals(sent[0].message.data[key], undefined);
+        assertEquals(sent[0].message.apns.payload.aps["mutable-content"], 1);
+        assertEquals(
+          sent[0].message.apns.payload.aps.category,
+          "BLAB_MESSAGE_V1",
+        );
+      },
+    );
+    await t.step(
+      "iOS revoked epoch and validation errors never dispatch or downgrade",
+      async () => {
+        validation = null;
+        await invoke();
+        assertEquals(sent.length, 0);
+        validationError = true;
+        await invoke();
+        assertEquals(sent.length, 0);
+        validationError = false;
+        ios = false;
+        await invoke();
+        assert(sent[0].message.notification);
+        assertEquals(sent[0].message.apns, undefined);
       },
     );
   } finally {

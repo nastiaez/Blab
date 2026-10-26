@@ -13,6 +13,7 @@ export interface ClaimedPushEvent {
   message_type?: string;
   message_id?: string;
   group_title?: string;
+  recipient_count?: number;
 }
 
 export interface FcmMessage {
@@ -177,6 +178,53 @@ export function buildCustomAndroidFcmMessage(
           : {}),
       },
       android: { priority: "high" },
+    },
+  };
+}
+
+/** The OS fallback never contains private content, even when NSE cannot run. */
+export function buildCommunicationIosFcmMessage(
+  event: ClaimedPushEvent,
+  token: string,
+  previewsEnabled: boolean,
+  accountEpoch: string,
+) {
+  const preview = buildFcmMessage(event, token, previewsEnabled).message;
+  return {
+    message: {
+      token,
+      apns: {
+        headers: { "apns-priority": "10" },
+        payload: {
+          aps: {
+            alert: {
+              title: "Blab",
+              body: genericCopy(event.interface_language).newMessage,
+            },
+            "mutable-content": 1,
+            category: "BLAB_MESSAGE_V1",
+            sound: "default",
+          },
+        },
+      },
+      data: {
+        ...preview.data,
+        iosPresentation: "blab_communication_v1",
+        accountEpoch,
+        previewsEnabled: String(previewsEnabled),
+        interfaceLanguage: event.interface_language,
+        ...(previewsEnabled
+          ? {
+            senderName: event.actor_name.trim() || "Blab",
+            blabPreviewBody: preview.notification.body,
+            ...(event.group_title ? { groupTitle: event.group_title } : {}),
+            ...(Number.isInteger(event.recipient_count) &&
+                event.recipient_count! >= 1 && event.recipient_count! <= 100
+              ? { recipientCount: String(event.recipient_count) }
+              : {}),
+          }
+          : {}),
+      },
     },
   };
 }
