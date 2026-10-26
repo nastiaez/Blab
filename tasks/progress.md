@@ -2308,3 +2308,45 @@ only this task's disposable build output removed to recover2GiB. Existing signed
 public/test40 installs preserved; emulator stopped. No integrated signed artifact,
 hosted rollout, Firebase distribution, or notice activation claimed. Production
 requires exact scope approval before any hosted mutation or distribution.
+
+## iOS notification candidate ·16093 ·26 October2026 ·not complete
+
+Fresh feat/ios-notifications-20261026 from fetched origin/main6eacf7a. Expanded native
+content extension preserves circular supplied full-colour mark, initial avatars,
+direct/group attribution and private generic copy. Same native extension is wired
+to the Flutter local-notification path; existing Android and remote iOS delivery
+stay unchanged.149 Swift privacy/palette assertions and full1081 client tests pass
+(17 environment skips); full analysis clean. Actual final main simulator app builds,
+installs and opens Welcome. Production-renderer local review entrypoint builds and
+its3 native direct/group/private tests pass; all6 compact/expanded screenshots
+opened and inspected. Final main restored after review. This is local rendering,
+not APNs/live delivery or authenticated warm/cold routing acceptance. See QA record
+docs/qa/2026-10-26-ios-notifications/README.md.
+No visual approval, commit/push, main integration, backend/production or release.
+Compact communication intents/live delivery/authenticated taps remain open gates.
+
+### Notification correction16123 ·compact rejected ·26 October2026
+- Expanded11/13/15 remain the target; ordinary compact10 is rejected.
+- Implemented/tested INSendMessageIntent person/group imagery and exact private mark
+  via explicit local full-app review channel. Three native cases pass; compact20/22/24
+  and expanded21/23/25 inspected. Full analysis +3 payload/account regressions pass.
+- **Blocked (design dependency):** iOS badges communication avatars with the app icon,
+  as both actual full-app screenshots and Apple HIG show. Existing hedgehog remains;
+  exact independent circle badge is not achieved. No launcher/composite change approved.
+- Review adapter is DEBUG-only fixture, NOT production routing/account/remote activation.
+  Product choice needed: separate app-icon alignment or accept native existing badge.
+  No merge/release/backend/Android changes; expanded design preserved.
+
+### Notification correction16171 ·iOS icon aligned ·26 October2026
+- User explicitly authorized necessary iOS app-icon alignment; earlier16123 icon-choice
+  blocker superseded. Copied only25 inspected original-arrow iOS PNG catalog slots,
+  preserving source fill-none/strokes/#F88C5A/#181616; no Android/launcher branch merge.
+- Final full-app local native3/3; ALL compact+expanded direct/group/private40–45
+  opened/inspected: new arrow everywhere, NO hedgehog. Compact app badge retains native
+  rounded-square mask; accepted expanded circular badge/initials/privacy unchanged.
+- PASS149 native privacy assertions,3 client payload regressions, full clean analysis,
+  25 catalog dimensions. V2 cached-icon screenshots30–35 rejected; dedicated simulator
+  restart preserved app data and final V3 packet passed.
+- Candidate visual review pending; DEBUG/local fixture only. Production communication
+  integration, APNs/account lifecycle, physical-device signing remain unverified.
+  No commit/merge/release/backend/Android action. Do not reopen resolved icon permission.

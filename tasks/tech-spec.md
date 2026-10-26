@@ -625,3 +625,37 @@ conflict or intervening main changes. All reviewed source hashes match the final
 V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
 only final V16 native acceptance and its QA entry are promoted. Manual physical
 phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+## iOS notification candidate ·26 October2026 ·review only
+
+iOS owns compact notification layout and its app icon. UNNotificationContentExtension
+can reproduce exact supplied full-colour circular mark plus initial avatars in the
+expanded view, not Android compact RemoteViews. No launcher change is authorized.
+The new BLAB_MESSAGE_REVIEW_V1 category is selected by the local Flutter notification
+path; display metadata travels only in that local payload, with identities omitted
+when previews are disabled. Receiver/chat routing stays bound, with a final account
+check after cache reads. Local iOS taps join existing authorization-checked routing.
+Legacy remote iOS/APNs payloads remain unchanged; no remote capability or service
+extension activation has occurred. Communication-intent compact avatars, versioned
+server opt-in, account lifecycle and physical-device APNs remain separate gates.
+See ios/BlabNotificationContent/README.md and docs/qa/2026-10-26-ios-notifications.
+
+### iOS communication compact investigation ·16123 ·26 October2026
+INSendMessageIntent + INPerson image, incoming interaction donation and content.updating
+produce real compact avatars when activity/capability configured. Group image uses
+speakableGroupName plus accurate recipient metadata; proof currently explicit local
+three-person fixture only. Apple HIG specifies system app-icon badging; no independent
+exact-circle badge API was established. Existing app icon remains, launcher untouched.
+Review adapter/DEBUG channel are NOT production sender/account lifecycle integration.
+Exact compact appearance remains blocked on owner app-icon/native-layout decision;
+NSE remote activation, APNs/signing and lifecycle gates remain separately pending.
+
+### iOS notification icon-source alignment ·16171 ·26 October2026
+Explicit owner correction authorizes iOS app-icon source update in this candidate.
+Only25 configured iOS catalog PNGs copied from inspected original SVG-derived source;
+no Android/pubspec/shared launcher source or unrelated branch changes merged. Native
+app-icon badge now observed as orange/ink arrow in all compact states40/42/44; system
+rounded-square mask remains. Expanded circular mark/initials unchanged41/43/45.
+Earlier app-icon product-choice gate resolved, not a reason to stop implementation.
+DEBUG Swift condition explicitly set only on Runner Debug configs for local review
+bridge. Remote/account lifecycle and physical-device signing/APNs gates remain open.

@@ -45,6 +45,9 @@ abstract final class BlabLocalNotifications {
           requestAlertPermission: false,
           requestBadgePermission: false,
           requestSoundPermission: false,
+          notificationCategories: [
+            DarwinNotificationCategory('BLAB_MESSAGE_REVIEW_V1'),
+          ],
         ),
       ),
       onDidReceiveNotificationResponse: (response) {
@@ -140,12 +143,27 @@ abstract final class BlabLocalNotifications {
       });
       return;
     }
+    if (accountStillCurrent != null && !await accountStillCurrent()) return;
+    final iosPayload = jsonEncode({
+      ...jsonDecode(payload) as Map<String, dynamic>,
+      'previewsEnabled': presentation.showsIdentity,
+      'interfaceLanguage': ?language,
+      if (presentation.showsIdentity) ...{
+        'senderName': presentation.sender,
+        'groupTitle': ?presentation.groupName,
+        'blabPreviewBody': presentation.body,
+      },
+    });
     await _plugin.show(
       id: id,
       title: presentation.title,
-      body: presentation.body,
+      body: presentation.isGroup && presentation.sender != null
+          ? '${presentation.sender}: ${presentation.body}'
+          : presentation.body,
       notificationDetails: NotificationDetails(
-        iOS: const DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(
+          categoryIdentifier: 'BLAB_MESSAGE_REVIEW_V1',
+        ),
         android: AndroidNotificationDetails(
           'messages',
           'Messages',
@@ -157,7 +175,7 @@ abstract final class BlabLocalNotifications {
           icon: '@drawable/ic_notification_arrow',
         ),
       ),
-      payload: payload,
+      payload: iosPayload,
     );
   }
 }
