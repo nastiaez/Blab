@@ -63,6 +63,8 @@ dependencies:
   stream_chat: ^10.5.0
   stream_chat_persistence: ^10.5.0
   uuid: ^4.5.3
+  blab_conversations:
+    path: packages/blab_conversations
   flutter_local_notifications: ^22.3.2
   sign_in_with_apple: ^8.2.0
   package_info_plus: ^10.2.2
@@ -115,6 +117,7 @@ flutter:
 
   assets:
     - assets/icons/
+    - assets/icon/notification_badge_exact.png
     - assets/onboarding/
     - assets/blab-logo.svg
     - assets/blab-logo 2.svg

@@ -52,6 +52,18 @@ class SupabasePushTokenRepository implements PushTokenRepository {
     required String token,
     required bool previewsEnabled,
   }) async {
+    if (BlabFirebaseConfig.isAndroidPlatform) {
+      try {
+        await _client.rpc(
+          'register_custom_android_push_token',
+          params: {'p_token': token, 'p_previews_enabled': previewsEnabled},
+        );
+        return;
+      } on PostgrestException catch (error) {
+        if (error.code != 'PGRST202') rethrow;
+        // An app may be installed before the capability migration is rolled out.
+      }
+    }
     await _client.rpc(
       'register_push_token',
       params: {

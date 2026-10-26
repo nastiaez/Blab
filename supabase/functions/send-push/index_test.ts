@@ -41,6 +41,7 @@ Deno.test("send-push resolves source media before constructing recipient preview
   const messageId = "33333333-3333-4333-8333-333333333333";
   let language = "uk", media = "image", body = "", previews = true;
   let eventType = "chat_message", missingMessage = false;
+  let platform = "android", custom = false;
   let sent: any[] = [], lookups: URL[] = [];
   const response = (value: unknown) => Response.json(value);
   globalThis.fetch = (async (input, init) => {
@@ -79,10 +80,15 @@ Deno.test("send-push resolves source media before constructing recipient preview
       assertEquals(url.searchParams.get("chat_id"), `eq.${chatId}`);
       return response(missingMessage ? null : { message_type: media });
     }
+    if (path.endsWith("/chats")) {
+      return response({ chat_kind: "group", title: "Weekend plans" });
+    }
     if (path.endsWith("/push_device_tokens")) {
       return response([{
         token: "fixture-device",
         previews_enabled: previews,
+        platform,
+        android_custom_notifications: custom,
       }]);
     }
     if (path.endsWith("/rpc/reserve_push_notification_delivery")) {
@@ -176,6 +182,33 @@ Deno.test("send-push resolves source media before constructing recipient preview
       assertEquals(sent.length, 1);
       assert(sent[0].message.notification.body.includes("приєднався"));
     });
+
+    await t.step(
+      "only opted-in Android chat devices receive custom data-only delivery",
+      async () => {
+        eventType = "chat_message";
+        custom = true;
+        platform = "android";
+        previews = true;
+        assertEquals((await invoke()).status, 200);
+        assert(!("notification" in sent[0].message));
+        assertEquals(
+          sent[0].message.data.androidPresentation,
+          "blab_custom_v1",
+        );
+        platform = "ios";
+        assertEquals((await invoke()).status, 200);
+        assert("notification" in sent[0].message);
+        platform = "android";
+        custom = false;
+        assertEquals((await invoke()).status, 200);
+        assert("notification" in sent[0].message);
+        custom = true;
+        eventType = "invite_claimed";
+        assertEquals((await invoke()).status, 200);
+        assert("notification" in sent[0].message);
+      },
+    );
   } finally {
     globalThis.fetch = savedFetch;
     Deno.serve = savedServe;

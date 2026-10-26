@@ -1,5 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:blab_conversations/blab_conversations.dart';
+import '../../app/design_tokens.dart';
+import 'local_chat_history_cache.dart';
+import 'notification_presentation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'local_profile_cache.dart';
 
@@ -32,7 +38,9 @@ abstract final class BlabLocalNotifications {
   static Future<void> _initialize() async {
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+        android: AndroidInitializationSettings(
+          '@drawable/ic_notification_arrow',
+        ),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
           requestBadgePermission: false,
@@ -54,7 +62,12 @@ abstract final class BlabLocalNotifications {
         : null;
   }
 
-  static Future<void> cancelAll() => _plugin.cancelAll();
+  static Future<void> cancelAll() async {
+    await _plugin.cancelAll();
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await BlabConversations.clear();
+    }
+  }
 
   static int _stableId(String value) {
     var hash = 2166136261;
@@ -64,28 +77,73 @@ abstract final class BlabLocalNotifications {
     return hash & 0x7fffffff;
   }
 
-  static Future<void> show(Map<String, dynamic> data) async {
+  static Future<void> show(
+    Map<String, dynamic> data, {
+    Future<bool> Function()? accountStillCurrent,
+  }) async {
     await initialize();
     final chat = data['chatId'] as String;
-    final previews = data['previewsEnabled'] != 'false';
     final receiver = data['receiverId'];
-    final language = receiver is String
-        ? (await LocalProfileCache(receiver).read())?.interfaceLanguage
-        : null;
-    final generic = switch (language) {
-      'de' => 'Du hast eine neue Nachricht',
-      'es' => 'Tienes un mensaje nuevo',
-      'uk' => 'У вас нове повідомлення',
-      _ => 'You have a new message',
-    };
+    final language =
+        (receiver is String
+            ? (await LocalProfileCache(receiver).read())?.interfaceLanguage
+            : null) ??
+        data['interfaceLanguage'] as String?;
+    String? groupName;
+    if (receiver is String &&
+        data['previewsEnabled'] != 'false' &&
+        data['previewsEnabled'] != false) {
+      for (final item in await LocalChatHistoryCache(receiver).loadChats()) {
+        if (item.id == chat && item.isGroup) {
+          groupName = item.partnerName;
+          break;
+        }
+      }
+    }
+    final presentation = NotificationPresentation.fromData(
+      data,
+      groupName:
+          groupName ??
+          (data['groupTitle'] is String ? data['groupTitle'] as String : null),
+      interfaceLanguage: language,
+    );
+    final payload = jsonEncode({
+      'type': 'chat_message',
+      'chatId': chat,
+      'receiverId': ?receiver,
+    });
+    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final id = _stableId('$receiver:$chat:${data['messageId'] ?? ''}');
+    final tag = receiver is String && data['messageId'] is String
+        ? 'blab:$receiver:$chat:${data['messageId']}'
+        : chat;
+    if (android) {
+      final artwork = await rootBundle.load(
+        'assets/icon/notification_badge_exact.png',
+      );
+      if (accountStillCurrent != null && !await accountStillCurrent()) return;
+      await BlabConversations.channel.invokeMethod<void>('showCustom', {
+        'id': id,
+        'tag': tag,
+        'title': presentation.title,
+        'body': presentation.isGroup && presentation.sender != null
+            ? '${presentation.sender}: ${presentation.body}'
+            : presentation.body,
+        'private': !presentation.showsIdentity,
+        'initials': BlabColors.avatarInitialsFor(presentation.title),
+        'color': BlabColors.avatarColorFor(presentation.title).toARGB32(),
+        'artwork': artwork.buffer.asUint8List(
+          artwork.offsetInBytes,
+          artwork.lengthInBytes,
+        ),
+        'payload': payload,
+      });
+      return;
+    }
     await _plugin.show(
-      id: _stableId(chat),
-      title: previews && data['title'] is String
-          ? data['title'] as String
-          : 'Blab',
-      body: previews && data['body'] is String
-          ? data['body'] as String
-          : generic,
+      id: id,
+      title: presentation.title,
+      body: presentation.body,
       notificationDetails: NotificationDetails(
         iOS: const DarwinNotificationDetails(),
         android: AndroidNotificationDetails(
@@ -93,18 +151,13 @@ abstract final class BlabLocalNotifications {
           'Messages',
           importance: Importance.high,
           priority: Priority.high,
-          tag: receiver is String && data['messageId'] is String
-              ? 'blab:$receiver:$chat:${data['messageId']}'
-              : chat,
+          category: AndroidNotificationCategory.message,
+          tag: tag,
           onlyAlertOnce: false,
-          icon: '@mipmap/launcher_icon',
+          icon: '@drawable/ic_notification_arrow',
         ),
       ),
-      payload: jsonEncode({
-        'type': 'chat_message',
-        'chatId': chat,
-        if (data['receiverId'] != null) 'receiverId': data['receiverId'],
-      }),
+      payload: payload,
     );
   }
 }

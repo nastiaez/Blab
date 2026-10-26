@@ -1,4 +1,5 @@
 import {
+  buildCustomAndroidFcmMessage,
   buildFcmMessage,
   eventIdFromWebhook,
   fcmErrorCode,
@@ -165,4 +166,53 @@ Deno.test("captioned photos retain authored caption; hidden previews reveal no m
     text.message.notification.body === "У вас нове повідомлення",
     "empty text is not a photo",
   );
+});
+
+Deno.test("opt-in Android chat uses data only, with bound identity and original preview", () => {
+  const value = buildCustomAndroidFcmMessage(
+    { ...event, message_id: "message-id" },
+    "token",
+    true,
+  ).message;
+  assert(
+    !("notification" in value),
+    "must not let OS pre-render a tinted notification",
+  );
+  assert(
+    !("notification" in value.android),
+    "no Android OS notification block",
+  );
+  assert(value.android.priority === "high", "background delivery priority");
+  assert(
+    value.data.title === "Alice" &&
+      value.data.body === "Hello Bob How are you?",
+    "authored preview",
+  );
+  assert(
+    value.data.receiverId === event.recipient_id &&
+      value.data.chatId === event.chat_id,
+    "bound routing",
+  );
+  assert(
+    value.data.androidPresentation === "blab_custom_v1",
+    "versioned client contract",
+  );
+});
+Deno.test("opt-in Android private payload includes no person or authored preview", () => {
+  const value = buildCustomAndroidFcmMessage(
+    { ...event, interface_language: "uk" },
+    "token",
+    false,
+  ).message;
+  const data = JSON.stringify(value.data);
+  assert(
+    !data.includes("Alice") && !data.includes("Hello"),
+    "no private identity/text in data",
+  );
+  assert(
+    value.data.previewsEnabled === "false" &&
+      value.data.interfaceLanguage === "uk",
+    "privacy/locale available offline",
+  );
+  assert(value.data.title === "Blab", "generic identity");
 });

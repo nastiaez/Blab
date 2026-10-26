@@ -142,7 +142,8 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
   @override
   Future<PushOpenEvent?> initialOpenEvent() async {
     if (!isSupported) return null;
-    if (const bool.fromEnvironment('BLAB_STREAM_REVIEW')) {
+    if (BlabFirebaseConfig.isAndroidPlatform ||
+        const bool.fromEnvironment('BLAB_STREAM_REVIEW')) {
       final local = await BlabLocalNotifications.initialOpen();
       if (local != null) return PushOpenEvent.fromData(local);
     }
@@ -167,7 +168,8 @@ class FirebasePushNotificationGateway implements PushNotificationGateway {
             (message) => add(message.data),
           ),
         );
-        if (const bool.fromEnvironment('BLAB_STREAM_REVIEW')) {
+        if (BlabFirebaseConfig.isAndroidPlatform ||
+            const bool.fromEnvironment('BLAB_STREAM_REVIEW')) {
           subscriptions.add(BlabLocalNotifications.opens.listen(add));
         }
       },

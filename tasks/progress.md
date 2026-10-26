@@ -2236,3 +2236,75 @@ No physical iPhone is connected to independently settle the rendering discrepanc
 so iOS delivery remains held. Production is unchanged; exact18-migration/one-worker
 rollout still requires separate approval after phone acceptance. No public stores.
 Release receipts preserve source/hash/package/signing/CI/audience/notice states.
+
+
+## BLA29 ·orange-arrow notification implementation ·24 October2026 ·in progress
+
+Design approved15856/15857, initials scope chosen15866. Worktree based0944b43;
+Android native conversation/initials candidate compiles and passes39 focused
+checks/analysis. Long-lived shortcuts verified valid by OS. Collapsed/expanded
+native local-fixture screenshots inspected and delivered15875/15876; they are not
+live push proof. Native badge is system-tinted, not the Paper orange fill; await
+actual visual review. Android arrow artwork reused from separate launcher
+candidate without claiming its approval. iOS assets untouched.
+Photo selection recorded separately; no new chooser silently added.
+
+Full client suite passes1072 checks/17 environment-gated skips. Backend payload/legacy OS-rendering, Stream background
+and cold receipt, privacy lifecycle, real taps, cache-miss groups, iOS capability/
+extension/device verification remain before completion. No main integration or
+release. QA docs/qa/2026-10-24-notification-arrow-photos.
+
+
+BLA29 colour correction: native API36 full-colour-vs-accent probe passes; exact
+orange/ink artwork is not preserved in this native small-icon badge. Orange
+contrast-adjusted arrow is available; supplied bitmap becomes solid dot. Actual
+probe screenshot inspected/delivered15883. Await product choice before adopting
+the different native appearance. No visual approval, integration or release.
+
+BLA29 correction15909: exact orange/ink SVG required; orange-accent substitute
+rejected/unapproved. Native custom-content proof now preserves artwork in direct/
+group initial-avatar notifications and private generic notification. Actual light
+and expanded/dark captures inspected;06/08 delivered15915/15916. Native fixture
+passes and analysis clean. Header/status icon and system auto-group summary still
+OS-owned/tinted; custom proof differs from MessagingStyle and does not retain its
+conversation-specific controls. Normal incoming push not switched to diagnostic
+method. Await actual visual review before choosing production presentation.
+Native/iOS/background/tap/device and final integration gates remain open.
+
+BLA29 circle revision15948: prior custom layout acceptable; requested circular
+notification artwork. Only outer mask changed, supplied original retained;
+all ink pixels preserved at same coordinates and orange unchanged. Launcher
+artwork untouched by circle change. Android native circle review in progress;
+not a main integration or delivery approval.
+Circle native fixture now passes; final actual screenshot09 inspected and delivered
+for review. Shape correction done in candidate, not integrated or released.
+
+Build15954: circle screenshot15950 approved for both Android app variants.
+Normal production notification rendering integrated with privacy/account guards,
+read-cancellation tags and local tap events. Native direct/group/private rendering
+and warm taps pass for both package IDs. 1078 client tests pass/17 gated skips;
+256 backend checks/9 steps pass; analyzer clean. Signed40 candidates building.
+Backend opt-in prepared only, not deployed; no distribution/main integration.
+
+Both signed Android40 candidates now built, package/version/signature verified,
+installed and real-main onboarding opened on owned offline API36 emulator.
+Native notification layouts and warm taps verified for both package IDs.
+Artifacts and receipt in parent releases/20261024-circular-notifications40/.
+Not integrated into main, distributed, or remotely activated; backend opt-in
+requires remaining full rebuild/live-receipt/integrated-main release gates.
+
+
+## Circular notifications ·26 October2026 ·approved integration
+
+Owner approved actual Android screenshots10/11 and requested commit/main/deploy.
+Fresh integration worktree based on fetched0944b43 preserves the original branch
+and untracked early-opening parity evidence. Unrelated launcher artwork AND
+launcher-generation configuration excluded. Final full client1078 pass/17 skipped,
+backend256 pass/9 steps, analysis clean. Full disposable Supabase schema124
+migrations and seed replayed; ledger exactly matches source; all19 SQL suites pass.
+Full-stack startup had unhealthy ancillary services; database-only recovery starts.
+Native rebuild is blocked by disk exhaustion and subsequent Gradle cache error;
+only this task's disposable build output removed to recover2GiB. Existing signed
+public/test40 installs preserved; emulator stopped. No integrated signed artifact,
+hosted rollout, Firebase distribution, or notice activation claimed. Production
+requires exact scope approval before any hosted mutation or distribution.

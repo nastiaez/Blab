@@ -1,0 +1,15 @@
+name: blab_conversations
+description: Background-safe native conversation notification support.
+version: 0.0.1
+publish_to: none
+environment:
+  sdk: ^3.11.5
+dependencies:
+  flutter:
+    sdk: flutter
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: app.blab.conversations
+        pluginClass: BlabConversationsPlugin

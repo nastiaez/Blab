@@ -12,6 +12,7 @@ export interface ClaimedPushEvent {
   original_body: string | null;
   message_type?: string;
   message_id?: string;
+  group_title?: string;
 }
 
 export interface FcmMessage {
@@ -152,4 +153,30 @@ export function isStaleFcmToken(code: string): boolean {
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     .test(value);
+}
+
+/** Only opt-in Android chat devices use data-only delivery; legacy/iOS stay unchanged. */
+export function buildCustomAndroidFcmMessage(
+  event: ClaimedPushEvent,
+  token: string,
+  previewsEnabled: boolean,
+) {
+  const legacy = buildFcmMessage(event, token, previewsEnabled).message;
+  return {
+    message: {
+      token,
+      data: {
+        ...legacy.data,
+        androidPresentation: "blab_custom_v1",
+        title: legacy.notification.title,
+        body: legacy.notification.body,
+        previewsEnabled: String(previewsEnabled),
+        interfaceLanguage: event.interface_language,
+        ...(previewsEnabled && event.group_title
+          ? { groupTitle: event.group_title }
+          : {}),
+      },
+      android: { priority: "high" },
+    },
+  };
 }

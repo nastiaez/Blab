@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import {
+  buildCustomAndroidFcmMessage,
   buildFcmMessage,
   type ClaimedPushEvent,
   eventIdFromWebhook,
@@ -222,7 +223,7 @@ Deno.serve(async (request) => {
 
   const { data: tokens, error: tokenError } = await supabase
     .from("push_device_tokens")
-    .select("token,previews_enabled")
+    .select("token,platform,previews_enabled,android_custom_notifications")
     .eq("user_id", claimed.recipient_id);
   if (tokenError) {
     await completeClaimedEvent(supabase, eventId, "token_lookup_failed");
@@ -234,6 +235,21 @@ Deno.serve(async (request) => {
       p_last_error: null,
     });
     return json({ status: "processed", attempted: 0, failures: 0 });
+  }
+
+  if (
+    claimed.event_type === "chat_message" &&
+    tokens.some((d) =>
+      d.platform === "android" && d.android_custom_notifications === true &&
+      d.previews_enabled === true
+    )
+  ) {
+    const { data: chat } = await supabase.from("chats").select(
+      "chat_kind,title",
+    ).eq("id", claimed.chat_id).maybeSingle();
+    if (chat?.chat_kind === "group" && typeof chat.title === "string") {
+      claimed.group_title = chat.title;
+    }
   }
 
   let accessToken: string;
@@ -275,7 +291,19 @@ Deno.serve(async (request) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(
-            buildFcmMessage(claimed, token, device.previews_enabled === true),
+            device.platform === "android" &&
+              device.android_custom_notifications === true &&
+              claimed.event_type === "chat_message"
+              ? buildCustomAndroidFcmMessage(
+                claimed,
+                token,
+                device.previews_enabled === true,
+              )
+              : buildFcmMessage(
+                claimed,
+                token,
+                device.previews_enabled === true,
+              ),
           ),
         },
       );

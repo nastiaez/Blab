@@ -92,7 +92,10 @@ Future<void> _cacheBackgroundPush(RemoteMessage message) async {
         authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
       );
     }
-    if (message.data['blab_transport'] == 'stream') {
+    if (message.data['blab_transport'] == 'stream' ||
+        (BlabFirebaseConfig.isAndroidPlatform &&
+            message.data['androidPresentation'] == 'blab_custom_v1' &&
+            event.type == 'chat_message')) {
       final user = Supabase.instance.client.auth.currentUser?.id;
       if (user == null || event.receiverId != user) return;
       final outcome = await prepareStreamPush(
@@ -104,7 +107,12 @@ Future<void> _cacheBackgroundPush(RemoteMessage message) async {
           receiverId: event.receiverId,
           expectedMessageId: message.data['messageId'] as String?,
         ),
-        show: () => BlabLocalNotifications.show(message.data),
+        show: () => BlabLocalNotifications.show(
+          message.data,
+          accountStillCurrent: () async =>
+              Supabase.instance.client.auth.currentUser?.id == user &&
+              await persistedPushAccountMatches(user, SupabaseConfig.url),
+        ),
       );
       if (kDebugMode) {
         debugPrint('Stream background notification: ${outcome.name}');
@@ -207,7 +215,7 @@ Future<void> _initializeAppServices() async {
   _startupTrace('firebase-ready');
   if (BlabFirebaseConfig.isPushPlatform && Firebase.apps.isNotEmpty) {
     FirebaseMessaging.onBackgroundMessage(_cacheBackgroundPush);
-    if (streamReviewEnabled) {
+    if (streamReviewEnabled || BlabFirebaseConfig.isAndroidPlatform) {
       try {
         await BlabLocalNotifications.initialize();
       } catch (_) {}
