@@ -327,6 +327,8 @@ Deno.serve(async (request) => {
         iosPayload = buildCommunicationIosFcmMessage(
           {
             ...claimed,
+            original_body: validation.original_body ?? null,
+            message_type: validation.message_type ?? claimed.message_type,
             group_title: validation.group_title ?? undefined,
             recipient_count: validation.recipient_count ?? undefined,
           },

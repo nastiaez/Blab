@@ -31,7 +31,7 @@ begin
  select to_jsonb(x) into m from public.messages x where id::text=e.source_key and chat_id=e.chat_id and sender_id=e.actor_id;
  select to_jsonb(x) into member from public.chat_members x where chat_id=e.chat_id and user_id=e.recipient_id;
  select to_jsonb(x) into actor from public.chat_members x where chat_id=e.chat_id and user_id=e.actor_id;
- if c is null or m is null or member is null or actor is null or c->>'left_at' is not null or member->>'chat_left_at' is not null or actor->>'chat_left_at' is not null then return null; end if;
+ if c is null or m is null or m->>'deleted_at' is not null or member is null or actor is null or c->>'left_at' is not null or member->>'chat_left_at' is not null or actor->>'chat_left_at' is not null then return null; end if;
  v_group := coalesce(c->>'chat_kind','direct')='group';
  if v_group then
  execute 'select count(*) from public.chat_members where chat_id=$1 and chat_left_at is null and user_id<>$2' into v_count using e.chat_id,e.actor_id;
@@ -39,7 +39,7 @@ begin
  else
  if exists(select 1 from public.blocks b where (b.blocker_id=e.actor_id and b.blocked_id=e.recipient_id) or (b.blocker_id=e.recipient_id and b.blocked_id=e.actor_id)) then return null; end if;
  end if;
- return jsonb_build_object('previews_enabled',d.previews_enabled,'group_title',case when v_group then c->>'title' end,'recipient_count',v_count);
+ return jsonb_build_object('previews_enabled',d.previews_enabled,'original_body',case when d.previews_enabled then m->>'body' end,'message_type',m->>'message_type','group_title',case when v_group and d.previews_enabled then c->>'title' end,'recipient_count',case when d.previews_enabled then v_count end);
 end; $$;
 revoke all on function public.validate_communication_ios_push_dispatch(uuid,text,text) from public,anon,authenticated;
 grant execute on function public.validate_communication_ios_push_dispatch(uuid,text,text) to service_role;

@@ -2337,3 +2337,12 @@ and evidence index: ../releases/20261026-all-notifications-16208/README.md.
   parent-owned backend capability rollout and physical-iPhone APNs/tap acceptance. Native
   source/type checks and client tests are not end-to-end completion. Existing40–45 approved
   renderer retained without intentional UI change. Receipt: docs/qa/2026-10-26-ios-production.
+
+### Notification16208 source gates ·26 October2026
+Real release iOS bridge/service/account fencing plus versioned privacy-safe backend
+implemented; full1087 client/17 skips,258 backend/12steps,56 native assertions and
+clean analysis pass. Exact original105+only2notification migrations and full125 replay;
+five original and20 full SQL suites plus both-schema iOS privacy checks pass.
+Source completion is not release completion. Apple authenticated provisioning and
+physical-iPhone APNs/tap checks, signed Android live-auth/remote acceptance and exact
+outgoing-copy approval still hold all4 deliveries and notice activation.
