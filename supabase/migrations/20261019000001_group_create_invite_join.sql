@@ -10,8 +10,10 @@ alter table public.chats
 alter table public.chats
   add constraint chats_kind_shape_check check (
     (chat_kind = 'direct'
-      and member_low_id is not null
-      and member_high_id is not null
+      -- Preserve the pre-group pair contract, including both-null legacy rows.
+      -- chats_member_pair_order_check still rejects partial/reversed pairs.
+      and ((member_low_id is null and member_high_id is null)
+        or (member_low_id is not null and member_high_id is not null))
       and title is null
       and owner_id is null)
     or

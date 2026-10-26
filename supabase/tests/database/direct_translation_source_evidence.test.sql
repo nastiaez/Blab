@@ -64,6 +64,8 @@ insert into public.message_translations (
   'minimal-source-anchor-v11'
 );
 
+-- This suite owns the interactive path; remove only its synthetic queued work.
+delete from public.message_preparation_jobs where chat_id = '5c000000-0000-4000-8000-000000000001';
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-4000-8000-00000000000b","role":"authenticated"}',

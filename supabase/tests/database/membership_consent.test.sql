@@ -75,12 +75,13 @@ select ok(
 
 select ok(
   exists (
-    select 1 from pg_constraint
-    where conrelid = 'public.chats'::regclass
-      and conname = 'chats_member_pair_key'
-      and contype = 'u'
+    select 1 from pg_index
+    where indrelid = 'public.chats'::regclass
+      and indexrelid = 'public.chats_active_member_pair_key'::regclass
+      and indisunique and indisvalid
+      and pg_get_expr(indpred, indrelid) = '(left_at IS NULL)'
   ),
-  'canonical participant pairs have a database unique constraint'
+  'active canonical participant pairs have a valid partial unique index'
 );
 
 select ok(

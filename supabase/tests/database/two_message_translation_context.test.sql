@@ -26,10 +26,14 @@ select is(jsonb_array_length(translation_recent_context('6c000000-0000-4000-8000
 select is(jsonb_array_length(translation_recent_context('6c000000-0000-4000-8000-000000000006','00000000-0000-4000-8000-00000000000a',now()+interval '3 seconds')),1,'language-era boundary remains intact');
 select is(translation_recent_context('6c000000-0000-4000-8000-000000000006','00000000-0000-4000-8000-00000000000c',null),'[]'::jsonb,'nonmember context is empty');
 select ok(not has_function_privilege('authenticated','translation_recent_context(uuid,uuid,timestamptz)','execute'),'caller cannot impersonate another viewer through helper');
+-- Isolate the interactive owner from automatically queued fixture work.
+delete from message_preparation_jobs where chat_id='6c000000-0000-4000-8000-000000000001';
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',true);
 set local role authenticated;
 select is(jsonb_array_length(request_message_translation('6c000000-0000-4000-8000-000000000006')->'context'),2,'interactive authorized path uses the bounded context');
 reset role;
+-- Restore the independent background-owner scenario after the interactive case.
+select enqueue_message_preparation_jobs('6c000000-0000-4000-8000-000000000006');
 update message_preparation_jobs set status='processing',locked_at=now() where message_id='6c000000-0000-4000-8000-000000000006' and viewer_id='00000000-0000-4000-8000-00000000000a';
 create temp table context_worker_job as select id from message_preparation_jobs where message_id='6c000000-0000-4000-8000-000000000006' and viewer_id='00000000-0000-4000-8000-00000000000a';
 grant select on context_worker_job to service_role;

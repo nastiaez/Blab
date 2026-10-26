@@ -6,6 +6,8 @@ insert into chat_members(chat_id,user_id,learning_language,mode) values
 ('75000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000b','en','normal');
 update profiles set primary_known_language='en',known_languages=array['en'] where id='00000000-0000-4000-8000-00000000000a';
 insert into messages(id,chat_id,sender_id,body,created_at) values('75000000-0000-4000-8000-000000000002','75000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000b','Tomorrow afternoon',now()+interval '1 second');
+-- This suite owns the interactive path; remove only its synthetic queued work.
+delete from public.message_preparation_jobs where chat_id = '75000000-0000-4000-8000-000000000001';
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000000a","role":"authenticated"}',true);
 set local role authenticated;
 select is(request_message_translation_variant('75000000-0000-4000-8000-000000000002','de')->>'targetLang','de','visible Practice request does not depend on saved Normal mode');
@@ -13,7 +15,15 @@ select is((select mode from chat_members where chat_id='75000000-0000-4000-8000-
 select is(request_message_translation_variant('75000000-0000-4000-8000-000000000002','fr')->>'status','forbidden','arbitrary language cannot forge authorized viewer lane');
 update chat_members set mode='practice' where chat_id='75000000-0000-4000-8000-000000000001' and user_id=auth.uid();
 select is(request_message_translation_variant('75000000-0000-4000-8000-000000000002','en')->>'targetLang','en','visible Normal request ignores old saved Practice mode');
+reset role;
+-- Independent request scenario, not a retry of the preceding in-flight fixture.
+delete from message_translation_attempts where message_id='75000000-0000-4000-8000-000000000002';
+set local role authenticated;
 select is(request_message_translation('75000000-0000-4000-8000-000000000002')->>'targetLang','de','legacy callers retain saved-mode behavior');
+reset role;
+-- Independent request scenario, not a retry of the preceding in-flight fixture.
+delete from message_translation_attempts where message_id='75000000-0000-4000-8000-000000000002';
+set local role authenticated;
 select is(request_message_translation_variant('75000000-0000-4000-8000-000000000002','en',true)->>'targetLang','en','forced refresh uses the requested authorized lane');
 reset role;
 update profiles set known_languages='{}'::text[] where id='00000000-0000-4000-8000-00000000000a';

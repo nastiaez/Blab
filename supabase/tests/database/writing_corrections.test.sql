@@ -75,6 +75,8 @@ values
     'Wie geht es dir?'
   );
 
+-- This suite owns the interactive path; remove only its synthetic queued work.
+delete from public.message_preparation_jobs where chat_id = '71000000-0000-4000-8000-000000000001';
 create temp table correction_prepared (
   label text primary key,
   value jsonb not null

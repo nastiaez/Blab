@@ -1,0 +1,222 @@
+[
+  {
+    "suite": "supabase/tests/chat_lifecycle.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/block_pair_behavior.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/chat_pair_consolidation.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/direct_translation_source_evidence.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/explicit_translation_view.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/historical_language_era.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/initial_language_timeline.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/invite_first_language.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/membership_consent.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/message_preparation_worker.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/onboarding_rollout_flag.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/profile_editing.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/readable_translation_delivery.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/reading_script_preference.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/shared_mistakes_matching_languages.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_account_erasure.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_activity_authority.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_event_inbox.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_history_cutover.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_learning_projection.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_legacy_private_media.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_media_authority.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_media_orphans.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_message_commands.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_private_media.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/stream_push_devices.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_contract.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_primary_known_language.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_realtime_recovery.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_recovery_phases.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_retry_ownership.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_security.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/translation_work_readiness.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/two_message_translation_context.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/versioned_onboarding.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/database/writing_corrections.test.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_account_erasure.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_ai_batching.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_conversation.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_deferred_jobs.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_historical_variant_recovery.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_inapp_invitations.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_information_requests.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_join_activity.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_media_history.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_membership_lifecycle.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_notifications.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_personal_delete.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_push_epoch.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/group_setup.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/ios_communication_notifications.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/reusable_invites.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/single_call_batches.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/test_app_boundary.sql",
+    "pass": true
+  },
+  {
+    "suite": "supabase/tests/translation_storage_acceptance.sql",
+    "pass": true
+  }
+]
