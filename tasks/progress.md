@@ -2308,3 +2308,14 @@ only this task's disposable build output removed to recover2GiB. Existing signed
 public/test40 installs preserved; emulator stopped. No integrated signed artifact,
 hosted rollout, Firebase distribution, or notice activation claimed. Production
 requires exact scope approval before any hosted mutation or distribution.
+
+### iOS notification approval16186 ·partial integration only ·26 October2026
+- Owner approved local compact/expanded40–45. Full reviewed source preserved on
+  feat/ios-notifications-20261026 at f3fcb7c, NOT merged as live notifications.
+- Main accepts only approved iOS orange/ink AppIcon assets and scope documentation;
+  production Dart, Runner signing/extension/communication runtime remain unchanged.
+- Candidate1081 Flutter checks/17 skips and full analysis pass. Actual extension
+  iphoneos build fails missing blab.nastia.ez.test.NotificationContent profile;
+  no connected iPhone. DEBUG fixture is not production capability/NSE/account flow.
+- Communication feature, APNs/account/tap verification and private distribution held.
+  No TestFlight/App Store upload, backend/production/Android or notice change.
