@@ -1,8 +1,7 @@
 # BLA-13 · five learning languages + Marathi reading script
 
 Request: Nastia, Telegram topic7420 message16713 (29 October2026).
-Branch: feat/bla13-languages-16713; base main877fe8c. Candidate only: no commit,
-main integration, hosted migration/function deployment or distribution.
+Branch: feat/bla13-languages-16713; base main877fe8c. Approved16774; commit/merge/deploy authorized16781. Integrated source f0806bf; language backend deployed to staging and production. Four signed version45 app artifacts prepared, NOT uploaded/distributed. See current gates below.
 
 ## Scope and preference mapping
 - Add da, fi, ko, mr, pl to learning/known-language selectors, four existing UI
@@ -46,7 +45,7 @@ main integration, hosted migration/function deployment or distribution.
   Translation cache keys already include languages; no accepted history erased
   or retranslated. Provider caching is automatic, no explicit cache objects.
 
-## Remaining gates
+## Review-time gates (historical; superseded below)
 - iOS simulator selector/settings + five live-generated sentence renderings and Marathi native/English-letters renderings pass. Inspected all six text screenshots and representative selector/settings screenshots. Four voices available; Marathi unavailable on this simulator. Actual-phone Marathi audio remains a release gate.
 - Extra Android text-rendering replay could not run: emulator5584 had stopped before the attempt. Earlier Android selector/settings success remains valid; no new AVD created or existing user data reset.
 - Complete clean-database migration + live two-account persistence/history,
@@ -66,3 +65,20 @@ main integration, hosted migration/function deployment or distribution.
 ## Approval and release continuation16781
 - Nastia approved screenshots/workflow16774; explicit commit, deploy and merge16781. Scope: five languages and Marathi reading script, combined with already-integrated held overlay; existing audiences only.
 - Preparing commit and clean-schema CI. Local Docker ping still times out; no shared restart/reset. Physical-iPhone Marathi voice remains unverified.
+
+## Release continuation16781 · final checkpoint
+- Feature commits56582ca/e7af21d, CI repair8b3ad23, current-main reconciliation72e135a, built-in workflow-token fixf0806bf. Main/local/remote synchronized at f0806bf before artifact preparation. BLA-17 dc4939c arrived during CI and is included in the integrated app, but remains explicitly held from upload/distribution by its own approval16778.
+- Quality and Android compile passed on e7af21d. Isolated clean-schema/backend integration40925113532 passed, including BLA-13 persistence/history, existing atomic batches/authority and full backend integration. Registry throttling caused two earlier environment-start failures, not test failures; authenticated GHCR pull support/backend-only retry added. No hosted credentials in CI.
+- Combined local app suite:1113 passed/17 skipped; only CI-contract test initially failed on the spelling of the built-in token context. Replaced secrets.GITHUB_TOKEN with github.token (same ephemeral read-only token, no custom deployment credential); all3 CI-contract checks pass. Final integrated main Quality40926297623 passes. Its backend repeat again hit registry throttling before tests; remaining Android CI job was cancelled, not passed. Local signed Android builds below do pass.
+- Both environments: migration20261029000003 applied with ledger/source SHA256 verification; translate-message and prepare-message-jobs deployed, downloaded rulebook/contract/single_call bytes match integrated source. Five source codes verified. Staging rollback probes verify persisted learning/known/source languages, retained older cache, authenticated preference saves and cross-user write rejection. No lasting QA users/data. Production manifest verification passes after ignoring an empty CLI migration-list placeholder.
+- Staging's broader manifest check reports pre-existing missing STREAM_API_KEY/STREAM_API_SECRET. Language persistence and translation deployment pass, but this is not a full staging configuration pass. Do not copy production credentials or silently connect the separate review Stream app. Existing review credentials identified, no authoritative staging mapping established; left unchanged.
+- Post-integration Android isolated preview: five selectors, Marathi settings and all-five live-generated text samples/both Marathi scripts pass. Fourteen captures retained; Marathi settings/Latin rendering and Korean rendering inspected. Existing Bob5584 crashed with host GPU; restarted the SAME AVD with software rendering, no wipe/new device. Both production/test installed apps retained.
+- Both signed Android45 APKs verified correct package/version and same certificate as44. Exact44→45 replacements retain firstInstallTime, all settled preference-file hashes and sentinel before first launch. Public baseline reconstructed from archived44 with German chosen through actual UI; German retained after45 launch. Existing test44 signed-out baseline retained and launches45. Not proof of physical-device/account/chat-history retention.
+- Both signed iOS45 archives exported; parent+two extension versions and deep signatures verified. No Apple upload. Original build-only signing configuration restored.
+- Artifacts and full logs: ../releases/20261029-languages-16781 (shared project root). Android/iOS manifests contain source/hash/package mapping. Only idle task-owned ignored compilation caches removed to recover space; source/signing/data/QA/release artifacts preserved.
+
+## Current gates
+- All four version45 artifacts prepared, zero uploads/distributions, no tester communications, no notice activation. Relevant notices remain43; unrelated disabled rows remain0.
+- BLA-17 message-panel update is on current main but explicitly distribution-held. Obtain combined-scope approval before uploading/releasing it with languages and the approved mention overlay. Exact outgoing tester copy still needs approval.
+- Resolve staging Stream configuration with an authoritative staging target before claiming full coordinated delivery readiness. No unrelated service credentials were changed.
+- Physical-iPhone Marathi voice/pronunciation remains unverified; simulator lacks that voice. No different-language fallback. Owner manual launch-tracker checkboxes remain untouched.

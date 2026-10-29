@@ -2398,3 +2398,5 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 
 ### BLA-17 approved integration16778 ·29 October2026 ← in progress
 - Approved tap/anchored panels and immediate composer deselection reconciled onto877fe8c with newer mention identities and picker overlay preserved. Source gates1110 passed/17 skipped; native integrated verification pending. No tracker checkbox completion, distribution, notices or tester sends.
+
+- BLA-13 release16781: visuals16774 approved; merged f0806bf, backend migration+translate-message/prepare-message-jobs deployed to staging and production with source/hash/language readback. Clean-schema/backend CI40925113532 and integrated Quality pass; signed Android45 (both flavors, exact update retention) and signed iOS45 parent+extensions prepared. NOT uploaded/distributed: current main includes explicitly-held BLA-17 panels; combined-scope/exact tester-copy approval pending. Staging broader manifest also lacks existing Stream keys; not silently configured. Notices stay43; physical-iPhone Marathi audio unverified. QA docs/qa/16713/README.md and shared releases/20261029-languages-16781.
