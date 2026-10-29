@@ -7,7 +7,6 @@ import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/message_translator.dart';
-import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/connectivity_state.dart';
 import 'package:blab/shared/state/privacy_settings.dart';
 import 'package:flutter/material.dart';

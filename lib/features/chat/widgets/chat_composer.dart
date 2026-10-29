@@ -54,108 +54,110 @@ class ChatComposer extends StatelessWidget {
     final showCounter = textLength >= counterShowAt;
     final atLimit = textLength >= maxLength;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: BlabColors.chatSurface,
-        border: showTopBorder
-            ? const Border(top: BorderSide(color: BlabColors.chatDivider))
-            : null,
-      ),
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ?mentionPicker,
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                12,
-                8,
-                12,
-                groupConversation ? 0 : 8,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Semantics(
-                          label: context.l10n.message,
-                          child: ChatComposerInput(
-                            controller: controller,
-                            focusNode: focusNode,
-                            hintText: hintText,
-                            groupConversation: groupConversation,
-                            maxLength: maxLength,
-                            enabled: enabled,
-                            autofocus: autofocus,
-                            emojiPanelOpen: emojiPanelOpen,
-                            onToggleEmoji: onToggleEmoji,
-                            onTapText: onTapText,
-                            emojiTooltip: emojiPanelOpen
-                                ? context.l10n.showKeyboard
-                                : context.l10n.showEmoji,
-                            attachTooltip: context.l10n.attach,
-                            onAttach: onAttach,
-                            showAttachment: allowAttachment,
+    return MentionPickerOverlay(
+      picker: mentionPicker,
+      child: Container(
+        decoration: BoxDecoration(
+          color: BlabColors.chatSurface,
+          border: showTopBorder
+              ? const Border(top: BorderSide(color: BlabColors.chatDivider))
+              : null,
+        ),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  8,
+                  12,
+                  groupConversation ? 0 : 8,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Semantics(
+                            label: context.l10n.message,
+                            child: ChatComposerInput(
+                              controller: controller,
+                              focusNode: focusNode,
+                              hintText: hintText,
+                              groupConversation: groupConversation,
+                              maxLength: maxLength,
+                              enabled: enabled,
+                              autofocus: autofocus,
+                              emojiPanelOpen: emojiPanelOpen,
+                              onToggleEmoji: onToggleEmoji,
+                              onTapText: onTapText,
+                              emojiTooltip: emojiPanelOpen
+                                  ? context.l10n.showKeyboard
+                                  : context.l10n.showEmoji,
+                              attachTooltip: context.l10n.attach,
+                              onAttach: onAttach,
+                              showAttachment: allowAttachment,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ChatSendButton(
-                        canSend: canSend,
-                        groupConversation: groupConversation,
-                        isPractice: isPractice,
-                        tooltip: context.l10n.send,
-                        onSend: onSend,
-                      ),
-                    ],
-                  ),
-                  if (showCounter)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 4, 12, 0),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          '$textLength / $maxLength',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: atLimit
-                                ? BlabColors.error
-                                : BlabColors.textMuted,
-                          ),
+                        const SizedBox(width: 8),
+                        ChatSendButton(
+                          canSend: canSend,
+                          groupConversation: groupConversation,
+                          isPractice: isPractice,
+                          tooltip: context.l10n.send,
+                          onSend: onSend,
                         ),
-                      ),
+                      ],
                     ),
-                ],
-              ),
-            ),
-            SizedBox(
-              key: const ValueKey('composer-input-obstruction'),
-              height:
-                  groupConversation &&
-                      bottomObstruction <=
-                          MediaQuery.viewPaddingOf(context).bottom
-                  ? math.max(30.0, bottomObstruction)
-                  : bottomObstruction,
-              width: double.infinity,
-              child: ClipRect(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: emojiPanel == null
-                      ? null
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: emojiPanel,
+                    if (showCounter)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 4, 12, 0),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '$textLength / $maxLength',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: atLimit
+                                  ? BlabColors.error
+                                  : BlabColors.textMuted,
+                            ),
+                          ),
                         ),
+                      ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              SizedBox(
+                key: const ValueKey('composer-input-obstruction'),
+                height:
+                    groupConversation &&
+                        bottomObstruction <=
+                            MediaQuery.viewPaddingOf(context).bottom
+                    ? math.max(30.0, bottomObstruction)
+                    : bottomObstruction,
+                width: double.infinity,
+                child: ClipRect(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: emojiPanel == null
+                        ? null
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: emojiPanel,
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
