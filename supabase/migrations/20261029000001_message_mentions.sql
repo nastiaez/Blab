@@ -1,5 +1,6 @@
 -- BLA-36: structured identity is separate from plain text; no push override.
 alter table public.messages add column mentions jsonb not null default '[]'::jsonb;
+grant update (mentions) on public.messages to authenticated;
 
 create function public.validate_message_mentions(p_chat uuid,p_body text,p_mentions jsonb)
 returns void language plpgsql security definer set search_path=public,extensions as $$
