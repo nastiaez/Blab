@@ -2396,7 +2396,7 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 
 - BLA-13 approval16774; commit/merge/deploy authorized16781. Combined release with approved held overlay; clean-schema CI and persistence checks in progress. Physical-phone Marathi speech unverified, no rollout completion claim.
 
-### BLA-17 approved integration16778 ·29 October2026 ← in progress
+### BLA-17 approved integration16778 ·29 October2026 ·delivered in coordinated45
 - Approved tap/anchored panels and immediate composer deselection reconciled onto877fe8c with newer mention identities and picker overlay preserved. Source gates1110 passed/17 skipped and isolated CI40922822268 all3 jobs pass. Approved scoped dc4939c fast-forwarded/pushed to main; integrated Android composer/four inventories/real finite scroll verified. Both signed Android46 artifacts prepared locally; test33->46 same-cert update retains4 preference hashes/German welcome. No tracker checkbox completion, uploads/distribution, notices or tester sends. See docs/qa/2026-10-29-bla17-integration/README.md.
 
 
@@ -2407,3 +2407,9 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 > **Coordinated release16819:** combined rollout authorized; tester copy approved16830. Exclusive four-target lease acquired; current automated/backend/security/signed-update gates in progress. Historical holds above superseded for this scope. No tracker completion inferred.
 
 > **Release16819 readiness:**1114 Flutter passes/17skips,217 Deno passes, analysis clean. Backend retry40928314274 now succeeds; production and staging manifest parity pass. Verified dedicated staging Stream app1733115 credentials restored to their explicitly bound staging project only; no review/production substitution. Four client deliveries remain pending.
+
+## Coordinated version45 completion ·16819/16822 ·29 October2026
+Supersedes historical blocked/held preparation states above. Combined owner16822 delivered both Android apps through existing Firebase audiences and both iOS apps through existing TestFlight groups from exact source f0806bf4d37d9d818156a2247a3feebb70469a17. Approved BLA17/composer dc4939c is an ancestor; affb141 changes documentation only, not runtime source. All four artifact bytes match original45 manifests. Firebase public1eedpvi5d082g (2 existing testers), test7hip4b4gp5ato (12); download-back hashes match. Apple public45 VALID/IN_BETA_TESTING for existing internal group; test45 VALID/IN_BETA_TESTING for existing internal and external groups. No audience expansion.
+Backend retry40928314274 succeeds; local1114 Flutter passes/17skips,217 Deno passes, analysis clean. Both backend manifests pass. Intended protected staging Stream app1733115 credentials were authenticated/read-only verified and consumed to restore only their explicitly bound staging project; no review/production credential substitution or values logged.
+Combined owner verified all4 applicable update-notice rows43→45, destinations/unrelated rows unchanged;5 focused notice checks pass. Receipts: shared releases/20261029-combined-16822/android-delivery-receipt.json, ios-delivery-receipt.json, staging-notices-after.json, production-notices-after.json, update-notice-final.log. Release availability is not physical-device installation acceptance; physical-iPhone Marathi voice remains unverified. No tracker checkbox completion inferred.
+16819 uploaded/distributed/notified NOTHING for48 and changed no notices. Local48 artifacts preserved, iOS preparation stopped and build-only signing restored. Duplicate release work stopped;45 is canonical delivered batch.
