@@ -6,6 +6,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      verification_scope:
+        description: Full suite, or backend-only retry when app checks already passed
+        type: choice
+        options: [full, backend]
+        default: full
 
 permissions:
   contents: read
@@ -20,6 +26,7 @@ env:
 
 jobs:
   quality:
+    if: inputs.verification_scope != 'backend'
     name: Quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -58,6 +65,10 @@ jobs:
 
   backend-integration:
     name: Local Supabase integration
+    if: ${{ !cancelled() && (needs.quality.result == 'success' || inputs.verification_scope == 'backend') }}
+    permissions:
+      contents: read
+      packages: read
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -74,6 +85,10 @@ jobs:
           version: ${{ env.SUPABASE_CLI_VERSION }}
       - name: Resolve dependencies
         run: flutter pub get
+      - name: Authenticate container registry
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - name: Reset disposable backend
         run: scripts/local_test.sh reset
       - name: Verify atomic message batch persistence
@@ -99,6 +114,7 @@ jobs:
         run: supabase stop --no-backup
 
   android-release:
+    if: inputs.verification_scope != 'backend'
     name: Android release compile
     needs: quality
     runs-on: ubuntu-latest
