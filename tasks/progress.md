@@ -2388,4 +2388,4 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 
 
 ### BLA-17 approved integration16778 ·29 October2026 ← in progress
-- Approved tap/anchored panels and immediate composer deselection reconciled onto877fe8c with newer mention identities and picker overlay preserved. Source gates1110 passed/17 skipped; native integrated verification pending. No tracker checkbox completion, distribution, notices or tester sends.
+- Approved tap/anchored panels and immediate composer deselection reconciled onto877fe8c with newer mention identities and picker overlay preserved. Source gates1110 passed/17 skipped and isolated CI40922822268 all3 jobs pass. Approved scoped dc4939c fast-forwarded/pushed to main; integrated Android composer/four inventories/real finite scroll verified. Both signed Android46 artifacts prepared locally; test33->46 same-cert update retains4 preference hashes/German welcome. No tracker checkbox completion, uploads/distribution, notices or tester sends. See docs/qa/2026-10-29-bla17-integration/README.md.
