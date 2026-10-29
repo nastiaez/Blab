@@ -1,0 +1,157 @@
+[
+  {
+    "lang": "pl",
+    "text": "I was tired yesterday.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Byłam wczoraj zmęczona.",
+      "interfaceText": "I was tired yesterday.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Byłam",
+          "gloss": "I was (feminine past tense verb)",
+          "roman": "BY-wam",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "wczoraj",
+          "gloss": "yesterday (adverb of time)",
+          "roman": "FCHO-ray",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "zmęczona",
+          "gloss": "tired (feminine adjective)",
+          "roman": "zmen-CHO-na",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": {
+        "before": "",
+        "feminine": "Byłam wczoraj zmęczona",
+        "masculine": "Byłem wczoraj zmęczony",
+        "after": ".",
+        "subjectName": "Alice",
+        "subjectIsViewer": true,
+        "suggestedForm": "feminine",
+        "feminineTokens": [
+          {
+            "text": "Byłam",
+            "gloss": "I was (feminine past tense verb)",
+            "roman": "BY-wam",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "wczoraj",
+            "gloss": "yesterday (adverb of time)",
+            "roman": "FCHO-ray",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "zmęczona",
+            "gloss": "tired (feminine adjective)",
+            "roman": "zmen-CHO-na",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          }
+        ],
+        "masculineTokens": [
+          {
+            "text": "Byłem",
+            "gloss": "I was (masculine past tense verb)",
+            "roman": "BY-wem",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "wczoraj",
+            "gloss": "yesterday (adverb of time)",
+            "roman": "FCHO-ray",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "zmęczony",
+            "gloss": "tired (masculine adjective)",
+            "roman": "zmen-CHO-ny",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          }
+        ],
+        "subjectRole": "author"
+      }
+    }
+  }
+]

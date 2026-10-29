@@ -51,6 +51,7 @@ void main() {
 
       expect(find.text(entry.value.$1), findsOneWidget);
       expect(find.text(entry.value.$2), findsOneWidget);
+      await tester.scrollUntilVisible(find.text(entry.value.$3), 100);
       expect(find.text(entry.value.$3), findsOneWidget);
       expect(find.text(entry.value.$4), findsOneWidget);
 
@@ -271,7 +272,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('Start practicing'));
     await tester.pump();
-    await tester.tap(find.text('French'));
+    await tester.tap(find.text('Dutch'));
     await tester.pump();
     expect(attempts, 1);
     final progress = tester.widget<CircularProgressIndicator>(

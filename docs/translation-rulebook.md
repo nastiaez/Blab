@@ -85,10 +85,10 @@ Resolve every source word's meaning in context before choosing target wording. N
 Preference resolution remains in client/worker code, not a second resolver here.
 
 ## Languages and classifications
-- Supported learning languages: {"en":"English","ta":"Tamil","uk":"Ukrainian","es":"Spanish","de":"German","fr":"French","it":"Italian","pt":"Portuguese","nl":"Dutch","tr":"Turkish","hi":"Hindi"}
+- Supported learning languages: {"en":"English","ta":"Tamil","uk":"Ukrainian","es":"Spanish","de":"German","fr":"French","it":"Italian","pt":"Portuguese","nl":"Dutch","tr":"Turkish","hi":"Hindi","da":"Danish","fi":"Finnish","ko":"Korean","mr":"Marathi","pl":"Polish"}
 - UI languages: en, uk, de, es
-- Latin targets: en, nl, fr, de, it, pt, es, tr
-- Form-audited targets: nl, fr, de, hi, it, pt, es, ta, uk
+- Latin targets: en, nl, fr, de, it, pt, es, tr, da, fi, pl
+- Form-audited targets: nl, fr, de, hi, it, pt, es, ta, uk, pl, mr
 - Modes: translation, correction, none; confidence: low, medium, high; unsupported source: other.
 - Recognized English chat abbreviations: omg, ttyl, brb, lol, lmao, idk, fyi, wtf. Translate meaning, not expanded English sounds.
 

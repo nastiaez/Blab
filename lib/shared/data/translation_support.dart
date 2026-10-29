@@ -38,6 +38,11 @@ const Set<String> kSupportedLearningLanguages = {
   'ta',
   'tr',
   'uk',
+  'da',
+  'fi',
+  'ko',
+  'mr',
+  'pl',
 };
 
 /// Shared composer and translation-function contract.

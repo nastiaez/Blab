@@ -275,6 +275,35 @@ void main() {
     expect(find.text('English letters'), findsOneWidget);
   });
 
+  testWidgets('Marathi chat shows one Reading script row and saves selection', (
+    tester,
+  ) async {
+    final saved = <String>[];
+    final container = _preferencesContainer(
+      rows: [_chatRow('chat-1', 'mr')],
+      update: (value) async {
+        saved.add(value);
+        return value;
+      },
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(_preferencesHost(container, chatId: 'chat-1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reading script'), findsOneWidget);
+    expect(find.text('Marathi script'), findsOneWidget);
+    await tester.tap(find.text('Reading script'));
+    await tester.pumpAndSettle();
+    expect(find.text('Marathi script'), findsWidgets);
+    expect(find.text('English letters'), findsOneWidget);
+
+    await tester.tap(find.text('English letters'));
+    await tester.pumpAndSettle();
+    expect(saved, ['english_letters']);
+    expect(find.text('English letters'), findsOneWidget);
+  });
+
   testWidgets('Tamil chat uses Tamil copy and another language hides the row', (
     tester,
   ) async {

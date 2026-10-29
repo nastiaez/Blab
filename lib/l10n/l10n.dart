@@ -24,6 +24,11 @@ String localizedInterfaceLanguageName(
 
 String localizedLanguageName(AppLocalizations localizations, String code) {
   return switch (code) {
+    'da' => localizations.languageDanish,
+    'fi' => localizations.languageFinnish,
+    'ko' => localizations.languageKorean,
+    'mr' => localizations.languageMarathi,
+    'pl' => localizations.languagePolish,
     'nl' => localizations.languageDutch,
     'en' => localizations.languageEnglish,
     'fr' => localizations.languageFrench,

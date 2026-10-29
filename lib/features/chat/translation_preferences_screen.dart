@@ -113,14 +113,14 @@ class _TranslationPreferencesScreenState
                   .watch(chatListProvider)
                   .value
                   ?.map((chat) => chat.learningLanguage.code)
-                  .where((code) => code == 'hi' || code == 'ta')
+                  .where(readingScriptLanguages.contains)
                   .toSet() ??
               const <String>{}
         : <String>{
-            if (ref.watch(learningLanguageProvider(chatId)).code case 'hi')
-              'hi',
-            if (ref.watch(learningLanguageProvider(chatId)).code case 'ta')
-              'ta',
+            if (readingScriptLanguages.contains(
+              ref.watch(learningLanguageProvider(chatId)).code,
+            ))
+              ref.watch(learningLanguageProvider(chatId)).code,
           };
     final showReadingScript = eligibleLanguages.isNotEmpty;
     final readingScript = showReadingScript
@@ -129,9 +129,11 @@ class _TranslationPreferencesScreenState
 
     String nativeScriptLabel() {
       if (eligibleLanguages.length > 1) return context.l10n.nativeScripts;
-      return eligibleLanguages.single == 'hi'
-          ? context.l10n.hindiScript
-          : context.l10n.tamilScript;
+      return switch (eligibleLanguages.single) {
+        'hi' => context.l10n.hindiScript,
+        'mr' => context.l10n.marathiScript,
+        _ => context.l10n.tamilScript,
+      };
     }
 
     Future<void> saveOwnForm(GrammaticalForm? value) => ref.read(

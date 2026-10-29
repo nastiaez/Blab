@@ -25,10 +25,33 @@ void main() {
       expect(TtsService.localeFor(''), isNull);
     });
 
-    test('covers all 11 supported languages', () {
-      expect(TtsService.kLocaleByCode.length, 11);
+    test('covers all 16 supported languages', () {
+      expect(TtsService.kLocaleByCode.length, 16);
     });
   });
+
+  test(
+    'failed locale selection never speaks using the previous language',
+    () async {
+      const channel = MethodChannel('flutter_tts');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      final spoken = <String>[];
+      var selectionResult = -1;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'setLanguage') return selectionResult;
+        if (call.method == 'speak') spoken.add(call.arguments.toString());
+        return 1;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final service = TtsService();
+      await service.speak('नमस्कार', 'mr');
+      expect(spoken, isEmpty);
+      selectionResult = 1;
+      await service.speak('नमस्कार', 'mr');
+      expect(spoken, hasLength(1));
+    },
+  );
 
   test(
     'keeps a recognised language playable when Android misreports its voice as not installed',

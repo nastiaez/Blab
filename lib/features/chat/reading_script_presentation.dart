@@ -29,7 +29,7 @@ ReadingScriptPresentation presentReadingScript({
   );
 
   if (readingScript != ReadingScript.englishLetters ||
-      (languageCode != 'hi' && languageCode != 'ta')) {
+      !readingScriptLanguages.contains(languageCode)) {
     return unchanged();
   }
 
@@ -66,4 +66,4 @@ ReadingScriptPresentation presentReadingScript({
 }
 
 bool _containsNativeScript(String value, String languageCode) =>
-    languageCode == 'hi' ? _devanagari.hasMatch(value) : _tamil.hasMatch(value);
+    languageCode == 'ta' ? _tamil.hasMatch(value) : _devanagari.hasMatch(value);

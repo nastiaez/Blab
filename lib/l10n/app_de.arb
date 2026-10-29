@@ -49,6 +49,12 @@
   "languageFrench": "Französisch",
   "languageUkrainian": "Ukrainisch",
   "languageGerman": "Deutsch",
+  "languageDanish": "Dänisch",
+  "languageFinnish": "Finnisch",
+  "languageKorean": "Koreanisch",
+  "languageMarathi": "Marathi",
+  "languagePolish": "Polnisch",
+  "marathiScript": "Marathi-Schrift",
   "languageHindi": "Hindi",
   "languageItalian": "Italienisch",
   "languagePortuguese": "Portugiesisch",
@@ -444,7 +450,7 @@
   "tamilScript": "Tamil-Schrift",
   "nativeScripts": "Originalschriften",
   "englishLetters": "Lateinische Buchstaben",
-  "learningTimelineMarker": "{languageCode, select, nl{Jetzt lernst du Niederländisch} en{Jetzt lernst du Englisch} fr{Jetzt lernst du Französisch} de{Jetzt lernst du Deutsch} hi{Jetzt lernst du Hindi} it{Jetzt lernst du Italienisch} pt{Jetzt lernst du Portugiesisch} es{Jetzt lernst du Spanisch} ta{Jetzt lernst du Tamil} tr{Jetzt lernst du Türkisch} uk{Jetzt lernst du Ukrainisch} other{Jetzt lernst du Englisch}}",
+  "learningTimelineMarker": "{languageCode, select, nl{Jetzt lernst du Niederländisch} en{Jetzt lernst du Englisch} fr{Jetzt lernst du Französisch} de{Jetzt lernst du Deutsch} hi{Jetzt lernst du Hindi} it{Jetzt lernst du Italienisch} pt{Jetzt lernst du Portugiesisch} es{Jetzt lernst du Spanisch} ta{Jetzt lernst du Tamil} tr{Jetzt lernst du Türkisch} uk{Jetzt lernst du Ukrainisch} da{Jetzt lernst du Dänisch} fi{Jetzt lernst du Finnisch} ko{Jetzt lernst du Koreanisch} mr{Jetzt lernst du Marathi} pl{Jetzt lernst du Polnisch} other{Jetzt lernst du Englisch}}",
   "@learningTimelineMarker": {
     "placeholders": {
       "languageCode": {

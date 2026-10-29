@@ -133,8 +133,9 @@ void main() {
     expect(find.text('Language you understand'), findsOneWidget);
     expect(find.byTooltip('Back'), findsOneWidget);
     final list = tester.widget<ListView>(find.byType(ListView));
-    expect(list.childrenDelegate.estimatedChildCount, 11);
+    expect(list.childrenDelegate.estimatedChildCount, 16);
     expect(find.byType(Radio<String>), findsWidgets);
+    await tester.scrollUntilVisible(find.text('German'), 100);
     final germanSemantics = tester.getSemantics(
       find.bySemanticsLabel('German'),
     );

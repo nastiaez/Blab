@@ -131,9 +131,7 @@ void main() {
       await tester.pumpAndSettle();
       await expectLater(
         find.byType(MaterialApp),
-        matchesGoldenFile(
-          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/language.png',
-        ),
+        matchesGoldenFile('../../docs/qa/16713/language-onboarding.png'),
       );
     },
     // These reviewed baselines use macOS font rasterization.

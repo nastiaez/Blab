@@ -1,3 +1,5 @@
+const readingScriptLanguages = {'hi', 'ta', 'mr'};
+
 enum ReadingScript { native, englishLetters }
 
 ReadingScript readingScriptFromWire(String? value) => value == 'english_letters'
