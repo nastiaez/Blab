@@ -24,6 +24,27 @@ do $$begin
  if (select mentions->0->>'start' from public.messages where id=current_setting('test.message')::uuid)<>'6' then raise exception 'edit range not saved'; end if;
 end$$;
 update public.messages set body='Hello Alice',mentions='[]' where id=current_setting('test.message')::uuid;
+-- Same visible name, different identity: invalidate and reject late old data.
+update public.messages set body='@Alice',mentions='[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]' where id=current_setting('test.message')::uuid;
+reset role;
+create temporary table mention_result_probe(message_id uuid,translation_text text,interface_text text,tokens jsonb);
+create trigger probe before insert on mention_result_probe for each row execute function public.check_translation_mention_identity();
+insert into mention_result_probe values(current_setting('test.message')::uuid,'@Alice','@Alice','[{"blabMentionSpans":{"@Alice":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]}}]');
+set local role authenticated;
+update public.messages set mentions='[{"userId":"00000000-0000-4000-8000-00000000000b","label":"Alice","start":0}]' where id=current_setting('test.message')::uuid;
+reset role;
+do $$begin
+ begin
+ insert into mention_result_probe values(current_setting('test.message')::uuid,'@Alice','@Alice','[{"blabMentionSpans":{"@Alice":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]}}]');
+ raise exception 'stale identity accepted';
+ exception when raise_exception then if sqlerrm<>'stale_mention_identity' then raise; end if; end;
+end$$;
+set local role authenticated;
+-- Legacy body-only edit strips obsolete structured ranges, not a send failure.
+update public.messages set body='Hello' where id=current_setting('test.message')::uuid;
+do $$begin
+ if (select mentions from public.messages where id=current_setting('test.message')::uuid)<>'[]'::jsonb then raise exception 'legacy edit retained invalid tag'; end if;
+end$$;
 reset role;
 insert into public.chat_message_transports(chat_id,provider,migration_state) values(current_setting('test.chat')::uuid,'stream','active');
 set local role authenticated;

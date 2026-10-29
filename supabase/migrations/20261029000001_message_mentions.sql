@@ -28,6 +28,13 @@ create function public.check_message_mentions() returns trigger language plpgsql
 begin
  -- Server projection retains historical identity even after member departure.
  if auth.role() is distinct from 'service_role' then
+  -- Older clients edit body without supplying updated structured ranges.
+  if TG_OP='UPDATE' and new.body is distinct from old.body and new.mentions=old.mentions then
+   begin perform public.validate_message_mentions(new.chat_id,new.body,new.mentions);
+   exception when raise_exception then
+    if sqlerrm='invalid_mentions' then new.mentions:='[]'::jsonb; else raise; end if;
+   end;
+  end if;
   if TG_OP='INSERT' or new.mentions is distinct from old.mentions or new.body is distinct from old.body then
    perform public.validate_message_mentions(new.chat_id,new.body,new.mentions);
   end if;

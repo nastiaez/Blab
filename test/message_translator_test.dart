@@ -25,6 +25,26 @@ Map<String, dynamic> _success() => {
 };
 
 void main() {
+  test('live response retains trusted mention identity sidecar', () async {
+    final translator = MessageTranslator(
+      invoke: ({required String messageId}) async => {
+        ..._success(),
+        'translation': 'Hello @Alex',
+        'interfaceText': 'Hi @Alex',
+        'tokens': [
+          {
+            'blabMentionSpans': {
+              'Hello @Alex': [
+                {'userId': 'account-1', 'label': 'Alex', 'start': 6},
+              ],
+            },
+          },
+        ],
+      },
+    );
+    final result = await translator.translate(messageId: _messageId);
+    expect(result.mentionSpans['Hello @Alex']!.single.userId, 'account-1');
+  });
   test('parses a successful response into translation + tokens', () async {
     final translator = MessageTranslator(
       invoke: ({required String messageId}) async => _success(),

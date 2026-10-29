@@ -277,6 +277,17 @@ class MessageTranslator {
       interfaceLang: interfaceLang,
       sourceLang: detectedSourceLang,
       tokens: _parseMessageTokens(rawTokens, translation),
+      mentionSpans: {
+        if (rawTokens is List)
+          for (final token in rawTokens)
+            if (token is Map && token['blabMentionSpans'] is Map)
+              for (final entry in (token['blabMentionSpans'] as Map).entries)
+                if (entry.key is String)
+                  entry.key as String: MessageMention.parse(
+                    entry.value,
+                    entry.key as String,
+                  ),
+      },
       mode: mode,
       explanation: mode == LearningAidMode.correction
           ? (rawExplanation as String).trim()
