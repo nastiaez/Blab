@@ -740,14 +740,14 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
-### US-050: Choose the reading script for Hindi and Tamil
-**Description:** As a Hindi or Tamil learner, I want Blab-generated learning text in native script or English letters, so I can learn the language without being forced to learn its writing system first.
+### US-050: Choose the reading script for Hindi, Tamil and Marathi
+**Description:** As a Hindi, Tamil or Marathi learner, I want Blab-generated learning text in native script or English letters, so I can learn the language without being forced to learn its writing system first.
 
 **Acceptance Criteria:**
-- [ ] One account-wide `Reading script` choice applies to both Hindi and Tamil; native script is the default and Ukrainian has no script choice
-- [ ] Chat → Translation preferences shows one contextual row only for a Hindi or Tamil chat: `Hindi script` / `Tamil script` or `English letters`; Profile shows one row only while at least one eligible conversation exists
+- [ ] One account-wide `Reading script` choice applies to Hindi, Tamil and Marathi; native script is the default and Ukrainian has no script choice
+- [ ] Chat → Translation preferences shows one contextual row only for a Hindi, Tamil or Marathi chat: `Hindi script` / `Tamil script` / `Marathi script` or `English letters`; Profile shows one row only while at least one eligible conversation exists
 - [ ] Both entry points use the existing preference-row and checkmarked bottom-sheet pattern, edit the same value, and remain synchronized
-- [ ] The redesigned language-selection sheet remains unchanged; changing a chat away from Hindi/Tamil hides the row without clearing the saved choice
+- [ ] The redesigned language-selection sheet remains unchanged; changing a chat away from Hindi/Tamil/Marathi hides the row without clearing the saved choice
 - [ ] The choice changes only Blab-generated Practice text, corrections, Normal fallback translations, matching reply previews, and word-description hierarchy; authored messages and Original remain exact
 - [ ] Switching the choice immediately re-renders eligible past messages from cached native text and Romanization without new translation or correction work
 - [ ] English letters render only when the full sentence has usable Romanization metadata; otherwise the whole sentence stays in native script with no mixed-script fallback
@@ -819,7 +819,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-41: Chat-photo originals remain in private Supabase Storage, synced previews persist on-device, opened full files use a bounded cache, and an unavailable offline preview renders the approved neutral placeholder without framework error UI
 - FR-42: Invite handoff preserves the most recently opened valid invite through standard email auth and app return. Claim happens only once a signed-in recipient is known; existing pairs reuse their chat and no one can self-claim. The static web page is generic and never validates or claims a token
 - FR-43: First-time Practice and Normal guidance is a once-per-account, non-modal mode-switch tip using the approved copy and warm-orange treatment
-- FR-44: Hindi and Tamil share one account-wide `Reading script` preference (`native` default or `english_letters`). It is exposed as one contextual Translation preferences row only when relevant, re-renders eligible cached Blab-generated sentences and word-description hierarchy immediately, falls back to the whole native sentence when Romanization is incomplete, preserves authored/Original text and native TTS, and never creates a script-only correction
+- FR-44: Hindi, Tamil and Marathi share one account-wide `Reading script` preference (`native` default or `english_letters`). It is exposed as one contextual Translation preferences row only when relevant, re-renders eligible cached Blab-generated sentences and word-description hierarchy immediately, falls back to the whole native sentence when Romanization is incomplete, preserves authored/Original text and native TTS, and never creates a script-only correction
 - FR-46: Startup uses a cream native launch surface followed by one app-owned Flutter wordmark assembly from the exact logo vectors. It completes once, coordinates with destination resolution, holds its final state only while real startup work continues, and becomes a static final wordmark with no added delay when Reduced Motion is enabled
 
 ---
@@ -913,7 +913,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 ## Languages Supported (Prototype)
 
 - **Interface:** English (default/fallback), Ukrainian, German, Spanish
-- **Chat learning:** Dutch, English, French, German, Hindi, Italian, Portuguese, Spanish, Tamil, Turkish, Ukrainian
+- **Chat learning:** Danish, Dutch, English, Finnish, French, German, Hindi, Italian, Korean, Marathi, Polish, Portuguese, Spanish, Tamil, Turkish, Ukrainian
 
 ---
 

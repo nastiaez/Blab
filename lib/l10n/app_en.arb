@@ -63,6 +63,12 @@
   "languageFrench": "French",
   "languageUkrainian": "Ukrainian",
   "languageGerman": "German",
+  "languageDanish": "Danish",
+  "languageFinnish": "Finnish",
+  "languageKorean": "Korean",
+  "languageMarathi": "Marathi",
+  "languagePolish": "Polish",
+  "marathiScript": "Marathi script",
   "languageHindi": "Hindi",
   "languageItalian": "Italian",
   "languagePortuguese": "Portuguese",
@@ -528,7 +534,7 @@
   "tamilScript": "Tamil script",
   "nativeScripts": "Native scripts",
   "englishLetters": "English letters",
-  "learningTimelineMarker": "{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning English}}",
+  "learningTimelineMarker": "{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} da{Now learning Danish} fi{Now learning Finnish} ko{Now learning Korean} mr{Now learning Marathi} pl{Now learning Polish} other{Now learning English}}",
   "@learningTimelineMarker": {
     "placeholders": {
       "languageCode": {

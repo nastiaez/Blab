@@ -396,6 +396,42 @@ abstract class AppLocalizations {
   /// **'German'**
   String get languageGerman;
 
+  /// No description provided for @languageDanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Danish'**
+  String get languageDanish;
+
+  /// No description provided for @languageFinnish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finnish'**
+  String get languageFinnish;
+
+  /// No description provided for @languageKorean.
+  ///
+  /// In en, this message translates to:
+  /// **'Korean'**
+  String get languageKorean;
+
+  /// No description provided for @languageMarathi.
+  ///
+  /// In en, this message translates to:
+  /// **'Marathi'**
+  String get languageMarathi;
+
+  /// No description provided for @languagePolish.
+  ///
+  /// In en, this message translates to:
+  /// **'Polish'**
+  String get languagePolish;
+
+  /// No description provided for @marathiScript.
+  ///
+  /// In en, this message translates to:
+  /// **'Marathi script'**
+  String get marathiScript;
+
   /// No description provided for @languageHindi.
   ///
   /// In en, this message translates to:
@@ -2313,7 +2349,7 @@ abstract class AppLocalizations {
   /// No description provided for @learningTimelineMarker.
   ///
   /// In en, this message translates to:
-  /// **'{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} other{Now learning English}}'**
+  /// **'{languageCode, select, nl{Now learning Dutch} en{Now learning English} fr{Now learning French} de{Now learning German} hi{Now learning Hindi} it{Now learning Italian} pt{Now learning Portuguese} es{Now learning Spanish} ta{Now learning Tamil} tr{Now learning Turkish} uk{Now learning Ukrainian} da{Now learning Danish} fi{Now learning Finnish} ko{Now learning Korean} mr{Now learning Marathi} pl{Now learning Polish} other{Now learning English}}'**
   String learningTimelineMarker(String languageCode);
 
   /// No description provided for @reportSpamQuestion.

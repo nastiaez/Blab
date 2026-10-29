@@ -30,6 +30,11 @@ class TtsService {
     'fr': 'fr-FR',
     'tr': 'tr-TR',
     'en': 'en-US',
+    'da': 'da-DK',
+    'fi': 'fi-FI',
+    'ko': 'ko-KR',
+    'mr': 'mr-IN',
+    'pl': 'pl-PL',
   };
 
   /// Translates a Blab language `code` to its TTS BCP-47 locale, or `null`
@@ -78,8 +83,8 @@ class TtsService {
     try {
       await _tts.stop();
       if (generation != _playbackGeneration) return;
-      await _tts.setLanguage(locale);
-      if (generation != _playbackGeneration) return;
+      final selected = await _tts.setLanguage(locale);
+      if (generation != _playbackGeneration || selected != 1) return;
       await _tts.speak(text);
     } catch (_) {
       // Swallow — TTS errors are non-fatal for the popup.

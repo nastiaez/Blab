@@ -2383,3 +2383,13 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 - 56 focused checks passed; resumed static analysis clean. Earlier Android attempt failed for lack of disk space; resume found21GiB available, no cleanup/deletion needed. Resumed50 targeted checks pass; Android keyboard-open before/overlay/selection captures inspected. Names cover the bubble without moving the date/composer; selection restores the bubble in its original position and retains keyboard. Synthetic-data native preview, not live-backend or iOS proof. Awaiting visual review; no approval, merge or release of this follow-up.
 
 -16630 visual/workflow approval;16633 explicitly authorizes commit, main integration and deployment. Full1095 tests pass/17 environment skips; clean analysis. Four-target release preparation follows integrated revision; no backend change needed.
+
+### BLA-13 five languages16713 ·29 October2026 ← in progress
+- Approved: Korean, Finnish, Polish, Danish, Marathi and Marathi native/English-letters reading preference. Current-main dedicated branch; no picker redesign, existing form-correction policy unchanged.
+- Done when: all five selectors/persistence/translation/word-help/audio journeys verified on Android and iOS, screenshots reviewed, current release gates satisfied.
+- Candidate: registries, localized names/timeline labels, speech locales, Hangul admission, Polish/Marathi form audit, Marathi reading presentation and database allowlists. Existing interface locales, history, grants/RLS preserved.
+- Initial checks: focused Flutter21 pass; existing translator187 pass; SQL fixture verifies admission, unchanged UI locales, permissions and existing rows. Full/native/live checks pending. No merge, deployment or release.
+
+- BLA-13 verification16713: full1098pass/17skip, then6 audio/registry checks; translator190pass and SQL fixture (including actual source normalization) pass. Both native selector/settings journeys pass; iOS all-five text + Marathi script rendering pass. Android voices5/5, iOS4/5 (Marathi unavailable); physical-device audio and hosted persistence/history remain gates. Screenshots16744/16765 sent; no visual approval, integration or release. Build-only config restored.
+
+- BLA-13 approval16774; commit/merge/deploy authorized16781. Combined release with approved held overlay; clean-schema CI and persistence checks in progress. Physical-phone Marathi speech unverified, no rollout completion claim.

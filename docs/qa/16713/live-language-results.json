@@ -1,0 +1,962 @@
+[
+  {
+    "lang": "da",
+    "text": "I will bring two books tomorrow, not today.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Jeg tager to bøger med i morgen, ikke i dag.",
+      "interfaceText": "I will bring two books tomorrow, not today.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Jeg",
+          "gloss": "I",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "tager",
+          "gloss": "take/bring",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "to",
+          "gloss": "two",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "bøger",
+          "gloss": "books",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "med",
+          "gloss": "along",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "i",
+          "gloss": "in",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "morgen",
+          "gloss": "tomorrow",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ",",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "ikke",
+          "gloss": "not",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "i",
+          "gloss": "in",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "dag",
+          "gloss": "day",
+          "roman": null,
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  },
+  {
+    "lang": "fi",
+    "text": "I will bring two books tomorrow, not today.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Tuon kaksi kirjaa huomenna, en tänään.",
+      "interfaceText": "I will bring two books tomorrow, not today.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Tuon",
+          "gloss": "I bring",
+          "roman": "Tuon",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "kaksi",
+          "gloss": "two",
+          "roman": "kaksi",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "kirjaa",
+          "gloss": "books",
+          "roman": "kirjaa",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "huomenna",
+          "gloss": "tomorrow",
+          "roman": "huomenna",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ",",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "en",
+          "gloss": "not (I do not)",
+          "roman": "en",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "tänään",
+          "gloss": "today",
+          "roman": "tänään",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  },
+  {
+    "lang": "ko",
+    "text": "I will bring two books tomorrow, not today.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "내일 책 두 권 가져갈게, 오늘은 말고.",
+      "interfaceText": "I will bring two books tomorrow, not today.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "내일",
+          "gloss": "tomorrow",
+          "roman": "naeil",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "책",
+          "gloss": "book",
+          "roman": "chaek",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "두",
+          "gloss": "two",
+          "roman": "du",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "권",
+          "gloss": "counter for books",
+          "roman": "gwon",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "가져갈게",
+          "gloss": "will bring (informal)",
+          "roman": "gajyeogalge",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ",",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "오늘은",
+          "gloss": "today (topic marker)",
+          "roman": "oneureun",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "말고",
+          "gloss": "not (this)",
+          "roman": "malgo",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  },
+  {
+    "lang": "mr",
+    "text": "I will bring two books tomorrow, not today.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "मी उद्या दोन पुस्तके आणेन, आज नाही.",
+      "interfaceText": "I will bring two books tomorrow, not today.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "मी",
+          "gloss": "I",
+          "roman": "mi",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "उद्या",
+          "gloss": "tomorrow",
+          "roman": "udya",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "दोन",
+          "gloss": "two",
+          "roman": "don",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "पुस्तके",
+          "gloss": "books",
+          "roman": "pustake",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "आणेन",
+          "gloss": "will bring",
+          "roman": "aanen",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ",",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "आज",
+          "gloss": "today",
+          "roman": "aaj",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "नाही",
+          "gloss": "not",
+          "roman": "nahi",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  },
+  {
+    "lang": "pl",
+    "text": "I will bring two books tomorrow, not today.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Przyniosę dwie książki jutro, nie dzisiaj.",
+      "interfaceText": "I will bring two books tomorrow, not today.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Przyniosę",
+          "gloss": "I will bring (future tense verb)",
+          "roman": "pshi-nyo-she",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "dwie",
+          "gloss": "two (feminine numeral)",
+          "roman": "dvye",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "książki",
+          "gloss": "books (plural noun)",
+          "roman": "kshyosh-kee",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "jutro",
+          "gloss": "tomorrow (adverb)",
+          "roman": "yu-tro",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ",",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "nie",
+          "gloss": "not (negation particle)",
+          "roman": "nye",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "dzisiaj",
+          "gloss": "today (adverb)",
+          "roman": "jee-sha-y",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  },
+  {
+    "lang": "mr",
+    "text": "I was tired yesterday.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "मी काल थकले होते.",
+      "interfaceText": "I was tired yesterday.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "मी",
+          "gloss": "I",
+          "roman": "mi",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "काल",
+          "gloss": "yesterday",
+          "roman": "kaal",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "थकले",
+          "gloss": "tired (feminine)",
+          "roman": "thakle",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "होते",
+          "gloss": "was (feminine)",
+          "roman": "hote",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": {
+        "before": "मी काल ",
+        "feminine": "थकले होते",
+        "masculine": "थकलो होतो",
+        "after": ".",
+        "subjectName": "Alice",
+        "subjectIsViewer": true,
+        "suggestedForm": "feminine",
+        "feminineTokens": [
+          {
+            "text": "मी",
+            "gloss": "I",
+            "roman": "mi",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "काल",
+            "gloss": "yesterday",
+            "roman": "kaal",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "थकले",
+            "gloss": "tired (feminine)",
+            "roman": "thakle",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "होते",
+            "gloss": "was (feminine)",
+            "roman": "hote",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          }
+        ],
+        "masculineTokens": [
+          {
+            "text": "मी",
+            "gloss": "I",
+            "roman": "mi",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "काल",
+            "gloss": "yesterday",
+            "roman": "kaal",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "थकलो",
+            "gloss": "tired (masculine)",
+            "roman": "thaklo",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": " ",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": "होतो",
+            "gloss": "was (masculine)",
+            "roman": "hoto",
+            "isContent": true,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          },
+          {
+            "text": ".",
+            "gloss": null,
+            "roman": null,
+            "isContent": false,
+            "wordHelpVersion": "contextual-word-meanings-v1"
+          }
+        ],
+        "subjectRole": "author"
+      }
+    }
+  },
+  {
+    "lang": "pl",
+    "text": "I was tired yesterday.",
+    "tone": "informal",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "Byłam wczoraj zmęczona.",
+      "interfaceText": "I was tired yesterday.",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "Byłam",
+          "gloss": "I was (feminine past tense verb)",
+          "roman": "BY-wam",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "wczoraj",
+          "gloss": "yesterday (adverb of time)",
+          "roman": "FCHO-ray",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "zmęczona",
+          "gloss": "tired (feminine adjective)",
+          "roman": "zmen-CHO-na",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": ".",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  },
+  {
+    "lang": "ko",
+    "text": "Can you help me tomorrow?",
+    "tone": "respectful",
+    "result": {
+      "mode": "translation",
+      "sourceLang": "en",
+      "translation": "내일 저를 도와주실 수 있나요?",
+      "interfaceText": "Can you help me tomorrow?",
+      "explanation": null,
+      "confidence": null,
+      "tokens": [
+        {
+          "text": "내일",
+          "gloss": "tomorrow",
+          "roman": "naeil",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "저를",
+          "gloss": "me (polite object marker)",
+          "roman": "jeoreul",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "도와주실",
+          "gloss": "to help (honorific)",
+          "roman": "dowajusil",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "수",
+          "gloss": "possibility/ability",
+          "roman": "su",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": " ",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "있나요",
+          "gloss": "is there/can (interrogative)",
+          "roman": "innayo",
+          "isContent": true,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        },
+        {
+          "text": "?",
+          "gloss": null,
+          "roman": null,
+          "isContent": false,
+          "wordHelpVersion": "contextual-word-meanings-v1"
+        }
+      ],
+      "formAlternatives": null
+    }
+  }
+]

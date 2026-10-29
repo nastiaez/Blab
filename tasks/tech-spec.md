@@ -635,3 +635,7 @@ message history in app groups. Versioned per-token RPC and generic-alert/mutable
 contract are specified in docs/qa/2026-10-26-ios-production/README.md; backend/main/deploy remain
 parent-owned. Existing legacy iOS and Android capabilities are not silently upgraded. Approved
 40–45 appearance preserved; source tests do not replace signed physical-device APNs acceptance.
+
+### BLA-13 ·29 October2026
+- Reuse the existing language registry, translation contract and system TTS engine; explicit da-DK/fi-FI/ko-KR/mr-IN/pl-PL mappings do not guarantee installed voices. Add mr to the shared reading-script eligibility set and use Devanagari presentation; no schema change to that preference.
+- Forward-only language migration expands the exact old learning allowlist in current and renamed compatibility functions while preserving signatures, privileges, RLS and cache rows. Four interface locales remain unchanged. Existing translation keys include language, so no invalidation of old accepted sentences is required.

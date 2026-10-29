@@ -132,7 +132,7 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile(
-          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/language.png',
+          '../../docs/qa/16713/language-onboarding.png',
         ),
       );
     },

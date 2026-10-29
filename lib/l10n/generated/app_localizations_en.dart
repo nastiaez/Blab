@@ -164,6 +164,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageGerman => 'German';
 
   @override
+  String get languageDanish => 'Danish';
+
+  @override
+  String get languageFinnish => 'Finnish';
+
+  @override
+  String get languageKorean => 'Korean';
+
+  @override
+  String get languageMarathi => 'Marathi';
+
+  @override
+  String get languagePolish => 'Polish';
+
+  @override
+  String get marathiScript => 'Marathi script';
+
+  @override
   String get languageHindi => 'Hindi';
 
   @override
@@ -1265,6 +1283,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'ta': 'Now learning Tamil',
       'tr': 'Now learning Turkish',
       'uk': 'Now learning Ukrainian',
+      'da': 'Now learning Danish',
+      'fi': 'Now learning Finnish',
+      'ko': 'Now learning Korean',
+      'mr': 'Now learning Marathi',
+      'pl': 'Now learning Polish',
       'other': 'Now learning English',
     });
     return '$_temp0';

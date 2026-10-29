@@ -1,4 +1,4 @@
-/// The 11 languages supported by the Blab prototype.
+/// The supported Blab learning languages.
 /// Source of truth: `tasks/prd-blab.md` § Languages Supported.
 class BlabLanguage {
   const BlabLanguage({
@@ -25,6 +25,13 @@ class BlabLanguage {
 
 const List<BlabLanguage> kBlabLanguages = [
   BlabLanguage(
+    code: 'da',
+    name: 'Danish',
+    nativeName: 'Dansk',
+    flag: '🇩🇰',
+    hello: 'hej',
+  ),
+  BlabLanguage(
     code: 'nl',
     name: 'Dutch',
     nativeName: 'Nederlands',
@@ -37,6 +44,13 @@ const List<BlabLanguage> kBlabLanguages = [
     nativeName: 'English',
     flag: '🇬🇧',
     hello: 'hello',
+  ),
+  BlabLanguage(
+    code: 'fi',
+    name: 'Finnish',
+    nativeName: 'Suomi',
+    flag: '🇫🇮',
+    hello: 'hei',
   ),
   BlabLanguage(
     code: 'fr',
@@ -65,6 +79,27 @@ const List<BlabLanguage> kBlabLanguages = [
     nativeName: 'Italiano',
     flag: '🇮🇹',
     hello: 'ciao',
+  ),
+  BlabLanguage(
+    code: 'ko',
+    name: 'Korean',
+    nativeName: '한국어',
+    flag: '🇰🇷',
+    hello: '안녕하세요',
+  ),
+  BlabLanguage(
+    code: 'mr',
+    name: 'Marathi',
+    nativeName: 'मराठी',
+    flag: '🇮🇳',
+    hello: 'नमस्कार',
+  ),
+  BlabLanguage(
+    code: 'pl',
+    name: 'Polish',
+    nativeName: 'Polski',
+    flag: '🇵🇱',
+    hello: 'cześć',
   ),
   BlabLanguage(
     code: 'pt',

@@ -56,6 +56,31 @@ void main() {
       );
     });
 
+    test('presents a complete Marathi sentence in English letters', () {
+      final result = presentReadingScript(
+        text: 'तू कसा आहेस?',
+        tokens: const [
+          MessageToken(text: 'तू', romanization: 'tu', gloss: 'you'),
+          MessageToken(text: ' ', isContent: false),
+          MessageToken(text: 'कसा', romanization: 'kasa', gloss: 'how'),
+          MessageToken(text: ' ', isContent: false),
+          MessageToken(text: 'आहेस', romanization: 'aahes', gloss: 'are'),
+          MessageToken(text: '?', isContent: false),
+        ],
+        languageCode: 'mr',
+        readingScript: ReadingScript.englishLetters,
+      );
+
+      expect(result.text, 'tu kasa aahes?');
+      expect(result.usedEnglishLetters, isTrue);
+      expect(
+        result.tokens
+            .where((token) => token.isContent)
+            .map((token) => token.nativeText),
+        ['तू', 'कसा', 'आहेस'],
+      );
+    });
+
     test('keeps the whole sentence native when romanization is incomplete', () {
       final tokens = const [
         MessageToken(text: 'आप', romanization: 'aap', gloss: 'you'),

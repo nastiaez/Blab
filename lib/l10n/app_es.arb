@@ -49,6 +49,12 @@
   "languageFrench": "Francés",
   "languageUkrainian": "Ucraniano",
   "languageGerman": "Alemán",
+  "languageDanish": "Danés",
+  "languageFinnish": "Finés",
+  "languageKorean": "Coreano",
+  "languageMarathi": "Maratí",
+  "languagePolish": "Polaco",
+  "marathiScript": "Escritura maratí",
   "languageHindi": "Hindi",
   "languageItalian": "Italiano",
   "languagePortuguese": "Portugués",
@@ -444,7 +450,7 @@
   "tamilScript": "Escritura tamil",
   "nativeScripts": "Escrituras nativas",
   "englishLetters": "Letras latinas",
-  "learningTimelineMarker": "{languageCode, select, nl{Ahora aprendes Neerlandés} en{Ahora aprendes Inglés} fr{Ahora aprendes Francés} de{Ahora aprendes Alemán} hi{Ahora aprendes Hindi} it{Ahora aprendes Italiano} pt{Ahora aprendes Portugués} es{Ahora aprendes Español} ta{Ahora aprendes Tamil} tr{Ahora aprendes Turco} uk{Ahora aprendes Ucraniano} other{Ahora aprendes Inglés}}",
+  "learningTimelineMarker": "{languageCode, select, nl{Ahora aprendes Neerlandés} en{Ahora aprendes Inglés} fr{Ahora aprendes Francés} de{Ahora aprendes Alemán} hi{Ahora aprendes Hindi} it{Ahora aprendes Italiano} pt{Ahora aprendes Portugués} es{Ahora aprendes Español} ta{Ahora aprendes Tamil} tr{Ahora aprendes Turco} uk{Ahora aprendes Ucraniano} da{Ahora aprendes Danés} fi{Ahora aprendes Finés} ko{Ahora aprendes Coreano} mr{Ahora aprendes Maratí} pl{Ahora aprendes Polaco} other{Ahora aprendes Inglés}}",
   "@learningTimelineMarker": {
     "placeholders": {
       "languageCode": {

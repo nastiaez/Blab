@@ -33,6 +33,11 @@ export const LANG_NAMES: Record<string, string> = {
   nl: "Dutch",
   tr: "Turkish",
   hi: "Hindi",
+  da: "Danish",
+  fi: "Finnish",
+  ko: "Korean",
+  mr: "Marathi",
+  pl: "Polish",
 };
 
 export const LATIN_TARGETS = new Set([
@@ -44,6 +49,9 @@ export const LATIN_TARGETS = new Set([
   "pt",
   "es",
   "tr",
+  "da",
+  "fi",
+  "pl",
 ]);
 
 export const INTERFACE_LANGS = new Set(["en", "uk", "de", "es"]);
@@ -77,6 +85,8 @@ export const FORM_RELEVANT_TARGET_LANGS = new Set([
   "es",
   "ta",
   "uk",
+  "pl",
+  "mr",
 ]);
 
 export const SHORT_SOURCE_RETRY_MAX_CHARS = 24;

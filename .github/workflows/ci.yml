@@ -88,6 +88,10 @@ jobs:
         run: |
           project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
           docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/message_mentions.sql
+      - name: Verify new language persistence and history
+        run: |
+          project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
+          docker exec -i "supabase_db_${project_id}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/bla13_languages.sql
       - name: Run backend integration suite
         run: scripts/local_test.sh integration
       - name: Stop disposable backend

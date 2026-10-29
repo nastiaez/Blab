@@ -831,6 +831,7 @@ export type FormAuditResult = {
 function validatedCompleteTokens(
   value: unknown,
   expectedText: string,
+  allowExplanatoryGloss = false,
 ): TranslationToken[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   const tokens: TranslationToken[] = [];
@@ -851,7 +852,7 @@ function validatedCompleteTokens(
       const glossWords = gloss.match(/[\p{L}\p{M}\p{N}'’]+/gu) ?? [];
       if (
         token.text.trim().length === 0 || /\s/u.test(token.text.trim()) ||
-        glossWords.length < 1 || glossWords.length > 3
+        glossWords.length < 1 || (!allowExplanatoryGloss && glossWords.length > 3)
       ) return null;
       const hasNonLatinLetter = Array.from(token.text).some((character) =>
         /\p{L}/u.test(character) && !/\p{Script=Latin}/u.test(character)
@@ -1201,8 +1202,10 @@ function scriptCompatibleWithLanguage(text: string, language: string): boolean {
   if (letters.length === 0) return false;
   const pattern = language === "uk"
     ? /\p{Script=Cyrillic}/u
-    : language === "hi"
+    : (language === "hi" || language === "mr")
     ? /\p{Script=Devanagari}/u
+    : language === "ko"
+    ? /\p{Script=Hangul}/u
     : language === "ta"
     ? /\p{Script=Tamil}/u
     : /\p{Script=Latin}/u;
@@ -1210,7 +1213,7 @@ function scriptCompatibleWithLanguage(text: string, language: string): boolean {
 }
 
 const SUPPORTED_SOURCE_SCRIPTS =
-  /[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Devanagari}\p{Script=Tamil}]/u;
+  /[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Devanagari}\p{Script=Tamil}\p{Script=Hangul}]/u;
 
 /// Returns true when authored text contains a letter from a script that none
 /// of Blab's supported languages use. This lets obvious unsupported text keep
@@ -1577,6 +1580,7 @@ export function parseProviderResult(
     formAlternatives: parseFormAlternatives(
       raw.formAlternatives,
       deferWordMetadata,
+      acceptance === "nonempty",
     ),
   };
   if (acceptance === "nonempty") {
@@ -1858,6 +1862,7 @@ function normalizeSourceLang(value: unknown): string {
 function parseFormAlternatives(
   value: unknown,
   deferWordMetadata = false,
+  allowExplanatoryGloss = false,
 ): FormAlternatives | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
@@ -1874,10 +1879,12 @@ function parseFormAlternatives(
   const feminineTokens = deferWordMetadata ? [] : validatedCompleteTokens(
     raw.feminineTokens,
     `${raw.before}${raw.feminine}${raw.after}`,
+    allowExplanatoryGloss,
   );
   const masculineTokens = deferWordMetadata ? [] : validatedCompleteTokens(
     raw.masculineTokens,
     `${raw.before}${raw.masculine}${raw.after}`,
+    allowExplanatoryGloss,
   );
   if (feminineTokens === null || masculineTokens === null) return null;
   return {
