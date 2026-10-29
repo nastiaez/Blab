@@ -184,6 +184,7 @@ class MessageLearningContent extends StatelessWidget {
       );
       return MessageText(
         isOutgoing: isOutgoing,
+        enableWordLookup: false,
         text: presentation.text,
         tokens: presentation.tokens,
         languageCode: generatedLanguageCode,
@@ -349,6 +350,7 @@ class MessageLearningContent extends StatelessWidget {
         ? (() {
             final corrected = presentGenerated(value.translation, value.tokens);
             return InlineCorrectionText(
+              enableWordLookup: false,
               originalText: authoredText,
               correctedText: corrected.text,
               correctedTokens: corrected.tokens,
@@ -363,7 +365,10 @@ class MessageLearningContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        learningLine,
+        KeyedSubtree(
+          key: const ValueKey('message-learning-lane'),
+          child: learningLine,
+        ),
         if (expanded) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -375,6 +380,7 @@ class MessageLearningContent extends StatelessWidget {
             ),
           ),
           MentionText(
+            key: const ValueKey('message-comprehension-lane'),
             text: value.interfaceText,
             mentions: value.mentionSpans[value.interfaceText] ?? const [],
             viewerId: viewerId,

@@ -1,5 +1,7 @@
 # PRD: Blab — Language Exchange Chat App
 
+> **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
+
 ## Introduction
 
 Blab is a peer-to-peer language exchange app. Two people teach each other their native languages through real conversations. People can write in any language. Practice shows the viewer's learning-language result; Normal shows authored text the reader knows and a primary-known-language translation when they do not. Exact authored text remains authoritative and is available through Normal's Original action whenever the displayed text differs. The app is built around mutual exchange — not courses, not AI conversation partners, not tutors. Real people, real chat.
@@ -279,15 +281,15 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] The interface language controls app chrome only; it is never a message-translation, word-description, or learning-explanation target
 - [ ] If an author makes a clear mistake in their learning language, that author sees the minimal correction inline with replaced text struck through and the replacement emphasized
 - [ ] In Practice, recipients see the author's correction marks only when both participants had the same Learning Language at send time; otherwise they see one clean corrected learning-language line
-- [ ] Struck-through correction text has no explanation action for either participant; corrected words keep standard word help
+- [ ] Struck-through correction text has no explanation action for either participant; chat taps use BLA-17 message selection
 - [ ] Shared-correction eligibility is fixed when the message is created, remains unchanged after either participant changes language, and is false for messages created before this rule ships
 - [ ] Correct target-language writing remains clean; uncertain author corrections are labeled "Possible correction" and do not invent missing meaning
 - [ ] Sender and receiver reuse the same correction cache variant when their learning and primary known languages match
 - [ ] Use only two response acceptance rules: loose readable structure identifying requested sentences, and nonempty translation text. Allow extra fields and missing optional metadata; word help or form metadata must not reject the sentence. (Owner, 2026-10-16.)
-- [ ] Translation words are tappable and definitions use the reader's primary Known Language
+- [ ] Message text uses BLA-17 message selection; unrelated word-help surfaces use the reader's Primary Known Language
 - [ ] Reaction pills overlap the lower outer bubble corner and grow inward toward the conversation center (left anchored for incoming, right anchored for outgoing) so wider mixed reactions remain onscreen on short messages; one shared oval pill uses `#FFFCF8` fill and `#DCD2C8` outline, with a subtle shadow in Practice only; distinct emojis sit side by side and the total number of reacting people appears inside the pill on the right (owner14372, 20 October 2026), including a count of1; no floating per-emoji number badges
-- [ ] Tapping a learning-language word opens its word description; tapping empty bubble padding does nothing; message actions require long press
-- [ ] Practice long press temporarily reveals the reader's primary-known-language translation below the existing divider; Normal conditionally offers Original for the exact authored text
+- [ ] Message/text tap opens anchored reactions/actions; old message word lookup and long-press entry are removed (BLA-17 correction16176)
+- [ ] Practice message selection temporarily reveals the reader's primary-known-language translation below the existing divider; Normal conditionally offers Original for the exact authored text
 - [ ] With learning aids disabled, authored text is shown and no new AI request is made
 - [ ] Expressive stretching, playful capitalization, and chat abbreviations are treated as style rather than mistakes; confidently identified names are transliterated into a different target script without changing their identity, while uncertain name-like text remains authored
 - [ ] If source language is outside Blab's supported language set, keep the exact authored text and show one neutral localized hint (`Blab doesn’t speak this one yet.`) in muted 12 px text; do not show Retry, Listen, Original, or word-description actions
@@ -320,17 +322,8 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 ---
 
-### US-018: Tappable words — word lookup popup
-**Description:** As a learner, I want to tap any word in the chat to see its meaning and pronunciation.
-
-**Acceptance Criteria:**
-- [ ] Every content word in Tamil messages is wrapped in a tappable span (both incoming and outgoing)
-- [ ] Tapping a word opens a popup. Layout: 🔊 speaker icon on the left, vertically centered; to its right, a single left-aligned column with learning-language word (large, w700) / Latin-script transliteration (13 px muted, NOT italic) / primary-known-language translation (15 px w500). All three text rows share the same left edge; word-containing learning lines are never cached without this metadata
-- [ ] Speaker icon belongs to the target word (left side), not the English translation
-- [ ] When TTS for the language is unavailable, the speaker icon stays in place but renders disabled: 40% opacity, no tap response, no tooltip, no text — silent disabled state. (FR-24)
-- [ ] Popup positions above the tapped word; clamps to phone bounds (no overflow)
-- [ ] × closes popup; tapping anywhere in message area closes popup
-- [ ] Tapping a tappable word does NOT trigger long-press on the parent bubble
+### US-018: Word lookup surfaces
+**BLA-17 supersession:** ordinary chat message/text taps select the message and open anchored panels, not word lookup; held press does not enter the old menu. Onboarding and unrelated word-help surfaces retain existing popup/audio behavior. Primary Known Language and Learning Language mapping is unchanged.
 
 ---
 
@@ -338,11 +331,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to edit, copy, reply to, or delete my own messages.
 
 **Acceptance Criteria:**
-- [ ] Double-tap a delivered incoming or outgoing message to toggle your heart reaction; repeating removes your heart, never the other participant’s. A different own reaction is replaced by a heart. Single word taps, long press, swipe reply and failed-message recovery retain their existing behavior (BLA-21, owner clarification 2026-10-20).
-- [ ] Long press opens the floating reaction row plus composer-replacement action row; the reaction row sits below by default, moves above when there is no room below, and overlaps only a viewport-filling message; tapping empty bubble padding does nothing and tapping a learning word still opens its definition
-- [ ] Practice actions: Reply | Edit | Copy | Listen | Delete; Normal actions: Reply | Edit | Copy | Original | Delete, with conditional actions hidden when ineligible
-- [ ] Practice long press temporarily reveals the primary-known-language translation; Normal Original temporarily reveals exact authored text below the existing divider
-- [ ] Tapping outside or starting a scroll closes reactions, actions, and temporary Translation/Original content
+- [ ] Double-tap a delivered incoming or outgoing message to toggle your heart reaction; repeating removes your heart, never the other participant’s. A different own reaction is replaced by a heart. Message/text taps follow BLA-17; swipe reply and failed-message recovery retain their existing behavior (BLA-21, owner clarification 2026-10-20).
+- [ ] Message/text tap opens separate anchored function/reaction panels, retaining composer and whole-chat scroll. Measure the complete pair below, then above, then approved long overlap. Remove old message word lookup and long-press entry
+- [ ] Practice actions: Listen | Reply | Edit | Copy | Delete; Normal actions: Reply | Edit | Copy | Original | Delete, with conditional actions hidden when ineligible
+- [ ] Practice message selection temporarily reveals the primary-known-language translation; Normal Original temporarily reveals exact authored text below the existing divider
+- [ ] Whole-chat scroll retains fixed panels and temporary content in a stable viewport; writing-field tap and outside tap dismiss immediately; geometry-changing lifecycle remains a review gate
 - [ ] Reply uses the primary text currently presented in chat, opens the keyboard, and threads the quote into the sent bubble
 - [ ] A deliberate horizontal swipe anywhere across the message's full row, including empty background beside the outgoing bubble, starts Reply; short movement and diagonal/vertical scrolling do not; open background outside message rows does nothing
 - [ ] **Edit window: 24 hours** from the moment the message was sent (Signal-style). Past 24h the Edit row is hidden from the sheet
@@ -358,11 +351,11 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user, I want to reply to or copy messages from my chat partner.
 
 **Acceptance Criteria:**
-- [ ] Double-tap a delivered incoming or outgoing message to toggle your heart reaction; repeating removes your heart, never the other participant’s. A different own reaction is replaced by a heart. Single word taps, long press, swipe reply and failed-message recovery retain their existing behavior (BLA-21, owner clarification 2026-10-20).
-- [ ] Long press opens the floating reaction row plus composer-replacement action row; the reaction row sits below by default, moves above when there is no room below, and overlaps only a viewport-filling message; tapping empty bubble padding does nothing and tapping a learning word still opens its definition
-- [ ] Practice actions: Reply | Copy | Listen | Report; Normal actions: Reply | Copy | Original | Report, with conditional actions hidden when ineligible
+- [ ] Double-tap a delivered incoming or outgoing message to toggle your heart reaction; repeating removes your heart, never the other participant’s. A different own reaction is replaced by a heart. Message/text taps follow BLA-17; swipe reply and failed-message recovery retain their existing behavior (BLA-21, owner clarification 2026-10-20).
+- [ ] Message/text tap opens separate anchored function/reaction panels, retaining composer and whole-chat scroll. Measure the complete pair below, then above, then approved long overlap. Remove old message word lookup and long-press entry
+- [ ] Practice actions: Listen | Reply | Copy | Report; Normal actions: Reply | Copy | Original | Report, with conditional actions hidden when ineligible
 - [ ] Copy and Reply use the complete primary text currently presented in chat; a translation failure therefore uses the readable authored text
-- [ ] Tapping outside or starting a scroll closes reactions, actions, and temporary Translation/Original content
+- [ ] Whole-chat scroll retains fixed panels and temporary content in a stable viewport; writing-field tap and outside tap dismiss immediately; geometry-changing lifecycle remains a review gate
 - [ ] A deliberate horizontal swipe anywhere across the message's full row, including empty background beside the incoming bubble, starts Reply; short movement and diagonal/vertical scrolling do not; open background outside message rows does nothing
 
 ---
@@ -470,7 +463,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Acceptance Criteria:**
 - [ ] All core chat features follow Flow 3 after the required initial practice-language selection
 - [ ] Before selection, authored text remains uncorrected and untranslated; after selection, messages and previews use the participant's Practice result where applicable
-- [ ] Reply preview + incoming long-press follow US-020 / US-021, including Normal Original, Practice Listen, and Report eligibility
+- [ ] Reply preview + incoming message selection follow US-020 / US-021, including Normal Original, Practice Listen, and Report eligibility
 - [ ] Input placeholder: localized "Message"
 - [ ] Send button uses the same empty-state treatment as US-023: dimmed circle fill with a solid-white arrow
 
@@ -786,12 +779,12 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-8: Profile settings in a single card: Interface language | Edit profile | Change email | Change password | Log out. Log out triggers a confirm dialog before signing out
 - FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to Profile only after the server succeeds, with the updated name immediately visible and no redundant success toast; failure stays inline on Edit profile. Saving Languages you understand or Translation language follows the same no-success-toast rule because the updated chips and Translation language row are immediately visible on return. Translation language is always included among understood languages
 - FR-10: Change password has current/new/confirm fields with strength bar; success returns to the destination with a compact light confirmation, leading check-circle, localized text, no close icon, and a 2.5-second timeout
-- FR-11: Every content word in normalized learning-language text is tappable → popup (word + romanization + translation + audio)
+- FR-11: Message/text tap opens BLA-17 anchored panels; no old message word popup/recognizer or long-press menu entry. Unrelated word-help surfaces are retained
 - FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
-- FR-13: Practice mode renders one collapsed learning-language line and temporarily reveals the primary-known-language line on long press; Normal renders authored text for known languages, translates an unknown incoming language once into the reader's primary known language, and conditionally exposes exact authored text through Original. The interface language controls chrome only; the primary Known Language controls word descriptions. Author mistakes in their learning language render as minimal inline strike-through corrections. A recipient sees those marks only when both participants had the same Learning Language at send time; otherwise they receive clean corrected output. Struck-through correction text has no explanation action for either participant, while corrected words retain standard word help. This eligibility is persisted when the message is created, remains historical through later language changes, and is false for pre-feature messages. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline text-only Retry action
+- FR-13: Practice mode renders one collapsed learning-language line and temporarily reveals the primary-known-language line on message selection; Normal renders authored text for known languages, translates an unknown incoming language once into the reader's primary known language, and conditionally exposes exact authored text through Original. The interface language controls chrome only; the primary Known Language controls word descriptions. Author mistakes in their learning language render as minimal inline strike-through corrections. A recipient sees those marks only when both participants had the same Learning Language at send time; otherwise they receive clean corrected output. Struck-through correction text has no explanation action for either participant; ordinary chat taps use BLA-17 message selection. This eligibility is persisted when the message is created, remains historical through later language changes, and is false for pre-feature messages. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline text-only Retry action
 - FR-14: Outgoing status is clock while sending, single gray check when accepted or device-received, and double gray check when read. Read requires both Read receipts toggles ON; otherwise it stays single. Default ON, symmetric, and OFF emits no read event
-- FR-15: Outgoing message actions require long press. Normal uses Reply | Edit | Copy | Original | Delete; Practice uses Reply | Edit | Copy | Listen | Delete. Conditional actions hide when ineligible; Delete confirms, removes for both, and has no tombstone or Undo
-- FR-16: Incoming message actions require long press. Normal uses Reply | Copy | Original | Report; Practice uses Reply | Copy | Listen | Report. Tapping empty bubble padding does nothing
+- FR-15: Outgoing message/text tap opens anchored actions. Normal uses Reply | Edit | Copy | Original | Delete; Practice uses Listen | Reply | Edit | Copy | Delete. Conditional actions hide when ineligible; Delete confirms, removes for both, and has no tombstone or Undo
+- FR-16: Incoming message/text tap opens anchored actions. Normal uses Reply | Copy | Original | Report; Practice uses Listen | Reply | Copy | Report. Existing eligibility remains
 - FR-17: Reply preview uses only You/name with the approved accent and visible primary message text, opens the keyboard, and threads the same text or photo preview into the sent bubble
 - FR-18: Consecutive outgoing messages group (reduced gap, no repeated timestamp)
 - FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
@@ -809,10 +802,10 @@ This document captures the full scope as prototyped across 4 phone flows.
 - FR-31: Typing indicators + Read receipts are Signal-symmetric toggles in Privacy settings; default ON; OFF path = client never broadcasts the event (server has no record) AND user does not see partner's signal either
 - FR-32: Edit window is 24h and Delete has no time limit; both apply to outgoing messages only. Edit preserves its draft across navigation until Send or ×, marks the message edited, and refreshes language help after any changed letter, number, or punctuation
 - FR-33: Primary Known Language switching immediately refreshes Normal-mode translations and word descriptions from the matching cache variant. Interface-language switching re-renders interface copy only and never changes those learning-aid results
-- FR-34: Render complete natural grammatical forms: explicit preference, then provisional name suggestion, then feminine fallback. Show one localized `Using [form] forms for [name] · Change` note per participant/chat; Change opens existing Translation preferences and corrects only the annotated message plus future messages. No markers, word-choice containers, or neutral rewrites to avoid ambiguity. Resolve author/recipient ownership before suggesting a form. Resolved words retain normal lookup behavior.
+- FR-34: Render complete natural grammatical forms: explicit preference, then provisional name suggestion, then feminine fallback. Show one localized `Using [form] forms for [name] · Change` note per participant/chat; Change opens existing Translation preferences and corrects only the annotated message plus future messages. No markers, word-choice containers, or neutral rewrites to avoid ambiguity. Resolve author/recipient ownership before suggesting a form. Resolved text uses BLA-17 message selection in ordinary chat; unrelated word-help surfaces are retained.
 - FR-35: Grammatical-form memory has only `not set`, `feminine`, and `masculine`. A self-owned form is account-wide; another participant’s choice is a private one-to-one fallback. The first clear authored form is learned silently; once saved, it is authoritative and later opposite authored forms receive the normal visible correction until the user changes the preference in settings. Conversation tone is stored separately per chat
 - FR-36: Message lifecycle follows `docs/superpowers/specs/2026-08-12-translating-state-animation-design.md`: a slow delivered outgoing Practice message receives a glyph-only wave after 350ms, then a measured clear → reshape → land transition; text states never duplicate. Language-help failure quietly retries once for up to 10 seconds, then preserves original text with Retry unless the server confirms current active preparation; that work retains the existing translating state for at most two minutes without duplicate AI requests. Expressive stretching, playful capitalization, and chat abbreviations are not correction mistakes; confidently identified names are transliterated when the target script differs without changing their identity. Unsupported source languages preserve the original with a neutral hint and no Retry or learning actions. Delivery failures remain distinct, and reduced-motion behavior has no decorative motion
-- FR-37: The launch message interaction follows `docs/superpowers/specs/2026-08-24-chat-ui-refresh-simple-long-press-design.md`: word tap opens lookup, empty bubble padding does nothing, long press opens reactions/actions without a scrim or bubble movement, the reaction row prefers free space below then above before overlapping a viewport-filling message, Copy/Reply use the primary displayed text, and the compact action row localizes without clipping
+- FR-37: BLA-17 revision2/correction16176/build16216: text/bubble tap opens measured anchored panels without scrim, lift, new outline or composer replacement. Whole-chat scroll retains fixed panels in stable viewport with finite natural end. Below/above/long-overlap geometry,8px gap, dynamic eligible rows,N−1 dividers and exact left SVGs follow the approved BLA-17 review packet. Copy/Reply primary, Edit authored, Listen listenText and Original exact retain predicates/effects. Tiny/top fallback, occlusion and async lifecycle remain review gates
 - FR-38: Delivered messages are prepared and persisted for each participant's Normal and Practice views before chat open. Genuine misses immediately show stored authored text with the shared glyph-only shimmer and no rectangular message loader; final failures retain authored text independently with Retry (owner revision, 2026-10-13)
 - FR-39: Chat entry anchors at the oldest unread behind an `N new messages` divider. Pending skeletons never count as read; final content requires 50% visibility unless the reader reaches bottom. Mode switching preserves the visible-message anchor and never scrolls to a failure
 - FR-40: Learning-language history is private per participant. Completed results retain their assigned historical language; `Now learning [language]` marks the boundary; pending unseen work retargets to the latest revision; stale language results cannot become active
@@ -932,7 +925,7 @@ Reasoning: the strongest defensible privacy claim is E2EE content + "no behavior
 
 - User can sign up and send first invite link in under 60 seconds
 - Tapping a word and getting its meaning in under 1 tap
-- User can long-press any message and find their action in under 2 seconds
+- User can tap any eligible message and find its action in under 2 seconds
 - Both sides of exchange (learner POV and teacher POV) are immediately clear on first open
 
 ---

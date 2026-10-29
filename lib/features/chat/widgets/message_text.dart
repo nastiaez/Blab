@@ -22,9 +22,11 @@ class MessageText extends ConsumerStatefulWidget {
     required this.style,
     this.popupTopInset = 0,
     this.isOutgoing = false,
+    this.enableWordLookup = true,
   });
 
   /// Visible learning-language text.
+  final bool enableWordLookup;
   final String text;
   final bool isOutgoing;
 
@@ -143,7 +145,8 @@ class _MessageTextState extends ConsumerState<MessageText> {
       }
 
       final key = _wordKeys.putIfAbsent(i, () => GlobalKey());
-      final recognizer = TapGestureRecognizer()..onTap = () => _onWordTap(i, t);
+      final recognizer = TapGestureRecognizer();
+      if (widget.enableWordLookup) recognizer.onTap = () => _onWordTap(i, t);
       _recognizers.add(recognizer);
 
       children.add(
@@ -157,7 +160,11 @@ class _MessageTextState extends ConsumerState<MessageText> {
           // is a full line tall on its own, so taps anywhere on the line
           // still land on the word under them.
           child: Text.rich(
-            TextSpan(text: t.text, style: widget.style, recognizer: recognizer),
+            TextSpan(
+              text: t.text,
+              style: widget.style,
+              recognizer: widget.enableWordLookup ? recognizer : null,
+            ),
             key: key,
           ),
         ),

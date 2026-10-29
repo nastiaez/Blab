@@ -1,4 +1,5 @@
 import 'package:blab/shared/models/message_mention.dart';
+import 'package:blab/features/chat/mention_controller.dart';
 import 'package:blab/features/groups/group_info_screen.dart';
 import 'package:blab/features/invite/test_access_gate.dart';
 import 'package:blab/features/auth/auth_screen.dart';
@@ -42,7 +43,6 @@ import 'package:blab/app/theme.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/message.dart';
 import 'package:blab/shared/models/message_token.dart';
-import 'package:blab/features/chat/widgets/word_popup.dart';
 import 'package:blab/shared/models/chat.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/services/chat_service.dart';
@@ -2223,6 +2223,156 @@ void main() {
     await tester.pump(const Duration(seconds: 20));
   });
 
+  for (final retainedFocus in [false, true]) {
+    testWidgets(
+      'BLA17 composer tap dismisses selected message with retainedFocus=$retainedFocus',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final container = _containerForHeader(
+          _PrimaryKnownLanguageChatService(),
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(_host(container));
+        await _settle(tester);
+        final composer = find.byKey(
+          const ValueKey('composer-message-text-field'),
+        );
+        await tester.enterText(composer, 'Keep my draft');
+        final field = tester.widget<TextField>(composer);
+        if (retainedFocus) {
+          tester.testTextInput.hide();
+        } else {
+          field.focusNode!.unfocus();
+        }
+        await _settle(tester);
+        expect(field.focusNode!.hasFocus, retainedFocus);
+        await tester.tap(find.text('Привіт'));
+        await _settle(tester);
+        expect(
+          find.byKey(const ValueKey('message-action-reply')),
+          findsOneWidget,
+        );
+        final restingY = tester.getTopLeft(composer).dy;
+        await tester.tap(composer);
+        await _settle(tester);
+        expect(
+          find.byKey(const ValueKey('message-action-reply')),
+          findsNothing,
+        );
+        expect(field.focusNode!.hasFocus, isTrue);
+        expect(tester.testTextInput.isVisible, isTrue);
+        expect(field.controller!.text, 'Keep my draft');
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await _settle(tester);
+        expect(tester.getTopLeft(composer).dy, lessThan(restingY - 250));
+        expect(field.controller!.text, 'Keep my draft');
+        tester.view.resetViewInsets();
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(seconds: 20));
+      },
+    );
+  }
+
+  testWidgets(
+    'BLA17 composer selection preserves mention draft and edit identity',
+    (tester) async {
+      final service = _PrimaryKnownLanguageChatService(
+        partnerName: 'Ash',
+        messageText: '@Ash hello',
+        messageMentions: const [
+          MessageMention(userId: 'ash', label: 'Ash', start: 0),
+        ],
+        messageIsOutgoing: true,
+        messageSentAt: DateTime.now(),
+      );
+      final container = _containerForHeader(
+        service,
+        mentionMembers: [
+          {'user_id': 'ash', 'display_name': 'Ash'},
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      final composer = find.byKey(
+        const ValueKey('composer-message-text-field'),
+      );
+      await tester.enterText(composer, '@');
+      await _settle(tester);
+      await tester.tap(find.text('Ash').last);
+      await _settle(tester);
+      final field = tester.widget<TextField>(composer);
+      final controller = field.controller! as MentionController;
+      expect(controller.mentions.single.userId, 'bob');
+      field.focusNode!.unfocus();
+      await _settle(tester);
+      await tester.tap(find.text('Привіт'));
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('message-action-edit')), findsOneWidget);
+      await tester.tap(composer);
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('message-action-edit')), findsNothing);
+      expect(controller.text, '@Ash ');
+      expect(controller.mentions.single.userId, 'bob');
+      await tester.enterText(composer, '@');
+      await _settle(tester);
+      await tester.tap(find.text('Ash').last);
+      await _settle(tester);
+      field.focusNode!.unfocus();
+      await _settle(tester);
+      await tester.tap(find.text('Привіт'));
+      await _settle(tester);
+      await tester.tap(find.byKey(const ValueKey('message-action-edit')));
+      await _settle(tester);
+      expect(controller.text, '@Ash hello');
+      expect(controller.mentions.single.userId, 'ash');
+      expect(controller.mentions.single.start, 0);
+      expect(controller.selection.baseOffset, controller.text.length);
+      expect(field.focusNode!.hasFocus, isTrue);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 20));
+    },
+  );
+
+  testWidgets('BLA17 Edit remains distinct from composer draft tap', (
+    tester,
+  ) async {
+    final service = _PrimaryKnownLanguageChatService(
+      messageText: 'Authored original',
+      messageIsOutgoing: true,
+      messageSentAt: DateTime.now(),
+    );
+    final container = _containerForHeader(service);
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    final composer = find.byKey(const ValueKey('composer-message-text-field'));
+    await tester.enterText(composer, 'Unsent draft');
+    tester.widget<TextField>(composer).focusNode!.unfocus();
+    await _settle(tester);
+    await tester.tap(find.text('Привіт'));
+    await _settle(tester);
+    await tester.tap(find.byKey(const ValueKey('message-action-edit')));
+    await _settle(tester);
+    final field = tester.widget<TextField>(composer);
+    expect(find.byKey(const ValueKey('message-action-edit')), findsNothing);
+    expect(container.read(editingProvider('chat-1'))?.id, 'msg-1');
+    expect(field.controller!.text, 'Authored original');
+    expect(field.controller!.selection.isCollapsed, isTrue);
+    expect(
+      field.controller!.selection.baseOffset,
+      field.controller!.text.length,
+    );
+    expect(field.focusNode!.hasFocus, isTrue);
+    expect(tester.testTextInput.isVisible, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 20));
+  });
+
   testWidgets(
     'swipe reply opens keyboard; Back cancels reply then opens Chats',
     (tester) async {
@@ -2449,6 +2599,13 @@ Future<void> runContextualWordHelpJourney(
           primary,
           replaceExisting: true,
         );
+    final resolved = container
+        .read(messageTranslationsProvider('chat-1'))[translationEntryKey(
+          'msg-1',
+          'en',
+          primary,
+        )]!
+        .value!;
     await tester.pump(const Duration(seconds: 2));
     for (final word in key == 'v0' ? ['the', 'of', 'message'] : ['message']) {
       await tester.tap(find.text(word).first);
@@ -2456,12 +2613,22 @@ Future<void> runContextualWordHelpJourney(
       final expected = tokens
           .firstWhere((t) => t.text.replaceAll('.', '') == word)
           .gloss!;
-      expect(find.byKey(const ValueKey('word-popup-card')), findsOneWidget);
-      expect(find.text(expected), findsOneWidget);
+      expect(find.byKey(const ValueKey('word-popup-card')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('message-action-reply')),
+        findsOneWidget,
+      );
+      expect(resolved.interfaceLang, primary);
+      expect(
+        resolved.tokens
+            .firstWhere((t) => t.text.replaceAll('.', '') == word)
+            .gloss,
+        expected,
+      );
       if (word != 'message') expect(expected, isNot('повідомлення'));
       if (capture != null) await capture('$primary-$word');
-      dismissWordPopup();
-      await tester.pump();
+      await tester.tapAt(const Offset(8, 180));
+      await _settle(tester);
     }
     await tester.pumpWidget(const SizedBox.shrink());
     container.dispose();
@@ -2716,6 +2883,11 @@ Future<void> runDoubleTapHeartJourney(
       );
       if (capture != null) await capture('03-mixed-reactions-$suffix');
       await tester.longPress(target);
+      await _settle(tester);
+      expect(find.byKey(const ValueKey('message-action-reply')), findsNothing);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.tap(find.byType(MessageText).first);
+      await tester.pump(const Duration(milliseconds: 350));
       await _settle(tester);
       expect(
         find.byKey(const ValueKey('message-action-reply')),
@@ -3089,12 +3261,18 @@ Future<void> runBla27ReadingJourney(
     // Press a visible point, not the center of an off-screen long bubble.
     final rect = tester.getRect(target);
     final viewport = tester.getRect(find.byType(ChatTimeline));
-    await tester.longPressAt(rect.intersect(viewport).center);
+    await tester.tapAt(rect.intersect(viewport).center);
+    await tester.pump(const Duration(milliseconds: 350));
     await _settle(tester);
     final row = find.byKey(const ValueKey('floating-reaction-row-msg-1'));
     expect(row, findsOneWidget);
     final readingViewport = tester.getRect(find.byType(ChatTimeline));
-    expect(tester.getRect(row).bottom, lessThanOrEqualTo(readingViewport.top));
+    expect(tester.getRect(row).top, greaterThanOrEqualTo(readingViewport.top));
+    expect(
+      tester.getRect(row).bottom,
+      lessThanOrEqualTo(readingViewport.bottom),
+    );
+    final fixedRowRect = tester.getRect(row);
     expect(find.text(service.message.originalText), findsOneWidget);
     if (capture != null) {
       await capture('bla27-${outgoing ? 'outgoing' : 'incoming'}-reading');
@@ -3102,6 +3280,7 @@ Future<void> runBla27ReadingJourney(
     await tester.drag(find.byType(ChatTimeline), const Offset(0, 260));
     await _settle(tester);
     expect(row, findsOneWidget);
+    expect(tester.getRect(row), fixedRowRect);
     expect(find.text(service.message.originalText), findsOneWidget);
     expect(find.byKey(const ValueKey('message-action-reply')), findsOneWidget);
     if (capture != null) {

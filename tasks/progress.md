@@ -1,5 +1,7 @@
 # Progress: Building Blab
 
+> **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
+
 > **Purpose:** a step-by-step build plan. Each step ends in something **runnable and testable** on an Android device or emulator. No step claims completion without a verifiable outcome.
 >
 > **Inputs:** [`prd-blab.md`](./prd-blab.md) (the *what*), [`tech-spec.md`](./tech-spec.md) (the *how*).
@@ -2383,3 +2385,7 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 - 56 focused checks passed; resumed static analysis clean. Earlier Android attempt failed for lack of disk space; resume found21GiB available, no cleanup/deletion needed. Resumed50 targeted checks pass; Android keyboard-open before/overlay/selection captures inspected. Names cover the bubble without moving the date/composer; selection restores the bubble in its original position and retains keyboard. Synthetic-data native preview, not live-backend or iOS proof. Awaiting visual review; no approval, merge or release of this follow-up.
 
 -16630 visual/workflow approval;16633 explicitly authorizes commit, main integration and deployment. Full1095 tests pass/17 environment skips; clean analysis. Four-target release preparation follows integrated revision; no backend change needed.
+
+
+### BLA-17 approved integration16778 ·29 October2026 ← in progress
+- Approved tap/anchored panels and immediate composer deselection reconciled onto877fe8c with newer mention identities and picker overlay preserved. Source gates1110 passed/17 skipped; native integrated verification pending. No tracker checkbox completion, distribution, notices or tester sends.

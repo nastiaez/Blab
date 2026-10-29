@@ -43,7 +43,7 @@ class MessageActionRow extends StatelessWidget {
       canListen: canListen,
       now: now,
     );
-    final items = actions
+    final eligible = actions
         .where(
           (action) =>
               !readOnly ||
@@ -53,29 +53,37 @@ class MessageActionRow extends StatelessWidget {
                 MessageAction.delete,
               ].contains(action),
         )
+        .toList();
+    if (eligible.remove(MessageAction.listen)) {
+      eligible.insert(0, MessageAction.listen);
+    }
+    final items = eligible
         .map((action) => _itemFor(context, action, isOriginalVisible))
         .toList();
-    return Container(
-      decoration: const BoxDecoration(
-        color: BlabColors.chatSurface,
-        border: Border(top: BorderSide(color: BlabColors.divider)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: kMessageActionRowMinHeight,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Material(
+      color: const Color(0xFFFFFCF8),
+      borderRadius: BorderRadius.circular(20),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: SizedBox(
+        width: 202,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (final item in items)
-                Expanded(
-                  child: _ActionButton(
-                    item: item,
-                    onTap: () => onAction(item.action),
+              for (var i = 0; i < items.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                    height: 0,
+                    thickness: 1,
+                    color: BlabColors.divider,
                   ),
+                _ActionButton(
+                  item: items[i],
+                  onTap: () => onAction(items[i].action),
                 ),
+              ],
             ],
           ),
         ),
@@ -150,25 +158,27 @@ class _ActionButton extends StatelessWidget {
       key: ValueKey('message-action-${item.action.name}'),
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            BlabIcon(name: item.iconName, size: 16, color: color),
-            const SizedBox(height: 4),
-            Text(
-              item.label,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1.1,
-                fontWeight: FontWeight.w400,
-                color: color,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              BlabIcon(name: item.iconName, size: 16, color: color),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  item.label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
+                    color: color,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

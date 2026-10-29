@@ -3,6 +3,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets(
+    'text tap opens once, double tap hearts, swipe replies without menu',
+    (tester) async {
+      var menus = 0;
+      var hearts = 0;
+      var replies = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MessageInteractionTarget(
+              isFailed: false,
+              onLongPress: (_, _) => menus++,
+              onFailedTap: () {},
+              onDoubleTap: () => hearts++,
+              onSwipeReply: () => replies++,
+              child: const SizedBox(
+                width: 240,
+                height: 100,
+                child: Text('message text'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('message text'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(menus, 1);
+      await tester.tap(find.text('message text'));
+      await tester.pump(const Duration(milliseconds: 70));
+      await tester.tap(find.text('message text'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(hearts, 1);
+      expect(menus, 1);
+      await tester.drag(
+        find.byType(MessageInteractionTarget),
+        const Offset(120, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(replies, 1);
+      expect(menus, 1);
+    },
+  );
+
   for (final failed in [false, true]) {
     testWidgets('double tap respects child word taps and failed=$failed', (
       tester,
@@ -46,7 +89,7 @@ void main() {
     });
   }
 
-  testWidgets('long press reports the bubble rect and press position', (
+  testWidgets('message tap reports geometry; long press has no menu entry', (
     tester,
   ) async {
     Rect? capturedRect;
@@ -75,6 +118,10 @@ void main() {
     );
 
     await tester.longPress(find.byType(MessageInteractionTarget));
+    await tester.pumpAndSettle();
+    expect(capturedRect, isNull);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byType(MessageInteractionTarget));
     await tester.pumpAndSettle();
 
     expect(capturedRect, isNotNull);

@@ -1,4 +1,7 @@
 import 'package:blab/features/chat/widgets/inline_correction_text.dart';
+import 'package:blab/features/chat/widgets/mention_text.dart';
+import 'package:blab/shared/models/message_mention.dart';
+import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/features/chat/widgets/message_learning_content.dart';
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/shared/models/chat.dart';
@@ -11,6 +14,82 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  for (final outgoing in [false, true]) {
+    testWidgets(
+      'BLA17 both anchored lanes retain mention identity and direction $outgoing',
+      (tester) async {
+        const mentions = [
+          MessageMention(userId: 'viewer', label: 'Ash', start: 0),
+        ];
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [currentUserIdProvider.overrideWithValue('viewer')],
+            child: MaterialApp(
+              home: Scaffold(
+                body: MessageLearningContent(
+                  authoredText: '@Ash hello',
+                  translation: const AsyncData(
+                    MessageTranslation(
+                      translation: '@Ash hallo',
+                      interfaceText: '@Ash hello',
+                      interfaceLang: 'en',
+                      sourceLang: 'en',
+                      tokens: [],
+                      mode: LearningAidMode.translation,
+                      mentionSpans: {
+                        '@Ash hallo': mentions,
+                        '@Ash hello': mentions,
+                      },
+                    ),
+                  ),
+                  showTranslation: true,
+                  learningLanguageCode: 'de',
+                  isOutgoing: outgoing,
+                  popupTopInset: 0,
+                  unavailableText: 'Unavailable',
+                  retryText: 'Retry',
+                  mode: ChatMode.practice,
+                  knownLanguageCodes: const ['en'],
+                  expanded: true,
+                  onToggleExpanded: () {},
+                  viewerId: 'viewer',
+                  mentions: mentions,
+                ),
+              ),
+            ),
+          ),
+        );
+        final learning = tester.widget<MessageText>(find.byType(MessageText));
+        expect(learning.enableWordLookup, isFalse);
+        expect(
+          learning.tokens!.where((t) => t.mentionUserId == 'viewer'),
+          hasLength(1),
+        );
+        expect(
+          find.byKey(const ValueKey('message-learning-lane')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('message-comprehension-lane')),
+          findsOneWidget,
+        );
+        final tags = tester.widgetList<Text>(find.text('@Ash'));
+        expect(tags, hasLength(2));
+        for (final tag in tags) {
+          expect(
+            tag.style!.color,
+            outgoing ? MentionColors.outgoingInk : MentionColors.ink,
+          );
+          expect(
+            tag.style!.decoration,
+            outgoing ? TextDecoration.underline : TextDecoration.none,
+          );
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   test(
     'correction marks follow authorship or the historical language match',
     () {
@@ -134,9 +213,7 @@ void main() {
     }
   }
 
-  testWidgets('correct same-language Practice words still open definitions', (
-    tester,
-  ) async {
+  testWidgets('message words no longer open definitions', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         child: host(
@@ -161,8 +238,8 @@ void main() {
     );
     await tester.tap(find.text('schnell'));
     await tester.pumpAndSettle();
-    expect(find.text('fast'), findsOneWidget);
-    expect(find.text('schnell'), findsNWidgets(2));
+    expect(find.text('fast'), findsNothing);
+    expect(find.text('schnell'), findsOneWidget);
   });
 
   testWidgets(

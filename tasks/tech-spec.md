@@ -1,5 +1,7 @@
 # Tech Spec: Blab
 
+> **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
+
 > **Scope:** how we build Blab. The *what* lives in [`prd-blab.md`](./prd-blab.md) — that PRD is the source of truth for product behavior. This document only covers technology, architecture, and engineering conventions. If the two disagree on product behavior, the PRD wins; if they disagree on tech choices, this spec wins.
 
 ---
@@ -166,7 +168,7 @@ The prototype's `id`/class names are not API — don't carry them into Dart.
 - **Interface Language** controls app chrome only. **Primary Known Language** controls Normal-mode translations and word descriptions. **Learning Language** controls Practice-mode output plus word and sentence audio. Do not conflate them.
 - Learning-aid cache identity is currently `(message_id, target_lang, interface_lang)`, where the legacy `interface_lang` storage field carries the reader's primary Known Language for message output and word descriptions. Authored text remains authoritative in `messages.body`; each row stores learning-language output, primary-known-language output, detected source, tokens, and correction analysis. Correction analysis remains internal data and is not presented as an explanation popup. Real Interface Language is not part of learning-aid cache identity and changes app chrome only
 - Retryable learning-aid failures remain client-local `AsyncError` entries. Manual Retry clears only the failed `(message_id, target_lang, primary_known_lang)` variant before re-running the server-authoritative cache/function flow
-- Tapping a learning word retains its definition gesture; tapping empty bubble padding does nothing. Long press opens the launch reaction/action treatment. Normal may reveal exact authorized `messages.body` through Original; Practice uses the cached primary-known-language line and Listen instead
+- Message/text tap opens BLA-17 anchored panels; message word lookup and long-press menu entry are removed. Composer and finite whole-chat scrolling are retained; writing-field tap immediately closes active selection. Normal may reveal exact authorized `messages.body` through Original; Practice uses the cached primary-known-language line and Listen instead
 
 ---
 

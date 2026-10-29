@@ -5,9 +5,9 @@ import '../../../shared/widgets/blab_icon.dart';
 
 /// Resolves the competing gestures inside a message bubble.
 ///
-/// Normal bubbles leave child word taps enabled and reserve message actions for
-/// long press. A horizontal swipe can start reply mode without interfering with
-/// word taps. Retry remains a separate status-row action below the bubble.
+/// Message tap opens actions; double tap and horizontal reply retain their
+/// separate recognizers. A held press is consumed without entering a menu.
+/// Retry remains a separate status-row action below the bubble.
 class MessageInteractionTarget extends StatefulWidget {
   const MessageInteractionTarget({
     super.key,
@@ -86,11 +86,11 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
     if (shouldReply) widget.onSwipeReply!();
   }
 
-  void _handleLongPressStart(LongPressStartDetails details) {
+  void _handleTap() {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final rect = box.localToGlobal(Offset.zero) & box.size;
-    widget.onLongPress(rect, details.globalPosition);
+    widget.onLongPress(rect, rect.center);
   }
 
   @override
@@ -107,8 +107,8 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onLongPressStart: _handleLongPressStart,
-        onTap: null,
+        onTap: _handleTap,
+        onLongPress: () {},
         onDoubleTap: widget.isFailed ? null : widget.onDoubleTap,
         onHorizontalDragStart: _canSwipeReply ? _startSwipe : null,
         onHorizontalDragUpdate: _canSwipeReply ? _updateSwipe : null,
