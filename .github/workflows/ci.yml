@@ -87,7 +87,7 @@ jobs:
         run: flutter pub get
       - name: Authenticate container registry
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_TOKEN: ${{ github.token }}
         run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - name: Reset disposable backend
         run: scripts/local_test.sh reset
