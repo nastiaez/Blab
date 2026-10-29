@@ -183,8 +183,10 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
     required this.learningLanguageCode,
     required this.popupTopInset,
     this.correctedTokens = const [],
+    this.enableWordLookup = true,
   });
 
+  final bool enableWordLookup;
   final String originalText;
   final String correctedText;
   final TextStyle style;
@@ -259,10 +261,12 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     final index = _nextKeyIndex++;
     final key = _keys.putIfAbsent(index, () => GlobalKey());
     final recognizer = TapGestureRecognizer()
-      ..onTap = () => _onCorrectedTap(
-        index,
-        popupToken ?? MessageToken(text: text, isContent: true),
-      );
+      ..onTap = !widget.enableWordLookup
+          ? null
+          : () => _onCorrectedTap(
+              index,
+              popupToken ?? MessageToken(text: text, isContent: true),
+            );
     _recognizers.add(recognizer);
 
     return WidgetSpan(
@@ -273,7 +277,11 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
         // wrapped lines, same as MessageText's per-word spans.
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Text.rich(
-          TextSpan(text: text, recognizer: recognizer, style: style),
+          TextSpan(
+            text: text,
+            recognizer: widget.enableWordLookup ? recognizer : null,
+            style: style,
+          ),
           key: key,
         ),
       ),

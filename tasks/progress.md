@@ -1,5 +1,7 @@
 # Progress: Building Blab
 
+> **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
+
 > **Purpose:** a step-by-step build plan. Each step ends in something **runnable and testable** on an Android device or emulator. No step claims completion without a verifiable outcome.
 >
 > **Inputs:** [`prd-blab.md`](./prd-blab.md) (the *what*), [`tech-spec.md`](./tech-spec.md) (the *how*).
@@ -2393,3 +2395,6 @@ Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integrati
 - BLA-13 verification16713: full1098pass/17skip, then6 audio/registry checks; translator190pass and SQL fixture (including actual source normalization) pass. Both native selector/settings journeys pass; iOS all-five text + Marathi script rendering pass. Android voices5/5, iOS4/5 (Marathi unavailable); physical-device audio and hosted persistence/history remain gates. Screenshots16744/16765 sent; no visual approval, integration or release. Build-only config restored.
 
 - BLA-13 approval16774; commit/merge/deploy authorized16781. Combined release with approved held overlay; clean-schema CI and persistence checks in progress. Physical-phone Marathi speech unverified, no rollout completion claim.
+
+### BLA-17 approved integration16778 ·29 October2026 ← in progress
+- Approved tap/anchored panels and immediate composer deselection reconciled onto877fe8c with newer mention identities and picker overlay preserved. Source gates1110 passed/17 skipped; native integrated verification pending. No tracker checkbox completion, distribution, notices or tester sends.

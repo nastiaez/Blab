@@ -21,6 +21,45 @@ Message _message({
 );
 
 void main() {
+  testWidgets(
+    'Practice Listen is first; five rows have four dividers and measured height',
+    (tester) async {
+      final now = DateTime.utc(2026, 10, 26);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: MessageActionRow(
+                message: _message(isOutgoing: true, sentAt: now),
+                now: now,
+                mode: ChatMode.practice,
+                canListen: true,
+                onAction: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      final panel = find.byType(MessageActionRow);
+      expect(tester.getSize(panel), const Size(202, 256));
+      expect(
+        find.descendant(of: panel, matching: find.byType(Divider)),
+        findsNWidgets(4),
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('message-action-listen')))
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(find.byKey(const ValueKey('message-action-reply')))
+              .dy,
+        ),
+      );
+    },
+  );
+
   testWidgets('outgoing message shows Reply, Edit, Copy, Delete — not Report', (
     tester,
   ) async {
@@ -290,7 +329,7 @@ void main() {
           .toList();
       expect(labels, hasLength(5));
       for (final label in labels) {
-        expect(label.maxLines, 2);
+        expect(label.maxLines, isNull);
         expect(label.overflow, isNull);
       }
       expect(tester.takeException(), isNull);

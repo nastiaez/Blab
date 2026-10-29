@@ -6,16 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Regression guard for the chat bubble's two competing gestures:
-///   - tap a learning-language word  → word popup (US-018)
-///   - tap message padding           → nothing; no accidental action sheet
-///   - long-press the bubble         → message action sheet (US-019/020,
-///                                      now incl. Report from Step 3.6a)
-///
-/// Reproduces `_MessageRow`'s composition: an outer GestureDetector with
-/// onLongPress wrapping the MessageText whose content tokens each carry a
-/// TapGestureRecognizer. A quick tap must reach the word; a held press must
-/// reach the long-press handler — never both.
+/// BLA-17 message taps own text and padding; held presses have no entry.
 class _FakeTtsService implements TtsService {
   @override
   Future<bool> isLanguageAvailable(String languageCode) async => false;
@@ -47,6 +38,7 @@ Widget _harness({
               key: ValueKey('message-padding'),
               padding: EdgeInsets.all(20),
               child: MessageText(
+                enableWordLookup: false,
                 text: 'காலை எப்படி',
                 tokens: [
                   MessageToken(
@@ -73,7 +65,7 @@ Widget _harness({
 }
 
 void main() {
-  testWidgets('tapping a word opens the popup and does NOT long-press', (
+  testWidgets('tapping message text opens actions without word popup', (
     tester,
   ) async {
     var longPressed = false;
@@ -81,22 +73,18 @@ void main() {
       _harness(onLongPress: (_, _) => longPressed = true),
     );
 
-    await tester.tapAt(tester.getCenter(find.text('காலை')));
+    await tester.tapAt(tester.getCenter(find.byType(MessageText)));
     await tester.pumpAndSettle();
 
     expect(
       find.text('morning'),
-      findsOneWidget,
-      reason: 'word popup should open on tap',
+      findsNothing,
+      reason: 'message text must not open word lookup',
     );
-    expect(
-      longPressed,
-      isFalse,
-      reason: 'a quick tap must not trigger the action sheet',
-    );
+    expect(longPressed, isTrue, reason: 'a quick tap opens message actions');
   });
 
-  testWidgets('long-pressing a word opens the action sheet, NOT the popup', (
+  testWidgets('long-pressing message text opens neither actions nor popup', (
     tester,
   ) async {
     var longPressed = false;
@@ -104,13 +92,13 @@ void main() {
       _harness(onLongPress: (_, _) => longPressed = true),
     );
 
-    await tester.longPress(find.text('காலை'));
+    await tester.longPress(find.byType(MessageText));
     await tester.pumpAndSettle();
 
     expect(
       longPressed,
-      isTrue,
-      reason: 'holding the word must trigger the action sheet',
+      isFalse,
+      reason: 'held presses no longer enter message actions',
     );
     expect(
       find.text('morning'),
@@ -119,9 +107,7 @@ void main() {
     );
   });
 
-  testWidgets('tapping non-word message space does not open the action sheet', (
-    tester,
-  ) async {
+  testWidgets('tapping non-word message space opens actions', (tester) async {
     var longPressed = false;
     await tester.pumpWidget(
       _harness(onLongPress: (_, _) => longPressed = true),
@@ -133,7 +119,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(longPressed, isFalse);
+    expect(longPressed, isTrue);
     expect(find.text('Reply'), findsNothing);
   });
 
@@ -216,28 +202,30 @@ void main() {
   });
 
   testWidgets(
-    'failed message text still opens word help; retry stays in its status row',
+    'failed message text opens actions not word help; retry stays separate',
     (tester) async {
       var failedTapped = false;
+      var openedActions = false;
       await tester.pumpWidget(
         _harness(
           isFailed: true,
-          onLongPress: (_, _) {},
+          onLongPress: (_, _) => openedActions = true,
           onFailedTap: () => failedTapped = true,
         ),
       );
 
-      await tester.tapAt(tester.getCenter(find.text('காலை')));
+      await tester.tapAt(tester.getCenter(find.byType(MessageText)));
       await tester.pumpAndSettle();
 
       expect(failedTapped, isFalse);
-      expect(find.text('morning'), findsOneWidget);
+      expect(openedActions, isTrue);
+      expect(find.text('morning'), findsNothing);
       expect(
         tester
             .widget<MouseRegion>(
               find
                   .ancestor(
-                    of: find.text('காலை'),
+                    of: find.byType(MessageText),
                     matching: find.byType(MouseRegion),
                   )
                   .first,

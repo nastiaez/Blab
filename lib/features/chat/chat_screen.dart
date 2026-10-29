@@ -61,7 +61,8 @@ import 'language_timeline.dart';
 import 'message_actions.dart';
 import 'message_presentation.dart';
 import 'message_translation_lifecycle.dart';
-import 'reaction_row_positioning.dart';
+import 'widgets/anchored_message_panels.dart';
+import 'package:flutter/rendering.dart';
 import 'services/chat_image_picker.dart';
 import 'widgets/chat_composer_input.dart';
 import 'widgets/jump_to_latest.dart';
@@ -156,9 +157,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   bool _translationResolveDeferred = false;
   int _lastMessageCount = 0;
   Message? _selectedMessage;
-  Message? _reactionRowMessage;
+  Message? _panelMessage;
   Rect? _selectedBubbleRect;
-  Offset? _selectedPressPosition;
+  List<double> _selectedLearningLineBottoms = const [];
+  double? _selectedTranslationTop;
+  bool _selectionGeometryReady = false;
   bool _showSelectedOriginal = false;
   Timer? _reactionRowDismissTimer;
 
@@ -914,21 +917,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _selectMessage(Message message, Rect bubbleRect, Offset pressPosition) {
     if (ref.read(editingProvider(widget.chatId)) != null) return;
-    // Selecting swaps the composer for the action row, so any open keyboard
-    // is about to go away. The message list is bottom-anchored, so losing the
-    // keyboard inset slides every bubble down by exactly that inset. Bake the
-    // shift into the geometry we freeze here, otherwise the floating row
-    // lands where the bubble *was* rather than where it ends up.
-    final keyboardShift = Offset(0, MediaQuery.viewInsetsOf(context).bottom);
-    FocusScope.of(context).unfocus();
     HapticFeedback.mediumImpact();
     _reactionRowDismissTimer?.cancel();
     setState(() {
       _emojiPanelOpen = false;
       _selectedMessage = message;
-      _reactionRowMessage = message;
-      _selectedBubbleRect = bubbleRect.shift(keyboardShift);
-      _selectedPressPosition = pressPosition + keyboardShift;
+      _panelMessage = message;
+      _selectedBubbleRect = bubbleRect;
+      _selectionGeometryReady = false;
       _showSelectedOriginal = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -942,15 +938,89 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (renderObject is! RenderBox || !renderObject.hasSize) return;
     final topLeft = renderObject.localToGlobal(Offset.zero);
     final rect = topLeft & renderObject.size;
-    final previous = _selectedBubbleRect;
-    if (previous != null &&
-        (previous.top - rect.top).abs() < 0.5 &&
-        (previous.left - rect.left).abs() < 0.5 &&
-        (previous.width - rect.width).abs() < 0.5 &&
-        (previous.height - rect.height).abs() < 0.5) {
-      return;
+    // Reveal the beginning of an expanded viewport-filling message through
+    // the real timeline, never by lifting the bubble or adding scroll extent.
+    final bottomBox = _bottomSurfaceKey.currentContext?.findRenderObject();
+    if (!_selectionGeometryReady &&
+        _scroll.hasClients &&
+        bottomBox is RenderBox &&
+        bottomBox.hasSize) {
+      final header = _renderedHeaderBottom(
+        context,
+        ref
+            .read(chatListProvider)
+            .value!
+            .firstWhere((chat) => chat.id == widget.chatId),
+      );
+      final viewportHeight = bottomBox.localToGlobal(Offset.zero).dy - header;
+      if (rect.height > viewportHeight && rect.top < header + 12) {
+        final position = _scroll.position;
+        final next = (position.pixels + header + 12 - rect.top).clamp(
+          position.minScrollExtent,
+          position.maxScrollExtent,
+        );
+        if ((next - position.pixels).abs() > .5) {
+          position.jumpTo(next);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _syncSelectedBubbleGeometry(messageId);
+          });
+          return;
+        }
+      }
     }
-    setState(() => _selectedBubbleRect = rect);
+    final lineBottoms = <double>{};
+    double? translationTop;
+    void inspect(Element element) {
+      final key = element.widget.key;
+      if (key == const ValueKey('message-comprehension-lane')) {
+        final box = element.findRenderObject();
+        if (box is RenderBox && box.hasSize) {
+          translationTop = box.localToGlobal(Offset.zero).dy;
+        }
+      }
+      if (key == const ValueKey('message-learning-lane')) {
+        void paragraph(RenderObject object) {
+          if (object is RenderParagraph) {
+            for (final box in object.getBoxesForSelection(
+              TextSelection(
+                baseOffset: 0,
+                extentOffset: object.text.toPlainText().length,
+              ),
+            )) {
+              lineBottoms.add(object.localToGlobal(Offset(0, box.bottom)).dy);
+            }
+            // WidgetSpan descendants repeat the same line at different glyph
+            // baselines. The outer paragraph owns the actual wrapped lines.
+            return;
+          }
+          object.visitChildren(paragraph);
+        }
+
+        final object = element.findRenderObject();
+        if (object != null) paragraph(object);
+      }
+      element.visitChildren(inspect);
+    }
+
+    final bubbleContext = _selectedBubbleKey.currentContext;
+    if (bubbleContext is Element) inspect(bubbleContext);
+    final sortedBottoms = lineBottoms.toList()..sort();
+    final renderedLineBottoms = <double>[];
+    final sameLineTolerance = MediaQuery.textScalerOf(context).scale(16) * .75;
+    for (final bottom in sortedBottoms) {
+      if (renderedLineBottoms.isNotEmpty &&
+          bottom - renderedLineBottoms.last < sameLineTolerance) {
+        renderedLineBottoms[renderedLineBottoms.length - 1] = bottom;
+      } else {
+        renderedLineBottoms.add(bottom);
+      }
+    }
+    setState(() {
+      _selectedBubbleRect = rect;
+      _selectedLearningLineBottoms = renderedLineBottoms;
+      _selectedTranslationTop = translationTop;
+      _selectionGeometryReady = true;
+    });
   }
 
   void _closeSelection() {
@@ -964,9 +1034,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _reactionRowDismissTimer = Timer(kFloatingReactionRowExitDuration, () {
       if (!mounted || _selectedMessage != null) return;
       setState(() {
-        _reactionRowMessage = null;
         _selectedBubbleRect = null;
-        _selectedPressPosition = null;
+        _panelMessage = null;
       });
     });
   }
@@ -1428,15 +1497,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           canRevealOriginal: false,
         );
 
-    final readingSelection =
-        _selectedMessage != null &&
-        (chatMode == ChatMode.practice || _showSelectedOriginal) &&
-        (_selectedBubbleRect?.height ?? 0) >
-            (MediaQuery.sizeOf(context).height -
-                    _renderedHeaderBottom(context, chat) -
-                    kMessageActionRowMinHeight) /
-                2;
-
     Widget buildReactionPicker(Message reactionRowMessage) =>
         FloatingReactionRow(
           key: ValueKey('floating-reaction-row-${reactionRowMessage.id}'),
@@ -1464,12 +1524,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             );
           },
         );
-
-    if (_selectedMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _syncSelectedBubbleGeometry(_selectedMessage!.id);
-      });
-    }
 
     return PopScope(
       canPop:
@@ -1582,17 +1636,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           .dismissReminder(),
                     ),
                   const OfflineBanner(),
-                  if (readingSelection &&
-                      _reactionRowMessage != null &&
-                      !chat.isLeft &&
-                      canReplyToMessage(_reactionRowMessage!))
-                    Padding(
-                      key: const ValueKey('reading-reaction-strip'),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Center(
-                        child: buildReactionPicker(_reactionRowMessage!),
-                      ),
-                    ),
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
@@ -1610,11 +1653,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               notification is ScrollStartNotification &&
                               notification.dragDetails != null;
                           if (isUserDrag) _modeAnchorGeneration++;
-                          if (isUserDrag &&
-                              _selectedMessage != null &&
-                              !readingSelection) {
-                            _closeSelection();
-                          }
                           if (isUserDrag && !_translationResolveDeferred) {
                             setState(() => _translationResolveDeferred = true);
                           } else if (notification is ScrollEndNotification &&
@@ -1863,47 +1901,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             name: chat.partnerName,
                             incoming: incomingContact,
                           )
-                        : _selectedMessage != null
-                        ? MessageActionRow(
-                            message: _selectedMessage!,
-                            readOnly: chat.isLeft,
-                            mode: chatMode,
-                            hasOriginal: activePresentation.canRevealOriginal,
-                            canListen:
-                                activePresentation.listenText != null &&
-                                hasSpeakableText(
-                                  activePresentation.listenText!,
-                                ),
-                            isOriginalVisible: _showSelectedOriginal,
-                            onAction: (action) {
-                              final message = _selectedMessage!;
-                              if (action == MessageAction.original) {
-                                setState(
-                                  () => _showSelectedOriginal =
-                                      !_showSelectedOriginal,
-                                );
-                                return;
-                              }
-                              if (action == MessageAction.listen) {
-                                _handleAction(
-                                  message,
-                                  action,
-                                  chat,
-                                  activePresentation,
-                                  learningLang.code,
-                                );
-                                return;
-                              }
-                              _closeSelection();
-                              _handleAction(
-                                message,
-                                action,
-                                chat,
-                                activePresentation,
-                                learningLang.code,
-                              );
-                            },
-                          )
                         : chat.isLeft
                         ? Container(
                             key: const ValueKey('left-chat-bar'),
@@ -2020,9 +2017,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 bottomObstruction: inputObstruction,
                                 emojiPanelOpen: _emojiPanelOpen,
                                 onToggleEmoji: _toggleComposerEmoji,
-                                onTapText: _emojiPanelOpen
-                                    ? _showComposerKeyboard
-                                    : null,
+                                onTapText: () {
+                                  if (_selectedMessage != null) {
+                                    _closeSelection();
+                                  }
+                                  if (_emojiPanelOpen) _showComposerKeyboard();
+                                },
                                 emojiPanel:
                                     _emojiPanelOpen ||
                                         _retainEmojiHeightForKeyboard
@@ -2085,74 +2085,108 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                 ),
-              if (!readingSelection &&
-                  !chat.isLeft &&
-                  _reactionRowMessage != null &&
+              if (_panelMessage != null &&
                   _selectedBubbleRect != null &&
-                  _selectedPressPosition != null &&
-                  canReplyToMessage(_reactionRowMessage!))
+                  _selectionGeometryReady)
                 Builder(
                   builder: (_) {
-                    final reactionRowMessage = _reactionRowMessage!;
                     final stackBox =
                         _stackKey.currentContext?.findRenderObject()
                             as RenderBox?;
-                    if (stackBox == null || !stackBox.hasSize) {
+                    final bottomBox =
+                        _bottomSurfaceKey.currentContext?.findRenderObject()
+                            as RenderBox?;
+                    if (stackBox == null ||
+                        !stackBox.hasSize ||
+                        bottomBox == null ||
+                        !bottomBox.hasSize) {
                       return const SizedBox.shrink();
                     }
-                    // Reading live render-tree geometry mid-build can race a
-                    // route transition — e.g. tapping a photo right after
-                    // picking an emoji, while this frame's tree is still
-                    // mid-layout from the selection closing. Fail soft: skip
-                    // the row for that one frame instead of crashing; it's
-                    // gone by the next frame regardless since the selection
-                    // just closed.
-                    double localTop;
-                    try {
-                      final padding = MediaQuery.paddingOf(context);
-                      final minTop = padding.top + 4;
-                      final stackBottom = stackBox
-                          .localToGlobal(Offset(0, stackBox.size.height))
-                          .dy;
-                      final maxBottom =
-                          stackBottom -
-                          padding.bottom -
-                          kMessageActionRowMinHeight;
-                      final globalTop = computeReactionRowTop(
-                        bubbleRect: _selectedBubbleRect!,
-                        pressPosition: _selectedPressPosition!,
-                        rowHeight: kFloatingReactionRowHeight,
-                        minTop: minTop,
-                        maxBottom: maxBottom,
-                      );
-                      localTop = stackBox
-                          .globalToLocal(Offset(0, globalTop))
-                          .dy;
-                    } catch (_) {
-                      return const SizedBox.shrink();
+                    final origin = stackBox.localToGlobal(Offset.zero);
+                    final viewport = Rect.fromLTRB(
+                      16,
+                      _renderedHeaderBottom(context, chat) - origin.dy,
+                      stackBox.size.width - 16,
+                      bottomBox.localToGlobal(Offset.zero).dy - origin.dy,
+                    );
+                    final bubble = _selectedBubbleRect!.shift(-origin);
+                    var afterLines =
+                        math.max(bubble.top + 12, viewport.top) +
+                        MediaQuery.textScalerOf(context).scale(16) * 1.5 * 3;
+                    final visibleLines = _selectedLearningLineBottoms
+                        .map((bottom) => bottom - origin.dy)
+                        .where((bottom) => bottom > viewport.top)
+                        .toList();
+                    if (visibleLines.length >= 3) {
+                      afterLines = visibleLines[2] + 8;
                     }
-                    // Centered on the stack rather than the bubble, so the
-                    // row sits the same distance from both edges regardless
-                    // of which side the bubble is on. Measured against the
-                    // stack's own width (not the full screen) so it lines up
-                    // even when SafeArea reserves horizontal space, and kept
-                    // clear of the physical edges — curved-edge phones and
-                    // Android's edge-swipe-back gesture both eat touches in
-                    // the outermost strip, which made the leftmost/rightmost
-                    // buttons unreliable to tap.
-                    final stackWidth = stackBox.size.width;
-                    const edgeMargin = 16.0;
-                    final centered =
-                        (stackWidth - kFloatingReactionRowWidth) / 2;
-                    final maxLeft =
-                        stackWidth - kFloatingReactionRowWidth - edgeMargin;
-                    final left = maxLeft >= edgeMargin
-                        ? centered.clamp(edgeMargin, maxLeft)
-                        : centered;
-                    return Positioned(
-                      top: localTop,
-                      left: left,
-                      child: buildReactionPicker(reactionRowMessage),
+                    final translationTop = _selectedTranslationTop == null
+                        ? null
+                        : _selectedTranslationTop! - origin.dy;
+                    return Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: _selectedMessage == null,
+                        child: AnchoredMessagePanels(
+                          key: ValueKey('anchored-panels-${_panelMessage!.id}'),
+                          viewport: viewport,
+                          bubble: bubble,
+                          afterVisibleLines: afterLines,
+                          translationTop: translationTop,
+                          reactionWidth: kFloatingReactionRowWidth,
+                          hasReactions:
+                              !chat.isLeft && canReplyToMessage(_panelMessage!),
+                          reactions:
+                              !chat.isLeft && canReplyToMessage(_panelMessage!)
+                              ? buildReactionPicker(_panelMessage!)
+                              : const SizedBox.shrink(),
+                          actions: Visibility(
+                            visible: _selectedMessage != null,
+                            maintainState: true,
+                            maintainAnimation: true,
+                            maintainSize: true,
+                            child: MessageActionRow(
+                              message: _panelMessage!,
+                              readOnly: chat.isLeft,
+                              mode: chatMode,
+                              hasOriginal: activePresentation.canRevealOriginal,
+                              canListen:
+                                  activePresentation.listenText != null &&
+                                  hasSpeakableText(
+                                    activePresentation.listenText!,
+                                  ),
+                              isOriginalVisible: _showSelectedOriginal,
+                              onAction: (action) {
+                                final message = _panelMessage!;
+                                if (action == MessageAction.original) {
+                                  setState(
+                                    () => _showSelectedOriginal =
+                                        !_showSelectedOriginal,
+                                  );
+                                  return;
+                                }
+                                if (action == MessageAction.listen) {
+                                  _handleAction(
+                                    message,
+                                    action,
+                                    chat,
+                                    activePresentation,
+                                    learningLang.code,
+                                  );
+                                  return;
+                                }
+                                _closeSelection();
+                                _handleAction(
+                                  message,
+                                  action,
+                                  chat,
+                                  activePresentation,
+                                  learningLang.code,
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
                     );
                   },
                 ),
