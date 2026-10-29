@@ -38,7 +38,7 @@ export function privateGroupResult(
     if (result.mode === "correction") {
       result.mode = "none";
       result.translation = v.text;
-      result.tokens = Array.isArray(v.mentions) && v.mentions.length ? [{blabMentionSpans: {
+      result.tokens = Array.isArray(v.mentions) && v.mentions.length ? [{blabMentionSource: v.mentions, blabMentionSpans: {
         [v.text]: v.mentions,
         ...Object.assign({}, ...raw.tokens.filter((t: any) => t.blabMentionSpans).map((t: any) => t.blabMentionSpans)),
       }}] as any : [];

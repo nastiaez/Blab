@@ -29,13 +29,13 @@ update public.messages set body='@Alice',mentions='[{"userId":"00000000-0000-400
 reset role;
 create temporary table mention_result_probe(message_id uuid,translation_text text,interface_text text,tokens jsonb);
 create trigger probe before insert on mention_result_probe for each row execute function public.check_translation_mention_identity();
-insert into mention_result_probe values(current_setting('test.message')::uuid,'@Alice','@Alice','[{"blabMentionSpans":{"@Alice":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]}}]');
+insert into mention_result_probe values(current_setting('test.message')::uuid,'@Alice','@Alice','[{"blabMentionSource":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}],"blabMentionSpans":{"@Alice":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]}}]');
 set local role authenticated;
 update public.messages set mentions='[{"userId":"00000000-0000-4000-8000-00000000000b","label":"Alice","start":0}]' where id=current_setting('test.message')::uuid;
 reset role;
 do $$begin
  begin
- insert into mention_result_probe values(current_setting('test.message')::uuid,'@Alice','@Alice','[{"blabMentionSpans":{"@Alice":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]}}]');
+ insert into mention_result_probe values(current_setting('test.message')::uuid,'@Alice','@Alice','[{"blabMentionSource":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}],"blabMentionSpans":{"@Alice":[{"userId":"00000000-0000-4000-8000-00000000000a","label":"Alice","start":0}]}}]');
  raise exception 'stale identity accepted';
  exception when raise_exception then if sqlerrm<>'stale_mention_identity' then raise; end if; end;
 end$$;

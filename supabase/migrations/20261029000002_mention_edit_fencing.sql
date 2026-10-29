@@ -30,15 +30,19 @@ for each row execute function public.invalidate_mention_edit();
 -- A late direct (non-leased) translation must not reattach an old identity.
 create function public.check_translation_mention_identity() returns trigger
 language plpgsql security definer set search_path=public as $$
-declare expected jsonb; actual jsonb; spans jsonb; sentence text; ranges jsonb; m jsonb;
+declare expected jsonb; actual jsonb; spans jsonb; sentence text; ranges jsonb; m jsonb; original_mentions jsonb; returned_source jsonb;
 begin
  if TG_TABLE_NAME='message_prepared_packages' and to_jsonb(new)->>'status'<>'ready' then return new; end if;
  select coalesce(jsonb_agg(jsonb_build_array(x->>'userId',x->>'label') order by x->>'userId',x->>'label'),'[]'::jsonb)
  into expected from messages msg cross join lateral jsonb_array_elements(msg.mentions) x where msg.id=new.message_id;
+ select mentions into original_mentions from messages where id=new.message_id;
+ returned_source:='[]'::jsonb;
  spans:='{}'::jsonb;
  for m in select value from jsonb_array_elements(new.tokens) loop
+  if m ? 'blabMentionSource' then returned_source:=m->'blabMentionSource'; end if;
   if jsonb_typeof(m->'blabMentionSpans')='object' then spans:=spans||(m->'blabMentionSpans'); end if;
  end loop;
+ if returned_source is distinct from original_mentions then raise exception 'stale_mention_identity'; end if;
  foreach sentence in array array[new.translation_text,new.interface_text] loop
   ranges:=coalesce(spans->sentence,'[]'::jsonb);
   if jsonb_typeof(ranges)<>'array' then raise exception 'stale_mention_identity'; end if;

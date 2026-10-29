@@ -97,6 +97,6 @@ export function restoreMentionResult<T>(
       if (nonce && JSON.stringify(outputForms[key]).includes(nonce)) outputForms[key] = [];
     }
   }
-  output.tokens = [...tokens, { blabMentionSpans: spans }];
+  output.tokens = [...tokens, { blabMentionSpans: spans, blabMentionSource: data.mentions }];
   return output as T;
 }
