@@ -2355,3 +2355,11 @@ launcher drawer14 inspected. Existing credentials reused; no user-chat DML.
 Four-target distribution NOT complete: Apple authenticated capability/profile setup
 and physical-iPhone APNs acceptance, Android live-auth/push/cold taps and outgoing
 copy approval remain. First human action: sign into prepared Apple Developer tab.
+
+### Learning-language heading16513 ·29 October2026 ← in progress
+- Copy-only change to shared required/Settings learning-language sheet: I want to learn... (EN/DE/ES/UK). Covers direct/group chat entry and changing language; interface/known-language selectors unchanged. Selection, persistence and translation behavior unchanged.
+- Dedicated current-main worktree fix/learn-heading-16513 at98f1927. Native screenshot review pending; no merge/release.
+
+- 16513 verification: 60 focused checks and analysis pass; real Android emulator5588 renders both production sheet variants in an isolated preview. Screenshots01/02 inspected; title fits, selection/helper/CTA unchanged. Native capture passes; post-run CLI tried removing absent public package and warned, test-channel preview remained. Owner review pending; no integrated build/iOS/release claim.
+
+Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integration and coordinated Android/iOS Blab+Blab-test release authorized. Delivery in progress, no availability claim.

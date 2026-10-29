@@ -12,13 +12,13 @@ void main() {
   ) async {
     const expectations = {
       'de': (
-        'Wähle eine Sprache zum Üben',
+        'Ich möchte lernen...',
         'Du kannst sie später in den Einstellungen ändern.',
         'Deutsch',
         'Fertig',
       ),
       'uk': (
-        'Вибери мову для практики',
+        'Я хочу вивчати...',
         'Її можна змінити пізніше в налаштуваннях.',
         'Німецька',
         'Готово',
@@ -84,7 +84,7 @@ void main() {
 
     final sheet = find
         .ancestor(
-          of: find.text('Choose a language to practice'),
+          of: find.text('I want to learn...'),
           matching: find.byType(Material),
         )
         .first;
@@ -190,7 +190,7 @@ void main() {
     await tester.tap(find.text('Start practicing'));
     await tester.pumpAndSettle();
     expect(completed, isFalse);
-    expect(find.text('Choose a language to practice'), findsOneWidget);
+    expect(find.text('I want to learn...'), findsOneWidget);
     expect(find.text("Couldn't save language. Try again."), findsOneWidget);
     await tester.tap(find.text('Start practicing'));
     await tester.pumpAndSettle();
@@ -225,7 +225,7 @@ void main() {
 
     await tester.tap(find.text('Open settings'));
     await tester.pumpAndSettle();
-    expect(find.text('Choose a language to practice'), findsOneWidget);
+    expect(find.text('I want to learn...'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
 
     await tester.tap(find.text('Dutch'));
@@ -265,7 +265,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(200, 20));
     await tester.drag(
-      find.text('Choose a language to practice'),
+      find.text('I want to learn...'),
       const Offset(0, 150),
     );
     await tester.pumpAndSettle();
@@ -286,7 +286,7 @@ void main() {
     );
     save.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Choose a language to practice'), findsNothing);
+    expect(find.text('I want to learn...'), findsNothing);
   });
 
   testWidgets('orange practice action uses dark warm ink', (tester) async {

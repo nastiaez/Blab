@@ -386,7 +386,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As a user mid-chat, I want to change which language I'm currently learning.
 
 **Acceptance Criteria:**
-- [ ] Bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: `Choose a language to practice` heading, helper, 11-name scrollable list, selected-row fill, checkmark, slim scrollbar, and persistent **Done** action
+- [ ] Bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: `I want to learn...` heading, helper, 11-name scrollable list, selected-row fill, checkmark, slim scrollbar, and persistent **Done** action
 - [ ] Current saved language is selected on opening; tapping another language previews it only
 - [ ] **Done** commits the visible choice, updates the chat header and ··· menu label, and closes the sheet on success
 - [ ] Backdrop tap and swipe-down close the sheet without changing the saved language; reopening shows the prior saved choice
@@ -453,7 +453,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] After the required language choice, an empty chat shows a simple text container: `No messages here yet…` + `Send any message to start.`; no launch illustration. Hide this container while initial language selection is required so it cannot peek above the open sheet
-- [ ] Required bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: title `Choose a language to practice`; helper `You can change it later in Settings.`; 48 px separated language rows; selected-row fill and check; slim scrollbar; and a persistent **Start practicing** action
+- [ ] Required bottom sheet follows `2026-09-12-learning-language-sheet-unification-design.md`: title `I want to learn...`; helper `You can change it later in Settings.`; 48 px separated language rows; selected-row fill and check; slim scrollbar; and a persistent **Start practicing** action
 - [ ] The sheet shows over the chat with no blur and a `#231208` 30% veil; authored first messages remain visible behind it if they already exist
 - [ ] At the 430 × 932 reference viewport, the required and Settings variants are both 567 px high; other viewports use the same `567 / 932` height proportion, capped at 567 logical px plus the bottom safe area
 - [ ] The sheet is bottom-anchored, uses 16 px top corners with no drop shadow, covers the empty-state note, and keeps the language list as its only scrolling region

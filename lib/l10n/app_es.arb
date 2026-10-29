@@ -158,7 +158,7 @@
   "relativeMinutes": "{count} min",
   "relativeHours": "{count} h",
   "relativeDays": "{count} d",
-  "chooseLanguageToPractice": "Elige un idioma para practicar",
+  "chooseLanguageToPractice": "Quiero aprender...",
   "chooseLanguageToPracticeHelp": "Puedes cambiarlo más tarde en Ajustes.",
   "startPracticing": "Empezar a practicar",
   "newMessages": "{count, plural, =1{1 mensaje nuevo} other{{count} mensajes nuevos}}",

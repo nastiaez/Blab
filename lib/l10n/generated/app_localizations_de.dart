@@ -523,7 +523,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get chooseLanguageToPractice => 'Wähle eine Sprache zum Üben';
+  String get chooseLanguageToPractice => 'Ich möchte lernen...';
 
   @override
   String get chooseLanguageToPracticeHelp =>

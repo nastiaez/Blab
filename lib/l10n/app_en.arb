@@ -228,7 +228,7 @@
       }
     }
   },
-  "chooseLanguageToPractice": "Choose a language to practice",
+  "chooseLanguageToPractice": "I want to learn...",
   "chooseLanguageToPracticeHelp": "You can change it later in Settings.",
   "startPracticing": "Start practicing",
   "newMessages": "{count, plural, =1{1 new message} other{{count} new messages}}",

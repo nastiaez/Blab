@@ -1114,7 +1114,7 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(_host(container));
     await _settle(tester);
-    expect(find.text('Choose a language to practice'), findsOneWidget);
+    expect(find.text('I want to learn...'), findsOneWidget);
     expect(find.text('Hallo'), findsOneWidget);
     expect(find.text('Привіт'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -2900,11 +2900,11 @@ Future<void> runPracticeEntryJourney(
     if (withPendingInvite) expect(service.claims, greaterThanOrEqualTo(1));
   }
   expect(find.byType(ChatsScreen), findsOneWidget);
-  expect(find.text('Choose a language to practice'), findsNothing);
+  expect(find.text('I want to learn...'), findsNothing);
   if (capture != null) await capture('01-chats-no-language-prompt');
   await tester.tap(find.text('Bob'));
   await _settle(tester);
-  expect(find.text('Choose a language to practice'), findsOneWidget);
+  expect(find.text('I want to learn...'), findsOneWidget);
   expect(
     tester
         .widget<FilledButton>(
@@ -2936,14 +2936,14 @@ Future<void> runPracticeEntryJourney(
   service.failNextSave = true;
   await tester.tap(find.text('Start practicing'));
   await _settle(tester);
-  expect(find.text('Choose a language to practice'), findsOneWidget);
+  expect(find.text('I want to learn...'), findsOneWidget);
   expect(service.savedLanguage, isNull);
   if (capture != null) await capture('03-injected-save-failure');
   await tester.tap(find.text('Start practicing'));
   await _settle(tester);
   expect(service.savedLanguage, 'en');
   expect(service.attempts, 2);
-  expect(find.text('Choose a language to practice'), findsNothing);
+  expect(find.text('I want to learn...'), findsNothing);
   expect(find.byType(ChatScreen), findsOneWidget);
   await tester.pump(const Duration(seconds: 5));
   await _settle(tester);
@@ -2955,7 +2955,7 @@ Future<void> runPracticeEntryJourney(
   await tester.tap(find.text('Bob'));
   await _settle(tester);
   expect(find.byType(ChatScreen), findsOneWidget);
-  expect(find.text('Choose a language to practice'), findsNothing);
+  expect(find.text('I want to learn...'), findsNothing);
   expect(service.attempts, 2);
   if (capture != null) await capture('05-reopened-no-repeat');
   await tester.pumpWidget(const SizedBox.shrink());

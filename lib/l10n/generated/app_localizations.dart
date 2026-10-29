@@ -1053,7 +1053,7 @@ abstract class AppLocalizations {
   /// No description provided for @chooseLanguageToPractice.
   ///
   /// In en, this message translates to:
-  /// **'Choose a language to practice'**
+  /// **'I want to learn...'**
   String get chooseLanguageToPractice;
 
   /// No description provided for @chooseLanguageToPracticeHelp.

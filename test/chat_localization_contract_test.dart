@@ -87,7 +87,7 @@ void main() {
       ],
       'lib/features/chat/widgets/learning_language_sheet.dart': [
         'Start practicing',
-        'Choose a language to practice',
+        'I want to learn...',
         'You can change it later in Settings.',
         'language.name',
       ],

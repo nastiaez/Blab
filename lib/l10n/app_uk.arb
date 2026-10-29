@@ -158,7 +158,7 @@
   "relativeMinutes": "{count} хв",
   "relativeHours": "{count} год",
   "relativeDays": "{count} дн",
-  "chooseLanguageToPractice": "Вибери мову для практики",
+  "chooseLanguageToPractice": "Я хочу вивчати...",
   "chooseLanguageToPracticeHelp": "Її можна змінити пізніше в налаштуваннях.",
   "startPracticing": "Почати практику",
   "newMessages": "{count, plural, =1{1 нове повідомлення} few{{count} нові повідомлення} many{{count} нових повідомлень} other{{count} нового повідомлення}}",
