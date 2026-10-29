@@ -1728,4 +1728,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get groupClearSearch => 'Suche löschen';
+
+  @override
+  String get mentionSomeone => 'Jemanden erwähnen';
+
+  @override
+  String get noMentionMatches => 'Keine passenden Teilnehmer';
 }

@@ -1,3 +1,4 @@
+import '../models/message_mention.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -109,6 +110,7 @@ class MessageTranslation {
     this.formAlternatives,
     this.formAlternativesList,
     this.wordMetadataReady = true,
+    this.mentionSpans = const {},
   });
   final String translation;
   final String interfaceText;
@@ -116,6 +118,7 @@ class MessageTranslation {
   final String sourceLang;
   final List<MessageToken> tokens;
   final bool wordMetadataReady;
+  final Map<String, List<MessageMention>> mentionSpans;
   final LearningAidMode mode;
   final String? explanation;
   final CorrectionConfidence? confidence;

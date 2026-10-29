@@ -1722,4 +1722,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get groupClearSearch => 'Borrar búsqueda';
+
+  @override
+  String get mentionSomeone => 'Mencionar a alguien';
+
+  @override
+  String get noMentionMatches => 'No hay participantes coincidentes';
 }

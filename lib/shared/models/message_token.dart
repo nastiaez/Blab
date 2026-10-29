@@ -1,3 +1,5 @@
+import 'message_mention.dart';
+
 /// A single tappable (or non-tappable) segment of a message rendered in the
 /// target language.
 ///
@@ -12,10 +14,12 @@ class MessageToken {
     this.nativeText,
     this.gloss,
     this.isContent = true,
+    this.mentionUserId,
   });
 
   /// The raw text as it appears in the message (e.g. `எப்படி`).
   final String text;
+  final String? mentionUserId;
 
   /// Latin-script romanization, e.g. `eppadi`. Optional — only present for
   /// scripts the user is unlikely to read (Tamil, Hindi, etc.).
@@ -68,6 +72,17 @@ List<MessageToken> messageTokensForText(
   List<MessageToken>? metadata,
 }) {
   if (text.isEmpty) return const [];
+  if (metadata != null &&
+      metadata.any((t) => t.mentionUserId != null) &&
+      metadata.map((t) => t.text).join() == text) {
+    return [
+      for (final token in metadata)
+        if (token.mentionUserId != null)
+          token
+        else
+          ...messageTokensForText(token.text, metadata: [token]),
+    ];
+  }
   final displayTokens = _splitVisibleText(text);
   final sanitized = metadata == null
       ? const []
@@ -162,4 +177,32 @@ bool _usesLatinScript(String value) {
     }
   }
   return hasLatinLetter;
+}
+
+List<MessageToken> tokensWithMentions(
+  String text,
+  List<MessageToken>? metadata,
+  List<MessageMention> mentions,
+) {
+  if (mentions.isEmpty) return metadata ?? const [];
+  final valid = MessageMention.parse(
+    mentions.map((m) => m.toJson()).toList(),
+    text,
+  );
+  if (valid.isEmpty) return metadata ?? const [];
+  final result = <MessageToken>[];
+  var cursor = 0;
+  for (final m in valid) {
+    result.addAll(
+      messageTokensForText(text.substring(cursor, m.start), metadata: metadata),
+    );
+    result.add(
+      MessageToken(text: m.text, isContent: false, mentionUserId: m.userId),
+    );
+    cursor = m.end;
+  }
+  result.addAll(
+    messageTokensForText(text.substring(cursor), metadata: metadata),
+  );
+  return result;
 }

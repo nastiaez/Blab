@@ -1,3 +1,4 @@
+import { protectMentions, restoreMentionResult } from "./mention_identity.ts";
 import { compactPlan, expandCompactResponse } from "./compact_request.ts";
 import { hasParticipantFormDifference } from "./participant_forms.ts";
 import {
@@ -18,6 +19,7 @@ export type PreparedViewer = {
   sourceHash: string;
   targetLang: string;
   interfaceLang: string;
+  mentions?: unknown;
   context?: unknown;
   formContext?: unknown;
 };
@@ -69,13 +71,17 @@ export async function generateMessageOnce(
   fetchImpl?: FetchLike,
   allowPartial = false,
 ): Promise<Record<string, TranslationResult>> {
+  singleCallRequest(viewers); // Validate batch before reading the first element.
+  const originalSource = viewers[0].text;
+  const protectedData = protectMentions(originalSource, viewers[0].mentions);
+  if (protectedData.mentions.length) viewers = viewers.map(v => ({...v, text: protectedData.text}));
   const request = singleCallRequest(viewers);
   const source = viewers[0].text;
-  const unsupported = unsupportedSourceScript(source);
-  if (unsupported || isProtectedLiteralMessage(source)) {
+  const unsupported = unsupportedSourceScript(originalSource);
+  if (unsupported || isProtectedLiteralMessage(originalSource)) {
     return Object.fromEntries(
       viewers.map(
-        (v) => [v.key, {
+        (v) => [v.key, restoreMentionResult({
           mode: unsupported ? "translation" : "none",
           sourceLang: unsupported ? "other" : v.targetLang,
           translation: source,
@@ -84,7 +90,7 @@ export async function generateMessageOnce(
           confidence: null,
           tokens: [],
           formAlternatives: null,
-        }],
+        }, protectedData)],
       ),
     ) as Record<string, TranslationResult>;
   }
@@ -229,7 +235,7 @@ export async function generateMessageOnce(
           r.formAlternatives.masculineTokens,
         );
       }
-      results[v.key] = r;
+      results[v.key] = restoreMentionResult(r, protectedData);
     } catch (error) {
       if (!allowPartial) throw error;
       // Invalid optional/per-viewer output cannot discard other usable sentences.

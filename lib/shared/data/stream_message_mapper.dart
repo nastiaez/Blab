@@ -1,3 +1,4 @@
+import '../models/message_mention.dart';
 import 'package:stream_chat/stream_chat.dart' as stream;
 
 import '../models/message.dart';
@@ -21,6 +22,12 @@ Message? messageFromStream(
     id: source.id,
     chatId: chatId,
     isOutgoing: source.user!.id == currentUserId,
+    mentions: deleted
+        ? const []
+        : MessageMention.parse(
+            source.extraData['blab_mentions'],
+            source.text ?? '',
+          ),
     originalText: deleted ? 'Deleted message' : source.text ?? '',
     translation: '',
     sentAt: source.remoteCreatedAt!.toLocal(),

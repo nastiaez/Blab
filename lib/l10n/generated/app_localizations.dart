@@ -3059,6 +3059,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear search'**
   String get groupClearSearch;
+
+  /// No description provided for @mentionSomeone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mention someone'**
+  String get mentionSomeone;
+
+  /// No description provided for @noMentionMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching participants'**
+  String get noMentionMatches;
 }
 
 class _AppLocalizationsDelegate

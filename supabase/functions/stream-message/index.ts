@@ -1,3 +1,4 @@
+import { parseMentions } from "./mentions.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { EdgeRuntime as EdgeRuntimeType } from "jsr:@supabase/functions-js/edge-runtime.d.ts";
 declare const EdgeRuntime: typeof EdgeRuntimeType;
@@ -48,6 +49,8 @@ Deno.serve(async (request) => {
     input.replyId !== undefined && input.replyId !== null &&
     (typeof input.replyId !== "string" || !uuid.test(input.replyId))
   ) return json({ error: "invalid_reply" }, 400);
+  let mentions;
+  try { mentions = parseMentions(input.mentions, String(input.body ?? "")); } catch { return json({ error: "invalid_mentions" }, 400); }
   const key = Deno.env.get("STREAM_API_KEY"),
     secret = Deno.env.get("STREAM_API_SECRET");
   if (!key || !secret) return json({ error: "stream_not_configured" }, 503);
@@ -74,6 +77,7 @@ Deno.serve(async (request) => {
       p_action: input.action,
       p_body: input.body ?? null,
       p_reply_id: input.replyId ?? null,
+      p_mentions: mentions,
     },
   );
   if (commandError) {
@@ -117,6 +121,7 @@ Deno.serve(async (request) => {
       if (canonical) {
         if (
           canonical.text !== input.body || canonical.deleted_at ||
+          JSON.stringify(canonical.blab_mentions ?? []) !== JSON.stringify(mentions) ||
           (canonical.quoted_message_id ?? null) !== (input.replyId ?? null)
         ) throw new Error("idempotency_conflict");
         if (
@@ -136,6 +141,7 @@ Deno.serve(async (request) => {
               id: input.messageId,
               user_id: identity.user.id,
               text: input.body,
+              blab_mentions: mentions,
               blab_languages_matched_at_send:
                 command.languagesMatchedAtSend === true,
               ...(input.replyId ? { quoted_message_id: input.replyId } : {}),
@@ -148,7 +154,7 @@ Deno.serve(async (request) => {
       }
     } else if (input.action === "edit") {
       canonical = (await server.request(`messages/${input.messageId}`, {
-        set: { text: input.body },
+        set: { text: input.body, blab_mentions: mentions },
         user_id: identity.user.id,
         skip_enrich_url: true,
       }, { method: "PUT" })).message as Record<string, unknown>;

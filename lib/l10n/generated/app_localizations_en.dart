@@ -1701,4 +1701,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get groupClearSearch => 'Clear search';
+
+  @override
+  String get mentionSomeone => 'Mention someone';
+
+  @override
+  String get noMentionMatches => 'No matching participants';
 }

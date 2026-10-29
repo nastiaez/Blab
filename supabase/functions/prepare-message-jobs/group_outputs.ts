@@ -13,6 +13,7 @@ export async function groupVariantKey(v: PreparedViewer): Promise<string> {
   const data = JSON.stringify({
     message: v.messageId,
     source: v.sourceHash,
+    mentions: v.mentions ?? [],
     contract: SINGLE_CALL_POLICY.contractVersion,
     author: f.messageAuthor === "viewer",
     request: singleCallRequest([v]),

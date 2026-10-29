@@ -373,6 +373,8 @@ class _BubbleState extends ConsumerState<MessageBubble> {
     }) => MessageLearningContent(
       groupConversation: widget.groupConversation,
       authoredText: message.originalText,
+      mentions: message.mentions,
+      viewerId: ref.watch(currentUserIdProvider),
       translation: translation,
       showTranslation: showTranslation,
       learningLanguageCode: languageCode,
@@ -387,9 +389,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       expanded: widget.isSelected && mode == ChatMode.practice,
       showOriginal: widget.isSelected && widget.showOriginal,
       pendingColor: pending && isPractice
-          ? (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary).withValues(
-              alpha: 0.48,
-            )
+          ? BlabColors.bubbleInk.withValues(alpha: 0.48)
           : null,
       onToggleExpanded: () {},
       unavailableText: context.l10n.translationUnavailable,
@@ -442,9 +442,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
             deferResolve: widget.deferTranslationResolve,
             keepAuthoredDuringFastHold: true,
             animateArrival: false,
-            waveBaseColor:
-                (isOut ? BlabColors.bubbleInk : BlabColors.textPrimary)
-                    .withValues(alpha: 0.48),
+            waveBaseColor: BlabColors.bubbleInk.withValues(alpha: 0.48),
             waveHighlightColor: Colors.white,
           )
         : finalContent;

@@ -1,3 +1,5 @@
+import '../../../shared/state/auth_state.dart';
+import 'mention_text.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,10 +21,12 @@ class MessageText extends ConsumerStatefulWidget {
     required this.languageCode,
     required this.style,
     this.popupTopInset = 0,
+    this.isOutgoing = false,
   });
 
   /// Visible learning-language text.
   final String text;
+  final bool isOutgoing;
 
   /// Optional metadata for the learning-language version of the message.
   final List<MessageToken>? tokens;
@@ -103,7 +107,8 @@ class _MessageTextState extends ConsumerState<MessageText> {
   @override
   Widget build(BuildContext context) {
     final tokens = messageTokensForText(widget.text, metadata: widget.tokens);
-    if (tokens.isEmpty || !tokens.any((t) => t.isContent)) {
+    if (tokens.isEmpty ||
+        !tokens.any((t) => t.isContent || t.mentionUserId != null)) {
       return Text(widget.text, style: widget.style);
     }
 
@@ -112,6 +117,26 @@ class _MessageTextState extends ConsumerState<MessageText> {
     final children = <InlineSpan>[];
     for (int i = 0; i < tokens.length; i++) {
       final t = tokens[i];
+      if (t.mentionUserId != null) {
+        final self = t.mentionUserId == ref.watch(currentUserIdProvider);
+        children.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Semantics(
+              selected: self,
+              child: Text(
+                t.text,
+                style: MentionColors.style(
+                  widget.style,
+                  outgoing: widget.isOutgoing,
+                ),
+              ),
+            ),
+          ),
+        );
+        continue;
+      }
       if (!t.isContent) {
         children.add(TextSpan(text: t.text, style: widget.style));
         continue;

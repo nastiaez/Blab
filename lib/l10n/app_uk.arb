@@ -610,5 +610,7 @@
   "personalInviteResetBody": "Поточне посилання перестане працювати. Наявні чати не зміняться.",
   "groupInviteOutsideTitle": "Запросити поза Blab",
   "groupShareLinkSubtitle": "Поділитися посиланням",
-  "groupClearSearch": "Очистити пошук"
+  "groupClearSearch": "Очистити пошук",
+  "mentionSomeone": "Згадати когось",
+  "noMentionMatches": "Учасників не знайдено"
 }

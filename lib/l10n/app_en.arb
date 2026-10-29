@@ -750,5 +750,7 @@
   "personalInviteResetBody": "The current link will stop working. Existing chats won’t change.",
   "groupInviteOutsideTitle": "Invite outside Blab",
   "groupShareLinkSubtitle": "Share a link",
-  "groupClearSearch": "Clear search"
+  "groupClearSearch": "Clear search",
+  "mentionSomeone": "Mention someone",
+  "noMentionMatches": "No matching participants"
 }

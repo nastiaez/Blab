@@ -1,3 +1,4 @@
+import 'package:blab/shared/models/message_mention.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -30,6 +31,7 @@ class _FakeChatService implements ChatService {
   Future<({String id, DateTime createdAt})> sendMessage({
     required String chatId,
     required String body,
+    List<MessageMention> mentions = const [],
     String? clientMessageId,
     String? replyToId,
   }) async {

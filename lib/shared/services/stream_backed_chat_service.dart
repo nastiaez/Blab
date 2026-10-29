@@ -1,3 +1,4 @@
+import '../models/message_mention.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -275,6 +276,7 @@ class StreamBackedChatService extends ChatService {
     String? body,
     String? replyId,
     String? requestId,
+    List<MessageMention> mentions = const [],
   }) async {
     _checkIdentity();
     final response = await _supabase.functions.invoke(
@@ -285,6 +287,8 @@ class StreamBackedChatService extends ChatService {
         'action': action,
         'requestId': requestId ?? const Uuid().v4(),
         'body': ?body,
+        if (action == 'send' || action == 'edit')
+          'mentions': mentions.map((m) => m.toJson()).toList(),
         'replyId': ?replyId,
       },
     );
@@ -306,6 +310,7 @@ class StreamBackedChatService extends ChatService {
     required String body,
     String? clientMessageId,
     String? replyToId,
+    List<MessageMention> mentions = const [],
   }) async {
     if (!await _isStream(chatId)) {
       return super.sendMessage(
@@ -313,6 +318,7 @@ class StreamBackedChatService extends ChatService {
         body: body,
         clientMessageId: clientMessageId,
         replyToId: replyToId,
+        mentions: mentions,
       );
     }
     final id = clientMessageId ?? const Uuid().v4();
@@ -322,6 +328,7 @@ class StreamBackedChatService extends ChatService {
       requestId: id,
       action: 'send',
       body: body,
+      mentions: mentions,
       replyId: replyToId,
     );
     return (
@@ -436,16 +443,22 @@ class StreamBackedChatService extends ChatService {
   Future<void> editMessage({
     required String messageId,
     required String newBody,
+    List<MessageMention> mentions = const [],
   }) async {
     final chatId = await _chatFor(messageId);
     if (!await _isStream(chatId)) {
-      return super.editMessage(messageId: messageId, newBody: newBody);
+      return super.editMessage(
+        messageId: messageId,
+        newBody: newBody,
+        mentions: mentions,
+      );
     }
     await _command(
       chatId: chatId,
       messageId: messageId,
       action: 'edit',
       body: newBody,
+      mentions: mentions,
     );
   }
 

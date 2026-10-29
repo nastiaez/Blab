@@ -1,3 +1,5 @@
+import 'package:blab/shared/models/message_mention.dart';
+import 'package:blab/features/groups/group_info_screen.dart';
 import 'package:blab/features/invite/test_access_gate.dart';
 import 'package:blab/features/auth/auth_screen.dart';
 import 'package:blab/features/onboarding/onboarding_bootstrap_screen.dart';
@@ -85,6 +87,7 @@ class _PrimaryKnownLanguageChatService implements ChatService {
     this.preparedPackages = const [],
     this.languageTimeline = const [],
     this.messageText = 'Hallo',
+    List<MessageMention> messageMentions = const [],
     this.previousMessageIsOutgoing = true,
     this.previousMessageText = 'Earlier',
     DateTime? messageSentAt,
@@ -98,6 +101,7 @@ class _PrimaryKnownLanguageChatService implements ChatService {
          senderName: messageSenderName,
          senderId: messageSenderId,
          originalText: messageText,
+         mentions: messageMentions,
          translation: '',
          sentAt: messageSentAt ?? DateTime.utc(2026, 8, 3, 12),
          status: MessageStatus.delivered,
@@ -456,6 +460,7 @@ ProviderContainer _containerForHeader(
   String primaryKnownLanguage = 'uk',
   List<String> knownLanguages = const ['uk'],
   bool isOnline = false,
+  List<Map<String, dynamic>>? mentionMembers,
   Future<MessageTranslation> Function(String messageId)? translate,
   TargetedTranslateMessageFn? retryTranslate,
   Future<Map<String, dynamic>> Function()? accessCheck,
@@ -464,6 +469,10 @@ ProviderContainer _containerForHeader(
 }) {
   return ProviderContainer(
     overrides: [
+      if (mentionMembers != null)
+        groupMembersProvider(
+          'chat-1',
+        ).overrideWith((_) => Stream.value(mentionMembers)),
       if (emailAuth != null)
         emailAuthActionProvider.overrideWithValue(emailAuth),
       chatServiceProvider.overrideWithValue(service),
@@ -1212,10 +1221,7 @@ void main() {
         await tester.pumpWidget(_host(container));
         await _settle(tester);
         final text = tester.widget<Text>(find.text('Hello there'));
-        expect(
-          text.style?.color,
-          outgoing ? BlabColors.bubbleInk : BlabColors.textPrimary,
-        );
+        expect(text.style?.color, BlabColors.bubbleInk);
         expect(find.byKey(const ValueKey('translation-wave')), findsNothing);
         expect(
           find.byKey(const ValueKey('translation-glyph-reveal')),
@@ -3107,4 +3113,110 @@ Future<void> runBla27ReadingJourney(
     await tester.pumpWidget(const SizedBox.shrink());
     container.dispose();
   }
+}
+
+Future<void> runMentionsJourney(
+  WidgetTester tester, {
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  for (final scenario in [
+    const String.fromEnvironment('BLAB_MENTION_SCENE', defaultValue: 'picker'),
+  ]) {
+    final picker = scenario == 'picker';
+    final service = _PrimaryKnownLanguageChatService(
+      partnerName: 'Deutsch zusammen',
+      chatMode: 'practice',
+      groupAiStartedAt: DateTime.utc(2026, 10, 29),
+      messageSentAt: DateTime.utc(2026, 10, 28, 9, 41),
+      messageSenderId: scenario == 'sender' ? 'alice' : 'robert',
+      messageSenderName: picker ? 'Nastia' : 'Robert',
+      messageIsOutgoing: scenario == 'sender',
+      messageText: picker
+          ? 'Shall we practise tomorrow?'
+          : '@Ash and @Nastia shall we practise at 6?',
+      messageMentions: picker
+          ? const []
+          : [
+              MessageMention(
+                userId: scenario == 'recipient' ? 'alice' : 'ash',
+                label: 'Ash',
+                start: 0,
+              ),
+              const MessageMention(userId: 'nastia', label: 'Nastia', start: 9),
+            ],
+    );
+    final container = _containerForHeader(
+      service,
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+      mentionMembers: [
+        {'user_id': 'ash', 'display_name': 'Ash'},
+        {'user_id': 'nastia', 'display_name': 'Nastia'},
+      ],
+    );
+    await tester.pumpWidget(_host(container, theme: blabTheme));
+    await _settle(tester);
+    if (picker) {
+      await tester.enterText(find.byType(TextField).last, '@');
+      await _settle(tester);
+      expect(find.text('Mention someone'), findsNothing);
+      await capture?.call('01-mention-picker');
+      await tester.tap(find.text('Ash').last);
+      await _settle(tester);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller!.text,
+        '@Ash ',
+      );
+    } else {
+      await capture?.call(
+        scenario == 'sender' ? '02-sender-grey-tags' : '03-recipient-peach-tag',
+      );
+    }
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    container.dispose();
+  }
+}
+
+/// Standalone, synthetic-data host for real framebuffer capture (no test surface).
+Widget mentionsPreview(String scene) {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  final picker = scene == 'picker';
+  final service = _PrimaryKnownLanguageChatService(
+    partnerName: 'Deutsch zusammen',
+    chatMode: scene.contains('normal') ? 'normal' : 'practice',
+    groupAiStartedAt: DateTime.utc(2026, 10, 29),
+    messageSentAt: DateTime.utc(2026, 10, 28, 9, 41),
+    messageSenderId: scene.startsWith('sender') ? 'alice' : 'robert',
+    messageSenderName: picker ? 'Nastia' : 'Robert',
+    messageIsOutgoing: scene.startsWith('sender'),
+    messageText: picker
+        ? 'Shall we practise tomorrow?'
+        : '@Ash and @Nastia shall we practise at 6?',
+    messageMentions: picker
+        ? const []
+        : [
+            MessageMention(
+              userId: scene == 'recipient' ? 'alice' : 'ash',
+              label: 'Ash',
+              start: 0,
+            ),
+            const MessageMention(userId: 'nastia', label: 'Nastia', start: 9),
+          ],
+  );
+  return _host(
+    _containerForHeader(
+      service,
+      primaryKnownLanguage: 'en',
+      knownLanguages: ['en'],
+      mentionMembers: [
+        {'user_id': 'ash', 'display_name': 'Ash'},
+        {'user_id': 'nastia', 'display_name': 'Nastia'},
+      ],
+    ),
+    theme: blabTheme,
+  );
 }

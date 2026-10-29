@@ -2363,3 +2363,17 @@ copy approval remain. First human action: sign into prepared Apple Developer tab
 - 16513 verification: 60 focused checks and analysis pass; real Android emulator5588 renders both production sheet variants in an isolated preview. Screenshots01/02 inspected; title fits, selection/helper/CTA unchanged. Native capture passes; post-run CLI tried removing absent public package and warned, test-channel preview remained. Owner review pending; no integrated build/iOS/release claim.
 
 Approval16523 (29Oct2026): screenshots accepted; explicit commit, main integration and coordinated Android/iOS Blab+Blab-test release authorized. Delivery in progress, no availability claim.
+
+### BLA-36 mentions16544 ·29 October2026 ← in progress
+- Ash approved design v1 implementation, superseding two-person approval wait. Dedicated feat/bla36-mentions from abc556d. No main integration or release.
+- Identity-linked selections; current participants only. Latest user revision removes picker heading and all tag backgrounds: own tag brand-orange text, others grey. First word of saved display name used after stated assumption; picker retains full display name. Two actual Android synthetic-data previews delivered16549–16550. Visual feedback and owner manual acceptance pending; translation/persistence integration and live end-to-end verification unfinished. No merge/deploy/release.
+- Preference mapping: existing independently resolved viewer Learning Language/history drives Practice, Primary Known Language drives Normal unknown-source and word help; understood Normal text and aids-off remain authored; Interface Language only UI. Stable mention labels are protected handles; ordinary-name transliteration and all mode/form/tone/correction rules remain unchanged.
+
+- Nastia16553: picker names and mentions now regular weight (w400), including composer/authored/generated views; colour rules unchanged. Four focused mention tests pass. Fresh Android picker review pending; no integration/release.
+- Android screenshot16553 blocked: test-channel debug packaging failed with No space left on device (175 MiB available). No fresh screenshot or native visual acceptance claimed; earlier screenshots show superseded bold weight.
+
+- Nastia16560: all selected mentions now use brand-orange #F88C5A, regular weight, no background, independent of viewer. Composer, authored ranges and generated-token rendering share one colour. No @ indicator or preference/translation-policy change. Current-main base still abc556d; fresh Android review underway.
+
+- Native outgoing Practice check16560 FAILED visual readability: #F88C5A mention ink equals existing #F88C5A outgoing bubble fill, making tags invisible (07-sender-orange-16560.png). Incoming/picker/composer inspected pass; full1091pass/17skip. Product decision needed: recommend dark brand-brown mention ink only on orange outgoing bubbles, retaining regular weight/no background. No release or visual-complete claim.
+
+- Latest approved16581/16588: dark-brown body in both directions/modes, terracotta incoming mentions, brown underlined outgoing; regular weight/no backgrounds. Actual Android packet16583–16586 accepted by commit/deploy/main instruction16588. 1093 Flutter tests pass/17skip, 214 backend tests pass, eight SQL admission checks pass. Full migration rebuild/live verification pending; local Docker ping times out. Integration and deployment authorized, not yet done.

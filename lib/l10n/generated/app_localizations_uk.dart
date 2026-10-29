@@ -1715,4 +1715,10 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get groupClearSearch => 'Очистити пошук';
+
+  @override
+  String get mentionSomeone => 'Згадати когось';
+
+  @override
+  String get noMentionMatches => 'Учасників не знайдено';
 }

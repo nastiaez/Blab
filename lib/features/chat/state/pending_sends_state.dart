@@ -1,3 +1,4 @@
+import '../../../shared/models/message_mention.dart';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,6 +164,7 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
             id: newId,
             chatId: m.chatId,
             isOutgoing: m.isOutgoing,
+            mentions: m.mentions,
             originalText: m.originalText,
             translation: m.translation,
             tokens: m.tokens,
@@ -182,6 +184,7 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
   static Map<String, dynamic> _serialize(Message m) => {
     'id': m.id,
     'chatId': m.chatId,
+    'mentions': m.mentions.map((m) => m.toJson()).toList(),
     'originalText': m.originalText,
     'sentAt': m.sentAt.toIso8601String(),
     'status': m.status.name,
@@ -203,6 +206,7 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
             'url': m.attachment!.url,
           },
     'replyToId': m.replyTo?.id,
+    'replyToMentions': m.replyTo?.mentions.map((m) => m.toJson()).toList(),
     'replyToText': m.replyTo?.originalText,
     'replyToWasOutgoing': m.replyTo?.isOutgoing,
     'replyToSentAt': m.replyTo?.sentAt.toIso8601String(),
@@ -219,6 +223,7 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
         id: replyId,
         chatId: j['chatId'] as String,
         isOutgoing: replyOut ?? false,
+        mentions: MessageMention.parse(j['replyToMentions'], replyText),
         originalText: replyText,
         translation: '',
         sentAt:
@@ -254,6 +259,10 @@ class PendingSendsNotifier extends Notifier<List<Message>> {
       id: j['id'] as String,
       chatId: j['chatId'] as String,
       isOutgoing: true,
+      mentions: MessageMention.parse(
+        j['mentions'],
+        j['originalText'] as String,
+      ),
       originalText: j['originalText'] as String,
       translation: '',
       sentAt: DateTime.parse(j['sentAt'] as String),

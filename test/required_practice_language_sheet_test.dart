@@ -264,10 +264,7 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(200, 20));
-    await tester.drag(
-      find.text('I want to learn...'),
-      const Offset(0, 150),
-    );
+    await tester.drag(find.text('I want to learn...'), const Offset(0, 150));
     await tester.pumpAndSettle();
     expect(find.text('English'), findsOneWidget);
     await tester.tap(find.text('English'));

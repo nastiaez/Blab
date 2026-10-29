@@ -1,3 +1,4 @@
+import '../../../shared/models/message_mention.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -84,9 +85,21 @@ String translationMeaningfulText(String text) {
 
 MessageTranslation _translationFromCache(CachedMessageTranslation cached) {
   final tokens = <MessageToken>[];
+  final mentionSpans = <String, List<MessageMention>>{};
   Object? rawFormAlternatives;
   final rawFormAlternativesList = <Object?>[];
   for (final token in cached.tokens) {
+    final spans = token['blabMentionSpans'];
+    if (spans is Map) {
+      for (final entry in spans.entries) {
+        if (entry.key is String) {
+          mentionSpans[entry.key as String] = MessageMention.parse(
+            entry.value,
+            entry.key as String,
+          );
+        }
+      }
+    }
     rawFormAlternatives ??= token['formAlternatives'];
     if (token['formAlternatives'] is List) {
       rawFormAlternativesList.addAll(token['formAlternatives'] as List);
@@ -106,6 +119,7 @@ MessageTranslation _translationFromCache(CachedMessageTranslation cached) {
   }
   final sanitizedTokens = sanitizeMessageTokens(tokens, cached.text);
   return MessageTranslation(
+    mentionSpans: mentionSpans,
     translation: cached.text,
     interfaceText: cached.interfaceText,
     interfaceLang: cached.interfaceLang,

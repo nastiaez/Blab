@@ -1,3 +1,4 @@
+import '../../../shared/models/message_mention.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -408,7 +409,11 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   /// [pendingSendsProvider]. When offline the bubble stays queued (clock)
   /// and the reconnect flush sends it later; when online it's sent right
   /// away. Step 2.2 Task 12 / PRD US-016, US-021, US-030, US-031.
-  Future<void> addOutgoing(String text, {Message? replyTo}) async {
+  Future<void> addOutgoing(
+    String text, {
+    Message? replyTo,
+    List<MessageMention> mentions = const [],
+  }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final tempId = ref.read(clientMessageIdFactoryProvider)();
@@ -416,6 +421,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       id: tempId,
       chatId: chatId,
       isOutgoing: true,
+      mentions: mentions
+          .map((m) => m.at(m.start - (text.length - text.trimLeft().length)))
+          .toList(),
       originalText: trimmed,
       translation: '',
       sentAt: DateTime.now(),
@@ -524,6 +532,13 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
           .sendMessage(
             chatId: chatId,
             body: body,
+            mentions:
+                ref
+                    .read(pendingSendsProvider(chatId))
+                    .where((m) => m.id == localId)
+                    .firstOrNull
+                    ?.mentions ??
+                const [],
             clientMessageId: localId,
             replyToId: replyToId,
           );
@@ -708,12 +723,26 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   }
 
   /// Edit an existing outgoing message. PRD US-019.
-  Future<void> editMessage(String id, String newText) async {
+  Future<void> editMessage(
+    String id,
+    String newText, {
+    List<MessageMention> mentions = const [],
+  }) async {
     final trimmed = newText.trim();
     if (trimmed.isEmpty) return;
     await ref
         .read(chatServiceProvider)
-        .editMessage(messageId: id, newBody: trimmed);
+        .editMessage(
+          messageId: id,
+          newBody: trimmed,
+          mentions: mentions
+              .map(
+                (m) => m.at(
+                  m.start - (newText.length - newText.trimLeft().length),
+                ),
+              )
+              .toList(),
+        );
     await ref
         .read(formCorrectionProvider.notifier)
         .mutate((s) => s.removeMessage(chatId, id))

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import '../models/message_mention.dart';
 import '../data/app_channel.dart';
 import 'dart:async';
 import 'dart:math';
@@ -633,12 +635,15 @@ class ChatService {
     required String body,
     String? clientMessageId,
     String? replyToId,
+    List<MessageMention> mentions = const [],
   }) async {
     final payload = {
       'id': ?clientMessageId,
       'chat_id': chatId,
       'sender_id': _uid,
       'body': body,
+      if (mentions.isNotEmpty)
+        'mentions': mentions.map((m) => m.toJson()).toList(),
       'reply_to': ?replyToId,
     };
     Map<String, dynamic> row;
@@ -648,13 +653,17 @@ class ChatService {
       if (clientMessageId == null || error.code != '23505') rethrow;
       final existing = await _client
           .from('messages')
-          .select('id,chat_id,sender_id,body,created_at,reply_to,deleted_at')
+          .select(
+            'id,chat_id,sender_id,body,created_at,reply_to,deleted_at,mentions',
+          )
           .eq('id', clientMessageId)
           .maybeSingle();
       if (existing == null ||
           existing['chat_id'] != chatId ||
           existing['sender_id'] != _uid ||
           existing['body'] != body ||
+          jsonEncode(existing['mentions'] ?? []) !=
+              jsonEncode(mentions.map((m) => m.toJson()).toList()) ||
           existing['reply_to'] != replyToId ||
           existing['deleted_at'] != null) {
         throw StateError('idempotency_conflict');
@@ -834,10 +843,14 @@ class ChatService {
   Future<void> editMessage({
     required String messageId,
     required String newBody,
+    List<MessageMention> mentions = const [],
   }) async {
     await _client
         .from('messages')
-        .update({'body': newBody})
+        .update({
+          'body': newBody,
+          'mentions': mentions.map((m) => m.toJson()).toList(),
+        })
         .eq('id', messageId);
   }
 

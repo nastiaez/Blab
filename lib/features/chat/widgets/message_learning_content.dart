@@ -1,3 +1,5 @@
+import '../../../shared/models/message_mention.dart';
+import 'mention_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -77,9 +79,13 @@ class MessageLearningContent extends StatelessWidget {
     this.readingScript = ReadingScript.native,
     this.translationLanguageCode,
     this.groupConversation = false,
+    this.mentions = const [],
+    this.viewerId,
   });
 
   final bool groupConversation;
+  final List<MessageMention> mentions;
+  final String? viewerId;
   final String authoredText;
   final AsyncValue<MessageTranslation>? translation;
   final bool showTranslation;
@@ -135,16 +141,12 @@ class MessageLearningContent extends StatelessWidget {
       fontSize: 16,
       height: groupConversation ? 23 / 16 : 1.5,
       letterSpacing: groupConversation ? 0 : null,
-      color:
-          pendingColor ??
-          (isOutgoing ? BlabColors.bubbleInk : BlabColors.textPrimary),
+      color: pendingColor ?? BlabColors.bubbleInk,
     );
     final secondaryStyle = TextStyle(
       fontSize: 14,
       height: 1.4,
-      color: isOutgoing
-          ? BlabColors.bubbleInk.withValues(alpha: 0.72)
-          : BlabColors.textMuted,
+      color: BlabColors.bubbleInk.withValues(alpha: 0.72),
     );
     final result = translation;
     final generatedLanguageCode =
@@ -160,13 +162,28 @@ class MessageLearningContent extends StatelessWidget {
       readingScript: readingScript,
     );
 
+    Widget authored(String text, TextStyle style) => MentionText(
+      text: text,
+      mentions: text == authoredText ? mentions : const [],
+      viewerId: viewerId,
+      isOutgoing: isOutgoing,
+      style: style,
+    );
+
     Widget generatedMessageText(
       String text,
       List<MessageToken> tokens,
       TextStyle style,
     ) {
-      final presentation = presentGenerated(text, tokens);
+      final spans =
+          translation?.value?.mentionSpans[text] ??
+          (text == authoredText ? mentions : const <MessageMention>[]);
+      final presentation = presentGenerated(
+        text,
+        tokensWithMentions(text, tokens, spans),
+      );
       return MessageText(
+        isOutgoing: isOutgoing,
         text: presentation.text,
         tokens: presentation.tokens,
         languageCode: generatedLanguageCode,
@@ -176,7 +193,7 @@ class MessageLearningContent extends StatelessWidget {
     }
 
     if (!showTranslation || result == null) {
-      return Text(authoredText, style: primaryStyle);
+      return authored(authoredText, primaryStyle);
     }
 
     // Resolve `AsyncData` first — its `value.sourceLang` is what normal
@@ -189,13 +206,13 @@ class MessageLearningContent extends StatelessWidget {
         sourceLang: value.sourceLang,
         authoredText: authoredText,
       )) {
-        return Text(authoredText, style: primaryStyle);
+        return authored(authoredText, primaryStyle);
       }
       // Normal mode preserves authored text when the reader knows its source,
       // even if a cached translation also carries form alternatives.
       if (mode == ChatMode.normal &&
           knownLanguageCodes.contains(value.sourceLang)) {
-        return Text(authoredText, style: primaryStyle);
+        return authored(authoredText, primaryStyle);
       }
       final formChoices = formAlternativesOverride == null
           ? value.participantFormsFor(generatedLanguageCode)
@@ -239,7 +256,7 @@ class MessageLearningContent extends StatelessWidget {
         );
         final displayWidget =
             mode == ChatMode.normal && displayText == authoredText
-            ? Text(displayText, style: primaryStyle)
+            ? authored(displayText, primaryStyle)
             : generatedMessageText(
                 value.translation,
                 value.tokens,
@@ -262,7 +279,7 @@ class MessageLearningContent extends StatelessWidget {
                     : Colors.grey.shade200,
               ),
             ),
-            Text(authoredText, style: secondaryStyle),
+            authored(authoredText, secondaryStyle),
           ],
         );
       }
@@ -274,7 +291,7 @@ class MessageLearningContent extends StatelessWidget {
     // translation resolves too; the swap to the learning-language line is
     // the completion signal.
     if (result is AsyncLoading<MessageTranslation>) {
-      return Text(authoredText, style: primaryStyle);
+      return authored(authoredText, primaryStyle);
     }
 
     if (result is AsyncError<MessageTranslation>) {
@@ -288,9 +305,9 @@ class MessageLearningContent extends StatelessWidget {
           resolvedSourceLang != null &&
           !knownLanguageCodes.contains(resolvedSourceLang);
       if (mode == ChatMode.normal && !needsTranslation) {
-        return Text(authoredText, style: primaryStyle);
+        return authored(authoredText, primaryStyle);
       }
-      return Text(authoredText, style: primaryStyle);
+      return authored(authoredText, primaryStyle);
     }
 
     final value = (result as AsyncData<MessageTranslation>).value;
@@ -357,7 +374,13 @@ class MessageLearningContent extends StatelessWidget {
                   : Colors.grey.shade200,
             ),
           ),
-          Text(value.interfaceText, style: secondaryStyle),
+          MentionText(
+            text: value.interfaceText,
+            mentions: value.mentionSpans[value.interfaceText] ?? const [],
+            viewerId: viewerId,
+            isOutgoing: isOutgoing,
+            style: secondaryStyle,
+          ),
         ],
       ],
     );

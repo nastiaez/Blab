@@ -925,11 +925,15 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   if (result === null) {
+    const mentionRow = await admin.from("messages").select("body,mentions").eq("id", messageId).single();
+    if (mentionRow.error || mentionRow.data.body.trim() !== text) return json({error:"translation_stale"},409);
+    prepared.mentions = mentionRow.data.mentions ?? [];
     try {
       const generated = await generateMessageOnce([{
         key: "v0",
         messageId,
         text,
+        mentions: prepared.mentions,
         sourceHash,
         targetLang,
         interfaceLang,

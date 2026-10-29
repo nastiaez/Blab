@@ -23,9 +23,11 @@ class ChatComposer extends StatelessWidget {
     this.emojiPanel,
     this.bottomObstruction = 0,
     this.groupConversation = false,
+    this.mentionPicker,
   });
 
   final bool groupConversation;
+  final Widget? mentionPicker;
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool hasText;
@@ -65,6 +67,7 @@ class ChatComposer extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ?mentionPicker,
             Padding(
               padding: EdgeInsets.fromLTRB(
                 12,

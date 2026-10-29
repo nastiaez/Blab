@@ -259,3 +259,6 @@ conflict or intervening main changes. All reviewed source hashes match the final
 V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
 only final V16 native acceptance and its QA entry are promoted. Manual physical
 phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+## BLA-36 first-name mentions · Later ·29 October2026
+Implementation authorized16544; screenshot review and manual two-viewer acceptance pending. No merge/release.

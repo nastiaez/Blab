@@ -610,5 +610,7 @@
   "personalInviteResetBody": "Der aktuelle Link funktioniert danach nicht mehr. Bestehende Chats bleiben unverändert.",
   "groupInviteOutsideTitle": "Außerhalb von Blab einladen",
   "groupShareLinkSubtitle": "Link teilen",
-  "groupClearSearch": "Suche löschen"
+  "groupClearSearch": "Suche löschen",
+  "mentionSomeone": "Jemanden erwähnen",
+  "noMentionMatches": "Keine passenden Teilnehmer"
 }

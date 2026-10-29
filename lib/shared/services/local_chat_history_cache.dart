@@ -1,3 +1,4 @@
+import '../models/message_mention.dart';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -747,6 +748,7 @@ class LocalChatHistoryCache {
     'isOutgoing': message.isOutgoing,
     'senderId': message.senderId,
     'senderName': message.senderName,
+    'mentions': message.mentions.map((m) => m.toJson()).toList(),
     'originalText': message.originalText,
     'sentAt': message.sentAt.toIso8601String(),
     'status': message.status.name,
@@ -776,6 +778,9 @@ class LocalChatHistoryCache {
             'isOutgoing': message.replyTo!.isOutgoing,
             'senderId': message.replyTo!.senderId,
             'senderName': message.replyTo!.senderName,
+            'mentions': message.replyTo!.mentions
+                .map((m) => m.toJson())
+                .toList(),
             'originalText': message.replyTo!.originalText,
             'sentAt': message.replyTo!.sentAt.toIso8601String(),
             'type': message.replyTo!.type.name,
@@ -841,6 +846,10 @@ class LocalChatHistoryCache {
           isOutgoing: reply['isOutgoing'] as bool? ?? false,
           senderId: reply['senderId'] as String?,
           senderName: reply['senderName'] as String?,
+          mentions: MessageMention.parse(
+            reply['mentions'],
+            reply['originalText'] as String? ?? '',
+          ),
           originalText: reply['originalText'] as String? ?? '',
           translation: '',
           sentAt: replyTime,
@@ -857,6 +866,7 @@ class LocalChatHistoryCache {
       isOutgoing: row['isOutgoing'] as bool? ?? false,
       senderId: row['senderId'] as String?,
       senderName: row['senderName'] as String?,
+      mentions: MessageMention.parse(row['mentions'], originalText),
       originalText: originalText,
       translation: '',
       sentAt: sentAt,

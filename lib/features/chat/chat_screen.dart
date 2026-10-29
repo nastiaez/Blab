@@ -1,3 +1,5 @@
+import 'mention_controller.dart';
+import 'widgets/mention_picker.dart';
 import '../groups/member_request.dart';
 import '../groups/group_info_screen.dart';
 import '../../shared/widgets/surfaces/blab_confirmation_dialog.dart';
@@ -114,7 +116,8 @@ class ChatScreen extends ConsumerStatefulWidget {
 enum ChatModeTip { practice, normal }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  final TextEditingController _input = TextEditingController();
+  final MentionController _input = MentionController();
+  bool _mentionDismissed = false;
   final FocusNode _inputFocus = FocusNode();
   final ScrollController _scroll = ScrollController();
   final GlobalKey _stackKey = GlobalKey();
@@ -200,10 +203,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final has = text.trim().isNotEmpty;
       final len = text.characters.length;
       ref.read(typingComposerProvider(widget.chatId)).textChanged(has);
-      if (has != _hasText || len != _textLength) {
+      if (mounted) {
         setState(() {
           _hasText = has;
           _textLength = len;
+          _mentionDismissed = false;
         });
       }
     });
@@ -680,7 +684,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       try {
         await ref
             .read(chatMessagesProvider(widget.chatId).notifier)
-            .editMessage(editing.id, text);
+            .editMessage(editing.id, text, mentions: _input.mentions);
         ref.read(editingProvider(widget.chatId).notifier).clear();
         _input.clear();
       } catch (_) {
@@ -693,7 +697,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final replyingTo = ref.read(replyingToProvider(widget.chatId));
     ref
         .read(chatMessagesProvider(widget.chatId).notifier)
-        .addOutgoing(text, replyTo: replyingTo);
+        .addOutgoing(text, replyTo: replyingTo, mentions: _input.mentions);
     if (replyingTo != null) {
       ref.read(replyingToProvider(widget.chatId).notifier).clear();
     }
@@ -1316,7 +1320,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (!mounted) return;
         if (editing != null) {
           if (_emojiPanelOpen) setState(() => _emojiPanelOpen = false);
-          _input.text = editing.originalText;
+          _input.load(editing.originalText, editing.mentions);
           _input.selection = TextSelection.fromPosition(
             TextPosition(offset: _input.text.length),
           );
@@ -1946,6 +1950,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   ? .45
                                   : 1,
                               child: ChatComposer(
+                                mentionPicker:
+                                    !_mentionDismissed && _input.query != null
+                                    ? MentionPicker(
+                                        candidates: chat.isGroup
+                                            ? [
+                                                for (final member
+                                                    in ref
+                                                            .watch(
+                                                              groupMembersProvider(
+                                                                widget.chatId,
+                                                              ),
+                                                            )
+                                                            .value ??
+                                                        <
+                                                          Map<String, dynamic>
+                                                        >[])
+                                                  if (member['user_id'] !=
+                                                      ref.watch(
+                                                        currentUserIdProvider,
+                                                      ))
+                                                    MentionCandidate(
+                                                      member['user_id']
+                                                          as String,
+                                                      member['display_name']
+                                                              as String? ??
+                                                          '?',
+                                                    ),
+                                              ]
+                                            : [
+                                                if (chat.partnerId != null)
+                                                  MentionCandidate(
+                                                    chat.partnerId!,
+                                                    chat.partnerName,
+                                                  ),
+                                              ],
+                                        query: _input.query!.query,
+                                        onDismiss: () => setState(
+                                          () => _mentionDismissed = true,
+                                        ),
+                                        onSelected: (person) {
+                                          _input.insertMention(
+                                            person.userId,
+                                            person.mentionLabel,
+                                          );
+                                          _inputFocus.requestFocus();
+                                        },
+                                      )
+                                    : null,
                                 controller: _input,
                                 focusNode: _inputFocus,
                                 hasText: _hasText,

@@ -1,3 +1,4 @@
+import '../models/message_mention.dart';
 import '../models/message.dart';
 
 Message messageFromRow(
@@ -22,6 +23,7 @@ Message messageFromRow(
     isOutgoing: senderId == currentUserId,
     senderId: senderId,
     senderName: row['sender_name'] as String?,
+    mentions: MessageMention.parse(row['mentions'], row['body'] as String),
     originalText: row['body'] as String,
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),
@@ -84,6 +86,9 @@ Message _replyPreviewFromRow(
     isOutgoing: row['sender_id'] == currentUserId,
     senderId: row['sender_id'] as String?,
     senderName: row['sender_name'] as String?,
+    mentions: deleted
+        ? const []
+        : MessageMention.parse(row['mentions'], row['body'] as String),
     originalText: deleted ? 'Deleted message' : row['body'] as String,
     translation: '',
     sentAt: DateTime.parse(row['created_at'] as String).toLocal(),

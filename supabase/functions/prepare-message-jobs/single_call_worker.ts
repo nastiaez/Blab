@@ -60,6 +60,7 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
           key: `v${pending.length}`,
           messageId: p.messageId as string,
           text: p.text as string,
+          mentions: p.mentions,
           sourceHash: p.sourceHash as string,
           targetLang: p.targetLang as string,
           interfaceLang: p.interfaceLang as string,

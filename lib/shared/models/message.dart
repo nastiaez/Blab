@@ -1,3 +1,4 @@
+import 'message_mention.dart';
 import 'message_token.dart';
 
 /// Delivery state for an outgoing message. Incoming messages are always
@@ -96,6 +97,7 @@ class Message {
     this.languagesMatchedAtSend = false,
     this.senderId,
     this.senderName,
+    this.mentions = const [],
   });
 
   final String id;
@@ -106,6 +108,7 @@ class Message {
   final bool isOutgoing;
   final String? senderId;
   final String? senderName;
+  final List<MessageMention> mentions;
 
   /// Exact authored text. This is always the primary bubble content and is
   /// never replaced by either interface- or learning-language output.
@@ -137,6 +140,7 @@ class Message {
   final bool languagesMatchedAtSend;
 
   Message copyWith({
+    List<MessageMention>? mentions,
     MessageStatus? status,
     String? originalText,
     String? translation,
@@ -153,6 +157,7 @@ class Message {
       isOutgoing: isOutgoing,
       senderId: senderId,
       senderName: senderName,
+      mentions: mentions ?? this.mentions,
       originalText: originalText ?? this.originalText,
       translation: translation ?? this.translation,
       tokens: tokens ?? this.tokens,
