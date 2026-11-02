@@ -104,10 +104,6 @@ class ChatHeader extends ConsumerWidget {
           child: ModeToggle(
             key: modeControlKey,
             enabled: !selectionActive && !practiceSetupRequired,
-            compact:
-                chat.isGroup &&
-                (MediaQuery.textScalerOf(context).scale(1) > 1.5 ||
-                    MediaQuery.sizeOf(context).width <= 340),
             chatId: chat.id,
             onBeforeToggle: onBeforeModeToggle,
             onModeChanged: onModeChanged,
@@ -166,46 +162,9 @@ class ChatHeaderFrame extends StatelessWidget {
   final VoidCallback onBack;
   @override
   Widget build(BuildContext context) {
-    if (group) {
-      return Material(
-        color: BlabColors.chatSurface,
-        child: SafeArea(
-          bottom: false,
-          child: Container(
-            key: const ValueKey('group-conversation-header'),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: BlabColors.chatDivider)),
-            ),
-            height: groupChatIdentityHeightFor(context),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 44,
-                  height: 48,
-                  child: BlabIconButton(
-                    tooltip: context.l10n.back,
-                    padding: EdgeInsets.zero,
-                    onPressed: onBack,
-                    icon: const BlabIcon(
-                      name: 'nav-arrow-left - 20',
-                      color: BlabColors.warmInk,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                Expanded(child: identity),
-                const SizedBox(width: 8),
-                modeControl,
-                SizedBox(width: 44, height: 48, child: menuButton),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
     final stacked = chatHeaderIsStacked(context);
     final back = SizedBox(
-      width: 44,
+      width: 48,
       height: 56,
       child: BlabIconButton(
         tooltip: context.l10n.back,
@@ -219,19 +178,23 @@ class ChatHeaderFrame extends StatelessWidget {
         splashRadius: 22,
       ),
     );
-    final menu = SizedBox(width: 44, height: 56, child: menuButton);
+    final menu = SizedBox(width: 48, height: 48, child: menuButton);
     final title = stacked
         ? Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: chatHeaderIdentityHeightFor(context),
+                height: (group
+                    ? groupChatIdentityHeightFor(context)
+                    : chatHeaderIdentityHeightFor(context)),
                 child: Row(
                   children: [
                     back,
                     Expanded(
                       child: SizedBox(
-                        height: chatHeaderIdentityHeightFor(context),
+                        height: (group
+                            ? groupChatIdentityHeightFor(context)
+                            : chatHeaderIdentityHeightFor(context)),
                         child: identity,
                       ),
                     ),
@@ -247,7 +210,9 @@ class ChatHeaderFrame extends StatelessWidget {
               back,
               Expanded(
                 child: SizedBox(
-                  height: chatHeaderIdentityHeightFor(context),
+                  height: (group
+                      ? groupChatIdentityHeightFor(context)
+                      : chatHeaderIdentityHeightFor(context)),
                   child: identity,
                 ),
               ),
@@ -257,15 +222,20 @@ class ChatHeaderFrame extends StatelessWidget {
             ],
           );
     return SizedBox(
+      key: group ? const ValueKey('group-conversation-header') : null,
       height:
-          MediaQuery.paddingOf(context).top + chatHeaderHeightFor(context) + 1,
+          MediaQuery.paddingOf(context).top +
+          chatHeaderHeightFor(context, group: group) +
+          1,
       child: BlabAppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 4,
-        toolbarHeight: chatHeaderHeightFor(context),
+        toolbarHeight: chatHeaderHeightFor(context, group: group),
         backgroundColor: BlabColors.chatSurface,
         shape: const Border(bottom: BorderSide(color: BlabColors.chatDivider)),
-        title: title,
+        // AppBar clamps title text by default; the approved header reflows
+        // instead of reducing the user-selected accessibility scale.
+        title: MediaQuery(data: MediaQuery.of(context), child: title),
       ),
     );
   }
@@ -291,20 +261,23 @@ class ChatHeaderIdentity extends StatelessWidget {
     borderRadius: BorderRadius.circular(8),
     child: Row(
       children: [
-        BlabAvatar(
-          name: name,
-          fill: group ? BlabColors.warmInk : null,
-          size: group ? 34 : 36,
-          fontSize: group ? 11 : 12,
-          shadows: group
-              ? const []
-              : const [
-                  BoxShadow(
-                    color: Color(0x21231208),
-                    offset: Offset(0, 2),
-                    blurRadius: 4,
-                  ),
-                ],
+        // Avatar artwork stays fixed-size in the approved large-text state.
+        MediaQuery.withNoTextScaling(
+          child: BlabAvatar(
+            name: name,
+            fill: group ? BlabColors.warmInk : null,
+            size: group ? 34 : 36,
+            fontSize: group ? 11 : 12,
+            shadows: group
+                ? const []
+                : const [
+                    BoxShadow(
+                      color: Color(0x21231208),
+                      offset: Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -349,7 +322,7 @@ class ChatHeaderIdentity extends StatelessWidget {
                       fontSize: 12,
                       height: 1.43,
                       letterSpacing: 0.25,
-                      color: BlabColors.brand,
+                      color: BlabColors.textMuted,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

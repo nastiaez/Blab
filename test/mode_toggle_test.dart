@@ -130,7 +130,7 @@ void main() {
         .getSize(find.byKey(const ValueKey('mode-toggle')))
         .width;
     expect(toggleWidth, greaterThanOrEqualTo(kPracticeModeToggleWidth));
-    expect(toggleWidth, lessThan(184));
+    expect(toggleWidth, closeTo(expectedContentWidth + 46, 0.1));
   });
 
   testWidgets('tapping the toggle switches mode and calls set()', (

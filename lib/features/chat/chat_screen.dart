@@ -82,6 +82,7 @@ import 'widgets/grammatical_form_note.dart';
 import '../../shared/state/profile_state.dart';
 import 'widgets/message_reaction_bar.dart';
 import 'widgets/mode_toggle.dart';
+import 'widgets/chat_mode_toggle.dart';
 import 'partner_profile_page.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
@@ -2208,8 +2209,7 @@ const double kChatHeaderHeight = 56;
 /// Let large translated mode labels reflow without clipping the native toolbar.
 bool chatHeaderIsStacked(BuildContext context) =>
     MediaQuery.textScalerOf(context).scale(1) > 1.5 ||
-    (MediaQuery.sizeOf(context).width <= 340 &&
-        Localizations.localeOf(context).languageCode == 'uk');
+    MediaQuery.sizeOf(context).width - chatModeControlWidth(context) < 210;
 
 double chatHeaderIdentityHeightFor(BuildContext context) {
   final scale = MediaQuery.textScalerOf(context);
@@ -2229,37 +2229,9 @@ double chatHeaderHeightFor(
   bool group = false,
   String name = '',
 }) {
-  if (group) {
-    return groupChatIdentityHeightFor(context, name: name);
-  }
-  if (!chatHeaderIsStacked(context)) return kChatHeaderHeight;
-  final scale = MediaQuery.textScalerOf(context);
-  final width = MediaQuery.sizeOf(context).width - 104;
-  double labelHeight(String label) {
-    final painter = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: const TextStyle(
-          fontSize: 12,
-          height: 1.2,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textDirection: Directionality.of(context),
-      textScaler: scale,
-    )..layout(maxWidth: width);
-    final height = painter.height;
-    painter.dispose();
-    return height;
-  }
-
-  return chatHeaderIdentityHeightFor(context) +
-      math.max(
-        48,
-        math.max(
-              labelHeight(context.l10n.normalMode),
-              labelHeight(context.l10n.practiceMode),
-            ) +
-            8,
-      );
+  final identityHeight = group
+      ? groupChatIdentityHeightFor(context, name: name)
+      : chatHeaderIdentityHeightFor(context);
+  if (!chatHeaderIsStacked(context)) return identityHeight;
+  return identityHeight + chatModeControlHeight(context);
 }

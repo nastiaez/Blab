@@ -1,3 +1,4 @@
+import 'helpers/material_test_fonts.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/widgets/selection/blab_language_chip.dart';
@@ -28,6 +29,7 @@ Widget _host(
   home: Scaffold(body: child),
 );
 void main() {
+  setUpAll(loadMaterialTestFonts);
   testWidgets('pressed toggle ink cannot paint outside the visible capsule', (
     tester,
   ) async {
@@ -67,9 +69,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 80));
     final during = await pixels();
     final width = boundary.size.width.toInt();
-    // The 44-high accessible target has five transparent pixels above/below
-    // the 34-high pill; pressed feedback must not reach either margin.
-    for (final y in [0, 1, 2, 3, 4, 39, 40, 41, 42, 43]) {
+    // The 48-high target retains six transparent pixels around the pill.
+    for (final y in [0, 1, 2, 3, 4, 5, 42, 43, 44, 45, 46, 47]) {
       final start = y * width * 4;
       expect(
         during.sublist(start, start + width * 4),

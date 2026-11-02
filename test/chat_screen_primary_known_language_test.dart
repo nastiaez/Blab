@@ -1,3 +1,5 @@
+import 'helpers/material_test_fonts.dart';
+import 'package:flutter/rendering.dart';
 import 'package:blab/shared/models/message_mention.dart';
 import 'package:blab/features/chat/mention_controller.dart';
 import 'package:blab/features/groups/group_info_screen.dart';
@@ -670,6 +672,7 @@ Future<void> runStationaryTranslationJourney(
 }
 
 void main() {
+  setUpAll(loadMaterialTestFonts);
   for (final locale in ['en', 'de', 'es', 'uk']) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('group layout narrow $locale scale$scale', (tester) async {
@@ -749,9 +752,9 @@ void main() {
         find.byKey(const ValueKey('mode-toggle')),
       );
       final titleRect = tester.getRect(find.text('Live group translation'));
-      expect(headerRect.height, 60);
-      expect(modeRect.center.dy, closeTo(headerRect.center.dy, 1));
-      expect(titleRect.bottom, greaterThan(modeRect.top));
+      expect(headerRect.height, 109);
+      expect(modeRect.top, greaterThan(titleRect.bottom));
+      expect(modeRect.right, lessThanOrEqualTo(headerRect.right));
       expect(
         find.byKey(const ValueKey('group-conversation-header')),
         findsOneWidget,
@@ -1545,9 +1548,9 @@ void main() {
     final nameRect = tester.getRect(name);
     final switchRect = tester.getRect(modeSwitch);
 
-    expect(avatarRect.left - backRect.right, 10);
+    expect(avatarRect.left - backRect.right, 12);
     expect(nameRect.left - avatarRect.right, 10);
-    expect(switchRect.left - nameRect.right, 10);
+    expect(switchRect.top, greaterThan(nameRect.bottom));
   });
 
   testWidgets('chat header avatar and name use the approved treatment', (
@@ -1587,10 +1590,14 @@ void main() {
     expect(name.style?.height, 1.2);
     expect(name.style?.fontWeight, FontWeight.w800);
     expect(name.style?.color, const Color(0xFF46281C));
+    // Real Roboto glyphs replace Ahem's square-glyph width assumption.
+    final nameText = find.text('Bob Local');
     expect(
-      tester.getSize(find.text('Bob Local')).width,
-      greaterThanOrEqualTo(79),
+      tester.renderObject<RenderParagraph>(nameText).didExceedMaxLines,
+      false,
     );
+    expect(name.maxLines, 1);
+    expect(name.overflow, TextOverflow.ellipsis);
     expect(find.text('ONLINE'), findsNothing);
   });
 
@@ -1647,7 +1654,7 @@ void main() {
       ),
     ];
     for (final row in menuRows) {
-      expect(tester.getSize(row).height, 52);
+      expect(tester.getSize(row).height, greaterThanOrEqualTo(52));
     }
 
     final arrows = tester
