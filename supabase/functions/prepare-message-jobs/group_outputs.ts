@@ -3,7 +3,7 @@ import {
   singleCallRequest,
 } from "../translate-message/single_call.ts";
 import type { TranslationResult } from "../translate-message/contract.ts";
-import { SINGLE_CALL_POLICY } from "../translate-message/rulebook.ts";
+import { MENTION_INTEGRITY_VERSION, SINGLE_CALL_POLICY } from "../translate-message/rulebook.ts";
 
 export const isGroupViewer = (v: PreparedViewer) =>
   (v.formContext as Record<string, unknown> | undefined)?.group === true;
@@ -15,6 +15,7 @@ export async function groupVariantKey(v: PreparedViewer): Promise<string> {
     source: v.sourceHash,
     mentions: v.mentions ?? [],
     contract: SINGLE_CALL_POLICY.contractVersion,
+    mentionIntegrity: MENTION_INTEGRITY_VERSION,
     author: f.messageAuthor === "viewer",
     request: singleCallRequest([v]),
   });

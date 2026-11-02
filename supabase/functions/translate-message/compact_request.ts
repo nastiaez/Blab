@@ -2,6 +2,7 @@ import { LANG_NAMES, TRANSLATION_RESPONSE_FORMAT } from "./contract.ts";
 import {
   COMPACT_TRANSLATION_RULES,
   GROUP_TRANSLATION_RULE,
+  SELECTED_MENTION_RULE,
   SINGLE_CALL_POLICY,
 } from "./rulebook.ts";
 import type { PreparedViewer } from "./single_call.ts";
@@ -151,7 +152,10 @@ function contextFor(v: PreparedViewer): Context {
   };
 }
 
-export function compactPlan(viewers: PreparedViewer[]) {
+export function compactPlan(
+  viewers: PreparedViewer[],
+  hasSelectedMentions = false,
+) {
   const contexts: Record<string, Context> = {};
   const contextKeys = new Map<string, string>();
   const sentences = new Map<string, Sentence>();
@@ -216,6 +220,7 @@ export function compactPlan(viewers: PreparedViewer[]) {
         {
           role: "system",
           content: COMPACT_TRANSLATION_RULES +
+            (hasSelectedMentions ? "\n" + SELECTED_MENTION_RULE : "") +
             (viewers.some((v) =>
                 (v.formContext as Record<string, unknown>)?.group === true
               )

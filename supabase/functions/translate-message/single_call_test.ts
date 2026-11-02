@@ -560,3 +560,83 @@ Deno.test("worker keeps valid viewer output when another requested sentence is a
     "valid viewer lost or additional model call made",
   );
 });
+
+Deno.test("incident replay rejects invented tags after one call for independently targeted viewers", async () => {
+  for (
+    const [source, translated] of [["Working ash", "Ich arbeite, @blab_."], [
+      "Was machst du",
+      "What are you doing @Aswin_Ranganathan?",
+    ]]
+  ) {
+    const first = { ...viewer, text: source };
+    const second = {
+      ...first,
+      key: "v1",
+      targetLang: "uk",
+      interfaceLang: "fr",
+    };
+    let calls = 0, rejected = false;
+    try {
+      await generateMessageOnce(
+        [first, second],
+        credential,
+        async (_url, init) => {
+          calls++;
+          const body = JSON.parse(String(init?.body));
+          assert(!body.messages[0].content.includes("Protected @blab_"));
+          return Response.json({
+            choices: [{
+              message: {
+                content: JSON.stringify(
+                  bundle([first, second], {
+                    v0: output(translated),
+                    v1: output("Привіт"),
+                  }),
+                ),
+              },
+            }],
+          });
+        },
+      );
+    } catch {
+      rejected = true;
+    }
+    assert(rejected, "invented handle cannot be persisted");
+    assert(calls === 1, "no extra model check or internal retry");
+  }
+});
+Deno.test("selected-mention instructions only accompany validated selected identities", async () => {
+  for (const selected of [false, true]) {
+    const v = {
+      ...viewer,
+      text: "Hi @Alex",
+      mentions: selected
+        ? [{
+          userId: "11111111-1111-4111-8111-111111111111",
+          label: "Alex",
+          start: 3,
+        }]
+        : [],
+    };
+    let checked = false;
+    const r = await generateMessageOnce([v], credential, async (_url, init) => {
+      const body = JSON.parse(String(init?.body));
+      assert(
+        body.messages[0].content.includes("Protected @blab_") === selected,
+      );
+      const source = JSON.parse(body.messages[1].content).message;
+      checked = true;
+      return Response.json({
+        choices: [{
+          message: {
+            content: JSON.stringify(
+              bundle([v], { v0: { ...output(source), interfaceText: source } }),
+            ),
+          },
+        }],
+      });
+    });
+    assert(checked);
+    assert(r.v0.translation === "Hi @Alex");
+  }
+});

@@ -74,23 +74,29 @@ export async function generateMessageOnce(
   singleCallRequest(viewers); // Validate batch before reading the first element.
   const originalSource = viewers[0].text;
   const protectedData = protectMentions(originalSource, viewers[0].mentions);
-  if (protectedData.mentions.length) viewers = viewers.map(v => ({...v, text: protectedData.text}));
-  const request = singleCallRequest(viewers);
+  if (protectedData.mentions.length) {
+    viewers = viewers.map((v) => ({ ...v, text: protectedData.text }));
+  }
+  const request =
+    compactPlan(viewers, protectedData.mentions.length > 0).request;
   const source = viewers[0].text;
   const unsupported = unsupportedSourceScript(originalSource);
   if (unsupported || isProtectedLiteralMessage(originalSource)) {
     return Object.fromEntries(
       viewers.map(
-        (v) => [v.key, restoreMentionResult({
-          mode: unsupported ? "translation" : "none",
-          sourceLang: unsupported ? "other" : v.targetLang,
-          translation: source,
-          interfaceText: source,
-          explanation: null,
-          confidence: null,
-          tokens: [],
-          formAlternatives: null,
-        }, protectedData)],
+        (v) => [
+          v.key,
+          restoreMentionResult({
+            mode: unsupported ? "translation" : "none",
+            sourceLang: unsupported ? "other" : v.targetLang,
+            translation: source,
+            interfaceText: source,
+            explanation: null,
+            confidence: null,
+            tokens: [],
+            formAlternatives: null,
+          }, protectedData),
+        ],
       ),
     ) as Record<string, TranslationResult>;
   }

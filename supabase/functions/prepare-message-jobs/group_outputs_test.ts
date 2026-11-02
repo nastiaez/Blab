@@ -247,3 +247,30 @@ Deno.test("large distinct-output groups continue without spending failure attemp
     "continuation regenerated accepted outputs",
   );
 });
+
+Deno.test("pending group artifacts bypass pre-integrity cache without changing completed history", async () => {
+  const v = viewer("v0");
+  const oldData = JSON.stringify({
+    message: v.messageId,
+    source: v.sourceHash,
+    mentions: [],
+    contract: "minimal-source-anchor-v11",
+    author: false,
+    request: singleCallRequest([v]),
+  });
+  const oldKey = [
+    ...new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(oldData)),
+    ),
+  ].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const rec = recorded();
+  const historical = output();
+  rec.cache.set(oldKey, historical);
+  await generateGroupOutputs([v], rec.hooks);
+  assert(
+    rec.requests.length === 1,
+    "old pending artifact must not bypass integrity",
+  );
+  assert(rec.cache.get(oldKey) === historical, "no historical deletion");
+  assert(await groupVariantKey(v) !== oldKey, "versioned artifact identity");
+});
