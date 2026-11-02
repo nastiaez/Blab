@@ -1,0 +1,19 @@
+{
+  "approval": "17234",
+  "runtime_commit": "b7c5983",
+  "functions": [
+    "translate-message",
+    "prepare-message-jobs"
+  ],
+  "environments": [
+    "staging",
+    "production"
+  ],
+  "source_files_matching_per_environment": 17,
+  "backend_tests_passed": 224,
+  "backend_integration_ci": "https://github.com/nastiaez/Blab/actions/runs/41459086414",
+  "live_staging_outputs": 8,
+  "production_historical_rows_unchanged": 50,
+  "app_distribution": false,
+  "saved_message_repairs": false
+}

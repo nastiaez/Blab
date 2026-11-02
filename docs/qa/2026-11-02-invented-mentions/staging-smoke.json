@@ -1,0 +1,83 @@
+{
+  "environment": "staging",
+  "cases": [
+    {
+      "source": "Working ash",
+      "outputs": [
+        {
+          "targetLang": "de",
+          "interfaceLang": "en",
+          "translation": "Ich arbeite, Ash.",
+          "interfaceText": "Working ash",
+          "mode": "translation"
+        },
+        {
+          "targetLang": "uk",
+          "interfaceLang": "fr",
+          "translation": "\u042f \u043f\u0440\u0430\u0446\u044e\u044e, Ash.",
+          "interfaceText": "Je travaille, Ash.",
+          "mode": "translation"
+        }
+      ]
+    },
+    {
+      "source": "Was machst du",
+      "outputs": [
+        {
+          "targetLang": "de",
+          "interfaceLang": "en",
+          "translation": "Was machst du",
+          "interfaceText": "What are you doing",
+          "mode": "none"
+        },
+        {
+          "targetLang": "uk",
+          "interfaceLang": "fr",
+          "translation": "\u0429\u043e \u0442\u0438 \u0440\u043e\u0431\u0438\u0448",
+          "interfaceText": "Qu'est-ce que tu fais",
+          "mode": "translation"
+        }
+      ]
+    },
+    {
+      "source": "Hello @Alex",
+      "outputs": [
+        {
+          "targetLang": "de",
+          "interfaceLang": "en",
+          "translation": "Hallo @Alex",
+          "interfaceText": "Hello @Alex",
+          "mode": "translation"
+        },
+        {
+          "targetLang": "uk",
+          "interfaceLang": "fr",
+          "translation": "\u041f\u0440\u0438\u0432\u0456\u0442 @Alex",
+          "interfaceText": "Salut @Alex",
+          "mode": "translation"
+        }
+      ]
+    },
+    {
+      "source": "Hello @aswinckr",
+      "outputs": [
+        {
+          "targetLang": "de",
+          "interfaceLang": "en",
+          "translation": "Hallo @aswinckr",
+          "interfaceText": "Hello @aswinckr",
+          "mode": "translation"
+        },
+        {
+          "targetLang": "uk",
+          "interfaceLang": "fr",
+          "translation": "\u041f\u0440\u0438\u0432\u0456\u0442 @aswinckr",
+          "interfaceText": "Salut @aswinckr",
+          "mode": "translation"
+        }
+      ]
+    }
+  ],
+  "cleanup": true,
+  "cleanup_errors": []
+}
