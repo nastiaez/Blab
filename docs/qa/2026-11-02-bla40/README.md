@@ -48,3 +48,6 @@ Linear Resources receipts:5d19f03f-0a96-4642-8750-b5f3c832d319 (menu PNG),7d2789
 - Both originally used existing AVDs preserved; no creation/reset/deletion.5586 released for another owner.5584 gracefully stopped after QA, leases released; no shared backend/Docker mutation. Temporary Android settings restored byte-for-byte; original packages retained.
 - Full suite generated six unrelated wordmark parity PNGs under docs/qa/2026-10-21-early-opening/parity (test/wordmark_render_parity_test.dart:62); retain as generated check artifacts, not part of BLA-40 product scope.
 - Linear is Testing, not Done/Implemented on test. Owner visual/journey review and iOS/live-client limits remain; no commit/push/merge/release approval implied.
+
+## Approval17374 and integration
+Nastia topic8856 message17374,2 November2026 17:06:30 Berlin: yes to exact question "approve it for commit and merge into main, while keeping release on hold?" Reviewed correction-chat.png, normal-incoming-huge-menu.png and review-scroll-9s.mp4. Supersedes historical review-wait text above for reviewed Android scope only. Feature commit191933a; current main remains ed2ac549 pending gates. Release explicitly held; no upload/distribution/notices/backend mutation/tester messaging. Platform and destination-load limitations unchanged.

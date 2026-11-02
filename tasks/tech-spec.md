@@ -1,6 +1,6 @@
 # Tech Spec: Blab
 
-> **BLA-40 ·2 November2026:** approved URL/menu contract and preserved report: [inline links](../docs/specs/2026-11-02-bla40-inline-links.md). Build authorized17281; candidate visual review pending. No commit/integration/release approval.
+> **BLA-40 ·2 November2026:** approved URL/menu contract and preserved report: [inline links](../docs/specs/2026-11-02-bla40-inline-links.md). Reviewed Android visuals/journey and commit/main integration approved17374; release explicitly held.
 
 > **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
 
