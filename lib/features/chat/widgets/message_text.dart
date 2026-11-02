@@ -1,3 +1,4 @@
+import 'message_link_text.dart';
 import '../../../shared/state/auth_state.dart';
 import 'mention_text.dart';
 import 'package:flutter/gestures.dart';
@@ -109,6 +110,42 @@ class _MessageTextState extends ConsumerState<MessageText> {
   @override
   Widget build(BuildContext context) {
     final tokens = messageTokensForText(widget.text, metadata: widget.tokens);
+    if (!widget.enableWordLookup && messageLinks(widget.text).isNotEmpty) {
+      final spans = <InlineSpan>[];
+      var plain = '';
+      for (final token in tokens) {
+        if (token.mentionUserId == null) {
+          plain += token.text;
+          continue;
+        }
+        if (plain.isNotEmpty) {
+          spans.add(TextSpan(text: plain));
+          plain = '';
+        }
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Semantics(
+              selected: token.mentionUserId == ref.watch(currentUserIdProvider),
+              child: Text(
+                token.text,
+                style: MentionColors.style(
+                  widget.style,
+                  outgoing: widget.isOutgoing,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+      if (plain.isNotEmpty) spans.add(TextSpan(text: plain));
+      return MessageLinkText(
+        style: widget.style,
+        isOutgoing: widget.isOutgoing,
+        spans: spans,
+      );
+    }
     if (tokens.isEmpty ||
         !tokens.any((t) => t.isContent || t.mentionUserId != null)) {
       return Text(widget.text, style: widget.style);

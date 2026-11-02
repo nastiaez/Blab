@@ -481,7 +481,14 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         clipBehavior: Clip.none,
         alignment: isOut ? Alignment.topRight : Alignment.topLeft,
         children: [
-          IntrinsicWidth(
+          _MessageContentWidth(
+            hasLinks:
+                messageLinks(presentation.primaryText).isNotEmpty ||
+                messageLinks(message.originalText).isNotEmpty ||
+                messageLinks(
+                  resolvedTranslation?.interfaceText ?? '',
+                ).isNotEmpty,
+            maxWidth: maxWidth,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,4 +675,19 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       ],
     );
   }
+}
+
+class _MessageContentWidth extends StatelessWidget {
+  const _MessageContentWidth({
+    required this.hasLinks,
+    required this.maxWidth,
+    required this.child,
+  });
+  final bool hasLinks;
+  final double maxWidth;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => hasLinks
+      ? SizedBox(width: maxWidth, child: child)
+      : IntrinsicWidth(child: child);
 }

@@ -1,0 +1,33 @@
+{
+  "base": "ed2ac549d287944613341491eaf700299aaf8a38",
+  "branch": "feat/bla40-links-20261102",
+  "revision": "uncommitted working tree",
+  "sourceDigest": "47083640f9e5978231551e5d41e6560d7bba9c3f13f2bac8778c517c37d7336d",
+  "appSourceDigest": "4a5e19c7ce68fc198e4b806147a0f2d9c89c4282804d18397c490baf1ac1c485",
+  "nativeProductFingerprintMatches": true,
+  "nativeProductFilesChecked": 47,
+  "testHarnessNote": "formatting only after native run; tested-harness.dart.txt retained",
+  "files": {
+    "integration_test/bla40_edges_native_test.dart": "74eb6256a52fef9369a7dfd3e82956c4d1c008a9be301fa62ee7868c95082c68",
+    "integration_test/bla40_links_native_test.dart": "6e2a9affaa10e8c5ef06e35616b36de18117a19e6f43236223d6468d34f2fafb",
+    "lib/features/chat/chat_screen.dart": "4c16391cc8aa5a7d1c1a28db3424d2de8a39c545e44dd1763a181e7b46d40cd9",
+    "lib/features/chat/widgets/grammatical_form_chooser.dart": "0c443eadc55e6c2bfc3693e4c77ff8e28fd5497017cd360860bee2c386e68d49",
+    "lib/features/chat/widgets/inline_correction_text.dart": "6392944a253f4e145ccc486794fbc219fa5de42949b568f5611f928bb056a5d6",
+    "lib/features/chat/widgets/mention_text.dart": "192a964cc62b9deeaeb061b08517133562cbb898703e2a18ba7ebd5d79e20133",
+    "lib/features/chat/widgets/message_bubble.dart": "130c584128752ca6a30f2a7a1f32f5c31432c0708a9da2dbe0dcd3c24b1f5453",
+    "lib/features/chat/widgets/message_interaction_target.dart": "02d0043ab473d3dd6e5eb0b0d1d14c82fbe5fa9c59d67a1676eec7f8836c00b5",
+    "lib/features/chat/widgets/message_learning_content.dart": "3aff17da6292514abcd811e8e2f1268114d2da842ecd83c1e65de798abc80ada",
+    "lib/features/chat/widgets/message_link_text.dart": "4c940817bdd89fbe9466d32d960d5b496aa84387dea075623f93f14cd0187c4a",
+    "lib/features/chat/widgets/message_text.dart": "9e5bce534981c655f5155ec0f0ff63bcbe91623f4732ea0b553208f8aecf4965",
+    "lib/l10n/app_de.arb": "0997f72e4a4de5b62f0cac066c1168d5ca17ddd693fbac0abfeaf80264343890",
+    "lib/l10n/app_en.arb": "22efdeeaeba3d316914c8edcc5ce311c89f54d98363284f0266db1b8af332963",
+    "lib/l10n/app_es.arb": "920d566cd0f51d17f4c36e291cfc4a621d32a163cef5dc7c41c937299f0b8fa6",
+    "lib/l10n/app_uk.arb": "f4062bdd99e955c6f3d36292bdaee4e28e8a3d75e5b5ed474cf64278876f3382",
+    "lib/l10n/generated/app_localizations.dart": "7a0715a2f7e5305c34a9f0ed64ef16d68561d1653db8d5ac2a8214de1a23035d",
+    "lib/l10n/generated/app_localizations_de.dart": "c1e4170bab15cb07a6fb4f1fba83d474170e6f64919aae7f17ff10540cc3e822",
+    "lib/l10n/generated/app_localizations_en.dart": "165dc3654cf6301889fc5eb81f4c9f0fff7973c016cbd24d29dfaf3fcb859e61",
+    "lib/l10n/generated/app_localizations_es.dart": "bc8f086d4e658f0998be8ebe1a2a826da1d9118123d3e4ce723aecf62fa10dbe",
+    "lib/l10n/generated/app_localizations_uk.dart": "078991aa4657e3bb129233a9c541c1c6d189fc4bb55dc4119f8bdb47d217ad8d",
+    "test/message_link_text_test.dart": "d75783e289a5235e518a822eced1ca3e3bae2aa6b77cf0eba2061e13f4d834f2"
+  }
+}

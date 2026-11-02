@@ -618,5 +618,8 @@
   "groupShareLinkSubtitle": "Link teilen",
   "groupClearSearch": "Suche löschen",
   "mentionSomeone": "Jemanden erwähnen",
-  "noMentionMatches": "Keine passenden Teilnehmer"
+  "noMentionMatches": "Keine passenden Teilnehmer",
+  "linkOpenBrowser": "Im Browser öffnen",
+  "linkCopy": "Link kopieren",
+  "linkActionFailed": "Dieser Link konnte nicht geöffnet oder kopiert werden."
 }

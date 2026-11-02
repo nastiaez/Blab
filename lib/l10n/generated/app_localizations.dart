@@ -3107,6 +3107,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching participants'**
   String get noMentionMatches;
+
+  /// No description provided for @linkOpenBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in browser'**
+  String get linkOpenBrowser;
+
+  /// No description provided for @linkCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get linkCopy;
+
+  /// No description provided for @linkActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open or copy this link.'**
+  String get linkActionFailed;
 }
 
 class _AppLocalizationsDelegate

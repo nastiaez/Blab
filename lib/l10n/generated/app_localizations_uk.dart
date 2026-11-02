@@ -1744,4 +1744,14 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get noMentionMatches => 'Учасників не знайдено';
+
+  @override
+  String get linkOpenBrowser => 'Відкрити в браузері';
+
+  @override
+  String get linkCopy => 'Копіювати посилання';
+
+  @override
+  String get linkActionFailed =>
+      'Не вдалося відкрити або скопіювати це посилання.';
 }

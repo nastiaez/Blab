@@ -1751,4 +1751,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get noMentionMatches => 'No hay participantes coincidentes';
+
+  @override
+  String get linkOpenBrowser => 'Abrir en el navegador';
+
+  @override
+  String get linkCopy => 'Copiar enlace';
+
+  @override
+  String get linkActionFailed => 'No se pudo abrir ni copiar este enlace.';
 }

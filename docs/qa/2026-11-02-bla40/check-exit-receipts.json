@@ -1,0 +1,13 @@
+{
+  "command": [
+    "flutter",
+    "test",
+    "--no-pub",
+    "--concurrency=2",
+    "--timeout=60s",
+    "--reporter",
+    "expanded"
+  ],
+  "cacheRecovery": "owned ignored build/test_cache renamed, preserved as build/test_cache-bla40-stalled; no shared SDK/device/backend mutation",
+  "exitCode": 0
+}

@@ -1,3 +1,4 @@
+import 'widgets/message_link_text.dart';
 import 'widgets/mention_picker_overlay.dart';
 import 'mention_controller.dart';
 import 'widgets/mention_picker.dart';

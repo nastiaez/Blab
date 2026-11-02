@@ -758,5 +758,8 @@
   "groupShareLinkSubtitle": "Share a link",
   "groupClearSearch": "Clear search",
   "mentionSomeone": "Mention someone",
-  "noMentionMatches": "No matching participants"
+  "noMentionMatches": "No matching participants",
+  "linkOpenBrowser": "Open in browser",
+  "linkCopy": "Copy link",
+  "linkActionFailed": "Couldn’t open or copy this link."
 }

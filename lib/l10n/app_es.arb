@@ -618,5 +618,8 @@
   "groupShareLinkSubtitle": "Compartir un enlace",
   "groupClearSearch": "Borrar búsqueda",
   "mentionSomeone": "Mencionar a alguien",
-  "noMentionMatches": "No hay participantes coincidentes"
+  "noMentionMatches": "No hay participantes coincidentes",
+  "linkOpenBrowser": "Abrir en el navegador",
+  "linkCopy": "Copiar enlace",
+  "linkActionFailed": "No se pudo abrir ni copiar este enlace."
 }

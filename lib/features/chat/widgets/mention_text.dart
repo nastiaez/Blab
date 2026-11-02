@@ -1,3 +1,4 @@
+import 'message_link_text.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/models/message_mention.dart';
 
@@ -36,7 +37,16 @@ class MentionText extends StatelessWidget {
       mentions.map((m) => m.toJson()).toList(),
       text,
     );
-    if (valid.isEmpty) return Text(text, style: style);
+    if (valid.isEmpty && messageLinks(text).isEmpty) {
+      return Text(text, style: style);
+    }
+    if (valid.isEmpty) {
+      return MessageLinkText(
+        spans: [TextSpan(text: text)],
+        style: style,
+        isOutgoing: isOutgoing,
+      );
+    }
     final spans = <InlineSpan>[];
     var cursor = 0;
     for (final mention in valid) {
@@ -63,6 +73,9 @@ class MentionText extends StatelessWidget {
       cursor = mention.end;
     }
     spans.add(TextSpan(text: text.substring(cursor)));
-    return Text.rich(TextSpan(style: style, children: spans));
+    if (messageLinks(text).isEmpty) {
+      return Text.rich(TextSpan(style: style, children: spans));
+    }
+    return MessageLinkText(spans: spans, style: style, isOutgoing: isOutgoing);
   }
 }

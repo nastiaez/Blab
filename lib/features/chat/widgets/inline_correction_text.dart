@@ -1,3 +1,4 @@
+import 'message_link_text.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
@@ -184,9 +185,11 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
     required this.popupTopInset,
     this.correctedTokens = const [],
     this.enableWordLookup = true,
+    this.isOutgoing = false,
   });
 
   final bool enableWordLookup;
+  final bool isOutgoing;
   final String originalText;
   final String correctedText;
   final TextStyle style;
@@ -306,6 +309,27 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       widget.originalText,
       widget.correctedText,
     );
+
+    if (!widget.enableWordLookup &&
+        (messageLinks(widget.correctedText).isNotEmpty ||
+            messageLinks(widget.originalText).isNotEmpty)) {
+      return MessageLinkText(
+        key: const ValueKey('inline-correction'),
+        style: widget.style,
+        isOutgoing: widget.isOutgoing,
+        spans: [
+          for (final segment in segments)
+            TextSpan(
+              text: segment.text,
+              style: segment.struck
+                  ? struckStyle
+                  : segment.corrected
+                  ? correctedStyle
+                  : widget.style,
+            ),
+        ],
+      );
+    }
     final metadataByWord = <String, List<MessageToken>>{};
     for (final token in messageTokensForText(
       widget.correctedText,

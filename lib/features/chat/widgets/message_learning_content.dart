@@ -237,6 +237,7 @@ class MessageLearningContent extends StatelessWidget {
           );
         }
         return GrammaticalFormAlternativesText(
+          isOutgoing: isOutgoing,
           alternatives: formChoices.first,
           alternativesList: formChoices,
           style: primaryStyle,
@@ -340,6 +341,7 @@ class MessageLearningContent extends StatelessWidget {
                   primaryStyle,
                 )
               : GrammaticalFormAlternativesText(
+                  isOutgoing: isOutgoing,
                   alternatives: formChoices.first,
                   alternativesList: formChoices,
                   style: primaryStyle,
@@ -350,6 +352,7 @@ class MessageLearningContent extends StatelessWidget {
         ? (() {
             final corrected = presentGenerated(value.translation, value.tokens);
             return InlineCorrectionText(
+              isOutgoing: isOutgoing,
               enableWordLookup: false,
               originalText: authoredText,
               correctedText: corrected.text,

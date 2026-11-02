@@ -618,5 +618,8 @@
   "groupShareLinkSubtitle": "Поділитися посиланням",
   "groupClearSearch": "Очистити пошук",
   "mentionSomeone": "Згадати когось",
-  "noMentionMatches": "Учасників не знайдено"
+  "noMentionMatches": "Учасників не знайдено",
+  "linkOpenBrowser": "Відкрити в браузері",
+  "linkCopy": "Копіювати посилання",
+  "linkActionFailed": "Не вдалося відкрити або скопіювати це посилання."
 }

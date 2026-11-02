@@ -1730,4 +1730,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noMentionMatches => 'No matching participants';
+
+  @override
+  String get linkOpenBrowser => 'Open in browser';
+
+  @override
+  String get linkCopy => 'Copy link';
+
+  @override
+  String get linkActionFailed => 'Couldn’t open or copy this link.';
 }

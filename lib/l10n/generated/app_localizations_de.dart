@@ -1757,4 +1757,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noMentionMatches => 'Keine passenden Teilnehmer';
+
+  @override
+  String get linkOpenBrowser => 'Im Browser öffnen';
+
+  @override
+  String get linkCopy => 'Link kopieren';
+
+  @override
+  String get linkActionFailed =>
+      'Dieser Link konnte nicht geöffnet oder kopiert werden.';
 }

@@ -1,5 +1,11 @@
 # Progress: Building Blab
 
+## BLA-40 · Inline links · [ ] ← in progress
+- Scope: [approved contract](../docs/specs/2026-11-02-bla40-inline-links.md), Normal/Practice URL rendering and separate anchored Open/Copy menu; no translation/cache/backend mutation.
+- Done when: actual native screenshot/motion journey reviewed and explicitly accepted, full target/scroll/gesture/layout checks retained with platform limits.
+- Status: reviewable uncommitted candidate from ed2ac549;1128 full client checks pass/17 skips,93 focused and224 pure backend pass; analysis/format/diff clean. Android8-case link matrix, native keyboard/draft, genuine German correction/different English comprehension, exact native clipboard including1209-character target and external Chrome handoff/Back pass. Browser webpage load/iOS/physical/live-provider/two-account unverified. Actual inspected screenshots/recordings and limitations: [QA](../docs/qa/2026-11-02-bla40/README.md). Owner visual/journey approval pending; no commit/push/merge/release.
+
+
 > **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
 
 > **Purpose:** a step-by-step build plan. Each step ends in something **runnable and testable** on an Android device or emulator. No step claims completion without a verifiable outcome.

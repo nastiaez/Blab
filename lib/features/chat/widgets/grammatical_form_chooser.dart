@@ -1,3 +1,4 @@
+import 'message_link_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
@@ -73,6 +74,7 @@ class GrammaticalFormAlternativesText extends StatelessWidget {
     this.alternativesList,
     this.onMarkerTap,
     this.activeIndex = 0,
+    this.isOutgoing = false,
   });
 
   final GrammaticalFormAlternatives alternatives;
@@ -80,6 +82,7 @@ class GrammaticalFormAlternativesText extends StatelessWidget {
   final List<GrammaticalFormAlternatives>? alternativesList;
   final ValueChanged<int>? onMarkerTap;
   final int activeIndex;
+  final bool isOutgoing;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +108,15 @@ class GrammaticalFormAlternativesText extends StatelessWidget {
       }
     }
     spans.add(TextSpan(text: first.after));
+    if (messageLinks(first.before).isNotEmpty ||
+        messageLinks(first.after).isNotEmpty) {
+      return MessageLinkText(
+        spans: spans,
+        style: style,
+        isOutgoing: isOutgoing,
+        placeholderSizes: [for (final _ in choices) const Size(47, 21)],
+      );
+    }
     return Text.rich(TextSpan(style: style, children: spans));
   }
 }
