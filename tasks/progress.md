@@ -1,5 +1,7 @@
 # Progress: Building Blab
 
+> **Names/tag retries17616 ·DELIVERED:** runtime04d2173 integrated; both hosted backends deployed/source+live verified; historical50 rows unchanged. Signed Android Blab-test50 distributed to unchanged13 testers, downloaded artifact hash verified, test/android notice50 active. Integrated native chooser/locale journey passes. Mixed-language explicitly deferred; no public-store/iOS release. Supersedes older name candidate/release-held statements below. [Final receipt](../docs/qa/2026-11-02-name-conflicts/RELEASE-17582.md).
+
 > **Scope17575:** mixed-language bug explicitly deferred as separate work, no longer a name/tag release blocker. Name candidate still awaits owner review/live verification; no merge/deployment/release authorized by this status question.
 
 > **Continuation17542 ·review ready, release held:** fresh current-main candidate at ../blab-name-choice-17542; full1204pass/17skip, backend228pass, focused22pass, analysis/format/diff clean. Native own/partner chooser-select-Change-clear journey and en/de/es/uk100/200% chooser checks passed;18 screenshots inspected, four screenshots/video delivered17560–17564. Existing chooser labels localized and long choices wrap. Mixed-language negation still fails across40 diagnostic model calls; no experimental policy adopted. Docker unavailable; live two-account/SQL gates and owner review remain open. No commit/merge/deploy. [Evidence](../docs/qa/2026-11-02-name-conflicts/CONTINUATION-17542.md).
