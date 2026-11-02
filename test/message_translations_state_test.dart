@@ -515,6 +515,10 @@ void main() {
   test('automatic retry leaves permanent failures untouched', () async {
     const permanentReasons = [
       'preparation_failed',
+      'unknown_mention_handle',
+      'mention_identity_lost',
+      'mention_identity_duplicated',
+      'authored_handle_changed',
       'translation_pending',
       'invalid_message_id',
       'translation_not_allowed',

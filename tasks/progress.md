@@ -1,10 +1,23 @@
 # Progress: Building Blab
 
+> **Scope17575:** mixed-language bug explicitly deferred as separate work, no longer a name/tag release blocker. Name candidate still awaits owner review/live verification; no merge/deployment/release authorized by this status question.
+
+> **Continuation17542 ·review ready, release held:** fresh current-main candidate at ../blab-name-choice-17542; full1204pass/17skip, backend228pass, focused22pass, analysis/format/diff clean. Native own/partner chooser-select-Change-clear journey and en/de/es/uk100/200% chooser checks passed;18 screenshots inspected, four screenshots/video delivered17560–17564. Existing chooser labels localized and long choices wrap. Mixed-language negation still fails across40 diagnostic model calls; no experimental policy adopted. Docker unavailable; live two-account/SQL gates and owner review remain open. No commit/merge/deploy. [Evidence](../docs/qa/2026-11-02-name-conflicts/CONTINUATION-17542.md).
+
 ## BLA-40 · Inline links · [ ] ← in progress
 - Scope: [approved contract](../docs/specs/2026-11-02-bla40-inline-links.md), Normal/Practice URL rendering and separate anchored Open/Copy menu; no translation/cache/backend mutation.
 - Done when: actual native screenshot/motion journey reviewed and explicitly accepted, full target/scroll/gesture/layout checks retained with platform limits.
 - Status: approved candidate committed191933a from ed2ac549;1128 full client checks pass/17 skips,93 focused and224 pure backend pass; analysis/format/diff clean. Android8-case link matrix, native keyboard/draft, genuine German correction/different English comprehension, exact native clipboard including1209-character target and external Chrome handoff/Back pass. Browser webpage load/iOS/physical/live-provider/two-account unverified. Actual inspected screenshots/recordings and limitations: [QA](../docs/qa/2026-11-02-bla40/README.md). Visual/journey and commit/main integration approved17374. Integration gates/native recheck pending; release explicitly held.
 
+> **Implementation17414 ·review candidate:** profile-name metadata removed; existing form chooser offered when no preference is saved, saved choices retained.228 backend/48 focused Flutter checks pass; analysis clean. Full suite stalled653pass/17skip, not complete. Test preview prepared; native/owner acceptance and mixed-language quality pending. No commit/merge/deploy. [Evidence](../docs/qa/2026-11-02-name-conflicts/IMPLEMENTATION-17414.md).
+
+> **Registered direction17409:** remove extra profile-name input, retain authored names and both grammatical alternatives, ask for grammatical form instead of name-derived guessing. Model test evidence recorded; asking/saved-choice journey and mixed-language diagnosis remain pending. Documentation only, nothing live changed. [Decision](../docs/qa/2026-11-02-name-conflicts/DECISION-17409.md).
+
+> **Profile-name removal17399 ·2 November2026:**48 isolated calls, unchanged prompt. Case-insensitive name preservation10/10 vs baseline6/10; tags6/6. Both forms/roles6/6 but name-derived suggestions2/6; mixed-language candidate0/2. Promising, not release-ready; no runtime/live changes. [Evidence](../docs/qa/2026-11-02-name-conflicts/NO-PROFILE-NAMES-17399.md).
+
+> **Name separation17379 ·2 November2026:**48 live calls; separate grammatical-name field rejected. Corrected case-insensitive scoring per17394: baseline6/10,candidate8/10; candidate tags6/6 and forms5/6. No runtime/live changes. [Evidence](../docs/qa/2026-11-02-name-conflicts/SEPARATED-17379.md).
+
+> **Name conflict17358 ·2 November2026:** isolated prompt replacement tested against current main;40 live model calls. Names still changed; candidate rejected, no runtime/hosted change.12/12 tag cases preserved handles, not app-rendering proof. [Evidence](../docs/qa/2026-11-02-name-conflicts/README.md).
 
 > **BLA-17 approval16778 ·29 October2026:** corrected native implementation clip accepted; scoped current-main reconciliation, commit and integration authorized after verification. Message/text tap opens separate matching-cream anchored functions/reactions; composer retained, scrolling finite and panels fixed in stable viewport. Writing-field tap immediately deselects/closes both panels without changing native keyboard/draft behavior; Edit remains separate. Newer mention identity/styling/picker-overlay behavior must survive. Distribution/uploads/notices/tester sends remain held. Tiny/top fallback, universal readability and async lifecycle are not inferred approved. Evidence: [integration QA](../docs/qa/2026-10-29-bla17-integration/README.md).
 
@@ -2422,3 +2435,5 @@ Combined owner verified all4 applicable update-notice rows43→45, destinations/
 
 ## Invented mentions ·17217/17234 ·2 November2026 ·backend delivered
 Explicit approval17234: conflict review passed, b7c5983 committed/merged/pushed to main, exact translate-message + prepare-message-jobs deployed to staging then production. 224 backend tests and clean integration CI41459086414 pass. Live staging 4-message/two-viewer matrix (8 outputs) plus stable repeat cache reads passes; temporary fixtures removed. Both deployment manifests pass; 17 downloaded source files per environment match. Production50 sampled historical rows unchanged and both unauthorized endpoints401. No schema/client release, historical repair or manual-device checkbox. Evidence: docs/qa/2026-11-02-invented-mentions/README.md.
+
+- 2026-11-02 ·17542 — Continued explicit-form/name-fidelity candidate from current main, completed full and Android fixture verification, repaired chooser locale labels/wrapping, delivered review packet; mixed-language quality and live backend remain blocked. No completion checkbox inferred.

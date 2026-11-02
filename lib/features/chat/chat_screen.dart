@@ -79,6 +79,7 @@ import 'widgets/message_action_row.dart';
 import 'widgets/message_interaction_target.dart';
 import 'widgets/message_learning_content.dart';
 import 'widgets/grammatical_form_note.dart';
+import 'widgets/grammatical_form_chooser.dart';
 import '../../shared/state/profile_state.dart';
 import 'widgets/message_reaction_bar.dart';
 import 'widgets/mode_toggle.dart';

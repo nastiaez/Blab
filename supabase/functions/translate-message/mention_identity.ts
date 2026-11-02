@@ -168,3 +168,15 @@ export function restoreMentionResult<T>(
   }
   return output as T;
 }
+
+// Explicit codes only: unrelated transport/format failures keep their retry policy.
+export function isMentionIntegrityFailure(error: unknown): boolean {
+  const reason = error instanceof Error ? error.message : error;
+  return typeof reason === "string" && [
+    "mention_identity_duplicated",
+    "unknown_mention_handle",
+    "authored_handle_changed",
+    "mention_identity_lost",
+    "split_mention_handle",
+  ].includes(reason);
+}

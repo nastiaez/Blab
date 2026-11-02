@@ -1,3 +1,4 @@
+import { isMentionIntegrityFailure } from "../translate-message/mention_identity.ts";
 import { commitGroupViewers, commitViewers } from "./commit_viewers.ts";
 import {
   generateMessageOnce,
@@ -6,7 +7,11 @@ import {
 import { providerCredentials } from "../translate-message/contract.ts";
 import { SINGLE_CALL_POLICY } from "../translate-message/rulebook.ts";
 import { planJobOutcome } from "./contract.ts";
-import { generateGroupOutputs, isGroupViewer } from "./group_outputs.ts";
+import {
+  generateGroupOutputs,
+  groupVariantKey,
+  isGroupViewer,
+} from "./group_outputs.ts";
 import type { TranslationResult } from "../translate-message/contract.ts";
 export type LeasedJob = {
   id: string;
@@ -22,9 +27,19 @@ type Admin = {
   ) => PromiseLike<{ data: unknown; error: unknown }>;
 };
 
-export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
+type Generator = (
+  viewers: PreparedViewer[],
+  onFailure: (viewer: PreparedViewer, error: unknown) => void,
+) => Promise<Record<string, TranslationResult>>;
+export async function runMessageBatch(
+  admin: Admin,
+  jobs: LeasedJob[],
+  generateOverride?: Generator,
+) {
   const pending: Array<{ job: LeasedJob; viewer: PreparedViewer }> = [];
   const backoff = { untilMs: 0 };
+  const integrityFailures = new Map<string, string>();
+  const failedVariants = new Map<string, string>();
   try {
     const prepared = await admin.rpc("prepare_translation_viewers", {
       p_leases: jobs.map((job) => ({ id: job.id, lease: job.lease_token })),
@@ -73,17 +88,39 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
     const viewers = pending.map((p) => p.viewer);
     const deferred = new Set<string>();
     const generate = async (vs: PreparedViewer[]) => {
-      const credential = providerCredentials({
-        openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
-        openAiKey: Deno.env.get("OPENAI_API_KEY"),
-        openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
-        openAiModel: Deno.env.get("OPENAI_MODEL"),
-        environment: Deno.env.get("BLAB_ENV"),
-        openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
-      })[0];
-      if (!credential) throw new Error("missing_provider_key");
-      credential.backoff = backoff;
-      return await generateMessageOnce(vs, credential, undefined, true);
+      const onFailure = (v: PreparedViewer, error: unknown) => {
+        if (isMentionIntegrityFailure(error)) {
+          integrityFailures.set(v.key, (error as Error).message);
+        }
+      };
+      const run = async () => {
+        if (generateOverride) return await generateOverride(vs, onFailure);
+        const credential = providerCredentials({
+          openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
+          openAiKey: Deno.env.get("OPENAI_API_KEY"),
+          openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
+          openAiModel: Deno.env.get("OPENAI_MODEL"),
+          environment: Deno.env.get("BLAB_ENV"),
+          openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
+        })[0];
+        if (!credential) throw new Error("missing_provider_key");
+        credential.backoff = backoff;
+        return await generateMessageOnce(
+          vs,
+          credential,
+          undefined,
+          true,
+          onFailure,
+        );
+      };
+      const generated = await run();
+      for (const v of vs) {
+        const reason = integrityFailures.get(v.key);
+        if (reason && isGroupViewer(v)) {
+          failedVariants.set(await groupVariantKey(v), reason);
+        }
+      }
+      return generated;
     };
     const artifact = async (
       v: PreparedViewer,
@@ -128,10 +165,30 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
         },
       })
       : await generate(viewers);
+    // Propagate representative failure to every viewer of that exact group contract.
+    for (const { job, viewer } of pending) {
+      const reason = integrityFailures.get(viewer.key) ??
+        (isGroupViewer(viewer)
+          ? failedVariants.get(await groupVariantKey(viewer))
+          : undefined);
+      if (!reason) continue;
+      integrityFailures.set(viewer.key, reason);
+      const finished = await admin.rpc("leased_translation_action", {
+        p_job_id: job.id,
+        p_lease_token: job.lease_token,
+        p_action: "finish",
+        p_payload: { outcome: "failed", reason, delaySeconds: 0 },
+      });
+      if (finished.error || finished.data !== true) {
+        throw new Error("integrity_finish_failed");
+      }
+    }
     const completions =
       await (viewers.every(isGroupViewer) ? commitGroupViewers : commitViewers)(
         admin.rpc.bind(admin),
-        pending.filter((p) => !deferred.has(p.viewer.key)).map((
+        pending.filter((p) =>
+          !deferred.has(p.viewer.key) && !integrityFailures.has(p.viewer.key)
+        ).map((
           { job, viewer },
         ) => ({
           jobId: job.id,
@@ -167,7 +224,8 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
       messageId: jobs[0].message_id,
       viewers: pending.length,
       ready: completions.filter((c) => !c.error).length,
-      failed: completions.filter((c) => c.error).length,
+      failed: completions.filter((c) => c.error).length +
+        integrityFailures.size,
     });
   } catch (e) {
     const reason = e instanceof Error && /^[a-zA-Z0-9_]+$/.test(e.message)
@@ -176,8 +234,18 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
     // Only the durable worker schedules bounded retries, never a second request
     // while a successful attempt is in flight. Fencing protects late workers.
     for (const job of jobs) {
+      const viewer = pending.find((p) => p.job.id === job.id)?.viewer;
+      const failure = viewer
+        ? integrityFailures.get(viewer.key) ??
+          (isGroupViewer(viewer)
+            ? failedVariants.get(await groupVariantKey(viewer))
+            : undefined)
+        : undefined;
+      const jobReason = failure ?? reason;
       const outcome = planJobOutcome({
-        status: /^provider_http_\d{3}$/.test(reason)
+        status: isMentionIntegrityFailure(jobReason)
+          ? 422
+          : /^provider_http_\d{3}$/.test(reason)
           ? Number(reason.slice(-3))
           : 503,
         retryAfterSeconds: Math.max(0, (backoff.untilMs - Date.now()) / 1000),
@@ -189,7 +257,7 @@ export async function runMessageBatch(admin: Admin, jobs: LeasedJob[]) {
         p_action: "finish",
         p_payload: {
           outcome: outcome.kind,
-          reason,
+          reason: jobReason,
           delaySeconds: outcome.kind === "retry" ? outcome.delaySeconds : 0,
         },
       });

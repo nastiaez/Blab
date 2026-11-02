@@ -160,7 +160,7 @@ export function providerMessages({
 }): Array<{ role: "system" | "user"; content: string }> {
   const contextText = context.length === 0
     ? ""
-    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, dates, times, and the referent of short corrections or contrasts. Use the supplied participant names only for a provisional grammatical-form suggestion; never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
+    : `\n\nRecent chat context, oldest to newest. For a genuinely ambiguous short current utterance, use recent messages from the same sender to resolve its source language. Otherwise use context only to resolve omitted subjects, explicit pronouns/gender metadata, family references, dates, times, and the referent of short corrections or contrasts. Never change which person the sentence describes based on a name. Do not translate this context block; translate only the current user message.\n${
       context
         .map((entry) =>
           `${entry.speaker}${
@@ -211,7 +211,7 @@ export function focusedTranslationRetryMessages({
   const interfaceName = LANG_NAMES[interfaceLang] ?? interfaceLang;
   const participants = formContext === undefined
     ? ""
-    : ` Participants: viewer=${formContext.viewerName}; partner=${formContext.partnerName}; current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}.`;
+    : ` Participants: viewer and partner; current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}.`;
   return [{
     role: "system",
     content:
@@ -852,7 +852,8 @@ function validatedCompleteTokens(
       const glossWords = gloss.match(/[\p{L}\p{M}\p{N}'’]+/gu) ?? [];
       if (
         token.text.trim().length === 0 || /\s/u.test(token.text.trim()) ||
-        glossWords.length < 1 || (!allowExplanatoryGloss && glossWords.length > 3)
+        glossWords.length < 1 ||
+        (!allowExplanatoryGloss && glossWords.length > 3)
       ) return null;
       const hasNonLatinLetter = Array.from(token.text).some((character) =>
         /\p{L}/u.test(character) && !/\p{Script=Latin}/u.test(character)
@@ -1155,17 +1156,13 @@ export function formAuditSystemPrompt(
   return `You verify grammatical agreement in one translated chat message.
 The source language is ${sourceName} (${sourceLang}); the target is ${targetName} (${targetLang}).
 The interface language is ${interfaceName} (${interfaceLang}).
-Viewer name: ${formContext.viewerName}. Partner name: ${formContext.partnerName}.
+Participants: viewer and partner.
 The current message author is the ${formContext.messageAuthor}. In direct first/second-person speech, “I” refers to ${
-    formContext.messageAuthor === "viewer"
-      ? formContext.viewerName
-      : formContext.partnerName
+    formContext.messageAuthor === "viewer" ? "viewer" : "partner"
   }; “you” refers to ${
-    formContext.messageAuthor === "viewer"
-      ? formContext.partnerName
-      : formContext.viewerName
+    formContext.messageAuthor === "viewer" ? "partner" : "viewer"
   }. Determine the subject before suggesting a form. Never label an incoming “you” sentence as the sender’s form.
-Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Agreement with an object, grammatical noun class, clock hour, date, number, or abstract concept is NOT participant gender: requiresChoice=false. For example Ukrainian Не дев’ята about a meeting hour agrees with the implied hour, never with the author; do not offer Не дев’ятий based on the author’s name. Use the independently resolved source meaning supplied with the request to establish the referent before deciding. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. For suggestedForm use the affected person’s supplied name; when unclear use feminine. For example, Alice suggests feminine, Bob suggests masculine, and an ambiguous Alex defaults to feminine. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
+Decide whether the shortest complete natural target-language sentence changes between feminine and masculine for the viewer or partner. Agreement with an object, grammatical noun class, clock hour, date, number, or abstract concept is NOT participant gender: requiresChoice=false. For example Ukrainian Не дев’ята about a meeting hour agrees with the implied hour, never with the author; do not offer Не дев’ятий based on the author’s name. Use the independently resolved source meaning supplied with the request to establish the referent before deciding. Check verbs, adjectives, participles, pronouns, agreement, and gendered person nouns together. Do not treat masculine as a generic default. Do not avoid a real choice with an awkward neutral rewrite. Set suggestedForm to feminine as the provisional base, never a name-derived guess. Saved preferences are private client state and must not affect this shared result. Do not change the sentence to avoid a form choice and do not infer from topic or writing style.
 
 ${PARTICIPANT_FORM_RELEVANCE_RULE}
 Return strict JSON only: {"requiresChoice":true|false,"subjectIsViewer":true|false|null,"before":"shared prefix"|null,"feminine":"shortest complete feminine fragment"|null,"masculine":"shortest complete masculine fragment"|null,"after":"shared suffix"|null,"suggestedForm":"feminine"|"masculine"|null,"feminineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null,"masculineTokens":[{"text":"segment","gloss":"1-3 word ${interfaceName} gloss","roman":"Latin transliteration","isContent":true}]|null}.
@@ -1925,7 +1922,7 @@ export function systemPrompt(
 
   const formInstruction = formContext === undefined
     ? "No participant grammatical-form data is available."
-    : `Participants: viewer=${formContext.viewerName}; partner=${formContext.partnerName}; current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}. For a direct first/second-person message, "I" normally refers to the author and "you" to the other participant. Saved grammatical-form choices are applied privately by the client and must not be inferred or encoded in this shared translation.`;
+    : `Participants: viewer and partner; current message author=${formContext.messageAuthor}; chat tone=${formContext.tone}. For a direct first/second-person message, "I" normally refers to the author and "you" to the other participant. Saved grammatical-form choices are applied privately by the client and must not be inferred or encoded in this shared translation.`;
   const authorLanguageHint = formContext?.authorPrimaryKnownLanguage == null
     ? ""
     : ` The author's primary known language is ${

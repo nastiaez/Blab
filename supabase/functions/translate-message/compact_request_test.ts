@@ -81,7 +81,7 @@ Deno.test("four distinct languages share one message, stable schema and compact 
   );
   const data = JSON.parse(p.request.messages[1].content);
   assert(
-    data.sender === "Alice" && data.recipient === "Bob" &&
+    !("sender" in data) && !("recipient" in data) &&
       data.message === viewers[0].text,
   );
   assert(!("contexts" in data) && !("viewers" in data));
@@ -326,4 +326,72 @@ Deno.test("reuse complete matching form tokens instead of rejecting omitted dupl
   assert(expandCompactResponse(raw, vs, p).v0.tokens[0].text === "cansada");
   raw.help[0].feminineTokens = [{ ...tokens[0], text: "unrelated" }];
   assert(expandCompactResponse(raw, vs, p).v0.tokens.length === 0);
+});
+
+Deno.test("profile names stay local while authored names and distinct viewer settings survive", () => {
+  const original = viewers.map((v) => ({
+    ...v,
+    text: "Hi ashwin, ask @Alex.",
+  }));
+  const renamed = original.map((v) => ({
+    ...v,
+    formContext: {
+      ...v.formContext as object,
+      viewerName: v.key === "v0" ? "Nastia" : "Aswin Ranganathan",
+      partnerName: v.key === "v0" ? "Aswin Ranganathan" : "Nastia",
+    },
+  }));
+  const a = compactPlan(original), b = compactPlan(renamed);
+  assert(
+    JSON.stringify(a.request) === JSON.stringify(b.request),
+    "account names must not affect generation",
+  );
+  assert(
+    JSON.parse(a.request.messages[1].content).message === original[0].text,
+  );
+  assert(
+    a.requested.sentences.length === 4,
+    "independent language preferences retained",
+  );
+});
+Deno.test("group context uses stable anonymous authors without changing authored text", () => {
+  const plan = compactPlan([{
+    ...viewers[0],
+    formContext: { ...viewers[0].formContext as object, group: true },
+    context: [
+      {
+        speaker: "partner",
+        speakerName: "Carol Fullname",
+        text: "Ask Carol tomorrow.",
+      },
+      { speaker: "partner", speakerName: "Bob Fullname", text: "Not today." },
+      { speaker: "partner", speakerName: "Carol Fullname", text: "Yes." },
+    ],
+  }]);
+  const data = JSON.parse(plan.request.messages[1].content);
+  const lines = data.contexts.c0.previous;
+  assert(
+    lines[0].sender === lines[2].sender && lines[0].sender !== lines[1].sender,
+  );
+  assert(lines[0].message === "Ask Carol tomorrow.");
+  assert(!JSON.stringify(data).includes("Fullname"));
+});
+
+Deno.test("group current author stays identifiable without their profile name", () => {
+  const p = compactPlan([{
+    ...viewers[0],
+    formContext: { ...viewers[0].formContext as object, group: true },
+    context: [{
+      speaker: "viewer",
+      speakerName: "Alice",
+      text: "Earlier statement.",
+    }, { speaker: "partner", speakerName: "Bob", text: "A reply." }],
+  }]);
+  const data = JSON.parse(p.request.messages[1].content);
+  assert(data.contexts.c0.previous[0].sender === "sender");
+  assert(data.contexts.c0.previous[1].sender !== "sender");
+  assert(
+    !JSON.stringify(data).includes("Alice") &&
+      !JSON.stringify(data).includes("Bob"),
+  );
 });

@@ -70,6 +70,7 @@ export async function generateMessageOnce(
   credential: ProviderCredential,
   fetchImpl?: FetchLike,
   allowPartial = false,
+  onViewerFailure?: (viewer: PreparedViewer, error: unknown) => void,
 ): Promise<Record<string, TranslationResult>> {
   singleCallRequest(viewers); // Validate batch before reading the first element.
   const originalSource = viewers[0].text;
@@ -244,6 +245,7 @@ export async function generateMessageOnce(
       results[v.key] = restoreMentionResult(r, protectedData);
     } catch (error) {
       if (!allowPartial) throw error;
+      onViewerFailure?.(v, error);
       // Invalid optional/per-viewer output cannot discard other usable sentences.
     }
   }

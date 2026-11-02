@@ -1072,3 +1072,8 @@ conflict or intervening main changes. All reviewed source hashes match the final
 V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
 only final V16 native acceptance and its QA entry are promoted. Manual physical
 phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+
+### Name fidelity / grammatical choice direction · owner17409 ·2 November2026
+
+Correct authored names take priority over profile-name-based form hints. Remove extra profile-name metadata from sentence translation, not names written in messages or displayed in the app. Capitalization alone is acceptable; spelling substitutions, surname expansions and invented mentions are not. Preserve both natural grammatical alternatives when needed, stop guessing the initial form from a profile name, and ask the user for the applicable form. Asking/remembering interaction must be reconciled with existing private saved choices before UI implementation; no repeated prompt or preference reset assumed. This direction supersedes name-derived suggestion requirements for this proposed change, not yet the deployed behavior. [Registered decision and bounded evidence](../docs/qa/2026-11-02-name-conflicts/DECISION-17409.md). Mixed-language quality remains open; no runtime deployment or visual approval implied.

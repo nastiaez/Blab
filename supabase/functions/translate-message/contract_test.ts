@@ -694,7 +694,7 @@ Deno.test("focused retry keeps its resolved source when provider parrots target"
   assert(result!.mode === "translation", "the target rendering is retained");
 });
 
-Deno.test("provider keeps private forms out while suggesting by name", () => {
+Deno.test("provider keeps private forms and profile names out", () => {
   const formContext = {
     viewerName: "Alice",
     partnerName: "Bob",
@@ -718,8 +718,8 @@ Deno.test("provider keeps private forms out while suggesting by name", () => {
     "private saved forms must not appear in the shared prompt",
   );
   assert(
-    prompt.includes("use feminine if the name is ambiguous"),
-    "ambiguous names use feminine",
+    prompt.includes("Do not infer grammatical form from names"),
+    "no name-derived guesses",
   );
   assert(
     prompt.includes("Do not replace them with an awkward neutral rewrite"),
@@ -1063,8 +1063,8 @@ Deno.test("focused audit prompt localizes word metadata", () => {
     "the audit receives the interface language for localized glosses",
   );
   assert(
-    prompt.includes("Alice") && prompt.includes("Bob"),
-    "the audit receives both participant names",
+    !prompt.includes("Alice") && !prompt.includes("Bob"),
+    "the audit uses participant roles without profile names",
   );
 });
 
@@ -1415,7 +1415,7 @@ Deno.test("prompt preserves supplied conversation tone", () => {
 Deno.test("interface repair reuses provisional form and address rules", () => {
   const prompt = interfaceRepairSystemPrompt("de", "uk");
   assert(
-    prompt.includes("use feminine if the name is ambiguous"),
+    prompt.includes("Do not infer grammatical form from names"),
     "same fallback rule",
   );
   assert(prompt.includes("Preserve authored formality"), "same address rule");

@@ -583,14 +583,25 @@ class _BubbleState extends ConsumerState<MessageBubble> {
                     formAlternatives != null &&
                     resolvedForm != null &&
                     (formLedger?.hasNote(resolutionKey) ?? false))
-                  GrammaticalFormNote(
-                    form: resolvedForm,
-                    person: formAlternatives.subjectName,
-                    subjectIsViewer: formAlternatives.subjectIsViewer,
-                    onChange: () => context.push(
-                      '/chat/$chatId/translation-preferences?name=${Uri.encodeComponent(widget.partnerName)}&subject=${formAlternatives.subjectIsViewer ? 'viewer' : 'partner'}',
+                  if (persistedForm == null && formPreferences.asData != null)
+                    GrammaticalFormChooser(
+                      alternatives: formAlternatives,
+                      onSelected: (form) =>
+                          ref.read(saveGrammaticalFormProvider)(
+                            subjectIsViewer: formAlternatives.subjectIsViewer,
+                            form: form,
+                            chatId: chatId,
+                          ),
+                    )
+                  else
+                    GrammaticalFormNote(
+                      form: resolvedForm,
+                      person: formAlternatives.subjectName,
+                      subjectIsViewer: formAlternatives.subjectIsViewer,
+                      onChange: () => context.push(
+                        '/chat/$chatId/translation-preferences?name=${Uri.encodeComponent(widget.partnerName)}&subject=${formAlternatives.subjectIsViewer ? 'viewer' : 'partner'}',
+                      ),
                     ),
-                  ),
               ],
             ),
           ),

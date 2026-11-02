@@ -110,16 +110,26 @@ function contextFor(v: PreparedViewer): Context {
   const eligible = raw.slice(-SINGLE_CALL_POLICY.contextMessages).filter((x) =>
     x && typeof x.text === "string" && ["viewer", "partner"].includes(x.speaker)
   );
+  const groupSpeakers = [
+    ...new Set(
+      eligible.map((x) => x.speakerName).filter((x) => typeof x === "string"),
+    ),
+  ];
+  const speakerLabel = (entry: any) =>
+    f.group === true && typeof entry.speakerName === "string"
+      ? entry.speakerName ===
+          (f.messageAuthor === "partner" ? f.partnerName : f.viewerName)
+        ? "sender"
+        : `speaker_${groupSpeakers.indexOf(entry.speakerName)}`
+      : entry.speaker === f.messageAuthor
+      ? "sender"
+      : "recipient";
   const priority = [...eligible].reverse().sort((a, b) =>
     Number(b.isReply === true) - Number(a.isReply === true)
   );
   for (const entry of priority) {
     const line = {
-      sender: f.group === true && typeof entry.speakerName === "string"
-        ? entry.speakerName
-        : (entry.speaker === f.messageAuthor
-          ? "sender"
-          : "recipient") as ContextLine["sender"],
+      sender: speakerLabel(entry),
       message: entry.text,
       reply: entry.isReply === true,
     };
@@ -133,9 +143,7 @@ function contextFor(v: PreparedViewer): Context {
   const lines = eligible.map((entry) =>
     chosen.find((line) =>
       line.message === entry.text &&
-      line.sender === (f.group === true && typeof entry.speakerName === "string"
-          ? entry.speakerName
-          : (entry.speaker === f.messageAuthor ? "sender" : "recipient")) &&
+      line.sender === speakerLabel(entry) &&
       line.reply === (entry.isReply === true)
     )
   ).filter((x) => x !== undefined);
@@ -232,8 +240,6 @@ export function compactPlan(
         {
           role: "user",
           content: JSON.stringify({
-            ...(sender ? { sender } : {}),
-            ...(recipient ? { recipient } : {}),
             ...(Object.keys(nonemptyContexts).length
               ? { contexts: nonemptyContexts }
               : {}),
@@ -356,7 +362,7 @@ export function expandCompactResponse(
             subjectIsViewer,
             subjectName: (subjectIsViewer ? f.viewerName : f.partnerName) ??
               (s.forms.subject === "sender" ? "sender" : "recipient"),
-            suggestedForm: s.forms.suggestedForm,
+            suggestedForm: "feminine",
             feminineTokens: h.feminineTokens,
             masculineTokens: h.masculineTokens,
           }

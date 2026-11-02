@@ -1,3 +1,4 @@
+import { isMentionIntegrityFailure } from "./mention_identity.ts";
 // Server-authoritative real-chat translator. The client supplies only a
 // message ID. Postgres validates the caller and derives source text and target
 // language before quota-limited provider work begins.
@@ -968,7 +969,7 @@ Deno.serve(async (req) => {
         error: isWorker ? "translation_unavailable" : "preparation_failed",
         reason: providerFailure,
       },
-      retryAfter > 0 ? 429 : 502,
+      isMentionIntegrityFailure(providerFailure) ? 422 : retryAfter > 0 ? 429 : 502,
       retryAfter > 0 ? { "Retry-After": String(retryAfter) } : {},
     );
   }

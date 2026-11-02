@@ -603,7 +603,7 @@ void main() {
   testWidgets('automatic viewer form uses you and Change opens own picker', (
     t,
   ) async {
-    final forms = _FormStore();
+    final forms = _FormStore()..own = GrammaticalForm.feminine;
     final c = _buildContainer(
       _BubbleExpandChatService(
         text: 'Did you go yesterday?',
@@ -629,9 +629,8 @@ void main() {
     await _settle(t);
     expect(find.text('Translation preferences'), findsOneWidget);
     expect(find.text('Grammatical form'), findsOneWidget);
-    expect(find.text('Feminine'), findsOneWidget);
+    expect(find.text('Feminine'), findsWidgets);
     expect(find.text('Masculine'), findsOneWidget);
-    expect(find.text('Not set'), findsWidgets);
     await t.tap(find.text('Masculine'));
     await _settle(t);
     expect(forms.ownWrites, [GrammaticalForm.masculine]);
@@ -643,7 +642,9 @@ void main() {
     t,
   ) async {
     final gate = Completer<void>();
-    final forms = _FormStore()..ownSaveDelay = gate.future;
+    final forms = _FormStore()
+      ..own = GrammaticalForm.feminine
+      ..ownSaveDelay = gate.future;
     final c = _buildContainer(
       _BubbleExpandChatService(
         text: 'Did you go yesterday?',
@@ -685,7 +686,11 @@ void main() {
     expect(forms.partnerWrites, isEmpty);
     expect(forms.own, isNull);
     expect(forms.partner, isNull);
-    expect(find.text('Using feminine forms for you'), findsOneWidget);
+    expect(find.byType(GrammaticalFormChooser), findsOneWidget);
+    await t.tap(find.text('masculine'));
+    await _settle(t);
+    expect(forms.own, GrammaticalForm.masculine);
+    expect(find.byType(GrammaticalFormChooser), findsNothing);
 
     await t.pumpWidget(const SizedBox.shrink());
     c.dispose();
@@ -710,7 +715,11 @@ void main() {
     expect(forms.partnerWrites, isEmpty);
     expect(forms.own, isNull);
     expect(forms.partner, isNull);
-    expect(find.text('Using feminine forms for Bob'), findsOneWidget);
+    expect(find.byType(GrammaticalFormChooser), findsOneWidget);
+    await t.tap(find.text('masculine'));
+    await _settle(t);
+    expect(forms.partner, GrammaticalForm.masculine);
+    expect(find.byType(GrammaticalFormChooser), findsNothing);
 
     await t.pumpWidget(const SizedBox.shrink());
     c.dispose();
@@ -718,7 +727,7 @@ void main() {
   testWidgets('partner note keeps the name and Change opens partner picker', (
     t,
   ) async {
-    final forms = _FormStore();
+    final forms = _FormStore()..partner = GrammaticalForm.feminine;
     final c = _buildContainer(
       _BubbleExpandChatService(
         isOutgoing: true,
@@ -870,7 +879,7 @@ void main() {
         ),
         findsWidgets,
       );
-      expect(find.text('Using feminine forms for you'), findsOneWidget);
+      expect(find.byType(GrammaticalFormChooser), findsOneWidget);
       await t.tap(
         find
             .byWidgetPredicate(

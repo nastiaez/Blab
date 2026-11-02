@@ -43,4 +43,31 @@ do $$ declare payload jsonb; n integer; begin
  if current_setting('blab.atomic_translation_batch',true)='on' then raise exception 'batch flag leaked'; end if;
  raise notice 'PASS same-language batch completion and two readable variants';
 end $$;
+-- Integrity failures are terminal for automatic work, but explicit user Retry
+-- can re-admit just that viewer. The earlier healthy message stays immutable.
+insert into messages(id,chat_id,sender_id,body) values
+ ('75555555-5555-4555-8555-755555555555','73333333-3333-4333-8333-733333333333','71111111-1111-4111-8111-711111111111','Hello @friend');
+do $$ declare j record; n integer; r jsonb; begin
+ for j in select * from claim_message_preparation_jobs_for_worker(10) loop
+  r:=leased_translation_action(j.id,j.lease_token,'finish',
+    '{"outcome":"failed","reason":"authored_handle_changed","delaySeconds":0}'::jsonb);
+  if r<>'true'::jsonb then raise exception 'terminal finish rejected'; end if;
+ end loop;
+ select count(*) into n from message_preparation_jobs where message_id='75555555-5555-4555-8555-755555555555' and status='failed' and attempts=1;
+ if n<>2 then raise exception 'expected two terminal failures, got %',n; end if;
+ select count(*) into n from claim_message_preparation_jobs_for_worker(10);
+ if n<>0 then raise exception 'integrity failure was automatically reclaimed'; end if;
+ perform set_config('request.jwt.claims','{"role":"authenticated","sub":"71111111-1111-4111-8111-711111111111"}',true);
+ r:=request_message_translation_variant('75555555-5555-4555-8555-755555555555','de',false);
+ if r->>'status'<>'failed' then raise exception 'ordinary request resurrected terminal failure: %',r; end if;
+ r:=request_message_translation_variant('75555555-5555-4555-8555-755555555555','de',true);
+ if r->>'status' not in ('ready','pending') then raise exception 'explicit Retry rejected: %',r; end if;
+ if exists(select 1 from message_preparation_jobs where message_id='75555555-5555-4555-8555-755555555555' and viewer_id='72222222-2222-4222-8222-722222222222' and status<>'failed') then
+  raise exception 'one viewer retry changed other viewer';
+ end if;
+ if (select count(*) from message_readable_variants where message_id='74444444-4444-4444-8444-744444444444' and result->>'translation'='Hallo')<>2 then
+  raise exception 'terminal failure changed completed history';
+ end if;
+ raise notice 'PASS terminal persistence, no automatic retry, explicit per-viewer Retry and retained history';
+end $$;
 rollback;

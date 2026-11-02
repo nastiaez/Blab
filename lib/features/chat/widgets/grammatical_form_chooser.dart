@@ -227,18 +227,22 @@ class _GrammaticalFormChooserState extends State<GrammaticalFormChooser> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _ChoiceButton(
-              label: widget.alternatives.feminine,
-              form: GrammaticalForm.feminine,
-              busy: _saving,
-              onTap: _choose,
+            Flexible(
+              child: _ChoiceButton(
+                label: widget.alternatives.feminine,
+                form: GrammaticalForm.feminine,
+                busy: _saving,
+                onTap: _choose,
+              ),
             ),
             const SizedBox(width: 8),
-            _ChoiceButton(
-              label: widget.alternatives.masculine,
-              form: GrammaticalForm.masculine,
-              busy: _saving,
-              onTap: _choose,
+            Flexible(
+              child: _ChoiceButton(
+                label: widget.alternatives.masculine,
+                form: GrammaticalForm.masculine,
+                busy: _saving,
+                onTap: _choose,
+              ),
             ),
           ],
         ),
@@ -312,7 +316,10 @@ class _ChoiceButton extends StatelessWidget {
       children: [
         Text(label, style: const TextStyle(fontSize: 13, color: _chooserInk)),
         Text(
-          form.label.toLowerCase(),
+          (form == GrammaticalForm.feminine
+                  ? context.l10n.formFeminine
+                  : context.l10n.formMasculine)
+              .toLowerCase(),
           style: const TextStyle(fontSize: 11, color: _chooserMuted),
         ),
       ],

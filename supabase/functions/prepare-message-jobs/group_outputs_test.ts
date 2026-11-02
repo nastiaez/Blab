@@ -274,3 +274,38 @@ Deno.test("pending group artifacts bypass pre-integrity cache without changing c
   assert(rec.cache.get(oldKey) === historical, "no historical deletion");
   assert(await groupVariantKey(v) !== oldKey, "versioned artifact identity");
 });
+
+Deno.test("pending profile-name artifacts are bypassed and retained, new results cache normally", async () => {
+  const v = viewer("v0");
+  const oldRequest = singleCallRequest([v]);
+  oldRequest.messages[1].content = JSON.stringify({
+    sender: "Alice",
+    recipient: "group",
+    ...JSON.parse(oldRequest.messages[1].content),
+  });
+  const oldData = JSON.stringify({
+    message: v.messageId,
+    source: v.sourceHash,
+    mentions: [],
+    contract: "minimal-source-anchor-v11",
+    mentionIntegrity: "authored-mentions-v2",
+    author: false,
+    request: oldRequest,
+  });
+  const oldKey = [
+    ...new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(oldData)),
+    ),
+  ].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const rec = recorded(), historical = output();
+  rec.cache.set(oldKey, historical);
+  await generateGroupOutputs([v], rec.hooks);
+  assert(rec.requests.length === 1, "old profile metadata artifact reused");
+  assert(rec.cache.get(oldKey) === historical, "history removed");
+  await generateGroupOutputs([v], {
+    ...rec.hooks,
+    generate: async () => {
+      throw Error("fresh artifact not reused");
+    },
+  });
+});
