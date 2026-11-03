@@ -1,3 +1,5 @@
+> **iOS parity17634 ·DELIVERED:** Blab-test50 available in TestFlight, beta APPROVED, internal1/external15 memberships unchanged; test/iOS notice50 active. Native chooser, links, Safari, mentions and header checks pass with documented simulator/physical limits. BLA37/40 now delivered on iOS; BLA36 retained; BLA31 unfinished on both, excluded. Main runtime unchanged. Both-platform delivery default recorded in parent AGENTS.md. [QA](../docs/qa/2026-11-03-ios-parity/README.md).
+
 # Progress: Building Blab
 
 > **Names/tag retries17616 ·DELIVERED:** runtime04d2173 integrated; both hosted backends deployed/source+live verified; historical50 rows unchanged. Signed Android Blab-test50 distributed to unchanged13 testers, downloaded artifact hash verified, test/android notice50 active. Integrated native chooser/locale journey passes. Mixed-language explicitly deferred; no public-store/iOS release. Supersedes older name candidate/release-held statements below. [Final receipt](../docs/qa/2026-11-02-name-conflicts/RELEASE-17582.md).
