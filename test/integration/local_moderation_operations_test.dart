@@ -32,8 +32,14 @@ Matcher _postgrestMessage(String message) => isA<PostgrestException>().having(
   message,
 );
 
+// Backend integration must use actual localhost HTTP, not widget-test HTTP 400s.
+class _BackendTestBinding extends AutomatedTestWidgetsFlutterBinding {
+  @override
+  bool get overrideHttpClient => false;
+}
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  _BackendTestBinding();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test(
