@@ -299,7 +299,7 @@ void main() {
   );
 
   test(
-    'account deletion cascades live data but preserves minimized report evidence',
+    'account deletion retains recipient history and minimizes identity and report evidence',
     () async {
       expect(_url, isNotEmpty);
       expect(_publicKey, isNotEmpty);
@@ -345,24 +345,30 @@ void main() {
 
         await admin.auth.admin.deleteUser(targetUserId);
 
-        final removedProfile = await alice
+        final retainedProfile = await alice
             .from('profiles')
-            .select('id')
+            .select(
+              'id,display_name,avatar_path,account_deleted_at,known_languages',
+            )
             .eq('id', targetUserId)
             .maybeSingle();
-        expect(removedProfile, isNull);
+        expect(retainedProfile, isNotNull);
+        expect(retainedProfile!['display_name'], 'Deleted account');
+        expect(retainedProfile['avatar_path'], isNull);
+        expect(retainedProfile['account_deleted_at'], isNotNull);
+        expect(retainedProfile['known_languages'], isEmpty);
         final removedMemberships = List<Map<String, dynamic>>.from(
           await admin
               .from('chat_members')
               .select('user_id')
               .eq('user_id', targetUserId),
         );
-        expect(removedMemberships, isEmpty);
+        expect(removedMemberships, hasLength(1));
         expect(
           (await ChatService(
             alice,
           ).fetchMessages(chatId)).where((row) => row.id == message.id),
-          isEmpty,
+          hasLength(1),
         );
 
         final retained = await admin
@@ -374,7 +380,7 @@ void main() {
             .eq('id', reportId)
             .single();
         expect(retained['reported_user_id'], isNull);
-        expect(retained['message_id'], isNull);
+        expect(retained['message_id'], message.id);
         expect(retained['reported_user_id_snapshot'], targetUserId);
         expect(retained['message_body_snapshot'], 'retained safety evidence');
         expect(retained['retention_until'], isNotNull);
