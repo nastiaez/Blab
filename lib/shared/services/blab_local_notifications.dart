@@ -2,7 +2,6 @@ import 'dart:async';
 import 'ios_communication.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:blab_conversations/blab_conversations.dart';
 import '../../app/design_tokens.dart';
 import 'local_chat_history_cache.dart';
@@ -119,24 +118,26 @@ abstract final class BlabLocalNotifications {
         ? 'blab:$receiver:$chat:${data['messageId']}'
         : chat;
     if (android) {
-      final artwork = await rootBundle.load(
-        'assets/icon/notification_badge_exact.png',
-      );
       if (accountStillCurrent != null && !await accountStillCurrent()) return;
-      await BlabConversations.channel.invokeMethod<void>('showCustom', {
+      await BlabConversations.channel.invokeMethod<void>('showConversation', {
         'id': id,
         'tag': tag,
+        'conversationId': receiver is String
+            ? NotificationPresentation.conversationId(receiver, chat)
+            : null,
         'title': presentation.title,
-        'body': presentation.isGroup && presentation.sender != null
-            ? '${presentation.sender}: ${presentation.body}'
-            : presentation.body,
+        'body': presentation.body,
         'private': !presentation.showsIdentity,
+        'isGroup': presentation.isGroup,
+        'sender': presentation.sender,
         'initials': BlabColors.avatarInitialsFor(presentation.title),
         'color': BlabColors.avatarColorFor(presentation.title).toARGB32(),
-        'artwork': artwork.buffer.asUint8List(
-          artwork.offsetInBytes,
-          artwork.lengthInBytes,
-        ),
+        'senderInitials': presentation.sender == null
+            ? null
+            : BlabColors.avatarInitialsFor(presentation.sender!),
+        'senderColor': presentation.sender == null
+            ? null
+            : BlabColors.avatarColorFor(presentation.sender!).toARGB32(),
         'payload': payload,
       });
       return;

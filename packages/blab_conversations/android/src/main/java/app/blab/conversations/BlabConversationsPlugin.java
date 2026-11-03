@@ -46,6 +46,7 @@ public final class BlabConversationsPlugin implements FlutterPlugin, MethodChann
         try {
             switch (call.method) {
                 case "prepare": result.success(prepare(call)); break;
+                case "showConversation": showConversation(call); result.success(null); break;
                 case "showCustomProbe":
                 case "showCustom": showCustomProbe(call); result.success(null); break;
                 case "remove": remove((String) call.arguments); result.success(null); break;
@@ -120,6 +121,77 @@ public final class BlabConversationsPlugin implements FlutterPlugin, MethodChann
         senderIcon.recycle();
         return response;
     }
+    // BLA-38: use the system conversation avatar instead of a second custom icon row.
+    private void showConversation(MethodCall call) {
+        int id = ((Number) call.argument("id")).intValue();
+        String title = call.argument("title");
+        String body = call.argument("body");
+        String conversationId = call.argument("conversationId");
+        String sender = call.argument("sender");
+        boolean privatePreview = Boolean.TRUE.equals(call.argument("private"));
+        boolean group = Boolean.TRUE.equals(call.argument("isGroup"));
+        if (title == null || body == null) throw new IllegalArgumentException();
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        if (Build.VERSION.SDK_INT >= 26) {
+            manager.createNotificationChannel(new NotificationChannel("messages", "Messages", NotificationManager.IMPORTANCE_HIGH));
+        }
+        int smallIcon = context.getResources().getIdentifier("ic_notification_arrow", "drawable", context.getPackageName());
+        Intent open = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+        if (open == null) throw new IllegalStateException();
+        open.setAction("SELECT_NOTIFICATION");
+        open.putExtra("payload", (String) call.argument("payload"));
+        PendingIntent pending = PendingIntent.getActivity(context, id, open,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Notification.Builder builder = Build.VERSION.SDK_INT >= 26
+            ? new Notification.Builder(context, "messages") : new Notification.Builder(context);
+        builder.setSmallIcon(smallIcon).setColor(0xFFF88C5A)
+            .setContentTitle(title).setContentText(body)
+            .setCategory(Notification.CATEGORY_MESSAGE).setAutoCancel(true)
+            .setVisibility(Notification.VISIBILITY_PRIVATE).setContentIntent(pending);
+        if (privatePreview || sender == null) {
+            if (conversationId != null) remove(conversationId);
+            builder.setStyle(new Notification.BigTextStyle().bigText(body));
+        } else {
+            Bitmap senderAvatar = avatar(call.argument("senderInitials"),
+                ((Number) call.argument("senderColor")).intValue());
+            Notification.MessagingStyle style;
+            if (Build.VERSION.SDK_INT >= 28) {
+                Person person = new Person.Builder().setName(sender)
+                    .setIcon(Icon.createWithBitmap(senderAvatar)).build();
+                style = new Notification.MessagingStyle(new Person.Builder().setName(" ").build())
+                    .setGroupConversation(group)
+                    .addMessage(body, System.currentTimeMillis(), person);
+            } else {
+                style = new Notification.MessagingStyle(" ")
+                    .addMessage(body, System.currentTimeMillis(), sender);
+                builder.setLargeIcon(senderAvatar);
+            }
+            if (group) style.setConversationTitle(title);
+            builder.setStyle(style);
+            if (conversationId != null && Build.VERSION.SDK_INT >= 30) {
+                Map<String, Object> args = new HashMap<>();
+                args.put("id", conversationId);
+                args.put("name", title);
+                args.put("sender", sender);
+                args.put("senderKey", conversationId + ":sender");
+                args.put("payload", call.argument("payload"));
+                args.put("initials", call.argument("initials"));
+                args.put("color", call.argument("color"));
+                args.put("senderInitials", call.argument("senderInitials"));
+                args.put("senderColor", call.argument("senderColor"));
+                try {
+                    Map<String, Object> prepared = prepare(new MethodCall("prepare", args));
+                    if (prepared.containsKey("shortcutId")) {
+                        builder.setShortcutId(conversationId).setLocusId(new LocusId(conversationId));
+                    }
+                } catch (RuntimeException ignored) {
+                    // Shortcut publication is best-effort; do not lose the message alert.
+                }
+            }
+        }
+        manager.notify((String) call.argument("tag"), id, builder.build());
+    }
+
     // Same rendering path for approved incoming notifications and native QA fixtures.
     private void showCustomProbe(MethodCall call) {
         Number idValue = call.argument("id");

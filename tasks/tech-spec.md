@@ -643,3 +643,8 @@ parent-owned. Existing legacy iOS and Android capabilities are not silently upgr
 ### BLA-13 ·29 October2026
 - Reuse the existing language registry, translation contract and system TTS engine; explicit da-DK/fi-FI/ko-KR/mr-IN/pl-PL mappings do not guarantee installed voices. Add mr to the shared reading-script eligibility set and use Devanagari presentation; no schema change to that preference.
 - Forward-only language migration expands the exact old learning allowlist in current and renamed compatibility functions while preserving signatures, privileges, RLS and cache rows. Four interface locales remain unchanged. Existing translation keys include language, so no invalidation of old accepted sentences is required.
+
+### BLA-38 ·3 November2026 ·native notification candidate
+Nastia17674 authorizes exploring native Android conversation presentation and system-styled badge, superseding exact custom orange/ink artwork only for this candidate review. MessagingStyle uses sender Person plus receiver/chat-scoped long-lived shortcuts on API30+, and preserves message-specific cancellation tags and receiver-bound tap payloads. Group title and sender remain separate; private previews use generic BigTextStyle without identity and remove the matching conversation shortcut. Shortcut publication failure must not suppress the notification. iOS/backend/translation preferences unchanged. Fresh native screenshots and visual acceptance still gate integration/release.
+
+17733 accepts native screenshots17710–17712 and authorizes the scoped implementation. The reviewed native system conversation presentation is now the accepted Android design; iOS remains unchanged.

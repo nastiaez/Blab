@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:blab/shared/services/blab_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:blab/shared/services/notification_presentation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,14 +42,19 @@ void main() {
     'body': 'See you at six!',
   };
   test(
-    'approved custom image path preserves read tag and tap identity',
+    'native conversation preserves read tag and receiver-bound tap identity',
     () async {
       await BlabLocalNotifications.show(data);
       final call = conversations.single;
-      expect(call.method, 'showCustom');
+      expect(call.method, 'showConversation');
       final args = call.arguments as Map;
-      expect(args['artwork'], isA<Uint8List>());
-      expect((args['artwork'] as Uint8List).length, greaterThan(100));
+      expect(
+        args['conversationId'],
+        NotificationPresentation.conversationId('receiver', 'chat'),
+      );
+      expect(args['sender'], 'Alice');
+      expect(args['senderInitials'], 'AL');
+      expect(args['isGroup'], false);
       expect(args['private'], false);
       expect(args['title'], 'Alice');
       expect(args['tag'], 'blab:receiver:chat:message');
@@ -67,10 +73,13 @@ void main() {
       expect(args['title'], 'Blab');
       expect(args['body'], 'You have a new message');
       expect(args['initials'], isNot('AL'));
+      expect(args['sender'], isNull);
+      expect(args['senderInitials'], isNull);
+      expect(args['senderColor'], isNull);
     },
   );
   test(
-    'native errors do not silently substitute the rejected tinted artwork',
+    'native errors are surfaced instead of silently losing an alert',
     () async {
       failNative = true;
       await expectLater(
@@ -95,13 +104,16 @@ void main() {
     expect(args['body'], 'Du hast eine neue Nachricht');
   });
   test(
-    'account switch during artwork preparation suppresses notification',
+    'account switch before native presentation suppresses notification',
     () async {
       await BlabLocalNotifications.show(
         data,
         accountStillCurrent: () async => false,
       );
-      expect(conversations.where((c) => c.method == 'showCustom'), isEmpty);
+      expect(
+        conversations.where((c) => c.method == 'showConversation'),
+        isEmpty,
+      );
     },
   );
   test(
@@ -113,7 +125,9 @@ void main() {
       });
       final args = conversations.single.arguments as Map;
       expect(args['title'], 'Weekend plans');
-      expect(args['body'], 'Alice: See you at six!');
+      expect(args['body'], 'See you at six!');
+      expect(args['sender'], 'Alice');
+      expect(args['isGroup'], true);
       expect(args['tag'], 'blab:receiver:chat:message');
     },
   );

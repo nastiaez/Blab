@@ -2441,3 +2441,11 @@ Combined owner verified all4 applicable update-notice rows43→45, destinations/
 Explicit approval17234: conflict review passed, b7c5983 committed/merged/pushed to main, exact translate-message + prepare-message-jobs deployed to staging then production. 224 backend tests and clean integration CI41459086414 pass. Live staging 4-message/two-viewer matrix (8 outputs) plus stable repeat cache reads passes; temporary fixtures removed. Both deployment manifests pass; 17 downloaded source files per environment match. Production50 sampled historical rows unchanged and both unauthorized endpoints401. No schema/client release, historical repair or manual-device checkbox. Evidence: docs/qa/2026-11-02-invented-mentions/README.md.
 
 - 2026-11-02 ·17542 — Continued explicit-form/name-fidelity candidate from current main, completed full and Android fixture verification, repaired chooser locale labels/wrapping, delivered review packet; mixed-language quality and live backend remain blocked. No completion checkbox inferred.
+
+## BLA-38 · Android redundant notification icon ·3 November2026 ← in progress
+
+Source diagnosis complete on current-main worktree. Extra leading icon is Android-owned decoration around custom content, not a duplicate XML element. Nastia17674 approves exploring native conversation presentation with system-styled badge. Android candidate implemented; 31 focused notification/privacy/routing checks,1204 full Flutter tests (17 environment skips),243 backend checks and analysis pass. Fresh native review is pending device handoff; both reusable devices remain claimed and untouched. No visual acceptance, integration or release claim. Evidence: docs/qa/2026-11-03-bla38/README.md.
+
+17702 continuation: native API36 direct/group/private light/dark shade inspected and sample screenshots17710–17712 delivered. All3 native warm taps preserve receiver/chat identity; authenticated chat navigation/remote push not established. Third reusable shared emulator used under parallel-QA exception; prior reserved devices untouched. Await visual review, no merge/release. See BLA38 QA record.
+
+17733: Nastia approves the delivered native notification style and implementation. Same-source31 presentation/state +11 router/session checks pass; approved source prepared for integration. Signed-in native chat opening remains unverified; no release claim.
