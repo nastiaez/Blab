@@ -1,3 +1,5 @@
+> **BLA38 release17773 ·Android tester51 DELIVERED:** approved runtime c5f5730, all3 CI checks pass. Signed50→51 smoke preserves German setting/firstInstallTime; Firebase same13testers, download-back hash matches. Signed-in test deferred to owner. iOS/backend/public app unchanged; reminder unchanged(API403), use App Tester. [Receipt](../docs/qa/2026-11-03-bla38/RELEASE-17773.md).
+
 > **iOS parity17634 ·DELIVERED:** Blab-test50 available in TestFlight, beta APPROVED, internal1/external15 memberships unchanged; test/iOS notice50 active. Native chooser, links, Safari, mentions and header checks pass with documented simulator/physical limits. BLA37/40 now delivered on iOS; BLA36 retained; BLA31 unfinished on both, excluded. Main runtime unchanged. Both-platform delivery default recorded in parent AGENTS.md. [QA](../docs/qa/2026-11-03-ios-parity/README.md).
 
 # Progress: Building Blab
