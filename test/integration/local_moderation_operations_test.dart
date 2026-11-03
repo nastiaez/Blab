@@ -1,6 +1,7 @@
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _enabled = bool.fromEnvironment('RUN_LOCAL_SUPABASE_INTEGRATION');
@@ -32,6 +33,9 @@ Matcher _postgrestMessage(String message) => isA<PostgrestException>().having(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   test(
     'reports are validated, private, actionable, enforced, and purged',
     () async {
