@@ -294,7 +294,7 @@ class ChatHeaderIdentity extends StatelessWidget {
             children: [
               Text(
                 _capitaliseName(name),
-                maxLines: 1,
+                maxLines: deleted ? 2 : 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: group ? 18 : 15,
