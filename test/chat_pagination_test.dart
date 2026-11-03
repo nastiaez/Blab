@@ -138,6 +138,28 @@ class _ControlledChatList extends ChatListNotifier {
 }
 
 void main() {
+  testWidgets('late hydration after disposal is ignored', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final service = _DelayedDisposalService();
+    final container = ProviderContainer(
+      overrides: [
+        chatServiceProvider.overrideWithValue(service),
+        currentUserIdProvider.overrideWithValue('user-a'),
+        authSessionProvider.overrideWith((ref) => Stream.value(null)),
+      ],
+    );
+    container.listen(chatMessagesProvider('chat-1'), (_, next) {});
+    for (var i = 0; i < 20 && !service.requested; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(service.requested, isTrue);
+    container.dispose();
+    service.page.complete(MessagePage(messages: [], hasMore: false));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(tester.takeException(), isNull);
+  });
+
   test(
     'recovery is chat-scoped, retries reads and stops after catch-up',
     () async {
@@ -427,4 +449,21 @@ void main() {
       expect(service.requests.last.limit, 50);
     },
   );
+}
+
+class _DelayedDisposalService implements ChatService {
+  final page = Completer<MessagePage>();
+  bool requested = false;
+  @override
+  Future<MessagePage> fetchMessagePage(
+    String chatId, {
+    int limit = 50,
+    MessageCursor? before,
+  }) {
+    requested = true;
+    return page.future;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);
 }

@@ -155,6 +155,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
 
   @override
   Stream<List<Message>> build() async* {
+    final buildRef = ref;
     ref.watch(currentUserIdProvider);
     final svc = ref.watch(chatServiceProvider);
     final localCache = ref.watch(localChatHistoryCacheProvider);
@@ -164,6 +165,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
     _setPagination(loading: false);
 
     final cached = await localCache?.loadMessages(chatId) ?? const [];
+    if (!buildRef.mounted) return;
     if (cached.isNotEmpty) {
       for (final message in cached) {
         _messagesById[message.id] = message;
@@ -177,6 +179,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
       final page = await svc
           .fetchMessagePage(chatId, limit: pageSize)
           .timeout(const Duration(seconds: 6));
+      if (!buildRef.mounted) return;
       _messagesById.clear();
       for (final message in page.messages) {
         _messagesById[message.id] = message;
@@ -196,6 +199,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         Error.throwWithStackTrace(error, stackTrace);
       }
     }
+    if (!buildRef.mounted) return;
     // US-031: list previews and timelines use independent live feeds. A
     // successful preview is a reconciliation hint, never a message payload.
     // Recover through the authoritative transport, preserving viewer policy.
