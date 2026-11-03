@@ -1,3 +1,4 @@
+import '../shared/services/account_transition_gate.dart';
 import '../shared/data/app_channel.dart';
 import 'dart:async';
 
@@ -204,9 +205,11 @@ final GoRouter blabRouter = GoRouter(
       if (callback == AuthCallbackRoute.passwordRecovery &&
           callbackUri != null) {
         try {
-          await Supabase.instance.client.auth.getSessionFromUrl(
-            callbackUri,
-            storeSession: true,
+          await AccountTransitionGate.run(
+            () => Supabase.instance.client.auth.getSessionFromUrl(
+              callbackUri,
+              storeSession: true,
+            ),
           );
           blabRouter.go('/auth/reset');
         } catch (_) {
@@ -216,9 +219,11 @@ final GoRouter blabRouter = GoRouter(
       }
       if (callback == AuthCallbackRoute.emailChange && callbackUri != null) {
         try {
-          await Supabase.instance.client.auth.getSessionFromUrl(
-            callbackUri,
-            storeSession: true,
+          await AccountTransitionGate.run(
+            () => Supabase.instance.client.auth.getSessionFromUrl(
+              callbackUri,
+              storeSession: true,
+            ),
           );
         } catch (_) {
           // supabase_flutter may have already consumed the link.

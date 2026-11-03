@@ -499,7 +499,9 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
         .value
         ?.where((chat) => chat.id == chatId)
         .firstOrNull;
-    if (chat?.isLeft == true) return false;
+    if (chat?.isLeft == true || chat?.partnerAccountDeleted == true) {
+      return false;
+    }
     final cutoff = chat?.historyClearedAt;
     if (cutoff == null) return true;
     final queued = ref
@@ -674,6 +676,7 @@ class ChatNotifier extends StreamNotifier<List<Message>> {
   /// Re-fire a previously failed send with its original idempotency id.
   /// PRD US-030.
   Future<void> retryFailed(String localId) async {
+    if (!_lifecycleAllowsQueuedSend(localId)) return;
     final pendings = ref.read(pendingSendsProvider(chatId));
     Message? target;
     for (final m in pendings) {

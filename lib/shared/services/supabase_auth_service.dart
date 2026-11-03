@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/supabase_config.dart';
 import '../data/app_channel.dart';
+import 'account_deletion_recovery.dart';
+import 'account_transition_gate.dart';
 
 /// Thrown when the user cancels a social sign-in flow.
 class SocialSignInCancelled implements Exception {
@@ -16,6 +18,7 @@ class SupabaseAuthService {
   SupabaseAuthService(this._client);
 
   final SupabaseClient _client;
+  final AccountDeletionRecovery _deletionRecovery = AccountDeletionRecovery();
 
   GoTrueClient get _auth => _client.auth;
 
@@ -31,14 +34,16 @@ class SupabaseAuthService {
     required String password,
     String interfaceLanguage = 'en',
   }) {
-    return _auth.signUp(
-      email: email.trim(),
-      password: password,
-      data: {
-        'name': name.trim(),
-        'interface_language': interfaceLanguage,
-        if (name.trim().isEmpty) 'onboarding_name_blank': true,
-      },
+    return AccountTransitionGate.run(
+      () => _auth.signUp(
+        email: email.trim(),
+        password: password,
+        data: {
+          'name': name.trim(),
+          'interface_language': interfaceLanguage,
+          if (name.trim().isEmpty) 'onboarding_name_blank': true,
+        },
+      ),
     );
   }
 
@@ -46,7 +51,9 @@ class SupabaseAuthService {
     required String email,
     required String password,
   }) {
-    return _auth.signInWithPassword(email: email.trim(), password: password);
+    return AccountTransitionGate.run(
+      () => _auth.signInWithPassword(email: email.trim(), password: password),
+    );
   }
 
   Future<void> sendPasswordReset(String email) {
@@ -59,12 +66,24 @@ class SupabaseAuthService {
   /// PRD US-004 follow-through: called from the reset screen after the
   /// recovery deep link has installed a session on the client.
   Future<UserResponse> updatePassword(String newPassword) {
-    return _auth.updateUser(UserAttributes(password: newPassword));
+    return AccountTransitionGate.run(
+      () => _auth.updateUser(UserAttributes(password: newPassword)),
+    );
   }
 
   /// Reauthenticates an email/password user immediately before changing the
   /// credential. Social-only accounts must not silently gain a password.
   Future<UserResponse> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => AccountTransitionGate.run(
+    () => _changePasswordUnlocked(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    ),
+  );
+
+  Future<UserResponse> _changePasswordUnlocked({
     required String currentPassword,
     required String newPassword,
   }) async {
@@ -76,7 +95,7 @@ class SupabaseAuthService {
       throw const AuthException('Password sign-in is not enabled');
     }
     await _auth.signInWithPassword(email: email, password: currentPassword);
-    return updatePassword(newPassword);
+    return _auth.updateUser(UserAttributes(password: newPassword));
   }
 
   /// PRD US-039. Sends a confirmation email to the NEW address; the
@@ -85,13 +104,17 @@ class SupabaseAuthService {
   /// change" enabled (default), Supabase also sends a notice to the
   /// current email.
   Future<UserResponse> updateEmail(String newEmail) {
-    return _auth.updateUser(
-      UserAttributes(email: newEmail.trim()),
-      emailRedirectTo: '${AppChannel.scheme}://auth/email-changed',
+    return AccountTransitionGate.run(
+      () => _auth.updateUser(
+        UserAttributes(email: newEmail.trim()),
+        emailRedirectTo: '${AppChannel.scheme}://auth/email-changed',
+      ),
     );
   }
 
-  Future<void> signOut() async {
+  Future<void> signOut() => AccountTransitionGate.run(_signOutUnlocked);
+
+  Future<void> _signOutUnlocked() async {
     await _auth.signOut();
     try {
       final google = GoogleSignIn(
@@ -116,7 +139,10 @@ class SupabaseAuthService {
   /// Native Google Sign-In → returns idToken → exchanges with Supabase
   /// via `signInWithIdToken`. Throws [SocialSignInCancelled] if the user
   /// dismisses the picker.
-  Future<AuthResponse> signInWithGoogle() async {
+  Future<AuthResponse> signInWithGoogle() =>
+      AccountTransitionGate.run(_signInWithGoogleUnlocked);
+
+  Future<AuthResponse> _signInWithGoogleUnlocked() async {
     final google = GoogleSignIn(
       serverClientId: SupabaseConfig.googleWebClientId,
     );
@@ -137,7 +163,10 @@ class SupabaseAuthService {
     );
   }
 
-  Future<AuthResponse> signInWithApple() async {
+  Future<AuthResponse> signInWithApple() =>
+      AccountTransitionGate.run(_signInWithAppleUnlocked);
+
+  Future<AuthResponse> _signInWithAppleUnlocked() async {
     final rawNonce = _auth.generateRawNonce();
     try {
       final credential = await SignInWithApple.getAppleIDCredential(
@@ -192,28 +221,92 @@ class SupabaseAuthService {
   /// users) is still authenticated end-to-end.
   Future<void> deleteAccount({
     String? password,
-    required Future<void> Function() clearLocalData,
+    required Future<void> Function(String owner) clearLocalData,
   }) async {
-    final email = _auth.currentUser?.email;
-    if (email == null) {
+    final user = _auth.currentUser;
+    final email = user?.email;
+    if (await reconcilePendingDeletion(clearLocalData: clearLocalData)) return;
+    if (user == null || email == null || _auth.currentUser?.id != user.id) {
       throw const AuthException('Not signed in');
     }
     if (password != null && password.isNotEmpty) {
-      await _auth.signInWithPassword(email: email, password: password);
+      await signIn(email: email, password: password);
     }
-
-    final res = await _client.functions.invoke('delete-account');
-    if (res.status != 200) {
-      final body = res.data;
-      final code = body is Map ? body['error']?.toString() : null;
-      throw Exception(code ?? 'delete_failed');
+    final receipt = await _deletionRecovery.begin(user.id);
+    final accessToken = _auth.currentSession?.accessToken;
+    if (_auth.currentUser?.id != user.id || accessToken == null) {
+      throw const AuthException('Not signed in');
     }
     try {
-      await clearLocalData();
-    } finally {
-      await _auth.signOut();
+      final res = await _client.functions.invoke(
+        'delete-account',
+        headers: {'Authorization': 'Bearer $accessToken'},
+        body: {'deletion_receipt': receipt},
+      );
+      if (res.status != 200) {
+        final body = res.data;
+        final code = body is Map ? body['error']?.toString() : null;
+        throw Exception(code ?? 'delete_failed');
+      }
+    } catch (_) {
+      // A response can be lost after commit. Only the atomic receipt, never
+      // an ordinary network/Auth error, authorizes local erasure.
+      try {
+        if (await reconcilePendingDeletion(clearLocalData: clearLocalData)) {
+          return;
+        }
+      } catch (_) {
+        /* Preserve marker and original failure for retry. */
+      }
+      rethrow;
     }
+    await _finishLocalDeletion(user.id, clearLocalData);
+    await _deletionRecovery.forget(owner: user.id, receipt: receipt);
   }
+
+  Future<void> _finishLocalDeletion(
+    String owner,
+    Future<void> Function(String owner) clearLocalData,
+  ) => AccountTransitionGate.run(() async {
+    if (_auth.currentUser?.id != null && _auth.currentUser?.id != owner) {
+      throw StateError('deletion_owner_changed');
+    }
+    try {
+      await clearLocalData(owner);
+    } finally {
+      // Owner check and SDK local-session removal execute without an await
+      // between them. Managed sign-ins cannot interleave with this section.
+      if (_auth.currentUser?.id == owner) {
+        await _auth.signOut(scope: SignOutScope.local);
+      }
+    }
+  });
+
+  Future<bool> reconcilePendingDeletion({
+    required Future<void> Function(String owner) clearLocalData,
+  }) => _deletionRecovery.reconcile(
+    currentOwner: () => _auth.currentUser?.id,
+    confirmed: (receipt) async {
+      // Use anon authority even when the deleted user's bearer is revoked.
+      final statusClient = SupabaseClient(
+        SupabaseConfig.url,
+        SupabaseConfig.publishableKey,
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      );
+      try {
+        return await statusClient
+                .rpc(
+                  'account_deletion_completed',
+                  params: {'p_receipt': receipt},
+                )
+                .timeout(const Duration(seconds: 4)) ==
+            true;
+      } finally {
+        await statusClient.dispose();
+      }
+    },
+    erase: (owner) => _finishLocalDeletion(owner, clearLocalData),
+  );
 
   /// Map a Supabase AuthException to a short, user-facing message.
   /// Inline error copy comes from PRD US-001…US-004.

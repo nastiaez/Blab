@@ -155,6 +155,7 @@ class ChatTimeline extends ConsumerWidget {
         items.add(
           _GroupJoinedItem(
             m.senderName,
+            accountDeleted: m.senderAccountDeleted,
             afterMessage: prev != null && prev.type != MessageType.groupJoined,
           ),
         );
@@ -248,7 +249,11 @@ class ChatTimeline extends ConsumerWidget {
             ),
             child: Center(
               child: Text(
-                item.name == null
+                item.accountDeleted
+                    ? context.l10n.groupMemberJoined(
+                        context.l10n.deletedAccount,
+                      )
+                    : item.name == null
                     ? context.l10n.someoneJoined
                     : context.l10n.groupMemberJoined(item.name!),
                 textAlign: TextAlign.center,
@@ -335,7 +340,12 @@ sealed class _ListItem {
 }
 
 class _GroupJoinedItem extends _ListItem {
-  const _GroupJoinedItem(this.name, {this.afterMessage = false});
+  const _GroupJoinedItem(
+    this.name, {
+    this.afterMessage = false,
+    this.accountDeleted = false,
+  });
+  final bool accountDeleted;
   final bool afterMessage;
   final String? name;
 }

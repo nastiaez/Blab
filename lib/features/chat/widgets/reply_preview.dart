@@ -44,7 +44,9 @@ class ReplyPreview extends StatelessWidget {
 
     final author = replyTo.isOutgoing
         ? context.l10n.you
-        : (replyTo.senderName ?? partnerName);
+        : (replyTo.senderAccountDeleted
+              ? context.l10n.deletedAccount
+              : replyTo.senderName ?? partnerName);
     final rawPreviewText = switch (translation) {
       AsyncData<MessageTranslation>(value: final value) =>
         resolveMessageDisplayText(

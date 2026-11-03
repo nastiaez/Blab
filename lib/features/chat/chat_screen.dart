@@ -1,4 +1,5 @@
 import 'widgets/message_link_text.dart';
+import 'widgets/deleted_identity_scope.dart';
 import 'widgets/mention_picker_overlay.dart';
 import 'mention_controller.dart';
 import 'widgets/mention_picker.dart';
@@ -255,7 +256,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     Chat chat, {
     bool previewRequest = false,
   }) {
-    if (chat.isLeft) return;
+    if (chat.isLeft || chat.partnerAccountDeleted) return;
     if (!chat.needsPracticeLanguageSelection ||
         _requiredLanguageSheetVisible ||
         _leavingRequiredLanguageSetup) {
@@ -532,7 +533,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _beginReply(Message message, {String? displayedText}) {
-    if (_chatIsLeft) return;
+    if (_chatIsLeft ||
+        (ref
+                .read(chatListProvider)
+                .value
+                ?.any(
+                  (c) => c.id == widget.chatId && c.partnerAccountDeleted,
+                ) ??
+            false)) {
+      return;
+    }
     if (ref.read(editingProvider(widget.chatId)) != null) return;
     _closeSelection();
     if (_emojiPanelOpen) setState(() => _emojiPanelOpen = false);
@@ -679,7 +689,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _send() async {
-    if (_chatIsLeft) return;
+    if (_chatIsLeft ||
+        (ref
+                .read(chatListProvider)
+                .value
+                ?.any(
+                  (c) => c.id == widget.chatId && c.partnerAccountDeleted,
+                ) ??
+            false)) {
+      return;
+    }
     final text = _input.text;
     if (text.trim().isEmpty) return;
     // Defensive — TextField.maxLength enforces this, but guard anyway.
@@ -713,7 +732,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _attachImage({required String recipientName}) async {
-    if (_chatIsLeft) return;
+    if (_chatIsLeft ||
+        (ref
+                .read(chatListProvider)
+                .value
+                ?.any(
+                  (c) => c.id == widget.chatId && c.partnerAccountDeleted,
+                ) ??
+            false)) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     PickedChatImage? image;
     try {
@@ -883,6 +911,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _beginReply(message, displayedText: presentation.primaryText);
         break;
       case MessageAction.edit:
+        if (chat.partnerAccountDeleted) return;
         ref.read(editingProvider(widget.chatId).notifier).set(message);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _inputFocus.requestFocus();
@@ -1728,6 +1757,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 // safe. PRD US-030, US-031.
                                 if (online &&
                                     !chat.isLeft &&
+                                    !chat.partnerAccountDeleted &&
                                     pendingVisible.any(
                                       (m) => m.status == MessageStatus.pending,
                                     )) {
@@ -1839,7 +1869,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                         )
                                         .retryFailed(m.id),
                                     onDoubleTapHeart:
-                                        chat.isLeft || isPartnerBlocked
+                                        chat.isLeft ||
+                                            chat.partnerAccountDeleted ||
+                                            isPartnerBlocked
                                         ? null
                                         : (m) async {
                                             _closeSelection();
@@ -1880,7 +1912,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                   ),
-                  if (!chat.isLeft && !isPartnerBlocked && replyingTo != null)
+                  if (!chat.isLeft &&
+                      !chat.partnerAccountDeleted &&
+                      !isPartnerBlocked &&
+                      replyingTo != null)
                     ComposerReplyBar(
                       message: replyingTo,
                       partnerName: chat.partnerName,
@@ -1888,7 +1923,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           .read(replyingToProvider(widget.chatId).notifier)
                           .clear(),
                     ),
-                  if (!chat.isLeft && !isPartnerBlocked && editing != null)
+                  if (!chat.isLeft &&
+                      !chat.partnerAccountDeleted &&
+                      !isPartnerBlocked &&
+                      editing != null)
                     ComposerEditBar(
                       onClose: () => ref
                           .read(editingProvider(widget.chatId).notifier)
@@ -1904,7 +1942,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             name: chat.partnerName,
                             incoming: incomingContact,
                           )
-                        : chat.isLeft
+                        : (chat.isLeft || chat.partnerAccountDeleted)
                         ? Container(
                             key: const ValueKey('left-chat-bar'),
                             width: double.infinity,
@@ -1922,7 +1960,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   vertical: 22,
                                 ),
                                 child: Text(
-                                  context.l10n.leftChat,
+                                  chat.partnerAccountDeleted
+                                      ? context.l10n.deletedAccountNotice
+                                      : context.l10n.leftChat,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: BlabColors.warmMuted,
@@ -2137,9 +2177,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           translationTop: translationTop,
                           reactionWidth: kFloatingReactionRowWidth,
                           hasReactions:
-                              !chat.isLeft && canReplyToMessage(_panelMessage!),
+                              !chat.isLeft &&
+                              !chat.partnerAccountDeleted &&
+                              canReplyToMessage(_panelMessage!),
                           reactions:
-                              !chat.isLeft && canReplyToMessage(_panelMessage!)
+                              !chat.isLeft &&
+                                  !chat.partnerAccountDeleted &&
+                                  canReplyToMessage(_panelMessage!)
                               ? buildReactionPicker(_panelMessage!)
                               : const SizedBox.shrink(),
                           actions: Visibility(
@@ -2150,6 +2194,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             child: MessageActionRow(
                               message: _panelMessage!,
                               readOnly: chat.isLeft,
+                              accountDeleted: chat.partnerAccountDeleted,
                               mode: chatMode,
                               hasOriginal: activePresentation.canRevealOriginal,
                               canListen:

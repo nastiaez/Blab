@@ -268,15 +268,22 @@ class ChatMessageRow extends ConsumerWidget {
                             width: 32,
                             child: isLastInGroup
                                 ? Semantics(
-                                    label: message.senderName ?? partnerName,
+                                    label: (message.senderAccountDeleted
+                                        ? context.l10n.deletedAccount
+                                        : message.senderName ?? partnerName),
                                     image: true,
                                     child: BlabAvatar(
-                                      name: message.senderName ?? partnerName,
+                                      name: (message.senderAccountDeleted
+                                          ? context.l10n.deletedAccount
+                                          : message.senderName ?? partnerName),
                                       size: 32,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       fill: BlabColors.avatarColorFor(
-                                        message.senderName ?? partnerName,
+                                        (message.senderAccountDeleted
+                                            ? context.l10n.deletedAccount
+                                            : message.senderName ??
+                                                  partnerName),
                                       ),
                                       shadows: const [],
                                     ),

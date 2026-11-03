@@ -35,8 +35,10 @@ class Chat {
     this.memberCount = 2,
     this.ownerId,
     this.aiStartedAt,
+    this.partnerAccountDeleted = false,
   });
 
+  final bool partnerAccountDeleted;
   final String id;
   final DateTime? leftAt;
   final DateTime? historyClearedAt;
@@ -74,6 +76,7 @@ class Chat {
     memberCount: memberCount,
     ownerId: ownerId,
     aiStartedAt: aiStartedAt,
+    partnerAccountDeleted: partnerAccountDeleted,
   );
 
   /// The partner's user id. Needed to block / report them. Null for mock

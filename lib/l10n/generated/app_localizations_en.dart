@@ -454,7 +454,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is permanent. The following will be deleted:';
 
   @override
-  String get allChatsMessages => 'All chats and messages';
+  String get allChatsMessages =>
+      'Your account access (existing messages and media remain visible to their recipients)';
 
   @override
   String get yourProfile => 'Your profile';
@@ -1739,4 +1740,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get linkActionFailed => 'Couldn’t open or copy this link.';
+
+  @override
+  String get deletedAccount => 'Deleted account';
+
+  @override
+  String get accountDeleted => 'Account deleted';
+
+  @override
+  String get deletedAccountNotice =>
+      'This account has been deleted. You can no longer send messages.';
 }

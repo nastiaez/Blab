@@ -182,7 +182,7 @@
   "logOutHelp": "You'll need your email and password (or Google) to sign back in.",
   "deleteAccount": "Delete account",
   "deleteAccountPermanent": "This is permanent. The following will be deleted:",
-  "allChatsMessages": "All chats and messages",
+  "allChatsMessages": "Your account access (existing messages and media remain visible to their recipients)",
   "yourProfile": "Your profile",
   "yourSettings": "Your settings and preferences",
   "confirmWithPassword": "Confirm with password",
@@ -761,5 +761,8 @@
   "noMentionMatches": "No matching participants",
   "linkOpenBrowser": "Open in browser",
   "linkCopy": "Copy link",
-  "linkActionFailed": "Couldn’t open or copy this link."
+  "linkActionFailed": "Couldn’t open or copy this link.",
+  "deletedAccount": "Deleted account",
+  "accountDeleted": "Account deleted",
+  "deletedAccountNotice": "This account has been deleted. You can no longer send messages."
 }

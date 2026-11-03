@@ -42,7 +42,9 @@ class ChatListTile extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            BlabAvatar(name: chat.partnerName),
+            BlabAvatar(
+              name: (chat.partnerAccountDeleted ? "" : chat.partnerName),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -52,10 +54,21 @@ class ChatListTile extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          chat.partnerName.isNotEmpty
-                              ? chat.partnerName[0].toUpperCase() +
-                                    chat.partnerName.substring(1)
-                              : chat.partnerName,
+                          (chat.partnerAccountDeleted
+                                      ? context.l10n.deletedAccount
+                                      : chat.partnerName)
+                                  .isNotEmpty
+                              ? (chat.partnerAccountDeleted
+                                            ? context.l10n.deletedAccount
+                                            : chat.partnerName)[0]
+                                        .toUpperCase() +
+                                    (chat.partnerAccountDeleted
+                                            ? context.l10n.deletedAccount
+                                            : chat.partnerName)
+                                        .substring(1)
+                              : (chat.partnerAccountDeleted
+                                    ? context.l10n.deletedAccount
+                                    : chat.partnerName),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -81,7 +94,9 @@ class ChatListTile extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          invitation
+                          chat.partnerAccountDeleted
+                              ? context.l10n.accountDeleted
+                              : invitation
                               ? context.l10n.groupInvitation
                               : chat.isLeft
                               ? context.l10n.leftChat
@@ -91,6 +106,8 @@ class ChatListTile extends ConsumerWidget {
                                     : context.l10n.newConnectionSayHi
                               : partnerTyping
                               ? context.l10n.typing
+                              : chat.partnerAccountDeleted
+                              ? context.l10n.accountDeleted
                               : chat.lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

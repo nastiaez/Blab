@@ -97,6 +97,8 @@ class Message {
     this.languagesMatchedAtSend = false,
     this.senderId,
     this.senderName,
+    this.senderAccountDeleted = false,
+    this.deletedMentionUserIds = const {},
     this.mentions = const [],
   });
 
@@ -108,6 +110,8 @@ class Message {
   final bool isOutgoing;
   final String? senderId;
   final String? senderName;
+  final bool senderAccountDeleted;
+  final Set<String> deletedMentionUserIds;
   final List<MessageMention> mentions;
 
   /// Exact authored text. This is always the primary bubble content and is
@@ -157,6 +161,8 @@ class Message {
       isOutgoing: isOutgoing,
       senderId: senderId,
       senderName: senderName,
+      senderAccountDeleted: senderAccountDeleted,
+      deletedMentionUserIds: deletedMentionUserIds,
       mentions: mentions ?? this.mentions,
       originalText: originalText ?? this.originalText,
       translation: translation ?? this.translation,

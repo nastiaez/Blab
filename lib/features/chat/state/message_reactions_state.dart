@@ -127,6 +127,13 @@ class MessageReactionsNotifier
   }
 
   Future<void> react({required String messageId, required String emoji}) async {
+    if (ref
+            .read(chatListProvider)
+            .value
+            ?.any((chat) => chat.id == chatId && chat.partnerAccountDeleted) ??
+        false) {
+      return;
+    }
     final currentUserId = ref.read(currentUserIdProvider);
     if (currentUserId == null) return;
     final generation = _generation;

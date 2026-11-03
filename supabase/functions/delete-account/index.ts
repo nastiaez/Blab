@@ -11,7 +11,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { StreamServer } from "../_shared/stream_server.ts";
-import { deactivateStreamAccount } from "../_shared/stream_account_erasure.ts";
+import { advanceStreamErasure } from "../_shared/stream_account_erasure.ts";
 import { isMissingPrivateObject } from "../_shared/private_media_cleanup.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -55,21 +55,46 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // The receipt grants status lookup only. Creation still requires the
+  // authenticated identity above, and completion is an Auth-delete trigger.
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = await req.json();
+  } catch { /* Legacy bodyless client. */ }
+  if (payload?.deletion_receipt !== undefined) {
+    if (
+      typeof payload.deletion_receipt !== "string" ||
+      !/^[0-9a-f]{64}$/.test(payload.deletion_receipt)
+    ) {
+      return json({ error: "invalid_receipt" }, 400);
+    }
+    const receipt = await admin.rpc("begin_account_deletion", {
+      p_user_id: userId,
+      p_receipt: payload.deletion_receipt,
+    });
+    if (receipt.error) return json({ error: "delete_failed" }, 503);
+  }
+
   const key = Deno.env.get("STREAM_API_KEY"),
     secret = Deno.env.get("STREAM_API_SECRET");
-  let vendor: StreamServer | null = null;
-  let deactivated = false;
+  // A partially configured provider must never silently bypass erasure.
+  // Both absent remains the existing local/non-Stream configuration.
+  if (Boolean(key) !== Boolean(secret)) {
+    return json({ error: "delete_failed" }, 503);
+  }
+  // Irrevocable, forward-only workflow: failed stages remain recoverable in
+  // the durable receipt/media/vendor queues. Never reactivate on failure:
+  // another request may already have committed Auth erasure.
   if (key && secret) {
     const queued = await admin.rpc("queue_stream_account_erasure", {
       p_user_id: userId,
     });
     if (queued.error) return json({ error: "delete_failed" }, 503);
-    vendor = new StreamServer(key, secret);
+    const vendor = new StreamServer(key, secret);
     try {
-      deactivated = await deactivateStreamAccount(vendor, userId);
+      await advanceStreamErasure(vendor, userId, null);
     } catch {
-      // Do not delete auth while a still-valid vendor session could survive.
-      return json({ error: "delete_failed" }, 503);
+      return json({ error: "deletion_pending" }, 503);
     }
   }
 
@@ -78,7 +103,9 @@ Deno.serve(async (req) => {
   const queuedPhotos = await admin.rpc("queue_account_private_media_cleanup", {
     p_actor_id: userId,
   });
-  if (queuedPhotos.error) return json({ error: "delete_failed" }, 503);
+  if (queuedPhotos.error) {
+    return json({ error: "deletion_pending" }, 503);
+  }
   try {
     const rows = (queuedPhotos.data ?? []) as Array<
       { bucket_id: string; object_path: string }
@@ -98,17 +125,24 @@ Deno.serve(async (req) => {
       }
     }
   } catch {
-    return json({ error: "delete_failed" }, 503);
+    return json({ error: "deletion_pending" }, 503);
   }
-  const { error: delErr } = await admin.auth.admin.deleteUser(userId);
+  let { error: delErr } = await admin.auth.admin.deleteUser(userId);
+  // Concurrent Auth deletions can return a generic database error. Retry
+  // this bounded class only; the atomic receipt, not error text, establishes
+  // whether erasure committed. Never replay vendor erasure here.
+  for (
+    let attempt = 0;
+    attempt < 2 && delErr?.status === 500 &&
+    delErr.message === "Database error deleting user";
+    attempt++
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+    ({ error: delErr } = await admin.auth.admin.deleteUser(userId));
+  }
   if (delErr) {
-    if (vendor && deactivated) {
-      try {
-        await vendor.request(`users/${userId}/reactivate`, {});
-      } catch { /* Safe to retry deletion. */ }
-    }
     console.error("deleteUser failed", { userId, message: delErr.message });
-    return json({ error: "delete_failed" }, 500);
+    return json({ error: "deletion_pending" }, 500);
   }
 
   return json({ ok: true });

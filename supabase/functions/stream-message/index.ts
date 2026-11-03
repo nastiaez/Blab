@@ -1,3 +1,4 @@
+import { reconcileDeletedSend } from "../_shared/deleted_account_send.ts";
 import { parseMentions } from "./mentions.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { EdgeRuntime as EdgeRuntimeType } from "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -50,7 +51,11 @@ Deno.serve(async (request) => {
     (typeof input.replyId !== "string" || !uuid.test(input.replyId))
   ) return json({ error: "invalid_reply" }, 400);
   let mentions;
-  try { mentions = parseMentions(input.mentions, String(input.body ?? "")); } catch { return json({ error: "invalid_mentions" }, 400); }
+  try {
+    mentions = parseMentions(input.mentions, String(input.body ?? ""));
+  } catch {
+    return json({ error: "invalid_mentions" }, 400);
+  }
   const key = Deno.env.get("STREAM_API_KEY"),
     secret = Deno.env.get("STREAM_API_SECRET");
   if (!key || !secret) return json({ error: "stream_not_configured" }, 503);
@@ -98,6 +103,15 @@ Deno.serve(async (request) => {
   );
   const server = new StreamServer(key, secret);
   let result: Record<string, unknown> | null = null;
+  const isWritable = async () => {
+    const checked = await admin.rpc("stream_command_is_writable", {
+      p_request_id: input.requestId,
+      p_lease_token: command.leaseToken,
+    });
+    if (checked.error) throw new Error("authorization_recheck_failed");
+    return checked.data === true;
+  };
+  let createdNow = false;
   try {
     let canonical: Record<string, unknown> | null = null;
     try {
@@ -117,11 +131,13 @@ Deno.serve(async (request) => {
       (canonical.cid !== `blab:${input.chatId}` ||
         (canonical.user as { id?: unknown })?.id !== identity.user.id)
     ) throw new Error("message_identity_mismatch");
+    if (!(await isWritable())) throw new Error("account_deleted");
     if (input.action === "send" || input.action === "send_image") {
       if (canonical) {
         if (
           canonical.text !== input.body || canonical.deleted_at ||
-          JSON.stringify(canonical.blab_mentions ?? []) !== JSON.stringify(mentions) ||
+          JSON.stringify(canonical.blab_mentions ?? []) !==
+            JSON.stringify(mentions) ||
           (canonical.quoted_message_id ?? null) !== (input.replyId ?? null)
         ) throw new Error("idempotency_conflict");
         if (
@@ -135,6 +151,7 @@ Deno.serve(async (request) => {
             )
         ) throw new Error("image_identity_conflict");
       } else {
+        createdNow = true;
         canonical =
           (await server.request(`channels/blab/${input.chatId}/message`, {
             message: {
@@ -177,6 +194,19 @@ Deno.serve(async (request) => {
       !canonical || typeof canonical.created_at !== "string" ||
       canonical.type === "error"
     ) throw new Error("missing_canonical_acknowledgment");
+    if (!(await isWritable())) {
+      // Canonical acceptance time decides history versus a post-deletion send.
+      // A durable fence owns retry if compensation or this response is lost.
+      if (createdNow) {
+        const fence = await admin.from("stream_account_send_fences").select("*")
+          .eq("message_id", input.messageId).maybeSingle();
+        if (fence.error || !fence.data) {
+          throw new Error("send_reconciliation_pending");
+        }
+        await reconcileDeletedSend(server, fence.data);
+      }
+      throw new Error("account_deleted");
+    }
     result = { id: input.messageId, createdAt: canonical.created_at };
   } catch {
     result = null;

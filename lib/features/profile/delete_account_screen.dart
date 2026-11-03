@@ -25,7 +25,7 @@ import '../chat/state/pending_sends_state.dart';
 /// Same chassis as the rest of the Profile sub-pages (cream canvas,
 /// transparent AppBar with ink back arrow + centered title). Promoted from
 /// a bottom sheet because the action carries more information than a
-/// simple confirm (what gets deleted, password / email confirmation, red
+/// simple confirm (what gets deleted, final confirmation, red
 /// CTA + Cancel) — full-page treatment matches WhatsApp / Signal /
 /// Telegram account-delete flows.
 class DeleteAccountScreen extends ConsumerStatefulWidget {
@@ -39,8 +39,10 @@ class DeleteAccountScreen extends ConsumerStatefulWidget {
 class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   String? _err;
   bool _busy = false;
+  bool _confirming = false;
 
   Future<void> _delete() async {
+    if (_busy) return;
     HapticFeedback.heavyImpact();
     final auth = ref.read(supabaseAuthServiceProvider);
 
@@ -51,7 +53,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
     try {
       await auth.deleteAccount(
-        clearLocalData: const LocalAccountDataStore().clear,
+        clearLocalData: const LocalAccountDataStore().clearForOwner,
       );
       ref.invalidate(typingIndicatorsProvider);
       ref.invalidate(readReceiptsProvider);
@@ -79,8 +81,14 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   }
 
   Future<void> _confirmAndDelete() async {
-    final confirmed = await _confirmDeleteAccount(context);
-    if (confirmed == true && mounted) await _delete();
+    if (_busy || _confirming) return;
+    _confirming = true;
+    try {
+      final confirmed = await _confirmDeleteAccount(context);
+      if (confirmed == true && mounted) await _delete();
+    } finally {
+      _confirming = false;
+    }
   }
 
   @override
@@ -218,14 +226,6 @@ Future<bool?> _confirmDeleteAccount(BuildContext context) {
       title: Text(
         context.l10n.deleteAccountConfirmationTitle,
         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-      ),
-      content: Text(
-        context.l10n.deleteAccountConfirmationBody,
-        style: const TextStyle(
-          fontSize: 14,
-          color: BlabColors.textMuted,
-          height: 1.4,
-        ),
       ),
       actionsPadding: const EdgeInsets.only(right: 8, bottom: 8),
       actions: [

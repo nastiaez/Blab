@@ -83,13 +83,17 @@ class ChatHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final partnerTyping =
         !chat.isLeft &&
+        !chat.partnerAccountDeleted &&
         (ref.watch(partnerTypingProvider(chat.id)).value ?? false);
     return ChatHeaderFrame(
       group: chat.isGroup,
       onBack: onBack,
       identity: ChatHeaderIdentity(
-        name: chat.partnerName,
+        name: (chat.partnerAccountDeleted
+            ? context.l10n.deletedAccount
+            : chat.partnerName),
         group: chat.isGroup,
+        deleted: chat.partnerAccountDeleted,
         subtitle: chat.isGroup
             ? context.l10n.groupMemberCount(chat.memberCount)
             : null,
@@ -247,9 +251,11 @@ class ChatHeaderIdentity extends StatelessWidget {
     required this.name,
     required this.onTap,
     this.typing = false,
+    this.deleted = false,
     this.subtitle,
     this.group = false,
   });
+  final bool deleted;
   final bool group;
   final String name;
   final VoidCallback onTap;
@@ -264,7 +270,8 @@ class ChatHeaderIdentity extends StatelessWidget {
         // Avatar artwork stays fixed-size in the approved large-text state.
         MediaQuery.withNoTextScaling(
           child: BlabAvatar(
-            name: name,
+            name: deleted ? "" : name,
+            initials: deleted ? "" : null,
             fill: group ? BlabColors.warmInk : null,
             size: group ? 34 : 36,
             fontSize: group ? 11 : 12,

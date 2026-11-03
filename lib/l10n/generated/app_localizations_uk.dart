@@ -455,7 +455,8 @@ class AppLocalizationsUk extends AppLocalizations {
   String get deleteAccountPermanent => 'Це незворотно. Буде видалено:';
 
   @override
-  String get allChatsMessages => 'Усі чати й повідомлення';
+  String get allChatsMessages =>
+      'Ваш доступ до облікового запису (наявні повідомлення й медіа залишаються видимими для їхніх одержувачів)';
 
   @override
   String get yourProfile => 'Твій профіль';
@@ -1754,4 +1755,14 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get linkActionFailed =>
       'Не вдалося відкрити або скопіювати це посилання.';
+
+  @override
+  String get deletedAccount => 'Видалений обліковий запис';
+
+  @override
+  String get accountDeleted => 'Обліковий запис видалено';
+
+  @override
+  String get deletedAccountNotice =>
+      'Цей обліковий запис видалено. Ви більше не можете надсилати повідомлення.';
 }

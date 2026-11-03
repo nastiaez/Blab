@@ -34,6 +34,7 @@ Chat _rowToChat(Map<String, dynamic> r) {
   return Chat(
     id: r['chat_id'] as String,
     partnerId: r['partner_id'] as String?,
+    partnerAccountDeleted: r['partner_account_deleted'] == true,
     leftAt: DateTime.tryParse(r['left_at'] as String? ?? ''),
     historyClearedAt: DateTime.tryParse(
       r['history_cleared_at'] as String? ?? '',
@@ -164,6 +165,7 @@ class ChatListNotifier extends AsyncNotifier<List<Chat>> {
         historyClearedAt: chat.historyClearedAt,
         partnerId: chat.partnerId,
         partnerName: chat.partnerName,
+        partnerAccountDeleted: chat.partnerAccountDeleted,
         partnerInitial: chat.partnerInitial,
         learningLanguage: language,
         mode: chat.mode,
@@ -301,7 +303,9 @@ final blockedUserIdsProvider = StreamProvider<Set<String>>((ref) {
 List<Chat> filterShareableChats(List<Chat> chats, Set<String> blocked) => chats
     .where(
       (c) =>
-          !c.isLeft && (c.partnerId == null || !blocked.contains(c.partnerId)),
+          !c.isLeft &&
+          !c.partnerAccountDeleted &&
+          (c.partnerId == null || !blocked.contains(c.partnerId)),
     )
     .toList();
 

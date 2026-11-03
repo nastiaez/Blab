@@ -1,3 +1,7 @@
+import {
+  type DeletedSendFence,
+  reconcileDeletedSend,
+} from "../_shared/deleted_account_send.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { StreamServer } from "../_shared/stream_server.ts";
@@ -113,6 +117,45 @@ Deno.serve(async (request) => {
         : "retry",
     };
   }));
+  const deletedSends = await admin.rpc("claim_deleted_account_sends");
+  if (deletedSends.error) {
+    return json({ error: "deleted_send_claim_unavailable" }, 503);
+  }
+  const deletedSendOutcomes = await Promise.all(
+    (deletedSends.data ?? []).map(async (
+      fence: DeletedSendFence & { lease_token: string },
+    ) => {
+      let done = false;
+      try {
+        const settled = await reconcileDeletedSend(server, fence);
+        if (settled.state === "retained") {
+          const applied = await admin.rpc("apply_stream_message_snapshot", {
+            p_chat_id: fence.chat_id,
+            p_snapshot: settled.message,
+          });
+          done = !applied.error;
+        } else {
+          // Several request deadlines elapse before declaring an absent send safe.
+          done = settled.state === "removed" ||
+            Date.now() - Date.parse(fence.blocked_at) > 5 * 60 * 1000;
+        }
+      } catch {
+        /* Durable retry never treats a provider timeout as absence. */
+      }
+      const finished = await admin.rpc("finish_deleted_account_send", {
+        p_message_id: fence.message_id,
+        p_lease_token: fence.lease_token,
+        p_done: done,
+      });
+      return {
+        state: finished.error || finished.data !== true
+          ? "lease_unsettled"
+          : done
+          ? "done"
+          : "retry",
+      };
+    }),
+  );
   const privateClaim = await admin.rpc("claim_stream_private_media_cleanup");
   if (privateClaim.error) {
     return json({ error: "private_media_claim_unavailable" }, 503);
@@ -122,6 +165,14 @@ Deno.serve(async (request) => {
       async (
         asset: { bucket_id: string; object_path: string; lease_token: string },
       ) => {
+        const safe = await admin.rpc("private_media_cleanup_is_safe", {
+          p_bucket: asset.bucket_id,
+          p_path: asset.object_path,
+          p_lease_token: asset.lease_token,
+        });
+        if (safe.error || safe.data !== true) {
+          return { state: "retained_or_lease_lost" };
+        }
         const removed = await admin.storage.from(asset.bucket_id).remove(
           [asset.object_path],
         );
@@ -194,5 +245,6 @@ Deno.serve(async (request) => {
     erased_accounts: erased,
     orphan_uploads: orphanOutcomes,
     private_media_cleanup: privateMediaOutcomes,
+    deleted_send_recovery: deletedSendOutcomes,
   });
 });

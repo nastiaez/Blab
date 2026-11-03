@@ -370,38 +370,41 @@ class _BubbleState extends ConsumerState<MessageBubble> {
       required AsyncValue<MessageTranslation>? translation,
       required bool showTranslation,
       bool pending = false,
-    }) => MessageLearningContent(
-      groupConversation: widget.groupConversation,
-      authoredText: message.originalText,
-      mentions: message.mentions,
-      viewerId: ref.watch(currentUserIdProvider),
-      translation: translation,
-      showTranslation: showTranslation,
-      learningLanguageCode: languageCode,
-      translationLanguageCode: targetLanguageCode,
-      readingScript: readingScript,
-      isOutgoing: isOut,
-      languagesMatchedAtSend: message.languagesMatchedAtSend,
-      popupTopInset: popupTopInset,
-      mode: mode,
-      knownLanguageCodes: knownLanguageCodes,
-      resolvedSourceLang: resolvedSourceLang,
-      expanded: widget.isSelected && mode == ChatMode.practice,
-      showOriginal: widget.isSelected && widget.showOriginal,
-      pendingColor: pending && isPractice
-          ? BlabColors.bubbleInk.withValues(alpha: 0.48)
-          : null,
-      onToggleExpanded: () {},
-      unavailableText: context.l10n.translationUnavailable,
-      retryText: context.l10n.retry,
-      onRetry: canRetryTranslation ? retryTranslation : null,
-      resolvedForm: resolvedForm,
-      formAlternativesOverride: formAlternatives,
-      onFormMarkerTap: (index) {
-        if (!mounted) return;
-        setState(() => _openFormChoiceIndex = index);
-      },
-      activeFormChoiceIndex: _openFormChoiceIndex,
+    }) => DeletedIdentityScope(
+      userIds: message.deletedMentionUserIds,
+      child: MessageLearningContent(
+        groupConversation: widget.groupConversation,
+        authoredText: message.originalText,
+        mentions: message.mentions,
+        viewerId: ref.watch(currentUserIdProvider),
+        translation: translation,
+        showTranslation: showTranslation,
+        learningLanguageCode: languageCode,
+        translationLanguageCode: targetLanguageCode,
+        readingScript: readingScript,
+        isOutgoing: isOut,
+        languagesMatchedAtSend: message.languagesMatchedAtSend,
+        popupTopInset: popupTopInset,
+        mode: mode,
+        knownLanguageCodes: knownLanguageCodes,
+        resolvedSourceLang: resolvedSourceLang,
+        expanded: widget.isSelected && mode == ChatMode.practice,
+        showOriginal: widget.isSelected && widget.showOriginal,
+        pendingColor: pending && isPractice
+            ? BlabColors.bubbleInk.withValues(alpha: 0.48)
+            : null,
+        onToggleExpanded: () {},
+        unavailableText: context.l10n.translationUnavailable,
+        retryText: context.l10n.retry,
+        onRetry: canRetryTranslation ? retryTranslation : null,
+        resolvedForm: resolvedForm,
+        formAlternativesOverride: formAlternatives,
+        onFormMarkerTap: (index) {
+          if (!mounted) return;
+          setState(() => _openFormChoiceIndex = index);
+        },
+        activeFormChoiceIndex: _openFormChoiceIndex,
+      ),
     );
 
     final authoredContent = buildLearningContent(
@@ -517,9 +520,12 @@ class _BubbleState extends ConsumerState<MessageBubble> {
                         if (widget.groupConversation &&
                             !isOut &&
                             widget.isFirstInGroup &&
-                            message.senderName != null) ...[
+                            (message.senderName != null ||
+                                message.senderAccountDeleted)) ...[
                           Text(
-                            message.senderName!,
+                            message.senderAccountDeleted
+                                ? context.l10n.deletedAccount
+                                : message.senderName!,
                             style: const TextStyle(
                               fontSize: 12,
                               height: 16 / 12,

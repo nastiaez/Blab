@@ -32,28 +32,85 @@ export async function advanceStreamErasure(
   taskId: string | null,
 ) {
   if (taskId != null) {
-    const task = await server.request(`tasks/${taskId}`);
-    if (task.task_id !== taskId) throw new Error("task_identity_mismatch");
-    if (task.status === "failed" || task.error != null) {
-      throw new Error("erasure_task_failed");
-    }
-    return { done: task.status === "completed", taskId };
+    throw new Error("legacy_destructive_task_requires_reconciliation");
   }
-  if (await findStreamAccount(server, userId) == null) {
+  const user = await findStreamAccount(server, userId);
+  if (user == null) return { done: true, taskId: null };
+  // Stream ListDevices returns 404 for inactive users. QueryUsers with
+  // include_deactivated_users returns their authoritative devices instead.
+  // Never reactivate merely to enumerate devices, or treat arbitrary 404 as empty.
+  const deviceList = user.deactivated_at != null
+    ? { devices: user.devices }
+    : await server.request("devices", undefined, {
+      query: { user_id: userId },
+    });
+  if (!Array.isArray(deviceList.devices) || deviceList.devices.length > 100) {
+    throw new Error("invalid_device_response");
+  }
+  await Promise.all(deviceList.devices.map(async (device: { id?: unknown }) => {
+    if (typeof device.id !== "string" || device.id.length === 0) {
+      throw new Error("invalid_device_identity");
+    }
+    await server.request("devices", undefined, {
+      method: "DELETE",
+      query: { id: device.id, user_id: userId },
+    });
+  }));
+  // Upsert merges custom fields. Explicitly unset every provider-returned
+  // custom field instead, retaining only provider-owned operational metadata.
+  const providerFields = new Set([
+    "id",
+    "role",
+    "created_at",
+    "updated_at",
+    "last_active",
+    "online",
+    "banned",
+    "ban_expires",
+    "deactivated_at",
+    "revoke_tokens_issued_before",
+    "teams",
+    "devices",
+    "invisible",
+    "language",
+    "unread_count",
+    "total_unread_count",
+    "unread_channels",
+    "unread_threads",
+    "shadow_banned",
+    "blocked_user_ids",
+    "mutes",
+    "channel_mutes",
+  ]);
+  const unset = Object.keys(user).filter((key) =>
+    !providerFields.has(key) && key !== "name" && key !== "image"
+  );
+  // Neither ListDevices nor partial user updates accept inactive users.
+  // A completed retry must verify the minimized snapshot; legacy unsanitized
+  // inactive identities require reconciliation, never automatic reactivation.
+  if (user.deactivated_at != null) {
+    if (
+      deviceList.devices.length || unset.length ||
+      user.name !== "Deleted account" || user.image !== "" ||
+      user.language !== "en" || !Array.isArray(user.teams) || user.teams.length
+    ) {
+      throw new Error("inactive_identity_requires_reconciliation");
+    }
     return { done: true, taskId: null };
   }
-  const task = await server.request("users/delete", {
-    user_ids: [userId],
-    user: "hard",
-    messages: "hard",
-    conversations: "hard",
-    files: true,
-  });
-  if (
-    typeof task.task_id !== "string" ||
-    !/^[A-Za-z0-9_-]{1,200}$/.test(task.task_id)
-  ) {
-    throw new Error("invalid_erasure_task");
-  }
-  return { done: false, taskId: task.task_id };
+  await server.request("users", {
+    users: [{
+      id: userId,
+      set: {
+        name: "Deleted account",
+        image: "",
+        language: "en",
+        teams: [],
+        revoke_tokens_issued_before: new Date().toISOString(),
+      },
+      unset,
+    }],
+  }, { method: "PATCH" });
+  await deactivateStreamAccount(server, userId);
+  return { done: true, taskId: null };
 }

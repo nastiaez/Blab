@@ -456,7 +456,8 @@ class AppLocalizationsEs extends AppLocalizations {
       'Esto es permanente. Se eliminará lo siguiente:';
 
   @override
-  String get allChatsMessages => 'Todos los chats y mensajes';
+  String get allChatsMessages =>
+      'Tu acceso a la cuenta (los mensajes y archivos existentes siguen visibles para sus destinatarios)';
 
   @override
   String get yourProfile => 'Tu perfil';
@@ -1760,4 +1761,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get linkActionFailed => 'No se pudo abrir ni copiar este enlace.';
+
+  @override
+  String get deletedAccount => 'Cuenta eliminada';
+
+  @override
+  String get accountDeleted => 'Cuenta eliminada';
+
+  @override
+  String get deletedAccountNotice =>
+      'Esta cuenta se ha eliminado. Ya no puedes enviar mensajes.';
 }

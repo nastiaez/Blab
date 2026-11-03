@@ -24,6 +24,67 @@ class LocalChatHistoryCache {
   final int? _mediaCacheCharacterBudget;
   static Future<void> _browserMediaQueue = Future<void>.value();
 
+  String get _deletedIdentityPrefix => 'cached_deleted_identity:$userId:';
+
+  Set<String> _knownDeletedIdentities(SharedPreferences prefs) => {
+    for (final key in prefs.getKeys())
+      if (key.startsWith(_deletedIdentityPrefix) && prefs.getBool(key) == true)
+        key.substring(_deletedIdentityPrefix.length),
+  };
+
+  Map<String, dynamic> _neutralizeSnapshot(
+    Map<String, dynamic> row,
+    Set<String> ids,
+  ) {
+    if (ids.contains(row['senderId'])) {
+      row['senderAccountDeleted'] = true;
+      row['senderName'] = null;
+    }
+    row['deletedMentionUserIds'] = {
+      ...((row['deletedMentionUserIds'] as List?) ?? const []).cast<String>(),
+      ...ids,
+    }.toList();
+    if (row['replyTo'] is Map) {
+      row['replyTo'] = _neutralizeSnapshot(
+        Map<String, dynamic>.from(row['replyTo'] as Map),
+        ids,
+      );
+    }
+    return row;
+  }
+
+  /// Authoritative tombstones are monotonic and scoped to the viewing account.
+  /// Also scrub older pages, not only the currently loaded realtime window.
+  Future<void> rememberDeletedIdentities(Set<String> ids) async {
+    if (ids.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    if (ids.every(
+      (id) => prefs.getBool('$_deletedIdentityPrefix$id') == true,
+    )) {
+      return;
+    }
+    for (final id in ids) {
+      await prefs.setBool('$_deletedIdentityPrefix$id', true);
+    }
+    final known = _knownDeletedIdentities(prefs);
+    for (final key in prefs.getKeys().where(
+      (k) => k.startsWith('cached_messages:$userId:'),
+    )) {
+      try {
+        final rows = jsonDecode(prefs.getString(key)!) as List;
+        await prefs.setString(
+          key,
+          jsonEncode([
+            for (final row in rows)
+              _neutralizeSnapshot(Map<String, dynamic>.from(row as Map), known),
+          ]),
+        );
+      } catch (_) {
+        /* A corrupt snapshot is ignored by the regular loader. */
+      }
+    }
+  }
+
   String _groupMembersKey(String chatId) =>
       'cached_group_members:$userId:$chatId';
 
@@ -33,7 +94,11 @@ class LocalChatHistoryCache {
     if (raw == null) return null;
     try {
       final rows = jsonDecode(raw) as List;
-      return rows.map((row) => Map<String, dynamic>.from(row as Map)).toList();
+      final deleted = _knownDeletedIdentities(prefs);
+      return rows
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .where((row) => !deleted.contains(row['user_id']))
+          .toList();
     } catch (_) {
       return null;
     }
@@ -310,6 +375,11 @@ class LocalChatHistoryCache {
   }
 
   Future<void> saveChats(Iterable<Chat> chats) async {
+    await rememberDeletedIdentities({
+      for (final chat in chats)
+        if (chat.partnerAccountDeleted && chat.partnerId != null)
+          chat.partnerId!,
+    });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       cachedChatsStorageKey(userId),
@@ -355,7 +425,16 @@ class LocalChatHistoryCache {
       if (decoded is! List) return const [];
       return decoded
           .whereType<Map>()
-          .map((row) => _chatFromJson(Map<String, dynamic>.from(row)))
+          .map((row) {
+            final snapshot = Map<String, dynamic>.from(row);
+            if (_knownDeletedIdentities(
+              prefs,
+            ).contains(snapshot['partnerId'])) {
+              snapshot['partnerAccountDeleted'] = true;
+              snapshot['partnerName'] = 'Deleted account';
+            }
+            return _chatFromJson(snapshot);
+          })
           .whereType<Chat>()
           .toList();
     } catch (_) {
@@ -488,9 +567,17 @@ class LocalChatHistoryCache {
 
   Future<void> saveMessages(String chatId, Iterable<Message> messages) async {
     final prefs = await SharedPreferences.getInstance();
+    await rememberDeletedIdentities({
+      for (final message in messages) ...[
+        ...message.deletedMentionUserIds,
+        if (message.senderAccountDeleted && message.senderId != null)
+          message.senderId!,
+      ],
+    });
+    final known = _knownDeletedIdentities(prefs);
     final serialized = <Map<String, dynamic>>[];
     for (final message in messages) {
-      serialized.add(_messageToJson(message));
+      serialized.add(_neutralizeSnapshot(_messageToJson(message), known));
       final attachment = message.attachment;
       final bytes = attachment?.localBytes;
       if (attachment != null && bytes != null && bytes.isNotEmpty) {
@@ -663,7 +750,10 @@ class LocalChatHistoryCache {
         final message = await _messageFromJson(
           prefs,
           userId,
-          Map<String, dynamic>.from(value),
+          _neutralizeSnapshot(
+            Map<String, dynamic>.from(value),
+            _knownDeletedIdentities(prefs),
+          ),
         );
         if (message != null) messages.add(message);
       }
@@ -681,6 +771,7 @@ class LocalChatHistoryCache {
     'memberCount': chat.memberCount,
     'ownerId': chat.ownerId,
     'aiStartedAt': chat.aiStartedAt?.toIso8601String(),
+    'partnerAccountDeleted': chat.partnerAccountDeleted,
     'partnerName': chat.partnerName,
     'learningLanguage': chat.learningLanguage.code,
     'mode': chat.mode.name,
@@ -721,6 +812,7 @@ class LocalChatHistoryCache {
       memberCount: (row['memberCount'] as num?)?.toInt() ?? 2,
       ownerId: row['ownerId'] as String?,
       aiStartedAt: DateTime.tryParse(row['aiStartedAt'] as String? ?? ''),
+      partnerAccountDeleted: row['partnerAccountDeleted'] == true,
       partnerName: name,
       partnerInitial: name.isEmpty ? '?' : name[0].toUpperCase(),
       learningLanguage: learning,
@@ -748,6 +840,8 @@ class LocalChatHistoryCache {
     'isOutgoing': message.isOutgoing,
     'senderId': message.senderId,
     'senderName': message.senderName,
+    'senderAccountDeleted': message.senderAccountDeleted,
+    'deletedMentionUserIds': message.deletedMentionUserIds.toList(),
     'mentions': message.mentions.map((m) => m.toJson()).toList(),
     'originalText': message.originalText,
     'sentAt': message.sentAt.toIso8601String(),
@@ -778,6 +872,9 @@ class LocalChatHistoryCache {
             'isOutgoing': message.replyTo!.isOutgoing,
             'senderId': message.replyTo!.senderId,
             'senderName': message.replyTo!.senderName,
+            'senderAccountDeleted': message.replyTo!.senderAccountDeleted,
+            'deletedMentionUserIds': message.replyTo!.deletedMentionUserIds
+                .toList(),
             'mentions': message.replyTo!.mentions
                 .map((m) => m.toJson())
                 .toList(),
@@ -846,6 +943,11 @@ class LocalChatHistoryCache {
           isOutgoing: reply['isOutgoing'] as bool? ?? false,
           senderId: reply['senderId'] as String?,
           senderName: reply['senderName'] as String?,
+          senderAccountDeleted: reply['senderAccountDeleted'] == true,
+          deletedMentionUserIds:
+              ((reply['deletedMentionUserIds'] as List?) ?? const [])
+                  .cast<String>()
+                  .toSet(),
           mentions: MessageMention.parse(
             reply['mentions'],
             reply['originalText'] as String? ?? '',
@@ -866,6 +968,11 @@ class LocalChatHistoryCache {
       isOutgoing: row['isOutgoing'] as bool? ?? false,
       senderId: row['senderId'] as String?,
       senderName: row['senderName'] as String?,
+      senderAccountDeleted: row['senderAccountDeleted'] == true,
+      deletedMentionUserIds:
+          ((row['deletedMentionUserIds'] as List?) ?? const [])
+              .cast<String>()
+              .toSet(),
       mentions: MessageMention.parse(row['mentions'], originalText),
       originalText: originalText,
       translation: '',

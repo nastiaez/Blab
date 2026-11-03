@@ -459,7 +459,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dies ist endgültig. Folgendes wird gelöscht:';
 
   @override
-  String get allChatsMessages => 'Alle Chats und Nachrichten';
+  String get allChatsMessages =>
+      'Dein Kontozugang (bisherige Nachrichten und Medien bleiben für ihre Empfänger sichtbar)';
 
   @override
   String get yourProfile => 'Dein Profil';
@@ -1767,4 +1768,14 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get linkActionFailed =>
       'Dieser Link konnte nicht geöffnet oder kopiert werden.';
+
+  @override
+  String get deletedAccount => 'Gelöschtes Konto';
+
+  @override
+  String get accountDeleted => 'Konto gelöscht';
+
+  @override
+  String get deletedAccountNotice =>
+      'Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden.';
 }

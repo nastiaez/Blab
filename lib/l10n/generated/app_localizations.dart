@@ -945,7 +945,7 @@ abstract class AppLocalizations {
   /// No description provided for @allChatsMessages.
   ///
   /// In en, this message translates to:
-  /// **'All chats and messages'**
+  /// **'Your account access (existing messages and media remain visible to their recipients)'**
   String get allChatsMessages;
 
   /// No description provided for @yourProfile.
@@ -3125,6 +3125,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t open or copy this link.'**
   String get linkActionFailed;
+
+  /// No description provided for @deletedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted account'**
+  String get deletedAccount;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted'**
+  String get accountDeleted;
+
+  /// No description provided for @deletedAccountNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been deleted. You can no longer send messages.'**
+  String get deletedAccountNotice;
 }
 
 class _AppLocalizationsDelegate

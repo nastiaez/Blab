@@ -548,10 +548,15 @@ This document captures the full scope as prototyped across 4 phone flows.
 
 **Acceptance Criteria:**
 - [ ] "Delete account" row appears in Profile, visually separated below "Log out", in red
-- [ ] Tapping opens a confirmation sheet listing what will be deleted (chats, messages, profile)
-- [ ] Requires re-entering password to confirm
+- [ ] Tapping opens a localized confirmation explaining permanent removal of account access, profile, settings and private account data, while existing messages and media remain visible to their authorized conversation recipients (BLA-31, Nastia approval16789, 29 October2026). This is the candidate policy; do not publish before the matching implementation is verified.
+- [ ] Confirmation-only deletion: reuse the existing Delete account page and final Cancel / Delete forever dialog; no password, email-entry or reauthentication step (Nastia17520, 2 November2026, option1). The authenticated session remains required server-side.
 - [ ] On success: all local data wiped, returns to auth screen
 - [ ] Deletion is irrevocable (no grace period in v1)
+- [ ] Recipient-visible existing direct-chat messages/media and group history remain; explicit message deletion and personal history cutoffs are never undone. Remove unnecessary profile/auth data and revoke all deleted-account access.
+- [ ] Authoritative deleted-account state renders neutral `Deleted account` identity, direct-chat notice `This account has been deleted. You can no longer send messages.` and list preview `Account deleted`; no missing-profile inference or broadcast push.
+- [ ] Deleted-account direct chats are read-only server-side and in realtime/offline clients. Existing personal chat deletion and blocking controls/behavior remain unchanged; no new delete-for-both option (Nastia16797).
+- [ ] Shared groups continue, reusing the existing account-erasure owner handover (active remaining account, then earliest join); sole-member groups close.
+- [ ] Signing up again, including with the same email, creates a new identity without restoring previous chats, memberships or ownership.
 
 ---
 

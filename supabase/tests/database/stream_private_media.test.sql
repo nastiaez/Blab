@@ -18,6 +18,9 @@ select ok(register_stream_private_media('9c000000-0000-4000-8000-000000000002','
 select throws_ok($$select register_stream_private_media('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000003',array['another-user/photo.png'])$$,'P0001','invalid_private_paths','lease cannot claim another account object');
 select ok(finish_stream_media_upload('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000003',(select jsonb_build_object('blab_storage_bucket','stream-private-media','blab_storage_path',path,'blab_preview_storage_path',path) from private_path)),'only exact owned private references become readable');
 reset role;
+-- Ready upload references become recipient-readable only after canonical projection.
+insert into messages(id,chat_id,sender_id,body,message_type) values
+('9c000000-0000-4000-8000-000000000002','9c000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-00000000000a','','image');
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-00000000000b"}',true);
 set local role authenticated;
 select ok(can_read_stream_private_media((select path from private_path)),'the actual partner can read the ready photo');
@@ -34,6 +37,8 @@ select ok(not can_read_stream_private_media((select path from private_path)),'qu
 reset role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 set local role service_role;
+-- Explicit message deletion releases its media; account erasure must not.
+update messages set deleted_at=clock_timestamp() where id='9c000000-0000-4000-8000-000000000002';
 create temp table private_claim as select * from claim_stream_private_media_cleanup();
 select is((select count(*) from private_claim),1::bigint,'one object cleanup is durably leased');
 select ok(not finish_stream_private_media_cleanup((select object_path from private_claim),gen_random_uuid(),true),'stale removal cannot settle another lease');

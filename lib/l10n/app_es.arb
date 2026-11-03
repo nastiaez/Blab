@@ -140,7 +140,7 @@
   "logOutHelp": "Necesitarás tu correo y contraseña (o Google) para volver a entrar.",
   "deleteAccount": "Eliminar cuenta",
   "deleteAccountPermanent": "Esto es permanente. Se eliminará lo siguiente:",
-  "allChatsMessages": "Todos los chats y mensajes",
+  "allChatsMessages": "Tu acceso a la cuenta (los mensajes y archivos existentes siguen visibles para sus destinatarios)",
   "yourProfile": "Tu perfil",
   "yourSettings": "Tus ajustes y preferencias",
   "confirmWithPassword": "Confirmar con contraseña",
@@ -621,5 +621,8 @@
   "noMentionMatches": "No hay participantes coincidentes",
   "linkOpenBrowser": "Abrir en el navegador",
   "linkCopy": "Copiar enlace",
-  "linkActionFailed": "No se pudo abrir ni copiar este enlace."
+  "linkActionFailed": "No se pudo abrir ni copiar este enlace.",
+  "deletedAccount": "Cuenta eliminada",
+  "accountDeleted": "Cuenta eliminada",
+  "deletedAccountNotice": "Esta cuenta se ha eliminado. Ya no puedes enviar mensajes."
 }

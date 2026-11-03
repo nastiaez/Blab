@@ -1,3 +1,4 @@
+import 'shared/services/account_transition_gate.dart';
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
@@ -42,6 +43,7 @@ import 'shared/services/chat_service.dart';
 import 'shared/services/cached_session_refresh.dart';
 import 'shared/services/local_chat_history_cache.dart';
 import 'shared/services/supabase_auth_service.dart';
+import 'shared/services/local_account_data_store.dart';
 import 'shared/state/chat_list_state.dart';
 import 'shared/state/auth_state.dart';
 import 'shared/state/interface_language.dart';
@@ -243,6 +245,15 @@ Future<void> _initializeAppServices() async {
     );
   }
   _startupTrace('account-ready');
+  try {
+    await SupabaseAuthService(
+      Supabase.instance.client,
+    ).reconcilePendingDeletion(
+      clearLocalData: const LocalAccountDataStore().clearForOwner,
+    );
+  } catch (_) {
+    /* Offline status is unknown; retain cached data and receipt. */
+  }
   await _routeInitialAuthCallback();
   _startupTrace('initial-link-ready');
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -305,9 +316,11 @@ Future<void> _routeInitialAuthCallback() async {
   final resolution = await resolveAuthCallbackUri(
     uri,
     exchange: (callback) async {
-      await Supabase.instance.client.auth.getSessionFromUrl(
-        callback,
-        storeSession: true,
+      await AccountTransitionGate.run(
+        () => Supabase.instance.client.auth.getSessionFromUrl(
+          callback,
+          storeSession: true,
+        ),
       );
     },
   );
@@ -367,6 +380,7 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   String? _knownEmail;
   String? _knownUserId;
   bool _checkingUserOnResume = false;
+  bool _reconcilingDeletion = false;
   int _incomingInviteRevision = 0;
   bool _resumingInvite = false;
   bool _initialInviteLinksReady = false;
@@ -614,9 +628,11 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
       final resolution = await resolveAuthCallbackUri(
         uri,
         exchange: (callback) async {
-          await Supabase.instance.client.auth.getSessionFromUrl(
-            callback,
-            storeSession: true,
+          await AccountTransitionGate.run(
+            () => Supabase.instance.client.auth.getSessionFromUrl(
+              callback,
+              storeSession: true,
+            ),
           );
         },
       );
@@ -635,10 +651,27 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshAndDetectEmailChange();
+      unawaited(_reconcileDeletion());
       unawaited(_resumeSavedInvite());
       unawaited(
         ref.read(pushNotificationsProvider.notifier).refreshPermission(),
       );
+    }
+  }
+
+  Future<void> _reconcileDeletion() async {
+    if (_reconcilingDeletion) return;
+    _reconcilingDeletion = true;
+    try {
+      await ref
+          .read(supabaseAuthServiceProvider)
+          .reconcilePendingDeletion(
+            clearLocalData: const LocalAccountDataStore().clearForOwner,
+          );
+    } catch (_) {
+      /* Retry at the next foreground/reconnect, not on a timer. */
+    } finally {
+      _reconcilingDeletion = false;
     }
   }
 
@@ -683,7 +716,10 @@ class _BlabAppState extends ConsumerState<BlabApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     ref.watch(preparedInviteProvider);
     ref.listen(isOnlineProvider, (previous, online) {
-      if (online && previous != true) unawaited(_resumeSavedInvite());
+      if (online && previous != true) {
+        unawaited(_resumeSavedInvite());
+        unawaited(_reconcileDeletion());
+      }
     });
     final interfaceLanguage = ref.watch(interfaceLanguageProvider);
     final push = ref.watch(pushNotificationsProvider);

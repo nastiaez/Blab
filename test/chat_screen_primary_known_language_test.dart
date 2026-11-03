@@ -3406,3 +3406,189 @@ Widget mentionsPreview(String scene) {
     theme: blabTheme,
   );
 }
+
+// BLA-31: identical viewer, messages and learning state across deletion.
+class _Bla31AppearanceService extends _PrimaryKnownLanguageChatService {
+  _Bla31AppearanceService({
+    required String mode,
+    required this.pendingResult,
+    this.photoOutgoing = false,
+  }) : super(
+         chatMode: mode,
+         pending: pendingResult,
+         messageText: 'Your history stays here.',
+         messageIsOutgoing: false,
+         previousMessageText: 'My history stays here.',
+         previousMessageIsOutgoing: true,
+         previousMessageSentAt: DateTime.utc(2026, 8, 3, 11, 59),
+       );
+  @override
+  Future<MessagePage> fetchMessagePage(
+    String chatId, {
+    int limit = 50,
+    MessageCursor? before,
+  }) async {
+    final page = await super.fetchMessagePage(
+      chatId,
+      limit: limit,
+      before: before,
+    );
+    return MessagePage(
+      messages: [
+        Message(
+          id: 'photo-retained',
+          chatId: 'chat-1',
+          isOutgoing: photoOutgoing,
+          originalText: '',
+          translation: '',
+          sentAt: DateTime.utc(2026, 8, 3, 11, 58),
+          status: MessageStatus.delivered,
+          type: MessageType.image,
+          attachment: MessageAttachment(
+            id: 'photo-attachment',
+            messageId: 'photo-retained',
+            chatId: 'chat-1',
+            storageBucket: 'fixture',
+            storagePath: 'retained.png',
+            mimeType: 'image/png',
+            byteSize: base64Decode(
+              'iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAABW0lEQVR4nO3RQU1DURQA0crBBg7eBnWIwAsisAGLLiEhbe/7/ZmcZARMci7r40vhLk8/0NYAxwMcD3A8wPEAxwMcD3A8wPEAxwMcD/Devj9ffnfkAOBd/Ul7PDPg+f6lPZIZ8HA36R5gDHiyO3R3GwMe627drcaAZ3pQd58x4JkAlxvR3WQMeCDA5QZ1dxgDfjTA8QDHAxwPcDzA8QD3O63uAjwS4H7n1F2ApwLc74S6C/BsZ9NdgMc7le4CvKPz6C7A+3o67TXAe3si7TXA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxzv8vr+pnCA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4/0A/lOpXgXXno0AAAAASUVORK5CYII=',
+            ).length,
+            localBytes: base64Decode(
+              'iVBORw0KGgoAAAANSUhEUgAAAKAAAABkCAIAAACO1KzYAAABW0lEQVR4nO3RQU1DURQA0crBBg7eBnWIwAsisAGLLiEhbe/7/ZmcZARMci7r40vhLk8/0NYAxwMcD3A8wPEAxwMcD3A8wPEAxwMcD/Devj9ffnfkAOBd/Ul7PDPg+f6lPZIZ8HA36R5gDHiyO3R3GwMe627drcaAZ3pQd58x4JkAlxvR3WQMeCDA5QZ1dxgDfjTA8QDHAxwPcDzA8QD3O63uAjwS4H7n1F2ApwLc74S6C/BsZ9NdgMc7le4CvKPz6C7A+3o67TXAe3si7TXA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxwPcDzA8QDHAxzv8vr+pnCA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4wGOBzge4HiA4/0A/lOpXgXXno0AAAAASUVORK5CYII=',
+            ),
+          ),
+        ),
+        ...page.messages,
+      ],
+      hasMore: false,
+    );
+  }
+
+  final bool pendingResult;
+  final bool photoOutgoing;
+  bool deleted = false;
+  @override
+  Future<List<Map<String, dynamic>>> fetchChatList() async => [
+    for (final row in await super.fetchChatList())
+      {...row, 'partner_account_deleted': deleted},
+  ];
+  @override
+  Future<CachedMessageTranslation?> fetchCachedTranslation({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => pendingResult
+      ? null
+      : (
+          text: messageId == 'msg-1'
+              ? 'Your history stays here.'
+              : 'My history stays here.',
+          interfaceText: messageId == 'msg-1'
+              ? 'Your history stays here.'
+              : 'My history stays here.',
+          interfaceLang: interfaceLang,
+          sourceLang: 'en',
+          mode: 'translation',
+          explanation: null,
+          confidence: null,
+          tokens: <Map<String, dynamic>>[],
+        );
+}
+
+Future<void> runBla31AppearanceJourney(
+  WidgetTester tester, {
+  required String mode,
+  bool pending = false,
+  bool photoOutgoing = false,
+  Future<void> Function(String)? capture,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  VisibilityDetectorController.instance.updateInterval = Duration.zero;
+  final service = _Bla31AppearanceService(
+    mode: mode,
+    pendingResult: pending,
+    photoOutgoing: photoOutgoing,
+  );
+  final container = _containerForHeader(
+    service,
+    primaryKnownLanguage: 'en',
+    knownLanguages: ['en'],
+    translate: (_) async => throw const MessageTranslationPending(),
+  );
+  await tester.pumpWidget(_host(container, theme: blabTheme));
+  await _settle(tester);
+  await tester.pump(const Duration(seconds: 4));
+  await _settle(tester);
+  Map<String, Object?> appearance(String id) {
+    final bubble = find.byKey(ValueKey('bubble-content-$id'));
+    expect(bubble, findsOneWidget);
+    final text = tester
+        .widgetList<RichText>(
+          find.descendant(of: bubble, matching: find.byType(RichText)),
+        )
+        .toList();
+    expect(text, isNotEmpty);
+    final expectedInk = mode == 'practice' && pending
+        ? BlabColors.bubbleInk.withValues(alpha: 0.48)
+        : BlabColors.bubbleInk;
+    expect(
+      text.any((t) => t.text.style?.color == expectedInk) ||
+          tester
+              .widgetList<MessageText>(
+                find.descendant(of: bubble, matching: find.byType(MessageText)),
+              )
+              .any((t) => t.style.color == expectedInk),
+      isTrue,
+      reason:
+          'Practice pending ink is a learning state, not a deleted-account state',
+    );
+    return {
+      'text': [for (final t in text) (t.text.toPlainText(), t.text.style)],
+      'decoration': [
+        for (final c in tester.widgetList<Container>(
+          find.descendant(of: bubble, matching: find.byType(Container)),
+        ))
+          c.decoration,
+      ],
+      'opacity': [
+        for (final o in tester.widgetList<Opacity>(
+          find.descendant(of: bubble, matching: find.byType(Opacity)),
+        ))
+          o.opacity,
+      ],
+      'size': tester.getSize(bubble),
+    };
+  }
+
+  final beforeIncoming = appearance('msg-1');
+  final beforeOutgoing = appearance('msg-0');
+  expect(find.byType(TextField), findsOneWidget);
+  final label = pending ? 'pending' : 'ready';
+  if (capture != null) await capture('$mode-$label-before');
+  service.deleted = true;
+  await container.read(chatListProvider.notifier).refresh();
+  await _settle(tester);
+  expect(find.text('Deleted account'), findsWidgets);
+  expect(
+    find.text(
+      'This account has been deleted. You can no longer send messages.',
+    ),
+    findsOneWidget,
+  );
+  expect(find.byType(TextField), findsNothing);
+  expect(
+    appearance('msg-1'),
+    beforeIncoming,
+    reason: 'incoming history must not dim after deletion',
+  );
+  expect(
+    appearance('msg-0'),
+    beforeOutgoing,
+    reason: 'outgoing history must not dim after deletion',
+  );
+  if (capture != null) await capture('$mode-$label-after');
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump();
+  container.dispose();
+}

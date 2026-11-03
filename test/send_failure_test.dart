@@ -1,3 +1,5 @@
+import 'package:blab/shared/models/chat.dart';
+import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/message_mention.dart';
 import 'dart:async';
 import 'dart:typed_data';
@@ -113,15 +115,37 @@ class _FakeChatService implements ChatService {
 String _id(int value) =>
     '00000000-0000-4000-8000-${value.toString().padLeft(12, '0')}';
 
+class _DeletedChatList extends ChatListNotifier {
+  @override
+  Future<List<Chat>> build() async => [
+    Chat(
+      id: 'c1',
+      partnerName: 'Deleted account',
+      partnerInitial: '',
+      learningLanguage: kBlabLanguages.first,
+      mode: ChatMode.normal,
+      partnerNativeLanguage: kBlabLanguages.first,
+      partnerLearningLanguage: kBlabLanguages.first,
+      lastMessage: 'Original',
+      lastMessageTranslation: '',
+      timestamp: DateTime.utc(2026),
+      unreadCount: 0,
+      partnerAccountDeleted: true,
+    ),
+  ];
+}
+
 ProviderContainer _container(
   _FakeChatService fake, {
   required bool online,
   bool? backendReachable,
   String userId = 'user-a',
+  bool deleted = false,
 }) {
   var nextId = 0;
   final c = ProviderContainer(
     overrides: [
+      if (deleted) chatListProvider.overrideWith(_DeletedChatList.new),
       chatServiceProvider.overrideWithValue(fake),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       currentUserIdProvider.overrideWithValue(userId),
@@ -142,6 +166,32 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test(
+    'BLA-31 queued text/photo and manual retry cannot send after authoritative deletion',
+    () async {
+      final fake = _FakeChatService();
+      final c = _container(fake, online: true, deleted: true);
+      addTearDown(c.dispose);
+      await c.read(chatListProvider.future);
+      final notifier = c.read(chatMessagesProvider('c1').notifier);
+      await notifier.addOutgoing('Queued text');
+      await notifier.addOutgoingPhoto(
+        PickedChatImage(
+          bytes: Uint8List.fromList([1, 2, 3]),
+          mimeType: 'image/jpeg',
+          fileName: 'photo.jpg',
+        ),
+        caption: 'Queued photo',
+      );
+      await notifier.flushPending();
+      for (final m in _queue(c, 'c1')) {
+        await notifier.retryFailed(m.id);
+      }
+      expect(fake.sendCalls, 0);
+      expect(fake.photoSendCalls, 0);
+    },
+  );
 
   test('online send → bubble upgraded to delivered with server id', () async {
     final fake = _FakeChatService();

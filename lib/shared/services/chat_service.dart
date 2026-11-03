@@ -414,23 +414,40 @@ class ChatService {
         ...replyRows.map((row) => row['id'] as String),
       }.toList(),
     );
-    final authors = {
-      ...pageRows,
-      ...replyRows,
-    }.map((row) => row['sender_id'] as String).toSet();
+    final authors = {...pageRows, ...replyRows}
+        .expand(
+          (row) => <String>[
+            row['sender_id'] as String,
+            for (final mention in (row['mentions'] as List? ?? const []))
+              if (mention is Map && mention['userId'] is String)
+                mention['userId'] as String,
+          ],
+        )
+        .toSet();
     final names = <String, String>{};
+    final deletedIdentities = <String>{};
     if (authors.isNotEmpty) {
       final profiles = await _client
           .from('profiles')
-          .select('id,display_name')
+          .select('id,display_name,account_deleted_at')
           .inFilter('id', authors.toList());
       for (final profile in profiles) {
+        if (profile['account_deleted_at'] != null) {
+          deletedIdentities.add(profile['id'] as String);
+        }
         names[profile['id'] as String] =
             profile['display_name'] as String? ?? '';
       }
     }
+    await LocalChatHistoryCache(
+      _uid,
+    ).rememberDeletedIdentities(deletedIdentities);
     for (final row in [...pageRows, ...replyRows]) {
       row['sender_name'] = names[row['sender_id']];
+      row['sender_account_deleted'] = deletedIdentities.contains(
+        row['sender_id'],
+      );
+      row['deleted_mention_user_ids'] = deletedIdentities.toList();
     }
     return messagesFromRows(
       pageRows.reversed,
@@ -563,6 +580,21 @@ class ChatService {
                   controller.add(MessageChange.remove(row));
                 } else {
                   controller.add(MessageChange.upsert(row));
+                }
+              },
+            )
+            .onPostgresChanges(
+              event: PostgresChangeEvent.update,
+              schema: 'public',
+              table: 'chats',
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'id',
+                value: chatId,
+              ),
+              callback: (_) {
+                if (!controller.isClosed) {
+                  controller.add(const MessageChange.resync());
                 }
               },
             )

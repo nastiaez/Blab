@@ -140,7 +140,7 @@
   "logOutHelp": "Zum erneuten Anmelden brauchst du deine E-Mail und dein Passwort (oder Google).",
   "deleteAccount": "Konto löschen",
   "deleteAccountPermanent": "Dies ist endgültig. Folgendes wird gelöscht:",
-  "allChatsMessages": "Alle Chats und Nachrichten",
+  "allChatsMessages": "Dein Kontozugang (bisherige Nachrichten und Medien bleiben für ihre Empfänger sichtbar)",
   "yourProfile": "Dein Profil",
   "yourSettings": "Deine Einstellungen",
   "confirmWithPassword": "Mit Passwort bestätigen",
@@ -621,5 +621,8 @@
   "noMentionMatches": "Keine passenden Teilnehmer",
   "linkOpenBrowser": "Im Browser öffnen",
   "linkCopy": "Link kopieren",
-  "linkActionFailed": "Dieser Link konnte nicht geöffnet oder kopiert werden."
+  "linkActionFailed": "Dieser Link konnte nicht geöffnet oder kopiert werden.",
+  "deletedAccount": "Gelöschtes Konto",
+  "accountDeleted": "Konto gelöscht",
+  "deletedAccountNotice": "Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden."
 }

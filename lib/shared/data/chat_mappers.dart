@@ -23,6 +23,11 @@ Message messageFromRow(
     isOutgoing: senderId == currentUserId,
     senderId: senderId,
     senderName: row['sender_name'] as String?,
+    senderAccountDeleted: row['sender_account_deleted'] == true,
+    deletedMentionUserIds:
+        ((row['deleted_mention_user_ids'] as List?) ?? const [])
+            .cast<String>()
+            .toSet(),
     mentions: MessageMention.parse(row['mentions'], row['body'] as String),
     originalText: row['body'] as String,
     translation: '',
@@ -86,6 +91,11 @@ Message _replyPreviewFromRow(
     isOutgoing: row['sender_id'] == currentUserId,
     senderId: row['sender_id'] as String?,
     senderName: row['sender_name'] as String?,
+    senderAccountDeleted: row['sender_account_deleted'] == true,
+    deletedMentionUserIds:
+        ((row['deleted_mention_user_ids'] as List?) ?? const [])
+            .cast<String>()
+            .toSet(),
     mentions: deleted
         ? const []
         : MessageMention.parse(row['mentions'], row['body'] as String),

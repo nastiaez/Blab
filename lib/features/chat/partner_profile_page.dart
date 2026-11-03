@@ -44,7 +44,9 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
   Future<void> _report() async {
     final result = await showPartnerReportDialog(
       context,
-      personName: chat.partnerName,
+      personName: (chat.partnerAccountDeleted
+          ? context.l10n.deletedAccount
+          : chat.partnerName),
       onSubmit: _submitPartnerReport,
     );
     if (result == null || !mounted) return;
@@ -71,7 +73,11 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
     }
     if (result.blockSucceeded) {
       showAppSnack(
-        context.l10n.blockSucceededReportFailed(chat.partnerName),
+        context.l10n.blockSucceededReportFailed(
+          (chat.partnerAccountDeleted
+              ? context.l10n.deletedAccount
+              : chat.partnerName),
+        ),
         action: SnackBarAction(
           label: context.l10n.retry,
           onPressed: _retryReport,
@@ -143,7 +149,13 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
       if (!mounted) return;
       setState(() => _blockedOverride = true);
       ref.invalidate(blockedUserIdsProvider);
-      showAppSuccessSnack(context.l10n.personBlocked(chat.partnerName));
+      showAppSuccessSnack(
+        context.l10n.personBlocked(
+          (chat.partnerAccountDeleted
+              ? context.l10n.deletedAccount
+              : chat.partnerName),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       showAppSnack(
@@ -159,7 +171,9 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
   Future<void> _block() async {
     final confirmed = await showBlockConfirmation(
       context,
-      personName: chat.partnerName,
+      personName: (chat.partnerAccountDeleted
+          ? context.l10n.deletedAccount
+          : chat.partnerName),
     );
     if (!confirmed || !mounted) return;
     try {
@@ -200,7 +214,13 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
       if (!mounted) return;
       setState(() => _blockedOverride = false);
       ref.invalidate(blockedUserIdsProvider);
-      showAppSuccessSnack(context.l10n.personUnblocked(chat.partnerName));
+      showAppSuccessSnack(
+        context.l10n.personUnblocked(
+          (chat.partnerAccountDeleted
+              ? context.l10n.deletedAccount
+              : chat.partnerName),
+        ),
+      );
     } catch (_) {
       if (mounted) showAppSnack(context.l10n.couldNotUnblock);
     }
@@ -228,30 +248,32 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           children: [
             _IdentityHeader(chat: chat),
-            const SizedBox(height: 28),
-            _ProfileSection(
-              title: context.l10n.languages,
-              children: [
-                _LanguageRow(
-                  flag: chat.partnerNativeLanguage.flag,
-                  label: context.l10n.speaksNatively(
-                    localizedLanguageName(
-                      context.l10n,
-                      chat.partnerNativeLanguage.code,
+            if (!chat.partnerAccountDeleted) ...[
+              const SizedBox(height: 28),
+              _ProfileSection(
+                title: context.l10n.languages,
+                children: [
+                  _LanguageRow(
+                    flag: chat.partnerNativeLanguage.flag,
+                    label: context.l10n.speaksNatively(
+                      localizedLanguageName(
+                        context.l10n,
+                        chat.partnerNativeLanguage.code,
+                      ),
                     ),
                   ),
-                ),
-                _LanguageRow(
-                  flag: chat.partnerLearningLanguage.flag,
-                  label: context.l10n.learningWithYou(
-                    localizedLanguageName(
-                      context.l10n,
-                      chat.partnerLearningLanguage.code,
+                  _LanguageRow(
+                    flag: chat.partnerLearningLanguage.flag,
+                    label: context.l10n.learningWithYou(
+                      localizedLanguageName(
+                        context.l10n,
+                        chat.partnerLearningLanguage.code,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             _ProfileSection(
               title: context.l10n.chat,
@@ -279,15 +301,27 @@ class _PartnerProfilePageState extends ConsumerState<PartnerProfilePage> {
                   BlabIconLabelRow.partnerSafety(
                     key: const Key('partner-report-action'),
                     icon: Icons.flag_outlined,
-                    label: context.l10n.reportPerson(chat.partnerName),
+                    label: context.l10n.reportPerson(
+                      (chat.partnerAccountDeleted
+                          ? context.l10n.deletedAccount
+                          : chat.partnerName),
+                    ),
                     onTap: _report,
                   ),
                   BlabIconLabelRow.partnerSafety(
                     key: const Key('partner-block-action'),
                     icon: isBlocked ? Icons.lock_open_outlined : Icons.block,
                     label: isBlocked
-                        ? context.l10n.unblockPerson(chat.partnerName)
-                        : context.l10n.blockPerson(chat.partnerName),
+                        ? context.l10n.unblockPerson(
+                            (chat.partnerAccountDeleted
+                                ? context.l10n.deletedAccount
+                                : chat.partnerName),
+                          )
+                        : context.l10n.blockPerson(
+                            (chat.partnerAccountDeleted
+                                ? context.l10n.deletedAccount
+                                : chat.partnerName),
+                          ),
                     destructive: !isBlocked,
                     onTap: isBlocked ? _unblock : _block,
                   ),
@@ -320,8 +354,8 @@ class _IdentityHeader extends StatelessWidget {
     return Column(
       children: [
         BlabAvatar(
-          name: chat.partnerName,
-          initials: chat.partnerInitial,
+          name: (chat.partnerAccountDeleted ? "" : chat.partnerName),
+          initials: chat.partnerAccountDeleted ? "" : chat.partnerInitial,
           size: 104,
           fontSize: 38,
           fontWeight: FontWeight.w700,
@@ -329,7 +363,9 @@ class _IdentityHeader extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          chat.partnerName,
+          (chat.partnerAccountDeleted
+              ? context.l10n.deletedAccount
+              : chat.partnerName),
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 26,
@@ -337,14 +373,16 @@ class _IdentityHeader extends StatelessWidget {
             color: BlabColors.warmInk,
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          '${context.l10n.learningLanguage}: '
-          '${localizedLanguageName(context.l10n, chat.partnerLearningLanguage.code)} '
-          '${chat.partnerLearningLanguage.flag}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14, color: BlabColors.warmMuted),
-        ),
+        if (!chat.partnerAccountDeleted) ...[
+          const SizedBox(height: 6),
+          Text(
+            '${context.l10n.learningLanguage}: '
+            '${localizedLanguageName(context.l10n, chat.partnerLearningLanguage.code)} '
+            '${chat.partnerLearningLanguage.flag}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: BlabColors.warmMuted),
+          ),
+        ],
       ],
     );
   }

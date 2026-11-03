@@ -6,6 +6,7 @@ import 'package:blab/features/chat/partner_profile_page.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/data/languages.dart';
 import 'package:blab/shared/models/chat.dart';
+import 'package:blab/shared/widgets/blab_avatar.dart';
 import 'package:blab/shared/services/chat_service.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,8 @@ import 'package:flutter_test/flutter_test.dart';
 BlabLanguage _language(String code) =>
     kBlabLanguages.firstWhere((language) => language.code == code);
 
-Chat _chat() => Chat(
+Chat _chat({bool deleted = false}) => Chat(
+  partnerAccountDeleted: deleted,
   id: 'chat-1',
   partnerId: 'alice-id',
   partnerName: 'Alice',
@@ -91,6 +93,7 @@ Future<void> _pumpPage(
   _FakeChatService service, {
   Locale locale = const Locale('en'),
   Size size = const Size(390, 844),
+  bool deleted = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -109,7 +112,7 @@ Future<void> _pumpPage(
         theme: blabTheme,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: PartnerProfilePage(chat: _chat()),
+        home: PartnerProfilePage(chat: _chat(deleted: deleted)),
       ),
     ),
   );
@@ -124,6 +127,26 @@ Future<void> _openReport(WidgetTester tester, Locale locale) async {
 }
 
 void main() {
+  for (final code in ['en', 'de', 'es', 'uk']) {
+    testWidgets('deleted profile suppresses stale metadata in $code', (
+      tester,
+    ) async {
+      final service = _FakeChatService();
+      addTearDown(service.changes.close);
+      await _pumpPage(tester, service, locale: Locale(code), deleted: true);
+      final l10n = lookupAppLocalizations(Locale(code));
+      expect(find.text(l10n.deletedAccount), findsOneWidget);
+      expect(find.text('Alice'), findsNothing);
+      expect(find.textContaining(l10n.learningLanguage), findsNothing);
+      expect(
+        find.text(l10n.speaksNatively(localizedLanguageName(l10n, 'en'))),
+        findsNothing,
+      );
+      final avatar = tester.widget<BlabAvatar>(find.byType(BlabAvatar));
+      expect(avatar.name, isEmpty);
+      expect(avatar.initials, isEmpty);
+    });
+  }
   testWidgets('profile opens as a page and returns to chat', (tester) async {
     final service = _FakeChatService();
     addTearDown(service.changes.close);

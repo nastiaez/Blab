@@ -1,4 +1,6 @@
 import 'message_link_text.dart';
+import 'deleted_identity_scope.dart';
+import '../../../l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/models/message_mention.dart';
 
@@ -52,6 +54,7 @@ class MentionText extends StatelessWidget {
     for (final mention in valid) {
       spans.add(TextSpan(text: text.substring(cursor, mention.start)));
       final self = mention.userId == viewerId;
+      final deleted = DeletedIdentityScope.of(context).contains(mention.userId);
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.baseline,
@@ -59,11 +62,11 @@ class MentionText extends StatelessWidget {
           child: Semantics(
             selected: self,
             child: GestureDetector(
-              onTap: onMentionTap == null
+              onTap: deleted || onMentionTap == null
                   ? null
                   : () => onMentionTap!(mention.userId),
               child: Text(
-                mention.text,
+                deleted ? context.l10n.deletedAccount : mention.text,
                 style: MentionColors.style(style, outgoing: isOutgoing),
               ),
             ),

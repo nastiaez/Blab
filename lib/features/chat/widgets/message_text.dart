@@ -1,4 +1,6 @@
 import 'message_link_text.dart';
+import '../../../l10n/l10n.dart';
+import 'deleted_identity_scope.dart';
 import '../../../shared/state/auth_state.dart';
 import 'mention_text.dart';
 import 'package:flutter/gestures.dart';
@@ -165,7 +167,9 @@ class _MessageTextState extends ConsumerState<MessageText> {
             child: Semantics(
               selected: self,
               child: Text(
-                t.text,
+                DeletedIdentityScope.of(context).contains(t.mentionUserId)
+                    ? context.l10n.deletedAccount
+                    : t.text,
                 style: MentionColors.style(
                   widget.style,
                   outgoing: widget.isOutgoing,

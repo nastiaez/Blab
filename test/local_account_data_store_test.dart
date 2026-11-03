@@ -19,10 +19,15 @@ void main() {
           '[{"body":"two"}]',
       cachedPreparedTranslationsStorageKey(userId: 'user-a', chatId: 'chat-a'):
           '[{"message_id":"message-a"}]',
+      'cached_deleted_identity:user-a:old': true,
+      'cached_group_members:user-a:g': 'private roster',
+      'cached_group_photos:user-a:g': 'private photos',
+      'cached_group_notifications:user-a:g': true,
+      'cached_language_timeline:user-a:c': 'private timeline',
       'unrelated_device_preference': 'keep',
     });
 
-    await const LocalAccountDataStore().clear();
+    await LocalAccountDataStore(clearNotifications: () async {}).clear();
 
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.containsKey(kPrivacyTypingIndicatorsKey), isFalse);
@@ -49,6 +54,36 @@ void main() {
       ),
       isEmpty,
     );
+    expect(
+      preferences.getKeys().where((key) => key.startsWith('cached_')),
+      isEmpty,
+    );
     expect(preferences.getString('unrelated_device_preference'), 'keep');
   });
+
+  for (final nativeFailure in [false, true]) {
+    test(
+      'OS notification cleanup requested, nativeFailure=$nativeFailure',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          '${kCachedProfileKeyPrefix}owner': 'private',
+        });
+        var calls = 0;
+        final clearing = LocalAccountDataStore(
+          clearNotifications: () async {
+            calls++;
+            if (nativeFailure) throw StateError('native unavailable');
+          },
+        ).clear();
+        if (nativeFailure) {
+          await expectLater(clearing, throwsStateError);
+        } else {
+          await clearing;
+        }
+        expect(calls, 1);
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.containsKey('${kCachedProfileKeyPrefix}owner'), isFalse);
+      },
+    );
+  }
 }

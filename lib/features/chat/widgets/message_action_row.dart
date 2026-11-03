@@ -23,6 +23,7 @@ class MessageActionRow extends StatelessWidget {
     this.isOriginalVisible = false,
     this.now,
     this.readOnly = false,
+    this.accountDeleted = false,
   });
 
   final Message message;
@@ -33,6 +34,7 @@ class MessageActionRow extends StatelessWidget {
   final bool isOriginalVisible;
   final DateTime? now;
   final bool readOnly;
+  final bool accountDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +46,11 @@ class MessageActionRow extends StatelessWidget {
       now: now,
     );
     final eligible = actions
+        .where(
+          (action) =>
+              !accountDeleted ||
+              ![MessageAction.reply, MessageAction.edit].contains(action),
+        )
         .where(
           (action) =>
               !readOnly ||
