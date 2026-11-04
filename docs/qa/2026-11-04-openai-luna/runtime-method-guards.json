@@ -1,0 +1,22 @@
+{
+  "staging": {
+    "translate-message": {
+      "status": 405,
+      "body": "{\"error\":\"method_not_allowed\"}"
+    },
+    "prepare-message-jobs": {
+      "status": 405,
+      "body": "{\"error\":\"method_not_allowed\"}"
+    }
+  },
+  "production": {
+    "translate-message": {
+      "status": 405,
+      "body": "{\"error\":\"method_not_allowed\"}"
+    },
+    "prepare-message-jobs": {
+      "status": 405,
+      "body": "{\"error\":\"method_not_allowed\"}"
+    }
+  }
+}

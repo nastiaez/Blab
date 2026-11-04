@@ -302,7 +302,7 @@ Deno.test("provider credentials prefer OpenRouter and fall back to OpenAI", () =
     "OpenRouter provider policy is enabled by default",
   );
   assert(both[1].provider === "openai", "OpenAI is the fallback");
-  assert(both[1].model === "gpt-4o-mini", "OpenAI uses its native model ID");
+  assert(both[1].model === "gpt-6-luna", "OpenAI uses its native model ID");
 
   const openAiOnly = providerCredentials({
     openRouterKey: "",

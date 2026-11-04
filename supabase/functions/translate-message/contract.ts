@@ -103,6 +103,7 @@ export type FormParticipantContext = {
 };
 
 export function providerCredentials(env: {
+  provider?: string | null;
   openRouterKey?: string | null;
   openAiKey?: string | null;
   openRouterModel?: string | null;
@@ -110,6 +111,8 @@ export function providerCredentials(env: {
   openRouterProviderPolicy?: string | null;
   environment?: string | null;
 }): ProviderCredential[] {
+  const selected = env.provider?.trim().toLowerCase();
+  if (selected && !["openai", "openrouter"].includes(selected)) return [];
   const providers: ProviderCredential[] = [];
   const openRouterKey = env.openRouterKey?.trim();
   const openAiKey = env.openAiKey?.trim();
@@ -122,7 +125,7 @@ export function providerCredentials(env: {
       env.openRouterProviderPolicy?.trim().toLocaleLowerCase() ?? "",
     );
   const useOpenRouterProviderPolicy = !disableOpenRouterProviderPolicy;
-  if (openRouterKey) {
+  if (openRouterKey && selected !== "openai") {
     providers.push({
       provider: "openrouter",
       apiKey: openRouterKey,
@@ -130,7 +133,7 @@ export function providerCredentials(env: {
       useOpenRouterProviderPolicy,
     });
   }
-  if (openAiKey) {
+  if (openAiKey && selected !== "openrouter") {
     providers.push({
       provider: "openai",
       apiKey: openAiKey,

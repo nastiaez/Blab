@@ -12,7 +12,7 @@ export const OPENROUTER_PROVIDER = {
 
 export const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
 
-export const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
+export const DEFAULT_OPENAI_MODEL = "gpt-6-luna";
 
 export const FRAGMENT_FIDELITY_RULE =
   "Keep short elliptical replies as fragments when the author supplied a fragment. Use explicit recent context to resolve what is being contrasted, without inventing a new assertion. For example, after a meeting time of six, Not seven excludes seven as that time; it does not assert that the current clock time is not seven. Never add now, currently, a new subject, or a new event unless the source or explicit context supports it.";

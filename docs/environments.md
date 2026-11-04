@@ -103,3 +103,13 @@ A production candidate is valid only when all of these agree:
 Staging accounts, sessions, messages, device tokens, translations, and logs are
 separate from production. Do not expect an account created in one environment
 to sign in to another.
+
+## Direct OpenAI translation routing
+
+Owner-approved Luna configuration uses BLAB_TRANSLATION_PROVIDER=openai,
+OPENAI_MODEL=gpt-6-luna, OPENAI_SEMANTIC_REVIEW_MODEL=gpt-6-luna and
+server-only OPENAI_API_KEY in each selected backend. Explicit OpenAI mode
+fails closed without its key; retained OpenRouter credentials are not used.
+Unset provider selection preserves the previous ordered-provider behavior.
+Direct Luna omits temperature and normalizes compact max_tokens to
+max_completion_tokens, while retaining structured response schemas.

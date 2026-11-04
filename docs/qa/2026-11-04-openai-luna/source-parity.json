@@ -1,0 +1,18 @@
+{
+  "staging": {
+    "translate-message/index.ts": true,
+    "translate-message/contract.ts": true,
+    "translate-message/provider.ts": true,
+    "translate-message/rulebook.ts": true,
+    "prepare-message-jobs/index.ts": true,
+    "prepare-message-jobs/single_call_worker.ts": true
+  },
+  "production": {
+    "translate-message/index.ts": true,
+    "translate-message/contract.ts": true,
+    "translate-message/provider.ts": true,
+    "translate-message/rulebook.ts": true,
+    "prepare-message-jobs/index.ts": true,
+    "prepare-message-jobs/single_call_worker.ts": true
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "staging": {
+    "project_ref": "tpfksdljkfnenjfdbane",
+    "selected_provider": "openai",
+    "generation_model": "gpt-6-luna",
+    "review_model": "gpt-6-luna",
+    "all_four_secret_digests_match": true,
+    "all_previous_secrets_unchanged": true
+  },
+  "production": {
+    "project_ref": "bhzcexhebjszwyqvcsxs",
+    "selected_provider": "openai",
+    "generation_model": "gpt-6-luna",
+    "review_model": "gpt-6-luna",
+    "all_four_secret_digests_match": true,
+    "all_previous_secrets_unchanged": true
+  },
+  "local": {
+    "config": "supabase/.env.local",
+    "mode": "0600",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "active_function_server": false
+  }
+}

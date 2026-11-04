@@ -1,0 +1,142 @@
+{
+  "staging": {
+    "concurrent_unrelated_version_changes": [
+      {
+        "slug": "delete-account",
+        "before": 9,
+        "after": 10
+      },
+      {
+        "slug": "send-push",
+        "before": 11,
+        "after": 12
+      },
+      {
+        "slug": "reconcile-stream-events",
+        "before": 6,
+        "after": 7
+      },
+      {
+        "slug": "stream-activity",
+        "before": 5,
+        "after": 6
+      },
+      {
+        "slug": "stream-channel",
+        "before": 6,
+        "after": 7
+      },
+      {
+        "slug": "stream-device",
+        "before": 5,
+        "after": 6
+      },
+      {
+        "slug": "stream-events",
+        "before": 5,
+        "after": 6
+      },
+      {
+        "slug": "stream-media",
+        "before": 5,
+        "after": 6
+      },
+      {
+        "slug": "stream-message",
+        "before": 7,
+        "after": 8
+      },
+      {
+        "slug": "stream-token",
+        "before": 5,
+        "after": 6
+      }
+    ],
+    "functions": [
+      {
+        "slug": "translate-message",
+        "status": "ACTIVE",
+        "version": 19,
+        "updated_at": 1793798357440,
+        "verify_jwt": true
+      },
+      {
+        "slug": "prepare-message-jobs",
+        "status": "ACTIVE",
+        "version": 15,
+        "updated_at": 1793798357440,
+        "verify_jwt": true
+      }
+    ]
+  },
+  "production": {
+    "concurrent_unrelated_version_changes": [
+      {
+        "slug": "delete-account",
+        "before": 12,
+        "after": 13
+      },
+      {
+        "slug": "send-push",
+        "before": 10,
+        "after": 11
+      },
+      {
+        "slug": "stream-token",
+        "before": 3,
+        "after": 4
+      },
+      {
+        "slug": "stream-channel",
+        "before": 4,
+        "after": 5
+      },
+      {
+        "slug": "stream-events",
+        "before": 4,
+        "after": 5
+      },
+      {
+        "slug": "reconcile-stream-events",
+        "before": 6,
+        "after": 7
+      },
+      {
+        "slug": "stream-message",
+        "before": 5,
+        "after": 6
+      },
+      {
+        "slug": "stream-media",
+        "before": 4,
+        "after": 5
+      },
+      {
+        "slug": "stream-activity",
+        "before": 3,
+        "after": 4
+      },
+      {
+        "slug": "stream-device",
+        "before": 2,
+        "after": 3
+      }
+    ],
+    "functions": [
+      {
+        "slug": "translate-message",
+        "status": "ACTIVE",
+        "version": 39,
+        "updated_at": 1793798361407,
+        "verify_jwt": true
+      },
+      {
+        "slug": "prepare-message-jobs",
+        "status": "ACTIVE",
+        "version": 19,
+        "updated_at": 1793798361407,
+        "verify_jwt": true
+      }
+    ]
+  }
+}

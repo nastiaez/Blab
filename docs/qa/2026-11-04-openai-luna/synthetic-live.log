@@ -1,0 +1,26 @@
+blab_provider_metric {
+  provider: "openai",
+  model: "gpt-6-luna",
+  status: 200,
+  durationMs: 6230,
+  promptTokens: 1034,
+  completionTokens: 611,
+  cachedPromptTokens: 0
+}
+{"boundary":"actual_compact_generation","model":"gpt-6-luna","result":{"v0":{"mode":"translation","sourceLang":"en","translation":"Ich bringe morgen Tee mit, nicht heute.","interfaceText":"I will bring tea tomorrow, not today.","explanation":null,"confidence":null,"tokens":[{"text":"Ich","gloss":"I","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":" ","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":"bringe","gloss":"bring","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":" ","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":"morgen","gloss":"tomorrow","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":" ","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":"Tee","gloss":"tea","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":" ","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":"mit","gloss":"along (separable verb particle)","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":",","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":" ","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":"nicht","gloss":"not","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":" ","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":"heute","gloss":"today","roman":null,"isContent":true,"wordHelpVersion":"contextual-word-meanings-v1"},{"text":".","gloss":null,"roman":null,"isContent":false,"wordHelpVersion":"contextual-word-meanings-v1"}],"formAlternatives":null}}}
+blab_provider_metric {
+  provider: "openai",
+  model: "gpt-6-luna",
+  status: 200,
+  durationMs: 5137,
+  promptTokens: 1034,
+  completionTokens: 502,
+  cachedPromptTokens: 1031
+}
+translation_message_batch_settled {
+  messageId: "51c0498e-04df-4d49-916e-1e22105e0af2",
+  viewers: 1,
+  ready: 1,
+  failed: 0
+}
+{"boundary":"real_worker_real_provider_synthetic_rpc_no_database","completed":1,"calls":["prepare_translation_viewers","complete_translation_message_batch"],"model":"gpt-6-luna"}
