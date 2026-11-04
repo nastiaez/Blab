@@ -651,3 +651,14 @@ Nastia17674 authorizes exploring native Android conversation presentation and sy
 ## Account deletion confirmation ·17520 ·2 November2026
 
 Nastia17520 selects confirmation-only deletion (option1), superseding US-035’s former password-entry requirement. Reuse DeleteAccountScreen, showBlabDialog / BlabConfirmationDialog, existing section container and Cancel / Delete forever buttons. No password/email-entry or reauthentication UI; the existing authenticated server request remains required. Serialize confirmation and deletion so repeated taps cannot stack dialogs or submit concurrent deletions. Cancellation makes no deletion request; failure permits a newly confirmed retry. Recipient-history retention, read-only notice, personal deletion/block behavior and all authorization fences remain unchanged. No redesign or rollout is authorized by this decision.
+
+## BLA-41 ·4 November2026
+Keep expansion state separate from menu selection, keyed by message source/mode/target/Primary Known Language in the ChatScreen visit. Reuse existing presentation and notice primitives and translation SVG. Anchor the selected row across the layout transaction with a scoped ScrollPosition correction; preserve short-chat leading whitespace. Do not change translation providers, backend or account preferences.
+
+BLA-41 shared notices: update MessageStatusNotice and UnsupportedLanguageNotice together to14px and1px vertical padding; explicit gaps in MessageBubble2px. No timestamps/primary message text or colours changed.
+
+
+BLA-41 colour refinement · Nastia17954 ·4 November2026: Show/Hide translation now uses the existing theme primary action/accent colour instead of textMuted. This supersedes the muted-toggle requirement only. Preserve14px typography, spacing and alignment; retry errors remain red and informational notices retain their muted styling. Source changed; fresh Android/iOS visual verification is blocked by host storage (306MiB free). Earlier screenshots do not prove this colour revision. No merge/release.
+
+
+BLA-41 quieter colour revision · Nastia screenshot feedback during18001 continuation,4 November2026: orange attracts too much attention; use message-colour or an existing kit brown. Selected BlabColors.warmInk (#46281C), softer than bubbleInk (#231208), preserving stronger legibility than warmMuted. Show/Hide only; keep14px/medium weight/2px gap, red retries and muted non-action notices. This supersedes orange17954; new native previews require review.

@@ -64,6 +64,9 @@ class ChatTimeline extends ConsumerWidget {
     required this.showSelectedOriginal,
     required this.selectedBubbleKey,
     this.emptyState,
+    this.translationVisibility = const {},
+    this.translationLeadingSpace = 0,
+    this.onToggleTranslation,
   });
 
   final String? highlightedMessageId;
@@ -99,6 +102,9 @@ class ChatTimeline extends ConsumerWidget {
   final bool showSelectedOriginal;
   final GlobalKey selectedBubbleKey;
   final Widget? emptyState;
+  final Map<String, bool> translationVisibility;
+  final double translationLeadingSpace;
+  final void Function(Message, String)? onToggleTranslation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -224,7 +230,7 @@ class ChatTimeline extends ConsumerWidget {
     return ListView.builder(
       controller: scrollController,
       reverse: true,
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.only(top: 12 + translationLeadingSpace, bottom: 12),
       itemCount: reversed.length + (hasOlderMessages ? 1 : 0),
       itemBuilder: (context, i) {
         if (i == reversed.length) {
@@ -284,43 +290,52 @@ class ChatTimeline extends ConsumerWidget {
           final replyEra = item.message.replyTo == null
               ? era
               : eraForMessage(item.message.replyTo!);
+          final row = ChatMessageRow(
+            translationVisibility: translationVisibility,
+            onToggleTranslation: onToggleTranslation,
+            highlighted: highlightedMessageId == item.message.id,
+            leadingGap: item.leadingGap,
+            chatId: chatId,
+            partnerName: partnerName,
+            message: item.message,
+            reactions: reactionsByMessage[item.message.id] ?? const [],
+            isFirstInGroup: item.isFirstInGroup,
+            isLastInGroup: item.isLastInGroup,
+            languageCode: era.languageCode,
+            replyLanguageCode: replyEra.languageCode,
+            translationInterfaceLanguageCode: translationInterfaceLanguageCode,
+            shouldTranslate: languageTimelineReady && !practiceSetupRequired,
+            practiceSetupRequired: practiceSetupRequired,
+            translationCutoffAt: null,
+            popupTopInset: popupTopInset,
+            deferTranslationResolve: deferTranslationResolve,
+            isSelected: selectedMessageId == item.message.id,
+            showOriginal:
+                selectedMessageId == item.message.id && showSelectedOriginal,
+            selectedBubbleKey: selectedMessageId == item.message.id
+                ? selectedBubbleKey
+                : null,
+            onLongPress: (rect, position) =>
+                onLongPress(item.message, rect, position),
+            onReply: () => onReply(item.message),
+            onJumpToMessage: onJumpToMessage,
+            onFailedTap: () => onFailedTap(item.message),
+            onFailedRetry: () => onFailedRetry(item.message),
+            onReact: () => onReact(item.message),
+            onDoubleTapHeart: onDoubleTapHeart == null
+                ? null
+                : () => onDoubleTapHeart!(item.message),
+          );
+          final key = messageAnchorKey(item.message.id);
           return KeyedSubtree(
-            key: messageAnchorKey(item.message.id),
-            child: ChatMessageRow(
-              highlighted: highlightedMessageId == item.message.id,
-              leadingGap: item.leadingGap,
-              chatId: chatId,
-              partnerName: partnerName,
-              message: item.message,
-              reactions: reactionsByMessage[item.message.id] ?? const [],
-              isFirstInGroup: item.isFirstInGroup,
-              isLastInGroup: item.isLastInGroup,
-              languageCode: era.languageCode,
-              replyLanguageCode: replyEra.languageCode,
-              translationInterfaceLanguageCode:
-                  translationInterfaceLanguageCode,
-              shouldTranslate: languageTimelineReady && !practiceSetupRequired,
-              practiceSetupRequired: practiceSetupRequired,
-              translationCutoffAt: null,
-              popupTopInset: popupTopInset,
-              deferTranslationResolve: deferTranslationResolve,
-              isSelected: selectedMessageId == item.message.id,
-              showOriginal:
-                  selectedMessageId == item.message.id && showSelectedOriginal,
-              selectedBubbleKey: selectedMessageId == item.message.id
-                  ? selectedBubbleKey
-                  : null,
-              onLongPress: (rect, position) =>
-                  onLongPress(item.message, rect, position),
-              onReply: () => onReply(item.message),
-              onJumpToMessage: onJumpToMessage,
-              onFailedTap: () => onFailedTap(item.message),
-              onFailedRetry: () => onFailedRetry(item.message),
-              onReact: () => onReact(item.message),
-              onDoubleTapHeart: onDoubleTapHeart == null
-                  ? null
-                  : () => onDoubleTapHeart!(item.message),
-            ),
+            key: key,
+            child: scrollController is TranslationAnchorController
+                ? TranslationAnchor(
+                    anchorKey: key,
+                    controller: scrollController as TranslationAnchorController,
+                    child: row,
+                  )
+                : row,
           );
         }
         return const SizedBox.shrink();

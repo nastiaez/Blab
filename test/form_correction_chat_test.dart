@@ -582,7 +582,7 @@ void main() {
         .setOwnForm(GrammaticalForm.masculine);
     await t.pumpWidget(_host(c));
     await _settle(t);
-    await t.tap(
+    await t.longPress(
       find
           .byWidgetPredicate(
             (w) => w is MessageText && w.text == 'Ти ходив вчора?',
@@ -820,7 +820,7 @@ void main() {
       findsWidgets,
     );
     expect(find.text('Using masculine forms for you'), findsOneWidget);
-    await t.tap(
+    await t.longPress(
       find
           .byWidgetPredicate(
             (w) => w is MessageText && w.text == 'Ти ходив вчора?',
@@ -880,7 +880,7 @@ void main() {
         findsWidgets,
       );
       expect(find.byType(GrammaticalFormChooser), findsOneWidget);
-      await t.tap(
+      await t.longPress(
         find
             .byWidgetPredicate(
               (w) => w is MessageText && w.text == 'Ти ходила вчора?',

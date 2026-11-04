@@ -3,7 +3,16 @@ import '../../../shared/models/chat.dart';
 
 /// The action picked from the long-press action row. PRD US-019, US-020;
 /// `report` added for Step 3.6a.
-enum MessageAction { reply, edit, copy, original, listen, delete, report }
+enum MessageAction {
+  translate,
+  reply,
+  edit,
+  copy,
+  original,
+  listen,
+  delete,
+  report,
+}
 
 const Duration messageEditWindow = Duration(hours: 24);
 const List<String> kQuickMessageReactions = [
@@ -38,10 +47,13 @@ List<MessageAction> actionsForMessage(
   required ChatMode mode,
   required bool hasOriginal,
   required bool canListen,
+  bool canTranslate = false,
   DateTime? now,
 }) {
   final photoOnly = isPhotoOnlyMessage(message);
   return [
+    if (!photoOnly && mode == ChatMode.practice && canTranslate)
+      MessageAction.translate,
     if (canReplyToMessage(message)) MessageAction.reply,
     if (!photoOnly && canEditMessage(message, now: now)) MessageAction.edit,
     if (!photoOnly) MessageAction.copy,
@@ -52,3 +64,10 @@ List<MessageAction> actionsForMessage(
     if (message.isOutgoing) MessageAction.delete else MessageAction.report,
   ];
 }
+
+String messageExpansionKey(
+  Message message,
+  ChatMode mode,
+  String target,
+  String known,
+) => '${message.id}|${message.originalText}|${mode.name}|$target|$known';

@@ -75,7 +75,21 @@ class _AnchoredMessagePanelsState extends State<AnchoredMessagePanels> {
             afterVisibleLines: widget.afterVisibleLines,
             translationTop: widget.translationTop,
           );
-    _placement ??= measuredPlacement;
+    // With Translate added, the action list can consume the remaining
+    // reading space. Keep the menu reachable within the chat viewport.
+    _placement ??=
+        measuredPlacement ??
+        (_height != null && pairHeight <= widget.viewport.height
+            ? (
+                top: widget.afterVisibleLines
+                    .clamp(
+                      widget.viewport.top,
+                      widget.viewport.bottom - pairHeight,
+                    )
+                    .toDouble(),
+                below: false,
+              )
+            : null);
     final placement = _placement;
     final width = widget.reactionWidth;
     final left = widget.bubble.center.dx - width / 2;
@@ -84,7 +98,16 @@ class _AnchoredMessagePanelsState extends State<AnchoredMessagePanels> {
     final x = fitsWidth
         ? left.clamp(widget.viewport.left, maxLeft).toDouble()
         : 0.0;
-    final actions = KeyedSubtree(key: _actionsKey, child: widget.actions);
+    final actions = KeyedSubtree(
+      key: _actionsKey,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: (widget.viewport.height - (widget.hasReactions ? 52 : 0))
+              .clamp(0.0, double.infinity),
+        ),
+        child: SingleChildScrollView(child: widget.actions),
+      ),
+    );
     return Stack(
       children: [
         Positioned(

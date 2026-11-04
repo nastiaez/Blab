@@ -20,6 +20,7 @@ class MessageActionRow extends StatelessWidget {
     this.mode = ChatMode.normal,
     this.hasOriginal = false,
     this.canListen = false,
+    this.canTranslate = false,
     this.isOriginalVisible = false,
     this.now,
     this.readOnly = false,
@@ -31,6 +32,7 @@ class MessageActionRow extends StatelessWidget {
   final ChatMode mode;
   final bool hasOriginal;
   final bool canListen;
+  final bool canTranslate;
   final bool isOriginalVisible;
   final DateTime? now;
   final bool readOnly;
@@ -43,6 +45,7 @@ class MessageActionRow extends StatelessWidget {
       mode: mode,
       hasOriginal: hasOriginal,
       canListen: canListen,
+      canTranslate: canTranslate,
       now: now,
     );
     final eligible = actions
@@ -62,7 +65,10 @@ class MessageActionRow extends StatelessWidget {
         )
         .toList();
     if (eligible.remove(MessageAction.listen)) {
-      eligible.insert(0, MessageAction.listen);
+      eligible.insert(
+        eligible.contains(MessageAction.translate) ? 1 : 0,
+        MessageAction.listen,
+      );
     }
     final items = eligible
         .map((action) => _itemFor(context, action, isOriginalVisible))
@@ -104,6 +110,11 @@ _ActionItem _itemFor(
   MessageAction action,
   bool isOriginalVisible,
 ) => switch (action) {
+  MessageAction.translate => _ActionItem(
+    'translate - 16',
+    context.l10n.translateMessage,
+    action,
+  ),
   MessageAction.reply => _ActionItem(
     'long-arrow-up-left - 16',
     context.l10n.reply,

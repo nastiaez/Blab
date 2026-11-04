@@ -8,8 +8,8 @@ import '../../../shared/widgets/blab_icon.dart';
 
 /// Resolves the competing gestures inside a message bubble.
 ///
-/// Message tap opens actions; double tap and horizontal reply retain their
-/// separate recognizers. A held press is consumed without entering a menu.
+/// BLA-41: long press opens actions; double tap and horizontal reply retain
+/// their separate recognizers.
 /// Retry remains a separate status-row action below the bubble.
 class MessageInteractionTarget extends StatefulWidget {
   const MessageInteractionTarget({
@@ -89,7 +89,7 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
     if (shouldReply) widget.onSwipeReply!();
   }
 
-  void _handleTap() {
+  void _openActions() {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final rect = box.localToGlobal(Offset.zero) & box.size;
@@ -135,8 +135,10 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
         },
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: _handleTap,
-          onLongPress: () {},
+          // Consume plain taps without opening actions. This also prevents a
+          // deferred double-tap timeout from reaching the chat background.
+          onTap: () {},
+          onLongPress: _openActions,
 
           onHorizontalDragStart: _canSwipeReply ? _startSwipe : null,
           onHorizontalDragUpdate: _canSwipeReply ? _updateSwipe : null,

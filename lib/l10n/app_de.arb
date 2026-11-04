@@ -624,5 +624,8 @@
   "linkActionFailed": "Dieser Link konnte nicht geöffnet oder kopiert werden.",
   "deletedAccount": "Gelöschtes Konto",
   "accountDeleted": "Konto gelöscht",
-  "deletedAccountNotice": "Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden."
+  "deletedAccountNotice": "Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden.",
+  "translateMessage": "Übersetzen",
+  "showMessageTranslation": "Übersetzung anzeigen",
+  "hideMessageTranslation": "Übersetzung ausblenden"
 }

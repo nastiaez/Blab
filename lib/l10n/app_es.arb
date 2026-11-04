@@ -624,5 +624,8 @@
   "linkActionFailed": "No se pudo abrir ni copiar este enlace.",
   "deletedAccount": "Cuenta eliminada",
   "accountDeleted": "Cuenta eliminada",
-  "deletedAccountNotice": "Esta cuenta se ha eliminado. Ya no puedes enviar mensajes."
+  "deletedAccountNotice": "Esta cuenta se ha eliminado. Ya no puedes enviar mensajes.",
+  "translateMessage": "Traducir",
+  "showMessageTranslation": "Mostrar traducción",
+  "hideMessageTranslation": "Ocultar traducción"
 }

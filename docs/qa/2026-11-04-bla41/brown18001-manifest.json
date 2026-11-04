@@ -1,0 +1,45 @@
+{
+  "base": "6e870b8e24f6a190b356a99531a0575edfde8489",
+  "branch": "feat/bla41-gestures-17867",
+  "colour": "BlabColors.warmInk #46281C",
+  "files": {
+    "integration_test/bla41_native_test.dart": "034d67a505149d1c16465badeea7489b5fa4544aea7ecf6995c90a2b56ba4444",
+    "lib/features/chat/chat_screen.dart": "1b1d38153132d4d4e709d931d567a27c0e5f879afc576abd8d7efc6032c32c34",
+    "lib/features/chat/message_actions.dart": "123eb0789a23e460e4910c57d5863b7caeb2439dafd65b1e5189136cfcfc5b89",
+    "lib/features/chat/translation_anchor_controller.dart": "b9a49177783e793cca4386962f0b76ff41e591748840906f2135ca168fb5a486",
+    "lib/features/chat/widgets/anchored_message_panels.dart": "3c7a0598b20b952a9ce8fc5ebaaf4ffb3854bc12b9f22eb82390826008dc8012",
+    "lib/features/chat/widgets/chat_timeline.dart": "23334075be88148ddc6668985a605b80be5f7a46b7bbd6e3891ee66309704941",
+    "lib/features/chat/widgets/message_action_row.dart": "d1f9ba12548f9450f3b34cde0ec04f7a9429e14d22033a18aa4624eeb2fe7a61",
+    "lib/features/chat/widgets/message_bubble.dart": "a1cf7989f3b57f4b98cdeae711c61b7f9e47ca804e7033e84138f27391bffba2",
+    "lib/features/chat/widgets/message_interaction_target.dart": "2130edada064e6949b182d4a75625310bccb75bc156fb50a333106ac8aa04389",
+    "lib/features/chat/widgets/message_meta.dart": "dbae894956cd2b611a81129e97fd1efa3006b6dcfaf3cc1190fba6c23e0b7d21",
+    "lib/features/chat/widgets/message_row.dart": "6953afa95ca765e77c0a11e16227e66fedf32c08903fe092de1e400ada3f79cb",
+    "lib/l10n/app_de.arb": "6b4f7a4c096f7ef0bd8f69d06d0e0f0e472a7c06d040181dd4a21d930f78b3bb",
+    "lib/l10n/app_en.arb": "9a3854ef1ffd35ff1d511e36c1b6c7cee5462b31abcf54f8e4c557e360673bf5",
+    "lib/l10n/app_es.arb": "30d33dedce1cf1627ec8c97bc00305ec45ad226c9f789c31528e0054f13ba06d",
+    "lib/l10n/app_uk.arb": "8e7d7da923dde532c04c4325745f4977fadc1bb0eddfe739c73272f02d2048fc",
+    "lib/l10n/generated/app_localizations.dart": "ce49b40fe1334701c6a3fa3972693ac9c8a5ea12c437ad538db76c2714ef2535",
+    "lib/l10n/generated/app_localizations_de.dart": "f8d44f940bb7c0dfeb81eba744e2aa3e0c936987fe4a955e8596719aa0b8c6ad",
+    "lib/l10n/generated/app_localizations_en.dart": "0a49dfa46b853fdbce7b158c014bee7a7de41a9db2abc7a35da11adb8ad59586",
+    "lib/l10n/generated/app_localizations_es.dart": "751a53db75e3fd457c819eea3a61cf74b8ad3d6cd36f440acb038f310e3e2ae0",
+    "lib/l10n/generated/app_localizations_uk.dart": "969a7796acfa4634d7ee2b625b4a1655cadeffb554d6bd95e84a553b6fcb184a",
+    "test/bla41_flow_test.dart": "cb78287cad385b6f081c92257baed2146ba0c2dab9d99f44ece15d70ed3c29d4",
+    "test/bubble_expand_test.dart": "7ee63602873487a4702ed427304b8e13d7d22fc45bd4c22e890c79caf0464d90",
+    "test/chat_screen_primary_known_language_test.dart": "986dfd1616cc5294350d55abf63800e6d65c6b7ae7b5b4ca23e4e7c907555416",
+    "test/form_correction_chat_test.dart": "021186e1525c35b46aa7fd8b55ee56aaf915c8a975319410c251e20b0c798ee7",
+    "test/message_interaction_target_test.dart": "3661ee0152445ecacba6f392596b8f842ed0d86427cdcace11513c5eb9a3e6af",
+    "test/message_link_text_test.dart": "9c63d2c1ba15df2105283dcbb1ca00d9fb2fad11f9392c02c2c858ed7095d02e",
+    "test/translation_anchor_controller_test.dart": "9aef3273ab06bf785e97c424ae78e651979a320e16673658b74d3b91c2a0ce87",
+    "test/word_gesture_test.dart": "0667ae609892bd117a69c2f975503c4688f7a72d0ab0f24db2bf33b8063824f6"
+  },
+  "native": {
+    "android": "android-v4/native.log",
+    "ios": "ios-v5/native.log"
+  },
+  "deliveries": [
+    18034,
+    18036,
+    18039
+  ],
+  "limitation": "Synthetic UI fixtures. iOS reaction emoji font fault remains. Not released."
+}

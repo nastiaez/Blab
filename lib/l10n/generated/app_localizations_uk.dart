@@ -1765,4 +1765,13 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get deletedAccountNotice =>
       'Цей обліковий запис видалено. Ви більше не можете надсилати повідомлення.';
+
+  @override
+  String get translateMessage => 'Перекласти';
+
+  @override
+  String get showMessageTranslation => 'Показати переклад';
+
+  @override
+  String get hideMessageTranslation => 'Приховати переклад';
 }

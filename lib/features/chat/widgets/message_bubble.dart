@@ -32,8 +32,13 @@ class MessageBubble extends ConsumerStatefulWidget {
     this.selectedBubbleKey,
     this.groupConversation = false,
     this.isFirstInGroup = true,
+    this.translationExpanded = false,
+    this.translationRequested = false,
+    this.onToggleTranslation,
   });
 
+  final bool translationExpanded, translationRequested;
+  final VoidCallback? onToggleTranslation;
   final bool groupConversation, isFirstInGroup;
   final String chatId;
   final String partnerName;
@@ -388,7 +393,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         mode: mode,
         knownLanguageCodes: knownLanguageCodes,
         resolvedSourceLang: resolvedSourceLang,
-        expanded: widget.isSelected && mode == ChatMode.practice,
+        expanded: widget.translationExpanded && mode == ChatMode.practice,
         showOriginal: widget.isSelected && widget.showOriginal,
         pendingColor: pending && isPractice
             ? BlabColors.bubbleInk.withValues(alpha: 0.48)
@@ -652,7 +657,12 @@ class _BubbleState extends ConsumerState<MessageBubble> {
     final hasError = isFailed || presentation.translationFailed;
     final showUnsupportedLanguageHint =
         presentation.unsupportedSource && showLearningAid;
-    if (!hasError && !showUnsupportedLanguageHint) {
+    final showTranslationToggle =
+        widget.translationRequested &&
+        mode == ChatMode.practice &&
+        showLearningAid &&
+        (presentation.knownLanguageText?.trim().isNotEmpty ?? false);
+    if (!hasError && !showUnsupportedLanguageHint && !showTranslationToggle) {
       return interactiveBubble;
     }
     return Column(
@@ -662,6 +672,18 @@ class _BubbleState extends ConsumerState<MessageBubble> {
           : CrossAxisAlignment.start,
       children: [
         interactiveBubble,
+        if (showTranslationToggle) ...[
+          if (reactions.isEmpty) const SizedBox(height: 2),
+          MessageStatusNotice(
+            key: ValueKey('translation-toggle-${message.id}'),
+            text: widget.translationExpanded
+                ? context.l10n.hideMessageTranslation
+                : context.l10n.showMessageTranslation,
+            onTap: widget.onToggleTranslation,
+            alignRight: isOut,
+            color: BlabColors.warmInk,
+          ),
+        ],
         if (showUnsupportedLanguageHint)
           UnsupportedLanguageNotice(
             key: const ValueKey('unsupported-language-hint'),
@@ -669,7 +691,7 @@ class _BubbleState extends ConsumerState<MessageBubble> {
             alignRight: isOut,
           ),
         if (isFailed) ...[
-          if (reactions.isEmpty) const SizedBox(height: 6),
+          if (reactions.isEmpty) const SizedBox(height: 2),
           MessageStatusNotice(
             key: const ValueKey('failed-message-retry'),
             text: context.l10n.failedToSend,
@@ -678,8 +700,8 @@ class _BubbleState extends ConsumerState<MessageBubble> {
           ),
         ],
         if (presentation.translationFailed) ...[
-          if (!isFailed && reactions.isEmpty) const SizedBox(height: 6),
-          if (isFailed) const SizedBox(height: 4),
+          if (!isFailed && reactions.isEmpty) const SizedBox(height: 2),
+          if (isFailed) const SizedBox(height: 2),
           MessageStatusNotice(
             key: const ValueKey('translation-message-retry'),
             text: isOut && resolvedSourceLang == targetLanguageCode

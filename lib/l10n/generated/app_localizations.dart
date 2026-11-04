@@ -3143,6 +3143,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This account has been deleted. You can no longer send messages.'**
   String get deletedAccountNotice;
+
+  /// No description provided for @translateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get translateMessage;
+
+  /// No description provided for @showMessageTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Show translation'**
+  String get showMessageTranslation;
+
+  /// No description provided for @hideMessageTranslation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide translation'**
+  String get hideMessageTranslation;
 }
 
 class _AppLocalizationsDelegate

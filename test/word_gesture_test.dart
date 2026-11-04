@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// BLA-17 message taps own text and padding; held presses have no entry.
+/// BLA-41 held presses own text and padding; taps do not open actions.
 class _FakeTtsService implements TtsService {
   @override
   Future<bool> isLanguageAvailable(String languageCode) async => false;
@@ -65,7 +65,7 @@ Widget _harness({
 }
 
 void main() {
-  testWidgets('tapping message text opens actions without word popup', (
+  testWidgets('tapping message text opens neither actions nor word popup', (
     tester,
   ) async {
     var longPressed = false;
@@ -81,10 +81,14 @@ void main() {
       findsNothing,
       reason: 'message text must not open word lookup',
     );
-    expect(longPressed, isTrue, reason: 'a quick tap opens message actions');
+    expect(
+      longPressed,
+      isFalse,
+      reason: 'a quick tap does not open message actions',
+    );
   });
 
-  testWidgets('long-pressing message text opens neither actions nor popup', (
+  testWidgets('long-pressing message text opens actions without word popup', (
     tester,
   ) async {
     var longPressed = false;
@@ -95,11 +99,7 @@ void main() {
     await tester.longPress(find.byType(MessageText));
     await tester.pumpAndSettle();
 
-    expect(
-      longPressed,
-      isFalse,
-      reason: 'held presses no longer enter message actions',
-    );
+    expect(longPressed, isTrue, reason: 'held presses enter message actions');
     expect(
       find.text('morning'),
       findsNothing,
@@ -107,13 +107,13 @@ void main() {
     );
   });
 
-  testWidgets('tapping non-word message space opens actions', (tester) async {
+  testWidgets('holding non-word message space opens actions', (tester) async {
     var longPressed = false;
     await tester.pumpWidget(
       _harness(onLongPress: (_, _) => longPressed = true),
     );
 
-    await tester.tapAt(
+    await tester.longPressAt(
       tester.getTopLeft(find.byKey(const ValueKey('message-padding'))) +
           const Offset(4, 4),
     );
@@ -214,7 +214,7 @@ void main() {
         ),
       );
 
-      await tester.tapAt(tester.getCenter(find.byType(MessageText)));
+      await tester.longPress(find.byType(MessageText));
       await tester.pumpAndSettle();
 
       expect(failedTapped, isFalse);

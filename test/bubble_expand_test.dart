@@ -632,7 +632,7 @@ void main() {
     final hint = tester.widget<Text>(
       find.text('Blab doesn’t speak this one yet.'),
     );
-    expect(hint.style?.fontSize, 12);
+    expect(hint.style?.fontSize, 14);
     expect(hint.style?.fontWeight, FontWeight.w400);
     expect(hint.style?.color, const Color(0xFF917869));
     expect(find.textContaining('Showing the original'), findsNothing);
@@ -750,26 +750,37 @@ void main() {
     expect(find.byKey(const ValueKey('collapse-icon')), findsNothing);
   });
 
-  testWidgets('Practice message tap reveals known-language text and Listen', (
-    tester,
-  ) async {
-    final container = _buildContainer(
-      _BubbleExpandChatService(text: 'hallo mein freund'),
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(_host(container));
-    await _settle(tester);
+  testWidgets(
+    'Practice long press offers Translate; explicit reveal persists',
+    (tester) async {
+      final container = _buildContainer(
+        _BubbleExpandChatService(text: 'hallo mein freund'),
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
 
-    expect(find.text('hello'), findsNothing);
-    await tester.tap(find.byType(MessageText).first);
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pumpAndSettle();
+      expect(find.text('hello'), findsNothing);
+      await tester.longPress(find.byType(MessageText).first);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
 
-    expect(find.text('hello'), findsOneWidget);
-    expect(find.byKey(const ValueKey('message-action-listen')), findsOneWidget);
-    expect(find.byKey(const ValueKey('message-action-original')), findsNothing);
-    await _settle(tester);
-  });
+      expect(find.text('hello'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('message-action-listen')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('message-action-original')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey('message-action-translate')));
+      await _settle(tester);
+      expect(find.text('hello'), findsOneWidget);
+      expect(find.byKey(const ValueKey('message-action-listen')), findsNothing);
+      await _settle(tester);
+    },
+  );
 
   testWidgets('Practice Listen speaks the primary visible sentence', (
     tester,
@@ -783,7 +794,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('message-action-listen')));
@@ -809,7 +820,7 @@ void main() {
     await _settle(tester);
 
     expect(find.text('hallo'), findsNothing);
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     expect(
@@ -840,7 +851,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('message-action-reply')));
@@ -872,7 +883,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('message-action-edit')));
@@ -903,7 +914,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('message-action-delete')));
@@ -938,7 +949,7 @@ void main() {
     await _settle(tester);
   });
 
-  testWidgets('message tap keeps the message viewport height stable', (
+  testWidgets('message long press keeps the message viewport height stable', (
     tester,
   ) async {
     final container = _buildContainer(_BubbleExpandChatService());
@@ -948,7 +959,7 @@ void main() {
 
     final before = tester.getSize(find.byType(ListView).first).height;
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
@@ -957,56 +968,67 @@ void main() {
     await _settle(tester);
   });
 
-  testWidgets('held message text has no menu or word lookup', (tester) async {
+  testWidgets('single message tap has no menu or word lookup', (tester) async {
     final container = _buildContainer(_BubbleExpandChatService());
     addTearDown(container.dispose);
     await tester.pumpWidget(_host(container));
     await _settle(tester);
-    await tester.longPress(find.byType(MessageText));
+    await tester.tap(find.byType(MessageText));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('message-action-listen')), findsNothing);
     expect(find.text('hello'), findsNothing);
   });
 
-  testWidgets('message tap retains draft and fixed panels while chat scrolls', (
-    tester,
-  ) async {
-    final container = _buildContainer(
-      _BubbleExpandChatService(
-        text: List.filled(100, 'hallo mein freund').join(' '),
-      ),
-    );
-    addTearDown(container.dispose);
-    await tester.pumpWidget(_host(container));
-    await _settle(tester);
-    final composer = find.byKey(const ValueKey('composer-message-text-field'));
-    final field = tester.widget<TextField>(composer);
-    field.controller!.text = 'unsent draft';
-    final composerRect = tester.getRect(composer);
-    final list = find.byType(ListView).first;
-    final scroll = tester.state<ScrollableState>(
-      find.descendant(of: list, matching: find.byType(Scrollable)).first,
-    );
-    final before = scroll.position.pixels;
-    final contentRect = tester.getRect(list);
-    await tester.tapAt(Offset(contentRect.left + 40, contentRect.bottom - 50));
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pumpAndSettle();
-    final action = find.byKey(const ValueKey('message-action-listen'));
-    expect(action, findsOneWidget);
-    final panelRect = tester.getRect(action);
-    expect(tester.getRect(composer), composerRect);
-    expect(tester.widget<TextField>(composer).controller!.text, 'unsent draft');
-    await tester.dragFrom(
-      Offset(contentRect.right - 8, contentRect.center.dy),
-      const Offset(0, 180),
-    );
-    await tester.pumpAndSettle();
-    expect(scroll.position.pixels, isNot(before));
-    expect(tester.getRect(action), panelRect);
-    expect(tester.getRect(composer), composerRect);
-    expect(tester.widget<TextField>(composer).controller!.text, 'unsent draft');
-  });
+  testWidgets(
+    'message long press retains draft and fixed panels while chat scrolls',
+    (tester) async {
+      final container = _buildContainer(
+        _BubbleExpandChatService(
+          text: List.filled(100, 'hallo mein freund').join(' '),
+        ),
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(_host(container));
+      await _settle(tester);
+      final composer = find.byKey(
+        const ValueKey('composer-message-text-field'),
+      );
+      final field = tester.widget<TextField>(composer);
+      field.controller!.text = 'unsent draft';
+      final composerRect = tester.getRect(composer);
+      final list = find.byType(ListView).first;
+      final scroll = tester.state<ScrollableState>(
+        find.descendant(of: list, matching: find.byType(Scrollable)).first,
+      );
+      final before = scroll.position.pixels;
+      final contentRect = tester.getRect(list);
+      await tester.longPressAt(
+        Offset(contentRect.left + 40, contentRect.bottom - 50),
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      final action = find.byKey(const ValueKey('message-action-listen'));
+      expect(action, findsOneWidget);
+      final panelRect = tester.getRect(action);
+      expect(tester.getRect(composer), composerRect);
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'unsent draft',
+      );
+      await tester.dragFrom(
+        Offset(contentRect.right - 8, contentRect.center.dy),
+        const Offset(0, 180),
+      );
+      await tester.pumpAndSettle();
+      expect(scroll.position.pixels, isNot(before));
+      expect(tester.getRect(action), panelRect);
+      expect(tester.getRect(composer), composerRect);
+      expect(
+        tester.widget<TextField>(composer).controller!.text,
+        'unsent draft',
+      );
+    },
+  );
 
   testWidgets('normal mode has no translate/play-sentence icon', (
     tester,
@@ -1026,7 +1048,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('message-action-listen')), findsOneWidget);
@@ -1048,7 +1070,7 @@ void main() {
     await tester.pumpWidget(_host(container));
     await _settle(tester);
 
-    await tester.tap(find.byType(MessageText).first);
+    await tester.longPress(find.byType(MessageText).first);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     expect(

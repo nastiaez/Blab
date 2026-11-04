@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
-    'text tap opens once, double tap hearts, swipe replies without menu',
+    'long press opens once, single tap is inert, double tap hearts and swipe replies',
     (tester) async {
       var menus = 0;
       var hearts = 0;
@@ -29,6 +29,9 @@ void main() {
       );
       await tester.tap(find.text('message text'));
       await tester.pump(const Duration(milliseconds: 400));
+      expect(menus, 0);
+      await tester.longPress(find.text('message text'));
+      await tester.pumpAndSettle();
       expect(menus, 1);
       await tester.tap(find.text('message text'));
       await tester.pump(const Duration(milliseconds: 70));
@@ -89,7 +92,7 @@ void main() {
     });
   }
 
-  testWidgets('message tap reports geometry; long press has no menu entry', (
+  testWidgets('long press reports geometry; message tap has no menu entry', (
     tester,
   ) async {
     Rect? capturedRect;
@@ -117,11 +120,11 @@ void main() {
       ),
     );
 
-    await tester.longPress(find.byType(MessageInteractionTarget));
+    await tester.tap(find.byType(MessageInteractionTarget));
     await tester.pumpAndSettle();
     expect(capturedRect, isNull);
     await tester.pump(const Duration(milliseconds: 400));
-    await tester.tap(find.byType(MessageInteractionTarget));
+    await tester.longPress(find.byType(MessageInteractionTarget));
     await tester.pumpAndSettle();
 
     expect(capturedRect, isNotNull);

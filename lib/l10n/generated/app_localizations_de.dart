@@ -1778,4 +1778,13 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get deletedAccountNotice =>
       'Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden.';
+
+  @override
+  String get translateMessage => 'Übersetzen';
+
+  @override
+  String get showMessageTranslation => 'Übersetzung anzeigen';
+
+  @override
+  String get hideMessageTranslation => 'Übersetzung ausblenden';
 }

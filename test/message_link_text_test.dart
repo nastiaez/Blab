@@ -179,7 +179,7 @@ void main() {
     },
   );
   testWidgets(
-    'link wins message tap; text still selects; outside and Back dismiss',
+    'link wins message tap; held text selects; outside and Back dismiss',
     (tester) async {
       var selections = 0;
       await tester.pumpWidget(
@@ -218,7 +218,7 @@ void main() {
             TextSelection(baseOffset: start, extentOffset: start + 2),
           )
           .first;
-      await tester.tapAt(
+      await tester.longPressAt(
         paragraph.localToGlobal(Offset(box.left + 2, box.top + 4)),
       );
       await tester.pumpAndSettle();

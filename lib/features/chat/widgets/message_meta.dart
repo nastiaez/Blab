@@ -6,8 +6,10 @@ class MessageStatusNotice extends StatelessWidget {
     required this.text,
     required this.onTap,
     required this.alignRight,
+    this.color = BlabColors.error,
   });
 
+  final Color color;
   final String text;
   final VoidCallback? onTap;
   final bool alignRight;
@@ -20,15 +22,15 @@ class MessageStatusNotice extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.symmetric(vertical: 1),
           child: Text(
             text,
             textAlign: alignRight ? TextAlign.right : TextAlign.left,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: 14,
               height: 1.25,
               fontWeight: FontWeight.w500,
-              color: BlabColors.error,
+              color: color,
             ),
           ),
         ),
@@ -53,12 +55,12 @@ class UnsupportedLanguageNotice extends StatelessWidget {
       widthFactor: 1,
       alignment: alignRight ? Alignment.centerRight : Alignment.centerLeft,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(vertical: 1),
         child: Text(
           text,
           textAlign: alignRight ? TextAlign.right : TextAlign.left,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             height: 1.25,
             fontWeight: FontWeight.w400,
             color: Color(0xFF917869),

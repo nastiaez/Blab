@@ -1,3 +1,4 @@
+import 'translation_anchor_controller.dart';
 import 'widgets/message_link_text.dart';
 import 'widgets/deleted_identity_scope.dart';
 import 'widgets/mention_picker_overlay.dart';
@@ -125,7 +126,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final MentionController _input = MentionController();
   bool _mentionDismissed = false;
   final FocusNode _inputFocus = FocusNode();
-  final ScrollController _scroll = ScrollController();
+  final TranslationAnchorController _scroll = TranslationAnchorController();
+  final Map<String, bool> _translationVisibility = {};
+  double _translationLeadingSpace = 0;
   final GlobalKey _stackKey = GlobalKey();
   final GlobalKey _bottomSurfaceKey = GlobalKey();
   final GlobalKey _selectedBubbleKey = GlobalKey();
@@ -224,6 +227,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
+  }
+
+  bool _active = true;
+
+  @override
+  void activate() {
+    super.activate();
+    _active = true;
+  }
+
+  @override
+  void deactivate() {
+    _active = false;
+    super.deactivate();
   }
 
   @override
@@ -929,12 +946,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final tts = ref.read(ttsServiceProvider);
         unawaited(tts.speak(text, learningLanguageCode));
         break;
+      case MessageAction.translate:
       case MessageAction.original:
         break;
       case MessageAction.delete:
         unawaited(_confirmDelete(message, chat));
         break;
     }
+  }
+
+  void _toggleTranslation(Message message, String key, {bool reveal = false}) {
+    final anchor = _messageAnchorKey(message.id);
+    _translationLeadingSpace += _scroll.leadingWhitespace(anchor);
+    _scroll.preserve(anchor);
+    _closeSelection();
+    setState(() {
+      _translationVisibility[key] =
+          reveal || !(_translationVisibility[key] ?? false);
+    });
   }
 
   void _toggleMenu() {
@@ -1672,6 +1701,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
                       onTap: () {
+                        // A double-tap recognizer can release its arena during
+                        // teardown; do not read providers from an inactive tree.
+                        if (!_active) return;
                         _closeMenu();
                         _closeSelection();
                       },
@@ -1832,6 +1864,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                       context,
                                       chat,
                                     ),
+                                    translationVisibility:
+                                        _translationVisibility,
+                                    translationLeadingSpace:
+                                        _translationLeadingSpace,
+                                    onToggleTranslation: _toggleTranslation,
                                     selectedMessageId: _selectedMessage?.id,
                                     showSelectedOriginal: _showSelectedOriginal,
                                     selectedBubbleKey: _selectedBubbleKey,
@@ -2197,6 +2234,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               accountDeleted: chat.partnerAccountDeleted,
                               mode: chatMode,
                               hasOriginal: activePresentation.canRevealOriginal,
+                              canTranslate:
+                                  activePresentation.knownLanguageText
+                                      ?.trim()
+                                      .isNotEmpty ??
+                                  false,
                               canListen:
                                   activePresentation.listenText != null &&
                                   hasSpeakableText(
@@ -2205,6 +2247,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               isOriginalVisible: _showSelectedOriginal,
                               onAction: (action) {
                                 final message = _panelMessage!;
+                                if (action == MessageAction.translate) {
+                                  _toggleTranslation(
+                                    message,
+                                    messageExpansionKey(
+                                      message,
+                                      chatMode,
+                                      targetForMessage(message),
+                                      translationInterfaceLang,
+                                    ),
+                                    reveal: true,
+                                  );
+                                  return;
+                                }
                                 if (action == MessageAction.original) {
                                   setState(
                                     () => _showSelectedOriginal =

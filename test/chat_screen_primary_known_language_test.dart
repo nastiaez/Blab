@@ -2256,7 +2256,7 @@ void main() {
         }
         await _settle(tester);
         expect(field.focusNode!.hasFocus, retainedFocus);
-        await tester.tap(find.text('Привіт'));
+        await tester.longPress(find.text('Привіт'));
         await _settle(tester);
         expect(
           find.byKey(const ValueKey('message-action-reply')),
@@ -2316,7 +2316,7 @@ void main() {
       expect(controller.mentions.single.userId, 'bob');
       field.focusNode!.unfocus();
       await _settle(tester);
-      await tester.tap(find.text('Привіт'));
+      await tester.longPress(find.text('Привіт'));
       await _settle(tester);
       expect(find.byKey(const ValueKey('message-action-edit')), findsOneWidget);
       await tester.tap(composer);
@@ -2330,7 +2330,7 @@ void main() {
       await _settle(tester);
       field.focusNode!.unfocus();
       await _settle(tester);
-      await tester.tap(find.text('Привіт'));
+      await tester.longPress(find.text('Привіт'));
       await _settle(tester);
       await tester.tap(find.byKey(const ValueKey('message-action-edit')));
       await _settle(tester);
@@ -2361,7 +2361,7 @@ void main() {
     await tester.enterText(composer, 'Unsent draft');
     tester.widget<TextField>(composer).focusNode!.unfocus();
     await _settle(tester);
-    await tester.tap(find.text('Привіт'));
+    await tester.longPress(find.text('Привіт'));
     await _settle(tester);
     await tester.tap(find.byKey(const ValueKey('message-action-edit')));
     await _settle(tester);
@@ -2615,7 +2615,7 @@ Future<void> runContextualWordHelpJourney(
         .value!;
     await tester.pump(const Duration(seconds: 2));
     for (final word in key == 'v0' ? ['the', 'of', 'message'] : ['message']) {
-      await tester.tap(find.text(word).first);
+      await tester.longPress(find.text(word).first);
       await _settle(tester);
       final expected = tokens
           .firstWhere((t) => t.text.replaceAll('.', '') == word)
@@ -2890,11 +2890,6 @@ Future<void> runDoubleTapHeartJourney(
       );
       if (capture != null) await capture('03-mixed-reactions-$suffix');
       await tester.longPress(target);
-      await _settle(tester);
-      expect(find.byKey(const ValueKey('message-action-reply')), findsNothing);
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.tap(find.byType(MessageText).first);
-      await tester.pump(const Duration(milliseconds: 350));
       await _settle(tester);
       expect(
         find.byKey(const ValueKey('message-action-reply')),
@@ -3268,7 +3263,7 @@ Future<void> runBla27ReadingJourney(
     // Press a visible point, not the center of an off-screen long bubble.
     final rect = tester.getRect(target);
     final viewport = tester.getRect(find.byType(ChatTimeline));
-    await tester.tapAt(rect.intersect(viewport).center);
+    await tester.longPressAt(rect.intersect(viewport).center);
     await tester.pump(const Duration(milliseconds: 350));
     await _settle(tester);
     final row = find.byKey(const ValueKey('floating-reaction-row-msg-1'));
@@ -3280,7 +3275,10 @@ Future<void> runBla27ReadingJourney(
       lessThanOrEqualTo(readingViewport.bottom),
     );
     final fixedRowRect = tester.getRect(row);
-    expect(find.text(service.message.originalText), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('message-comprehension-lane')),
+      findsNothing,
+    );
     if (capture != null) {
       await capture('bla27-${outgoing ? 'outgoing' : 'incoming'}-reading');
     }
@@ -3288,7 +3286,10 @@ Future<void> runBla27ReadingJourney(
     await _settle(tester);
     expect(row, findsOneWidget);
     expect(tester.getRect(row), fixedRowRect);
-    expect(find.text(service.message.originalText), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('message-comprehension-lane')),
+      findsNothing,
+    );
     expect(find.byKey(const ValueKey('message-action-reply')), findsOneWidget);
     if (capture != null) {
       await capture('bla27-${outgoing ? 'outgoing' : 'incoming'}-scrolled');

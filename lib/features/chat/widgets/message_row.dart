@@ -4,6 +4,8 @@ class ChatMessageRow extends ConsumerWidget {
   const ChatMessageRow({
     super.key,
     this.highlighted = false,
+    this.translationVisibility = const {},
+    this.onToggleTranslation,
     this.leadingGap,
     required this.chatId,
     required this.partnerName,
@@ -31,6 +33,8 @@ class ChatMessageRow extends ConsumerWidget {
     this.selectedBubbleKey,
   });
 
+  final Map<String, bool> translationVisibility;
+  final void Function(Message, String)? onToggleTranslation;
   final double? leadingGap;
   final bool highlighted;
   final String chatId;
@@ -159,7 +163,18 @@ class ChatMessageRow extends ConsumerWidget {
     // (_selectedBubbleRect), so if it wrapped the icon+bubble Row too, that
     // rect would include the icon and throw off the row's horizontal
     // centering on every practice-mode long-press.
+    final expansionKey = messageExpansionKey(
+      message,
+      mode,
+      targetLang,
+      translationInterfaceLanguageCode,
+    );
     Widget bubble = MessageBubble(
+      translationExpanded: translationVisibility[expansionKey] ?? false,
+      translationRequested: translationVisibility.containsKey(expansionKey),
+      onToggleTranslation: onToggleTranslation == null
+          ? null
+          : () => onToggleTranslation!(message, expansionKey),
       onJumpToMessage: onJumpToMessage,
       chatId: chatId,
       partnerName: partnerName,

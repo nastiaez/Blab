@@ -624,5 +624,8 @@
   "linkActionFailed": "Не вдалося відкрити або скопіювати це посилання.",
   "deletedAccount": "Видалений обліковий запис",
   "accountDeleted": "Обліковий запис видалено",
-  "deletedAccountNotice": "Цей обліковий запис видалено. Ви більше не можете надсилати повідомлення."
+  "deletedAccountNotice": "Цей обліковий запис видалено. Ви більше не можете надсилати повідомлення.",
+  "translateMessage": "Перекласти",
+  "showMessageTranslation": "Показати переклад",
+  "hideMessageTranslation": "Приховати переклад"
 }

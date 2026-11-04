@@ -764,5 +764,8 @@
   "linkActionFailed": "Couldn’t open or copy this link.",
   "deletedAccount": "Deleted account",
   "accountDeleted": "Account deleted",
-  "deletedAccountNotice": "This account has been deleted. You can no longer send messages."
+  "deletedAccountNotice": "This account has been deleted. You can no longer send messages.",
+  "translateMessage": "Translate",
+  "showMessageTranslation": "Show translation",
+  "hideMessageTranslation": "Hide translation"
 }
