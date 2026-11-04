@@ -6,9 +6,10 @@ const file = await Deno.readTextFile(
     throw Error("app_env_file_required");
   })(),
 );
-const key = file.split("\n").find((l) => l.includes("KEY="))!.split("=").slice(
-  1,
-).join("=").trim().replace(/^["']|["']$/g, "");
+const key = file.split("\n").find((l) => l.startsWith("OPENAI_API_KEY="))!
+  .split("=").slice(
+    1,
+  ).join("=").trim().replace(/^["']|["']$/g, "");
 Deno.env.set("OPENAI_API_KEY", key);
 Deno.env.set("OPENAI_MODEL", "gpt-6-luna");
 Deno.env.set("BLAB_TRANSLATION_PROVIDER", "openai");
