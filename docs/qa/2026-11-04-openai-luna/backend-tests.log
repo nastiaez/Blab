@@ -1,0 +1,739 @@
+[0m[32mCheck[0m supabase/functions/prepare-message-jobs/batch_failure_test.ts
+[0m[32mCheck[0m supabase/functions/prepare-message-jobs/commit_viewers_test.ts
+[0m[32mCheck[0m supabase/functions/prepare-message-jobs/contract_test.ts
+[0m[32mCheck[0m supabase/functions/prepare-message-jobs/group_outputs_test.ts
+[0m[32mCheck[0m supabase/functions/prepare-message-jobs/group_worker_rpc_test.ts
+[0m[32mCheck[0m supabase/functions/prepare-message-jobs/mention_retry_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/automatic_forms_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/cache_migration_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/compact_request_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/consensus_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/contract_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/delivery_optimization_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/luna_provider_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/mention_identity_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/new_languages_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/participant_forms_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/provider_metrics_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/provider_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/readable_delivery_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/recovery_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/rulebook_test.ts
+[0m[32mCheck[0m supabase/functions/translate-message/single_call_test.ts
+[0m[38;5;245mrunning 2 tests from ./supabase/functions/prepare-message-jobs/batch_failure_test.ts[0m
+batch failures retain the rejecting stage without private database detail ... [0m[32mok[0m [0m[38;5;245m(292µs)[0m
+constraint failures retain SQLSTATE but never the row body ... [0m[32mok[0m [0m[38;5;245m(87µs)[0m
+[0m[38;5;245mrunning 3 tests from ./supabase/functions/prepare-message-jobs/commit_viewers_test.ts[0m
+one rejected viewer cannot discard another viewer result ... [0m[32mok[0m [0m[38;5;245m(202µs)[0m
+transport failure is bounded to its viewer and does not skip others ... [0m[32mok[0m [0m[38;5;245m(343µs)[0m
+missing viewer output never reaches the save RPC ... [0m[32mok[0m [0m[38;5;245m(22µs)[0m
+[0m[38;5;245mrunning 10 tests from ./supabase/functions/prepare-message-jobs/contract_test.ts[0m
+claims are processed oldest first with a stable tie break ... [0m[32mok[0m [0m[38;5;245m(8ms)[0m
+one failed job does not stop independent completions ... [0m[32mok[0m [0m[38;5;245m(153µs)[0m
+transient failures retry with bounded delay ... [0m[32mok[0m [0m[38;5;245m(40µs)[0m
+permanent failures stop immediately ... [0m[32mok[0m [0m[38;5;245m(14µs)[0m
+stale revisions are discarded without retry ... [0m[32mok[0m [0m[38;5;245m(18µs)[0m
+retry budget ends in a terminal failure ... [0m[32mok[0m [0m[38;5;245m(16µs)[0m
+worker input accepts only bounded batches and job UUIDs ... [0m[32mok[0m [0m[38;5;245m(96µs)[0m
+an unrelated slow job does not delay an already claimed message ... [0m[32mok[0m [0m[38;5;245m(64µs)[0m
+failure diagnostics retain bounded reasons, never private provider text ... [0m[32mok[0m [0m[38;5;245m(47µs)[0m
+retry delay respects provider Retry-After ... [0m[32mok[0m [0m[38;5;245m(18µs)[0m
+[0m[38;5;245mrunning 12 tests from ./supabase/functions/prepare-message-jobs/group_outputs_test.ts[0m
+2 identical group viewers share one generation; restart costs zero ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+5 identical group viewers share one generation; restart costs zero ... [0m[32mok[0m [0m[38;5;245m(662µs)[0m
+30 identical group viewers share one generation; restart costs zero ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+100 identical group viewers share one generation; restart costs zero ... [0m[32mok[0m [0m[38;5;245m(4ms)[0m
+author and many different recipients fit one group request, with private corrections ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+distinct targets, known languages, tones and context never merge incorrectly ... [0m[32mok[0m [0m[38;5;245m(323µs)[0m
+long distinct outputs split before exhausting the output budget ... [0m[32mok[0m [0m[38;5;245m(163µs)[0m
+completed artifact survives a later batch failure and is not regenerated ... [0m[32mok[0m [0m[38;5;245m(617µs)[0m
+group recipient form alternatives are never attributed to an arbitrary member ... [0m[32mok[0m [0m[38;5;245m(27µs)[0m
+large distinct-output groups continue without spending failure attempts ... [0m[32mok[0m [0m[38;5;245m(3ms)[0m
+pending group artifacts bypass pre-integrity cache without changing completed history ... [0m[32mok[0m [0m[38;5;245m(134µs)[0m
+pending profile-name artifacts are bypassed and retained, new results cache normally ... [0m[32mok[0m [0m[38;5;245m(132µs)[0m
+[0m[38;5;245mrunning 2 tests from ./supabase/functions/prepare-message-jobs/group_worker_rpc_test.ts[0m
+100 cached jobs need one preparation roundtrip and no provider credentials ... [0m[32mok[0m [0m[38;5;245m(370µs)[0m
+100 group completions use one roundtrip and preserve isolated failures ... [0m[32mok[0m [0m[38;5;245m(93µs)[0m
+[0m[38;5;245mrunning 15 tests from ./supabase/functions/prepare-message-jobs/mention_retry_test.ts[0m
+direct invented: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 7,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+direct invented: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(12ms)[0m
+direct all_invented: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 0, failed: 3 }
+[0m[38;5;245m----- post-test output end -----[0m
+direct all_invented: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(411µs)[0m
+direct missing: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+direct missing: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(706µs)[0m
+direct duplicated: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+direct duplicated: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(304µs)[0m
+direct altered: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+direct altered: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(234µs)[0m
+direct valid: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 3, failed: 0 }
+[0m[38;5;245m----- post-test output end -----[0m
+direct valid: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(232µs)[0m
+direct transport: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 503,
+  durationMs: 2,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_failed { messageId: "m", reason: "provider_http_503" }
+[0m[38;5;245m----- post-test output end -----[0m
+direct transport: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+group invented: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+group invented: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(828µs)[0m
+group all_invented: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 0, failed: 3 }
+[0m[38;5;245m----- post-test output end -----[0m
+group all_invented: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(582µs)[0m
+group missing: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+group missing: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(374µs)[0m
+group duplicated: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+group duplicated: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(396µs)[0m
+group altered: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 1, failed: 2 }
+[0m[38;5;245m----- post-test output end -----[0m
+group altered: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(381µs)[0m
+group valid: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_settled { messageId: "m", viewers: 3, ready: 3, failed: 0 }
+[0m[38;5;245m----- post-test output end -----[0m
+group valid: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(279µs)[0m
+group transport: integrity stops once, healthy viewers persist ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 503,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+translation_message_batch_failed { messageId: "m", reason: "provider_http_503" }
+[0m[38;5;245m----- post-test output end -----[0m
+group transport: integrity stops once, healthy viewers persist ... [0m[32mok[0m [0m[38;5;245m(312µs)[0m
+later group transport failure cannot requeue earlier integrity failures ...
+[0m[38;5;245m------- post-test output -------[0m
+translation_message_batch_failed { messageId: "m", reason: "provider_http_503" }
+[0m[38;5;245m----- post-test output end -----[0m
+later group transport failure cannot requeue earlier integrity failures ... [0m[32mok[0m [0m[38;5;245m(658µs)[0m
+[0m[38;5;245mrunning 28 tests from ./supabase/functions/translate-message/automatic_forms_test.ts[0m
+English direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+English direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(44µs)[0m
+German direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(209µs)[0m
+German direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(34µs)[0m
+Spanish direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(358µs)[0m
+Spanish direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(21µs)[0m
+French direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(213µs)[0m
+French direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(29µs)[0m
+Ukrainian direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+Ukrainian direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(28µs)[0m
+Hindi direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(273µs)[0m
+Hindi direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(13µs)[0m
+Dutch direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(275µs)[0m
+Dutch direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(46µs)[0m
+Italian direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(839µs)[0m
+Italian direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(15µs)[0m
+Portuguese direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(364µs)[0m
+Portuguese direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(15µs)[0m
+Tamil direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(456µs)[0m
+Tamil direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(15µs)[0m
+Turkish direct author maps to stable author role ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+Turkish direct recipient maps to stable recipient role ... [0m[32mok[0m [0m[38;5;245m(17µs)[0m
+direct role recognition is isolated to the detected language ... [0m[32mok[0m [0m[38;5;245m(74µs)[0m
+wrong incoming you metadata is rebound to Bob and stable recipient role ... [0m[32mok[0m [0m[38;5;245m(36µs)[0m
+existing alternatives require ownership audit too ... [0m[32mok[0m [0m[38;5;245m(23µs)[0m
+shared provider prompts are invariant to private saved forms ... [0m[32mok[0m [0m[38;5;245m(157µs)[0m
+normalized shared alternatives preserve name-derived provider suggestions ... [0m[32mok[0m [0m[38;5;245m(233µs)[0m
+embedded and named affected people remain audit-owned ... [0m[32mok[0m [0m[38;5;245m(4ms)[0m
+[0m[38;5;245mrunning 6 tests from ./supabase/functions/translate-message/cache_migration_test.ts[0m
+automatic-form migration invalidates every legacy cache variant ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+automatic-form migration replaces invalidated preparation jobs ... [0m[32mok[0m [0m[38;5;245m(4ms)[0m
+automatic-form migration rejects every legacy completion contract ... [0m[32mok[0m [0m[38;5;245m(254µs)[0m
+complete-language-aids migration advances and invalidates the cache ... [0m[32mok[0m [0m[38;5;245m(217µs)[0m
+translation-reliability migration replaces every stale result ... [0m[32mok[0m [0m[38;5;245m(275µs)[0m
+completion RPCs preserve corrected source-interface text ... [0m[32mok[0m [0m[38;5;245m(143µs)[0m
+[0m[38;5;245mrunning 12 tests from ./supabase/functions/translate-message/compact_request_test.ts[0m
+word meanings use the same contextual rule in generation and metadata repair ... [0m[32mok[0m [0m[38;5;245m(389µs)[0m
+four distinct languages share one message, stable schema and compact rules ... [0m[32mok[0m [0m[38;5;245m(110µs)[0m
+matching pair deduplicates sentences and word help; explanation language remains independent ... [0m[32mok[0m [0m[38;5;245m(80µs)[0m
+same context shared across opposite viewer perspectives, quote retained and bounded ... [0m[32mok[0m [0m[38;5;245m(170µs)[0m
+different historical context and tone must not coalesce language outputs ... [0m[32mok[0m [0m[38;5;245m(60µs)[0m
+shared gender alternative maps to opposite viewers without model-relative booleans ... [0m[32mok[0m [0m[38;5;245m(442µs)[0m
+all supported target/known pairs remain dynamic, no UI or private forms sent ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+same-language authored gender is not normalized into a correction ... [0m[32mok[0m [0m[38;5;245m(73µs)[0m
+reuse complete matching form tokens instead of rejecting omitted duplicate base metadata ... [0m[32mok[0m [0m[38;5;245m(84µs)[0m
+profile names stay local while authored names and distinct viewer settings survive ... [0m[32mok[0m [0m[38;5;245m(68µs)[0m
+group context uses stable anonymous authors without changing authored text ... [0m[32mok[0m [0m[38;5;245m(67µs)[0m
+group current author stays identifiable without their profile name ... [0m[32mok[0m [0m[38;5;245m(38µs)[0m
+[0m[38;5;245mrunning 2 tests from ./supabase/functions/translate-message/consensus_test.ts[0m
+first two reviews start independently; agreement avoids third call ... [0m[32mok[0m [0m[38;5;245m(173µs)[0m
+disagreement requires third review and never accepts one vote ... [0m[32mok[0m [0m[38;5;245m(50µs)[0m
+[0m[38;5;245mrunning 89 tests from ./supabase/functions/translate-message/contract_test.ts[0m
+counts user-perceived characters ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+rejects a same-language correction that drops caption content ... [0m[32mok[0m [0m[38;5;245m(739µs)[0m
+accepts a complete Dutch correction with one changed word ... [0m[32mok[0m [0m[38;5;245m(102µs)[0m
+focused correction audit catches a clear agreement error ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+stale correction tokens preserve the valid correction for metadata repair ... [0m[32mok[0m [0m[38;5;245m(88µs)[0m
+focused correction audit contract is generic and localized ... [0m[32mok[0m [0m[38;5;245m(37µs)[0m
+accepts only a message UUID ... [0m[32mok[0m [0m[38;5;245m(68µs)[0m
+provider route permits every eligible ZDR endpoint ... [0m[32mok[0m [0m[38;5;245m(26µs)[0m
+provider credentials prefer OpenRouter and fall back to OpenAI ... [0m[32mok[0m [0m[38;5;245m(69µs)[0m
+provider messages include recent context but translate only current text ... [0m[32mok[0m [0m[38;5;245m(171µs)[0m
+provider messages include bounded source evidence ... [0m[32mok[0m [0m[38;5;245m(49µs)[0m
+focused short retry isolates semantic translation from source detection ... [0m[32mok[0m [0m[38;5;245m(332µs)[0m
+semantic translation audit independently checks source meaning ... [0m[32mok[0m [0m[38;5;245m(51µs)[0m
+source meaning is anchored before any candidate is visible ... [0m[32mok[0m [0m[38;5;245m(57µs)[0m
+semantic translation audit uses one stable internal meaning language ... [0m[32mok[0m [0m[38;5;245m(34µs)[0m
+semantic audit parser accepts only internally consistent verdicts ... [0m[32mok[0m [0m[38;5;245m(82µs)[0m
+semantic audit consensus retries contradictions and requires agreement ... [0m[32mok[0m [0m[38;5;245m(257µs)[0m
+semantic audit consensus rejects competing corrections ... [0m[32mok[0m [0m[38;5;245m(31µs)[0m
+focused retry keeps its resolved source when provider parrots target ... [0m[32mok[0m [0m[38;5;245m(271µs)[0m
+provider keeps private forms and profile names out ... [0m[32mok[0m [0m[38;5;245m(39µs)[0m
+English to Ukrainian rejects parenthetical gender alternatives ... [0m[32mok[0m [0m[38;5;245m(902µs)[0m
+unresolved form forces one explicit audit before accepting a translation without alternatives ... [0m[32mok[0m [0m[38;5;245m(50µs)[0m
+focused grammatical-form audit requires a participant when a choice is needed ... [0m[32mok[0m [0m[38;5;245m(89µs)[0m
+focused grammatical-form audit requires complete token metadata for both renderings ... [0m[32mok[0m [0m[38;5;245m(101µs)[0m
+strict form schemas require both complete token arrays ... [0m[32mok[0m [0m[38;5;245m(17µs)[0m
+provider alternatives retain complete tokens for both forms ... [0m[32mok[0m [0m[38;5;245m(884µs)[0m
+focused audit prompt localizes word metadata ... [0m[32mok[0m [0m[38;5;245m(46µs)[0m
+confirmed alternatives must keep the audit's minimal changing fragment ... [0m[32mok[0m [0m[38;5;245m(39µs)[0m
+focused audit can attach minimal alternatives to its exact feminine translation ... [0m[32mok[0m [0m[38;5;245m(66µs)[0m
+confirmed audit makes feminine translation metadata canonical ... [0m[32mok[0m [0m[38;5;245m(42µs)[0m
+optional form audit preserves a valid base translation when unavailable ... [0m[32mok[0m [0m[38;5;245m(43µs)[0m
+prompt distinguishes author and recipient for Ukrainian questions ... [0m[32mok[0m [0m[38;5;245m(40µs)[0m
+prompt preserves supplied conversation tone ... [0m[32mok[0m [0m[38;5;245m(19µs)[0m
+interface repair reuses provisional form and address rules ... [0m[32mok[0m [0m[38;5;245m(21µs)[0m
+provider responses use strict schemas ... [0m[32mok[0m [0m[38;5;245m(12µs)[0m
+provider response schema requires word metadata ... [0m[32mok[0m [0m[38;5;245m(10µs)[0m
+provider validation failures expose bounded structural reasons ... [0m[32mok[0m [0m[38;5;245m(168µs)[0m
+provider keeps full text when optional token metadata is invalid ... [0m[32mok[0m [0m[38;5;245m(69µs)[0m
+provider trims boundary-only token whitespace ... [0m[32mok[0m [0m[38;5;245m(46µs)[0m
+provider repairs token punctuation without losing word metadata ... [0m[32mok[0m [0m[38;5;245m(62µs)[0m
+provider canonicalizes punctuation-bound Latin word metadata ... [0m[32mok[0m [0m[38;5;245m(30µs)[0m
+every learning language requests pronunciation metadata ... [0m[32mok[0m [0m[38;5;245m(204µs)[0m
+provider discards phrase-sized content tokens ... [0m[32mok[0m [0m[38;5;245m(44µs)[0m
+provider-added paragraph breaks are removed for single-paragraph input ... [0m[32mok[0m [0m[38;5;245m(23µs)[0m
+provider mode drift is normalized instead of hiding translation ... [0m[32mok[0m [0m[38;5;245m(59µs)[0m
+copied learning text requests an interface retry for every source ... [0m[32mok[0m [0m[38;5;245m(47µs)[0m
+provider accepts a source outside the learning-language list ... [0m[32mok[0m [0m[38;5;245m(21µs)[0m
+provider keeps a usable translation when optional word metadata is missing ... [0m[32mok[0m [0m[38;5;245m(34µs)[0m
+non-Latin learning text requires complete word metadata ... [0m[32mok[0m [0m[38;5;245m(28µs)[0m
+copied multi-word glosses require a focused metadata repair ... [0m[32mok[0m [0m[38;5;245m(114µs)[0m
+source-language glosses are repaired when known language differs ... [0m[32mok[0m [0m[38;5;245m(61µs)[0m
+focused word metadata repair preserves the accepted sentence ... [0m[32mok[0m [0m[38;5;245m(97µs)[0m
+provider retries only when a cross-language result copies the source ... [0m[32mok[0m [0m[38;5;245m(14µs)[0m
+provider retries a misclassified short source ... [0m[32mok[0m [0m[38;5;245m(19µs)[0m
+source evidence retry rejects No misclassified as German ... [0m[32mok[0m [0m[38;5;245m(64µs)[0m
+source evidence selects the author's language for the bounded retry ... [0m[32mok[0m [0m[38;5;245m(483µs)[0m
+source evidence retry preserves genuine target-language text ... [0m[32mok[0m [0m[38;5;245m(25µs)[0m
+source evidence retry recognizes an abbreviation plus a name ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+source evidence pins a recognized English abbreviation without history ... [0m[32mok[0m [0m[38;5;245m(44µs)[0m
+unsupported source scripts are recognized without provider guessing ... [0m[32mok[0m [0m[38;5;245m(171µs)[0m
+abbreviation plus name source evidence covers every target language ... [0m[32mok[0m [0m[38;5;245m(105µs)[0m
+source classification retry preserves valid short messages ... [0m[32mok[0m [0m[38;5;245m(39µs)[0m
+source classification retry excludes non-conversational and long input ... [0m[32mok[0m [0m[38;5;245m(688µs)[0m
+source classification retry guidance is generic ... [0m[32mok[0m [0m[38;5;245m(33µs)[0m
+auto-source prompt requests learning output with localized glosses ... [0m[32mok[0m [0m[38;5;245m(67µs)[0m
+standard prompt contains no English token example for German word help ... [0m[32mok[0m [0m[38;5;245m(38µs)[0m
+focused retry explicitly requires German token glosses ... [0m[32mok[0m [0m[38;5;245m(19µs)[0m
+Dutch prompt requires standard closed compounds ... [0m[32mok[0m [0m[38;5;245m(32µs)[0m
+Hindi prompt prefers a true future construction for one-time events ... [0m[32mok[0m [0m[38;5;245m(23µs)[0m
+Hindi temporal translations receive a focused future audit ... [0m[32mok[0m [0m[38;5;245m(44µs)[0m
+Dutch output normalizes tomorrow morning as a closed compound ... [0m[32mok[0m [0m[38;5;245m(129µs)[0m
+prompt names every supported interface language correctly ... [0m[32mok[0m [0m[38;5;245m(52µs)[0m
+author can receive a bounded same-language correction ... [0m[32mok[0m [0m[38;5;245m(19µs)[0m
+same-language correction is available to any eligible viewer ... [0m[32mok[0m [0m[38;5;245m(26µs)[0m
+server accepts corrected interface-language text for translated source mistakes ... [0m[32mok[0m [0m[38;5;245m(21µs)[0m
+server keeps duplicate target and interface lanes identical ... [0m[32mok[0m [0m[38;5;245m(17µs)[0m
+maximum character contract remains 2000 ... [0m[32mok[0m [0m[38;5;245m(111µs)[0m
+word metadata repair restores paragraph separators and emoji without rewriting words ... [0m[32mok[0m [0m[38;5;245m(56µs)[0m
+accepted Latin translation remains readable without optional popup metadata ... [0m[32mok[0m [0m[38;5;245m(15µs)[0m
+protected literal messages bypass linguistic guessing without exempting words ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+literal character guard rejects guessed expansion in every display lane ... [0m[32mok[0m [0m[38;5;245m(320µs)[0m
+literal guard permits French elisions while preserving quoted initials ... [0m[32mok[0m [0m[38;5;245m(741µs)[0m
+word metadata never hides attached Tamil letters as punctuation ... [0m[32mok[0m [0m[38;5;245m(39µs)[0m
+malformed optional forms defer to required agreement audit instead of losing readable text ... [0m[32mok[0m [0m[38;5;245m(37µs)[0m
+learners can write short correct German despite an English profile ... [0m[32mok[0m [0m[38;5;245m(41µs)[0m
+meaning equivalence cannot approve the wrong output language ... [0m[32mok[0m [0m[38;5;245m(31µs)[0m
+verified standalone OK/okay does not retry solely for identical spelling ... [0m[32mok[0m [0m[38;5;245m(192µs)[0m
+OK exception never exempts sentences, other words or false friends ... [0m[32mok[0m [0m[38;5;245m(37µs)[0m
+OK local-script rendering remains an ordinary translation ... [0m[32mok[0m [0m[38;5;245m(23µs)[0m
+[0m[38;5;245mrunning 1 test from ./supabase/functions/translate-message/delivery_optimization_test.ts[0m
+participant changes retain the long stable language-pair prefix ... [0m[32mok[0m [0m[38;5;245m(336µs)[0m
+[0m[38;5;245mrunning 2 tests from ./supabase/functions/translate-message/luna_provider_test.ts[0m
+explicit OpenAI selection never falls back to retained OpenRouter ... [0m[32mok[0m [0m[38;5;245m(192µs)[0m
+direct Luna normalizes both legacy and compact request paths without changing schemas ... [0m[32mok[0m [0m[38;5;245m(5ms)[0m
+[0m[38;5;245mrunning 7 tests from ./supabase/functions/translate-message/mention_identity_test.ts[0m
+duplicate names preserve identity through translated reordering ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+missing or duplicated identities fail closed before delivery ... [0m[32mok[0m [0m[38;5;245m(236µs)[0m
+restored output uses plain text for old clients and trusted sidecar ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+invented internal and ordinary handles fail with no selected mentions ... [0m[32mok[0m [0m[38;5;245m(128µs)[0m
+authored handles, emails, names and reordering remain ordinary text ... [0m[32mok[0m [0m[38;5;245m(92µs)[0m
+selected identity permits Tamil suffix but not invented ASCII identity ... [0m[32mok[0m [0m[38;5;245m(130µs)[0m
+invalid optional mentions do not discard accepted sentences ... [0m[32mok[0m [0m[38;5;245m(118µs)[0m
+[0m[38;5;245mrunning 3 tests from ./supabase/functions/translate-message/new_languages_test.ts[0m
+new language scripts are supported without admitting unrelated scripts ... [0m[32mok[0m [0m[38;5;245m(713µs)[0m
+language registry and participant agreement cover BLA-13 ... [0m[32mok[0m [0m[38;5;245m(49µs)[0m
+Polish live grammatical alternatives survive explanatory word glosses ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "fixture",
+  status: 200,
+  durationMs: 5,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+Polish live grammatical alternatives survive explanatory word glosses ... [0m[32mok[0m [0m[38;5;245m(10ms)[0m
+[0m[38;5;245mrunning 13 tests from ./supabase/functions/translate-message/participant_forms_test.ts[0m
+de: Schreib deiner Mutter / Schreib deinem Mutter ... [0m[32mok[0m [0m[38;5;245m(359µs)[0m
+de: Mit dieser App / Mit diesem App ... [0m[32mok[0m [0m[38;5;245m(24µs)[0m
+de: Ich sehe meine Mutter. / Ich sehe meinen Mutter. ... [0m[32mok[0m [0m[38;5;245m(10µs)[0m
+de: Das ist euer Buch. / Das ist eurem Buch. ... [0m[32mok[0m [0m[38;5;245m(9µs)[0m
+de: Ich bin Lehrerin. / Ich bin Lehrer. ... [0m[32mok[0m [0m[38;5;245m(13µs)[0m
+de: Sie ist meine Freundin. / Er ist mein Freund. ... [0m[32mok[0m [0m[38;5;245m(18µs)[0m
+de: Das ist ihr Buch. / Das ist sein Buch. ... [0m[32mok[0m [0m[38;5;245m(12µs)[0m
+de: Ich bin deine. / Ich bin deiner. ... [0m[32mok[0m [0m[38;5;245m(18µs)[0m
+de: Du bist müde. / Du bist müde. ... [0m[32mok[0m [0m[38;5;245m(19µs)[0m
+uk: Ти ходила вчора? / Ти ходив вчора? ... [0m[32mok[0m [0m[38;5;245m(11µs)[0m
+es: Estoy cansada. / Estoy cansado. ... [0m[32mok[0m [0m[38;5;245m(12µs)[0m
+fr: Je suis prête. / Je suis prêt. ... [0m[32mok[0m [0m[38;5;245m(8µs)[0m
+old German noun-case metadata cannot survive provider/cache parsing ... [0m[32mok[0m [0m[38;5;245m(303µs)[0m
+[0m[38;5;245mrunning 3 tests from ./supabase/functions/translate-message/provider_metrics_test.ts[0m
+cache telemetry distinguishes measured zero from absent or invalid usage ... [0m[32mok[0m [0m[38;5;245m(175µs)[0m
+metrics do not consume the caller response or expose request contents ... [0m[32mok[0m [0m[38;5;245m(5ms)[0m
+a failed telemetry callback cannot fail delivery ... [0m[32mok[0m [0m[38;5;245m(167µs)[0m
+[0m[38;5;245mrunning 5 tests from ./supabase/functions/translate-message/provider_test.ts[0m
+focused audits use their matching strict response schemas ... [0m[32mok[0m [0m[38;5;245m(396µs)[0m
+provider fetch aborts and reports a controlled timeout ... [0m[32mok[0m [0m[38;5;245m(6ms)[0m
+provider fetch preserves endpoint, signal, model, and privacy policy ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "openai/gpt-4o-mini",
+  status: 200,
+  durationMs: 3,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openai",
+  model: "gpt-4o-mini",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+provider fetch preserves endpoint, signal, model, and privacy policy ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+short messages do not reserve a long-message completion budget ... [0m[32mok[0m [0m[38;5;245m(50µs)[0m
+provider backoff prevents same-account hedge and retains Retry-After ... [0m[32mok[0m [0m[38;5;245m(505µs)[0m
+[0m[38;5;245mrunning 8 tests from ./supabase/functions/translate-message/readable_delivery_test.ts[0m
+readable schema removes only optional word metadata, preserving form choices ... [0m[32mok[0m [0m[38;5;245m(155µs)[0m
+deferred metadata retains exact linked forms without inventing definitions ... [0m[32mok[0m [0m[38;5;245m(386µs)[0m
+metadata resume preserves verified participant role without trusting provider role ... [0m[32mok[0m [0m[38;5;245m(75µs)[0m
+readable prompt preserves source and meaning rules ... [0m[32mok[0m [0m[38;5;245m(46µs)[0m
+only byte-identical authored text in its known language avoids a rewrite audit ... [0m[32mok[0m [0m[38;5;245m(43µs)[0m
+word-help failure leaves accepted text intact and retry never retranslates ... [0m[32mok[0m [0m[38;5;245m(541µs)[0m
+readable delivery defaults on and supports explicit rollback ... [0m[32mok[0m [0m[38;5;245m(34µs)[0m
+copied foreign known-language lane is repaired before trusting semantic agreement ... [0m[32mok[0m [0m[38;5;245m(43µs)[0m
+[0m[38;5;245mrunning 5 tests from ./supabase/functions/translate-message/recovery_test.ts[0m
+fast accepted primary avoids fallback entirely ... [0m[32mok[0m [0m[38;5;245m(7ms)[0m
+invalid primary immediately tries one fallback ... [0m[32mok[0m [0m[38;5;245m(84µs)[0m
+slow primary is cancelled after accepted hedge ... [0m[32mok[0m [0m[38;5;245m(7ms)[0m
+failed hedge cannot discard a later valid primary ... [0m[32mok[0m [0m[38;5;245m(15ms)[0m
+both hung providers settle at the shared deadline ... [0m[32mok[0m [0m[38;5;245m(18ms)[0m
+[0m[38;5;245mrunning 2 tests from ./supabase/functions/translate-message/rulebook_test.ts[0m
+generated translation rulebook is current ... [0m[32mok[0m [0m[38;5;245m(678µs)[0m
+acknowledgement policy is shared by retry and audit prompts ... [0m[32mok[0m [0m[38;5;245m(445µs)[0m
+[0m[38;5;245mrunning 15 tests from ./supabase/functions/translate-message/single_call_test.ts[0m
+one fetch produces both independently targeted viewer results ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 5,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+one fetch produces both independently targeted viewer results ... [0m[32mok[0m [0m[38;5;245m(8ms)[0m
+provider failure cannot trigger an in-request retry or hedge ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 503,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+provider failure cannot trigger an in-request retry or hedge ... [0m[32mok[0m [0m[38;5;245m(421µs)[0m
+missing requested sentence, empty translation and unreadable output are rejected without repair calls ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+missing requested sentence, empty translation and unreadable output are rejected without repair calls ... [0m[32mok[0m [0m[38;5;245m(511µs)[0m
+context is bounded and remains untrusted data; unrelated messages cannot batch ... [0m[32mok[0m [0m[38;5;245m(204µs)[0m
+protected literal messages require zero provider calls ... [0m[32mok[0m [0m[38;5;245m(296µs)[0m
+complete alternatives normalize a masculine base without a repair call ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+complete alternatives normalize a masculine base without a repair call ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+noun-case-only forms are discarded without rejecting a readable one-call result ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+noun-case-only forms are discarded without rejecting a readable one-call result ... [0m[32mok[0m [0m[38;5;245m(420µs)[0m
+unchanged same-language result keeps authored spacing and aligns supplied word help ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+unchanged same-language result keeps authored spacing and aligns supplied word help ... [0m[32mok[0m [0m[38;5;245m(648µs)[0m
+nonempty acceptance keeps a multiword title and tolerates missing optional word help ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+nonempty acceptance keeps a multiword title and tolerates missing optional word help ... [0m[32mok[0m [0m[38;5;245m(411µs)[0m
+nonempty acceptance does not veto copied text, changed literals or correction metadata ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+nonempty acceptance does not veto copied text, changed literals or correction metadata ... [0m[32mok[0m [0m[38;5;245m(281µs)[0m
+missing help and conflicting source labels cannot block routed nonempty sentences ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+missing help and conflicting source labels cannot block routed nonempty sentences ... [0m[32mok[0m [0m[38;5;245m(148µs)[0m
+loose structure accepts extra fields, extra outputs and optional omissions ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+loose structure accepts extra fields, extra outputs and optional omissions ... [0m[32mok[0m [0m[38;5;245m(150µs)[0m
+worker keeps valid viewer output when another requested sentence is absent ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+worker keeps valid viewer output when another requested sentence is absent ... [0m[32mok[0m [0m[38;5;245m(137µs)[0m
+incident replay rejects invented tags after one call for independently targeted viewers ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+incident replay rejects invented tags after one call for independently targeted viewers ... [0m[32mok[0m [0m[38;5;245m(588µs)[0m
+selected-mention instructions only accompany validated selected identities ...
+[0m[38;5;245m------- post-test output -------[0m
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+blab_provider_metric {
+  provider: "openrouter",
+  model: "test",
+  status: 200,
+  durationMs: 0,
+  promptTokens: null,
+  completionTokens: null,
+  cachedPromptTokens: null
+}
+[0m[38;5;245m----- post-test output end -----[0m
+selected-mention instructions only accompany validated selected identities ... [0m[32mok[0m [0m[38;5;245m(340µs)[0m
+
+[0m[32mok[0m | 245 passed | 0 failed [0m[38;5;245m(662ms)[0m
+
