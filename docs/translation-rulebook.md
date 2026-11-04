@@ -108,7 +108,7 @@ Readable-text phase: obey the supplied response schema. Generate the complete tr
 ## Limits and provider defaults
 - Message limit: 2000 characters.
 - Focused source retry eligibility: 24 characters; pattern: /^[\p{L}\p{M}][\p{L}\p{M}\s'’-]*$/u.
-- Default OpenRouter model: google/gemini-3.1-flash-lite; OpenAI fallback model: gpt-4o-mini. Existing environment overrides still apply.
+- Default OpenRouter model: google/gemini-3.1-flash-lite; OpenAI fallback model: gpt-6-luna. Existing environment overrides still apply.
 - OpenRouter routing: {"sort":"latency","allow_fallbacks":true,"require_parameters":true,"data_collection":"deny","zdr":true}.
 
 ## Other configuration owners

@@ -17,7 +17,10 @@
     "stream-device": true
   },
   "required_secrets": [
-    "OPEN_ROUTER_KEY",
+    "OPENAI_API_KEY",
+    "BLAB_TRANSLATION_PROVIDER",
+    "OPENAI_MODEL",
+    "OPENAI_SEMANTIC_REVIEW_MODEL",
     "PUSH_WEBHOOK_SECRET",
     "FIREBASE_PROJECT_ID",
     "FIREBASE_CLIENT_EMAIL",

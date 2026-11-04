@@ -95,7 +95,7 @@ const OPENROUTER_SEMANTIC_REVIEW_MODEL =
   Deno.env.get("OPENROUTER_SEMANTIC_REVIEW_MODEL")?.trim() ||
   "google/gemini-2.5-flash";
 const OPENAI_SEMANTIC_REVIEW_MODEL =
-  Deno.env.get("OPENAI_SEMANTIC_REVIEW_MODEL")?.trim() || "gpt-4.1-mini";
+  Deno.env.get("OPENAI_SEMANTIC_REVIEW_MODEL")?.trim() || "gpt-6-luna";
 const OPENROUTER_PROVIDER_POLICY = Deno.env.get("OPENROUTER_PROVIDER_POLICY");
 const CACHE_CONTRACT_VERSION = "minimal-source-anchor-v11";
 const TEXT_FIRST_DELIVERY = textFirstDeliveryEnabled(
@@ -880,6 +880,7 @@ Deno.serve(async (req) => {
   const providerKeys = deterministicUnsupported || protectedLiteral
     ? []
     : providerCredentials({
+      provider: Deno.env.get("BLAB_TRANSLATION_PROVIDER"),
       openRouterKey: OPEN_ROUTER_KEY,
       openAiKey: OPENAI_API_KEY,
       openRouterModel: OPENROUTER_MODEL,
@@ -926,8 +927,13 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   if (result === null) {
-    const mentionRow = await admin.from("messages").select("body,mentions").eq("id", messageId).single();
-    if (mentionRow.error || mentionRow.data.body.trim() !== text) return json({error:"translation_stale"},409);
+    const mentionRow = await admin.from("messages").select("body,mentions").eq(
+      "id",
+      messageId,
+    ).single();
+    if (mentionRow.error || mentionRow.data.body.trim() !== text) {
+      return json({ error: "translation_stale" }, 409);
+    }
     prepared.mentions = mentionRow.data.mentions ?? [];
     try {
       const generated = await generateMessageOnce([{
@@ -969,7 +975,11 @@ Deno.serve(async (req) => {
         error: isWorker ? "translation_unavailable" : "preparation_failed",
         reason: providerFailure,
       },
-      isMentionIntegrityFailure(providerFailure) ? 422 : retryAfter > 0 ? 429 : 502,
+      isMentionIntegrityFailure(providerFailure)
+        ? 422
+        : retryAfter > 0
+        ? 429
+        : 502,
       retryAfter > 0 ? { "Retry-After": String(retryAfter) } : {},
     );
   }

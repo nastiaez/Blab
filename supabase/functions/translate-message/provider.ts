@@ -60,6 +60,21 @@ function chatCompletionEndpoint(credential: ProviderCredential): string {
     : "https://api.openai.com/v1/chat/completions";
 }
 
+export function normalizeProviderBody(
+  credential: ProviderCredential,
+  body: Record<string, unknown>,
+): Record<string, unknown> {
+  const normalized = { ...body };
+  if (credential.provider === "openai" && credential.model === "gpt-6-luna") {
+    delete normalized.temperature;
+    if (
+      normalized.max_completion_tokens == null && normalized.max_tokens != null
+    ) normalized.max_completion_tokens = normalized.max_tokens;
+    delete normalized.max_tokens;
+  }
+  return normalized;
+}
+
 export async function fetchChatCompletion(
   credential: ProviderCredential,
   body: Record<string, unknown>,
@@ -104,7 +119,7 @@ export async function fetchChatCompletion(
         ? AbortSignal.any([controller.signal, credential.signal])
         : controller.signal,
       body: JSON.stringify({
-        ...body,
+        ...normalizeProviderBody(credential, body),
         model: credential.model,
         ...(credential.provider === "openrouter" &&
             credential.useOpenRouterProviderPolicy

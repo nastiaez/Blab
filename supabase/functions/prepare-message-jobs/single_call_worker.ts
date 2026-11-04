@@ -96,6 +96,7 @@ export async function runMessageBatch(
       const run = async () => {
         if (generateOverride) return await generateOverride(vs, onFailure);
         const credential = providerCredentials({
+          provider: Deno.env.get("BLAB_TRANSLATION_PROVIDER"),
           openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
           openAiKey: Deno.env.get("OPENAI_API_KEY"),
           openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
