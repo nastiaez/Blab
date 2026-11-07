@@ -1,7 +1,11 @@
+import 'message_link_anchor.dart';
+import 'anchored_message_panels.dart';
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../l10n/l10n.dart';
 import 'mention_text.dart';
@@ -68,13 +72,62 @@ class MessageLinkText extends StatefulWidget {
   State<MessageLinkText> createState() => _MessageLinkTextState();
 }
 
-class MessageLinkTapGestureRecognizer extends TapGestureRecognizer {}
+class MessageLinkTapGestureRecognizer extends TapGestureRecognizer {
+  Timer? _holdTimer;
+  bool _held = false;
+  GestureLongPressStartCallback? onLinkLongPress;
 
-class _MessageLinkTextState extends State<MessageLinkText> {
-  final _recognizers = <TapGestureRecognizer>[];
+  set onLinkTap(VoidCallback callback) {
+    onTap = () {
+      if (!_held) callback();
+    };
+  }
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    if (event.pointer != primaryPointer) return;
+    _held = false;
+    _holdTimer?.cancel();
+    _holdTimer = Timer(kLongPressTimeout, () {
+      _held = true;
+      resolve(GestureDisposition.accepted);
+      onLinkLongPress?.call(
+        LongPressStartDetails(
+          globalPosition: event.position,
+          localPosition: event.localPosition,
+        ),
+      );
+    });
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    super.handleEvent(event);
+    if (event is PointerUpEvent || event is PointerCancelEvent) {
+      _holdTimer?.cancel();
+      _held = false;
+    }
+  }
+
+  @override
+  void rejectGesture(int pointer) {
+    _holdTimer?.cancel();
+    super.rejectGesture(pointer);
+  }
+
   @override
   void dispose() {
-    for (final r in _recognizers) {
+    _holdTimer?.cancel();
+    super.dispose();
+  }
+}
+
+class _MessageLinkTextState extends State<MessageLinkText> {
+  final _recognizers = <String, MessageLinkTapGestureRecognizer>{};
+  @override
+  void dispose() {
+    for (final r in _recognizers.values) {
       r.dispose();
     }
     super.dispose();
@@ -83,10 +136,9 @@ class _MessageLinkTextState extends State<MessageLinkText> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      for (final r in _recognizers) {
-        r.dispose();
-      }
-      _recognizers.clear();
+      final usedRecognizers = <String>{};
+      var linkIndex = 0;
+      final accessibleActions = <CustomSemanticsAction, VoidCallback>{};
       final style = DefaultTextStyle.of(context).style.merge(widget.style);
       final output = <InlineSpan>[];
       final width = constraints.hasBoundedWidth
@@ -194,14 +246,28 @@ class _MessageLinkTextState extends State<MessageLinkText> {
             // Security takes precedence when the authority alone exceeds two lines.
             visible = '${link.raw.substring(0, low)}…';
           }
-          var position = Offset.zero;
-          final recognizer = MessageLinkTapGestureRecognizer()
-            ..onTapDown = (details) {
-              position = details.globalPosition;
+          final key = "${linkIndex++}:${link.raw}";
+          usedRecognizers.add(key);
+          accessibleActions[CustomSemanticsAction(
+            label: "${context.l10n.linkCopy}: ${link.raw}",
+          )] = () async {
+            try {
+              await Clipboard.setData(ClipboardData(text: link.raw));
+            } catch (_) {
+              if (context.mounted) _linkError(context);
             }
-            ..onTap = () =>
-                showMessageLinkMenu(context, link: link, anchor: position);
-          _recognizers.add(recognizer);
+          };
+          final recognizer =
+              _recognizers.putIfAbsent(key, MessageLinkTapGestureRecognizer.new)
+                ..onLinkTap = () {
+                  openMessageLink(context, link);
+                }
+                ..onLinkLongPress = (details) => showMessageLinkMenu(
+                  context,
+                  link: link,
+                  anchor: details.globalPosition,
+                );
+
           output.add(
             TextSpan(
               text: visible,
@@ -229,127 +295,157 @@ class _MessageLinkTextState extends State<MessageLinkText> {
       for (final span in widget.spans) {
         add(span);
       }
-      return Text.rich(TextSpan(style: widget.style, children: output));
+      for (final key in _recognizers.keys.toList()) {
+        if (!usedRecognizers.contains(key)) _recognizers.remove(key)!.dispose();
+      }
+      final text = Text.rich(TextSpan(style: widget.style, children: output));
+      return accessibleActions.isEmpty
+          ? text
+          : Semantics(customSemanticsActions: accessibleActions, child: text);
     },
   );
+}
+
+Future<void> openMessageLink(BuildContext context, MessageLink link) async {
+  try {
+    final opened = await launchUrl(
+      link.target,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) _linkError(context);
+  } catch (_) {
+    if (context.mounted) _linkError(context);
+  }
 }
 
 Future<void> showMessageLinkMenu(
   BuildContext context, {
   required MessageLink link,
   required Offset anchor,
-}) => showGeneralDialog<void>(
-  context: context,
-  barrierDismissible: true,
-  requestFocus: false,
-  barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-  barrierColor: Colors.transparent,
-  transitionDuration: const Duration(milliseconds: 150),
-  pageBuilder: (menuContext, _, _) {
-    final media = MediaQuery.of(menuContext);
-    final scale = media.textScaler.scale(14) / 14;
-    final width = math.min(
-      278.0,
-      media.size.width - media.padding.horizontal - 24,
-    );
-    final top = media.padding.top + 8;
-    final bottom =
-        media.size.height -
-        math.max(media.padding.bottom, media.viewInsets.bottom) -
-        8;
-    final available = bottom - top;
-    final actionHeight = math.max(48.0, media.textScaler.scale(16) * 1.25 + 24);
-    final urlHeight = math.min(
-      80 * scale,
-      math.max(20 * scale, available - 2 * actionHeight - 36),
-    );
-    final height = urlHeight + 36 + 2 * actionHeight;
-    final y = anchor.dy + 16 + height <= bottom
-        ? anchor.dy + 16
-        : (anchor.dy - height - 16).clamp(top, math.max(top, bottom - height));
-    final x = (anchor.dx - 32).clamp(
-      media.padding.left + 12,
-      math.max(
-        media.padding.left + 12,
-        media.size.width - media.padding.right - width - 12,
-      ),
-    );
-    return Stack(
-      children: [
-        Positioned(
-          left: x.toDouble(),
-          top: y.toDouble(),
-          width: width,
-          child: Material(
-            color: const Color(0xFFFFFCF8),
-            elevation: 5,
-            shadowColor: const Color(0x22000000),
-            borderRadius: BorderRadius.circular(20),
-            clipBehavior: Clip.antiAlias,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 12),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: urlHeight),
-                      child: SingleChildScrollView(
-                        key: const ValueKey('link-url-scroll'),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            link.raw,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 20 / 14,
-                              color: Color(0xFF5F6770),
-                            ),
+}) {
+  final bubble =
+      MessageLinkAnchor.bubbleOf(context) ??
+      ((context.findRenderObject() as RenderBox?)?.localToGlobal(Offset.zero) ??
+              anchor) &
+          ((context.findRenderObject() as RenderBox?)?.size ?? Size.zero);
+  final viewportFor = MessageLinkAnchor.viewportOf(context);
+  return showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    requestFocus: false,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 150),
+    pageBuilder: (menuContext, _, _) {
+      final media = MediaQuery.of(menuContext);
+      final scale = media.textScaler.scale(14) / 14;
+      final width = math.min(
+        278.0,
+        media.size.width - media.padding.horizontal - 24,
+      );
+      final top = media.padding.top + 8;
+      final bottom =
+          media.size.height -
+          math.max(media.padding.bottom, media.viewInsets.bottom) -
+          8;
+      final available = bottom - top;
+      final actionHeight = math.max(
+        48.0,
+        media.textScaler.scale(16) * 1.25 + 24,
+      );
+      final urlHeight = math.min(
+        80 * scale,
+        math.max(20 * scale, available - 2 * actionHeight - 36),
+      );
+      final safeViewport = Rect.fromLTRB(
+        media.padding.left + 16,
+        top,
+        media.size.width - media.padding.right - 16,
+        bottom,
+      );
+      final viewport = (viewportFor?.call() ?? safeViewport).intersect(
+        safeViewport,
+      );
+      return AnchoredMessagePanels(
+        viewport: viewport,
+        bubble: bubble,
+        afterVisibleLines:
+            math.max(bubble.top + 12, viewport.top) +
+            media.textScaler.scale(16) * 1.5 * 3,
+        reactionWidth: math.min(width, viewport.width),
+        hasReactions: false,
+        reactions: const SizedBox.shrink(),
+        actions: Material(
+          key: const ValueKey('link-actions-container'),
+
+          color: const Color(0xFFFFFCF8),
+          elevation: 5,
+          shadowColor: const Color(0x22000000),
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 12),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: urlHeight),
+                    child: SingleChildScrollView(
+                      key: const ValueKey('link-url-scroll'),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          link.raw,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            height: 20 / 14,
+                            color: Color(0xFF5F6770),
                           ),
                         ),
                       ),
                     ),
                   ),
-                  _LinkAction(
-                    label: context.l10n.linkOpenBrowser,
-                    icon: Icons.north_east,
-                    height: actionHeight,
-                    onTap: () async {
-                      Navigator.of(menuContext).pop();
-                      try {
-                        final opened = await launchUrl(
-                          link.target,
-                          mode: LaunchMode.externalApplication,
-                        );
-                        if (!opened && context.mounted) _linkError(context);
-                      } catch (_) {
-                        if (context.mounted) _linkError(context);
-                      }
-                    },
-                  ),
-                  _LinkAction(
-                    label: context.l10n.linkCopy,
-                    icon: Icons.content_copy,
-                    height: actionHeight,
-                    onTap: () async {
-                      Navigator.of(menuContext).pop();
-                      try {
-                        await Clipboard.setData(ClipboardData(text: link.raw));
-                      } catch (_) {
-                        if (context.mounted) _linkError(context);
-                      }
-                    },
-                  ),
-                ],
-              ),
+                ),
+                _LinkAction(
+                  label: context.l10n.linkOpenBrowser,
+                  icon: Icons.north_east,
+                  height: actionHeight,
+                  onTap: () async {
+                    Navigator.of(menuContext).pop();
+                    try {
+                      final opened = await launchUrl(
+                        link.target,
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!opened && context.mounted) _linkError(context);
+                    } catch (_) {
+                      if (context.mounted) _linkError(context);
+                    }
+                  },
+                ),
+                _LinkAction(
+                  label: context.l10n.linkCopy,
+                  icon: Icons.content_copy,
+                  height: actionHeight,
+                  onTap: () async {
+                    Navigator.of(menuContext).pop();
+                    try {
+                      await Clipboard.setData(ClipboardData(text: link.raw));
+                    } catch (_) {
+                      if (context.mounted) _linkError(context);
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ),
-      ],
-    );
-  },
-);
+      );
+    },
+  );
+}
 
 void _linkError(BuildContext context) => ScaffoldMessenger.maybeOf(
   context,

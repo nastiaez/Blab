@@ -55,7 +55,29 @@ List<TextSpan> linkSpans(WidgetTester tester) {
   return result;
 }
 
-Future<void> tapLink(WidgetTester tester) async {
+Future<void> holdLink(WidgetTester tester, {int index = 0}) async {
+  final finder = find
+      .descendant(
+        of: find.byType(MessageLinkText),
+        matching: find.byType(RichText),
+      )
+      .first;
+  final paragraph = tester.renderObject<RenderParagraph>(finder);
+  final span = linkSpans(tester)[index];
+  final text = paragraph.text.toPlainText(includeSemanticsLabels: false);
+  final start = text.indexOf(span.text!);
+  final box = paragraph
+      .getBoxesForSelection(
+        TextSelection(baseOffset: start, extentOffset: start + 1),
+      )
+      .first;
+  await tester.longPressAt(
+    paragraph.localToGlobal(Offset(box.left + 2, (box.top + box.bottom) / 2)),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> tapLink(WidgetTester tester, {int index = 0}) async {
   final finder = find
       .descendant(
         of: find.byType(MessageLinkText),
@@ -78,6 +100,280 @@ Future<void> tapLink(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('rapid direct link taps do not trigger a message heart', (
+    tester,
+  ) async {
+    var hearts = 0, launches = 0;
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      if (call.method == 'launch') {
+        launches++;
+      }
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      app(
+        MessageInteractionTarget(
+          isFailed: false,
+          onLongPress: (_, _) {},
+          onFailedTap: () {},
+          onDoubleTap: () => hearts++,
+          child: links('nastia.design'),
+        ),
+      ),
+    );
+    await tapLink(tester);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tapLink(tester);
+    expect(hearts, 0);
+    expect(launches, 2);
+    expect(find.text('Copy link'), findsNothing);
+  });
+  testWidgets('screen-reader link copy actions retain full target per URL', (
+    tester,
+  ) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(app(links('blab.chat https://nastia.design/work')));
+    final node = tester
+        .widgetList<Semantics>(
+          find.descendant(
+            of: find.byType(MessageLinkText),
+            matching: find.byType(Semantics),
+          ),
+        )
+        .firstWhere(
+          (w) => w.properties.customSemanticsActions?.isNotEmpty ?? false,
+        );
+    final actions = node.properties.customSemanticsActions!;
+    expect(actions.length, 2);
+    actions.entries
+        .firstWhere((e) => e.key.label?.contains('nastia.design') ?? false)
+        .value();
+    await tester.pumpAndSettle();
+    expect(copied, 'https://nastia.design/work');
+  });
+  testWidgets('unrelated rebuild cannot cancel an active link hold', (
+    tester,
+  ) async {
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      app(
+        StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return links('nastia.design');
+          },
+        ),
+      ),
+    );
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find
+          .descendant(
+            of: find.byType(MessageLinkText),
+            matching: find.byType(RichText),
+          )
+          .first,
+    );
+    final box = paragraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 0, extentOffset: 1),
+        )
+        .first;
+    final gesture = await tester.startGesture(
+      paragraph.localToGlobal(Offset(box.left + 2, box.top + 4)),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    rebuild(() {});
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('Copy link'), findsOneWidget);
+  });
+  testWidgets('URL-only bubble padding retains message hold actions', (
+    tester,
+  ) async {
+    var actions = 0;
+    await tester.pumpWidget(
+      app(
+        MessageInteractionTarget(
+          isFailed: false,
+          onLongPress: (_, _) => actions++,
+          onFailedTap: () {},
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: links('nastia.design'),
+          ),
+        ),
+      ),
+    );
+    await tester.longPressAt(
+      tester.getTopLeft(find.byType(MessageInteractionTarget)) +
+          const Offset(3, 3),
+    );
+    await tester.pumpAndSettle();
+    expect(actions, 1);
+    expect(find.text('Copy link'), findsNothing);
+  });
+  testWidgets('cancelled link pointer opens neither browser nor options', (
+    tester,
+  ) async {
+    var launches = 0;
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      if (call.method == 'launch') launches++;
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
+    await tester.pumpWidget(app(links('nastia.design')));
+    final paragraph = tester.renderObject<RenderParagraph>(
+      find
+          .descendant(
+            of: find.byType(MessageLinkText),
+            matching: find.byType(RichText),
+          )
+          .first,
+    );
+    final box = paragraph
+        .getBoxesForSelection(
+          const TextSelection(baseOffset: 0, extentOffset: 1),
+        )
+        .first;
+    final gesture = await tester.startGesture(
+      paragraph.localToGlobal(Offset(box.left + 2, box.top + 4)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.cancel();
+    await tester.pump(const Duration(seconds: 1));
+    expect(launches, 0);
+    expect(find.text('Copy link'), findsNothing);
+  });
+  testWidgets('holding second URL copies only the selected full link', (
+    tester,
+  ) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      app(links('First blab.chat then https://nastia.design/work?x=2')),
+    );
+    await holdLink(tester, index: 1);
+    expect(find.text('https://nastia.design/work?x=2'), findsOneWidget);
+    await tester.tap(find.text('Copy link'));
+    await tester.pumpAndSettle();
+    expect(copied, 'https://nastia.design/work?x=2');
+  });
+  testWidgets('direct link tap opens browser without either menu', (
+    tester,
+  ) async {
+    var actions = 0;
+    Map<dynamic, dynamic>? payload;
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      if (call.method == 'launch') payload = call.arguments as Map;
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      app(
+        MessageInteractionTarget(
+          isFailed: false,
+          onLongPress: (_, _) => actions++,
+          onFailedTap: () {},
+          child: links('nastia.design'),
+        ),
+      ),
+    );
+    await tapLink(tester);
+    expect(payload!['url'], 'https://nastia.design');
+    expect(payload!['useWebView'], false);
+    expect(find.text('Copy link'), findsNothing);
+    expect(actions, 0);
+  });
+  testWidgets('link hold wins over parent message actions without launching', (
+    tester,
+  ) async {
+    var messageActions = 0;
+    var launches = 0;
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      if (call.method == 'launch') launches++;
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      app(
+        MessageInteractionTarget(
+          isFailed: false,
+          onLongPress: (_, _) => messageActions++,
+          onFailedTap: () {},
+          child: links('https://blab.chat'),
+        ),
+      ),
+    );
+    await holdLink(tester);
+    expect(find.text('Copy link'), findsOneWidget);
+    expect(messageActions, 0);
+    expect(launches, 0);
+  });
+
   test(
     'punctuation balanced paths query multiple bare domains and raw offsets',
     () {
@@ -147,7 +443,7 @@ void main() {
       );
       expect(boxes.map((b) => b.top).toSet().length, lessThanOrEqualTo(2));
       final before = tester.getSize(find.byType(MessageLinkText));
-      await tapLink(tester);
+      await holdLink(tester);
       expect(find.text(raw), findsOneWidget);
       final openBefore = tester.getRect(find.text('Open in browser'));
       final copyBefore = tester.getRect(find.text('Copy link'));
@@ -193,12 +489,12 @@ void main() {
           ),
         ),
       );
-      await tapLink(tester);
+      await holdLink(tester);
       expect(selections, 0);
       await tester.tapAt(const Offset(700, 500));
       await tester.pumpAndSettle();
       expect(find.text('Copy link'), findsNothing);
-      await tapLink(tester);
+      await holdLink(tester);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.text('Copy link'), findsNothing);
@@ -283,7 +579,7 @@ void main() {
       final raw =
           'https://example.com/${'long-path/' * 80}?tail=complete#fragment';
       await tester.pumpWidget(app(links(raw)));
-      await tapLink(tester);
+      await holdLink(tester);
       await tester.tap(find.text('Open in browser'));
       await tester.pumpAndSettle();
       expect(payload!['url'], raw);
@@ -305,7 +601,7 @@ void main() {
           scale: 2,
         ),
       );
-      await tapLink(tester);
+      await holdLink(tester);
       expect(
         tester.getRect(find.text('Open in browser')).bottom,
         lessThan(700),
@@ -318,7 +614,7 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets('rapid repeated URL tap cannot become a message heart', (
+  testWidgets('repeated URL holds cannot become a message heart', (
     tester,
   ) async {
     var hearts = 0;
@@ -333,10 +629,10 @@ void main() {
         ),
       ),
     );
-    await tapLink(tester);
+    await holdLink(tester);
     await tester.tapAt(const Offset(700, 500));
     await tester.pumpAndSettle();
-    await tapLink(tester);
+    await holdLink(tester);
     expect(hearts, 0);
     expect(find.text('Copy link'), findsOneWidget);
   });
@@ -377,7 +673,7 @@ void main() {
         );
         expect(find.byType(MessageLinkText), findsNWidgets(2));
         expect(linkSpans(tester).single.semanticsLabel, url);
-        await tapLink(tester);
+        await holdLink(tester);
         expect(find.text(url), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
@@ -416,7 +712,7 @@ void main() {
         await tester.tap(find.byType(GrammaticalFormMarker));
         await tester.pump();
         expect(marked, true);
-        await tapLink(tester);
+        await holdLink(tester);
         expect(find.text(raw), findsOneWidget);
         expect(tester.takeException(), isNull);
       },

@@ -1,3 +1,5 @@
+> **BLA-43 (7 November 2026):** Nastia18294/18297 selects tap URL to external browser; long press URL to existing floating link container; long press non-link message area to existing reactions/actions. No competing menus or bottom-sheet redesign. Nastia approved18395 visuals in18499 and commit/main integration in18502; distribution is not authorized in this step.
+
 # PRD: Blab — Language Exchange Chat App
 
 > **BLA-40 ·2 November2026:** approved URL/menu contract and preserved report: [inline links](../docs/specs/2026-11-02-bla40-inline-links.md). Reviewed Android visuals/journey and commit/main integration approved17374; release explicitly held.
@@ -1093,3 +1095,6 @@ BLA-41 colour refinement · Nastia17954 ·4 November2026: Show/Hide translation 
 
 
 BLA-41 quieter colour revision · Nastia screenshot feedback during18001 continuation,4 November2026: orange attracts too much attention; use message-colour or an existing kit brown. Selected BlabColors.warmInk (#46281C), softer than bubbleInk (#231208), preserving stronger legibility than warmMuted. Show/Hide only; keep14px/medium weight/2px gap, red retries and muted non-action notices. This supersedes orange17954; new native previews require review.
+
+
+BLA-43 owner refinement18395: URL long-press floating actions use the same bubble-relative placement as message/reaction panels: measured height,8px gap, centered on selected bubble with horizontal viewport clamp, below when space permits, otherwise above; constrained-space fallback stays inside the chat viewport. Preserve existing content, typography, colors, shape and gestures. No release approval.

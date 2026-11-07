@@ -1,3 +1,4 @@
+import 'widgets/message_link_anchor.dart';
 import 'translation_anchor_controller.dart';
 import 'widgets/message_link_text.dart';
 import 'widgets/deleted_identity_scope.dart';
@@ -1603,7 +1604,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         body: SafeArea(
           top: false,
           bottom: false,
-          child: Stack(
+          child: MessageLinkAnchor(
+            viewport: () {
+              final stack =
+                  _stackKey.currentContext?.findRenderObject() as RenderBox?;
+              final bottom =
+                  _bottomSurfaceKey.currentContext?.findRenderObject()
+                      as RenderBox?;
+              if (stack == null ||
+                  !stack.hasSize ||
+                  bottom == null ||
+                  !bottom.hasSize) {
+                return null;
+              }
+              final origin = stack.localToGlobal(Offset.zero);
+              return Rect.fromLTRB(
+                origin.dx + 16,
+                _renderedHeaderBottom(context, chat),
+                origin.dx + stack.size.width - 16,
+                bottom.localToGlobal(Offset.zero).dy,
+              );
+            },
+            child: Stack(
             key: _stackKey,
             children: [
               Column(
@@ -2294,7 +2316,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   },
                 ),
             ],
-          ),
+          )),
         ),
       ),
     );

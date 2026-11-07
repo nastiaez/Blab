@@ -1,3 +1,4 @@
+import 'message_link_anchor.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'message_link_text.dart';
@@ -106,74 +107,82 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
         ? Alignment.centerRight
         : Alignment.centerLeft;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: RawGestureDetector(
-        gestures: {
-          if (!widget.isFailed && widget.onDoubleTap != null)
-            _MessageDoubleTapRecognizer:
-                GestureRecognizerFactoryWithHandlers<
-                  _MessageDoubleTapRecognizer
-                >(() => _MessageDoubleTapRecognizer(), (recognizer) {
-                  recognizer.onDoubleTap = widget.onDoubleTap;
-                  recognizer.allowPointer = (event) {
-                    final box = context.findRenderObject() as RenderBox?;
-                    if (box == null) return true;
-                    final hits = BoxHitTestResult();
-                    box.hitTest(
-                      hits,
-                      position: box.globalToLocal(event.position),
-                    );
-                    return !hits.path.any(
-                      (entry) =>
-                          entry.target is TextSpan &&
-                          (entry.target as TextSpan).recognizer
-                              is MessageLinkTapGestureRecognizer,
-                    );
-                  };
-                }),
-        },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          // Consume plain taps without opening actions. This also prevents a
-          // deferred double-tap timeout from reaching the chat background.
-          onTap: () {},
-          onLongPress: _openActions,
+    return MessageLinkAnchor(
+      bubble: () {
+        final box = context.findRenderObject() as RenderBox?;
+        return box != null && box.hasSize
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null;
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: RawGestureDetector(
+          gestures: {
+            if (!widget.isFailed && widget.onDoubleTap != null)
+              _MessageDoubleTapRecognizer:
+                  GestureRecognizerFactoryWithHandlers<
+                    _MessageDoubleTapRecognizer
+                  >(() => _MessageDoubleTapRecognizer(), (recognizer) {
+                    recognizer.onDoubleTap = widget.onDoubleTap;
+                    recognizer.allowPointer = (event) {
+                      final box = context.findRenderObject() as RenderBox?;
+                      if (box == null) return true;
+                      final hits = BoxHitTestResult();
+                      box.hitTest(
+                        hits,
+                        position: box.globalToLocal(event.position),
+                      );
+                      return !hits.path.any(
+                        (entry) =>
+                            entry.target is TextSpan &&
+                            (entry.target as TextSpan).recognizer
+                                is MessageLinkTapGestureRecognizer,
+                      );
+                    };
+                  }),
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            // Consume plain taps without opening actions. This also prevents a
+            // deferred double-tap timeout from reaching the chat background.
+            onTap: () {},
+            onLongPress: _openActions,
 
-          onHorizontalDragStart: _canSwipeReply ? _startSwipe : null,
-          onHorizontalDragUpdate: _canSwipeReply ? _updateSwipe : null,
-          onHorizontalDragEnd: _canSwipeReply ? (_) => _finishSwipe() : null,
-          onHorizontalDragCancel: _canSwipeReply ? _resetSwipe : null,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: replyOpacity,
-                    duration: const Duration(milliseconds: 80),
-                    child: Align(
-                      alignment: replyAlignment,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: BlabIcon(
-                          name: 'long-arrow-up-left - 20',
-                          size: 20,
-                          color: BlabColors.textMuted,
+            onHorizontalDragStart: _canSwipeReply ? _startSwipe : null,
+            onHorizontalDragUpdate: _canSwipeReply ? _updateSwipe : null,
+            onHorizontalDragEnd: _canSwipeReply ? (_) => _finishSwipe() : null,
+            onHorizontalDragCancel: _canSwipeReply ? _resetSwipe : null,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: replyOpacity,
+                      duration: const Duration(milliseconds: 80),
+                      child: Align(
+                        alignment: replyAlignment,
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: BlabIcon(
+                            name: 'long-arrow-up-left - 20',
+                            size: 20,
+                            color: BlabColors.textMuted,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              AnimatedSlide(
-                offset: Offset(_visualOffset / 240, 0),
-                duration: const Duration(milliseconds: 80),
-                curve: Curves.easeOut,
-                child: widget.child,
-              ),
-            ],
+                AnimatedSlide(
+                  offset: Offset(_visualOffset / 240, 0),
+                  duration: const Duration(milliseconds: 80),
+                  curve: Curves.easeOut,
+                  child: widget.child,
+                ),
+              ],
+            ),
           ),
         ),
       ),
