@@ -2140,8 +2140,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     if (_selectedMessage != null) {
                                       _closeSelection();
                                     }
-                                    if (_emojiPanelOpen)
+                                    if (_emojiPanelOpen) {
                                       _showComposerKeyboard();
+                                    }
                                   },
                                   emojiPanel:
                                       _emojiPanelOpen ||
