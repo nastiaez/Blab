@@ -1,3 +1,4 @@
+import 'package:blab/shared/widgets/blab_icon.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -45,6 +46,27 @@ void main() {
     expect(find.text('Add a caption…'), findsOneWidget);
     expect(find.text('Pallavi Sen'), findsOneWidget);
     expect(find.byKey(const ValueKey('photo-preview-send')), findsOneWidget);
+    final sendIcon = tester.widget<BlabIcon>(
+      find.descendant(
+        of: find.byKey(const ValueKey('photo-preview-send')),
+        matching: find.byType(BlabIcon),
+      ),
+    );
+    expect(sendIcon.name, 'arrow-right - 20');
+    expect(sendIcon.size, 20);
+    for (final name in ['close - 20', 'media-image-plus - 20']) {
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is BlabIcon && w.name == name && w.size == 20,
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(find.byType(Icon), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('photo-preview-send'))),
+      const Size(56, 56),
+    );
 
     final imageCenter = tester.getCenter(
       find.byKey(const ValueKey('photo-preview-image')),

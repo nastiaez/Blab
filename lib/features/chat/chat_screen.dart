@@ -1931,6 +1931,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                       context,
                                       reactions:
                                           reactionsByMessage[m.id] ?? const [],
+                                      partnerId:
+                                          chat.partnerAccountDeleted ||
+                                              chat.isGroup
+                                          ? null
+                                          : chat.partnerId,
+                                      currentUserId: ref.read(
+                                        currentUserIdProvider,
+                                      ),
                                       partnerName: chat.partnerName,
                                       onChangeReaction: (emoji) => ref
                                           .read(

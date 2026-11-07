@@ -318,6 +318,7 @@ class _GroupInviteScreenState extends ConsumerState<GroupInviteScreen> {
                                 label: friend.name,
                                 selected: selected,
                                 leading: BlabAvatar(
+                                  userId: friend.userId,
                                   name: friend.name,
                                   size: 40,
                                   fontSize: 15,

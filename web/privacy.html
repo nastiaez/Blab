@@ -90,12 +90,28 @@
 
       <h2>What we collect</h2>
       <ul>
-        <li><strong>Account details</strong> — your email address and the display name you choose.</li>
+        <li><strong>Account details</strong> — your email address, display name, and optional profile photo. When you create a new account with Google, Google may provide your name, email address, and profile picture to initialize your Blab profile.</li>
         <li><strong>Messages</strong> — the chats you send and receive, so we can deliver them and show your history.</li>
         <li><strong>Language preferences</strong> — the languages you're learning, to set up your chats and translations.</li>
         <li><strong>Notification details</strong> — a device notification token and your message-preview preference, so we can notify you about new chats.</li>
         <li><strong>Diagnostics</strong> — if the app crashes, we receive a technical error report. These reports are scrubbed so they never contain your message text.</li>
       </ul>
+
+      <h2>Your profile photo</h2>
+      <p>People who share or have shared a Blab chat or group with you can see
+        your profile name and photo. You can change or remove your photo in
+        <em>Profile → Edit profile</em>. Removing it restores initials; signing
+        in again does not re-import it. We do not request access to your Google
+        Photos library or synchronize later Google profile changes.</p>
+      <p>Uploaded profile photos are stored privately with Supabase. Google-sourced
+        profile pictures are loaded from Google's image servers; viewing one
+        sends a network request, including your IP address, to Google. Google
+        controls its image URLs; removing a photo from Blab does not remove it
+        from Google. Removal
+        prevents new authorized access, but an already displayed or cached copy
+        may remain on another person's device. Signed links for uploaded photos may remain usable
+        for up to one minute; Google-hosted image URLs are controlled by Google. Old or interrupted uploads are queued for physical
+        cleanup; account deletion also queues and verifies photo removal.</p>
 
       <h2>Message notifications</h2>
       <p>

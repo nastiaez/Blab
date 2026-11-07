@@ -45,6 +45,8 @@ Future<void> _pumpEditProfile(
     ),
   );
   await tester.pumpAndSettle();
+  await tester.tap(find.text(displayName));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -119,7 +121,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(submitted, 'Alice Renamed');
-      expect(find.text('profile destination'), findsOneWidget);
+      expect(find.text('Edit profile'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
       expect(find.text('Profile updated ✓'), findsNothing);
     },
   );

@@ -1,3 +1,5 @@
+> **BLA-39 ·approved18455 ·7 November2026:** profile-photo editor uses frozen [Paper V2](https://app.paper.design/file/01M3PCM6SC0AMB5Q0M3AZ58WBR/p-N-0). Native Camera/Photo → black crop/✓ → unsaved preview → Save; × creates draft removal; Back discards. Initials fallback. Google photo initializes new accounts once, never overwrites custom photos or restores removal; signup remains name-only, no extra consent/review screen. Illustrations and custom gallery excluded. Static approval does not approve implementation or distribution.
+
 # PRD: Blab — Language Exchange Chat App
 
 > **BLA-40 ·2 November2026:** approved URL/menu contract and preserved report: [inline links](../docs/specs/2026-11-02-bla40-inline-links.md). Reviewed Android visuals/journey and commit/main integration approved17374; release explicitly held.

@@ -43,6 +43,9 @@ class ChatListTile extends ConsumerWidget {
         child: Row(
           children: [
             BlabAvatar(
+              userId: chat.isGroup || chat.partnerAccountDeleted
+                  ? null
+                  : chat.partnerId,
               name: (chat.partnerAccountDeleted ? "" : chat.partnerName),
             ),
             const SizedBox(width: 12),

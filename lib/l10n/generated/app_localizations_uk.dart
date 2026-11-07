@@ -1774,4 +1774,26 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get hideMessageTranslation => 'Приховати переклад';
+
+  @override
+  String get profilePhotoEditPhoto => 'Редагувати фото';
+
+  @override
+  String get profilePhotoCropPhoto => 'Обрізати фото';
+
+  @override
+  String get profilePhotoCamera => 'Камера';
+
+  @override
+  String get profilePhotoPhoto => 'Фото';
+
+  @override
+  String get profilePhotoRemovePhoto => 'Видалити фото';
+
+  @override
+  String get profilePhotoConfirmCrop => 'Підтвердити обрізання';
+
+  @override
+  String get profilePhotoPhotoError =>
+      'Не вдалося відкрити це фото. Спробуйте інше зображення.';
 }

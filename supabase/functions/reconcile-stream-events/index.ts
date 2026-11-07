@@ -156,6 +156,25 @@ Deno.serve(async (request) => {
       };
     }),
   );
+  const avatarClaim = await admin.rpc("claim_profile_avatar_cleanup");
+  if (avatarClaim.error) {
+    return json({ error: "avatar_cleanup_unavailable" }, 503);
+  }
+  for (const row of avatarClaim.data ?? []) {
+    const removed = await admin.storage.from("profile-avatars").remove([
+      row.object_path,
+    ]);
+    const probe = removed.error
+      ? null
+      : await admin.storage.from("profile-avatars").download(row.object_path);
+    const success = !removed.error && probe !== null &&
+      isMissingPrivateObject(probe.error);
+    await admin.rpc("finish_profile_avatar_cleanup", {
+      p_path: row.object_path,
+      p_lease: row.lease_token,
+      p_success: success,
+    });
+  }
   const privateClaim = await admin.rpc("claim_stream_private_media_cleanup");
   if (privateClaim.error) {
     return json({ error: "private_media_claim_unavailable" }, 503);

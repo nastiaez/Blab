@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'package:uuid/uuid.dart';
+import 'package:image/image.dart' as image;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/languages.dart';
@@ -8,6 +11,8 @@ import 'local_profile_cache.dart';
 class UserProfile {
   const UserProfile({
     required this.displayName,
+    this.avatarUrl,
+    this.avatarPath,
     this.interfaceLanguage = 'en',
     this.knownLanguages = const [],
     this.primaryKnownLanguage,
@@ -20,6 +25,8 @@ class UserProfile {
   factory UserProfile.fromRow(Map<String, dynamic> row) {
     return UserProfile(
       displayName: row['display_name'] as String,
+      avatarUrl: row['avatar_url'] as String?,
+      avatarPath: row['avatar_path'] as String?,
       interfaceLanguage: row['interface_language'] as String,
       knownLanguages:
           (row['known_languages'] as List<dynamic>?)
@@ -37,6 +44,21 @@ class UserProfile {
   }
 
   final String displayName;
+  final String? avatarUrl;
+  final String? avatarPath;
+
+  UserProfile withAvatarUrl(String? url) => UserProfile(
+    displayName: displayName,
+    avatarUrl: url,
+    avatarPath: avatarPath,
+    interfaceLanguage: interfaceLanguage,
+    knownLanguages: knownLanguages,
+    primaryKnownLanguage: primaryKnownLanguage,
+    grammaticalForm: grammaticalForm,
+    readingScript: readingScript,
+    onboardingVersion: onboardingVersion,
+    onboardingStage: onboardingStage,
+  );
   final String interfaceLanguage;
   final List<String> knownLanguages;
   final String? primaryKnownLanguage;
@@ -70,11 +92,81 @@ class ProfileService {
         .select(
           'display_name,interface_language,known_languages,'
           'primary_known_language,grammatical_form,reading_script,'
-          'onboarding_version,onboarding_stage',
+          'onboarding_version,onboarding_stage,avatar_path',
         )
         .eq('id', _uid)
         .single();
+    try {
+      row['avatar_url'] = await resolveAvatarPath(
+        row['avatar_path'] as String?,
+      );
+    } catch (_) {
+      row['avatar_url'] = null;
+    }
     return UserProfile.fromRow(row);
+  }
+
+  Future<String?> resolveAvatarPath(String? path) async {
+    if (path == null || path.isEmpty) return null;
+    if (isGoogleAvatarUrl(path)) return path;
+    if (!RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$',
+    ).hasMatch(path)) {
+      return null;
+    }
+    return _client.storage.from('profile-avatars').createSignedUrl(path, 60);
+  }
+
+  Future<void> updateAvatar(Uint8List? bytes) async {
+    final account = _uid;
+    String? path;
+    if (bytes != null) {
+      if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+        throw ArgumentError('invalid_avatar_size');
+      }
+      image.Image? decoded;
+      try {
+        decoded = image.decodeJpg(bytes);
+      } catch (_) {
+        throw ArgumentError('invalid_avatar_image');
+      }
+      if (decoded == null || decoded.width > 2048 || decoded.height > 2048) {
+        throw ArgumentError('invalid_avatar_image');
+      }
+      path = '$account/AVATAR_UUID.jpg'.replaceFirst(
+        'AVATAR_UUID',
+        const Uuid().v4(),
+      );
+      await _client.storage
+          .from('profile-avatars')
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(contentType: 'image/jpeg'),
+          );
+    }
+    try {
+      if (_client.auth.currentUser?.id != account) {
+        throw StateError('account_changed');
+      }
+      final previous = await _client.rpc(
+        'update_my_avatar',
+        params: {'p_path': path, 'p_expected_actor': account},
+      );
+      if (previous is String &&
+          previous.startsWith('$account/') &&
+          previous != path &&
+          _client.auth.currentUser?.id == account) {
+        try {
+          await _client.storage.from('profile-avatars').remove([previous]);
+        } catch (_) {}
+      }
+    } catch (_) {
+      // An interrupted response can follow a committed write. Never delete the
+      // new object here; the server's grace-period collector owns orphan cleanup.
+      rethrow;
+    }
+    await _invalidateCachedProfile(account);
   }
 
   Future<String> updateDisplayName(String displayName) async {
@@ -206,4 +298,14 @@ class ProfileService {
     }
     return OnboardingProgress.fromJson(Map<String, dynamic>.from(value));
   }
+}
+
+bool isGoogleAvatarUrl(String value) {
+  final uri = Uri.tryParse(value);
+  return uri != null &&
+      uri.scheme == 'https' &&
+      uri.userInfo.isEmpty &&
+      uri.port == 443 &&
+      (uri.host == 'googleusercontent.com' ||
+          uri.host.endsWith('.googleusercontent.com'));
 }

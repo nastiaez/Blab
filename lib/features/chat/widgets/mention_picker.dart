@@ -55,6 +55,7 @@ class MentionPicker extends StatelessWidget {
                     color: Colors.transparent,
                     child: ListTile(
                       leading: BlabAvatar(
+                        userId: candidate.userId,
                         name: candidate.displayName,
                         size: 32,
                         fontSize: 12,

@@ -627,5 +627,12 @@
   "deletedAccountNotice": "Esta cuenta se ha eliminado. Ya no puedes enviar mensajes.",
   "translateMessage": "Traducir",
   "showMessageTranslation": "Mostrar traducción",
-  "hideMessageTranslation": "Ocultar traducción"
+  "hideMessageTranslation": "Ocultar traducción",
+  "profilePhotoEditPhoto": "Editar foto",
+  "profilePhotoCropPhoto": "Recortar foto",
+  "profilePhotoCamera": "Cámara",
+  "profilePhotoPhoto": "Foto",
+  "profilePhotoRemovePhoto": "Eliminar foto",
+  "profilePhotoConfirmCrop": "Confirmar recorte",
+  "profilePhotoPhotoError": "No se pudo abrir esta foto. Prueba otra imagen."
 }
