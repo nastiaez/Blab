@@ -1,3 +1,4 @@
+import 'widgets/message_link_anchor.dart';
 import 'translation_anchor_controller.dart';
 import 'widgets/message_link_text.dart';
 import 'widgets/deleted_identity_scope.dart';
@@ -1603,671 +1604,726 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         body: SafeArea(
           top: false,
           bottom: false,
-          child: Stack(
-            key: _stackKey,
-            children: [
-              Column(
-                children: [
-                  ChatHeader(
-                    key: _chatHeaderKey,
-                    chat: chat,
-                    onBeforeModeToggle: _captureModeAnchor,
-                    onModeChanged: (mode) {
-                      if (mode == ChatMode.normal) {
-                        unawaited(_showModeTipOnce(ChatModeTip.normal));
-                      }
-                    },
-                    practiceSetupRequired: chat.needsPracticeLanguageSelection,
-                    menuController: _chatMenuController,
-                    modeControlKey: _modeControlKey,
-                    onMenuStateChanged: () {
-                      if (mounted) setState(() {});
-                    },
-                    onLearningLanguageTap: () async {
-                      _closeMenu();
-                      final current = ref.read(
-                        learningLanguageProvider(widget.chatId),
-                      );
-                      await showLearningLanguageSheet(
-                        context,
-                        current: current,
-                        onSelected: (language) => ref
-                            .read(
-                              learningLanguageProvider(widget.chatId).notifier,
-                            )
-                            .set(language),
-                      );
-                      if (mounted && editing != null) {
-                        _inputFocus.requestFocus();
-                      }
-                    },
-                    onTranslationPreferencesTap: () async {
-                      _closeMenu();
-                      await context.push(
-                        '/chat/${widget.chatId}/translation-preferences?name=${Uri.encodeComponent(chat.partnerName)}',
-                      );
-                      if (mounted && editing != null) {
-                        _inputFocus.requestFocus();
-                      }
-                    },
-
-                    selectionActive: _selectedMessage != null,
-                    onDismissSelection: _closeSelection,
-                    onBack: _handleChatBack,
-                    onMenu: () {
-                      if (_selectedMessage != null) {
-                        _closeSelection();
-                        return;
-                      }
-                      _toggleMenu();
-                    },
-                    onTapPartner: () async {
-                      if (_selectedMessage != null) {
-                        _closeSelection();
-                        return;
-                      }
-                      if (chat.isGroup) {
-                        await Navigator.of(context).push<void>(
-                          telegramRoute<void>(GroupInfoScreen(chat: chat)),
-                        );
-                      } else {
-                        await showPartnerProfilePage(context, chat: chat);
-                      }
-                      if (!context.mounted) return;
-                      final blockedIds =
-                          ref.read(blockedUserIdsProvider).value ??
-                          const <String>{};
-                      if (blockedIds.contains(chat.partnerId)) {
-                        ref
-                            .read(replyingToProvider(widget.chatId).notifier)
-                            .clear();
-                        ref
-                            .read(editingProvider(widget.chatId).notifier)
-                            .clear();
-                        _inputFocus.unfocus();
-                      } else if (editing != null) {
-                        _inputFocus.requestFocus();
-                      }
-                    },
-                  ),
-                  if (pushNotifications.reminderVisible)
-                    ChatNotificationReminder(
-                      onDismiss: () => ref
-                          .read(pushNotificationsProvider.notifier)
-                          .dismissReminder(),
-                    ),
-                  const OfflineBanner(),
-                  Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTap: () {
-                        // A double-tap recognizer can release its arena during
-                        // teardown; do not read providers from an inactive tree.
-                        if (!_active) return;
-                        _closeMenu();
-                        _closeSelection();
+          child: MessageLinkAnchor(
+            viewport: () {
+              final stack =
+                  _stackKey.currentContext?.findRenderObject() as RenderBox?;
+              final bottom =
+                  _bottomSurfaceKey.currentContext?.findRenderObject()
+                      as RenderBox?;
+              if (stack == null ||
+                  !stack.hasSize ||
+                  bottom == null ||
+                  !bottom.hasSize) {
+                return null;
+              }
+              final origin = stack.localToGlobal(Offset.zero);
+              return Rect.fromLTRB(
+                origin.dx + 16,
+                _renderedHeaderBottom(context, chat),
+                origin.dx + stack.size.width - 16,
+                bottom.localToGlobal(Offset.zero).dy,
+              );
+            },
+            child: Stack(
+              key: _stackKey,
+              children: [
+                Column(
+                  children: [
+                    ChatHeader(
+                      key: _chatHeaderKey,
+                      chat: chat,
+                      onBeforeModeToggle: _captureModeAnchor,
+                      onModeChanged: (mode) {
+                        if (mode == ChatMode.normal) {
+                          unawaited(_showModeTipOnce(ChatModeTip.normal));
+                        }
                       },
-                      child: NotificationListener<ScrollNotification>(
-                        onNotification: (notification) {
-                          // Only a real finger drag dismisses the selection.
-                          // Programmatic scrolls (the keyboard-inset snap-back
-                          // below calls jumpTo) report no drag details and must
-                          // not close the row out from under the user.
-                          final isUserDrag =
-                              notification is ScrollStartNotification &&
-                              notification.dragDetails != null;
-                          if (isUserDrag) _modeAnchorGeneration++;
-                          if (isUserDrag && !_translationResolveDeferred) {
-                            setState(() => _translationResolveDeferred = true);
-                          } else if (notification is ScrollEndNotification &&
-                              _translationResolveDeferred) {
-                            setState(() => _translationResolveDeferred = false);
-                          }
-                          if (notification is ScrollEndNotification) {
-                            _markResolvedAtBottom();
-                          }
-                          return false;
+                      practiceSetupRequired:
+                          chat.needsPracticeLanguageSelection,
+                      menuController: _chatMenuController,
+                      modeControlKey: _modeControlKey,
+                      onMenuStateChanged: () {
+                        if (mounted) setState(() {});
+                      },
+                      onLearningLanguageTap: () async {
+                        _closeMenu();
+                        final current = ref.read(
+                          learningLanguageProvider(widget.chatId),
+                        );
+                        await showLearningLanguageSheet(
+                          context,
+                          current: current,
+                          onSelected: (language) => ref
+                              .read(
+                                learningLanguageProvider(
+                                  widget.chatId,
+                                ).notifier,
+                              )
+                              .set(language),
+                        );
+                        if (mounted && editing != null) {
+                          _inputFocus.requestFocus();
+                        }
+                      },
+                      onTranslationPreferencesTap: () async {
+                        _closeMenu();
+                        await context.push(
+                          '/chat/${widget.chatId}/translation-preferences?name=${Uri.encodeComponent(chat.partnerName)}',
+                        );
+                        if (mounted && editing != null) {
+                          _inputFocus.requestFocus();
+                        }
+                      },
+
+                      selectionActive: _selectedMessage != null,
+                      onDismissSelection: _closeSelection,
+                      onBack: _handleChatBack,
+                      onMenu: () {
+                        if (_selectedMessage != null) {
+                          _closeSelection();
+                          return;
+                        }
+                        _toggleMenu();
+                      },
+                      onTapPartner: () async {
+                        if (_selectedMessage != null) {
+                          _closeSelection();
+                          return;
+                        }
+                        if (chat.isGroup) {
+                          await Navigator.of(context).push<void>(
+                            telegramRoute<void>(GroupInfoScreen(chat: chat)),
+                          );
+                        } else {
+                          await showPartnerProfilePage(context, chat: chat);
+                        }
+                        if (!context.mounted) return;
+                        final blockedIds =
+                            ref.read(blockedUserIdsProvider).value ??
+                            const <String>{};
+                        if (blockedIds.contains(chat.partnerId)) {
+                          ref
+                              .read(replyingToProvider(widget.chatId).notifier)
+                              .clear();
+                          ref
+                              .read(editingProvider(widget.chatId).notifier)
+                              .clear();
+                          _inputFocus.unfocus();
+                        } else if (editing != null) {
+                          _inputFocus.requestFocus();
+                        }
+                      },
+                    ),
+                    if (pushNotifications.reminderVisible)
+                      ChatNotificationReminder(
+                        onDismiss: () => ref
+                            .read(pushNotificationsProvider.notifier)
+                            .dismissReminder(),
+                      ),
+                    const OfflineBanner(),
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          // A double-tap recognizer can release its arena during
+                          // teardown; do not read providers from an inactive tree.
+                          if (!_active) return;
+                          _closeMenu();
+                          _closeSelection();
                         },
-                        child: FutureBuilder<void>(
-                          future: _ready,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState !=
-                                ConnectionState.done) {
-                              return const ChatViewSkeleton();
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            // Only a real finger drag dismisses the selection.
+                            // Programmatic scrolls (the keyboard-inset snap-back
+                            // below calls jumpTo) report no drag details and must
+                            // not close the row out from under the user.
+                            final isUserDrag =
+                                notification is ScrollStartNotification &&
+                                notification.dragDetails != null;
+                            if (isUserDrag) _modeAnchorGeneration++;
+                            if (isUserDrag && !_translationResolveDeferred) {
+                              setState(
+                                () => _translationResolveDeferred = true,
+                              );
+                            } else if (notification is ScrollEndNotification &&
+                                _translationResolveDeferred) {
+                              setState(
+                                () => _translationResolveDeferred = false,
+                              );
                             }
-                            // Show the skeleton only while we have NO data at
-                            // all. If the stream errored after a successful
-                            // initial yield (e.g. user toggled airplane mode),
-                            // keep showing the last-known messages rather than
-                            // collapsing to the loading shimmer.
-                            final knownMessages = messagesAsync.value
-                                ?.where(afterHistoryClear)
-                                .toList();
-                            final pending = ref.watch(
-                              pendingSendsProvider(widget.chatId),
-                            );
-                            if (knownMessages == null && pending.isEmpty) {
-                              if (messagesAsync.hasError) {
-                                return ChatHistoryErrorState(
-                                  onRetry: () => ref.invalidate(
-                                    chatMessagesProvider(widget.chatId),
-                                  ),
-                                );
+                            if (notification is ScrollEndNotification) {
+                              _markResolvedAtBottom();
+                            }
+                            return false;
+                          },
+                          child: FutureBuilder<void>(
+                            future: _ready,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState !=
+                                  ConnectionState.done) {
+                                return const ChatViewSkeleton();
                               }
-                              return const ChatViewSkeleton();
-                            }
-                            return Builder(
-                              builder: (context) {
-                                final messages =
-                                    knownMessages ?? const <Message>[];
-                                // In-place upgrade: after the server confirms
-                                // a send, the pending bubble carries the server's
-                                // id + timestamp. As soon as the realtime stream
-                                // emits the canonical row the merge layer dedupes
-                                // by id, dropping the pending without a flicker.
-                                final messageIds = messages
-                                    .map((m) => m.id)
-                                    .toSet();
-                                final pendingVisible = pending
-                                    .where(
-                                      (p) =>
-                                          afterHistoryClear(p) &&
-                                          !messageIds.contains(p.id),
-                                    )
-                                    .toList();
-                                // Optimistic delete overlay: hide anything the
-                                // user just deleted, instantly, without waiting
-                                // for the realtime row update. US-019.
-                                final hidden = ref.watch(
-                                  hiddenMessagesProvider(widget.chatId),
-                                );
-                                // Auto-flush queued sends once we're back online
-                                // (covers reconnect after airplane mode and
-                                // sends interrupted by an app kill, re-hydrated
-                                // from disk on cold launch). flushPending guards
-                                // in-flight ids, so re-running it per rebuild is
-                                // safe. PRD US-030, US-031.
-                                if (online &&
-                                    !chat.isLeft &&
-                                    !chat.partnerAccountDeleted &&
-                                    pendingVisible.any(
-                                      (m) => m.status == MessageStatus.pending,
-                                    )) {
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    ref
-                                        .read(
-                                          chatMessagesProvider(
-                                            widget.chatId,
-                                          ).notifier,
-                                        )
-                                        .flushPending();
-                                  });
-                                }
-                                final all =
-                                    [...messages, ...pendingVisible]
-                                        .where((m) => !hidden.contains(m.id))
-                                        .toList()
-                                      ..sort(
-                                        (a, b) => a.sentAt.compareTo(b.sentAt),
-                                      );
-                                if (unreadIds.isNotEmpty &&
-                                    !_unreadDividerAnchored) {
-                                  WidgetsBinding.instance.addPostFrameCallback(
-                                    (_) => _anchorOldestUnread(),
+                              // Show the skeleton only while we have NO data at
+                              // all. If the stream errored after a successful
+                              // initial yield (e.g. user toggled airplane mode),
+                              // keep showing the last-known messages rather than
+                              // collapsing to the loading shimmer.
+                              final knownMessages = messagesAsync.value
+                                  ?.where(afterHistoryClear)
+                                  .toList();
+                              final pending = ref.watch(
+                                pendingSendsProvider(widget.chatId),
+                              );
+                              if (knownMessages == null && pending.isEmpty) {
+                                if (messagesAsync.hasError) {
+                                  return ChatHistoryErrorState(
+                                    onRetry: () => ref.invalidate(
+                                      chatMessagesProvider(widget.chatId),
+                                    ),
                                   );
                                 }
-                                final reactionsByMessage =
-                                    ref
-                                        .watch(
-                                          messageReactionsProvider(
-                                            widget.chatId,
-                                          ),
-                                        )
-                                        .value ??
-                                    const <
-                                      String,
-                                      List<MessageReactionSummary>
-                                    >{};
-                                return JumpToLatest(
-                                  controller: _scroll,
-                                  enabled:
-                                      _selectedMessage == null &&
-                                      !chat.needsPracticeLanguageSelection,
-                                  child: ChatTimeline(
-                                    highlightedMessageId: _replyHighlightId,
-                                    chatId: widget.chatId,
-                                    partnerName: chat.partnerName,
-                                    messages: all,
-                                    reactionsByMessage: reactionsByMessage,
-                                    scrollController: _scroll,
-                                    languageCode: learningLang.code,
-                                    languageTimelineRows: languageTimelineRows,
-                                    languageTimelineReady:
-                                        languageTimelineReady,
-                                    practiceSetupRequired:
-                                        chat.needsPracticeLanguageSelection,
-                                    translationInterfaceLanguageCode:
-                                        translationInterfaceLang,
-                                    unreadMessageIds: unreadIds,
-                                    unreadDividerKey: _unreadDividerKey,
-                                    messageAnchorKey: _messageAnchorKey,
-                                    hasOlderMessages: pagination.hasMore,
-                                    isLoadingOlder: pagination.isLoading,
-                                    deferTranslationResolve:
-                                        _translationResolveDeferred,
-                                    // BUG-009: keep the word popup from drawing on
-                                    // top of the chat header. Account for the
-                                    // safe-area notch as well.
-                                    popupTopInset: _renderedHeaderBottom(
-                                      context,
-                                      chat,
-                                    ),
-                                    translationVisibility:
-                                        _translationVisibility,
-                                    translationLeadingSpace:
-                                        _translationLeadingSpace,
-                                    onToggleTranslation: _toggleTranslation,
-                                    selectedMessageId: _selectedMessage?.id,
-                                    showSelectedOriginal: _showSelectedOriginal,
-                                    selectedBubbleKey: _selectedBubbleKey,
-                                    emptyState: FirstMessageEmptyState(
-                                      chat: chat,
-                                    ),
-                                    onLongPress: _selectMessage,
-                                    onReply: _beginReply,
-                                    onJumpToMessage: _jumpToQuotedMessage,
-                                    onFailedTap: (m) {
-                                      final notifier = ref.read(
-                                        chatMessagesProvider(
-                                          widget.chatId,
-                                        ).notifier,
-                                      );
-                                      showFailedMessageSheet(
+                                return const ChatViewSkeleton();
+                              }
+                              return Builder(
+                                builder: (context) {
+                                  final messages =
+                                      knownMessages ?? const <Message>[];
+                                  // In-place upgrade: after the server confirms
+                                  // a send, the pending bubble carries the server's
+                                  // id + timestamp. As soon as the realtime stream
+                                  // emits the canonical row the merge layer dedupes
+                                  // by id, dropping the pending without a flicker.
+                                  final messageIds = messages
+                                      .map((m) => m.id)
+                                      .toSet();
+                                  final pendingVisible = pending
+                                      .where(
+                                        (p) =>
+                                            afterHistoryClear(p) &&
+                                            !messageIds.contains(p.id),
+                                      )
+                                      .toList();
+                                  // Optimistic delete overlay: hide anything the
+                                  // user just deleted, instantly, without waiting
+                                  // for the realtime row update. US-019.
+                                  final hidden = ref.watch(
+                                    hiddenMessagesProvider(widget.chatId),
+                                  );
+                                  // Auto-flush queued sends once we're back online
+                                  // (covers reconnect after airplane mode and
+                                  // sends interrupted by an app kill, re-hydrated
+                                  // from disk on cold launch). flushPending guards
+                                  // in-flight ids, so re-running it per rebuild is
+                                  // safe. PRD US-030, US-031.
+                                  if (online &&
+                                      !chat.isLeft &&
+                                      !chat.partnerAccountDeleted &&
+                                      pendingVisible.any(
+                                        (m) =>
+                                            m.status == MessageStatus.pending,
+                                      )) {
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          ref
+                                              .read(
+                                                chatMessagesProvider(
+                                                  widget.chatId,
+                                                ).notifier,
+                                              )
+                                              .flushPending();
+                                        });
+                                  }
+                                  final all =
+                                      [...messages, ...pendingVisible]
+                                          .where((m) => !hidden.contains(m.id))
+                                          .toList()
+                                        ..sort(
+                                          (a, b) =>
+                                              a.sentAt.compareTo(b.sentAt),
+                                        );
+                                  if (unreadIds.isNotEmpty &&
+                                      !_unreadDividerAnchored) {
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback(
+                                          (_) => _anchorOldestUnread(),
+                                        );
+                                  }
+                                  final reactionsByMessage =
+                                      ref
+                                          .watch(
+                                            messageReactionsProvider(
+                                              widget.chatId,
+                                            ),
+                                          )
+                                          .value ??
+                                      const <
+                                        String,
+                                        List<MessageReactionSummary>
+                                      >{};
+                                  return JumpToLatest(
+                                    controller: _scroll,
+                                    enabled:
+                                        _selectedMessage == null &&
+                                        !chat.needsPracticeLanguageSelection,
+                                    child: ChatTimeline(
+                                      highlightedMessageId: _replyHighlightId,
+                                      chatId: widget.chatId,
+                                      partnerName: chat.partnerName,
+                                      messages: all,
+                                      reactionsByMessage: reactionsByMessage,
+                                      scrollController: _scroll,
+                                      languageCode: learningLang.code,
+                                      languageTimelineRows:
+                                          languageTimelineRows,
+                                      languageTimelineReady:
+                                          languageTimelineReady,
+                                      practiceSetupRequired:
+                                          chat.needsPracticeLanguageSelection,
+                                      translationInterfaceLanguageCode:
+                                          translationInterfaceLang,
+                                      unreadMessageIds: unreadIds,
+                                      unreadDividerKey: _unreadDividerKey,
+                                      messageAnchorKey: _messageAnchorKey,
+                                      hasOlderMessages: pagination.hasMore,
+                                      isLoadingOlder: pagination.isLoading,
+                                      deferTranslationResolve:
+                                          _translationResolveDeferred,
+                                      // BUG-009: keep the word popup from drawing on
+                                      // top of the chat header. Account for the
+                                      // safe-area notch as well.
+                                      popupTopInset: _renderedHeaderBottom(
                                         context,
-                                        onAction: (action) {
-                                          switch (action) {
-                                            case FailedMessageAction.retry:
-                                              notifier.retryFailed(m.id);
-                                              break;
-                                            case FailedMessageAction.delete:
-                                              notifier.dropPending(m.id);
-                                              break;
-                                          }
-                                        },
-                                      );
-                                    },
-                                    onFailedRetry: (m) => ref
-                                        .read(
+                                        chat,
+                                      ),
+                                      translationVisibility:
+                                          _translationVisibility,
+                                      translationLeadingSpace:
+                                          _translationLeadingSpace,
+                                      onToggleTranslation: _toggleTranslation,
+                                      selectedMessageId: _selectedMessage?.id,
+                                      showSelectedOriginal:
+                                          _showSelectedOriginal,
+                                      selectedBubbleKey: _selectedBubbleKey,
+                                      emptyState: FirstMessageEmptyState(
+                                        chat: chat,
+                                      ),
+                                      onLongPress: _selectMessage,
+                                      onReply: _beginReply,
+                                      onJumpToMessage: _jumpToQuotedMessage,
+                                      onFailedTap: (m) {
+                                        final notifier = ref.read(
                                           chatMessagesProvider(
                                             widget.chatId,
                                           ).notifier,
-                                        )
-                                        .retryFailed(m.id),
-                                    onDoubleTapHeart:
-                                        chat.isLeft ||
-                                            chat.partnerAccountDeleted ||
-                                            isPartnerBlocked
-                                        ? null
-                                        : (m) async {
-                                            _closeSelection();
-                                            try {
-                                              await ref
-                                                  .read(
-                                                    messageReactionsProvider(
-                                                      widget.chatId,
-                                                    ).notifier,
-                                                  )
-                                                  .react(
-                                                    messageId: m.id,
-                                                    emoji: '❤️',
-                                                  );
-                                            } catch (_) {
-                                              // The notifier restores the previous reaction on failure.
+                                        );
+                                        showFailedMessageSheet(
+                                          context,
+                                          onAction: (action) {
+                                            switch (action) {
+                                              case FailedMessageAction.retry:
+                                                notifier.retryFailed(m.id);
+                                                break;
+                                              case FailedMessageAction.delete:
+                                                notifier.dropPending(m.id);
+                                                break;
                                             }
                                           },
-                                    onReact: (m) => showReactionDetailsSheet(
-                                      context,
-                                      reactions:
-                                          reactionsByMessage[m.id] ?? const [],
-                                      partnerName: chat.partnerName,
-                                      onChangeReaction: (emoji) => ref
+                                        );
+                                      },
+                                      onFailedRetry: (m) => ref
                                           .read(
-                                            messageReactionsProvider(
+                                            chatMessagesProvider(
                                               widget.chatId,
                                             ).notifier,
                                           )
-                                          .react(messageId: m.id, emoji: emoji),
+                                          .retryFailed(m.id),
+                                      onDoubleTapHeart:
+                                          chat.isLeft ||
+                                              chat.partnerAccountDeleted ||
+                                              isPartnerBlocked
+                                          ? null
+                                          : (m) async {
+                                              _closeSelection();
+                                              try {
+                                                await ref
+                                                    .read(
+                                                      messageReactionsProvider(
+                                                        widget.chatId,
+                                                      ).notifier,
+                                                    )
+                                                    .react(
+                                                      messageId: m.id,
+                                                      emoji: '❤️',
+                                                    );
+                                              } catch (_) {
+                                                // The notifier restores the previous reaction on failure.
+                                              }
+                                            },
+                                      onReact: (m) => showReactionDetailsSheet(
+                                        context,
+                                        reactions:
+                                            reactionsByMessage[m.id] ??
+                                            const [],
+                                        partnerName: chat.partnerName,
+                                        onChangeReaction: (emoji) => ref
+                                            .read(
+                                              messageReactionsProvider(
+                                                widget.chatId,
+                                              ).notifier,
+                                            )
+                                            .react(
+                                              messageId: m.id,
+                                              emoji: emoji,
+                                            ),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (!chat.isLeft &&
-                      !chat.partnerAccountDeleted &&
-                      !isPartnerBlocked &&
-                      replyingTo != null)
-                    ComposerReplyBar(
-                      message: replyingTo,
-                      partnerName: chat.partnerName,
-                      onClose: () => ref
-                          .read(replyingToProvider(widget.chatId).notifier)
-                          .clear(),
-                    ),
-                  if (!chat.isLeft &&
-                      !chat.partnerAccountDeleted &&
-                      !isPartnerBlocked &&
-                      editing != null)
-                    ComposerEditBar(
-                      onClose: () => ref
-                          .read(editingProvider(widget.chatId).notifier)
-                          .clear(),
-                    ),
-                  KeyedSubtree(
-                    key: _bottomSurfaceKey,
-                    child:
-                        (incomingContact || waitingContact) &&
-                            !chat.needsPracticeLanguageSelection
-                        ? MemberRequestFooter(
-                            chatId: chat.id,
-                            name: chat.partnerName,
-                            incoming: incomingContact,
-                          )
-                        : (chat.isLeft || chat.partnerAccountDeleted)
-                        ? Container(
-                            key: const ValueKey('left-chat-bar'),
-                            width: double.infinity,
-                            decoration: const BoxDecoration(
-                              color: BlabColors.chatSurface,
-                              border: Border(
-                                top: BorderSide(color: BlabColors.chatDivider),
-                              ),
-                            ),
-                            child: SafeArea(
-                              top: false,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 22,
-                                ),
-                                child: Text(
-                                  chat.partnerAccountDeleted
-                                      ? context.l10n.deletedAccountNotice
-                                      : context.l10n.leftChat,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: BlabColors.warmMuted,
-                                    fontSize: 15,
+                    if (!chat.isLeft &&
+                        !chat.partnerAccountDeleted &&
+                        !isPartnerBlocked &&
+                        replyingTo != null)
+                      ComposerReplyBar(
+                        message: replyingTo,
+                        partnerName: chat.partnerName,
+                        onClose: () => ref
+                            .read(replyingToProvider(widget.chatId).notifier)
+                            .clear(),
+                      ),
+                    if (!chat.isLeft &&
+                        !chat.partnerAccountDeleted &&
+                        !isPartnerBlocked &&
+                        editing != null)
+                      ComposerEditBar(
+                        onClose: () => ref
+                            .read(editingProvider(widget.chatId).notifier)
+                            .clear(),
+                      ),
+                    KeyedSubtree(
+                      key: _bottomSurfaceKey,
+                      child:
+                          (incomingContact || waitingContact) &&
+                              !chat.needsPracticeLanguageSelection
+                          ? MemberRequestFooter(
+                              chatId: chat.id,
+                              name: chat.partnerName,
+                              incoming: incomingContact,
+                            )
+                          : (chat.isLeft || chat.partnerAccountDeleted)
+                          ? Container(
+                              key: const ValueKey('left-chat-bar'),
+                              width: double.infinity,
+                              decoration: const BoxDecoration(
+                                color: BlabColors.chatSurface,
+                                border: Border(
+                                  top: BorderSide(
+                                    color: BlabColors.chatDivider,
                                   ),
                                 ),
                               ),
-                            ),
-                          )
-                        : isPartnerBlocked
-                        ? BlockedChatBar(
-                            message: context.l10n.youBlockedPerson(
-                              chat.partnerName,
-                            ),
-                            actionLabel: context.l10n.unblock,
-                            onUnblock: () => unawaited(_unblockPartner(chat)),
-                          )
-                        : AbsorbPointer(
-                            absorbing:
-                                chat.needsPracticeLanguageSelection ||
-                                historyUnavailable,
-                            child: Opacity(
-                              opacity:
-                                  chat.needsPracticeLanguageSelection ||
-                                      historyUnavailable
-                                  ? .45
-                                  : 1,
-                              child: ChatComposer(
-                                mentionPicker:
-                                    !_mentionDismissed && _input.query != null
-                                    ? MentionPicker(
-                                        candidates: chat.isGroup
-                                            ? [
-                                                for (final member
-                                                    in ref
-                                                            .watch(
-                                                              groupMembersProvider(
-                                                                widget.chatId,
-                                                              ),
-                                                            )
-                                                            .value ??
-                                                        <
-                                                          Map<String, dynamic>
-                                                        >[])
-                                                  if (member['user_id'] !=
-                                                      ref.watch(
-                                                        currentUserIdProvider,
-                                                      ))
-                                                    MentionCandidate(
-                                                      member['user_id']
-                                                          as String,
-                                                      member['display_name']
-                                                              as String? ??
-                                                          '?',
-                                                    ),
-                                              ]
-                                            : [
-                                                if (chat.partnerId != null)
-                                                  MentionCandidate(
-                                                    chat.partnerId!,
-                                                    chat.partnerName,
-                                                  ),
-                                              ],
-                                        query: _input.query!.query,
-                                        onDismiss: () => setState(
-                                          () => _mentionDismissed = true,
-                                        ),
-                                        onSelected: (person) {
-                                          _input.insertMention(
-                                            person.userId,
-                                            person.mentionLabel,
-                                          );
-                                          _inputFocus.requestFocus();
-                                        },
-                                      )
-                                    : null,
-                                controller: _input,
-                                focusNode: _inputFocus,
-                                hasText: _hasText,
-                                groupConversation: chat.isGroup,
-                                hintText: chat.isGroup
-                                    ? context.l10n.message
-                                    : practiceHint ??
-                                          (chatIsEmpty
-                                              ? context.l10n.sayHi
-                                              : context.l10n.message),
-                                textLength: _textLength,
-                                maxLength: _maxMessageLength,
-                                counterShowAt: _counterShowAt,
-                                isPractice: chatMode == ChatMode.practice,
-                                enabled:
-                                    !chat.needsPracticeLanguageSelection &&
-                                    !historyUnavailable,
-                                showTopBorder: replyingTo == null,
-                                bottomObstruction: inputObstruction,
-                                emojiPanelOpen: _emojiPanelOpen,
-                                onToggleEmoji: _toggleComposerEmoji,
-                                onTapText: () {
-                                  if (_selectedMessage != null) {
-                                    _closeSelection();
-                                  }
-                                  if (_emojiPanelOpen) _showComposerKeyboard();
-                                },
-                                emojiPanel:
-                                    _emojiPanelOpen ||
-                                        _retainEmojiHeightForKeyboard
-                                    ? IgnorePointer(
-                                        ignoring: !_emojiPanelOpen,
-                                        child: ComposerEmojiPanel(
-                                          controller: _input,
-                                          maxLength: _maxMessageLength,
-                                          height: emojiContentHeight,
-                                          onSearchChanged: (open) {
-                                            if (mounted) {
-                                              setState(
-                                                () => _emojiSearchOpen = open,
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      )
-                                    : null,
-                                onAttach: () {
-                                  if (_emojiPanelOpen) {
-                                    setState(() => _emojiPanelOpen = false);
-                                  }
-                                  _attachImage(recipientName: chat.partnerName);
-                                },
-                                onSend: _send,
-                                autofocus:
-                                    chatIsEmpty ||
-                                    replyingTo != null ||
-                                    editing != null,
-                                allowAttachment: editing == null,
-                              ),
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-              if (_visibleModeTip != null)
-                Positioned(
-                  top: _renderedHeaderBottom(context, chat) + 8,
-                  right: 16,
-                  child: TapRegion(
-                    onTapOutside: (_) => setState(() => _visibleModeTip = null),
-                    child: ChatModeTipCard(
-                      tip: _visibleModeTip!,
-                      modeControlKey: _modeControlKey,
-                      practiceLanguage: localizedLanguageName(
-                        context.l10n,
-                        learningLang.code,
-                      ),
-                      primaryKnownLanguage: localizedLanguageName(
-                        context.l10n,
-                        knownLanguages?.primary ?? 'en',
-                      ),
-                      onDismiss: () => setState(() => _visibleModeTip = null),
-                      onEditKnownLanguages: () {
-                        setState(() => _visibleModeTip = null);
-                        context.push('/profile/known-languages');
-                      },
-                    ),
-                  ),
-                ),
-              if (_panelMessage != null &&
-                  _selectedBubbleRect != null &&
-                  _selectionGeometryReady)
-                Builder(
-                  builder: (_) {
-                    final stackBox =
-                        _stackKey.currentContext?.findRenderObject()
-                            as RenderBox?;
-                    final bottomBox =
-                        _bottomSurfaceKey.currentContext?.findRenderObject()
-                            as RenderBox?;
-                    if (stackBox == null ||
-                        !stackBox.hasSize ||
-                        bottomBox == null ||
-                        !bottomBox.hasSize) {
-                      return const SizedBox.shrink();
-                    }
-                    final origin = stackBox.localToGlobal(Offset.zero);
-                    final viewport = Rect.fromLTRB(
-                      16,
-                      _renderedHeaderBottom(context, chat) - origin.dy,
-                      stackBox.size.width - 16,
-                      bottomBox.localToGlobal(Offset.zero).dy - origin.dy,
-                    );
-                    final bubble = _selectedBubbleRect!.shift(-origin);
-                    var afterLines =
-                        math.max(bubble.top + 12, viewport.top) +
-                        MediaQuery.textScalerOf(context).scale(16) * 1.5 * 3;
-                    final visibleLines = _selectedLearningLineBottoms
-                        .map((bottom) => bottom - origin.dy)
-                        .where((bottom) => bottom > viewport.top)
-                        .toList();
-                    if (visibleLines.length >= 3) {
-                      afterLines = visibleLines[2] + 8;
-                    }
-                    final translationTop = _selectedTranslationTop == null
-                        ? null
-                        : _selectedTranslationTop! - origin.dy;
-                    return Positioned.fill(
-                      child: IgnorePointer(
-                        ignoring: _selectedMessage == null,
-                        child: AnchoredMessagePanels(
-                          key: ValueKey('anchored-panels-${_panelMessage!.id}'),
-                          viewport: viewport,
-                          bubble: bubble,
-                          afterVisibleLines: afterLines,
-                          translationTop: translationTop,
-                          reactionWidth: kFloatingReactionRowWidth,
-                          hasReactions:
-                              !chat.isLeft &&
-                              !chat.partnerAccountDeleted &&
-                              canReplyToMessage(_panelMessage!),
-                          reactions:
-                              !chat.isLeft &&
-                                  !chat.partnerAccountDeleted &&
-                                  canReplyToMessage(_panelMessage!)
-                              ? buildReactionPicker(_panelMessage!)
-                              : const SizedBox.shrink(),
-                          actions: Visibility(
-                            visible: _selectedMessage != null,
-                            maintainState: true,
-                            maintainAnimation: true,
-                            maintainSize: true,
-                            child: MessageActionRow(
-                              message: _panelMessage!,
-                              readOnly: chat.isLeft,
-                              accountDeleted: chat.partnerAccountDeleted,
-                              mode: chatMode,
-                              hasOriginal: activePresentation.canRevealOriginal,
-                              canTranslate:
-                                  activePresentation.knownLanguageText
-                                      ?.trim()
-                                      .isNotEmpty ??
-                                  false,
-                              canListen:
-                                  activePresentation.listenText != null &&
-                                  hasSpeakableText(
-                                    activePresentation.listenText!,
+                              child: SafeArea(
+                                top: false,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 22,
                                   ),
-                              isOriginalVisible: _showSelectedOriginal,
-                              onAction: (action) {
-                                final message = _panelMessage!;
-                                if (action == MessageAction.translate) {
-                                  _toggleTranslation(
-                                    message,
-                                    messageExpansionKey(
-                                      message,
-                                      chatMode,
-                                      targetForMessage(message),
-                                      translationInterfaceLang,
+                                  child: Text(
+                                    chat.partnerAccountDeleted
+                                        ? context.l10n.deletedAccountNotice
+                                        : context.l10n.leftChat,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: BlabColors.warmMuted,
+                                      fontSize: 15,
                                     ),
-                                    reveal: true,
-                                  );
-                                  return;
-                                }
-                                if (action == MessageAction.original) {
-                                  setState(
-                                    () => _showSelectedOriginal =
-                                        !_showSelectedOriginal,
-                                  );
-                                  return;
-                                }
-                                if (action == MessageAction.listen) {
+                                  ),
+                                ),
+                              ),
+                            )
+                          : isPartnerBlocked
+                          ? BlockedChatBar(
+                              message: context.l10n.youBlockedPerson(
+                                chat.partnerName,
+                              ),
+                              actionLabel: context.l10n.unblock,
+                              onUnblock: () => unawaited(_unblockPartner(chat)),
+                            )
+                          : AbsorbPointer(
+                              absorbing:
+                                  chat.needsPracticeLanguageSelection ||
+                                  historyUnavailable,
+                              child: Opacity(
+                                opacity:
+                                    chat.needsPracticeLanguageSelection ||
+                                        historyUnavailable
+                                    ? .45
+                                    : 1,
+                                child: ChatComposer(
+                                  mentionPicker:
+                                      !_mentionDismissed && _input.query != null
+                                      ? MentionPicker(
+                                          candidates: chat.isGroup
+                                              ? [
+                                                  for (final member
+                                                      in ref
+                                                              .watch(
+                                                                groupMembersProvider(
+                                                                  widget.chatId,
+                                                                ),
+                                                              )
+                                                              .value ??
+                                                          <
+                                                            Map<String, dynamic>
+                                                          >[])
+                                                    if (member['user_id'] !=
+                                                        ref.watch(
+                                                          currentUserIdProvider,
+                                                        ))
+                                                      MentionCandidate(
+                                                        member['user_id']
+                                                            as String,
+                                                        member['display_name']
+                                                                as String? ??
+                                                            '?',
+                                                      ),
+                                                ]
+                                              : [
+                                                  if (chat.partnerId != null)
+                                                    MentionCandidate(
+                                                      chat.partnerId!,
+                                                      chat.partnerName,
+                                                    ),
+                                                ],
+                                          query: _input.query!.query,
+                                          onDismiss: () => setState(
+                                            () => _mentionDismissed = true,
+                                          ),
+                                          onSelected: (person) {
+                                            _input.insertMention(
+                                              person.userId,
+                                              person.mentionLabel,
+                                            );
+                                            _inputFocus.requestFocus();
+                                          },
+                                        )
+                                      : null,
+                                  controller: _input,
+                                  focusNode: _inputFocus,
+                                  hasText: _hasText,
+                                  groupConversation: chat.isGroup,
+                                  hintText: chat.isGroup
+                                      ? context.l10n.message
+                                      : practiceHint ??
+                                            (chatIsEmpty
+                                                ? context.l10n.sayHi
+                                                : context.l10n.message),
+                                  textLength: _textLength,
+                                  maxLength: _maxMessageLength,
+                                  counterShowAt: _counterShowAt,
+                                  isPractice: chatMode == ChatMode.practice,
+                                  enabled:
+                                      !chat.needsPracticeLanguageSelection &&
+                                      !historyUnavailable,
+                                  showTopBorder: replyingTo == null,
+                                  bottomObstruction: inputObstruction,
+                                  emojiPanelOpen: _emojiPanelOpen,
+                                  onToggleEmoji: _toggleComposerEmoji,
+                                  onTapText: () {
+                                    if (_selectedMessage != null) {
+                                      _closeSelection();
+                                    }
+                                    if (_emojiPanelOpen)
+                                      _showComposerKeyboard();
+                                  },
+                                  emojiPanel:
+                                      _emojiPanelOpen ||
+                                          _retainEmojiHeightForKeyboard
+                                      ? IgnorePointer(
+                                          ignoring: !_emojiPanelOpen,
+                                          child: ComposerEmojiPanel(
+                                            controller: _input,
+                                            maxLength: _maxMessageLength,
+                                            height: emojiContentHeight,
+                                            onSearchChanged: (open) {
+                                              if (mounted) {
+                                                setState(
+                                                  () => _emojiSearchOpen = open,
+                                                );
+                                              }
+                                            },
+                                          ),
+                                        )
+                                      : null,
+                                  onAttach: () {
+                                    if (_emojiPanelOpen) {
+                                      setState(() => _emojiPanelOpen = false);
+                                    }
+                                    _attachImage(
+                                      recipientName: chat.partnerName,
+                                    );
+                                  },
+                                  onSend: _send,
+                                  autofocus:
+                                      chatIsEmpty ||
+                                      replyingTo != null ||
+                                      editing != null,
+                                  allowAttachment: editing == null,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+                if (_visibleModeTip != null)
+                  Positioned(
+                    top: _renderedHeaderBottom(context, chat) + 8,
+                    right: 16,
+                    child: TapRegion(
+                      onTapOutside: (_) =>
+                          setState(() => _visibleModeTip = null),
+                      child: ChatModeTipCard(
+                        tip: _visibleModeTip!,
+                        modeControlKey: _modeControlKey,
+                        practiceLanguage: localizedLanguageName(
+                          context.l10n,
+                          learningLang.code,
+                        ),
+                        primaryKnownLanguage: localizedLanguageName(
+                          context.l10n,
+                          knownLanguages?.primary ?? 'en',
+                        ),
+                        onDismiss: () => setState(() => _visibleModeTip = null),
+                        onEditKnownLanguages: () {
+                          setState(() => _visibleModeTip = null);
+                          context.push('/profile/known-languages');
+                        },
+                      ),
+                    ),
+                  ),
+                if (_panelMessage != null &&
+                    _selectedBubbleRect != null &&
+                    _selectionGeometryReady)
+                  Builder(
+                    builder: (_) {
+                      final stackBox =
+                          _stackKey.currentContext?.findRenderObject()
+                              as RenderBox?;
+                      final bottomBox =
+                          _bottomSurfaceKey.currentContext?.findRenderObject()
+                              as RenderBox?;
+                      if (stackBox == null ||
+                          !stackBox.hasSize ||
+                          bottomBox == null ||
+                          !bottomBox.hasSize) {
+                        return const SizedBox.shrink();
+                      }
+                      final origin = stackBox.localToGlobal(Offset.zero);
+                      final viewport = Rect.fromLTRB(
+                        16,
+                        _renderedHeaderBottom(context, chat) - origin.dy,
+                        stackBox.size.width - 16,
+                        bottomBox.localToGlobal(Offset.zero).dy - origin.dy,
+                      );
+                      final bubble = _selectedBubbleRect!.shift(-origin);
+                      var afterLines =
+                          math.max(bubble.top + 12, viewport.top) +
+                          MediaQuery.textScalerOf(context).scale(16) * 1.5 * 3;
+                      final visibleLines = _selectedLearningLineBottoms
+                          .map((bottom) => bottom - origin.dy)
+                          .where((bottom) => bottom > viewport.top)
+                          .toList();
+                      if (visibleLines.length >= 3) {
+                        afterLines = visibleLines[2] + 8;
+                      }
+                      final translationTop = _selectedTranslationTop == null
+                          ? null
+                          : _selectedTranslationTop! - origin.dy;
+                      return Positioned.fill(
+                        child: IgnorePointer(
+                          ignoring: _selectedMessage == null,
+                          child: AnchoredMessagePanels(
+                            key: ValueKey(
+                              'anchored-panels-${_panelMessage!.id}',
+                            ),
+                            viewport: viewport,
+                            bubble: bubble,
+                            afterVisibleLines: afterLines,
+                            translationTop: translationTop,
+                            reactionWidth: kFloatingReactionRowWidth,
+                            hasReactions:
+                                !chat.isLeft &&
+                                !chat.partnerAccountDeleted &&
+                                canReplyToMessage(_panelMessage!),
+                            reactions:
+                                !chat.isLeft &&
+                                    !chat.partnerAccountDeleted &&
+                                    canReplyToMessage(_panelMessage!)
+                                ? buildReactionPicker(_panelMessage!)
+                                : const SizedBox.shrink(),
+                            actions: Visibility(
+                              visible: _selectedMessage != null,
+                              maintainState: true,
+                              maintainAnimation: true,
+                              maintainSize: true,
+                              child: MessageActionRow(
+                                message: _panelMessage!,
+                                readOnly: chat.isLeft,
+                                accountDeleted: chat.partnerAccountDeleted,
+                                mode: chatMode,
+                                hasOriginal:
+                                    activePresentation.canRevealOriginal,
+                                canTranslate:
+                                    activePresentation.knownLanguageText
+                                        ?.trim()
+                                        .isNotEmpty ??
+                                    false,
+                                canListen:
+                                    activePresentation.listenText != null &&
+                                    hasSpeakableText(
+                                      activePresentation.listenText!,
+                                    ),
+                                isOriginalVisible: _showSelectedOriginal,
+                                onAction: (action) {
+                                  final message = _panelMessage!;
+                                  if (action == MessageAction.translate) {
+                                    _toggleTranslation(
+                                      message,
+                                      messageExpansionKey(
+                                        message,
+                                        chatMode,
+                                        targetForMessage(message),
+                                        translationInterfaceLang,
+                                      ),
+                                      reveal: true,
+                                    );
+                                    return;
+                                  }
+                                  if (action == MessageAction.original) {
+                                    setState(
+                                      () => _showSelectedOriginal =
+                                          !_showSelectedOriginal,
+                                    );
+                                    return;
+                                  }
+                                  if (action == MessageAction.listen) {
+                                    _handleAction(
+                                      message,
+                                      action,
+                                      chat,
+                                      activePresentation,
+                                      learningLang.code,
+                                    );
+                                    return;
+                                  }
+                                  _closeSelection();
                                   _handleAction(
                                     message,
                                     action,
@@ -2275,25 +2331,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     activePresentation,
                                     learningLang.code,
                                   );
-                                  return;
-                                }
-                                _closeSelection();
-                                _handleAction(
-                                  message,
-                                  action,
-                                  chat,
-                                  activePresentation,
-                                  learningLang.code,
-                                );
-                              },
+                                },
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-            ],
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),
