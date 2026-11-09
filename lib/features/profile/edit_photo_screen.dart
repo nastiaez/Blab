@@ -110,23 +110,31 @@ class _EditPhotoScreenState extends ConsumerState<EditPhotoScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: _changed && !_busy ? _save : null,
-              child: _busy
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      context.l10n.save,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: _changed
-                            ? BlabColors.brand
-                            : BlabColors.textMuted,
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.centerRight,
+                ),
+                onPressed: _changed && !_busy ? _save : null,
+                child: _busy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        context.l10n.save,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: _changed
+                              ? const Color(0xfff88c5a)
+                              : BlabColors.textMuted,
+                        ),
                       ),
-                    ),
+              ),
             ),
           ],
         ),
@@ -282,11 +290,15 @@ class PhotoSettingsCard extends StatelessWidget {
     ),
     child: Column(
       children: [
-        for (var i = 0; i < children.length; i++) ...[
-          if (i > 0)
-            const Divider(height: 1, thickness: 1, color: Color(0xffe1dad2)),
-          children[i],
-        ],
+        for (var i = 0; i < children.length; i++)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: i < children.length - 1
+                  ? const Border(bottom: BorderSide(color: Color(0xffe1dad2)))
+                  : null,
+            ),
+            child: children[i],
+          ),
       ],
     ),
   );
@@ -310,7 +322,7 @@ class PhotoSettingsRow extends StatelessWidget {
     child: InkWell(
       onTap: onPressed,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 55),
+        constraints: const BoxConstraints(minHeight: 56),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
@@ -322,6 +334,7 @@ class PhotoSettingsRow extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     fontSize: 15,
+                    height: 1.43,
                     letterSpacing: .25,
                     color: Color(0xff46281c),
                   ),

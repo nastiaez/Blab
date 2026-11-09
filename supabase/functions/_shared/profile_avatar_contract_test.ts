@@ -46,3 +46,9 @@ Deno.test("avatar static contract: recovery owns versioned lease and physical ve
     ]
   ) if (!worker.includes(s)) throw Error(s);
 });
+
+Deno.test("avatar cleanup runs before unrelated Stream configuration gate", () => {
+  const cleanup = worker.indexOf("claim_profile_avatar_cleanup");
+  const gate = worker.indexOf("stream_not_configured");
+  if (cleanup < 0 || cleanup > gate) throw Error("avatar_cleanup_blocked_by_stream");
+});

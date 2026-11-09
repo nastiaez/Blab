@@ -158,6 +158,7 @@ class _CropProfilePhotoScreenState extends State<CropProfilePhotoScreen> {
         ),
         body: SafeArea(
           top: false,
+          bottom: false,
           child: LayoutBuilder(
             builder: (context, constraints) {
               _extent = math.max(
@@ -246,7 +247,8 @@ class _CropProfilePhotoScreenState extends State<CropProfilePhotoScreen> {
                   ),
                   Positioned(
                     right: 24,
-                    bottom: 24,
+                    // Frozen Paper CTA: 32px from the viewport, not its inset.
+                    bottom: 32,
                     child: SizedBox.square(
                       dimension: 56,
                       child: IconButton(

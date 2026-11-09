@@ -20,12 +20,31 @@ Deno.serve(async (request) => {
   if (
     !authority || request.headers.get("Authorization") !== `Bearer ${authority}`
   ) return json({ error: "unauthorized" }, 401);
-  const key = Deno.env.get("STREAM_API_KEY"),
-    secret = Deno.env.get("STREAM_API_SECRET");
-  if (!key || !secret) return json({ error: "stream_not_configured" }, 503);
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, authority, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const avatarClaim = await admin.rpc("claim_profile_avatar_cleanup");
+  if (avatarClaim.error) {
+    return json({ error: "avatar_cleanup_unavailable" }, 503);
+  }
+  for (const row of avatarClaim.data ?? []) {
+    const removed = await admin.storage.from("profile-avatars").remove([
+      row.object_path,
+    ]);
+    const probe = removed.error
+      ? null
+      : await admin.storage.from("profile-avatars").download(row.object_path);
+    const success = !removed.error && probe !== null &&
+      isMissingPrivateObject(probe.error);
+    await admin.rpc("finish_profile_avatar_cleanup", {
+      p_path: row.object_path,
+      p_lease: row.lease_token,
+      p_success: success,
+    });
+  }
+  const key = Deno.env.get("STREAM_API_KEY"),
+    secret = Deno.env.get("STREAM_API_SECRET");
+  if (!key || !secret) return json({ error: "stream_not_configured" }, 503);
   const { data, error } = await admin.rpc("claim_stream_message_events", {
     p_limit: 8,
   });
@@ -156,25 +175,6 @@ Deno.serve(async (request) => {
       };
     }),
   );
-  const avatarClaim = await admin.rpc("claim_profile_avatar_cleanup");
-  if (avatarClaim.error) {
-    return json({ error: "avatar_cleanup_unavailable" }, 503);
-  }
-  for (const row of avatarClaim.data ?? []) {
-    const removed = await admin.storage.from("profile-avatars").remove([
-      row.object_path,
-    ]);
-    const probe = removed.error
-      ? null
-      : await admin.storage.from("profile-avatars").download(row.object_path);
-    const success = !removed.error && probe !== null &&
-      isMissingPrivateObject(probe.error);
-    await admin.rpc("finish_profile_avatar_cleanup", {
-      p_path: row.object_path,
-      p_lease: row.lease_token,
-      p_success: success,
-    });
-  }
   const privateClaim = await admin.rpc("claim_stream_private_media_cleanup");
   if (privateClaim.error) {
     return json({ error: "private_media_claim_unavailable" }, 503);

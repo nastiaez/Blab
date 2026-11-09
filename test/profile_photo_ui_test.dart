@@ -59,6 +59,56 @@ Future<void> pump(
 }
 
 void main() {
+  testWidgets(
+    'frozen crop CTA anchors 32px from viewport, not safe-area edge',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPadding);
+      for (final bottom in [0.0, 24.0, 34.0]) {
+        tester.view.padding = FakeViewPadding(top: 47, bottom: bottom);
+        await pump(tester, CropProfilePhotoScreen(bytes: fixture()));
+        final rect = tester.getRect(find.byTooltip('Confirm crop'));
+        expect(rect, const Rect.fromLTWH(310, 756, 56, 56));
+        final button = tester.widget<IconButton>(
+          find.byWidgetPredicate(
+            (w) => w is IconButton && w.tooltip == 'Confirm crop',
+          ),
+        );
+        expect(
+          button.style!.backgroundColor!.resolve({}),
+          const Color(0xfff88c5a),
+        );
+        final canvas = tester.getRect(
+          find.byKey(const ValueKey('profile-crop-gesture')),
+        );
+        expect(canvas.top, 47 + 56 + 64);
+        expect(canvas.size, const Size(350, 350));
+      }
+    },
+  );
+  testWidgets('frozen Paper editor keeps 20px Save ink and 56px rows', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await pump(tester, const EditPhotoScreen());
+    expect(tester.getRect(find.text('Save')).right, closeTo(370, .01));
+    for (final row in find.byType(PhotoSettingsRow).evaluate()) {
+      expect(
+        tester.getSize(find.byWidget(row.widget)).height,
+        closeTo(56, .01),
+      );
+    }
+    expect(
+      tester.getSize(find.byType(PhotoSettingsCard)).height,
+      closeTo(114, .01),
+    );
+  });
   test(
     'normalization rejects malformed images and crops actual selected pixels',
     () async {
@@ -115,6 +165,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(calls, 0);
     expect(find.byTooltip('Remove photo'), findsNothing);
+    expect(
+      tester.widget<Text>(find.text('Save')).style!.color,
+      const Color(0xfff88c5a),
+    );
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(calls, 1);

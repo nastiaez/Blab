@@ -1,7 +1,8 @@
 -- BLA39 real PostgreSQL policy/RPC regression; disposable database only.
 \set ON_ERROR_STOP on
 begin;
-insert into public.app_distribution_policy(singleton,channel) values(true,'public');
+insert into public.app_distribution_policy(singleton,channel) values(true,'public')
+on conflict (singleton) do update set channel=excluded.channel;
 insert into auth.users(id,instance_id,aud,role,email,raw_app_meta_data,raw_user_meta_data)
 select ('00000000-0000-4000-8000-00000000000'||n)::uuid,'00000000-0000-0000-0000-000000000000','authenticated','authenticated',n||'@avatar.blab.test','{"provider":"google"}','{"name":"Avatar QA","avatar_url":"https://lh3.googleusercontent.com/initial"}' from unnest(array['a','b','c']) n;
 create function pg_temp.assert_true(ok boolean,label text) returns void language plpgsql as $$begin if ok is distinct from true then raise exception 'FAIL %',label;end if;raise notice 'PASS %',label;end$$;
