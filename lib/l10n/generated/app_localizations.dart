@@ -3161,6 +3161,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide translation'**
   String get hideMessageTranslation;
+
+  /// No description provided for @profilePhotoEditPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit photo'**
+  String get profilePhotoEditPhoto;
+
+  /// No description provided for @profilePhotoCropPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop photo'**
+  String get profilePhotoCropPhoto;
+
+  /// No description provided for @profilePhotoCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get profilePhotoCamera;
+
+  /// No description provided for @profilePhotoPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get profilePhotoPhoto;
+
+  /// No description provided for @profilePhotoRemovePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get profilePhotoRemovePhoto;
+
+  /// No description provided for @profilePhotoConfirmCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm crop'**
+  String get profilePhotoConfirmCrop;
+
+  /// No description provided for @profilePhotoPhotoError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this photo. Try another image.'**
+  String get profilePhotoPhotoError;
 }
 
 class _AppLocalizationsDelegate

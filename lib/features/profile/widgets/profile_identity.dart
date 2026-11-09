@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/blab_avatar.dart';
 
 class ProfileIdentity extends StatelessWidget {
-  const ProfileIdentity({super.key, required this.name});
+  const ProfileIdentity({super.key, required this.name, this.imageUrl});
 
   final String name;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -12,6 +13,7 @@ class ProfileIdentity extends StatelessWidget {
       children: [
         BlabAvatar(
           name: name,
+          imageUrl: imageUrl,
           size: 96,
           fontSize: 28,
           shadows: const [

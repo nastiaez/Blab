@@ -52,7 +52,10 @@ class ProfileScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ProfileIdentity(name: displayName),
+            ProfileIdentity(
+              name: displayName,
+              imageUrl: profile.value?.avatarUrl,
+            ),
             const SizedBox(height: 28),
             knownLanguages.when(
               data: (value) => _KnownLanguagesGroup(

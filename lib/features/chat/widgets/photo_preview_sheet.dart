@@ -1,3 +1,4 @@
+import '../../../shared/widgets/blab_icon.dart';
 import '../../../shared/widgets/actions/blab_icon_button.dart';
 import '../../../shared/widgets/forms/blab_composer_field.dart';
 import '../../../shared/widgets/selection/blab_selection_sheet.dart';
@@ -66,7 +67,11 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                   child: BlabIconButton(
                     key: const ValueKey('photo-preview-close'),
                     tooltip: context.l10n.cancel,
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: const BlabIcon(
+                      name: 'close - 20',
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -82,8 +87,8 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                     width: double.infinity,
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(
-                        child: Icon(
-                          Icons.image_outlined,
+                        child: BlabIcon(
+                          name: 'media-image - 20',
                           color: Colors.white70,
                           size: 56,
                         ),
@@ -113,9 +118,14 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                             style: const TextStyle(color: Colors.white),
                             cursorColor: Colors.white,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(
-                                Icons.add_photo_alternate_outlined,
-                                color: Colors.white,
+                              prefixIcon: const Center(
+                                widthFactor: 1,
+                                heightFactor: 1,
+                                child: BlabIcon(
+                                  name: 'media-image-plus - 20',
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
                               ),
                               hintText: context.l10n.addCaption,
                               hintStyle: const TextStyle(color: Colors.white),
@@ -144,10 +154,10 @@ class _PhotoPreviewSheetState extends State<PhotoPreviewSheet> {
                               tooltip: context.l10n.send,
                               onPressed: () =>
                                   Navigator.of(context).pop(_caption.text),
-                              icon: const Icon(
-                                Icons.arrow_forward,
+                              icon: const BlabIcon(
+                                name: 'arrow-right - 20',
                                 color: Colors.white,
-                                size: 30,
+                                size: 20,
                               ),
                             ),
                           ),

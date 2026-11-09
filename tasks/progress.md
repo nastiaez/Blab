@@ -1,5 +1,10 @@
 > **BLA-43 (7 November 2026):** Nastia18294/18297 selects tap URL to external browser; long press URL to existing floating link container; long press non-link message area to existing reactions/actions. No competing menus or bottom-sheet redesign. Nastia approved18395 visuals in18499 and commit/main integration in18502; distribution is not authorized in this step.
 
+## BLA-39 · Profile photos · [ ] ← in progress
+- Approved static Paper V2 and Google one-time initialization/name-only signup: Nastia18455,7 November2026.
+- Dedicated current-main worktree; implementation and verification ongoing. No integration or distribution authorized before implementation review.
+- Done when: native add/replace/crop/cancel/save/remove/relogin journeys, authorized peer visibility and both-platform screenshot review pass; Google actual consent evidence and privacy disclosure review recorded.
+
 > **OpenAI Luna17985 ·backend configured/deployed:** functional794f429 integrated in main b251805; candidate CI41834845610 and integrated CI41836980802 all3 checks pass. Local ignored0600 configuration merged; staging and production exact provider/model/key digests verified, both deployed function sources match integrated main, manifest and runtime method-guard checks pass. Live bounded generation+worker synthetic-adapter probes pass; no real history/cache updates. Hosted end-to-end provider execution and Alice/Bob UI remain unverified, local persistent function server absent. No mobile distribution. [Final receipt](../docs/qa/2026-11-04-openai-luna/FINAL.md).
 
 > **BLA38 release17773 ·Android tester51 DELIVERED:** approved runtime c5f5730, all3 CI checks pass. Signed50→51 smoke preserves German setting/firstInstallTime; Firebase same13testers, download-back hash matches. Signed-in test deferred to owner. iOS/backend/public app unchanged; reminder unchanged(API403), use App Tester. [Receipt](../docs/qa/2026-11-03-bla38/RELEASE-17773.md).

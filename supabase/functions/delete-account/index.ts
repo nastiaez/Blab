@@ -98,6 +98,28 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Avatar cleanup is durable and includes interrupted/unreferenced uploads.
+  const avatars = await admin.rpc("queue_profile_avatar_account_erasure", {
+    p_actor_id: userId,
+  });
+  if (avatars.error) return json({ error: "deletion_pending" }, 503);
+  try {
+    for (const row of avatars.data ?? []) {
+      const removed = await admin.storage.from("profile-avatars").remove([
+        row.object_path,
+      ]);
+      if (removed.error) throw removed.error;
+      const probe = await admin.storage.from("profile-avatars").download(
+        row.object_path,
+      );
+      if (!isMissingPrivateObject(probe.error)) {
+        throw new Error("avatar_removal_unconfirmed");
+      }
+    }
+  } catch {
+    return json({ error: "deletion_pending" }, 503);
+  }
+
   // Record cleanup first; remove old client-owned files before auth deletion.
   // Interrupted/new uploads remain durably queued for the recovery worker.
   const queuedPhotos = await admin.rpc("queue_account_private_media_cleanup", {

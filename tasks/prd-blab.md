@@ -1,5 +1,7 @@
 > **BLA-43 (7 November 2026):** Nastia18294/18297 selects tap URL to external browser; long press URL to existing floating link container; long press non-link message area to existing reactions/actions. No competing menus or bottom-sheet redesign. Nastia approved18395 visuals in18499 and commit/main integration in18502; distribution is not authorized in this step.
 
+> **BLA-39 ·approved18455 ·7 November2026:** profile-photo editor uses frozen [Paper V2](https://app.paper.design/file/01M3PCM6SC0AMB5Q0M3AZ58WBR/p-N-0). Native Camera/Photo → black crop/✓ → unsaved preview → Save; × creates draft removal; Back discards. Initials fallback. Google photo initializes new accounts once, never overwrites custom photos or restores removal; signup remains name-only, no extra consent/review screen. Illustrations and custom gallery excluded. Static approval does not approve implementation or distribution.
+
 # PRD: Blab — Language Exchange Chat App
 
 > **BLA-40 ·2 November2026:** approved URL/menu contract and preserved report: [inline links](../docs/specs/2026-11-02-bla40-inline-links.md). Reviewed Android visuals/journey and commit/main integration approved17374; release explicitly held.

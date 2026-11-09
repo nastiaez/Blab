@@ -1,3 +1,4 @@
+import '../../../shared/widgets/blab_avatar.dart';
 import '../../../shared/widgets/selection/blab_selection_sheet.dart';
 import 'package:flutter/material.dart';
 
@@ -15,18 +16,27 @@ Future<void> showReactionDetailsSheet(
   BuildContext context, {
   required List<MessageReactionSummary> reactions,
   required String partnerName,
+  String? partnerId,
+  String? currentUserId,
   required void Function(String emoji) onChangeReaction,
 }) {
   final rows = <_Reactor>[];
   for (final reaction in reactions) {
     if (reaction.reactedByMe) {
       rows.add(
-        _Reactor(name: context.l10n.you, emoji: reaction.emoji, isMe: true),
+        _Reactor(
+          name: context.l10n.you,
+          userId: currentUserId,
+          emoji: reaction.emoji,
+          isMe: true,
+        ),
       );
     }
     final othersOnThisEmoji = reaction.count - (reaction.reactedByMe ? 1 : 0);
     if (othersOnThisEmoji > 0) {
-      rows.add(_Reactor(name: partnerName, emoji: reaction.emoji));
+      rows.add(
+        _Reactor(name: partnerName, userId: partnerId, emoji: reaction.emoji),
+      );
     }
   }
   final total = reactions.fold<int>(0, (sum, r) => sum + r.count);
@@ -84,9 +94,15 @@ Future<void> showReactionDetailsSheet(
 }
 
 class _Reactor {
-  const _Reactor({required this.name, required this.emoji, this.isMe = false});
+  const _Reactor({
+    required this.name,
+    required this.emoji,
+    this.isMe = false,
+    this.userId,
+  });
 
   final String name;
+  final String? userId;
   final String emoji;
   final bool isMe;
 }
@@ -103,17 +119,12 @@ class _ReactorRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: BlabColors.avatarColorFor(reactor.name),
-            child: Text(
-              BlabColors.avatarInitialsFor(reactor.name),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
+          BlabAvatar(
+            name: reactor.name,
+            userId: reactor.userId,
+            size: 32,
+            fontSize: 13,
+            shadows: null,
           ),
           const SizedBox(width: 12),
           Expanded(

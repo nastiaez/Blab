@@ -1,3 +1,4 @@
+import 'package:blab/shared/widgets/blab_avatar.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/widgets/failed_message_sheet.dart';
 import 'package:blab/features/chat/widgets/reaction_details_sheet.dart';
@@ -80,12 +81,16 @@ void main() {
     final partner = tester.widget<Text>(find.text('Alice'));
     final helper = tester.widget<Text>(find.text('Tap to remove'));
     final partnerAvatar = tester
-        .widgetList<CircleAvatar>(find.byType(CircleAvatar))
+        .widgetList<BlabAvatar>(find.byType(BlabAvatar))
         .last;
     expect(sheet.backgroundColor, BlabColors.chatSurface);
     expect(count.style?.color, BlabColors.warmInk);
     expect(partner.style?.color, BlabColors.warmInk);
     expect(helper.style?.color, BlabColors.warmMuted);
-    expect(partnerAvatar.backgroundColor, BlabColors.avatarColorFor('Alice'));
+    expect(
+      partnerAvatar.fill ?? BlabColors.avatarColorFor(partnerAvatar.name),
+      BlabColors.avatarColorFor('Alice'),
+    );
+    expect(partnerAvatar.size, 32);
   });
 }

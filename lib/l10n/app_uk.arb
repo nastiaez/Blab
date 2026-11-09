@@ -627,5 +627,12 @@
   "deletedAccountNotice": "Цей обліковий запис видалено. Ви більше не можете надсилати повідомлення.",
   "translateMessage": "Перекласти",
   "showMessageTranslation": "Показати переклад",
-  "hideMessageTranslation": "Приховати переклад"
+  "hideMessageTranslation": "Приховати переклад",
+  "profilePhotoEditPhoto": "Редагувати фото",
+  "profilePhotoCropPhoto": "Обрізати фото",
+  "profilePhotoCamera": "Камера",
+  "profilePhotoPhoto": "Фото",
+  "profilePhotoRemovePhoto": "Видалити фото",
+  "profilePhotoConfirmCrop": "Підтвердити обрізання",
+  "profilePhotoPhotoError": "Не вдалося відкрити це фото. Спробуйте інше зображення."
 }

@@ -50,6 +50,7 @@ class LocalProfileCache {
         'userId': userId,
         'profile': {
           'display_name': value.displayName,
+          'avatar_path': value.avatarPath,
           'interface_language': value.interfaceLanguage,
           'known_languages': value.knownLanguages,
           'primary_known_language': value.primaryKnownLanguage,
@@ -115,6 +116,7 @@ Future<UserProfile> cachedProfileFirst({
 
 bool _sameProfile(UserProfile a, UserProfile b) =>
     a.displayName == b.displayName &&
+    a.avatarPath == b.avatarPath &&
     a.interfaceLanguage == b.interfaceLanguage &&
     a.primaryKnownLanguage == b.primaryKnownLanguage &&
     a.grammaticalForm == b.grammaticalForm &&

@@ -1787,4 +1787,26 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get hideMessageTranslation => 'Übersetzung ausblenden';
+
+  @override
+  String get profilePhotoEditPhoto => 'Foto bearbeiten';
+
+  @override
+  String get profilePhotoCropPhoto => 'Foto zuschneiden';
+
+  @override
+  String get profilePhotoCamera => 'Kamera';
+
+  @override
+  String get profilePhotoPhoto => 'Foto';
+
+  @override
+  String get profilePhotoRemovePhoto => 'Foto entfernen';
+
+  @override
+  String get profilePhotoConfirmCrop => 'Zuschnitt bestätigen';
+
+  @override
+  String get profilePhotoPhotoError =>
+      'Dieses Foto konnte nicht geöffnet werden. Versuche ein anderes Bild.';
 }

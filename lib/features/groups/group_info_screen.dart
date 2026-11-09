@@ -742,7 +742,13 @@ class _GroupMemberRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              BlabAvatar(name: label, size: 36, fontSize: 14, shadows: null),
+              BlabAvatar(
+                userId: member['user_id'] as String?,
+                name: label,
+                size: 36,
+                fontSize: 14,
+                shadows: null,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(

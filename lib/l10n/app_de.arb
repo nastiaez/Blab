@@ -627,5 +627,12 @@
   "deletedAccountNotice": "Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden.",
   "translateMessage": "Übersetzen",
   "showMessageTranslation": "Übersetzung anzeigen",
-  "hideMessageTranslation": "Übersetzung ausblenden"
+  "hideMessageTranslation": "Übersetzung ausblenden",
+  "profilePhotoEditPhoto": "Foto bearbeiten",
+  "profilePhotoCropPhoto": "Foto zuschneiden",
+  "profilePhotoCamera": "Kamera",
+  "profilePhotoPhoto": "Foto",
+  "profilePhotoRemovePhoto": "Foto entfernen",
+  "profilePhotoConfirmCrop": "Zuschnitt bestätigen",
+  "profilePhotoPhotoError": "Dieses Foto konnte nicht geöffnet werden. Versuche ein anderes Bild."
 }

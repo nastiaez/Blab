@@ -1,7 +1,7 @@
 Deno.test("BLA-31 migration retains identity/history without disabling existing personal deletion", async () => {
   const sql = await Deno.readTextFile(
     new URL(
-      "../../migrations/20261029000003_deleted_account_retention.sql",
+      "../../migrations/20261103000000_deleted_account_retention.sql",
       import.meta.url,
     ),
   );
@@ -30,7 +30,7 @@ Deno.test("BLA-31 migration retains identity/history without disabling existing 
 Deno.test("BLA-31 safety migration removes private rows, fences leases and retains authorization cutoffs", async () => {
   const sql = await Deno.readTextFile(
     new URL(
-      "../../migrations/20261029000003_deleted_account_retention.sql",
+      "../../migrations/20261103000000_deleted_account_retention.sql",
       import.meta.url,
     ),
   );

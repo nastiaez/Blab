@@ -1759,4 +1759,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hideMessageTranslation => 'Hide translation';
+
+  @override
+  String get profilePhotoEditPhoto => 'Edit photo';
+
+  @override
+  String get profilePhotoCropPhoto => 'Crop photo';
+
+  @override
+  String get profilePhotoCamera => 'Camera';
+
+  @override
+  String get profilePhotoPhoto => 'Photo';
+
+  @override
+  String get profilePhotoRemovePhoto => 'Remove photo';
+
+  @override
+  String get profilePhotoConfirmCrop => 'Confirm crop';
+
+  @override
+  String get profilePhotoPhotoError =>
+      'Could not open this photo. Try another image.';
 }

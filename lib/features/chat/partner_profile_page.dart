@@ -354,6 +354,7 @@ class _IdentityHeader extends StatelessWidget {
     return Column(
       children: [
         BlabAvatar(
+          userId: chat.partnerAccountDeleted ? null : chat.partnerId,
           name: (chat.partnerAccountDeleted ? "" : chat.partnerName),
           initials: chat.partnerAccountDeleted ? "" : chat.partnerInitial,
           size: 104,

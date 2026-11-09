@@ -89,6 +89,9 @@ class ChatHeader extends ConsumerWidget {
       group: chat.isGroup,
       onBack: onBack,
       identity: ChatHeaderIdentity(
+        userId: chat.isGroup || chat.partnerAccountDeleted
+            ? null
+            : chat.partnerId,
         name: (chat.partnerAccountDeleted
             ? context.l10n.deletedAccount
             : chat.partnerName),
@@ -253,6 +256,7 @@ class ChatHeaderIdentity extends StatelessWidget {
     this.typing = false,
     this.deleted = false,
     this.subtitle,
+    this.userId,
     this.group = false,
   });
   final bool deleted;
@@ -261,6 +265,7 @@ class ChatHeaderIdentity extends StatelessWidget {
   final VoidCallback onTap;
   final bool typing;
   final String? subtitle;
+  final String? userId;
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
@@ -270,6 +275,7 @@ class ChatHeaderIdentity extends StatelessWidget {
         // Avatar artwork stays fixed-size in the approved large-text state.
         MediaQuery.withNoTextScaling(
           child: BlabAvatar(
+            userId: deleted ? null : userId,
             name: deleted ? "" : name,
             initials: deleted ? "" : null,
             fill: group ? BlabColors.warmInk : null,

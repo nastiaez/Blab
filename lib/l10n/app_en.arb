@@ -767,5 +767,12 @@
   "deletedAccountNotice": "This account has been deleted. You can no longer send messages.",
   "translateMessage": "Translate",
   "showMessageTranslation": "Show translation",
-  "hideMessageTranslation": "Hide translation"
+  "hideMessageTranslation": "Hide translation",
+  "profilePhotoEditPhoto": "Edit photo",
+  "profilePhotoCropPhoto": "Crop photo",
+  "profilePhotoCamera": "Camera",
+  "profilePhotoPhoto": "Photo",
+  "profilePhotoRemovePhoto": "Remove photo",
+  "profilePhotoConfirmCrop": "Confirm crop",
+  "profilePhotoPhotoError": "Could not open this photo. Try another image."
 }

@@ -288,6 +288,9 @@ class ChatMessageRow extends ConsumerWidget {
                                         : message.senderName ?? partnerName),
                                     image: true,
                                     child: BlabAvatar(
+                                      userId: message.senderAccountDeleted
+                                          ? null
+                                          : message.senderId,
                                       name: (message.senderAccountDeleted
                                           ? context.l10n.deletedAccount
                                           : message.senderName ?? partnerName),
