@@ -19,3 +19,6 @@ Initial6,506,692KiB free; fell to670,116KiB during unrelated shared-host activit
 - Focused67 address/URL/geometry checks, including exact clipboard, parent hold, large text/system Back, mixed URLs/addresses and mocked Maps success/failure. These mocked calls prove dispatch payload and error feedback, not native Google Maps/browser handoff.
 - Pure policy/worker245 passed, analysis and format/diff clean. Earlier interrupted/mid-edit full logs are retained as failed attempts, superseded by frozen1305 pass. No test failure was waived.
 - Actual Android/iOS, accessibility service, live Alice/Bob, Maps installed/uninstalled fallback and screenshots/motion all OPEN. No device was started, installed, reset or deleted. Current shared-host available space fluctuates around3GiB; safe coordinated both-platform native work needs stable~8GiB, not further blind cleanup.
+
+## Approved replacement18969 / release19078
+Initial sheet superseded. Exact existing URL popup/card/placement/dismissal accepted by Nastia19078 unchanged. Focused32/full1306/17skip and clean analysis at approved source; both actual native fixtures proved exact clipboard and Maps/Safari handoff. Inspected native screenshots/motion. Synthetic local services, not live Alice/Bob acceptance. Current-main integration/native/environment gates remain required. No raw/private artifacts versioned.

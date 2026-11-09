@@ -119,6 +119,13 @@ MessageTranslation _translationFromCache(CachedMessageTranslation cached) {
   }
   final sanitizedTokens = sanitizeMessageTokens(tokens, cached.text);
   return MessageTranslation(
+    authoredCorrection: parseAuthoredCorrection(cached.tokens),
+    generationEnvelope: parseGenerationEnvelope({
+      'formAlternatives': cached.tokens
+          .where((t) => t['formAlternatives'] is Map)
+          .map((t) => t['formAlternatives'])
+          .firstOrNull,
+    }),
     mentionSpans: mentionSpans,
     translation: cached.text,
     interfaceText: cached.interfaceText,

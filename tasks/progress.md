@@ -2506,3 +2506,11 @@ BLA41 delivery FINAL18075: Apple57 VALID/reviewAPPROVED; internal+external IN_BE
 - Changelog9Nov: registered approved BLA42 journey and implementation without changing translation policy.
 
 BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.
+## BLA-28 mixed-language and genuine-correction slice — approved integration18965
+- Approved Nastia18771 visuals;18965 scoped commit/main merge, no release. Exact original and beautiful recorded provider/backend/widget checks pass; whole-message none preservation, source-only correction provenance, target anchors, spacing/equal size and deterministic trim preserved.
+- Current-main a5d2e46 reconciles without textual conflict. Other dirty worktrees and main artifacts preserved. No model/deadline/explanation-policy change, history backfill, new paid request or hosted deployment.
+- Done when: integrated automated/clean migration/RLS gates pass and main ancestry is synchronized; integrated Android recorded-response verification separately recorded, not inferred from unit tests.
+
+- Integration gate disposition:277backend PASS;134canonical migration ledger exact;8real SQL/RLS suites PASS;analysis/format/shell clean;complete Flutter1334pass/36skip plus2temporary-QA-config failures, both cleared in17-test restored-config rerun. Native QA APK compiles; existing emulator stalled, native acceptance remains OPEN. No release.
+
+BLA-42 approval Nastia19078 ·9 November2026: reviewed18969 anchored popup accepted unchanged; tentative direct-Maps tap19060 superseded. Scoped commit/push/main integration and existing private Android+iOS Blab/Blab-test distribution authorized, subject to current-main automated/native/security/environment-parity gates. No backend/schema/history rollout or audience expansion.

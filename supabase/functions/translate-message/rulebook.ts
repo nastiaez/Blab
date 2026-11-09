@@ -226,7 +226,9 @@ Word-help metadata policy: ${WORD_HELP_POLICY.version}. Version optional word me
 
 One normal provider request covers a direct-chat viewer batch for the same message/source. Groups deduplicate identical outputs and use bounded batches for genuinely distinct outputs; continuation does not consume the failure-retry budget. No independent AI reviews, meaning-anchor calls or speculative hedges. Mention-integrity failures stop automatic retries immediately; explicit manual Retry remains available. Other durable retries occur only after actual failures. Context budget: ${SINGLE_CALL_POLICY.contextMessages} messages and ${SINGLE_CALL_POLICY.contextUtf8Bytes} UTF-8 bytes per viewer.
 
-## Core translation behaviour
+## Core translation behaviour (legacy full-schema reference)
+
+The active single-call bundle uses the rules above and its compact response schema; the legacy full-schema reference below does not override that active contract.
 These are the existing complete-message rules used by the generation prompt, not a new policy or a noun-retention whitelist. Ordinary nouns are translatable content; names retain their identity, and protected literals are preserved. Translation covers the whole message, not selected halves; already-understood Normal-mode text and learning-aids-off follow the preference rules below. Preserve meaning and relationships rather than source spelling or word order.
 
 In the exact prompt rules below, LEARNING_LANGUAGE and PRIMARY_KNOWN_LANGUAGE stand for the independently resolved viewer settings. Legacy interfaceText/interfaceLang name the secondary known-language output, not the UI language. Language-specific spelling and romanization instructions are supplied by the existing per-language prompt helpers.
@@ -317,7 +319,7 @@ export const WORD_HELP_POLICY = {
 export const GROUP_TRANSLATION_RULE =
   "Group conversation: sender is the actual message author; recipient denotes the group, not a single person. Context speaker labels identify actual authors. Never infer a particular addressee or recipient gender. Return participant alternatives only for the author, never for an unspecified group recipient. Corrections and explanations are author-only. Group history before the viewer's latest join stays original-only and never starts AI work.";
 
-export const GENERATION_POLICY_VERSION = "explicit-form-terminal-mentions-v1";
+export const GENERATION_POLICY_VERSION = "authored-provenance-a-v2";
 
 export const MENTION_INTEGRITY_VERSION = "authored-mentions-v2";
 
@@ -329,7 +331,9 @@ export const COMPACT_TRANSLATION_RULES =
 - Never create @handles from names or context. Preserve authored handles exactly; ordinary names remain names, with the existing transliteration policy.
 - Preserve meaning, tone, repetition and paragraphs. Translate ordinary nouns; preserve names, URLs, handles, hashtags, code, numbers and emoji. Transliterate names when appropriate.
 - Use context only to resolve references. Preserve ambiguous fragments; never invent details.
-- Detect the actual source language; mixed supported languages, learner errors, names and chat abbreviations remain supported. If already in the requested language, minimally correct genuine errors; otherwise translate naturally. Preserve informal style, expressive spelling and valid acknowledgements. Do not mark punctuation, capitalization or spacing as learning corrections.
+- Produce the complete message in each requested language, including mixed-language content. Distinguish genuine mistakes in the author's writing from changes needed only for translation. Preserve intended meaning, negation, names, protected content, legitimate loanwords, acceptable forms, informal style and expressive spelling. Do not classify translation, alternative wording, punctuation, capitalization or spacing as learning corrections.
+- Return corrections containing only genuine mistakes in the original writing. For each correction, return the exact original substring, its zero-based occurrence among identical substrings in the original message, and its minimal replacement in the same language as that substring. Do not include correctly written foreign words merely because the complete translation changes them. Return an empty corrections array when there are no genuine mistakes.
+- For each genuine correction, identify the exact corresponding text and occurrence in the complete translation with targetAnchor: null or {text, occurrence}. Exclude changes made only for translation. Return null when correspondence is absent, non-contiguous or uncertain; never alter the translation to fit. Occurrence is zero-based among identical non-overlapping substrings. Anchors apply only to this complete base sentence, never transfer them to grammatical alternatives or reading scripts.
 - Preserve explicit formality; otherwise use the requested tone.
 - Only for translation into another language, when participant gender changes the sentence, return feminine and masculine alternatives identifying sender or recipient. Preserve authored gender in same-language text; names are not grounds for corrections. Use the feminine base and suggestedForm=feminine; the client asks for the form, never infer it from names. Objects, noun case and clock hours do not create participant choices.
 - ${WORD_HELP_POLICY.rule}
