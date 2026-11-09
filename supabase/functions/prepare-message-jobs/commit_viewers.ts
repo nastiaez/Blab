@@ -1,3 +1,4 @@
+import { serializeGeneration } from "../translate-message/correction_provenance.ts";
 import { batchFailureReason } from "./batch_failure.ts";
 type Rpc = (
   name: string,
@@ -9,7 +10,12 @@ export async function commitGroupViewers(
   entries: Array<{ jobId: string; lease: string; result: unknown }>,
 ) {
   const reply = await rpc("complete_group_translation_viewers", {
-    p_entries: entries,
+    p_entries: entries.map((e) => ({
+      ...e,
+      result: e.result
+        ? serializeGeneration(e.result as Record<string, unknown>)
+        : null,
+    })),
   });
   if (
     reply.error || !Array.isArray(reply.data) ||
@@ -37,7 +43,10 @@ export async function commitViewers(
     }
     try {
       const reply = await rpc("complete_translation_message_batch", {
-        p_results: [entry],
+        p_results: [{
+          ...entry,
+          result: serializeGeneration(entry.result as Record<string, unknown>),
+        }],
       });
       outcomes.push({
         jobId: entry.jobId,

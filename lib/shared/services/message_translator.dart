@@ -111,7 +111,13 @@ class MessageTranslation {
     this.formAlternativesList,
     this.wordMetadataReady = true,
     this.mentionSpans = const {},
+    this.authoredCorrection,
+    this.generationEnvelope,
   });
+  final Map<String, dynamic>? authoredCorrection;
+  final Map<String, dynamic>? generationEnvelope;
+  bool get sourceScopedGeneration =>
+      generationEnvelope != null || authoredCorrection != null;
   final String translation;
   final String interfaceText;
   final String interfaceLang;
@@ -137,7 +143,7 @@ class MessageTranslation {
 
   List<GrammaticalFormAlternatives> participantFormsFor(
     String targetLanguage,
-  ) => mode != LearningAidMode.translation
+  ) => mode != LearningAidMode.translation && !sourceScopedGeneration
       ? const []
       : formChoices
             .where((choice) => choice.isParticipantRelevant(targetLanguage))
@@ -263,15 +269,11 @@ class MessageTranslator {
       'medium' => CorrectionConfidence.medium,
       'high' => CorrectionConfidence.high,
       null => null,
-      _ => throw MessageTranslationFailed('invalid_correction_confidence'),
+      _ => null,
     };
-    if (mode == LearningAidMode.correction &&
-        (rawExplanation is! String ||
-            rawExplanation.trim().isEmpty ||
-            confidence == null)) {
-      throw MessageTranslationFailed('missing_correction_details');
-    }
     return MessageTranslation(
+      authoredCorrection: parseAuthoredCorrection(rawTokens),
+      generationEnvelope: parseGenerationEnvelope(raw),
       translation: translation,
       interfaceText: interfaceText,
       interfaceLang: interfaceLang,
@@ -290,7 +292,9 @@ class MessageTranslator {
       },
       mode: mode,
       explanation: mode == LearningAidMode.correction
-          ? (rawExplanation as String).trim()
+          ? (rawExplanation is String && rawExplanation.trim().isNotEmpty
+                ? rawExplanation.trim()
+                : null)
           : null,
       confidence: mode == LearningAidMode.correction ? confidence : null,
       formAlternatives: alternatives,
@@ -425,3 +429,30 @@ Future<Map<String, dynamic>> _defaultInvoke({
 final messageTranslatorProvider = Provider<MessageTranslator>(
   (ref) => MessageTranslator(),
 );
+
+Map<String, dynamic>? parseAuthoredCorrection(Object? tokens) {
+  if (tokens is! List) return null;
+  for (final token in tokens) {
+    if (token is Map && token.containsKey('blabAuthoredCorrection')) {
+      final raw = token['blabAuthoredCorrection'];
+      return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    }
+  }
+  return null;
+}
+
+Map<String, dynamic>? parseGenerationEnvelope(Object? value) {
+  if (value is! Map) return null;
+  if (value.containsKey('generationEnvelope')) {
+    final raw = value['generationEnvelope'];
+    return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+  }
+  for (final key in ['formAlternatives', 'form_alternatives']) {
+    final forms = value[key];
+    if (forms is Map && forms.containsKey('blabGenerationEnvelope')) {
+      final raw = forms['blabGenerationEnvelope'];
+      return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    }
+  }
+  return null;
+}

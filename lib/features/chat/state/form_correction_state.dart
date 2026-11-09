@@ -132,6 +132,8 @@ class FormCorrectionLedger {
         : choices.first;
     final text = a.resolved(snapshot?.form ?? a.suggestedForm);
     return MessageTranslation(
+      authoredCorrection: value.authoredCorrection,
+      generationEnvelope: value.generationEnvelope,
       translation: text,
       interfaceText: value.interfaceText,
       interfaceLang: value.interfaceLang,

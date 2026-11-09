@@ -184,10 +184,12 @@ class InlineCorrectionText extends ConsumerStatefulWidget {
     required this.learningLanguageCode,
     required this.popupTopInset,
     this.correctedTokens = const [],
+    this.segments,
     this.enableWordLookup = true,
     this.isOutgoing = false,
   });
 
+  final List<CorrectionSegment>? segments;
   final bool enableWordLookup;
   final bool isOutgoing;
   final String originalText;
@@ -305,10 +307,26 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
     );
     final correctedStyle = widget.style.copyWith(fontWeight: FontWeight.w600);
 
-    final segments = correctionSegments(
-      widget.originalText,
-      widget.correctedText,
-    );
+    final sourceSegments =
+        widget.segments ??
+        correctionSegments(widget.originalText, widget.correctedText);
+    // Provenance runs preserve exact source/replacement bytes. Add the visual
+    // separator here, not to the correction metadata or reconstructed sentence.
+    final segments = <CorrectionSegment>[];
+    for (final segment in sourceSegments) {
+      if (segments.isNotEmpty &&
+          segments.last.struck &&
+          segment.corrected &&
+          segments.last.text.isNotEmpty &&
+          segment.text.isNotEmpty &&
+          !_isWhitespace(segments.last.text[segments.last.text.length - 1]) &&
+          !_isWhitespace(segment.text[0]) &&
+          _containsWord(segments.last.text) &&
+          _containsWord(segment.text)) {
+        segments.add(const CorrectionSegment(' '));
+      }
+      segments.add(segment);
+    }
 
     if (!widget.enableWordLookup &&
         (messageLinks(widget.correctedText).isNotEmpty ||
@@ -399,4 +417,286 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       ),
     );
   }
+}
+
+/// Generation-scoped source provenance. Missing legacy metadata keeps the old path.
+List<CorrectionSegment> authoredCorrectionSegments(
+  String source,
+  Map<String, dynamic> metadata,
+) {
+  if (metadata['source'] != source) return [CorrectionSegment(source)];
+  final corrected = metadata['correctionText'];
+  if (corrected is! String) return [CorrectionSegment(source)];
+  if (metadata['version'] != 'a-v1') return [CorrectionSegment(source)];
+  final raw = metadata['corrections'];
+  if (raw is! List) return [CorrectionSegment(source)];
+  final rows = <Map>[];
+  for (final c in raw) {
+    if (c is! Map ||
+        c['start'] is! int ||
+        c['end'] is! int ||
+        c['original'] is! String ||
+        c['replacement'] is! String) {
+      return [CorrectionSegment(source)];
+    }
+    final start = c['start'] as int, end = c['end'] as int;
+    if (start < 0 ||
+        end <= start ||
+        end > source.length ||
+        source.substring(start, end) != c['original']) {
+      return [CorrectionSegment(source)];
+    }
+    bool split(int i) =>
+        i > 0 &&
+        i < source.length &&
+        source.codeUnitAt(i - 1) >= 0xD800 &&
+        source.codeUnitAt(i - 1) <= 0xDBFF &&
+        source.codeUnitAt(i) >= 0xDC00 &&
+        source.codeUnitAt(i) <= 0xDFFF;
+    if (split(start) || split(end)) return [CorrectionSegment(source)];
+    rows.add(c);
+  }
+  rows.sort((a, b) => (a['start'] as int).compareTo(b['start'] as int));
+  var rebuilt = source;
+  for (final c in rows.reversed) {
+    rebuilt = rebuilt.replaceRange(
+      c['start'] as int,
+      c['end'] as int,
+      c['replacement'] as String,
+    );
+  }
+  if (rebuilt != corrected) return [CorrectionSegment(source)];
+  final result = <CorrectionSegment>[];
+  var cursor = 0;
+  for (final c in rows) {
+    final start = c['start'] as int, end = c['end'] as int;
+    if (start < cursor) return [CorrectionSegment(source)];
+    if (start > cursor) {
+      result.add(CorrectionSegment(source.substring(cursor, start)));
+    }
+    final original = c['original'] as String;
+    final replacement = c['replacement'] as String;
+    String mechanical(String text) => text.toLowerCase().replaceAll(
+      RegExp(r"[\s\p{P}\p{S}]", unicode: true),
+      '',
+    );
+    if (mechanical(original) == mechanical(replacement)) {
+      result.add(CorrectionSegment(original));
+    } else {
+      // Trim unchanged whole-word anchors only within this validated source span.
+      final oldWords = _words(original), newWords = _words(replacement);
+      var prefix = 0, suffix = 0;
+      while (prefix < oldWords.length &&
+          prefix < newWords.length &&
+          oldWords[prefix].normalized == newWords[prefix].normalized) {
+        prefix++;
+      }
+      while (suffix < oldWords.length - prefix &&
+          suffix < newWords.length - prefix &&
+          oldWords[oldWords.length - suffix - 1].normalized ==
+              newWords[newWords.length - suffix - 1].normalized) {
+        suffix++;
+      }
+      var os = prefix == 0 ? 0 : oldWords[prefix - 1].end;
+      var ns = prefix == 0 ? 0 : newWords[prefix - 1].end;
+      var oe = suffix == 0
+          ? original.length
+          : oldWords[oldWords.length - suffix].start;
+      var ne = suffix == 0
+          ? replacement.length
+          : newWords[newWords.length - suffix].start;
+      while (os < oe &&
+          ns < ne &&
+          original[os] == replacement[ns] &&
+          _isWhitespace(original[os])) {
+        os++;
+        ns++;
+      }
+      while (oe > os &&
+          ne > ns &&
+          original[oe - 1] == replacement[ne - 1] &&
+          _isWhitespace(original[oe - 1])) {
+        oe--;
+        ne--;
+      }
+      if (ns > 0) result.add(CorrectionSegment(replacement.substring(0, ns)));
+      if (os < oe) {
+        result.add(CorrectionSegment(original.substring(os, oe), struck: true));
+      }
+      if (ns < ne) {
+        result.add(
+          CorrectionSegment(replacement.substring(ns, ne), corrected: true),
+        );
+      }
+      if (ne < replacement.length) {
+        result.add(CorrectionSegment(replacement.substring(ne)));
+      }
+    }
+    cursor = end;
+  }
+  if (cursor < source.length) {
+    result.add(CorrectionSegment(source.substring(cursor)));
+  }
+  return result;
+}
+
+/// Synthetic/durable target anchors are revalidated against the exact output.
+List<CorrectionSegment> translatedCorrectionSegments(
+  String source,
+  String target,
+  Map<String, dynamic> metadata,
+) {
+  List<CorrectionSegment> clean() => [CorrectionSegment(target)];
+  if (metadata['version'] != 'a-v2' ||
+      metadata['source'] != source ||
+      metadata['targetText'] != target) {
+    return clean();
+  }
+  final sourceMetadata = {...metadata, 'version': 'a-v1'};
+  if (!authoredCorrectionSegments(
+    source,
+    sourceMetadata,
+  ).any((s) => s.struck)) {
+    return clean();
+  }
+  final raw = metadata['corrections'];
+  if (raw is! List) return clean();
+  final rows = <Map>[];
+  for (final c in raw) {
+    if (c is! Map) return clean();
+    if (c['start'] is! int ||
+        c['end'] is! int ||
+        c['original'] is! String ||
+        c['replacement'] is! String) {
+      return clean();
+    }
+    final ss = c['start'] as int, se = c['end'] as int;
+    if (ss < 0 ||
+        se <= ss ||
+        se > source.length ||
+        source.substring(ss, se) != c['original']) {
+      return clean();
+    }
+    if (_protectedCorrectionOverlap(source, ss, se)) return clean();
+    final a = c['targetAnchor'];
+    if (a is! Map ||
+        a['text'] is! String ||
+        (a['text'] as String).isEmpty ||
+        a['occurrence'] is! int ||
+        a['start'] is! int ||
+        a['end'] is! int) {
+      return clean();
+    }
+    final text = a['text'] as String, occurrence = a['occurrence'] as int;
+    if (occurrence < 0 || occurrence > target.length) return clean();
+    var start = -1, cursor = 0;
+    for (var n = 0; n <= occurrence; n++) {
+      start = target.indexOf(text, cursor);
+      if (start < 0) return clean();
+      cursor = start + text.length;
+    }
+    bool split(int i) =>
+        i > 0 &&
+        i < target.length &&
+        target.codeUnitAt(i - 1) >= 0xD800 &&
+        target.codeUnitAt(i - 1) <= 0xDBFF &&
+        target.codeUnitAt(i) >= 0xDC00 &&
+        target.codeUnitAt(i) <= 0xDFFF;
+    if (_protectedCorrectionOverlap(target, start, cursor)) return clean();
+    if (start != a['start'] ||
+        cursor != a['end'] ||
+        split(start) ||
+        split(cursor)) {
+      return clean();
+    }
+    if (rows.any(
+      (r) =>
+          start < (r['rawTargetEnd'] as int) &&
+          cursor > (r['rawTargetStart'] as int),
+    )) {
+      return clean();
+    }
+    // Independently narrow a-v2 metadata only with an exact replacement anchor.
+    var original = c['original'] as String;
+    final replacement = c['replacement'] as String;
+    var targetStart = start, targetEnd = cursor;
+    if (text == replacement) {
+      final edges = _identicalWholeWordEdges(original, replacement);
+      original = original.substring(edges[0], original.length - edges[1]);
+      targetStart += edges[0];
+      targetEnd -= edges[1];
+    }
+    rows.add({
+      ...c,
+      'original': original,
+      'rawTargetStart': start,
+      'rawTargetEnd': cursor,
+      'targetStart': targetStart,
+      'targetEnd': targetEnd,
+    });
+  }
+  rows.sort(
+    (a, b) => (a['targetStart'] as int).compareTo(b['targetStart'] as int),
+  );
+  final result = <CorrectionSegment>[];
+  var cursor = 0;
+  for (final c in rows) {
+    final start = c['targetStart'] as int, end = c['targetEnd'] as int;
+    if (start < cursor) return clean();
+    result.add(CorrectionSegment(target.substring(cursor, start)));
+    result.add(CorrectionSegment(c['original'] as String, struck: true));
+    result.add(
+      CorrectionSegment(target.substring(start, end), corrected: true),
+    );
+    cursor = end;
+  }
+  result.add(CorrectionSegment(target.substring(cursor)));
+  return result;
+}
+
+// Do not infer ordinary names from capitalization.
+bool _protectedCorrectionOverlap(String text, int start, int end) {
+  final literals = RegExp(
+    r'https?://[^\s<>]+|www\.[^\s<>]+|[@#][\p{L}\p{M}\p{N}_-]+|\x60[^\x60]*\x60',
+    unicode: true,
+  );
+  return literals.allMatches(text).any((m) => start < m.end && end > m.start);
+}
+
+// Exact whitespace-delimited words, no case folding or partial-word inference.
+List<int> _identicalWholeWordEdges(String original, String replacement) {
+  var prefix = 0, suffix = 0;
+  while (true) {
+    final a = RegExp(
+      r'^\S+\s+',
+      unicode: true,
+    ).firstMatch(original.substring(prefix))?.group(0);
+    final b = RegExp(
+      r'^\S+\s+',
+      unicode: true,
+    ).firstMatch(replacement.substring(prefix))?.group(0);
+    if (a == null ||
+        a != b ||
+        prefix + a.length >= original.length ||
+        prefix + a.length >= replacement.length) {
+      break;
+    }
+    prefix += a.length;
+  }
+  while (true) {
+    final a = RegExp(r'\s+\S+$', unicode: true)
+        .firstMatch(original.substring(prefix, original.length - suffix))
+        ?.group(0);
+    final b = RegExp(r'\s+\S+$', unicode: true)
+        .firstMatch(replacement.substring(prefix, replacement.length - suffix))
+        ?.group(0);
+    if (a == null ||
+        a != b ||
+        prefix + suffix + a.length >= original.length ||
+        prefix + suffix + a.length >= replacement.length) {
+      break;
+    }
+    suffix += a.length;
+  }
+  return [prefix, suffix];
 }

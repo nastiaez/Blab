@@ -36,16 +36,33 @@ export const COMPACT_RESPONSE_FORMAT = {
         type: "array",
         items: object({
           id: { type: "string" },
+          corrections: {
+            type: "array",
+            items: object({
+              original: { type: "string" },
+              occurrence: { type: "integer", minimum: 0 },
+              replacement: { type: "string" },
+              targetAnchor: {
+                anyOf: [
+                  { type: "null" },
+                  object({
+                    text: { type: "string" },
+                    occurrence: { type: "integer", minimum: 0 },
+                  }),
+                ],
+              },
+            }),
+          },
           sourceLang: base.sourceLang,
           mode: {
             ...base.mode,
             description:
-              "translation if source differs; correction for a genuine same-language error; none otherwise, retaining trimmed original exactly.",
+              "correction when genuine authored mistakes are present; otherwise translation when translation is needed; otherwise none.",
           },
           text: {
             type: "string",
             description:
-              "Full natural sentence in the requested language. Feminine base when forms exist.",
+              "Complete natural message in the requested language, independent of correction metadata.",
           },
           confidence: {
             ...base.confidence,
@@ -71,7 +88,7 @@ export const COMPACT_RESPONSE_FORMAT = {
               "suggestedForm",
             ],
             description:
-              "Only mode=translation participant gender differences; null for none/correction. before+feminine+after equals text; masculine replaces the complete affected fragment.",
+              "Participant gender differences required by the complete translation; preserve explicit authored gender. before+feminine+after equals text; masculine replaces the complete affected fragment.",
           },
         }),
       },
@@ -82,7 +99,7 @@ export const COMPACT_RESPONSE_FORMAT = {
           explanation: {
             ...base.explanation,
             description:
-              "Brief explanation in the requested meanings language only for correction, otherwise null.",
+              "Brief explanation of genuine authored mistakes only, in the requested meanings language; null when no genuine mistakes are present.",
           },
           tokens: tokenArray,
           feminineTokens: {
@@ -345,15 +362,20 @@ export function expandCompactResponse(
       v.key,
       structuredClone({
         mode: s.mode,
+        corrections: s.corrections,
+        correctionText: s.correctionText,
         sourceLang: s.sourceLang,
-        translation: s.mode === "none" && s.sourceLang === v.targetLang
-          ? v.text.trim()
+        translation: s.mode === "none" &&
+            s.text.replace(/\s/gu, "") === v.text.replace(/\s/gu, "")
+          ? v.text
           : s.text,
         interfaceText: secondary.text,
         explanation: h.explanation,
         confidence: s.confidence,
         tokens,
-        formAlternatives: s.forms && s.sourceLang !== v.targetLang
+        formAlternatives: s.forms &&
+            (s.sourceLang !== v.targetLang || Array.isArray(s.corrections) ||
+              typeof s.correctionText === "string")
           ? {
             before: s.forms.before,
             feminine: s.forms.feminine,

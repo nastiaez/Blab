@@ -31,7 +31,8 @@ bool shouldShowCorrectionMarks({
 /// Resolves which text to show for a translated message, per the modes/
 /// known-languages design spec's § Display logic three rules:
 /// - `LearningAidMode.none` (server decided no learning aid is needed, e.g.
-///   a same-language chat) → always the exact original.
+///   a same-language chat) → retain exact authored formatting when the generated
+///   text differs only in whitespace; otherwise preserve the complete result.
 /// - Practice mode → the learning-language result (`value.translation`,
 ///   already corrected in place when the author made a mistake).
 /// - Normal mode → the exact original when the reader already knows the
@@ -224,6 +225,7 @@ class MessageLearningContent extends StatelessWidget {
           ? [formAlternativesOverride!]
           : <GrammaticalFormAlternatives>[];
       if (formChoices.isNotEmpty &&
+          (mode == ChatMode.normal || !value.sourceScopedGeneration) &&
           (onFormSelected != null || resolvedForm != null)) {
         if (resolvedForm != null) {
           return generatedMessageText(
@@ -316,17 +318,32 @@ class MessageLearningContent extends StatelessWidget {
 
     // Practice mode: always the learning-language line, collapsible second
     // (interface-language) lane driven by the externally-owned [expanded].
-    final showCorrectionMarks = shouldShowCorrectionMarks(
-      isOutgoing: isOutgoing,
-      languagesMatchedAtSend: languagesMatchedAtSend,
-      mode: value.mode,
-      sourceLanguageCode: value.sourceLang,
-      learningLanguageCode: learningLanguageCode,
-    );
+    final showCorrectionMarks =
+        (!value.sourceScopedGeneration || value.confidence != null) &&
+        shouldShowCorrectionMarks(
+          isOutgoing: isOutgoing,
+          languagesMatchedAtSend: languagesMatchedAtSend,
+          mode: value.mode,
+          sourceLanguageCode: value.sourceLang,
+          learningLanguageCode: learningLanguageCode,
+        );
 
     final formChoices = formAlternativesOverride == null
-        ? value.formChoices
+        ? value.sourceScopedGeneration
+              ? value.participantFormsFor(generatedLanguageCode)
+              : value.formChoices
         : [formAlternativesOverride!];
+    final translatedProvenance = value.authoredCorrection;
+    final targetPresentation = presentGenerated(
+      value.translation,
+      value.tokens,
+    );
+    final useTargetAnchors =
+        showCorrectionMarks &&
+        translatedProvenance?['version'] == 'a-v2' &&
+        value.generationEnvelope?['version'] == 'a-v2' &&
+        value.generationEnvelope?['source'] == authoredText &&
+        targetPresentation.text == value.translation;
     final Widget learningLine =
         formChoices.isNotEmpty &&
             (onFormSelected != null || resolvedForm != null)
@@ -348,7 +365,22 @@ class MessageLearningContent extends StatelessWidget {
                   onMarkerTap: onFormMarkerTap,
                   activeIndex: activeFormChoiceIndex,
                 )
-        : showCorrectionMarks
+        : useTargetAnchors
+        ? InlineCorrectionText(
+            originalText: authoredText,
+            correctedText: value.translation,
+            segments: translatedCorrectionSegments(
+              authoredText,
+              value.translation,
+              translatedProvenance!,
+            ),
+            style: primaryStyle,
+            learningLanguageCode: generatedLanguageCode,
+            popupTopInset: popupTopInset,
+            isOutgoing: isOutgoing,
+            enableWordLookup: false,
+          )
+        : showCorrectionMarks && !value.sourceScopedGeneration
         ? (() {
             final corrected = presentGenerated(value.translation, value.tokens);
             return InlineCorrectionText(
@@ -363,6 +395,18 @@ class MessageLearningContent extends StatelessWidget {
             );
           })()
         : generatedMessageText(value.translation, value.tokens, primaryStyle);
+    final provenance = value.authoredCorrection;
+    final sourceSegments = provenance == null
+        ? null
+        : authoredCorrectionSegments(authoredText, provenance);
+    final hasSourceCorrections =
+        showCorrectionMarks &&
+        value.sourceScopedGeneration &&
+        (value.generationEnvelope == null ||
+            (value.generationEnvelope!['version'] == 'a-v1' &&
+                value.generationEnvelope!['source'] == authoredText)) &&
+        sourceSegments != null &&
+        sourceSegments.any((s) => s.struck);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,6 +416,17 @@ class MessageLearningContent extends StatelessWidget {
           key: const ValueKey('message-learning-lane'),
           child: learningLine,
         ),
+        if (hasSourceCorrections)
+          InlineCorrectionText(
+            originalText: authoredText,
+            correctedText: provenance!['correctionText'] as String,
+            segments: sourceSegments,
+            isOutgoing: isOutgoing,
+            enableWordLookup: false,
+            learningLanguageCode: generatedLanguageCode,
+            popupTopInset: popupTopInset,
+            style: primaryStyle,
+          ),
         if (expanded) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),

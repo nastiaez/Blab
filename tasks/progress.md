@@ -2496,3 +2496,11 @@ BLA41 delivery FINAL18075: Apple57 VALID/reviewAPPROVED; internal+external IN_BE
 - Approval: Nastia18499 accepts actual18395 visuals/journey; Nastia18502 authorizes conflict check, scoped commit and main integration, using delegated approval17829. No tester/store distribution in this step.
 - Done when: latest-main integration and required integrated Android checks pass; distribution remains a separate gate. Evidence: docs/qa/2026-11-07-bla43/integration-18502.md, shared queue/checkpoint and Linear.
 - Changelog7Nov: added gesture/geometry coverage, verified both native candidates, recorded Nastia approvals and began approved integration.
+
+
+## BLA-28 mixed-language and genuine-correction slice — approved integration18965
+- Approved Nastia18771 visuals;18965 scoped commit/main merge, no release. Exact original and beautiful recorded provider/backend/widget checks pass; whole-message none preservation, source-only correction provenance, target anchors, spacing/equal size and deterministic trim preserved.
+- Current-main a5d2e46 reconciles without textual conflict. Other dirty worktrees and main artifacts preserved. No model/deadline/explanation-policy change, history backfill, new paid request or hosted deployment.
+- Done when: integrated automated/clean migration/RLS gates pass and main ancestry is synchronized; integrated Android recorded-response verification separately recorded, not inferred from unit tests.
+
+- Integration gate disposition:277backend PASS;134canonical migration ledger exact;8real SQL/RLS suites PASS;analysis/format/shell clean;complete Flutter1334pass/36skip plus2temporary-QA-config failures, both cleared in17-test restored-config rerun. Native QA APK compiles; existing emulator stalled, native acceptance remains OPEN. No release.

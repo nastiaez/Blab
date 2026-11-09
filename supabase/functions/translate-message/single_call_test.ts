@@ -510,7 +510,10 @@ Deno.test("missing help and conflicting source labels cannot block routed nonemp
         choices: [{ message: { content: JSON.stringify(data) } }],
       }),
   );
-  assert(r.v0.translation === "Hallo" && r.v0.tokens.length === 0);
+  assert(
+    r.v0.translation === "Hallo" &&
+      r.v0.tokens.filter((t: any) => typeof t.text === "string").length === 0,
+  );
 });
 
 Deno.test("loose structure accepts extra fields, extra outputs and optional omissions", async () => {
@@ -537,7 +540,10 @@ Deno.test("loose structure accepts extra fields, extra outputs and optional omis
         }],
       }),
   );
-  assert(r.v0.translation === "Hallo" && r.v0.tokens.length === 0);
+  assert(
+    r.v0.translation === "Hallo" &&
+      r.v0.tokens.filter((t: any) => typeof t.text === "string").length === 0,
+  );
 });
 
 Deno.test("worker keeps valid viewer output when another requested sentence is absent", async () => {

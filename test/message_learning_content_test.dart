@@ -417,6 +417,34 @@ void main() {
     expect(find.text('गया'), findsNothing);
   });
 
+  for (final confidence in [null, CorrectionConfidence.high]) {
+    testWidgets(
+      'missing explanation preserves readable correction $confidence',
+      (tester) async {
+        await tester.pumpWidget(
+          host(
+            AsyncData(
+              result(
+                learning: 'Ich bin müde.',
+                interfaceText: 'I am tired.',
+                source: 'de',
+                mode: LearningAidMode.correction,
+                confidence: confidence,
+              ),
+            ),
+            authoredText: 'Ich ist müde.',
+            learningCode: 'de',
+            isOutgoing: true,
+            expanded: false,
+          ),
+        );
+        expect(find.byType(InlineCorrectionText), findsOneWidget);
+        // True legacy entries retain historical correction eligibility.
+        expect(find.text('Translation unavailable'), findsNothing);
+      },
+    );
+  }
+
   testWidgets('genuine Tamil correction can use English-letter display', (
     tester,
   ) async {
@@ -429,6 +457,7 @@ void main() {
             interfaceLang: 'en',
             sourceLang: 'ta',
             mode: LearningAidMode.correction,
+            confidence: CorrectionConfidence.high,
             tokens: [
               MessageToken(
                 text: 'வணக்கம்',

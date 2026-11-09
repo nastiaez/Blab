@@ -1,4 +1,13 @@
-import { protectMentions, restoreMentionResult } from "./mention_identity.ts";
+import {
+  anchoredCorrections,
+  correctedSource,
+  explicitCorrections,
+} from "./correction_provenance.ts";
+import {
+  protectMentions,
+  restoreMentionResult,
+  restoreMentionText,
+} from "./mention_identity.ts";
 import { compactPlan, expandCompactResponse } from "./compact_request.ts";
 import { hasParticipantFormDifference } from "./participant_forms.ts";
 import {
@@ -242,7 +251,52 @@ export async function generateMessageOnce(
           r.formAlternatives.masculineTokens,
         );
       }
-      results[v.key] = restoreMentionResult(r, protectedData);
+      const restored = restoreMentionResult(r, protectedData);
+      const sourceOriginal = originalSource;
+      const unprotect = (text: string) =>
+        restoreMentionText(text, protectedData, false).text;
+      const input = Array.isArray(rawResult.corrections)
+        ? rawResult.corrections.map((c: any) => ({
+          ...c,
+          targetAnchor:
+            c?.targetAnchor && typeof c.targetAnchor.text === "string"
+              ? { ...c.targetAnchor, text: unprotect(c.targetAnchor.text) }
+              : null,
+          original: typeof c?.original === "string"
+            ? unprotect(c.original)
+            : c?.original,
+          replacement: typeof c?.replacement === "string"
+            ? unprotect(c.replacement)
+            : c?.replacement,
+        }))
+        : [];
+      const corrections = anchoredCorrections(
+        restored.translation,
+        explicitCorrections(sourceOriginal, input),
+        input,
+        sourceOriginal,
+      );
+      const correctionText = correctedSource(sourceOriginal, corrections);
+      const envelope = {
+        version: "a-v2",
+        source: sourceOriginal,
+        correctionText,
+        targetText: restored.translation,
+        corrections,
+      };
+      // Existing token JSON carries generation-scoped provenance without schema/history migration.
+      if (restored.tokens.length) {
+        Object.assign(restored.tokens[0] as object, {
+          blabAuthoredCorrection: envelope,
+        });
+      } else {
+        restored.tokens.push({
+          blabAuthoredCorrection: envelope,
+          wordHelpVersion: WORD_HELP_POLICY.version,
+        });
+      }
+      restored.generationEnvelope = { version: "a-v2", source: sourceOriginal };
+      results[v.key] = restored;
     } catch (error) {
       if (!allowPartial) throw error;
       onViewerFailure?.(v, error);
