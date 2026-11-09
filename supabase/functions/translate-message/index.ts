@@ -1,3 +1,4 @@
+import { serializeGeneration } from "./correction_provenance.ts";
 import { isMentionIntegrityFailure } from "./mention_identity.ts";
 // Server-authoritative real-chat translator. The client supplies only a
 // message ID. Postgres validates the caller and derives source text and target
@@ -984,8 +985,9 @@ Deno.serve(async (req) => {
     );
   }
 
+  const storedResult = serializeGeneration(result);
   if (TEXT_FIRST_DELIVERY) {
-    const { tokens: _tokens, ...readable } = result;
+    const { tokens: _tokens, ...readable } = storedResult;
     if (readable.formAlternatives) {
       readable.formAlternatives = {
         ...readable.formAlternatives,
@@ -1024,7 +1026,7 @@ Deno.serve(async (req) => {
       p_job_id: internalJobId,
       p_lease_token: jobLease,
       p_action: "complete",
-      p_payload: { ...result, contractVersion: CACHE_CONTRACT_VERSION },
+      p_payload: { ...storedResult, contractVersion: CACHE_CONTRACT_VERSION },
     })
     : await admin.rpc("complete_message_translation", {
       p_message_id: messageId,
@@ -1039,7 +1041,7 @@ Deno.serve(async (req) => {
       p_explanation: result.explanation,
       p_confidence: result.confidence,
       p_tokens: result.tokens,
-      p_form_alternatives: result.formAlternatives,
+      p_form_alternatives: storedResult.formAlternatives,
       p_cache_contract_version: CACHE_CONTRACT_VERSION,
     });
   const { data: completed, error: completionError } = completion;

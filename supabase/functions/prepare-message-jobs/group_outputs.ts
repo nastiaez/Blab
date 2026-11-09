@@ -3,7 +3,11 @@ import {
   singleCallRequest,
 } from "../translate-message/single_call.ts";
 import type { TranslationResult } from "../translate-message/contract.ts";
-import { GENERATION_POLICY_VERSION, MENTION_INTEGRITY_VERSION, SINGLE_CALL_POLICY } from "../translate-message/rulebook.ts";
+import {
+  GENERATION_POLICY_VERSION,
+  MENTION_INTEGRITY_VERSION,
+  SINGLE_CALL_POLICY,
+} from "../translate-message/rulebook.ts";
 
 export const isGroupViewer = (v: PreparedViewer) =>
   (v.formContext as Record<string, unknown> | undefined)?.group === true;
@@ -35,15 +39,31 @@ export function privateGroupResult(
   const f = v.formContext as Record<string, unknown>;
   const result = structuredClone(raw);
   if (f.messageAuthor !== "viewer") {
+    result.tokens = result.tokens.map((t: any) => {
+      const { blabAuthoredCorrection: _private, ...rest } = t;
+      return rest;
+    });
     result.explanation = null;
     result.confidence = null;
-    if (result.mode === "correction") {
+    if (result.mode === "correction" && result.generationEnvelope) {
+      result.mode = "none";
+    } else if (result.mode === "correction") {
       result.mode = "none";
       result.translation = v.text;
-      result.tokens = Array.isArray(v.mentions) && v.mentions.length ? [{blabMentionSource: v.mentions, blabMentionSpans: {
-        [v.text]: v.mentions,
-        ...Object.assign({}, ...raw.tokens.filter((t: any) => t.blabMentionSpans).map((t: any) => t.blabMentionSpans)),
-      }}] as any : [];
+      result.tokens = Array.isArray(v.mentions) && v.mentions.length
+        ? [{
+          blabMentionSource: v.mentions,
+          blabMentionSpans: {
+            [v.text]: v.mentions,
+            ...Object.assign(
+              {},
+              ...raw.tokens.filter((t: any) => t.blabMentionSpans).map((
+                t: any,
+              ) => t.blabMentionSpans),
+            ),
+          },
+        }] as any
+        : [];
     }
   }
   // A group is not a single gendered recipient. Author alternatives remain valid.

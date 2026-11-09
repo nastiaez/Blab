@@ -395,3 +395,28 @@ Deno.test("group current author stays identifiable without their profile name", 
       !JSON.stringify(data).includes("Bob"),
   );
 });
+
+Deno.test("complete returned sentence survives contradictory none label", () => {
+  const v = [{
+    ...viewers[0],
+    text: "Ich bin tired.",
+    targetLang: "de",
+    interfaceLang: "en",
+  }];
+  const p = compactPlan(v);
+  const raw = {
+    sentences: p.requested.sentences.map((s) => ({
+      id: s.id,
+      sourceLang: "de",
+      mode: "none",
+      text: s.language === "German" ? "Ich bin müde." : "I am tired.",
+      confidence: null,
+      forms: null,
+    })),
+    help: [],
+  };
+  assert(
+    expandCompactResponse(raw, v, p, "nonempty").v0.translation ===
+      "Ich bin müde.",
+  );
+});

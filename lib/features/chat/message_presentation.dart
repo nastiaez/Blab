@@ -42,7 +42,11 @@ String resolveMessageDisplayText({
   )) {
     return authoredText;
   }
-  if (value.mode == LearningAidMode.none) return authoredText;
+  if (value.mode == LearningAidMode.none &&
+      value.translation.replaceAll(RegExp(r'\s'), '') ==
+          authoredText.replaceAll(RegExp(r'\s'), '')) {
+    return authoredText;
+  }
   late final String displayText;
   if (mode == ChatMode.normal) {
     displayText = knownLanguageCodes.contains(value.sourceLang)
@@ -82,11 +86,7 @@ MessagePresentation resolveMessagePresentation({
       sourceLang: value.sourceLang,
       authoredText: authoredText,
     );
-    final practiceAid =
-        mode == ChatMode.practice &&
-        (value.mode != LearningAidMode.none ||
-            value.sourceLang == targetLanguageCode) &&
-        !unsupportedSource;
+    final practiceAid = mode == ChatMode.practice && !unsupportedSource;
     return MessagePresentation(
       primaryText: primaryText,
       originalText: authoredText,

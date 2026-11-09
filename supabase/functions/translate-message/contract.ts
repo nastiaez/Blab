@@ -531,6 +531,7 @@ export function validateRequest(
 }
 
 export type TranslationResult = {
+  generationEnvelope?: { version: "a-v1" | "a-v2"; source: string };
   mode: LearningAidMode;
   sourceLang: string;
   translation: string;

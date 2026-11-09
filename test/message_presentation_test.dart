@@ -22,6 +22,64 @@ MessageTranslation _translation({
 );
 
 void main() {
+  test(
+    'cached none keeps exact authored whitespace without losing actions',
+    () {
+      final result = resolveMessagePresentation(
+        authoredText: '  Hallo   Welt! ',
+        translation: AsyncData(
+          _translation(
+            translation: 'Hallo Welt!',
+            interfaceText: 'Hello world!',
+            sourceLang: 'de',
+            mode: LearningAidMode.none,
+          ),
+        ),
+        mode: ChatMode.practice,
+        knownLanguageCodes: ['en'],
+        targetLanguageCode: 'de',
+      );
+      expect(result.primaryText, '  Hallo   Welt! ');
+      expect(result.knownLanguageText, 'Hello world!');
+    },
+  );
+  test('contradictory none label cannot disable usable Practice actions', () {
+    final result = resolveMessagePresentation(
+      authoredText: 'Hello',
+      translation: AsyncData(
+        _translation(
+          translation: 'Привіт',
+          interfaceText: 'Hello',
+          sourceLang: 'en',
+          mode: LearningAidMode.none,
+        ),
+      ),
+      mode: ChatMode.practice,
+      knownLanguageCodes: ['en'],
+      targetLanguageCode: 'uk',
+    );
+    expect(result.primaryText, 'Привіт');
+    expect(result.knownLanguageText, 'Hello');
+    expect(result.listenText, 'Привіт');
+  });
+
+  test('practice does not discard complete text mislabeled none', () {
+    final result = resolveMessagePresentation(
+      authoredText: 'Ich bin tired.',
+      translation: AsyncData(
+        _translation(
+          translation: 'Ich bin müde.',
+          sourceLang: 'de',
+          mode: LearningAidMode.none,
+        ),
+      ),
+      mode: ChatMode.practice,
+      knownLanguageCodes: ['en'],
+      targetLanguageCode: 'de',
+    );
+    expect(result.primaryText, 'Ich bin müde.');
+  });
+
   test('pending preparation is delayed, not a terminal error', () {
     final result = resolveMessagePresentation(
       authoredText: 'Hello',
@@ -165,7 +223,7 @@ void main() {
     expect(result.listenText, 'नमस्ते');
   });
 
-  test('aid mode none preserves authored native script', () {
+  test('none label does not overwrite returned sentence script', () {
     final result = resolveMessagePresentation(
       authoredText: 'नमस्ते',
       translation: AsyncData(
@@ -181,6 +239,6 @@ void main() {
       readingScript: ReadingScript.englishLetters,
     );
 
-    expect(result.primaryText, 'नमस्ते');
+    expect(result.primaryText, 'namaste');
   });
 }
