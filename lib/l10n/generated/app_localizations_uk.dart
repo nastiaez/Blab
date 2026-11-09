@@ -1774,4 +1774,17 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get hideMessageTranslation => 'Приховати переклад';
+
+  @override
+  String get addressCopy => 'Копіювати адресу';
+
+  @override
+  String get addressOpenMaps => 'Відкрити в Google Maps';
+
+  @override
+  String get addressCopied => 'Адресу скопійовано';
+
+  @override
+  String get addressActionFailed =>
+      'Не вдалося відкрити або скопіювати цю адресу.';
 }

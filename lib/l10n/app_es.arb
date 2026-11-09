@@ -627,5 +627,9 @@
   "deletedAccountNotice": "Esta cuenta se ha eliminado. Ya no puedes enviar mensajes.",
   "translateMessage": "Traducir",
   "showMessageTranslation": "Mostrar traducción",
-  "hideMessageTranslation": "Ocultar traducción"
+  "hideMessageTranslation": "Ocultar traducción",
+  "addressCopy": "Copiar dirección",
+  "addressOpenMaps": "Abrir en Google Maps",
+  "addressCopied": "Dirección copiada",
+  "addressActionFailed": "No se pudo abrir ni copiar esta dirección."
 }

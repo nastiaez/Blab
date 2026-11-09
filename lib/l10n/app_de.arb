@@ -627,5 +627,9 @@
   "deletedAccountNotice": "Dieses Konto wurde gelöscht. Du kannst keine Nachrichten mehr senden.",
   "translateMessage": "Übersetzen",
   "showMessageTranslation": "Übersetzung anzeigen",
-  "hideMessageTranslation": "Übersetzung ausblenden"
+  "hideMessageTranslation": "Übersetzung ausblenden",
+  "addressCopy": "Adresse kopieren",
+  "addressOpenMaps": "In Google Maps öffnen",
+  "addressCopied": "Adresse kopiert",
+  "addressActionFailed": "Diese Adresse konnte nicht geöffnet oder kopiert werden."
 }

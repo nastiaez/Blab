@@ -767,5 +767,9 @@
   "deletedAccountNotice": "This account has been deleted. You can no longer send messages.",
   "translateMessage": "Translate",
   "showMessageTranslation": "Show translation",
-  "hideMessageTranslation": "Hide translation"
+  "hideMessageTranslation": "Hide translation",
+  "addressCopy": "Copy address",
+  "addressOpenMaps": "Open in Google Maps",
+  "addressCopied": "Address copied",
+  "addressActionFailed": "Couldn’t open or copy this address."
 }

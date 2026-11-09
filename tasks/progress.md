@@ -2496,3 +2496,13 @@ BLA41 delivery FINAL18075: Apple57 VALID/reviewAPPROVED; internal+external IN_BE
 - Approval: Nastia18499 accepts actual18395 visuals/journey; Nastia18502 authorizes conflict check, scoped commit and main integration, using delegated approval17829. No tester/store distribution in this step.
 - Done when: latest-main integration and required integrated Android checks pass; distribution remains a separate gate. Evidence: docs/qa/2026-11-07-bla43/integration-18502.md, shared queue/checkpoint and Linear.
 - Changelog7Nov: added gesture/geometry coverage, verified both native candidates, recorded Nastia approvals and began approved integration.
+
+
+
+### BLA-42 address actions ·18832 ·9 November2026 ← in progress
+- Scope: conservative inline address recognition, exact-address Copy / Google Maps search sheet, existing whole-message Copy/reactions/URL gestures preserved.
+- Done when: required regressions/gates and real Android+iOS journeys/inspected screenshots+motion pass, then explicit visual approval. No merge/release authorized.
+- Status: isolated current-main candidate; initial focused28 pass. Shared-host headroom fell from6.2GiB to653MiB while own checkout/cache was ~33MiB. Approved verified inactive BLA28 compiler/intermediate caches removed; pre-third-target status guard detected concurrent diagnostic evidence additions and halted further cleanup. Native evidence gate remains open pending safe stable storage and coordination.
+- Changelog9Nov: registered approved BLA42 journey and implementation without changing translation policy.
+
+BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.

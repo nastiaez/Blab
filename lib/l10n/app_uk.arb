@@ -627,5 +627,9 @@
   "deletedAccountNotice": "Цей обліковий запис видалено. Ви більше не можете надсилати повідомлення.",
   "translateMessage": "Перекласти",
   "showMessageTranslation": "Показати переклад",
-  "hideMessageTranslation": "Приховати переклад"
+  "hideMessageTranslation": "Приховати переклад",
+  "addressCopy": "Копіювати адресу",
+  "addressOpenMaps": "Відкрити в Google Maps",
+  "addressCopied": "Адресу скопійовано",
+  "addressActionFailed": "Не вдалося відкрити або скопіювати цю адресу."
 }
