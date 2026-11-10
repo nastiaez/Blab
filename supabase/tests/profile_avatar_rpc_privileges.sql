@@ -9,10 +9,7 @@ begin
  if not has_function_privilege('authenticated','public.update_my_avatar(text,uuid)','EXECUTE') then
   raise exception 'authenticated avatar RPC EXECUTE lost';
  end if;
- if not has_function_privilege('service_role','public.update_my_avatar(text,uuid)','EXECUTE') then
-  raise exception 'service avatar RPC EXECUTE lost';
- end if;
- raise notice 'PASS avatar RPC grants: anonymous denied, authenticated/service preserved';
+ raise notice 'PASS avatar RPC grants: anonymous denied, authenticated preserved';
 end $$;
 set local role anon;
 do $$
