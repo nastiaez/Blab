@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -26,17 +25,6 @@ void main() {
       'arrow-up',
       'arrow-right',
     ];
-    final font = FontLoader('ReviewArial')
-      ..addFont(
-        Future.value(
-          ByteData.sublistView(
-            File(
-              '/System/Library/Fonts/Supplemental/Arial.ttf',
-            ).readAsBytesSync(),
-          ),
-        ),
-      );
-    await font.load();
     final key = GlobalKey();
     Widget icon(String n, int s, double scale) => Transform.scale(
       scale: scale,
@@ -44,7 +32,7 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeData(fontFamily: 'ReviewArial'),
+        theme: ThemeData(),
         home: Scaffold(
           body: RepaintBoundary(
             key: key,
@@ -133,12 +121,14 @@ void main() {
     await tester.runAsync(() async {
       final image = await boundary.toImage(pixelRatio: 2);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      await Directory(
-        '/Users/aswin/.openclaw/media/blab-bla39-18562',
-      ).create(recursive: true);
-      await File(
-        '/Users/aswin/.openclaw/media/blab-bla39-18562/icon-family.png',
-      ).writeAsBytes(bytes!.buffer.asUint8List());
+      final output = await Directory.systemTemp.createTemp('blab-icon-review-');
+      try {
+        await File(
+          '${output.path}/icon-family.png',
+        ).writeAsBytes(bytes!.buffer.asUint8List());
+      } finally {
+        await output.delete(recursive: true);
+      }
       image.dispose();
     });
   });
