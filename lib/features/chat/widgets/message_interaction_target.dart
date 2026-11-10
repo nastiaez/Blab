@@ -136,7 +136,7 @@ class _MessageInteractionTargetState extends State<MessageInteractionTarget> {
                         (entry) =>
                             entry.target is TextSpan &&
                             (entry.target as TextSpan).recognizer
-                                is MessageLinkTapGestureRecognizer,
+                                is MessageInlineActionTapGestureRecognizer,
                       );
                     };
                   }),

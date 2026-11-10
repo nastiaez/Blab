@@ -88,7 +88,13 @@ class MessageLinkText extends StatefulWidget {
   State<MessageLinkText> createState() => _MessageLinkTextState();
 }
 
-class MessageLinkTapGestureRecognizer extends TapGestureRecognizer {
+class MessageInlineActionTapGestureRecognizer extends TapGestureRecognizer {}
+
+class MessageAddressTapGestureRecognizer
+    extends MessageInlineActionTapGestureRecognizer {}
+
+class MessageLinkTapGestureRecognizer
+    extends MessageInlineActionTapGestureRecognizer {
   Timer? _holdTimer;
   bool _held = false;
   GestureLongPressStartCallback? onLinkLongPress;
@@ -286,7 +292,7 @@ class _MessageLinkTextState extends State<MessageLinkText> {
           final recognizer = _recognizers.putIfAbsent(
             key,
             () => link.isAddress
-                ? TapGestureRecognizer()
+                ? MessageAddressTapGestureRecognizer()
                 : MessageLinkTapGestureRecognizer(),
           );
           if (recognizer is MessageLinkTapGestureRecognizer) {

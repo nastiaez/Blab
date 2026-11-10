@@ -2,9 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:blab/features/chat/widgets/message_link_text.dart';
+import 'package:blab/features/chat/widgets/message_interaction_target.dart';
 import 'message_link_text_test.dart' as helpers;
 
 void main() {
+  testWidgets(
+    'address tap survives live parent double-tap and hold recognizers',
+    (tester) async {
+      var doubles = 0, holds = 0;
+      await tester.pumpWidget(
+        helpers.app(
+          MessageInteractionTarget(
+            isFailed: false,
+            onDoubleTap: () => doubles++,
+            onLongPress: (_, _) => holds++,
+            onFailedTap: () {},
+            child: helpers.links('Furkastrasse 82'),
+          ),
+        ),
+      );
+      await helpers.tapLink(tester);
+      expect(find.text('Copy address'), findsOneWidget);
+      expect(doubles, 0);
+      expect(holds, 0);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await helpers.holdLink(tester);
+      expect(holds, 1);
+      expect(doubles, 0);
+      expect(find.text('Copy address'), findsNothing);
+    },
+  );
   testWidgets('address reuses URL card geometry style and dismissal', (
     tester,
   ) async {
