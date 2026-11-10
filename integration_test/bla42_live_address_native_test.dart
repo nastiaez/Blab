@@ -141,8 +141,13 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 900)),
       );
       expect((await Clipboard.getData(Clipboard.kTextPlain))?.text, address);
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
       await binding.takeScreenshot('$evidence-copied');
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(seconds: 5)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Address copied'), findsNothing);
     }
 
     await mount(bob);
@@ -151,8 +156,12 @@ void main() {
       find.byKey(const ValueKey('composer-message-text-field')),
       '123 Main Street reply from Bob',
     );
-    await tester.tap(find.byTooltip('Send'));
+    await tester.pumpAndSettle();
     FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await binding.takeScreenshot('02-bob-composer-ready');
+    await tester.tap(find.byTooltip('Send'));
+    await tester.pumpAndSettle();
     await tester.runAsync(() async {
       for (var i = 0; i < 40; i++) {
         if ((await a.fetchMessages(
@@ -169,6 +178,34 @@ void main() {
     await mount(alice);
     await copyAddress('123 Main Street', '02-alice-received');
     debugPrint('BLA42_REAL_AUTH_CHAT_BIDIRECTIONAL_COPY_PASS chat=$chat');
+    final destination = find.byWidgetPredicate(
+      (w) => w is RichText && w.text.toPlainText().contains('123 Main Street'),
+    );
+    final paragraph = tester.renderObject<RenderParagraph>(destination.first);
+    final rendered = tester
+        .widget<RichText>(destination.first)
+        .text
+        .toPlainText();
+    final start = rendered.indexOf('123 Main Street');
+    final box = paragraph
+        .getBoxesForSelection(
+          TextSelection(baseOffset: start, extentOffset: start + 1),
+        )
+        .first;
+    await tester.tapAt(paragraph.localToGlobal(box.toRect().center));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 800)),
+    );
+    await tester.pumpAndSettle();
+    await ready(find.text('Open in Google Maps'));
+    await binding.takeScreenshot('03-live-maps-action');
+    await tester.tap(find.text('Open in Google Maps'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(seconds: 5)),
+    );
+    debugPrint(
+      'BLA42_LIVE_NATIVE_MAPS_HANDOFF_REQUESTED query=123 Main Street',
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
