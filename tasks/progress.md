@@ -2499,10 +2499,11 @@ BLA41 delivery FINAL18075: Apple57 VALID/reviewAPPROVED; internal+external IN_BE
 
 
 
-### BLA-42 address actions ·18832 ·9 November2026 ← in progress
-- Scope: conservative inline address recognition, exact-address Copy / Google Maps search sheet, existing whole-message Copy/reactions/URL gestures preserved.
-- Done when: required regressions/gates and real Android+iOS journeys/inspected screenshots+motion pass, then explicit visual approval. No merge/release authorized.
-- Status: isolated current-main candidate; initial focused28 pass. Shared-host headroom fell from6.2GiB to653MiB while own checkout/cache was ~33MiB. Approved verified inactive BLA28 compiler/intermediate caches removed; pre-third-target status guard detected concurrent diagnostic evidence additions and halted further cleanup. Native evidence gate remains open pending safe stable storage and coordination.
+### BLA-42 address actions ·18832 ·completed10 November2026
+- Scope: conservative inline address recognition, exact-address Copy / Google Maps search in the approved existing anchored link popup; whole-message Copy/reactions/URL gestures preserved.
+- Done when: regressions/full integrated gates, real Android+iOS journeys, inspected screenshots/motion and explicit visual approval pass; authorized existing private delivery separately verified.
+- Status: approved18969 popup preserved; Nastia19078 release authority continued19158. Integrated runtime4e31d72 passes full main CI42780425961 and both real local-account native journeys. Signed1.0.0(110) is available on all four existing Firebase/TestFlight targets, including approved external test beta; unchanged audiences and downloaded APK byte hashes verified. Four matching notices110 pass anonymous readback and actual client eligibility checks. Physical-device, signed-in-history retention and live-provider quality are not claimed.
+- Initial storage history: initial28 focused checks passed; headroom fell6.2GiB→653MiB; approved inactive BLA28 compiler/intermediate cleanup stopped when a preservation guard found concurrent evidence. Those historical blockers were resolved without deleting user data or review evidence.
 - Changelog9Nov: registered approved BLA42 journey and implementation without changing translation policy.
 
 BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.
