@@ -416,6 +416,14 @@
     are present only in ignored environment config, both guarded release builds
     pass, and a deliberate staging error arrived with redacted message content
     and the correct `staging` environment label.
+
+6
+## BLA-39 main-only integration19161 ·10 November202
+
+- Nastia19097 accepted reviewed correction19075;19161 explicitly requests main code integration now and defers further staging. Minimal forward migration revokes inherited anonymous EXECUTE on update_my_avatar(text,uuid), leaving authenticated/service grants and applied00001 unchanged. Real PostgreSQL inherited-default-grant regression fails before and passes after; anonymous is denied at function permission boundary. Canonical replay and integrated checks pending.
+- No UX changes; approved727ec6e/dab4f13 preserved. Prior staging135ledger/cleanup11+8 remains deployed; new hardening is code only. No production/staging mutations, uploads or distribution authorized this pass. Google human first/returning consent, physical camera and latest authenticated hosted acceptance remain explicit release-only gates, not passed.
+- Main integration coordination: BLA42/request19158 currently owns shared integration lock; isolated code work proceeds without stealing it.
+
   - [x] **Deployment parity recovery (2026-10-02):** staging and production manifests now include the existing authenticated `prepare-message-jobs` function, with a repository contract test preventing function/JWT-policy drift.
   - [ ] **Live check during manual test** (Nastia): on the installed release build, dev menu → "Throw test error" → confirm the event lands in Sentry within ~1 min and carries no message text.
 
