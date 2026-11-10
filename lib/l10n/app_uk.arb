@@ -634,5 +634,9 @@
   "profilePhotoPhoto": "Фото",
   "profilePhotoRemovePhoto": "Видалити фото",
   "profilePhotoConfirmCrop": "Підтвердити обрізання",
-  "profilePhotoPhotoError": "Не вдалося відкрити це фото. Спробуйте інше зображення."
+  "profilePhotoPhotoError": "Не вдалося відкрити це фото. Спробуйте інше зображення.",
+  "addressCopy": "Копіювати адресу",
+  "addressOpenMaps": "Відкрити в Google Maps",
+  "addressCopied": "Адресу скопійовано",
+  "addressActionFailed": "Не вдалося відкрити або скопіювати цю адресу."
 }

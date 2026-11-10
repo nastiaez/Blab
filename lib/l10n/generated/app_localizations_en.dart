@@ -1781,4 +1781,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profilePhotoPhotoError =>
       'Could not open this photo. Try another image.';
+
+  @override
+  String get addressCopy => 'Copy address';
+
+  @override
+  String get addressOpenMaps => 'Open in Google Maps';
+
+  @override
+  String get addressCopied => 'Address copied';
+
+  @override
+  String get addressActionFailed => 'Couldn’t open or copy this address.';
 }

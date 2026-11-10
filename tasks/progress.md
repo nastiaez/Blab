@@ -2504,6 +2504,15 @@ BLA41 delivery FINAL18075: Apple57 VALID/reviewAPPROVED; internal+external IN_BE
 - Changelog7Nov: added gesture/geometry coverage, verified both native candidates, recorded Nastia approvals and began approved integration.
 
 
+
+### BLA-42 address actions ·18832 ·completed10 November2026
+- Scope: conservative inline address recognition, exact-address Copy / Google Maps search in the approved existing anchored link popup; whole-message Copy/reactions/URL gestures preserved.
+- Done when: regressions/full integrated gates, real Android+iOS journeys, inspected screenshots/motion and explicit visual approval pass; authorized existing private delivery separately verified.
+- Status: approved18969 popup preserved; Nastia19078 release authority continued19158. Integrated runtime4e31d72 passes full main CI42780425961 and both real local-account native journeys. Signed1.0.0(110) is available on all four existing Firebase/TestFlight targets, including approved external test beta; unchanged audiences and downloaded APK byte hashes verified. Four matching notices110 pass anonymous readback and actual client eligibility checks. Physical-device, signed-in-history retention and live-provider quality are not claimed.
+- Initial storage history: initial28 focused checks passed; headroom fell6.2GiB→653MiB; approved inactive BLA28 compiler/intermediate cleanup stopped when a preservation guard found concurrent evidence. Those historical blockers were resolved without deleting user data or review evidence.
+- Changelog9Nov: registered approved BLA42 journey and implementation without changing translation policy.
+
+BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.
 ## BLA-28 mixed-language and genuine-correction slice — approved integration18965
 - Approved Nastia18771 visuals;18965 scoped commit/main merge, no release. Exact original and beautiful recorded provider/backend/widget checks pass; whole-message none preservation, source-only correction provenance, target anchors, spacing/equal size and deterministic trim preserved.
 - Current-main a5d2e46 reconciles without textual conflict. Other dirty worktrees and main artifacts preserved. No model/deadline/explanation-policy change, history backfill, new paid request or hosted deployment.
@@ -2516,3 +2525,11 @@ BLA41 delivery FINAL18075: Apple57 VALID/reviewAPPROVED; internal+external IN_BE
 - Nastia19097 accepted reviewed correction19075;19161 explicitly requests main code integration now and defers further staging. Minimal forward migration revokes inherited anonymous EXECUTE on update_my_avatar(text,uuid), leaving authenticated/service grants and applied00001 unchanged. Real PostgreSQL inherited-default-grant regression fails before and passes after; anonymous is denied at function permission boundary. Canonical replay and integrated checks pending.
 - No UX changes; approved727ec6e/dab4f13 preserved. Prior staging135ledger/cleanup11+8 remains deployed; new hardening is code only. No production/staging mutations, uploads or distribution authorized this pass. Google human first/returning consent, physical camera and latest authenticated hosted acceptance remain explicit release-only gates, not passed.
 - Main integration coordination: BLA42/request19158 currently owns shared integration lock; isolated code work proceeds without stealing it.
+
+BLA-42 approval Nastia19078 ·9 November2026: reviewed18969 anchored popup accepted unchanged; tentative direct-Maps tap19060 superseded. Scoped commit/push/main integration and existing private Android+iOS Blab/Blab-test distribution authorized, subject to current-main automated/native/security/environment-parity gates. No backend/schema/history rollout or audience expansion.
+
+BLA-42 continuation19158 ·10November: yesterday hosted-migration blocker superseded by actual deployment/production manifest PASS; staging exact approved135-ledger superset separately verified read-only. Clean134-migration local rebuild and10SQL/RLS suites PASS; exact7be57b4 CI all3PASS. Real-account native check exposed parent double-tap swallowing address tap; focused RED→GREEN arbitration-only repair preserves approved18969 popup. Full/native reruns in progress; no main merge/distribution yet.
+
+BLA42 19158 native gate: BOTH real local-account journeys PASS, actual composer reply+exact clipboards+Maps/Safari handoff, inspected stills/motion; repaired-source full CI42778201153 all3PASS. Approved popup byte-identical; final harness readiness-only changes. Main integration authorized19078 now proceeding; signed private four-target delivery remains pending, not Done.
+
+BLA39 continuation19165/19173: private release additionally authorized; fresh designated Google login share verified usable and expected browser session authenticated, not native proof. BLA42 handoff confirmed10:54, latest80878ad preserved in reconciliation. Forward permission migration remains undeployed; no production/furtherstaging writes. Integrated checks and signed111+ Android verification in progress; personal account/data preserved.

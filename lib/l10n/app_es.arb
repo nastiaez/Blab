@@ -634,5 +634,9 @@
   "profilePhotoPhoto": "Foto",
   "profilePhotoRemovePhoto": "Eliminar foto",
   "profilePhotoConfirmCrop": "Confirmar recorte",
-  "profilePhotoPhotoError": "No se pudo abrir esta foto. Prueba otra imagen."
+  "profilePhotoPhotoError": "No se pudo abrir esta foto. Prueba otra imagen.",
+  "addressCopy": "Copiar dirección",
+  "addressOpenMaps": "Abrir en Google Maps",
+  "addressCopied": "Dirección copiada",
+  "addressActionFailed": "No se pudo abrir ni copiar esta dirección."
 }

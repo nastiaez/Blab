@@ -1802,4 +1802,17 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get profilePhotoPhotoError =>
       'No se pudo abrir esta foto. Prueba otra imagen.';
+
+  @override
+  String get addressCopy => 'Copiar dirección';
+
+  @override
+  String get addressOpenMaps => 'Abrir en Google Maps';
+
+  @override
+  String get addressCopied => 'Dirección copiada';
+
+  @override
+  String get addressActionFailed =>
+      'No se pudo abrir ni copiar esta dirección.';
 }

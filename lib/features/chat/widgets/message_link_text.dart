@@ -12,10 +12,13 @@ import 'mention_text.dart';
 
 /// BLA-40: offsets and copy payload always refer to the untouched visible text.
 class MessageLink {
-  const MessageLink(this.start, this.end, this.raw);
+  const MessageLink(this.start, this.end, this.raw, {this.isAddress = false});
+  final bool isAddress;
   final int start, end;
   final String raw;
-  Uri get target => Uri.parse(raw.contains('://') ? raw : 'https://$raw');
+  Uri get target => isAddress
+      ? Uri.https('www.google.com', '/maps/search/', {'api': '1', 'query': raw})
+      : Uri.parse(raw.contains('://') ? raw : 'https://$raw');
   int get authorityEnd {
     final start = raw.indexOf('://');
     final offset = start < 0 ? 0 : start + 3;
@@ -52,6 +55,19 @@ List<MessageLink> messageLinks(String text) {
     }
     links.add(MessageLink(match.start, match.start + raw.length, raw));
   }
+  final addressPattern = RegExp(
+    r'(?<![\p{L}\p{N}_/@])(?:[\p{Lu}][\p{L}.-]*(?:[Ss]trasse|[Ss]traße|[Ss]tr\.|weg|platz|gasse|allee)[ \t]+[0-9]{1,5}[a-zA-Z]?(?:[/-][0-9]{1,5})?|[0-9]{1,5}[ \t]+(?:[\p{Lu}][\p{L}.-]*[ \t]+){1,3}(?:Street|St\.|Road|Rd\.|Avenue|Ave\.|Lane|Drive|Boulevard)|(?:вулиця|вул\.|проспект|провулок|Calle|Avenida)[ \t]+[\p{Lu}][\p{L}.-]*(?:[ \t]+[\p{Lu}][\p{L}.-]*){0,2},?[ \t]+[0-9]{1,5}[a-zA-Zа-яА-Я]?)(?![\p{L}\p{N}_])',
+    unicode: true,
+  );
+  for (final match in addressPattern.allMatches(text)) {
+    if (links.any((link) => match.start < link.end && match.end > link.start)) {
+      continue;
+    }
+    links.add(
+      MessageLink(match.start, match.end, match.group(0)!, isAddress: true),
+    );
+  }
+  links.sort((a, b) => a.start.compareTo(b.start));
   return links;
 }
 
@@ -72,7 +88,13 @@ class MessageLinkText extends StatefulWidget {
   State<MessageLinkText> createState() => _MessageLinkTextState();
 }
 
-class MessageLinkTapGestureRecognizer extends TapGestureRecognizer {
+class MessageInlineActionTapGestureRecognizer extends TapGestureRecognizer {}
+
+class MessageAddressTapGestureRecognizer
+    extends MessageInlineActionTapGestureRecognizer {}
+
+class MessageLinkTapGestureRecognizer
+    extends MessageInlineActionTapGestureRecognizer {
   Timer? _holdTimer;
   bool _held = false;
   GestureLongPressStartCallback? onLinkLongPress;
@@ -124,7 +146,7 @@ class MessageLinkTapGestureRecognizer extends TapGestureRecognizer {
 }
 
 class _MessageLinkTextState extends State<MessageLinkText> {
-  final _recognizers = <String, MessageLinkTapGestureRecognizer>{};
+  final _recognizers = <String, TapGestureRecognizer>{};
   @override
   void dispose() {
     for (final r in _recognizers.values) {
@@ -232,7 +254,8 @@ class _MessageLinkTextState extends State<MessageLinkText> {
             outgoing: widget.isOutgoing,
           ).copyWith(decoration: TextDecoration.underline);
           var visible = link.raw;
-          if (lineCount(visible, linkStyle) > 2 &&
+          if (!link.isAddress &&
+              lineCount(visible, linkStyle) > 2 &&
               link.authorityEnd < visible.length) {
             var low = link.authorityEnd, high = visible.length - 1;
             while (low < high) {
@@ -246,27 +269,51 @@ class _MessageLinkTextState extends State<MessageLinkText> {
             // Security takes precedence when the authority alone exceeds two lines.
             visible = '${link.raw.substring(0, low)}…';
           }
-          final key = "${linkIndex++}:${link.raw}";
+          final key = "${linkIndex++}:${link.isAddress}:${link.raw}";
           usedRecognizers.add(key);
           accessibleActions[CustomSemanticsAction(
-            label: "${context.l10n.linkCopy}: ${link.raw}",
+            label:
+                "${link.isAddress ? context.l10n.addressCopy : context.l10n.linkCopy}: ${link.raw}",
           )] = () async {
             try {
               await Clipboard.setData(ClipboardData(text: link.raw));
             } catch (_) {
-              if (context.mounted) _linkError(context);
+              if (context.mounted) {
+                _linkError(context, address: link.isAddress);
+              }
             }
           };
-          final recognizer =
-              _recognizers.putIfAbsent(key, MessageLinkTapGestureRecognizer.new)
-                ..onLinkTap = () {
-                  openMessageLink(context, link);
-                }
-                ..onLinkLongPress = (details) => showMessageLinkMenu(
-                  context,
-                  link: link,
-                  anchor: details.globalPosition,
-                );
+          if (link.isAddress) {
+            accessibleActions[CustomSemanticsAction(
+              label: "${context.l10n.addressOpenMaps}: ${link.raw}",
+            )] = () =>
+                openMessageLink(context, link);
+          }
+          final recognizer = _recognizers.putIfAbsent(
+            key,
+            () => link.isAddress
+                ? MessageAddressTapGestureRecognizer()
+                : MessageLinkTapGestureRecognizer(),
+          );
+          if (recognizer is MessageLinkTapGestureRecognizer) {
+            recognizer
+              ..onLinkTap = () {
+                openMessageLink(context, link);
+              }
+              ..onLinkLongPress = (details) => showMessageLinkMenu(
+                context,
+                link: link,
+                anchor: details.globalPosition,
+              );
+          } else {
+            Offset anchor = Offset.zero;
+            recognizer
+              ..onTapDown = (details) {
+                anchor = details.globalPosition;
+              }
+              ..onTap = () =>
+                  showMessageLinkMenu(context, link: link, anchor: anchor);
+          }
 
           output.add(
             TextSpan(
@@ -312,9 +359,13 @@ Future<void> openMessageLink(BuildContext context, MessageLink link) async {
       link.target,
       mode: LaunchMode.externalApplication,
     );
-    if (!opened && context.mounted) _linkError(context);
+    if (!opened && context.mounted) {
+      _linkError(context, address: link.isAddress);
+    }
   } catch (_) {
-    if (context.mounted) _linkError(context);
+    if (context.mounted) {
+      _linkError(context, address: link.isAddress);
+    }
   }
 }
 
@@ -409,8 +460,10 @@ Future<void> showMessageLinkMenu(
                   ),
                 ),
                 _LinkAction(
-                  label: context.l10n.linkOpenBrowser,
-                  icon: Icons.north_east,
+                  label: link.isAddress
+                      ? context.l10n.addressOpenMaps
+                      : context.l10n.linkOpenBrowser,
+                  icon: link.isAddress ? Icons.map_outlined : Icons.north_east,
                   height: actionHeight,
                   onTap: () async {
                     Navigator.of(menuContext).pop();
@@ -419,22 +472,35 @@ Future<void> showMessageLinkMenu(
                         link.target,
                         mode: LaunchMode.externalApplication,
                       );
-                      if (!opened && context.mounted) _linkError(context);
+                      if (!opened && context.mounted) {
+                        _linkError(context, address: link.isAddress);
+                      }
                     } catch (_) {
-                      if (context.mounted) _linkError(context);
+                      if (context.mounted) {
+                        _linkError(context, address: link.isAddress);
+                      }
                     }
                   },
                 ),
                 _LinkAction(
-                  label: context.l10n.linkCopy,
+                  label: link.isAddress
+                      ? context.l10n.addressCopy
+                      : context.l10n.linkCopy,
                   icon: Icons.content_copy,
                   height: actionHeight,
                   onTap: () async {
                     Navigator.of(menuContext).pop();
                     try {
                       await Clipboard.setData(ClipboardData(text: link.raw));
+                      if (link.isAddress && context.mounted) {
+                        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                          SnackBar(content: Text(context.l10n.addressCopied)),
+                        );
+                      }
                     } catch (_) {
-                      if (context.mounted) _linkError(context);
+                      if (context.mounted) {
+                        _linkError(context, address: link.isAddress);
+                      }
                     }
                   },
                 ),
@@ -447,9 +513,16 @@ Future<void> showMessageLinkMenu(
   );
 }
 
-void _linkError(BuildContext context) => ScaffoldMessenger.maybeOf(
-  context,
-)?.showSnackBar(SnackBar(content: Text(context.l10n.linkActionFailed)));
+void _linkError(BuildContext context, {bool address = false}) =>
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+        content: Text(
+          address
+              ? context.l10n.addressActionFailed
+              : context.l10n.linkActionFailed,
+        ),
+      ),
+    );
 
 class _LinkAction extends StatelessWidget {
   const _LinkAction({

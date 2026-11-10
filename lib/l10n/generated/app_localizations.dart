@@ -3203,6 +3203,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open this photo. Try another image.'**
   String get profilePhotoPhotoError;
+
+  /// No description provided for @addressCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy address'**
+  String get addressCopy;
+
+  /// No description provided for @addressOpenMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Google Maps'**
+  String get addressOpenMaps;
+
+  /// No description provided for @addressCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Address copied'**
+  String get addressCopied;
+
+  /// No description provided for @addressActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open or copy this address.'**
+  String get addressActionFailed;
 }
 
 class _AppLocalizationsDelegate

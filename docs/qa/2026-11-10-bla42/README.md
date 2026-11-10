@@ -1,0 +1,27 @@
+# BLA42 continuation19158
+
+Approved18969 popup retained, release authority19078 continued19158.
+
+- Current main d2aedc5. Production manifest passes; staging contains exactly134 main migrations plus separately approved BLA39 profile-photo migration20261107000001. A scratch135-migration manifest passes; live translation/worker source bytes match main, staged avatar functions match approved dab4f13. No hosted writes or verifier weakening. Original missing00000 blocker superseded by verified deployment receipts19122.
+- Exact pre-repair7be57b4 CI42775057877: Quality, clean local backend integration, Android release compile all SUCCESS. Fresh isolated134 migration rebuild and10real SQL/RLS suites pass independently.
+- New actual local Auth/ChatService native harness exposed address/parent double-tap arbitration missing from earlier synthetic fixtures. Parent-gesture regression fails before fix, passes after. Typed inline-action recognizers now exclude address taps from parent double-tap interception, while address hold still reaches parent actions. Approved showMessageLinkMenu implementation remains byte-identical; no copy, geometry, parser, translation policy, backend, URL hold or word-learning change.
+- Final focused85 pass including parent tap+hold, URL geometry, existing interactions and restored Android release contracts; analysis clean and formatting unchanged. Earlier full rerun had1346pass/36skip and one temporary QA Gradle-configuration failure, not a green full receipt; restored contract passes separately. Clean frozen CI and native completion remain explicit gates.
+- Real local acceptance is not live hosted-provider quality or physical-device proof. Native Android menu rendered; clipboard attempt lost foreground to a verified Android system ANR. This is not a claimed native pass. Own runtime stopped preserving data, sequential iOS and clean Android rerun pending. Local-only QA package prevents signed app-data deletion; no uploads/notices/main update yet.
+
+Raw diagnostics, private configuration and media remain outside Git in sibling qa-artifacts/bla42-19158. Recovery checkpoint is sibling automation/state/checkpoints/BLA-42.json.
+
+## Native gates completed before main integration
+Both Android and iOS real local Auth/PostgREST/ChatService journeys PASS: Alice sends exact address, Bob receives and copies exact span, Bob sends a reply through real composer, Alice receives and copies exact English address. No injected chat/translation payload or hosted data writes. Real Android Maps activity displays exact123 Main Street query (partial matches, no invented locality/navigation); iOS Maps-absent Safari reaches Google consent. Returning app foreground after handoff allows background-paused test driver to finish. Canonical images and both actual motion contact sheets inspected against approved popup; same appearance/behavior, contextual group layout only.
+Full repaired-source CI42778201153 SUCCESS: Quality (full Flutter/analysis/backend unit), fresh Supabase integration and Android compile. Final harness-only changes fix readiness/timing, wait for standard copied notice before composer taps, and capture actual Maps handoff; lib/test/backend trees unchanged from green c732abf. Simulator app-group sync warning is not push-notification acceptance; no physical-device or paid live-provider claim. Signed integrated releases and availability still pending.
+
+## Final private release110
+Integrated runtime source4e31d7273aa88a1510440b8ea2aa9fbafa784c17; exact-main CI42780425961 Quality, fresh Supabase integration and Android compile SUCCESS. All four private1.0.0(110) targets are available; test external beta review APPROVED, existing groups assigned and nonexpired IN_BETA_TESTING states verified. No membership writes, public-store submission, custom release notes, backend/schema/history/prompt deployment or new paid-provider calls.
+
+- Android test109→110 retains signing/firstInstallTime/ES welcome and cold-launches; public58→110 retains signing/firstInstallTime/DE welcome. Nondebuggable private stores were not bypassed; no signed-in-history or physical-install claim.
+- Firebase exact predecessor cohorts15 test /2 public verified both before distribution and on reopened110 tester lists. Both actual downloaded APK byte hashes match the signed/tested files. Initial older59 download was detected and superseded, never uploaded/installed as110.
+- Both IPAs pass deep/strict signatures, parent+two-extension IDs/build110, isolated environment app groups and parent communication entitlement. Actual real-service simulator journeys are distinct from signed-IPA physical installation.
+- Four matching update notices59→110 enabled only after actual availability. Destinations and other four rows preserved; anonymous readback plus actual Dart resolver109-eligible/110-hidden/disabled-hidden and existing notice regressions:6PASS.
+- APK SHA256 test5b73170df584314b5d61a6f7c0ff8e408909f98978ec3370a958cf4aaaaae962; public222205bfd53efce0365e673d7fd042030d1bfb7836cd4885ab532972d53166d1.
+- IPA SHA256 test574c27b6d95b40e440808d8f45638bccb120fcbda75481f34f9a9b993e126a68; public811dccd70df832d498d5fb4d892d3cb0b5ae1b1da45d3331194baf96fb88f9aa.
+
+Receipts and private artifacts remain outside Git at sibling releases/20261110-bla42-19158; actual inspected journey media at sibling qa-artifacts/bla42-19158. This final status amendment is documentation-only; shipped runtime/lib/test/backend trees remain exactly the verified integrated revision. No launch-tracker manual-test checkbox changed.

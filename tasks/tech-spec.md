@@ -667,3 +667,10 @@ BLA-41 quieter colour revision · Nastia screenshot feedback during18001 continu
 
 
 BLA-43 refinement18395: MessageLinkAnchor resolves the exact MessageInteractionTarget bounds plus the current ChatScreen header-to-composer viewport at hold time. Link dialog reuses AnchoredMessagePanels with hasReactions=false, so real measured card height replaces guessed maximum URL height. Existing message positioning/actions remain unchanged. No translation, backend, caching or language ownership changes.
+
+> **BLA-42 · Nastia18622/18832:** implementation authorized: tap a recognized underlined address to a sheet showing its exact text, Copy address and Open in Google Maps (search, browser fallback). Address hold retains message reactions/actions; ordinary message Copy and URL gestures remain unchanged. Detection is conservative; no geocoding, inferred locality, automatic navigation, translation/history mutation or release authorization. Actual Android/iOS visual and journey review remains pending.
+
+
+BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.
+
+BLA-42 approval Nastia19078 ·9 November2026: reviewed18969 anchored popup accepted unchanged; tentative direct-Maps tap19060 superseded. Scoped commit/push/main integration and existing private Android+iOS Blab/Blab-test distribution authorized, subject to current-main automated/native/security/environment-parity gates. No backend/schema/history rollout or audience expansion.
