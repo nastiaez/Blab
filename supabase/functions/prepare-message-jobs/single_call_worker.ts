@@ -1,3 +1,4 @@
+import { withLeaseGuard } from "./lease_guard.ts";
 import { isMentionIntegrityFailure } from "../translate-message/mention_identity.ts";
 import { commitGroupViewers, commitViewers } from "./commit_viewers.ts";
 import {
@@ -35,6 +36,7 @@ export async function runMessageBatch(
   admin: Admin,
   jobs: LeasedJob[],
   generateOverride?: Generator,
+  deadlineMs = performance.now() + 80_000,
 ) {
   const pending: Array<{ job: LeasedJob; viewer: PreparedViewer }> = [];
   const backoff = { untilMs: 0 };
@@ -93,7 +95,7 @@ export async function runMessageBatch(
           integrityFailures.set(v.key, (error as Error).message);
         }
       };
-      const run = async () => {
+      const run = async (signal?: AbortSignal) => {
         if (generateOverride) return await generateOverride(vs, onFailure);
         const credential = providerCredentials({
           provider: Deno.env.get("BLAB_TRANSLATION_PROVIDER"),
@@ -106,6 +108,11 @@ export async function runMessageBatch(
         })[0];
         if (!credential) throw new Error("missing_provider_key");
         credential.backoff = backoff;
+        if (signal) {
+          credential.signal = signal;
+          credential.deadlineMs = deadlineMs;
+          credential.timeoutMs = 65_000;
+        }
         return await generateMessageOnce(
           vs,
           credential,
@@ -114,7 +121,22 @@ export async function runMessageBatch(
           onFailure,
         );
       };
-      const generated = await run();
+      // This repair is intentionally limited to the single-call two-person path.
+      // Group contracts retain their existing scheduling/publication semantics.
+      const generated = vs.some(isGroupViewer)
+        ? await run()
+        : await withLeaseGuard({
+          deadlineMs,
+          renew: async () => {
+            const reply = await admin.rpc("renew_message_preparation_leases", {
+              p_leases: pending.map(({ job }) => ({
+                id: job.id,
+                lease: job.lease_token,
+              })),
+            });
+            return !reply.error && reply.data === true;
+          },
+        }, run);
       for (const v of vs) {
         const reason = integrityFailures.get(v.key);
         if (reason && isGroupViewer(v)) {

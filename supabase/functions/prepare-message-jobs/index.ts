@@ -40,9 +40,24 @@ Deno.serve(async (request) => {
   });
   const processJobs = async () => {
     let claimed = 0;
-    const deadline = Date.now() + 60000;
-    while (claimed < limit && Date.now() < deadline) {
-      const { data, error } = await admin.rpc(
+    const deadline = Date.now() + 90_000;
+    const generationDeadline = performance.now() + 80_000;
+    const boundedAdmin = {
+      rpc: async (name: string, args: Record<string, unknown>) => {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          return {
+            data: null,
+            error: new Error("invocation_budget_exhausted"),
+          };
+        }
+        return await admin.rpc(name, args).abortSignal(
+          AbortSignal.timeout(Math.min(5_000, remaining)),
+        );
+      },
+    };
+    while (claimed < limit && Date.now() < deadline - 15_000) {
+      const { data, error } = await boundedAdmin.rpc(
         "claim_message_preparation_jobs_for_worker",
         { p_limit: limit - claimed },
       );
@@ -56,7 +71,9 @@ Deno.serve(async (request) => {
         batches.set(key, [...(batches.get(key) ?? []), job]);
       }
       await Promise.all(
-        [...batches.values()].map((batch) => runMessageBatch(admin, batch)),
+        [...batches.values()].map((batch) =>
+          runMessageBatch(boundedAdmin, batch, undefined, generationDeadline)
+        ),
       );
     }
     return json({ status: "processed", claimed });

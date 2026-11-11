@@ -231,6 +231,18 @@ class _ControlledCacheChatService implements ChatService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _DurableRetryChatService extends _ControlledCacheChatService {
+  _DurableRetryChatService(Map<String, MessageTranslation> cache)
+    : super(cachedByMessageId: cache);
+  bool pending = false;
+  @override
+  Future<bool> isMessageTranslationPending({
+    required String messageId,
+    required String targetLang,
+    required String interfaceLang,
+  }) async => pending;
+}
+
 class _RealtimeTranslationChatService implements ChatService {
   final changes = StreamController<MessageTranslationChange>.broadcast();
   bool pending = false;
@@ -1847,6 +1859,69 @@ void main() {
         reason: 'one tap is one attempt, not a quiet retry loop',
       );
       expect(automaticCalls, 1);
+    },
+  );
+
+  test(
+    'manual durable retry waits for saved result without another AI call',
+    () async {
+      final cache = <String, MessageTranslation>{};
+      final service = _DurableRetryChatService(cache);
+      var automaticCalls = 0;
+      var retryCalls = 0;
+      final container = ProviderContainer(
+        overrides: [
+          chatServiceProvider.overrideWithValue(service),
+          translationLoadingTimeoutProvider.overrideWithValue(
+            const Duration(milliseconds: 5),
+          ),
+          translationLateCacheRecoveryDelayProvider.overrideWithValue(
+            const Duration(milliseconds: 5),
+          ),
+          translateMessageFnProvider.overrideWithValue((
+            id, {
+            targetLang,
+          }) async {
+            automaticCalls++;
+            throw MessageTranslationFailed('preparation_failed');
+          }),
+          retryMessageFnProvider.overrideWithValue((id, {targetLang}) async {
+            retryCalls++;
+            service.pending = true;
+            throw MessageTranslationFailed('translation_pending');
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      final provider = messageTranslationsProvider('durable-retry');
+      final notifier = container.read(provider.notifier);
+      await notifier.ensure(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      notifier.hydrateFromDb({'m2': _translation('Unchanged')}, 'de', 'en');
+      await notifier.retry(
+        messageId: 'm1',
+        text: 'hello',
+        targetLang: 'de',
+        interfaceLang: 'en',
+      );
+      expect(
+        container.read(provider)['m1|de|en'],
+        isA<AsyncLoading<MessageTranslation>>(),
+      );
+      cache['m1'] = _translation('Hallo');
+      service.pending = false;
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(container.read(provider)['m1|de|en']!.value!.translation, 'Hallo');
+      expect(
+        container.read(provider)['m2|de|en']!.value!.translation,
+        'Unchanged',
+      );
+      expect(automaticCalls, 1);
+      expect(retryCalls, 1);
     },
   );
 

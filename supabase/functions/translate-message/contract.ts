@@ -81,6 +81,7 @@ export type ProviderCredential = {
   model: string;
   useOpenRouterProviderPolicy: boolean;
   deadlineMs?: number;
+  timeoutMs?: number;
   signal?: AbortSignal;
   backoff?: { untilMs: number };
 };

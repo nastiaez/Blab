@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart' show StringCharacters;
+
 import 'message_mention.dart';
 
 /// A single tappable (or non-tappable) segment of a message rendered in the
@@ -109,7 +111,11 @@ List<MessageToken> _splitVisibleText(String text) {
   final tokens = <MessageToken>[];
   final current = StringBuffer();
   bool? currentIsContent;
-  final characters = text.runes.map(String.fromCharCode).toList();
+  // Keep variation selectors and emoji sequences in the same rendered span.
+  final characters = text.characters.toList();
+  bool isWord(String cluster) =>
+      !cluster.contains('\u20e3') &&
+      _wordCharacter.hasMatch(String.fromCharCode(cluster.runes.first));
 
   void flush() {
     if (current.isEmpty) return;
@@ -123,12 +129,12 @@ List<MessageToken> _splitVisibleText(String text) {
     final char = characters[index];
     final isConnector = _wordConnectors.contains(char);
     final isContent =
-        _wordCharacter.hasMatch(char) ||
+        isWord(char) ||
         (isConnector &&
             index > 0 &&
             index + 1 < characters.length &&
-            _wordCharacter.hasMatch(characters[index - 1]) &&
-            _wordCharacter.hasMatch(characters[index + 1]));
+            isWord(characters[index - 1]) &&
+            isWord(characters[index + 1]));
     if (currentIsContent != null && currentIsContent != isContent) {
       flush();
     }

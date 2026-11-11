@@ -112,7 +112,7 @@ export async function generateMessageOnce(
   }
   const response = await fetchChatCompletion(credential, request, {
     fetchImpl,
-    timeoutMs: SINGLE_CALL_POLICY.timeoutMs,
+    timeoutMs: credential.timeoutMs ?? SINGLE_CALL_POLICY.timeoutMs,
   });
   if (!response.ok) throw new Error(`provider_http_${response.status}`);
   const payload = await response.json();
