@@ -173,7 +173,7 @@ class ChatSendButton extends StatelessWidget {
         key: const ValueKey('composer-send-decoration'),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          boxShadow: isPractice && !groupConversation
+          boxShadow: isPractice
               ? const [
                   BoxShadow(
                     color: Color(0x2E231208),
@@ -192,7 +192,7 @@ class ChatSendButton extends StatelessWidget {
                 ? BlabColors.sendButton
                 : (groupConversation
                       ? const Color(0xFFB3A69D)
-                      : BlabColors.sendButton.withValues(alpha: 0.4)),
+                      : const Color(0xFFB5A7A0)),
           ),
           child: BlabIconButton(
             tooltip: tooltip,
@@ -201,12 +201,12 @@ class ChatSendButton extends StatelessWidget {
             style: IconButton.styleFrom(shape: const CircleBorder()),
             icon: const SizedBox(
               key: ValueKey('composer-send-icon'),
-              width: 20,
-              height: 20,
+              width: 24,
+              height: 24,
               child: BlabIcon(
-                name: 'arrow-up - 20',
+                name: 'chat-send-branded',
                 color: Colors.white,
-                size: 20,
+                size: 24,
               ),
             ),
           ),
