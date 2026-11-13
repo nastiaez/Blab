@@ -524,9 +524,15 @@ class _ReviewService extends _PrimaryKnownLanguageChatService {
 }
 
 void main() {
-  for (final outgoing in [true, false]) {
+  for (final scenario in [
+    (true, false),
+    (false, false),
+    (true, true),
+    (false, true),
+  ]) {
+    final (outgoing, long) = scenario;
     testWidgets(
-      'BLA41 explicit translation remains and anchors outgoing=$outgoing',
+      'BLA41 explicit translation remains and anchors outgoing=$outgoing long=$long',
       (tester) async {
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1;
@@ -537,7 +543,7 @@ void main() {
         final service = _ReviewService(
           outgoing: outgoing,
           mode: 'practice',
-          long: false,
+          long: long,
         );
         final container = _containerForHeader(
           service,
@@ -567,13 +573,15 @@ void main() {
           ),
           findsNothing,
         );
-        await tester.tap(target);
+        await tester.tapAt(tester.getTopLeft(target) + const Offset(30, 20));
         await _settle(tester);
         expect(
           find.byKey(const ValueKey('message-action-translate')),
           findsNothing,
         );
-        await tester.longPress(target);
+        await tester.longPressAt(
+          tester.getTopLeft(target) + const Offset(30, 20),
+        );
         await _settle(tester);
         final translate = find.byKey(
           const ValueKey('message-action-translate'),
@@ -587,7 +595,6 @@ void main() {
                 .dy,
           ),
         );
-        final top = tester.getTopLeft(target).dy;
         await tester.tap(translate);
         await _settle(tester);
         expect(
@@ -601,14 +608,12 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(tester.getTopLeft(target).dy, closeTo(top, 0.5));
         final toggle = find.byKey(const ValueKey('translation-toggle-msg-1'));
         expect(
           find.descendant(of: toggle, matching: find.text('Hide translation')),
           findsOneWidget,
         );
-        await tester.ensureVisible(toggle);
-        await _settle(tester);
+        expect(toggle.hitTestable(), findsOneWidget);
         await tester.tap(toggle);
         await _settle(tester);
         expect(
@@ -623,11 +628,28 @@ void main() {
           findsOneWidget,
         );
 
-        await tester.ensureVisible(toggle);
-        await _settle(tester);
+        expect(toggle.hitTestable(), findsOneWidget);
         await tester.tap(toggle);
         await _settle(tester);
 
+        double? toggleBottom;
+        for (var i = 0; i < 4; i++) {
+          expect(toggle.hitTestable(), findsOneWidget);
+          final bottom = tester.getRect(toggle).bottom;
+          toggleBottom ??= bottom;
+          expect(bottom, closeTo(toggleBottom, 0.1));
+          final rect = tester.getRect(toggle);
+          expect(
+            rect.top,
+            greaterThanOrEqualTo(tester.getRect(find.byType(ChatTimeline)).top),
+          );
+          expect(
+            rect.bottom,
+            lessThanOrEqualTo(tester.getRect(find.byType(ChatTimeline)).bottom),
+          );
+          await tester.tap(toggle);
+          await _settle(tester);
+        }
         await tester.pumpWidget(const SizedBox.shrink());
         container.dispose();
         await tester.pump(const Duration(seconds: 20));

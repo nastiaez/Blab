@@ -93,10 +93,25 @@ class MessageBubble extends ConsumerStatefulWidget {
 
 class _BubbleState extends ConsumerState<MessageBubble> {
   int _openFormChoiceIndex = 0;
+  final _translationToggleKey = GlobalKey();
 
   @override
   void didUpdateWidget(covariant MessageBubble oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.translationRequested &&
+        (oldWidget.translationExpanded != widget.translationExpanded ||
+            !oldWidget.translationRequested)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final toggleContext = _translationToggleKey.currentContext;
+        if (toggleContext == null) return;
+        Scrollable.ensureVisible(
+          toggleContext,
+          alignment: 1,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+        );
+      });
+    }
     if (oldWidget.message.id != widget.message.id ||
         oldWidget.message.originalText != widget.message.originalText ||
         oldWidget.mode != widget.mode ||
@@ -674,14 +689,17 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         interactiveBubble,
         if (showTranslationToggle) ...[
           if (reactions.isEmpty) const SizedBox(height: 2),
-          MessageStatusNotice(
-            key: ValueKey('translation-toggle-${message.id}'),
-            text: widget.translationExpanded
-                ? context.l10n.hideMessageTranslation
-                : context.l10n.showMessageTranslation,
-            onTap: widget.onToggleTranslation,
-            alignRight: isOut,
-            color: BlabColors.warmInk,
+          SizedBox(
+            key: _translationToggleKey,
+            child: MessageStatusNotice(
+              key: ValueKey('translation-toggle-${message.id}'),
+              text: widget.translationExpanded
+                  ? context.l10n.hideMessageTranslation
+                  : context.l10n.showMessageTranslation,
+              onTap: widget.onToggleTranslation,
+              alignRight: isOut,
+              color: BlabColors.warmInk,
+            ),
           ),
         ],
         if (showUnsupportedLanguageHint)
