@@ -121,22 +121,20 @@ export async function runMessageBatch(
           onFailure,
         );
       };
-      // This repair is intentionally limited to the single-call two-person path.
-      // Group contracts retain their existing scheduling/publication semantics.
-      const generated = vs.some(isGroupViewer)
-        ? await run()
-        : await withLeaseGuard({
-          deadlineMs,
-          renew: async () => {
-            const reply = await admin.rpc("renew_message_preparation_leases", {
-              p_leases: pending.map(({ job }) => ({
-                id: job.id,
-                lease: job.lease_token,
-              })),
-            });
-            return !reply.error && reply.data === true;
-          },
-        }, run);
+      // All provider work must retain its leases inside the invocation budget.
+      // Group batching and artifact publication remain owned by group_outputs.
+      const generated = await withLeaseGuard({
+        deadlineMs,
+        renew: async () => {
+          const reply = await admin.rpc("renew_message_preparation_leases", {
+            p_leases: pending.map(({ job }) => ({
+              id: job.id,
+              lease: job.lease_token,
+            })),
+          });
+          return !reply.error && reply.data === true;
+        },
+      }, run);
       for (const v of vs) {
         const reason = integrityFailures.get(v.key);
         if (reason && isGroupViewer(v)) {
