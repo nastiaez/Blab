@@ -1,3 +1,7 @@
+## BLA-53 · Group translation lease recovery · owner-closed
+- Backend guard repair deployed to staging; Nastia confirmed successful Retry (19780), then explicitly approved main integration and local retirement (19832). 291 backend tests pass.
+- Production deployment and app releases are not authorized by this integration. Full native/live-provider QA remains incomplete; owner-requested Linear Done is administrative.
+
 ## BLA-52 · Translation toggle visibility · [ ] ← in progress
 - Scope: preserve existing translation appearance/copy and keep its Show/Hide control visible after explicit repeated toggles; no translation-policy/cache/backend change.
 - Done when: incoming/outgoing short/long journeys remain tappable without manual scrolling on Android and iOS; actual screenshots/motion reviewed and accepted.
