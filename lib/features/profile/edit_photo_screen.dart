@@ -42,16 +42,11 @@ class _EditPhotoScreenState extends ConsumerState<EditPhotoScreen> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final file = await ref.read(profilePhotoPickerProvider)(source);
-      if (file == null) return;
-      if (await file.length() > 20 * 1024 * 1024) {
-        throw const FormatException('Image too large');
-      }
-      final bytes = await file.readAsBytes();
-      final normalized = await prepareProfilePhoto(bytes);
-      if (!mounted) return;
+      final picker = ref.read(profilePhotoPickerProvider);
       final cropped = await Navigator.of(context).push<Uint8List>(
-        telegramRoute<Uint8List>(CropProfilePhotoScreen(bytes: normalized)),
+        telegramRoute<Uint8List>(
+          PickProfilePhotoScreen(pick: () => picker(source)),
+        ),
       );
       if (cropped != null && mounted) {
         setState(() {

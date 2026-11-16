@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
 import '../../shared/widgets/navigation/blab_app_bar.dart';
 import 'edit_photo_screen.dart' show photoText, FrozenPhotoIcon;
 
@@ -69,6 +70,83 @@ Uint8List _crop(Map<String, Object> input) => cropProfilePhotoPixels(
   input['rect']! as Rect,
 );
 
+BlabAppBar _cropPhotoAppBar(BuildContext context, {bool busy = false}) =>
+    BlabAppBar(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      centerTitle: true,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      title: Text(
+        photoText(context, 'cropPhoto'),
+        style: const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
+      ),
+      leading: IconButton(
+        onPressed: busy ? null : () => Navigator.of(context).pop(),
+        icon: const BlabIcon(
+          name: 'nav-arrow-left - 20',
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+
+class PickProfilePhotoScreen extends StatefulWidget {
+  const PickProfilePhotoScreen({super.key, required this.pick});
+  final Future<XFile?> Function() pick;
+
+  @override
+  State<PickProfilePhotoScreen> createState() => _PickProfilePhotoScreenState();
+}
+
+class _PickProfilePhotoScreenState extends State<PickProfilePhotoScreen> {
+  Uint8List? _bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    try {
+      final file = await widget.pick();
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      if (file == null) {
+        Navigator.of(context).pop();
+        return;
+      }
+      if (await file.length() > 20 * 1024 * 1024) {
+        throw const FormatException('Image too large');
+      }
+      final bytes = await prepareProfilePhoto(await file.readAsBytes());
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        setState(() => _bytes = bytes);
+      }
+    } catch (_) {
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(photoText(context, 'photoError'))));
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bytes = _bytes;
+    if (bytes != null) return CropProfilePhotoScreen(bytes: bytes);
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: _cropPhotoAppBar(context),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
 class CropProfilePhotoScreen extends StatefulWidget {
   const CropProfilePhotoScreen({super.key, required this.bytes});
   final Uint8List bytes;
@@ -89,17 +167,18 @@ class _CropProfilePhotoScreenState extends State<CropProfilePhotoScreen> {
     _image = img.decodeJpg(widget.bytes)!;
   }
 
-  double get _base => _extent / math.min(_image.width, _image.height);
+  double get _diameter => _extent - 24;
+  double get _base => _diameter / math.min(_image.width, _image.height);
   Offset _bounded(Offset value) {
     final scale = _base * _zoom;
     return Offset(
       value.dx.clamp(
-        -(_image.width * scale - _extent) / 2,
-        (_image.width * scale - _extent) / 2,
+        -(_image.width * scale - _diameter) / 2,
+        (_image.width * scale - _diameter) / 2,
       ),
       value.dy.clamp(
-        -(_image.height * scale - _extent) / 2,
-        (_image.height * scale - _extent) / 2,
+        -(_image.height * scale - _diameter) / 2,
+        (_image.height * scale - _diameter) / 2,
       ),
     );
   }
@@ -108,7 +187,7 @@ class _CropProfilePhotoScreenState extends State<CropProfilePhotoScreen> {
     if (_busy) return;
     setState(() => _busy = true);
     final scale = _base * _zoom;
-    final side = (_extent - 24) / scale;
+    final side = _diameter / scale;
     final rect = Rect.fromLTWH(
       _image.width / 2 - _offset.dx / scale - side / 2,
       _image.height / 2 - _offset.dy / scale - side / 2,
@@ -135,27 +214,7 @@ class _CropProfilePhotoScreenState extends State<CropProfilePhotoScreen> {
       canPop: !_busy,
       child: Scaffold(
         backgroundColor: Colors.black,
-        appBar: BlabAppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          centerTitle: true,
-          title: Text(
-            photoText(context, 'cropPhoto'),
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          leading: IconButton(
-            onPressed: _busy ? null : () => Navigator.of(context).pop(),
-            icon: const BlabIcon(
-              name: 'nav-arrow-left - 20',
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ),
+        appBar: _cropPhotoAppBar(context, busy: _busy),
         body: SafeArea(
           top: false,
           bottom: false,
