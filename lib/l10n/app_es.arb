@@ -17,6 +17,7 @@
   "delete": "Eliminar",
   "copy": "Copiar",
   "edit": "Editar",
+  "reportMessage": "Denunciar mensaje",
   "report": "Denunciar",
   "reply": "Responder",
   "chats": "Chats",
@@ -638,5 +639,19 @@
   "addressCopy": "Copiar dirección",
   "addressOpenMaps": "Abrir en Google Maps",
   "addressCopied": "Dirección copiada",
-  "addressActionFailed": "No se pudo abrir ni copiar esta dirección."
+  "addressActionFailed": "No se pudo abrir ni copiar esta dirección.",
+  "translationReportTitle": "Informar sobre la traducción",
+  "translationReportQuestion": "¿Qué salió mal?",
+  "translationReportIncorrect": "Traducción incorrecta",
+  "translationReportPartial": "Una parte no se tradujo",
+  "translationReportWrongLanguage": "Idioma incorrecto",
+  "translationReportFailing": "La traducción sigue fallando",
+  "translationReportChange": "Cambiar",
+  "translationReportNote": "Añadir una nota (opcional)",
+  "translationReportDisclosure": "Este mensaje, su traducción y los detalles técnicos se compartirán con el equipo de Blab.",
+  "translationReportSend": "Enviar informe",
+  "translationReportSending": "Enviando…",
+  "translationReportError": "No se pudo enviar el informe. Inténtalo de nuevo.",
+  "translationReportSent": "Informe enviado",
+  "translationReportClose": "Cerrar"
 }

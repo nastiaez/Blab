@@ -61,6 +61,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get edit => 'Bearbeiten';
 
   @override
+  String get reportMessage => 'Nachricht melden';
+
+  @override
   String get report => 'Melden';
 
   @override
@@ -726,9 +729,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get couldNotSaveLearningLanguage =>
       'Die Sprache konnte nicht gespeichert werden. Versuche es erneut.';
-
-  @override
-  String get reportMessage => 'Nachricht melden';
 
   @override
   String get sendInvite => 'Einladung senden';
@@ -1822,4 +1822,48 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get addressActionFailed =>
       'Diese Adresse konnte nicht geöffnet oder kopiert werden.';
+
+  @override
+  String get translationReportTitle => 'Übersetzung melden';
+
+  @override
+  String get translationReportQuestion => 'Was ist schiefgelaufen?';
+
+  @override
+  String get translationReportIncorrect => 'Falsche Übersetzung';
+
+  @override
+  String get translationReportPartial => 'Ein Teil wurde nicht übersetzt';
+
+  @override
+  String get translationReportWrongLanguage => 'Falsche Sprache';
+
+  @override
+  String get translationReportFailing => 'Übersetzung schlägt immer fehl';
+
+  @override
+  String get translationReportChange => 'Ändern';
+
+  @override
+  String get translationReportNote => 'Notiz hinzufügen (optional)';
+
+  @override
+  String get translationReportDisclosure =>
+      'Diese Nachricht, ihre Übersetzung und technische Details werden mit dem Blab-Team geteilt.';
+
+  @override
+  String get translationReportSend => 'Meldung senden';
+
+  @override
+  String get translationReportSending => 'Wird gesendet…';
+
+  @override
+  String get translationReportError =>
+      'Meldung konnte nicht gesendet werden. Versuch es erneut.';
+
+  @override
+  String get translationReportSent => 'Meldung gesendet';
+
+  @override
+  String get translationReportClose => 'Schließen';
 }

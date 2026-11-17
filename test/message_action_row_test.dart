@@ -100,6 +100,7 @@ void main() {
     expect(find.byKey(const ValueKey('message-action-reply')), findsOneWidget);
     expect(find.byKey(const ValueKey('message-action-copy')), findsOneWidget);
     expect(find.byKey(const ValueKey('message-action-report')), findsOneWidget);
+    expect(find.text('Report message'), findsOneWidget);
     expect(find.byKey(const ValueKey('message-action-edit')), findsNothing);
     expect(find.byKey(const ValueKey('message-action-delete')), findsNothing);
   });

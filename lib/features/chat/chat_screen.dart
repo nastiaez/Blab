@@ -90,6 +90,8 @@ import 'widgets/chat_mode_toggle.dart';
 import 'partner_profile_page.dart';
 import 'widgets/photo_preview_sheet.dart';
 import 'widgets/report_sheet.dart';
+import 'widgets/translation_report_sheet.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'widgets/translating_message_content.dart';
 
 part 'widgets/chat_header.dart';
@@ -782,6 +784,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
+  Future<void> _reportTranslation(
+    Message message,
+    MessagePresentation presentation,
+    String targetLanguage,
+  ) async {
+    final service = ref.read(chatServiceProvider);
+    final successMessage = context.l10n.translationReportSent;
+    final sent = await showTranslationReportSheet(
+      context,
+      submit: (id, reason, note) async {
+        final info = await PackageInfo.fromPlatform();
+        return service.submitTranslationReport(
+          submissionId: id,
+          messageId: message.id,
+          reason: reason.wire,
+          note: note,
+          displayedText: presentation.primaryText,
+          targetLanguage: targetLanguage,
+          clientMetadata: {
+            'platform': defaultTargetPlatform.name,
+            'app_version': '${info.version}+${info.buildNumber}',
+          },
+        );
+      },
+    );
+    if (sent == true && mounted) {
+      showTranslationReportSuccess(
+        successMessage,
+        bottomClearance: _activeBottomSurfaceHeight,
+      );
+    }
+  }
+
   Future<void> _reportMessage(Message message, Chat chat) async {
     final successMessage = context.l10n.thanksReport;
     final errorMessage = context.l10n.couldNotReport;
@@ -922,6 +957,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     String learningLanguageCode,
   ) {
     switch (action) {
+      case MessageAction.reportTranslation:
+        _reportTranslation(message, presentation, learningLanguageCode);
+        break;
       case MessageAction.report:
         _reportMessage(message, chat);
         break;

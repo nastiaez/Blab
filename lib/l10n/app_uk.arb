@@ -17,6 +17,7 @@
   "delete": "Видалити",
   "copy": "Копіювати",
   "edit": "Редагувати",
+  "reportMessage": "Поскаржитися на повідомлення",
   "report": "Поскаржитися",
   "reply": "Відповісти",
   "chats": "Чати",
@@ -638,5 +639,19 @@
   "addressCopy": "Копіювати адресу",
   "addressOpenMaps": "Відкрити в Google Maps",
   "addressCopied": "Адресу скопійовано",
-  "addressActionFailed": "Не вдалося відкрити або скопіювати цю адресу."
+  "addressActionFailed": "Не вдалося відкрити або скопіювати цю адресу.",
+  "translationReportTitle": "Повідомити про переклад",
+  "translationReportQuestion": "Що пішло не так?",
+  "translationReportIncorrect": "Неправильний переклад",
+  "translationReportPartial": "Частину не перекладено",
+  "translationReportWrongLanguage": "Неправильна мова",
+  "translationReportFailing": "Переклад постійно не вдається",
+  "translationReportChange": "Змінити",
+  "translationReportNote": "Додати примітку (необов’язково)",
+  "translationReportDisclosure": "Це повідомлення, його переклад і технічні дані буде передано команді Blab.",
+  "translationReportSend": "Надіслати звіт",
+  "translationReportSending": "Надсилання…",
+  "translationReportError": "Не вдалося надіслати звіт. Спробуй ще раз.",
+  "translationReportSent": "Звіт надіслано",
+  "translationReportClose": "Закрити"
 }

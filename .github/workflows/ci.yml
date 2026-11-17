@@ -91,6 +91,10 @@ jobs:
         run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - name: Reset disposable backend
         run: scripts/local_test.sh reset
+      - name: Verify private translation report intake
+        run: |
+          project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
+          docker exec -i -e PGOPTIONS='-c blab.allow_translation_report_fixture=local-only' "supabase_db_${project_id}" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/translation_reports.sql
       - name: Verify atomic message batch persistence
         run: |
           project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)

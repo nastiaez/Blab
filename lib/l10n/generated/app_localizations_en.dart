@@ -60,6 +60,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get edit => 'Edit';
 
   @override
+  String get reportMessage => 'Report message';
+
+  @override
   String get report => 'Report';
 
   @override
@@ -718,9 +721,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get couldNotSaveLearningLanguage =>
       'Couldn\'t save language. Try again.';
-
-  @override
-  String get reportMessage => 'Report message';
 
   @override
   String get sendInvite => 'Send invite';
@@ -1793,4 +1793,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addressActionFailed => 'Couldn’t open or copy this address.';
+
+  @override
+  String get translationReportTitle => 'Report translation';
+
+  @override
+  String get translationReportQuestion => 'What went wrong?';
+
+  @override
+  String get translationReportIncorrect => 'Incorrect translation';
+
+  @override
+  String get translationReportPartial => 'Part wasn’t translated';
+
+  @override
+  String get translationReportWrongLanguage => 'Wrong language';
+
+  @override
+  String get translationReportFailing => 'Translation keeps failing';
+
+  @override
+  String get translationReportChange => 'Change';
+
+  @override
+  String get translationReportNote => 'Add a note (optional)';
+
+  @override
+  String get translationReportDisclosure =>
+      'This message, its translation and technical details will be shared with the Blab team.';
+
+  @override
+  String get translationReportSend => 'Send report';
+
+  @override
+  String get translationReportSending => 'Sending...';
+
+  @override
+  String get translationReportError => 'Couldn’t send report. Try again.';
+
+  @override
+  String get translationReportSent => 'Report sent';
+
+  @override
+  String get translationReportClose => 'Close';
 }

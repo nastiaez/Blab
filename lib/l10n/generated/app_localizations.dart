@@ -204,6 +204,12 @@ abstract class AppLocalizations {
   /// **'Edit'**
   String get edit;
 
+  /// No description provided for @reportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Report message'**
+  String get reportMessage;
+
   /// No description provided for @report.
   ///
   /// In en, this message translates to:
@@ -1397,12 +1403,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t save language. Try again.'**
   String get couldNotSaveLearningLanguage;
-
-  /// No description provided for @reportMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Report message'**
-  String get reportMessage;
 
   /// No description provided for @sendInvite.
   ///
@@ -3227,6 +3227,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t open or copy this address.'**
   String get addressActionFailed;
+
+  /// No description provided for @translationReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report translation'**
+  String get translationReportTitle;
+
+  /// No description provided for @translationReportQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'What went wrong?'**
+  String get translationReportQuestion;
+
+  /// No description provided for @translationReportIncorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect translation'**
+  String get translationReportIncorrect;
+
+  /// No description provided for @translationReportPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Part wasn’t translated'**
+  String get translationReportPartial;
+
+  /// No description provided for @translationReportWrongLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong language'**
+  String get translationReportWrongLanguage;
+
+  /// No description provided for @translationReportFailing.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation keeps failing'**
+  String get translationReportFailing;
+
+  /// No description provided for @translationReportChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get translationReportChange;
+
+  /// No description provided for @translationReportNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note (optional)'**
+  String get translationReportNote;
+
+  /// No description provided for @translationReportDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'This message, its translation and technical details will be shared with the Blab team.'**
+  String get translationReportDisclosure;
+
+  /// No description provided for @translationReportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get translationReportSend;
+
+  /// No description provided for @translationReportSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get translationReportSending;
+
+  /// No description provided for @translationReportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t send report. Try again.'**
+  String get translationReportError;
+
+  /// No description provided for @translationReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent'**
+  String get translationReportSent;
+
+  /// No description provided for @translationReportClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get translationReportClose;
 }
 
 class _AppLocalizationsDelegate

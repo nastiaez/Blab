@@ -1501,6 +1501,35 @@ class ChatService {
     return result;
   }
 
+  Future<String> submitTranslationReport({
+    required String submissionId,
+    required String messageId,
+    required String reason,
+    required String note,
+    required String displayedText,
+    required String targetLanguage,
+    required Map<String, dynamic> clientMetadata,
+  }) async {
+    final receipt = await _client
+        .rpc(
+          'submit_translation_report',
+          params: {
+            'p_submission_id': submissionId,
+            'p_message_id': messageId,
+            'p_reason': reason,
+            'p_note': note,
+            'p_displayed_text': displayedText,
+            'p_target_language': targetLanguage,
+            'p_client_metadata': clientMetadata,
+          },
+        )
+        .timeout(const Duration(seconds: 20));
+    if (receipt is! String || receipt.isEmpty) {
+      throw StateError('missing_report_receipt');
+    }
+    return receipt;
+  }
+
   // ---- Report + Block (Step 3.6a, Play UGC/CSAE policy) ----
 
   /// File an abuse report. Any of [reportedUserId] / [chatId] / [messageId]

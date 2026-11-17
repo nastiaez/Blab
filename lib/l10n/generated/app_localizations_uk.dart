@@ -60,6 +60,9 @@ class AppLocalizationsUk extends AppLocalizations {
   String get edit => 'Редагувати';
 
   @override
+  String get reportMessage => 'Поскаржитися на повідомлення';
+
+  @override
   String get report => 'Поскаржитися';
 
   @override
@@ -720,9 +723,6 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get couldNotSaveLearningLanguage =>
       'Не вдалося зберегти мову. Спробуй ще раз.';
-
-  @override
-  String get reportMessage => 'Поскаржитися на повідомлення';
 
   @override
   String get sendInvite => 'Надіслати запрошення';
@@ -1809,4 +1809,48 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get addressActionFailed =>
       'Не вдалося відкрити або скопіювати цю адресу.';
+
+  @override
+  String get translationReportTitle => 'Повідомити про переклад';
+
+  @override
+  String get translationReportQuestion => 'Що пішло не так?';
+
+  @override
+  String get translationReportIncorrect => 'Неправильний переклад';
+
+  @override
+  String get translationReportPartial => 'Частину не перекладено';
+
+  @override
+  String get translationReportWrongLanguage => 'Неправильна мова';
+
+  @override
+  String get translationReportFailing => 'Переклад постійно не вдається';
+
+  @override
+  String get translationReportChange => 'Змінити';
+
+  @override
+  String get translationReportNote => 'Додати примітку (необов’язково)';
+
+  @override
+  String get translationReportDisclosure =>
+      'Це повідомлення, його переклад і технічні дані буде передано команді Blab.';
+
+  @override
+  String get translationReportSend => 'Надіслати звіт';
+
+  @override
+  String get translationReportSending => 'Надсилання…';
+
+  @override
+  String get translationReportError =>
+      'Не вдалося надіслати звіт. Спробуй ще раз.';
+
+  @override
+  String get translationReportSent => 'Звіт надіслано';
+
+  @override
+  String get translationReportClose => 'Закрити';
 }

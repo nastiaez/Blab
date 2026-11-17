@@ -142,9 +142,14 @@ _ActionItem _itemFor(
     action,
     destructive: true,
   ),
+  MessageAction.reportTranslation => _ActionItem(
+    'white-flag - 16',
+    context.l10n.translationReportTitle,
+    action,
+  ),
   MessageAction.report => _ActionItem(
     'white-flag - 16',
-    context.l10n.report,
+    context.l10n.reportMessage,
     action,
   ),
 };

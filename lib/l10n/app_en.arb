@@ -17,6 +17,7 @@
   "delete": "Delete",
   "copy": "Copy",
   "edit": "Edit",
+  "reportMessage": "Report message",
   "report": "Report",
   "reply": "Reply",
   "chats": "Chats",
@@ -778,5 +779,19 @@
   "addressCopy": "Copy address",
   "addressOpenMaps": "Open in Google Maps",
   "addressCopied": "Address copied",
-  "addressActionFailed": "Couldn’t open or copy this address."
+  "addressActionFailed": "Couldn’t open or copy this address.",
+  "translationReportTitle": "Report translation",
+  "translationReportQuestion": "What went wrong?",
+  "translationReportIncorrect": "Incorrect translation",
+  "translationReportPartial": "Part wasn’t translated",
+  "translationReportWrongLanguage": "Wrong language",
+  "translationReportFailing": "Translation keeps failing",
+  "translationReportChange": "Change",
+  "translationReportNote": "Add a note (optional)",
+  "translationReportDisclosure": "This message, its translation and technical details will be shared with the Blab team.",
+  "translationReportSend": "Send report",
+  "translationReportSending": "Sending...",
+  "translationReportError": "Couldn’t send report. Try again.",
+  "translationReportSent": "Report sent",
+  "translationReportClose": "Close"
 }

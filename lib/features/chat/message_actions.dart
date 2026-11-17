@@ -12,6 +12,7 @@ enum MessageAction {
   listen,
   delete,
   report,
+  reportTranslation,
 }
 
 const Duration messageEditWindow = Duration(hours: 24);
@@ -61,6 +62,8 @@ List<MessageAction> actionsForMessage(
       MessageAction.original,
     if (!photoOnly && mode == ChatMode.practice && canListen)
       MessageAction.listen,
+    if (!message.isOutgoing && !photoOnly && canReplyToMessage(message))
+      MessageAction.reportTranslation,
     if (message.isOutgoing) MessageAction.delete else MessageAction.report,
   ];
 }
