@@ -1822,4 +1822,28 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get addressActionFailed =>
       'Diese Adresse konnte nicht geöffnet oder kopiert werden.';
+
+  @override
+  String get deepDive => 'Deep Dive';
+
+  @override
+  String get wordDetails => 'Wortdetails';
+
+  @override
+  String get moreWordDetails => 'Mehr Details';
+
+  @override
+  String get whyThisMistake => 'WARUM DIESER FEHLER?';
+
+  @override
+  String get whyThisForm => 'WARUM DIESE FORM?';
+
+  @override
+  String get wordExamples => 'BEISPIELE';
+
+  @override
+  String get learningDetailsUnavailable => 'Lerninformationen nicht verfügbar';
+
+  @override
+  String get audioUnavailable => 'Audio nicht verfügbar';
 }

@@ -778,5 +778,13 @@
   "addressCopy": "Copy address",
   "addressOpenMaps": "Open in Google Maps",
   "addressCopied": "Address copied",
-  "addressActionFailed": "Couldn’t open or copy this address."
+  "addressActionFailed": "Couldn’t open or copy this address.",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Word details",
+  "moreWordDetails": "More details",
+  "whyThisMistake": "WHY THIS MISTAKE?",
+  "whyThisForm": "WHY THIS FORM?",
+  "wordExamples": "EXAMPLES",
+  "learningDetailsUnavailable": "Learning details unavailable",
+  "audioUnavailable": "Audio unavailable"
 }

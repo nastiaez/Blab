@@ -99,11 +99,30 @@ export function anchoredCorrections(
   source?: string,
 ): AuthoredCorrection[] {
   const inputs = Array.isArray(raw) ? raw : [];
+  // No diff inference: only replay the producer's explicit source edits when
+  // they reproduce the accepted base sentence byte-for-byte.
+  const exactReplay = source !== undefined && spans.length > 0 &&
+    correctedSource(source, spans) === target;
+  let delta = 0;
+  const replayAnchors = new Map<
+    AuthoredCorrection,
+    { text: string; occurrence: number }
+  >();
+  for (const c of spans) {
+    const start = c.start + delta;
+    if (exactReplay && c.replacement) {
+      replayAnchors.set(c, {
+        text: c.replacement,
+        occurrence: occurrenceAt(target, c.replacement, start),
+      });
+    }
+    delta += c.replacement.length - (c.end - c.start);
+  }
   const originalAnchors: Array<{ start: number; end: number }> = [];
   const resolved = spans.map((c) => {
     const a = inputs.find((x) =>
       x?.original === c.original && x?.occurrence === c.occurrence
-    )?.targetAnchor;
+    )?.targetAnchor ?? replayAnchors.get(c);
     let anchor: AuthoredCorrection["targetAnchor"] = null;
     if (
       a && typeof a.text === "string" && a.text.length &&
@@ -113,7 +132,9 @@ export function anchoredCorrections(
       let start = -1, cursor = 0;
       for (let n = 0; n <= a.occurrence; n++) {
         start = target.indexOf(a.text, cursor);
-        if (start < 0) break;
+        if (start < 0) {
+          break;
+        }
         cursor = start + a.text.length;
       }
       const split = (i: number) =>
@@ -126,14 +147,20 @@ export function anchoredCorrections(
         anchor = { text: a.text, occurrence: a.occurrence, start, end: cursor };
       }
     }
-    if (anchor) originalAnchors.push(anchor);
+    if (anchor) {
+      originalAnchors.push(anchor);
+    }
     const resolved = { ...c, targetAnchor: anchor };
     if (
       source === undefined || !anchor || anchor.text !== c.replacement ||
       source.slice(c.start, c.end) !== c.original
-    ) return resolved;
+    ) {
+      return resolved;
+    }
     const [prefix, suffix] = identicalWholeWordEdges(c.original, c.replacement);
-    if (!prefix && !suffix) return resolved;
+    if (!prefix && !suffix) {
+      return resolved;
+    }
     const original = c.original.slice(prefix, c.original.length - suffix);
     const replacement = c.replacement.slice(
       prefix,
@@ -147,7 +174,9 @@ export function anchoredCorrections(
       occurrence < 0 || targetOccurrence < 0 ||
       protectedCorrectionOverlap(source, start, end) ||
       protectedCorrectionOverlap(target, targetStart, targetEnd)
-    ) return resolved;
+    ) {
+      return resolved;
+    }
     return {
       original,
       replacement,

@@ -638,5 +638,13 @@
   "addressCopy": "Adresse kopieren",
   "addressOpenMaps": "In Google Maps öffnen",
   "addressCopied": "Adresse kopiert",
-  "addressActionFailed": "Diese Adresse konnte nicht geöffnet oder kopiert werden."
+  "addressActionFailed": "Diese Adresse konnte nicht geöffnet oder kopiert werden.",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Wortdetails",
+  "moreWordDetails": "Mehr Details",
+  "whyThisMistake": "WARUM DIESER FEHLER?",
+  "whyThisForm": "WARUM DIESE FORM?",
+  "wordExamples": "BEISPIELE",
+  "learningDetailsUnavailable": "Lerninformationen nicht verfügbar",
+  "audioUnavailable": "Audio nicht verfügbar"
 }

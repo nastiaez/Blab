@@ -638,5 +638,13 @@
   "addressCopy": "Копіювати адресу",
   "addressOpenMaps": "Відкрити в Google Maps",
   "addressCopied": "Адресу скопійовано",
-  "addressActionFailed": "Не вдалося відкрити або скопіювати цю адресу."
+  "addressActionFailed": "Не вдалося відкрити або скопіювати цю адресу.",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Деталі слова",
+  "moreWordDetails": "Докладніше",
+  "whyThisMistake": "ЧОМУ ЦЯ ПОМИЛКА?",
+  "whyThisForm": "ЧОМУ ЦЯ ФОРМА?",
+  "wordExamples": "ПРИКЛАДИ",
+  "learningDetailsUnavailable": "Навчальна інформація недоступна",
+  "audioUnavailable": "Аудіо недоступне"
 }

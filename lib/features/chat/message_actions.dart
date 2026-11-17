@@ -4,6 +4,7 @@ import '../../../shared/models/chat.dart';
 /// The action picked from the long-press action row. PRD US-019, US-020;
 /// `report` added for Step 3.6a.
 enum MessageAction {
+  deepDive,
   translate,
   reply,
   edit,
@@ -48,12 +49,15 @@ List<MessageAction> actionsForMessage(
   required bool hasOriginal,
   required bool canListen,
   bool canTranslate = false,
+  bool canDeepDive = false,
   DateTime? now,
 }) {
   final photoOnly = isPhotoOnlyMessage(message);
   return [
     if (!photoOnly && mode == ChatMode.practice && canTranslate)
       MessageAction.translate,
+    if (canDeepDive && !photoOnly && canReplyToMessage(message))
+      MessageAction.deepDive,
     if (canReplyToMessage(message)) MessageAction.reply,
     if (!photoOnly && canEditMessage(message, now: now)) MessageAction.edit,
     if (!photoOnly) MessageAction.copy,

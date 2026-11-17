@@ -37,6 +37,8 @@ export const COMPACT_RESPONSE_FORMAT = {
         items: object({
           id: { type: "string" },
           corrections: {
+            description:
+              "Genuine authored mistakes only. Check subject/verb agreement in the original even when meaning is clear. When correcting the same-language sentence, enumerate each genuine edit here and anchor its replacement in text; never use an empty array for a sentence whose grammatical mistakes you corrected. Optional metadata must not change sentence acceptance.",
             type: "array",
             items: object({
               original: { type: "string" },

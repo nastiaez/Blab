@@ -1793,4 +1793,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addressActionFailed => 'Couldn’t open or copy this address.';
+
+  @override
+  String get deepDive => 'Deep Dive';
+
+  @override
+  String get wordDetails => 'Word details';
+
+  @override
+  String get moreWordDetails => 'More details';
+
+  @override
+  String get whyThisMistake => 'WHY THIS MISTAKE?';
+
+  @override
+  String get whyThisForm => 'WHY THIS FORM?';
+
+  @override
+  String get wordExamples => 'EXAMPLES';
+
+  @override
+  String get learningDetailsUnavailable => 'Learning details unavailable';
+
+  @override
+  String get audioUnavailable => 'Audio unavailable';
 }

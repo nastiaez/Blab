@@ -108,6 +108,10 @@ flutter_native_splash:
 
 # The following section is specific to Flutter packages.
 flutter:
+  fonts:
+    - family: BlabDeepDiveRoboto
+      fonts:
+        - asset: assets/fonts/deep_dive/Roboto-Variable.ttf
   generate: true
 
   # The following line ensures that the Material Icons font is
@@ -116,6 +120,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/fonts/deep_dive/OFL.txt
     - assets/icons/
     - assets/icon/notification_badge_exact.png
     - assets/onboarding/
