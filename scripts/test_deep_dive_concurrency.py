@@ -4,7 +4,7 @@ Never starts/stops containers, copies rows, invokes providers, or alters roles.
 Fixtures persist in the dedicated disposable database until its lifecycle owner removes it.
 """
 import pathlib,json,subprocess,shutil,concurrent.futures,threading,hashlib,argparse,os,re
-P=argparse.ArgumentParser();P.add_argument('--container',required=True);P.add_argument('--database',required=True);P.add_argument('--output',default='build/deep-dive-sql');P.add_argument('--application-name',default='deepdive_sql_ci');P.add_argument('--fixture-prefix',default='da');args=P.parse_args()
+P=argparse.ArgumentParser();P.add_argument('--container',required=True);P.add_argument('--database',required=True);P.add_argument('--output',default='build/deep-dive-sql');P.add_argument('--application-name',default='deepdive_sql_ci');P.add_argument('--fixture-prefix',default='da');P.add_argument('--socket-dir',help='Optional explicit socket directory; default uses the container libpq default');args=P.parse_args()
 assert re.fullmatch(r'supabase_db_[A-Za-z0-9_]+',args.container)
 assert re.fullmatch(r'[A-Za-z0-9_]+',args.database)
 assert re.fullmatch(r'[A-Za-z0-9_]+',args.application_name)
@@ -12,7 +12,7 @@ assert re.fullmatch(r'[a-f0-9]{2}',args.fixture_prefix)
 assert args.database.startswith('deepdive_test_') or (args.database=='postgres' and os.environ.get('CI')=='true'),'Dedicated disposable database required'
 R=pathlib.Path(__file__).resolve().parent.parent;C=R;O=pathlib.Path(args.output).resolve();O.mkdir(parents=True,exist_ok=True);assert shutil.disk_usage(R).free>=8*1024**3
 options='-c application_name='+args.application_name+' -c statement_timeout=20000 -c lock_timeout=2000 -c idle_in_transaction_session_timeout=30000 -c work_mem=8MB -c max_parallel_workers_per_gather=0'
-A=['docker','exec','-i','-e','PGOPTIONS='+options,args.container,'psql','-X','-h','/tmp','-U','postgres','-d',args.database,'-v','ON_ERROR_STOP=1','-qAt'];results={}
+A=['docker','exec','-i','-e','PGOPTIONS='+options,args.container,'psql','-X']+(['-h',args.socket_dir] if args.socket_dir else [])+['-U','postgres','-d',args.database,'-v','ON_ERROR_STOP=1','-qAt'];results={}
 V=args.fixture_prefix+'111111-1111-4111-8111-111111111111';M=args.fixture_prefix+'555555-5555-4555-8555-555555555555';SOURCE="'"+hashlib.sha256(b'Hola mundo').hexdigest()+"'"
 def sql(name,text,ok=True):
  if shutil.disk_usage(R).free<6*1024**3:raise RuntimeError('Own tests paused: disk guard')
