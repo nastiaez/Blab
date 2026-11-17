@@ -5,22 +5,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('hosted deployment manifests cover every hosted Edge Function', () {
-    // Deep Dive is a local-only candidate; it must not expand either hosted rollout.
-    const localOnlyFunctions = {'deep-dive'};
-    final functionNames =
-        Directory('supabase/functions')
-            .listSync()
-            .whereType<Directory>()
-            .where(
-              (directory) => File('${directory.path}/index.ts').existsSync(),
-            )
-            .map(
-              (directory) => directory.uri.pathSegments
-                  .where((segment) => segment.isNotEmpty)
-                  .last,
-            )
-            .toSet()
-          ..removeAll(localOnlyFunctions);
+    // Explicit staged-only rollout. Production must not silently gain this function.
+    const stagingOnlyFunctions = {'deep-dive'};
+    final functionNames = Directory('supabase/functions')
+        .listSync()
+        .whereType<Directory>()
+        .where((directory) => File('${directory.path}/index.ts').existsSync())
+        .map(
+          (directory) => directory.uri.pathSegments
+              .where((segment) => segment.isNotEmpty)
+              .last,
+        )
+        .toSet();
     final localSource = File(
       'supabase/functions/deep-dive/index.ts',
     ).readAsStringSync();
@@ -61,7 +57,14 @@ void main() {
       final functions = (manifest['functions'] as Map<String, dynamic>).map(
         (name, verifyJwt) => MapEntry(name, verifyJwt as bool),
       );
-      expect(functions, configuredPolicies, reason: environment);
+      final expected = Map<String, bool>.from(configuredPolicies);
+      if (environment == 'production') {
+        for (final name in stagingOnlyFunctions) {
+          expected.remove(name);
+        }
+      }
+      expect(functions, expected, reason: environment);
+      expect(functions.containsKey('deep-dive'), environment == 'staging');
     }
   });
 }

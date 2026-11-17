@@ -90,8 +90,11 @@ void main() {
           speech: fixture.FakeSpeech(),
         ),
       );
-      IconButton button() =>
-          tester.widget<IconButton>(find.byWidgetPredicate((w) => w is IconButton && w.tooltip == 'Translate'));
+      IconButton button() => tester.widget<IconButton>(
+        find.byWidgetPredicate(
+          (w) => w is IconButton && w.tooltip == 'Translate',
+        ),
+      );
       Color? fill() => button().style!.backgroundColor!.resolve({
         if (button().isSelected!) WidgetState.selected,
       });

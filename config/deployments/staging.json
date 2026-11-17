@@ -14,7 +14,8 @@
     "stream-message": true,
     "stream-media": true,
     "stream-activity": true,
-    "stream-device": true
+    "stream-device": true,
+    "deep-dive": true
   },
   "required_secrets": [
     "OPENAI_API_KEY",
@@ -26,6 +27,9 @@
     "FIREBASE_CLIENT_EMAIL",
     "FIREBASE_PRIVATE_KEY",
     "STREAM_API_KEY",
-    "STREAM_API_SECRET"
+    "STREAM_API_SECRET",
+    "DEEP_DIVE_HOSTED_ENABLED",
+    "DEEP_DIVE_ALLOW_PROVIDER",
+    "DEEP_DIVE_ENVIRONMENT"
   ]
 }

@@ -99,6 +99,7 @@ class DeepDiveService {
           : kind,
       'text': text,
       'aidsEnabled': true,
+      if (retry) 'retry': true,
       'start': start,
       'end': end,
       'targetLang': targetLang,

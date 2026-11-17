@@ -448,3 +448,9 @@ entrypoint = "./functions/stream-activity/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/stream-device/index.ts"
+
+# Deep Dive is staged explicitly; production inventory remains unchanged.
+[functions.deep-dive]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/deep-dive/index.ts"

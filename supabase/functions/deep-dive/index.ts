@@ -1,3 +1,4 @@
+import { enrichmentKey, HostedEnrichment, runtimeMode } from "./hosted.ts";
 import { acceptedContext, historicalEra } from "./accepted_context.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { BodyTooLarge, readBoundedBody } from "../_shared/bounded_body.ts";
@@ -27,10 +28,17 @@ export async function handle(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
   }
-  // This candidate must never become an accidentally hosted paid endpoint.
-  if (Deno.env.get("BLAB_ENV") !== "local") {
+  let mode: "local" | "hosted";
+  try {
+    mode = runtimeMode(
+      Deno.env.get("DEEP_DIVE_ENVIRONMENT") || Deno.env.get("BLAB_ENV"),
+      Deno.env.get("SUPABASE_URL"),
+      Deno.env.get("DEEP_DIVE_HOSTED_ENABLED"),
+    );
+  } catch {
     return json({ error: "local_only" }, 503);
   }
+  let hosted: HostedEnrichment | undefined;
   const authorization = request.headers.get("Authorization");
   if (!authorization?.startsWith("Bearer ")) {
     return json({ error: "authentication_required" }, 401);
@@ -43,6 +51,7 @@ export async function handle(request: Request): Promise<Response> {
     );
     const url = Deno.env.get("SUPABASE_URL")!;
     if (
+      mode === "local" &&
       !["localhost", "127.0.0.1", "kong", "host.docker.internal"].includes(
         new URL(url).hostname,
       )
@@ -163,28 +172,52 @@ export async function handle(request: Request): Promise<Response> {
     if (Deno.env.get("DEEP_DIVE_ALLOW_PROVIDER") !== "true") {
       throw new DiveError("analysis_provider_disabled", 503);
     }
-    const credential = providerCredentials({
-      provider: Deno.env.get("TRANSLATION_PROVIDER"),
-      openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
-      openAiKey: Deno.env.get("OPENAI_API_KEY"),
-      openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
-      openAiModel: Deno.env.get("OPENAI_MODEL"),
-      openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
-      environment: "local",
-    })[0];
-    if (!credential) throw new DiveError("analysis_provider_unavailable", 503);
-    const response = await fetchChatCompletion(credential, {
-      messages: analysisMessages(r, c),
-      response_format: { type: "json_object" },
-      max_completion_tokens: 1600,
-    });
-    if (!response.ok) throw new DiveError("analysis_unavailable", 502);
-    const payload = await response.json();
-    const analysis = parseAnalysis(
-      JSON.parse(payload.choices?.[0]?.message?.content),
-      r.kind,
-    );
-    // Generation can outlive an edit, account deletion or membership change.
+    const messages = analysisMessages(r, c);
+    if (new TextEncoder().encode(JSON.stringify(messages)).length > 10000) {
+      throw new DiveError("invalid_request", 400);
+    }
+    let analysis;
+    if (mode === "hosted") {
+      const service = Deno.env.get("BLAB_SUPABASE_SERVICE_ROLE_KEY") ||
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!service) throw new DiveError("analysis_provider_unavailable", 503);
+      const admin = createClient(url, service, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      hosted = new HostedEnrichment(
+        async (name, args) => await admin.rpc(name, args),
+        r,
+        c,
+        await enrichmentKey(r, c),
+      );
+      analysis = await hosted.claim();
+    }
+    if (!analysis) {
+      const credential = providerCredentials({
+        provider: Deno.env.get("TRANSLATION_PROVIDER"),
+        openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
+        openAiKey: Deno.env.get("OPENAI_API_KEY"),
+        openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
+        openAiModel: Deno.env.get("OPENAI_MODEL"),
+        openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
+        environment: mode === "local" ? "local" : "staging",
+      })[0];
+      if (!credential) {
+        throw new DiveError("analysis_provider_unavailable", 503);
+      }
+      const response = await fetchChatCompletion(credential, {
+        messages,
+        response_format: { type: "json_object" },
+        max_completion_tokens: 1600,
+      });
+      if (!response.ok) throw new DiveError("analysis_unavailable", 502);
+      const payload = await response.json();
+      analysis = parseAnalysis(
+        JSON.parse(payload.choices?.[0]?.message?.content),
+        r.kind,
+      );
+    }
+    // Generation/cache access can outlive an edit, account deletion or membership change.
     const [latestMessage, latestProfile, latestMembership] = await Promise.all([
       client.from("messages").select(
         "body,deleted_at,languages_matched_at_send",
@@ -211,6 +244,7 @@ export async function handle(request: Request): Promise<Response> {
     ) {
       throw new DiveError("stale_context", 409);
     }
+    await hosted?.complete(analysis);
     return json({
       ...analysis,
       kind: r.kind,
@@ -232,6 +266,9 @@ export async function handle(request: Request): Promise<Response> {
       },
     });
   } catch (e) {
+    try {
+      await hosted?.fail();
+    } catch { /* lease expires; no quota refund or retry */ }
     if (e instanceof BodyTooLarge) {
       return json({ error: "body_too_large" }, 413);
     }

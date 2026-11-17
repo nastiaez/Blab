@@ -18,6 +18,7 @@ export type DiveRequest = {
   targetLang: string;
   knownLang: string;
   aidsEnabled: boolean;
+  retry?: boolean;
   replacement?: string;
   acceptedText?: string;
   sourceText?: string;
@@ -73,6 +74,9 @@ export function parseRequest(x: unknown): DiveRequest {
     (x.replacement !== undefined &&
       (typeof x.replacement !== "string" || x.replacement.length > 2000))
   ) throw new DiveError("invalid_request", 400);
+  if (x.retry !== undefined && typeof x.retry !== "boolean") {
+    throw new DiveError("invalid_request", 400);
+  }
   if (!x.aidsEnabled) throw new DiveError("learning_aids_off", 403);
   for (const i of [Number(x.start), Number(x.end)]) {
     if (
