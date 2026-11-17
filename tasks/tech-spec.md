@@ -1,6 +1,6 @@
-> **20513 ·17 November2026:** Nastia authorized scoped BLA22 commit, main integration and deployment after required quality/security/native gates. Existing Apple agreement/auth and both iOS release pause20294 remains; no Apple build/upload/login authorized. Native UK/accessibility/abuse acceptance remains open.
+> **20513 ·17 November2026:** Nastia authorized scoped BLA22 commit, main integration and deployment after required quality/security/native gates. Apple agreement/auth and both iOS release pause20294 remains; no Apple build/upload/login authorized. Native UK/accessibility/abuse acceptance remains open.
 
-> **BLA-22 ·16 November2026 ·19998:** report-only journey implementation in dedicated worktree; [private inbox/acceptance record](../docs/translation-report-inbox.md). No automatic translation retry or authored-text/cache changes. Separate menu actions approved20021. Isolated SQL and connected native-sheet intake verified20300; full ordinary-entry/native parity and visual approval remain open. No merge/deployment/release approval.
+> **BLA-22 ·19998/20021/20360:** report-only selected-message journey; separate translation/abuse actions and shared success pill approved. No automatic retry/cache/history rewrite. Private intake/acceptance: [report inbox](../docs/translation-report-inbox.md).
 
 > **BLA-43 (7 November 2026):** Nastia18294/18297 selects tap URL to external browser; long press URL to existing floating link container; long press non-link message area to existing reactions/actions. No competing menus or bottom-sheet redesign. Nastia approved18395 visuals in18499 and commit/main integration in18502; distribution is not authorized in this step.
 
@@ -327,3 +327,354 @@ Offline entry uses an account-bound presentation-only profile snapshot and last 
 
 
 ### Stream notification-provider boundary — 14 October 2026 ← implementation in progress
+
+Use the existing production Firebase project, with a dedicated FCM-only Stream service identity rather than sharing the legacy multi-purpose Admin SDK identity. Stream retains original-message notification delivery; existing Supabase push remains for unmigrated chats and invite events. Activated Stream learning projections must not enqueue duplicate Supabase chat pushes. Register authenticated devices with two named Firebase configurations: preview-enabled and preview-disabled templates. Per-device provider selection preserves the existing per-device preview preference without placing a private setting in shared messages or merging settings across phones. Both notification templates carry validated chat/message/receiver IDs for local-first navigation and quiet cache refresh. Disable other push event types (edits/reactions) unless the PRD explicitly adds them. Real Android background/cold/offline notification proof is required; configured credentials or vendor acknowledgment alone is not delivery evidence.
+
+
+### Android Stream background preloading correction — 14 October 2026
+
+A real notification-plus-data receipt displayed the notification, but an offline tap lacked its new message. Stream Android providers therefore use high-priority data-only payloads. The background handler verifies current persisted identity across isolates, fetches authenticated originals/recent history and already-prepared variants, then posts a local OS notification. Preparation is capped at two seconds and never calls AI; unavailable networking or OS background limits retain fallback notification/tap recovery. Display title/body are UI previews only and never authorize or populate message caches. Local notification cold-launch/resumed taps use the same receiver-bound router. Existing Supabase invite/unmigrated-chat pushes remain unchanged. Private preview copies retain the prior localized generic message and hide the sender title. This is implemented but awaiting actual Android red/green preloading proof.
+
+- 2026-10-14 — Notification cache fast path: read the authenticated server-only learning projection first, require the exact notified message ID before committing a snapshot; fall back to canonical Stream HTTP queries when projection has not caught up. Background vendor sessions disable WebSocket and SQLite persistence; UI sessions retain both. No payload preview enters storage. Foreground cache reads reload across isolates and merge newly arrived IDs without resetting timeline/drafts. Imported history will use stable IDs/timestamps/quote references and explicit per-message Blab receipt metadata; vendor import upserts overwrite omitted fields, so complete snapshots and isolated readback checks are mandatory. References: https://getstream.io/chat/docs/node/import/ and stream_chat10.5.0 connection-less client API.
+
+- 2026-10-14 — Deletion captures a private durable vendor-erasure identity before auth cascade and deactivates existing Stream sessions synchronously. A leased worker confirms asynchronous hard deletion of user/messages/two-person conversations/files before marking done. Unknown/failed tasks stay retryable; auth identity still present blocks purge. Partial image uploads wait for both promises to settle, cancel failed upload leases and queue never-committed asset URLs for durable cleanup. Committed ready URLs are protected; new retries wait until cleanup settles. Candidate model routing prefers latency within the existing required-parameters/no-training/ZDR allowlist, retaining provider fallback. No model migration: two isolated text-only calls measured4.7s(gpt-4o-mini) and19.5s(gpt-4.1-mini), neither a population benchmark; cache-hit tokens0 in both. Reference: https://openrouter.ai/docs/guides/routing/provider-selection .
+
+
+### Owner-approved private media boundary — 14 October 2026
+
+Photos remain in Supabase private Storage; Stream owns canonical message/attachment references, not photo bytes or publicly cacheable URLs. This supersedes the earlier vendor-CDN photo implementation after an actual deleted URL remained downloadable with a14-day cache header. Use server-authorized immutable upload-lease paths, private member-only reads, cacheControl0 and60-second client-only signed URLs. Record durable cleanup ownership before upload; failed/late uploads and auth/chat cascades cannot discard it. Queueing account deletion revokes fresh photo reads and removes completed old client-owned `message-media` files before auth deletion; a leased worker confirms physical absence and retries failures. Existing legacy photos stay in their original private bucket during import; export only allowlisted identity/hash/path metadata, never signed URLs. Unknown cleanup/network failures never count as deletion. No real history cutover, merge or App Tester distribution occurred with this setup.
+
+Migration promotion requires a frozen source, exact complete vendor readback, retained proof hash and matching operator lease. Pre-traffic rollback additionally requires a frozen vendor and unchanged originals/receipt/reaction/media source with no pending work. Benign local learning/view preferences stay in Supabase and are not copied to Stream; they do not invalidate the normalized source fingerprint. New canonical activity refuses this rollback path and requires explicit reconciliation. Historical imports carry the actual legacy edit timestamp so source reconciliation cannot erase it; deleted source text is scrubbed, not replaced by a vendor placeholder.
+
+
+### Seamless messaging correction — 14 October 2026
+
+Original-message transport remains independent of AI. Normal mode presents full-contrast originals immediately (retaining the existing unknown-language translation rule); only Practice owns shimmer. Replace erase/blank/reveal phases with an atomic readable-result swap; retain scroll deferral and reduced-motion support. Chat routes use zero-duration entry/exit instead of the inherited delayed fade. Process already-leased preparation jobs concurrently within the existing database-wide four-job cap, preserving per-job errors and deterministic outcome order. Provider-model candidates require live quality/timing verification under the existing structured-output and zero-data-retention policy; no new model is promoted yet. Hosted text-first configuration and actual two-client proof remain outstanding.
+
+
+- Seamless refinement: eliminate chat-list-owned generation entirely; durable server jobs own preparation. Stop visible pending renewal at ten seconds while preserving Realtime/read-only late recovery. Default both delivery flags on with explicit-false rollback. Allocate output tokens by text length and output type (readable/audit/metadata), retaining long-message ceilings; no safety review bypass. Elision boundaries are not literal initials. Local fast-model evaluation is not promotion; funded final coverage remains blocked.
+
+- Funded follow-up: candidate routes OpenRouter generation to google/gemini-3.1-flash-lite and independent review to google/gemini-2.5-flash; explicit model overrides and existing native OpenAI fallback remain. Selected reviewer passed3/3 focused checks (correct Tamil, invented clock-now assertion, O→ears) at615–793ms; GPT4.1mini passed2/3 at1467–2412ms. This small probe is not a general model-quality benchmark. Retain candidate-blind anchoring, two-of-three consensus, output/literal guards and ZDR. Feed resolved source meaning into independent grammatical-form review: noun classes and clock-hour agreement are not participant gender. Prompt word-help as intact written words, including Tamil attached letters; reject letter-bearing tokens mislabeled as punctuation. Keep fragment replies minimal and use explicit context for time contrasts. Final integrated-model/live acceptance remains pending.
+
+- 2026-10-14 21:05 — Exact-source funded acceptance complete:22 sends/44 readable viewer results/44 word-help packages, median2.874s/max6.256s; actual two-client context follow-ups2.918–6.756s.185 backend pass; unchanged Dart894 pass/15 skip. Tamil, fragment/form-review and malformed-optional-form regressions fixed. Actual Android/browser media retained in docs/qa/2026-10-14-seamless-translation. Funding block superseded; owner visual review, hosted rollout and integrated Firebase release still pending.
+
+### 2026-10-14 — Sentence lane integrity and learner grammar
+
+US-015/FR-23: independent sentence audit must attest actual requested output language as well as semantic equivalence. Same-language corrections and unchanged learning text also require known-language lane validation. Lexical edit-distance heuristic cannot veto a correction before candidate-blind meaning consensus; multiple grammar/loanword repairs may be valid. Anchor resolves clear learner grammar to intended minimal meaning, preserves fragments and does not invent consequences. Keep bounded8s budget and literal/name/negation protections. Existing bad production cache is repaired only for specifically diagnosed messages after candidate review, not via an unbounded whole-history invalidation.
+
+Practice mode=none means the learning sentence needs no correction, not that its known-language reveal/audio should disappear. Same-language words remain tappable and long-press uses the existing divider and known-language lane. Learning aids disabled and unsupported-source exceptions remain unchanged. A copied foreign known-language lane is explicitly retranslated before semantic/language approval; reviewer self-report alone was observed to misclassify copied German as English.
+
+
+### 2026-10-15 — Native route and keyboard ownership
+
+Owner supersedes the earlier instant chat-entry requirement: use the existing Android PredictiveBackPageTransitionsBuilder (FadeForwards fallback450ms) through MaterialPage for pushed chat routes, consistent with new-chat/settings. Keep root/tab pages NoTransitionPage and modal sheets/dialogs on their standard route types; do not replace modal semantics with a full-page slide. Preserve the existing warm fallback color and platform/reduced-motion behavior.
+
+Chats and Profile have no editable fields and must not resize their body/FAB for keyboard insets from a departing route. Set resizeToAvoidBottomInset=false only on those screens; keep keyboard avoidance on chat/forms. App-bar Back dismisses composer focus before popping, without delaying navigation or discarding draft text. Native baseline reproduced keyboard visible over the returning list and an elevated FAB; injected-inset regression failed before the fix.
+
+Pending Practice uses its existing shimmer even after the initial visual deadline, while read-only recovery checks continue. No second Translating status row. Actual terminal errors stop shimmer and preserve the original with Retry. Reduced-motion keeps a stationary original and no animation. These are owner-directed changes, not a new retry/provider budget.
+
+### Owner-selected page motion — 15 October 2026
+
+Supersedes SDK-standard page motion above: pushed pages use PageRouteBuilder, 150ms both ways, cubic ease-out (1-(1-t)^3), fixed positive 48 logical-pixel horizontal travel and matching opacity. Ignore secondary animation so the previous page stays stationary. Back reverses the same curve, not a claim of exact Telegram closing easing or predictive gesture scrubbing. Root tabs, dialogs and bottom sheets retain their distinct behavior. Reduced motion skips decorative travel/fade.
+
+### 2026-10-15 — Narrow standalone OK/okay exception (candidate)
+
+Topic7420, Telegram12768–12770: keep the proposed exception limited to standalone `ok` and `okay`; interpret the repeated `ok` in12770 in the preceding OK/okay discussion. Match case-insensitively and allow surrounding whitespace and ordinary terminal punctuation (`OK!`, `okay?`, `Ok.`). Do not add taxi/hotel/radio/pizza or build an expanding loanword dictionary.
+
+This is not a universal untranslated-content exemption. Accept an unchanged candidate only when appropriate in the actual viewer-selected target language and with the intended meaning. Local-script forms such as Ukrainian `окей` remain language-specific outputs, not an instruction to transliterate arbitrary words. Preserve semantic/language validation and source-conflict guards. Sentences containing these words (`Is that okay?`, `okay, tomorrow`) remain under full translation checks; punctuation and question intent must not be lost. Normal known-language behavior, learning-aids-off, historical language era and primary-known reveal remain unchanged.
+
+Implementation acceptance: cover ok/OK/Okay/okay with punctuation, appropriate unchanged target output, Ukrainian local-script output, rejected wrong-script copies, sentences containing okay, false friends and asymmetric viewer preferences. Implemented in the candidate after independent semantic/language audits; no production deployment changed.
+
+### 2026-10-15 — Executable translation rulebook
+
+`supabase/functions/translate-message/rulebook.ts` owns shared exception configuration, supported-language sets, model/routing defaults, message/source-retry limits and common prompt fragments. `contract.ts` re-exports existing public constants for compatibility. Initial generation, focused retry, semantic audit and readable-text prompts consume this source. `docs/translation-rulebook.md` is generated using `scripts/generate_translation_rulebook.ts`; CI rejects stale output. Preference ownership is an integration contract, not a duplicate preference resolver; the rulebook explicitly indexes remaining implementation owners (schemas, scheduling, orchestration). PRD remains product authority.
+### 2026-10-15 — Open timeline reconciliation (candidate)
+
+US-031: independent chat-list updates are a missing-message hint, never message content. When that chat's latest ID is absent, fetch through its authoritative ChatService transport and merge without losing older pages. Retry a transient read with capped exponential delays (200/400/800/1600/3200ms), coalesce triggers, stop after catch-up, and cancel scheduled work on provider disposal. Event-enrichment/stream errors also request reconciliation instead of silently waiting for another message. Do not generate translations, change preferences, or copy list preview text into a bubble. This closes proven lost-event/enrichment gaps; it does not diagnose the phone's precise network failure or guarantee delivery when both independent feeds fail.
+
+### 2026-10-15 — Pending-display liveness safeguards (candidate)
+
+Start the translation loading watchdog before initial cache I/O so stalled I/O cannot prevent read-only recovery. Ready-content scroll deferral is bounded at 750ms and cancelled on pending/reset/disposal; ScrollEnd still resolves immediately. No changes to language targets, historical revision, source identity, semantic acceptance or AI initiation. Exact 22-call trace analysis is in docs/qa/2026-10-15-stuck-shimmer/README.md; call-reduction work remains separate from these client guards.
+
+### 2026-10-15 — Owner-approved single-call architecture (candidate)
+
+Supersedes earlier active multi-audit/source-anchor/hedged generation guidance: normal durable message preparation claims all eligible viewer jobs as one message/source batch, generates one structured result keyed by viewer and commits atomically under per-job lease fences. Compact rules are generated from rulebook.ts; context capped3 entries/1800 UTF-8 bytes per viewer. Existing RPC preference/history/source rules are unchanged. No independent model review, source-analysis or word-help calls; code validates structure, literal preservation and metadata. Retry actual failures only through durable scheduler (max4, Retry-After respected). Manual/legacy direct requests remain one call for their requested viewer. Protected literals require no model. The retained v11 contract tag denotes compatible stored result schema, not a requirement to run the retired source-anchor pipeline.
+
+This explicitly accepts the bundled-output trade-off: word metadata increases output size and an invalid bundle can require a bounded retry; an independent AI second opinion is no longer present. Deterministic form normalization uses only supplied complete alternatives and token metadata. Source identity and author/recipient mapping remain mandatory.
+
+Live chat resubscribes after stream failure, schedules independent10-second reconciliation while observed/online, bounds history/cache reads6 seconds, and preserves merged historical pages. Translation watchdog starts before initial I/O; scroll-end deferral bounded750ms. Evidence docs/qa/2026-10-15-single-call-reliable-chat. Release remains subject to owner visual/workflow review.
+
+### Composer emoji input — 15 October 2026
+
+Reuse the installed emoji_picker_flutter engine in a nonmodal inline panel, with the approved tintable SVG toggle assets. Chat owns panel visibility so app-bar/system Back close it before reply/navigation. Composer insertion and backspace edit the existing controller at its selection and enforce the existing grapheme limit; do not pass the controller to the picker (which bypasses our input formatters/limit). No translation, cache, account preferences or backend changes. Interface locale owns picker search and action labels. Owner authorized feature work after icon approval in Telegram12800; implementation review is separate.
+
+Height revision12807/12809: Chat owns bottom avoidance (Scaffold does not also resize). Composer reserves max(active IME inset, measured panel obstruction, navigation inset). The grid excludes the bottom navigation inset; input padding is shared, with no extra panel gap. Keep measured obstruction during the350ms input-connection handoff. Search explicitly reports its state and reserves its compact result panel above the search IME. Regression measures identical composer geometry before, during and after an IME/panel handoff.
+
+Handoff correction12818: retain the actual disabled picker artwork while returning to the IME, not an empty reserved SizedBox. Remove the retained artwork only after the IME inset covers the measured obstruction (next frame); a2s no-IME fallback releases it if software input never appears. Icon/input mode changes immediately so the text connection can attach normally. Frame-by-frame native review is required; stable-state geometry and sparse video contact sheets were insufficient proof.
+
+Jump-to-latest request12824: listener-driven bottom-center overlay inside the timeline bounds, outside the scroll contents. Reuse arrow-up SVG rotated180 degrees, warm44px circular control. Reverse-list offset0 is latest; show above200dp, animateTo0 over300ms easeOutCubic (jump for reduced motion). Does not mutate messages, read receipts, draft, focus or auto-scroll ownership.
+
+
+### Compact one-call wire format — 15 October 2026
+
+Owner12931 authorizes compact dynamically resolved language requests and tester delivery. The provider wire format separates unique language/tone/eligible-context sentences from learning-sentence/known-language word help. A stable schema and canonical fixed rule prefix precede deterministic sorted settings; sender/recipient and bounded context are data, not repeated per viewer. Sender/recipient form ownership is mapped back into existing viewer-relative storage by code. Existing source/revision fences, atomic batch persistence, historical cache contract, Normal/Practice and aids-off decisions remain unchanged. Runtime prompt caching is provider implicit best-effort; no padding, explicit content-storage cache or privacy-policy weakening. Record measured cached tokens, not inferred savings.
+
+### 2026-10-15 — FR-47 separate testing namespace (candidate)
+
+BLAB_APP_CHANNEL=test uses package blab.nastia.ez.test, blab-test scheme, /i-test/ links and staging-only hosted configuration. Public defaults remain package blab.nastia.ez, blab scheme and /i/. Dart and Android reject test→production; public→staging is also rejected. Separate Supabase projects isolate auth signatures, user IDs, invites, messages and storage; neither a client parameter nor binary label grants database rights. Prefix test- is server-minted, namespace-checked on claim and retained through auth continuation/referrers; URL-path edits cannot convert invite authority.
+
+app_distribution_policy defaults public so the migration alone changes no existing access. Only trusted operators can configure a test deployment, enable/expire it and register test_app_members by verified account UUID. is_account_active and member/read RLS enforce access in old clients too. The test-only shell verifies backend channel and access on entry/resume and every15s; failed checks block, rather than preserve an indefinite offline grant. Public app has no test gate. This is not hardware attestation or remote erasure; installed app content can have already been seen. No public history transfer.
+
+Hosted staging provisioning, distinct Firebase app/OAuth registration, signed app-links verification and actual deployment require separate release evidence after owner reviews the candidate. No existing production accounts are enrolled automatically.
+
+### 2026-10-15 — Owner visual parity revision
+
+Owner rejected test banner and extra invite copy after actual screenshot review. Keep separate package/backend and `/i-test/test-…` routing, but use public app name/icon, invite title/card/helper/share text and unwrapped active/signed-out child layout. The access gate adds no permanent chrome or padding; only pending/denied/error states intercept access. Existing mismatch errors remain to enforce the requested boundary. Previously sent screenshots12971–12974 are superseded for visual approval. No hosted change.
+
+### 2026-10-15 — Invited test emails
+
+Owner requested preapproval of named testers before signup. Operator-only `test_app_invited_emails` grants access only to a matching verified auth email; explicit UUID membership denial/expiry takes precedence. Global test disable/expiry and account enforcement remain unchanged. Public policy remains unchanged. No invitation URL or client flag grants access. This extends the UUID-only enrollment above.
+
+## Resolved — reusable personal invitations, 16 October 2026
+
+Owner replaces decisions13/29/30 single-use/automatic rotation. `create_invite()` returns the current reusable token, including for older clients calling it after share. `regenerate_invite(current_token)` atomically revokes all owner links; owner advisory lock serializes creation, regeneration and claims. Repeated regeneration with a revoked token returns current token, making lost-response retries safe. Claim retains canonical pair uniqueness, membership preferences and blocks. Existing unclaimed tokens become reusable; old claimed tokens are never reactivated. Server-minted128-bit random IDs preserve namespace. UI uses inline Regenerate, localized explanation and authoritative refresh after uncertain network outcome; no public name slug needed.
+
+
+## Resolved — chat lifecycle, 16 October 2026
+
+Terminal `chats.left_at/left_by` and both memberships' `chat_left_at` drive existing realtime watchers. Authenticated `leave_chat` and invite claim use the same pair advisory lock; active-pair partial uniqueness permits retained closed histories plus one new conversation. New legacy writes and Stream command/media reservations take a shared chat-row lock and reject terminal chats, while leave serializes with an exclusive row lock. Preauthorized vendor work may reconcile history, never reopen messaging. Personal `delete_chat` sets only that viewer's hidden timestamp and history cutoff; SELECT RLS and client rendering enforce the cutoff. Only a genuinely newer incoming message unhides the membership. Reinvite after a personal clear closes the former pair and creates a fresh one without deleting partner history. No translation or block policy is changed. Screenshot review, native verification and owner manual acceptance remain release gates.
+
+## Connection-notice removal · 2026-10-19
+
+Owner removed global Connecting/No connection banners (US-031). Keep the shared notice slot zero-height and silent; retain connectivity providers, queue/reconnect, access authorization/error recovery, and per-message feedback unchanged. The unmerged update-notice candidate remains separate and must retain its action when integrated.
+
+
+## Resolved — BLA-21 · 20 October 2026
+
+Thread an optional quick-heart callback from ChatScreen through timeline/row/bubble to MessageInteractionTarget's double-tap recognizer. Keep badge tap opening details. Reuse existing reaction notifier and server commands; rollback on failure. No translation pipeline or preference changes.
+
+
+### BLA-21 shared reaction pill · owner14372
+
+One capsule renders distinct aggregated emojis and sum(count) on the right. Server permits one reaction per person/message. Retain32px visible/44px touch height, existing colors and Practice shadow. Anchor incoming left/outgoing right at lower outer bubble corner so variable-width pill grows inward without clipping short messages. No state, server or preference changes.
+
+
+## Resolved — BLA-16 · 20 October 2026
+
+Leave _status unchanged on test-access transport failure and on resume. Owner correction (20 October): ended status must not replace the chat with a session-ended screen; retain chat/draft through expiry and offline resume. Not-approved/configuration mismatch remain blocking. Server-side authorization remains authoritative for commands. On restored active access, invalidate chatListProvider after the reveal frame to avoid invalidating paused dependent subscriptions. No authentication, RLS, queue storage, translation or production changes.
+
+## Reviewed animation batch ·20 October2026
+
+- Logo:450ms initial a/handoff hold,950ms motion,1.40s total. l joins at35% of motion; exact letter paths unchanged.
+- Onboarding:13.75s playback maps onto existing7.75s phase motion, extending only reading phases. Conversation pointer down stops controller immediately; last release/cancel resumes current phase. Continue and reduced-motion final state remain usable; no translation or auth changes.
+
+## BLA-14 conversation candidate · 19 October 2026
+
+Reuse the established PostgreSQL text-message transport and ChatScreen; do not
+enable Stream group transport implicitly. Snapshot non-sender group recipients
+when a message is accepted, serialized with membership by the chat-row lock.
+Group aggregate read RPC exposes only the sender's fully-read message IDs,
+never partial reader identities. Snapshot remains unchanged after joins; no
+other recipients means no automatic read status. Client privacy OFF continues
+to suppress read transport/display. Group history SELECT is constrained by the
+viewer's join boundary. Group messages never qualify for two-person shared
+correction marks, including two-member groups; legacy shared learning rows are
+author-only while per-viewer private variants retain their established keys.
+No new translation targets, policies, prompts or AI-provider work are introduced.
+This is local candidate engineering, not acceptance of all group journeys.
+
+### BLA-14 recovery · 20 October 2026
+
+Group information uses the existing native shared controls, supplied SVG icons
+and page motion. Member menus anchor to their tapped row, not a fixed screen
+coordinate. Rename reopens from the refreshed chat identity and preserves input
+on failure. Required language selection receives an explicit request-preview
+presentation (View message/help), independent of the unchanged translation
+preference mapping documented in the conversation QA record. Viewing does not
+call acceptance; the database suppresses all pending-request receipts.
+The disposable groups backend was rebuilt from all 108 migration files, fixing
+the retained manual-application/ledger drift in migrations 5 and 6.
+
+### BLA-14 owner notice · approved slice 14432
+
+Reuse the isolated dependent groups worktree: the group screen/authority
+contracts are still uncommitted and absent from main. Preserve that work rather
+than copying a dirty checkout into another branch. Reconcile current main before
+integration. The approved p-6-0 Paper alert uses showBlabDialog and
+BlabConfirmationDialog with the exact warm 28px surface,40px horizontal inset,
+20/15/14px type and48px dismiss target. Interface Language alone owns its four
+localized strings. No translation, database mutation or automatic owner selection
+is performed by opening/dismissing the notice. The notice is shown only to the
+current owner with other members; regular/sole-member departure is a separate
+unfinished group lifecycle slice, never the direct-chat leave RPC.
+
+### BLA-14 completion ·14489 ·20 October
+
+Group notification state is per chat_members row and per account, persisted via
+an active-membership RPC. Mute is checked when queueing and when claiming queued
+group pushes; it does not alter other participants or direct-chat behavior.
+Notifications use the existing warm row and a two-choice popup, not a new screen.
+Shared photos listen to real message/attachment changes, including initial and
+reconnect resync. Thumbnails keep the Paper78px preview/10px radius variant;
+chat-photo defaults remain12px. The storage history policy must allow the active
+uploader's own path before attachment metadata exists (storage upsert SELECT),
+without opening orphaned objects or pre-join attachments to other members.
+Storage and Realtime are enabled only in the isolated groups backend. No hosted
+changes. Native settings/media evidence uses real upload/download/readback and
+live subscriptions, not simulated image or synchronization responses.
+
+Web attachment selection uses image_picker's browser file chooser and XFile
+bytes; native retains the established photo_manager sheet. Browser cancellation
+must leave the chat unchanged and allow immediate reselection. Roster now listens
+to RLS-scoped chat_members snapshots and refetches the display-only roster RPC
+after changes, including initial/reconnect refresh. No permission widening.
+
+Live-learning acceptance is separate from private-request UI/privacy proof.
+Configured application provider returned HTTP402 payment required in local direct
+translation testing; no successful asymmetric-language or automatic-worker proof
+is claimed. Device notification dispatch likewise remains unverified without the
+local FCM credential. Lifecycle history semantics remain a required open choice.
+
+Browser media preferences use a shared2Mi-character full/preview cache budget
+across accounts, not the native20MB full-file LRU. Trim legacy media when loading
+chats/history and serialize media saves; never evict auth, drafts/unsent messages
+or text metadata. Originals remain server-backed; oversized media caching is
+best-effort. Group information/photo/notification reads have an8s timeout and
+bounded requests. Request14530 supersedes the full-page Retry fallback: group
+identity always renders; saved account/chat-scoped roster, photo manifest and
+own mute setting survive transient failures. Recovery retries every10s only
+after failure, with source-table/reconnect refreshes and disposal cancellation.
+Authoritative42501 clears cached group information rather than granting stale
+access. First-load failures keep known metadata, not invented members/photos.
+Channel names use monotonic sequence IDs; timestamp-only names can collide for
+simultaneous browser observers. Actual membership watcher is RLS-filtered CDC,
+not a table stream whose initial REST failure can permanently end observation.
+
+
+### Group lifecycle and AI boundary —14578, in progress
+
+Keep the existing dependent group worktree and isolated Blab_Groups_20261019 runtime; do not copy dirty contracts into main. Lifecycle serializes against the group row. Departure deletes active membership and private prepared/readable/job/attempt bindings, retaining canonical originals and immutable read-recipient snapshots. A separate private departure record denies removed-user tokens created before removal; rotation creates a genuinely newer token. Last-member exit closes the group and revokes invitations. Join stamps joined_at using clock_timestamp; clients cannot change it.
+
+Original history RLS permits current group members, independently of AI eligibility. Group AI requires message created_at >= current membership joined_at; initial language backfill is filtered before job insertion, learning-era resolution and private package/readable access/write paths enforce the same cutoff. Client Chat.aiStartedAt is persisted account-scoped and gates rendering, prefetched translations, quotes and selected-message actions. Fresh joins clear saved chat learning snapshots; authoritative departure/rejoin list refresh clears stale snapshots. Direct-chat historical language behavior remains unchanged.
+
+Cost batching redesign is still pending; see docs/specs/2026-10-20-group-ai-cost-and-membership.md. Local lifecycle SQL and client cached-translation regression pass; not yet whole-feature acceptance.
+
+
+### Group completion implementation checkpoint14578
+
+The previously pending cost redesign is now local source: message-level leases, exact output-contract deduplication, service-only source/contract-keyed artifacts and private author/recipient result bindings. At most four distinct contracts per token-bounded generation; at most four generations before yielding unprocessed viewers without decrementing their failure allowance. Durable periodic dispatch resumes deferred work. Preparation and independent private commits use bounded100-viewer RPC arrays with per-viewer completion isolation. Interactive group misses defer to that durable owner, not a competing provider call. Existing direct-chat pipeline stays separate.
+
+Canonical paginated group_joined rows are server-only, localized at display time, excluded from AI/unread/ordinary pushes/human previews, and do not impersonate a group author. User-private departure hints permit revocation delivery even after content RLS denies access. Original-only rendering and clearing both disk and in-memory learning/outbox state fence a new membership epoch; disposed language fetches cannot overwrite its cache.
+
+Account-erasure fallback is distinct from ordinary Leave: transfer to a remaining member or delete an empty group so a permanent account deletion does not fail the owner FK or erase remaining members' group. Queued push claims must match current membership timing. These last SQL safeguards009/010 are authored, not applied/tested while Docker is blocked. Final native source must be rebuilt; earlier packaged QA APK is superseded after the memory-boundary fix. See completion-14578 QA for gates; no acceptance/release claim.
+
+## Group conversation approved composition ·21 October2026
+
+Implement14898 as group-only variants of shared chat components rather than a second message-rendering pipeline. Resolve membership epoch, historical Learning Language, Primary Known Language, mode, aid toggle, tone/form and reading script unchanged before presentation. Interface Language alone owns the header caption/composer labels. Incoming metadata/spacing/name/avatars change, never cached output eligibility or AI scheduling. Accessible title measurement can grow the identity row; the utility row stacks at large text. Retain platform font rendering.32px initials avatars use the existing warm palette, group-local stable name hashing with plum Alice fixture; do not add photo upload/product scope. Existing local groups backend remains owned by the preserved BLA14 worktree; this UI worktree is read-only consumer, with no function/background dispatch enabled.
+
+
+## Final group refinements ·21 October2026
+
+Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
+
+Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15003. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.
+
+
+## Group in-app invitations ·15062 ·21 October2026
+
+New group_invite_friends/send_group_invitations RPCs validate current membership, accepted direct connections, mutual block boundaries and current nonmembers on server. Individual invites reuse private pending inbox; no translation jobs. Refresh on private RLS-filtered realtime events; named invitations follow owner link rotation. Dedicated current-main worktree7e7a5a7; no shared/hosted database mutation or release authorized for this new visual slice.
+
+## Reviewed native invitation sender flow ·22 October2026 /15272
+
+Paper V15 p-B-0 is the sender UI source, including15235/15241 reductions.
+InviteLinkPanel composes native Material, TextButton.icon and FilledButton.icon;
+personal/group pages reuse it without hero art or helper copy. Existing Blab
+selection rows compose native ListTile with a plain check, and selection count
+includes1. Reset uses PopupMenuButton and AlertDialog, preserves reusable-link
+and named-invitation authority. Copy writes the full HTTPS URL; sharing invokes
+the platform sheet directly. Create group navigates to its chat; invitations
+remain optional. The friend picker scrolls as one body while Send remains fixed
+so320px/200% translations remain usable. Recipient screens/learning policy unchanged.
+Candidate is isolated, based on current main d983a6a; review precedes integration.
+
+Sender correction15313: production group route and GroupInfoScreen now instantiate
+GroupInviteLinkScreen directly. GroupInviteScreen remains unreachable from app
+entry points; earlier candidate picker/backend source is preserved, not a new
+release requirement. Preserve already-issued invitation/recipient compatibility.
+
+Reset confirmations reuse BlabConfirmationDialog with explicit chatSurface and
+the existing rounded28 border variant, avoiding the pink default without changing
+other dialogs. Optional scrollable flag defaultsfalse; only these callers optin.
+
+
+## Approved Paper V16 invitation picker ·15498 ·22 October2026
+
+Supersedes direct-link correction15313 and all later exploratory sender references.
+Paper p-C-0 states6FT-0/6GW-0/6IL-0/6JM-0 are canonical. Group details Invite
+friends and /group/:id/invite restore the existing Blab-friend picker. No global
+user discovery. Top-right Search replaces the title with a366x56px neutral
+#EEE8DF radius28 field,12px inset, native Back and Clear inside48px targets;
+gray Search friends placeholder, no username/phone lookup. Preserve selections
+through filtering/Clear/Back and external-link navigation. Invite outside Blab /
+Share a link stays above people. No section/footer dividers or Friends on Blab
+heading; list64px rows,8px gaps; pinned52px Send invite / Send invites(count).
+0 disables Send; private invitations never auto-join. Search/keyboard Back
+consumes search before leaving the picker; leaving hides keyboard. Localization
+uses Interface Language only; no learning-language/translation pipeline changes.
+Implementation authorized, actual native visual/journey acceptance still pending.
+No merge/main integration, hosted migration or release authorization.
+
+
+## Integration authorization · 22 October 2026 ·15553
+Nastia reviewed the actual Android packet15539–15543 and explicitly requested
+“check for conflicts, commit and merge to main”. This supersedes the pending
+visual/integration authorization above for this invitation slice only. No hosted
+migration, service deployment, update notice or tester distribution is authorized.
+Fetched origin/main617639c equals the reviewed candidate base: no textual merge
+conflict or intervening main changes. All reviewed source hashes match the final
+V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
+only final V16 native acceptance and its QA entry are promoted. Manual physical
+phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+## Production iOS communication notification contract ·16208 ·26 October2026
+
+Release-enabled Runner bridge and NotificationService share a fail-closed app-group account
+snapshot/epoch with the approved NotificationContent renderer. Privacy/identity transitions
+rotate epoch and purge delivered/pending notifications and Siri donations. No credentials or
+message history in app groups. Versioned per-token RPC and generic-alert/mutable-content APNs
+contract are specified in docs/qa/2026-10-26-ios-production/README.md; backend/main/deploy remain
+parent-owned. Existing legacy iOS and Android capabilities are not silently upgraded. Approved
+40–45 appearance preserved; source tests do not replace signed physical-device APNs acceptance.
+
+### BLA-13 ·29 October2026
+- Reuse the existing language registry, translation contract and system TTS engine; explicit da-DK/fi-FI/ko-KR/mr-IN/pl-PL mappings do not guarantee installed voices. Add mr to the shared reading-script eligibility set and use Devanagari presentation; no schema change to that preference.
+- Forward-only language migration expands the exact old learning allowlist in current and renamed compatibility functions while preserving signatures, privileges, RLS and cache rows. Four interface locales remain unchanged. Existing translation keys include language, so no invalidation of old accepted sentences is required.
+
+### BLA-38 ·3 November2026 ·native notification candidate
+Nastia17674 authorizes exploring native Android conversation presentation and system-styled badge, superseding exact custom orange/ink artwork only for this candidate review. MessagingStyle uses sender Person plus receiver/chat-scoped long-lived shortcuts on API30+, and preserves message-specific cancellation tags and receiver-bound tap payloads. Group title and sender remain separate; private previews use generic BigTextStyle without identity and remove the matching conversation shortcut. Shortcut publication failure must not suppress the notification. iOS/backend/translation preferences unchanged. Fresh native screenshots and visual acceptance still gate integration/release.
+
+17733 accepts native screenshots17710–17712 and authorizes the scoped implementation. The reviewed native system conversation presentation is now the accepted Android design; iOS remains unchanged.
+## Account deletion confirmation ·17520 ·2 November2026
+
+Nastia17520 selects confirmation-only deletion (option1), superseding US-035’s former password-entry requirement. Reuse DeleteAccountScreen, showBlabDialog / BlabConfirmationDialog, existing section container and Cancel / Delete forever buttons. No password/email-entry or reauthentication UI; the existing authenticated server request remains required. Serialize confirmation and deletion so repeated taps cannot stack dialogs or submit concurrent deletions. Cancellation makes no deletion request; failure permits a newly confirmed retry. Recipient-history retention, read-only notice, personal deletion/block behavior and all authorization fences remain unchanged. No redesign or rollout is authorized by this decision.
+
+## BLA-41 ·4 November2026
+Keep expansion state separate from menu selection, keyed by message source/mode/target/Primary Known Language in the ChatScreen visit. Reuse existing presentation and notice primitives and translation SVG. Anchor the selected row across the layout transaction with a scoped ScrollPosition correction; preserve short-chat leading whitespace. Do not change translation providers, backend or account preferences.
+
+BLA-41 shared notices: update MessageStatusNotice and UnsupportedLanguageNotice together to14px and1px vertical padding; explicit gaps in MessageBubble2px. No timestamps/primary message text or colours changed.
+
+
+BLA-41 colour refinement · Nastia17954 ·4 November2026: Show/Hide translation now uses the existing theme primary action/accent colour instead of textMuted. This supersedes the muted-toggle requirement only. Preserve14px typography, spacing and alignment; retry errors remain red and informational notices retain their muted styling. Source changed; fresh Android/iOS visual verification is blocked by host storage (306MiB free). Earlier screenshots do not prove this colour revision. No merge/release.
+
+
+BLA-41 quieter colour revision · Nastia screenshot feedback during18001 continuation,4 November2026: orange attracts too much attention; use message-colour or an existing kit brown. Selected BlabColors.warmInk (#46281C), softer than bubbleInk (#231208), preserving stronger legibility than warmMuted. Show/Hide only; keep14px/medium weight/2px gap, red retries and muted non-action notices. This supersedes orange17954; new native previews require review.
+
+
+BLA-43 refinement18395: MessageLinkAnchor resolves the exact MessageInteractionTarget bounds plus the current ChatScreen header-to-composer viewport at hold time. Link dialog reuses AnchoredMessagePanels with hasReactions=false, so real measured card height replaces guessed maximum URL height. Existing message positioning/actions remain unchanged. No translation, backend, caching or language ownership changes.
+
+> **BLA-42 · Nastia18622/18832:** implementation authorized: tap a recognized underlined address to a sheet showing its exact text, Copy address and Open in Google Maps (search, browser fallback). Address hold retains message reactions/actions; ordinary message Copy and URL gestures remain unchanged. Detection is conservative; no geocoding, inferred locality, automatic navigation, translation/history mutation or release authorization. Actual Android/iOS visual and journey review remains pending.
+
+
+BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.
+
+BLA-42 approval Nastia19078 ·9 November2026: reviewed18969 anchored popup accepted unchanged; tentative direct-Maps tap19060 superseded. Scoped commit/push/main integration and existing private Android+iOS Blab/Blab-test distribution authorized, subject to current-main automated/native/security/environment-parity gates. No backend/schema/history rollout or audience expansion.

@@ -1,6 +1,6 @@
-> **20513 ·17 November2026:** Nastia authorized scoped BLA22 commit, main integration and deployment after required quality/security/native gates. Existing Apple agreement/auth and both iOS release pause20294 remains; no Apple build/upload/login authorized. Native UK/accessibility/abuse acceptance remains open.
+> **20513 ·17 November2026:** Nastia authorized scoped BLA22 commit, main integration and deployment after required quality/security/native gates. Apple agreement/auth and both iOS release pause20294 remains; no Apple build/upload/login authorized. Native UK/accessibility/abuse acceptance remains open.
 
-> **BLA-22 ·16 November2026 ·19998:** report-only journey implementation in dedicated worktree; [private inbox/acceptance record](../docs/translation-report-inbox.md). No automatic translation retry or authored-text/cache changes. Separate menu actions approved20021. Isolated SQL and connected native-sheet intake verified20300; full ordinary-entry/native parity and visual approval remain open. No merge/deployment/release approval.
+> **BLA-22 ·19998/20021/20360:** report-only selected-message journey; separate translation/abuse actions and shared success pill approved. No automatic retry/cache/history rewrite. Private intake/acceptance: [report inbox](../docs/translation-report-inbox.md).
 
 > **BLA-43 (7 November 2026):** Nastia18294/18297 selects tap URL to external browser; long press URL to existing floating link container; long press non-link message area to existing reactions/actions. No competing menus or bottom-sheet redesign. Nastia approved18395 visuals in18499 and commit/main integration in18502; distribution is not authorized in this step.
 
@@ -646,3 +646,468 @@ This document captures the full scope as prototyped across 4 phone flows.
 - [ ] Matching preference changes update that annotated message plus future translations, regardless of message age, visibility or intervening messages. Other completed messages remain unchanged. Clearing the preference restores the provisional suggestion/feminine, never a gap. Exact rules: `docs/superpowers/specs/2026-09-11-automatic-grammatical-forms-design.md`.
 - [ ] Resolve the affected person before suggesting a form: direct “I” is the author and direct “you” is the recipient, independently of who views the chat. A participant's preference never applies to the other participant.
 - [ ] A first clear form authored directly in the learning language is accepted and remembered silently, with no correction mark
+- [ ] Once a form is saved, a later opposite authored form is automatically corrected to it with the normal visible correction treatment; no contradiction chooser, warning, or explanation appears
+- [ ] The person’s own form is account-wide and takes priority; somebody else’s selection is a private fallback for that one-to-one relationship and never edits the person’s profile
+- [ ] Chat → Translation preferences exposes `Your grammatical form`, `[Name]’s grammatical form`, and `Conversation tone` as three direct rows in one outlined container without section subtitles; Profile → Translation preferences also exposes the account-wide self form. Each value and its navigation arrow form one compact trailing group aligned to the container's right edge. The page uses `#FAF7F2` canvas, `#FFFCF8` header/card, `#E1DAD2` card outline, regular 18 px `#46281C` title, regular 15 px `#46281C` labels, regular 14 px `#917869` values, supplied 20 px navigation arrows, `#46281C` back arrow, and `#917869` row arrows. The header title begins at the same horizontal position as the chat-header avatar, leaving the same 10 px visual gap after the back arrow
+- [ ] A name supplies only a provisional grammatical form, not a confirmed identity. Explicit language can resolve named references; other named people remain message-local.
+- [ ] The note appears only for sentences and supported languages requiring a form; English and Turkish can remain naturally gender-neutral, while Tamil usually requires it only for third-person references
+- [ ] Photo captions use the same form, correction, and ambiguity rules as text messages
+- [ ] V1 offers feminine and masculine only; nonbinary grammatical systems and regional variants beyond the launch locales remain explicit limits rather than invented or stiff rewrites
+
+---
+
+### US-043: Message lifecycle and translating state
+**Description:** As a person chatting while learning, I want translation or correction to feel like one clear transformation, so I can trust that my message sent and understand what Blab is doing without seeing duplicate text or a dead end.
+
+**Acceptance Criteria:**
+- [ ] Outgoing Practice messages follow the approved under-180ms / 180–350ms / over-350ms display branches, including subtle arrival motion and the glyph-only wave after 350ms for slow results
+- [ ] Source and generated text are never visible together, and no text is visible while a bubble changes its measured final size
+- [ ] Mechanical writing fixes are silent; clear author mistakes use the normal inline correction treatment; recipients see that treatment only when both participants had the same Learning Language at send time, otherwise they see clean output
+- [ ] Emoji, URLs, mentions, hashtags, code, protected names, and number-only content are never corrected or translated; mixed messages preserve them in natural target-language order
+- [ ] Incoming Practice messages show authored text immediately while preparing their target-language result; incoming Normal messages translate only when their source is unknown to the reader
+- [ ] Pending incoming translation uses the same shared readable-text shimmer and resolve motion as outgoing translation; both modes show authored text immediately, without rectangular message placeholder lines or a separate loading row (owner revision, 2026-10-13)
+- [ ] After one quiet retry and no more than ten seconds without confirmed active preparation, language-help failure preserves readable original text and shows an actionable Retry; confirmed current server work retains its translating state without duplicate AI requests, bounded to two minutes; delivery failure remains a separate state
+- [ ] Cached messages, mode switches, edits, deletion, captions, grammatical alternatives, off-screen resolution, concurrent sends, and reduced-motion behavior follow `2026-08-12-translating-state-animation-design.md`
+
+---
+
+### US-044: Open unread chats with translations ready
+**Description:** As a recipient, I want messages translated before I open the chat so I can begin reading immediately without bubbles arriving in a random order.
+
+**Acceptance Criteria:**
+- [ ] After message delivery, Blab prepares and persists the recipient's Practice and Normal views without requiring that participant to open the chat
+- [ ] Under normal service availability, opening a prepared chat paints final messages immediately with no replayed translation state
+- [ ] A genuine remaining miss immediately shows the stored authored text, with the shared glyph-only shimmer for slow preparation, then the outgoing clear/reshape/land lifecycle; cached final results do not replay it
+- [ ] Pending messages use the same readable-text shimmer individually, without a rectangular message loader or a group loading row
+- [ ] Pending results reveal oldest-first, and each ready result appears without waiting for every other pending message
+- [ ] Both Practice and Normal keep stored authored text readable immediately while language help is pending; Normal retains known-language authored text or resolves the existing unknown-language translation exception
+- [ ] A final failure retains that message’s readable authored text plus `Couldn’t translate · Retry` and never blocks later messages
+
+---
+
+### US-045: Stable unread position and truthful read state
+**Description:** As a recipient, I want the chat to start where my unread messages begin and preserve my place while I read or switch modes.
+
+**Acceptance Criteria:**
+- [ ] Chat entry anchors the oldest unread message at the top of the readable viewport behind a centered `{count} new message(s)` divider
+- [ ] The divider uses regular 12 px `#8C735F`, 1 px `#E1DAD2` side lines, 8 px line gap, 16 px vertical spacing, and remains until the chat is closed
+- [ ] A pending skeleton never counts as read; final translated, authored, or final-failure fallback content counts after at least 50% becomes visible
+- [ ] Reaching the bottom marks every resolved incoming message through the latest as read; pending rows become read only after they resolve while the reader remains caught up
+- [ ] Normal/Practice switching keeps the reader at bottom or preserves the same top visible message and relative offset elsewhere
+- [ ] Translation failure never triggers automatic scrolling
+
+---
+
+### US-046: Preserve learning-language history
+**Description:** As a learner, I want completed messages to retain the language I was learning at that point in the conversation, while new and still-unseen work follows my latest language choice.
+
+**Acceptance Criteria:**
+- [ ] Completed Practice results remain in their historical learning language after a later language change
+- [ ] A private centered marker `Now learning [language]` appears in both modes using the date-label treatment: regular 12 px `#8C735F`, no lines, pill, outline, or icon. When it starts a dated section, the order is date label → language marker → messages, with 18 px from the previous bubble to the date label, 10 px from the date label to the language marker, and 10 px from the marker to the next bubble. When it sits between message bubbles, it keeps 10 px of visible space above and below the marker.
+- [ ] The marker and language history belong only to that participant and never appear in the partner's view
+- [ ] Still-pending unseen work is cancelled or invalidated, reassigned to the new language, and placed below the marker
+- [ ] A late result for the old language can never overwrite the active new-language result
+- [ ] Repeated switching creates small private timeline events without duplicating original messages or clearing completed translations
+
+---
+
+### US-047: View synced chat photos offline
+**Description:** As a participant, I want photos I have already synced to remain recognizable and usable when my phone is offline.
+
+**Acceptance Criteria:**
+- [ ] The private full-resolution original remains durably stored in Supabase Storage; every attachment also has a chat-sized preview
+- [ ] Synced previews persist in app-private device storage; a full-size photo persists in the bounded device cache after it has been opened
+- [ ] A cached full photo opens normally offline; a preview-only photo opens at its available quality
+- [ ] If no preview has downloaded, the bubble retains its photo geometry and 12 px corners with a neutral `#EAE6E0` placeholder plus muted photo asset
+- [ ] The offline placeholder has no visible error text, red cross, dim overlay, or enabled tap
+- [ ] Reconnection loads the missing preview automatically without moving the message
+
+---
+
+### US-048: Invite-opening loading state
+**Description:** As a recipient, I want calm feedback while Blab validates or claims my invite.
+
+**Acceptance Criteria:**
+- [ ] Show only after validation takes longer than one second, including the post-auth claim of a saved invite
+- [ ] Centered canvas is `#FAF7F2`; first row is `Opening invite` in 17 px semibold `#46281C`
+- [ ] Three 16 px `#F88C5A` dots appear 16 px below the text with 10 px gaps; opacity cycles left-to-right through 100%/60%/30% over a 900 ms loop, without movement or scaling
+- [ ] Reduced motion uses the static 100%/60%/30% dot state
+- [ ] The state routes directly to normal auth, the resulting chat, or the relevant terminal error state
+
+---
+
+### US-049: First-time mode tips
+**Description:** As a new chat participant, I want a short explanation of Practice and Normal after choosing a practice language.
+
+**Acceptance Criteria:**
+- [ ] Practice tip appears after the participant's first practice-language choice; Normal tip appears the first time they switch to Normal; each appears once per account
+- [ ] Tips anchor to the mode switch with no dimming or blur and close when the user taps anywhere else
+- [ ] Practice copy: `Messages appear in {practice language}. Blab helps correct mistakes and translates from {primary known language}. Switch to Normal to see the original.`
+- [ ] Normal copy: `Messages in languages you know stay as written. Others are translated for you. Long-press to see the original.` followed by `Edit known languages`
+- [ ] Tips use `#F88C5A` fill, `#46281C` text, 280 px maximum width, 12 px padding/radius, 13 px semibold title, 12 px / 16 px body, and a low-opacity warm-ink y2/blur8 shadow
+
+---
+
+### US-050: Choose the reading script for Hindi, Tamil and Marathi
+**Description:** As a Hindi, Tamil or Marathi learner, I want Blab-generated learning text in native script or English letters, so I can learn the language without being forced to learn its writing system first.
+
+**Acceptance Criteria:**
+- [ ] One account-wide `Reading script` choice applies to Hindi, Tamil and Marathi; native script is the default and Ukrainian has no script choice
+- [ ] Chat → Translation preferences shows one contextual row only for a Hindi, Tamil or Marathi chat: `Hindi script` / `Tamil script` / `Marathi script` or `English letters`; Profile shows one row only while at least one eligible conversation exists
+- [ ] Both entry points use the existing preference-row and checkmarked bottom-sheet pattern, edit the same value, and remain synchronized
+- [ ] The redesigned language-selection sheet remains unchanged; changing a chat away from Hindi/Tamil/Marathi hides the row without clearing the saved choice
+- [ ] The choice changes only Blab-generated Practice text, corrections, Normal fallback translations, matching reply previews, and word-description hierarchy; authored messages and Original remain exact
+- [ ] Switching the choice immediately re-renders eligible past messages from cached native text and Romanization without new translation or correction work
+- [ ] English letters render only when the full sentence has usable Romanization metadata; otherwise the whole sentence stays in native script with no mixed-script fallback
+- [ ] Native mode makes the native word primary in word descriptions; English-letters mode makes Romanization primary; native spelling, meaning, and native-language audio remain available
+- [ ] Valid native-script or Romanized authored text is never corrected solely because it differs from the reading preference
+- [ ] The complete Hindi/Tamil, both-direction Alice-browser/Bob-Android journey passes and final screenshots are retained for owner review
+
+---
+
+### US-052: Recognisable Blab opening
+**Description:** As a person opening Blab, I want one brief branded transition into the app, so startup feels warm and recognisable without delaying access.
+
+**Acceptance Criteria:**
+- [ ] The native launch surface is warm cream only, with no avatar or completed wordmark before the app-owned animation
+- [ ] The exact Blab letterforms assemble once as `a → la → bla → blab`; the intact `a` lifts its upper curve and right stroke together while its foot stays planted, `l` walks in subtly, and a duplicated `b` hops in a clean arc over `la`; `l` and `a` duck together as it passes, then recover when it lands at the end
+- [ ] The app-owned motion is non-looping, silent, interrupt-safe, and implemented in Flutter without a Rive or video runtime dependency
+- [ ] Startup routes only after both the real destination resolver and the animation are ready; a slower resolver holds the completed wordmark without replaying it
+- [ ] The animation plays on a cold process launch and does not replay when the existing app resumes from the background; if the operating system has evicted the process, the next open is treated as a cold launch
+- [ ] Reduced Motion renders the completed static wordmark and adds no decorative delay
+- [ ] The final timing and cold-start handoff pass on the Android release candidate and receive owner approval
+
+---
+
+## Functional Requirements
+
+- FR-1: Signed-out entry is Welcome → Learn in context → separate Sign up or Log in method screens. Email, Google, recovery, callback, session, and invite behavior are retained under a new central resolver; no auth success handler navigates directly to Chats
+- FR-2: The refreshed account setup is versioned and server-persisted. Every pre-release account completes Welcome/Learn, explicitly confirms its saved name, and confirms one Translation language once for this version without losing its valid session, existing name, interface locale, or known languages
+- FR-2A: Email signup collects email/password only, then Confirm name. Google proposes a provider name only for a new account; an existing saved Blab name has priority. Password controls use secure entry, visibility, Android autofill, inline strength/validation, and real system keyboard behavior
+- FR-2B: One resolver waits for session restoration, callback classification, account onboarding state, and pending invite state before choosing a destination. Recovery and email-change callbacks resolve before ordinary onboarding; required name/language setup resolves before invite continuation or Chats
+- FR-2C: Learn in context reproduces the approved approximately 7.05-second HTML dialogue cycle, disposes safely, restarts from the beginning after backgrounding, never blocks Continue, and renders a static complete state when reduced motion is enabled
+- FR-3: Interface-language picker exposes English, Ukrainian, German, and Spanish from auth and Profile; English is the default/fallback, and the preference persists locally before auth and per account after auth. A successful signed-in change uses target-locale feedback with one Undo action, no close icon, a 4-second normal timeout, and navigation dismissal
+- FR-4: Invite creation never asks for a language or contacts access. A personal link is reusable by unlimited friends with no time expiry; only explicit Regenerate revokes prior links and creates a new random ID
+- FR-5: `Send invite` opens the device native share sheet with the standard Copy affordance and return behaviour; no custom share sheet or success page is used
+- FR-6: Chat list shows avatar, name, last message preview, timestamp, unread badge, and `Ready to chat · Say hi` for an unmessaged new connection until that participant selects a practice language
+- FR-7: Empty state shown when no chats exist
+- FR-8: Profile settings in a single card: Interface language | Edit profile | Change email | Change password | Log out. Log out triggers a confirm dialog before signing out
+- FR-9: Edit profile loads and validates the persisted display name. Save (in nav) returns to Profile only after the server succeeds, with the updated name immediately visible and no redundant success toast; failure stays inline on Edit profile. Saving Languages you understand or Translation language follows the same no-success-toast rule because the updated chips and Translation language row are immediately visible on return. Translation language is always included among understood languages
+- FR-10: Change password has current/new/confirm fields with strength bar; success returns to the destination with a compact light confirmation, leading check-circle, localized text, no close icon, and a 2.5-second timeout
+- FR-11: Message/text tap opens BLA-17 anchored panels; no old message word popup/recognizer or long-press menu entry. Unrelated word-help surfaces are retained
+- FR-12: Popup positions above word, clamps to phone bounds, closes on tap-outside
+- FR-13: Practice mode renders one collapsed learning-language line and temporarily reveals the primary-known-language line on message selection; Normal renders authored text for known languages, translates an unknown incoming language once into the reader's primary known language, and conditionally exposes exact authored text through Original. The interface language controls chrome only; the primary Known Language controls word descriptions. Author mistakes in their learning language render as minimal inline strike-through corrections. A recipient sees those marks only when both participants had the same Learning Language at send time; otherwise they receive clean corrected output. Struck-through correction text has no explanation action for either participant; ordinary chat taps use BLA-17 message selection. This eligibility is persisted when the message is created, remains historical through later language changes, and is false for pre-feature messages. Disabling learning aids prevents new AI requests and shows only the original; failures preserve the original with an inline text-only Retry action
+- FR-14: Outgoing status is clock while sending, single gray check when accepted or device-received, and double gray check when read. Read requires both Read receipts toggles ON; otherwise it stays single. Default ON, symmetric, and OFF emits no read event
+- FR-15: Outgoing message/text tap opens anchored actions. Normal uses Reply | Edit | Copy | Original | Delete; Practice uses Listen | Reply | Edit | Copy | Delete. Conditional actions hide when ineligible; Delete confirms, removes for both, and has no tombstone or Undo
+- FR-16: Incoming message/text tap opens anchored actions. Normal uses Reply | Copy | Original | Report; Practice uses Listen | Reply | Copy | Report. Existing eligibility remains
+- FR-17: Reply preview uses only You/name with the approved accent and visible primary message text, opens the keyboard, and threads the same text or photo preview into the sent bubble
+- FR-18: Consecutive outgoing messages group (reduced gap, no repeated timestamp)
+- FR-19: ··· menu: show/hide translations and corrections toggle + change learning language, auto-width
+- FR-20: Change learning language uses the shared language-sheet design and height: 11 named languages, selected-row check, preview-before-commit, and a **Done** action that updates the header label only after success
+- FR-21: Send button disabled-state dims the circle fill to 40% when input is empty while keeping the arrow solid white; input is an auto-growing textarea
+- FR-22: A new unmessaged chat shows `No messages here yet…` / `Send any message to start.` in a simple centered text container. Its required initial practice-language sheet matches the handled Settings sheet's `567 / 932` viewport-height proportion, uses no blur and a `#231208` 30% scrim, hides and covers the empty-state container, and must be completed before chat interaction
+- FR-23: Translations toggle scoped per chat (phone3 vs phone4 separate state)
+- FR-24: Word popup audio uses on-device TTS only — no external API. When TTS unavailable for the language, speaker icon stays in place but renders disabled (40% opacity, no tap, no tooltip, no text)
+- FR-25: Delivery failure shows `Not sent · Tap to try again`; language-help failure shows `Couldn’t translate · Retry`. Both are `#C62828` text-only rows below the bubble with no standalone icon; pending remains a clock
+- FR-26: Connection/access checks remain silent with no global connection banner or reserved strip (owner revision 2026-10-19, US-031). Composed messages queue and auto-send on reconnect. Invite a friend disables Send invite while offline; a pending valid invite claim resumes automatically on reconnection. Optional update-available notices remain separate.
+- FR-27: Loading skeletons on first paint of chat list and chat view; failures use inline retry, not full-screen blockers
+- FR-28: All interactive elements have semantic labels; tap targets ≥ 44pt; contrast ≥ WCAG AA; respects system font scaling through 200%. The temporary five-action launch row uses 16 px icons, 11 px labels, and two-line wrapping under enlarged text rather than clipping or truncating
+- FR-29: Push permission requested after first chat opens, not at launch
+- FR-30: No online / "last seen" feature exists. Chat header shows learning-language subtitle, replaced by "typing…" only when both sides have Typing-indicator toggle ON (US-040)
+- FR-31: Typing indicators + Read receipts are Signal-symmetric toggles in Privacy settings; default ON; OFF path = client never broadcasts the event (server has no record) AND user does not see partner's signal either
+- FR-32: Edit window is 24h and Delete has no time limit; both apply to outgoing messages only. Edit preserves its draft across navigation until Send or ×, marks the message edited, and refreshes language help after any changed letter, number, or punctuation
+- FR-33: Primary Known Language switching immediately refreshes Normal-mode translations and word descriptions from the matching cache variant. Interface-language switching re-renders interface copy only and never changes those learning-aid results
+- FR-34: Render complete natural grammatical forms: explicit preference, then provisional name suggestion, then feminine fallback. Show one localized `Using [form] forms for [name] · Change` note per participant/chat; Change opens existing Translation preferences and corrects only the annotated message plus future messages. No markers, word-choice containers, or neutral rewrites to avoid ambiguity. Resolve author/recipient ownership before suggesting a form. Resolved text uses BLA-17 message selection in ordinary chat; unrelated word-help surfaces are retained.
+- FR-35: Grammatical-form memory has only `not set`, `feminine`, and `masculine`. A self-owned form is account-wide; another participant’s choice is a private one-to-one fallback. The first clear authored form is learned silently; once saved, it is authoritative and later opposite authored forms receive the normal visible correction until the user changes the preference in settings. Conversation tone is stored separately per chat
+- FR-36: Message lifecycle follows `docs/superpowers/specs/2026-08-12-translating-state-animation-design.md`: a slow delivered outgoing Practice message receives a glyph-only wave after 350ms, then a measured clear → reshape → land transition; text states never duplicate. Language-help failure quietly retries once for up to 10 seconds, then preserves original text with Retry unless the server confirms current active preparation; that work retains the existing translating state for at most two minutes without duplicate AI requests. Expressive stretching, playful capitalization, and chat abbreviations are not correction mistakes; confidently identified names are transliterated when the target script differs without changing their identity. Unsupported source languages preserve the original with a neutral hint and no Retry or learning actions. Delivery failures remain distinct, and reduced-motion behavior has no decorative motion
+- FR-37: BLA-17 revision2/correction16176/build16216: text/bubble tap opens measured anchored panels without scrim, lift, new outline or composer replacement. Whole-chat scroll retains fixed panels in stable viewport with finite natural end. Below/above/long-overlap geometry,8px gap, dynamic eligible rows,N−1 dividers and exact left SVGs follow the approved BLA-17 review packet. Copy/Reply primary, Edit authored, Listen listenText and Original exact retain predicates/effects. Tiny/top fallback, occlusion and async lifecycle remain review gates
+- FR-38: Delivered messages are prepared and persisted for each participant's Normal and Practice views before chat open. Genuine misses immediately show stored authored text with the shared glyph-only shimmer and no rectangular message loader; final failures retain authored text independently with Retry (owner revision, 2026-10-13)
+- FR-39: Chat entry anchors at the oldest unread behind an `N new messages` divider. Pending skeletons never count as read; final content requires 50% visibility unless the reader reaches bottom. Mode switching preserves the visible-message anchor and never scrolls to a failure
+- FR-40: Learning-language history is private per participant. Completed results retain their assigned historical language; `Now learning [language]` marks the boundary; pending unseen work retargets to the latest revision; stale language results cannot become active
+- FR-41: Chat-photo originals remain in private Supabase Storage, synced previews persist on-device, opened full files use a bounded cache, and an unavailable offline preview renders the approved neutral placeholder without framework error UI
+- FR-42: Invite handoff preserves the most recently opened valid invite through standard email auth and app return. Claim happens only once a signed-in recipient is known; existing pairs reuse their chat and no one can self-claim. The static web page is generic and never validates or claims a token
+- FR-43: First-time Practice and Normal guidance is a once-per-account, non-modal mode-switch tip using the approved copy and warm-orange treatment
+- FR-44: Hindi, Tamil and Marathi share one account-wide `Reading script` preference (`native` default or `english_letters`). It is exposed as one contextual Translation preferences row only when relevant, re-renders eligible cached Blab-generated sentences and word-description hierarchy immediately, falls back to the whole native sentence when Romanization is incomplete, preserves authored/Original text and native TTS, and never creates a script-only correction
+- FR-46: Startup uses a cream native launch surface followed by one app-owned Flutter wordmark assembly from the exact logo vectors. It completes once, coordinates with destination resolution, holds its final state only while real startup work continues, and becomes a static final wordmark with no added delay when Reduced Motion is enabled
+
+---
+
+## Security & Encryption (End-to-End)
+
+Chat content is end-to-end encrypted. Supabase Auth + RLS control **who can fetch** ciphertext; E2EE controls **who can read** it. Both layers required.
+
+### Shape
+
+1. **Auth & access control** — Supabase Auth for login; Row-Level Security (RLS) on every table and Storage bucket. `service_role` key never ships in the client.
+2. **Key generation** — encryption keys generated on the Flutter device, never on Supabase or in Edge Functions.
+3. **Ciphertext only at rest** — Postgres rows and Storage objects store only ciphertext for any user-content field (message body, message metadata that reveals content, attachments).
+4. **Key storage** — public keys uploaded to Supabase (per user, per device); private keys stay on-device in **iOS Keychain** / **Android Keystore**. Private keys never leave the device.
+5. **Encrypt before write** — client encrypts locally before any `insert`/`update`.
+6. **Decrypt after read** — client decrypts locally after fetch; server-side code never sees plaintext.
+7. **Shared content (1:1 chat)** — generate a random per-message (or per-conversation) **content key**; encrypt the payload once with the content key; then wrap the content key separately for each recipient device's public key. Adding/removing a device re-wraps the key, never re-encrypts the payload.
+8. **No plaintext in server compute** — Edge Functions, triggers, logs, and analytics must never receive plaintext, private keys, or decrypted payloads. Treat server logs as public.
+
+### Crypto choices (recommended)
+
+- **Flutter libraries:** `cryptography` / `cryptography_flutter` or `sodium` (libsodium bindings).
+- **Payload encryption:** XChaCha20-Poly1305 or AES-GCM (authenticated encryption, required).
+- **Key exchange:** X25519 + HKDF, or libsodium **sealed boxes** for the wrap step.
+- **For chat with forward secrecy:** do **not** invent a protocol. Use Signal-style (Double Ratchet) or Matrix/Olm. Decide in tech-spec before shipping real-time chat.
+
+### Caveats — accept these
+
+- **Encrypted fields cannot be searched or sorted** by Postgres normally. If we need search over message content, either (a) decrypt locally and search client-side, or (b) add a **blind index** field — knowing it leaks some metadata (length, equality patterns). Default: client-side only.
+- **Metadata still visible:** timestamps, sender/recipient IDs, message counts, attachment sizes. E2EE hides content, not the social graph. Minimize what we store.
+- **Key loss = data loss.** If a user loses all their devices, their old ciphertext is unrecoverable unless we implement a recovery scheme (passphrase-wrapped backup key, secure enclave attested backup, etc.) — decide in tech-spec.
+
+### References
+
+- Supabase Flutter quickstart: https://supabase.com/docs/guides/getting-started/quickstarts/flutter
+- Supabase data security & RLS: https://supabase.com/docs/guides/database/secure-data
+- Dart `cryptography` package: https://pub.dev/packages/cryptography
+- Dart `sodium` (libsodium): https://pub.dev/packages/sodium
+
+---
+
+## Privacy posture
+
+Blab is sold as a "language-learning app that respects your privacy." This section locks the user-facing promise + the technical commitments behind it.
+
+### The honest promise
+
+> Your messages are end-to-end encrypted — we can't read them. We don't analyze your behavior, sell your data, or track you for ads. Some basic activity (when you're typing, when you read) flows through our servers to make chat work, **but only if you've opted in** — both toggles default to ON for usability, are symmetric (off = neither side sees), and OFF means the event never leaves your phone.
+
+Reasoning: the strongest defensible privacy claim is E2EE content + "no behavioral analytics." We don't pretend to be Signal-level metadata-blind in V1 (we'd need sealed sender + onion routing + similar), but we do not collect any metadata for ads, profiling, or analytics. We pick EU server region to keep data under GDPR.
+
+### Technical commitments
+
+1. **End-to-end encryption** for message content (see § Security & Encryption). Server stores ciphertext, key lives on device.
+2. **No online / "last seen" feature exists at all.** Not a toggle, not an opt-out — the capability is simply not built. (Signal model.)
+3. **Typing indicators are a Signal-symmetric toggle.** Default ON. Off path = client never sends the event. See US-040.
+4. **Read receipts are a Signal-symmetric toggle.** Default ON. Off path = client never sends the event. See US-016, US-041.
+5. **No behavioral analytics, no ads SDKs, no third-party trackers.** Period. Sentry crash reports only (no message bodies, no PII beyond user id).
+6. **Server region = EU (GDPR).** Locked in tech-spec Resolved Decision #9.
+7. **Key loss = data loss in V1.** No key recovery scheme yet — reinstalling wipes chat history. This is surfaced clearly in onboarding copy. V2 may add an optional passphrase-wrapped key backup. (See § Security & Encryption Caveats.)
+8. **Report, block, and staffed moderation are required in V1.** The invite-only design reduces exposure but does not remove the need for accessible reporting/blocking, validated report intake, timely human review, enforcement, and child-safety escalation.
+
+### What we do not promise
+
+- We do **not** claim Signal-level metadata privacy. Sealed Sender, message-padding, traffic-shaping, etc. are V2+ research items in tech-spec.
+- We do **not** claim "off the grid" or "uncompliable to subpoenas" — lawful EU requests still apply.
+- We do **not** claim history is backed up. It isn't.
+
+---
+
+## Non-Goals (Out of Scope)
+
+- No real backend, database, or user accounts
+- No actual push notifications (simulated in prototype)
+- No real audio playback (simulated play interaction)
+- Profile photos and file uploads are out of scope; launch profiles use initial avatars only
+- No contacts discovery, recipient-email matching, or separate invite-management screen; inline link regeneration is supported
+- Group chats are defined by the approved BLA-14 group-feature specification
+  (`docs/specs/2026-10-19-group-feature.md`). That specification supersedes
+  this former non-goal for its explicitly listed journeys; all other group
+  behavior remains out of scope until specified.
+- No voice or video messages
+- No AI conversation partners or generated replies; AI is limited to user-controlled message translation and writing correction
+- No language matching algorithm / discovery feed
+- No in-app payments or subscription
+- No notifications settings screen
+- No blocked-people settings directory in V1; recovery stays inside the visible blocked chat
+
+---
+
+## Languages Supported (Prototype)
+
+- **Interface:** English (default/fallback), Ukrainian, German, Spanish
+- **Chat learning:** Danish, Dutch, English, Finnish, French, German, Hindi, Italian, Korean, Marathi, Polish, Portuguese, Spanish, Tamil, Turkish, Ukrainian
+
+---
+
+## Design Principles
+
+- Current Blab visual language: rounded corners, bottom sheets, nav-bar Save, system fonts. Owner clarification (2026-10-13): reusable Flutter Material 3 controls with genuine Android-standard navigation/Back, preserving existing visuals/icons; screenshot/journey approval is required before migration integration.
+- Purple brand (`#5B4FE8`) as primary action color
+- Translations visible by default, toggleable per chat
+- Partner's language always shown first; English always second
+- Read receipts only on outgoing messages (never on incoming)
+- No icebreakers — exchange card explains the setup, user starts conversation
+
+---
+
+## Success Metrics
+
+- User can sign up and send first invite link in under 60 seconds
+- Tapping a word and getting its meaning in under 1 tap
+- User can tap any eligible message and find its action in under 2 seconds
+- Both sides of exchange (learner POV and teacher POV) are immediately clear on first open
+
+---
+
+## Resolved Questions
+
+Originally tracked as "Open Questions"; resolved 2026-05-28 in one batch.
+
+- **Multiple simultaneous language exchanges per user?** → **Yes**, per-chat. Each chat owns its `learning_language_code` + `teaching_language_code`; languages can repeat across chats or differ. Profile shows the primary (most active) as a hint. (Affects US-022, chat schema in Phase 2.2.)
+- **Which preference controls translations and word descriptions?** → **Primary Known Language.** It targets Normal-mode translations and word descriptions. Interface Language updates app chrome only; Learning Language controls Practice-mode output and word/sentence audio. Switching Interface Language must not change learning-aid content. (Revised 2026-09-30 after correction explanations were removed from the UI.)
+- **Invite link single-use or reusable until claimed?** → **Reusable until claimed** (single *successful* claim), with no time expiry so a delayed or offline share is not invalidated. (Updated US-024, US-037, FR-4 on 2026-09-07.)
+- **Exchange card disappearance on first message?** → **200 ms opacity fade-out**, no slide/scale. (Updated US-027.)
+- **Edit-profile Save success toast?** → **No.** The explicit Save action and immediately visible updated value provide sufficient confirmation; failures remain where the action happened. Known Languages uses the same rule. (Revised 2026-09-15; updated US-011 / FR-9.)
+- **Password-success feedback?** → **Yes, but quiet.** Password changes are not visually evident on the destination, so show a compact light pill with a leading check-circle and localized message for 2.5 seconds. Do not add a trailing `✓` or close icon; swipe and normal transient-feedback dismissal still apply. (Approved 2026-09-15; updated US-012 / FR-10.)
+- **Report and Block flow?** → **Keep both message and person reporting, plus Block.** The partner profile is a full page. `Report Name` opens a centered spam confirmation with `Report spam`, `Report and block`, and `Cancel`; person reports do not ask for a reason. Incoming-message Report remains a six-reason bottom sheet tied to that message. Successful reports use the factual shared pill `Report submitted`. Block still requires the concise localized `Block Name?` confirmation. A blocked conversation remains visible and readable, its composer becomes `You blocked Name · Unblock`, and neither participant can send until the blocker unblocks. Reopening an invite reuses that same blocked conversation without silently unblocking. No separate blocked-people settings screen or Block Snackbar is needed in V1. (Revised and approved 2026-09-16; Step 3.6a.)
+- **Log-out confirm dialog?** → **Yes** (Signal-style). "Log out?" with Cancel + Log out before actually signing out. (Updated US-010.)
+- **TTS — on-device good enough or recorded fallback?** → **V1: on-device only.** Disabled state for unavailable languages = icon dimmed in place (40% opacity, no tap, no tooltip, no text). Cloud TTS or recorded human audio re-evaluated in V2 once we have real usage data on which languages matter most. (Updated US-018, US-029.)
+- **Chat history across reinstalls — server-side or device-local?** → **V1: ciphertext on server, key on device, no key recovery.** Reinstall = lose history. Surface clearly in onboarding copy. V2 may add an optional passphrase-wrapped key backup. (See § Privacy posture #7.)
+- **Typing indicators — ship or skip?** → **Ship as Signal-symmetric toggle.** Default ON. Off path = client never broadcasts. See US-040.
+  - Bonus decision: **read receipts get the same Signal-symmetric toggle** (US-041), and the **"Online / last seen" feature is dropped entirely** — no toggle, no opt-out, the capability simply is not built. (Updated US-013, US-016.)
+- **Edit / delete time window — forever or limited?** → **Edit: 24 h** (Signal-style). **Delete: forever** (sender can delete any sent message at any time, propagates to recipient). (Updated US-019.)
+
+
+### Owner revision — seamless messaging, 14 October 2026
+
+Supersedes the decorative clear/reshape/land requirements in US-043/044 and FR-36/38: original text is immediately readable; Normal uses full-contrast normal chat text and never a translation shimmer. Its existing unknown-language completed translation exception is retained. Practice alone may shimmer while real work is pending, then paints the complete result immediately without typing/glyph reveals, erased/blank frames, or mandatory animation delays. Ready cached history and mode switches never replay translation motion. Chat opening presents the new screen immediately, without the previous screen's delayed fade. Delivery never waits on AI; contextual translation is separately measured, with a target of a few seconds for ordinary short messages, not a fabricated fixed delay. Recovery and actual timings must be verified with real providers and both clients.
+
+### Owner revision — separate Blab Test, 15 October 2026 (FR-47)
+
+Owner12963 and follow-up explicitly select a separate test app with separate accounts/chats. This supersedes shared public invite copy/routes only for that app; public US-024/025/037 behavior remains.
+
+- Owner visual revision after screenshot review: test app must look exactly like public Blab. No test banner, extra helper copy, altered invite titles or share wording. App name/icon and normal journeys remain identical; only the invite URL differs. Separate installation/accounts remain behind the scenes.
+- Test links contain `-test`: `https://loveblab.com/i-test/test-{token}`. Normal shared copy remains identical to public, with only the link changed. Wrong-channel and revoked-access errors remain necessary enforcement states, not persistent test decoration.
+- Test invitations are accepted only in the separate testing namespace by approved test accounts; public invitations stay public. Wrong-channel opening explains which app is needed and never claims/consumes a token.
+- Test accounts/chats do not migrate automatically to public Blab. Existing public/Firebase-v21 histories are unchanged. Testing access is separately revocable, with global and per-account expiry/disable; never deletes accounts/chats or affects public access.
+- Account approval is operator-owned, never a self-selected flag or Firebase download invitation. Online server authorization is authoritative; already downloaded content/screenshots cannot be remotely erased.
+- Localized test UI follows Interface Language only. All learning/known-language preferences remain per viewer and untouched.
+- Android candidate first; current repository has no iOS target. No claim of iPhone readiness, billing implementation or store launch approval.
+
+- Owner naming revision12986: visible test app name is exactly `Blab-test`; public remains `Blab`. Icon and in-app screens remain identical. This supersedes the identical launcher-name decision only.
+
+### Owner revision — stationary result and connection loading, 16 October 2026
+
+Owner13402: after the Practice shimmer, paint the complete result at its final position without horizontal movement or animated width/height interpolation. Preserve new-message arrival and reduced-motion behavior. The test-only access loading state says localized `Connecting…` with no Logout button while checking; retain server access enforcement and denied/error recovery actions.
+
+Owner13414 supersedes the full-screen pending design: keep the current routed screen visible and interactive during access refresh. Reuse the existing No connection banner slot for localized Connecting with orange (non-error) styling; never stack both banners. Keep explicit denied/error recovery and server authorization enforcement. No extra full-screen pending page.
+
+## Owner revision — reusable personal invites (16 October 2026)
+
+Supersedes single-successful-claim and automatic rotation in US-008/037, FR-4 and the September invite decision. One opaque, random personal ID remains stable across shares and app restarts; no display-name requirement. Unlimited distinct recipients create their own conversation with the inviter; repeat joins reuse the same pair without resetting language settings or removing blocks. Regenerate disables all prior links for future joins, without deleting existing chats. Previously claimed legacy links retain old compatibility until regeneration; previously unclaimed links become reusable. Test namespace and approved-tester access remain enforced. New invite visuals require owner review before integration; production promotion needs approval of this new migration scope.
+
+
+## Chat lifecycle — owner request 13655, 16 October 2026
+
+- Add Leave chat in the existing partner profile Safety section, using the current row/dialog visual system.
+- Leaving is terminal for that conversation: history remains visible to both participants, both see exactly “Left chat”, and neither can send new text/photos/replies or restart the conversation in place.
+- A new invite after leaving creates a separate fresh conversation with independent language setup; old messages stay in the closed conversation. Repeat invites to an active pair still reuse that active chat. Account-level blocks are never cleared or bypassed.
+- Chats supports swipe-left Delete with a confirmation modal. Deletion is viewer-scoped; the other participant’s retained history is not erased. Owner clarified in this topic: deleting does not end messaging for the other person; a new incoming message brings the chat back, without restoring the deleting viewer’s earlier cleared history.
+- Native Android and iOS evidence must show leave confirmation, both closed-chat states, swipe/delete confirmation, deletion and fresh reinvite. Existing offline history, learning-language history and per-viewer preferences remain intact.
+
+
+## Group completion — approved topic7420 /14560,14566,14578 (20 October 2026)
+
+- Use existing 1:1 preferences first, then Stream defaults, unless an explicit group decision differs. These instructions supersede the earlier proposed prejoin original-history restriction for groups only.
+- New and returning members can read older original messages/media; no historical translation/correction work. AI begins at the latest server-confirmed join and older translated results must not return through caches. Leaving/removal removes the group from Chats and ends read/send access. Rejoin starts a new membership epoch. Original history includes messages sent during absence.
+- Owner transfers ownership before leaving when others remain; final member closes the group. Members may share links; explicit Join remains required, 100-person cap includes owner. Removed members cannot use an invitation older than removal. Blocking private contact does not hide shared group messages.
+- Delete remains personal as in 1:1, not group-wide deletion. Join notices are neutral localized timeline activity, not group-authored bubbles. Share matching AI outputs while keeping corrections private.
+- Actual screenshot approval, Android proof and release remain separate from this authorization to implement.
+
+## Group conversation visual exception · approved14898 ·21 October2026
+
+Paper page p-7-0 artboard5A5-0 (sender-name revision14894) is the approved group-only UI specification. US-013's one-row/36px/15px header and Practice composer guidance remain unchanged for1:1. Groups instead use the two-row60+46px header,34px group avatar,18px title, localized compact practicing-language label and existing mode control. Composer placeholder is localized Message in both modes,48px input/send. Incoming runs show12px/16px500 muted#9B6550 names on the first bubble and32px avatar on the last; join/date/other sender boundaries reset grouping. Own messages omit names/avatars. Metadata12px, incoming body16/23. Preserve all translation/history/gesture/privacy behavior. See group-feature specification and QA record; design approval is not approval of unseen app implementation.
+
+
+## Final group refinements ·21 October2026
+
+Latest owner screenshot feedback supersedes the earlier two-row Paper header: remove the practicing-language caption and keep identity, mode toggle and menu in one toolbar row. Long titles ellipsize; enlarged text/narrow screens retain a compact icon control with full mode semantics and44px activation height. Group-only;1:1 remains unchanged. Hide the complete Shared media section after a confirmed empty result; retain loading/retry and show it once a photo exists.
+
+Verified on Android5560 and390×867 Web: native conversation and information journeys pass; inspected replacements delivered15001 and15003. Full client1,026 passed/16 environment skips; analysis clean. Fresh122 migrations/15 SQL suites and211 worker checks passed previously on the same backend source. Main group integration68e22be pushed; final refinement integration/test32 delivery pending. Staging17 migrations and2 modified functions promoted without production changes. No new AI generation for these refinements.
+
+
+## Group in-app invitations ·15062 ·21 October2026
+
+Existing accepted1:1 connections are selectable to receive individual group invitations inside Blab. Recipients see a private invitation in Chats and explicitly Join/Reject; no automatic membership or ordinary chat/AI message. External share-link action is separate. Regeneration remains owner-only in the link page overflow menu with confirmation; named in-app invitations remain valid when the shared link changes.
+
+## Owner invitation-flow revision ·22 October2026 /15272
+
+Paper V15 p-B-0, as simplified in15235/15241, governs the built sender journey.
+Chats plus lists Invite a friend first, New group second. Creating a group needs
+only a name and opens its chat, not forced member selection. Later Invite friends
+uses search, existing highlight/plain check rows, and one Send button with selected
+count (including1); external invite links are a separate upper row. Group links
+match the personal Copy/Share layout, with group name but no avatar/member count
+or helper. Share opens the phone share sheet, not Blab Chats; in-app selection
+sends private invitations and never auto-joins a recipient. Reset remains owner-only
+for groups and preserves named invitations. Actual implementation screenshots
+still need owner review; specification approval is not merge/release approval.
+
+### Superseding sender-flow correction15313 ·22 October2026
+
+The friend-picker screen (old review screenshot2/4) is removed from the active
+group invitation journey. Group details > Invite friends and /group/:id/invite
+open the existing group-name + link + Copy link + Share link screen (3/4) directly.
+Back returns to the previous context. No search, selection or Send-invite step
+is shown. This supersedes the existing-friend-picker branch above; personal
+invites, optional invitations after creation, recipient decisions and owner-only
+reset remain unchanged. Do not infer release approval or backend removal.
+
+### Reset confirmation surface correction ·22 October2026
+
+Personal and group Reset link confirmations reuse BlabConfirmationDialog with
+BlabColors.chatSurface (the existing cream surface), not Material's pink default.
+Use the existing rounded28/hairline variant; retain native buttons, scrolling,
+current copy, cancellation and reset authority. No global dialog-theme retinting.
+
+
+## Approved Paper V16 invitation picker ·15498 ·22 October2026
+
+Supersedes direct-link correction15313 and all later exploratory sender references.
+Paper p-C-0 states6FT-0/6GW-0/6IL-0/6JM-0 are canonical. Group details Invite
+friends and /group/:id/invite restore the existing Blab-friend picker. No global
+user discovery. Top-right Search replaces the title with a366x56px neutral
+#EEE8DF radius28 field,12px inset, native Back and Clear inside48px targets;
+gray Search friends placeholder, no username/phone lookup. Preserve selections
+through filtering/Clear/Back and external-link navigation. Invite outside Blab /
+Share a link stays above people. No section/footer dividers or Friends on Blab
+heading; list64px rows,8px gaps; pinned52px Send invite / Send invites(count).
+0 disables Send; private invitations never auto-join. Search/keyboard Back
+consumes search before leaving the picker; leaving hides keyboard. Localization
+uses Interface Language only; no learning-language/translation pipeline changes.
+Implementation authorized, actual native visual/journey acceptance still pending.
+No merge/main integration, hosted migration or release authorization.
+
+
+## Integration authorization · 22 October 2026 ·15553
+Nastia reviewed the actual Android packet15539–15543 and explicitly requested
+“check for conflicts, commit and merge to main”. This supersedes the pending
+visual/integration authorization above for this invitation slice only. No hosted
+migration, service deployment, update notice or tester distribution is authorized.
+Fetched origin/main617639c equals the reviewed candidate base: no textual merge
+conflict or intervening main changes. All reviewed source hashes match the final
+V16 manifest. Historical exploratory tests/captures remain in the retained checkout;
+only final V16 native acceptance and its QA entry are promoted. Manual physical
+phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
+
+
+### Name fidelity / grammatical choice direction · owner17409 ·2 November2026
+
+Correct authored names take priority over profile-name-based form hints. Remove extra profile-name metadata from sentence translation, not names written in messages or displayed in the app. Capitalization alone is acceptable; spelling substitutions, surname expansions and invented mentions are not. Preserve both natural grammatical alternatives when needed, stop guessing the initial form from a profile name, and ask the user for the applicable form. Asking/remembering interaction must be reconciled with existing private saved choices before UI implementation; no repeated prompt or preference reset assumed. This direction supersedes name-derived suggestion requirements for this proposed change, not yet the deployed behavior. [Registered decision and bounded evidence](../docs/qa/2026-11-02-name-conflicts/DECISION-17409.md). Mixed-language quality remains open; no runtime deployment or visual approval implied.
+
+## BLA-41 supersession · approved17850/17853/17857, implementation17867 ·4 November2026
+Supersedes BLA-17 tap/temporary Practice expansion only: long press opens the existing anchored menus on both mobile platforms; a single message tap no longer opens them. Eligible Practice messages offer Translate first with the existing translation icon. Translate closes menus and reveals the Primary Known Language lane below the primary text, retaining it until hidden. A muted Show/Hide translation notice appears only after first reveal and remains after collapse. Reuse below-message notice typography/spacing/alignment, never blue/error red. Expansion is downward with original text and earlier messages stationary; subsequent content moves down, without automatic recentering. Normal Original and all preference/eligibility exceptions remain unchanged. Screenshots and recording require review before integration.
+
+BLA-41 preview refinement (4 November2026): Nastia accepts the overall first preview and requests larger, closer text for all below-message notices. Use14px/1.25 line-height,1px vertical padding,2px explicit bubble gap; preserve alignment, weights and colours. Revised screenshots need review.
+
+
+BLA-41 colour refinement · Nastia17954 ·4 November2026: Show/Hide translation now uses the existing theme primary action/accent colour instead of textMuted. This supersedes the muted-toggle requirement only. Preserve14px typography, spacing and alignment; retry errors remain red and informational notices retain their muted styling. Source changed; fresh Android/iOS visual verification is blocked by host storage (306MiB free). Earlier screenshots do not prove this colour revision. No merge/release.
+
+
+BLA-41 quieter colour revision · Nastia screenshot feedback during18001 continuation,4 November2026: orange attracts too much attention; use message-colour or an existing kit brown. Selected BlabColors.warmInk (#46281C), softer than bubbleInk (#231208), preserving stronger legibility than warmMuted. Show/Hide only; keep14px/medium weight/2px gap, red retries and muted non-action notices. This supersedes orange17954; new native previews require review.
+
+
+BLA-43 owner refinement18395: URL long-press floating actions use the same bubble-relative placement as message/reaction panels: measured height,8px gap, centered on selected bubble with horizontal viewport clamp, below when space permits, otherwise above; constrained-space fallback stays inside the chat viewport. Preserve existing content, typography, colors, shape and gestures. No release approval.
+
+> **BLA-42 · Nastia18622/18832:** implementation authorized: tap a recognized underlined address to a sheet showing its exact text, Copy address and Open in Google Maps (search, browser fallback). Address hold retains message reactions/actions; ordinary message Copy and URL gestures remain unchanged. Detection is conservative; no geocoding, inferred locality, automatic navigation, translation/history mutation or release authorization. Actual Android/iOS visual and journey review remains pending.
+
+
+BLA-42 revision Nastia18969 ·9 November2026: bottom-sheet presentation rejected. Address tap now reuses showMessageLinkMenu and its exact AnchoredMessagePanels card, destination styling, Open-then-Copy action rows, measured bubble/viewport placement, transparent barrier, dismissal and focus behavior. Address-specific exact text, Open in Google Maps and Copy address retained; address hold still belongs to parent message selection. URL tap/hold behavior unchanged. Previous sheet evidence superseded, not approved. New native review remains required; no commit/merge/release.
+
+BLA-42 approval Nastia19078 ·9 November2026: reviewed18969 anchored popup accepted unchanged; tentative direct-Maps tap19060 superseded. Scoped commit/push/main integration and existing private Android+iOS Blab/Blab-test distribution authorized, subject to current-main automated/native/security/environment-parity gates. No backend/schema/history rollout or audience expansion.
