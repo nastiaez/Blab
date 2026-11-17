@@ -135,37 +135,13 @@ class _WelcomeIllustration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipPath(
-      clipper: const _WelcomeIllustrationClipper(),
-      child: Image.asset(
-        'assets/onboarding/reading-nook.png',
-        key: const Key('welcome-reading-nook-illustration'),
-        fit: BoxFit.cover,
-        alignment: Alignment.topCenter,
-        filterQuality: FilterQuality.none,
-        excludeFromSemantics: true,
-      ),
+    return Image.asset(
+      'assets/onboarding/friends-phone-cream-20461.png',
+      key: const Key('welcome-friends-phone-illustration'),
+      fit: BoxFit.contain,
+      alignment: Alignment.topCenter,
+      filterQuality: FilterQuality.medium,
+      excludeFromSemantics: true,
     );
   }
-}
-
-class _WelcomeIllustrationClipper extends CustomClipper<Path> {
-  const _WelcomeIllustrationClipper();
-
-  @override
-  Path getClip(Size size) {
-    return Path()
-      ..lineTo(0, size.height - 26)
-      ..quadraticBezierTo(
-        size.width * 0.56,
-        size.height - 7,
-        size.width,
-        size.height - 58,
-      )
-      ..lineTo(size.width, 0)
-      ..close();
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

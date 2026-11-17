@@ -35,7 +35,7 @@ void main() {
     expect(find.text('EN'), findsOneWidget);
     expect(find.text('Get started'), findsOneWidget);
     expect(
-      find.byKey(const Key('welcome-reading-nook-illustration')),
+      find.byKey(const Key('welcome-friends-phone-illustration')),
       findsOneWidget,
     );
     expect(
@@ -46,6 +46,16 @@ void main() {
           .textAlign,
       TextAlign.center,
     );
+
+    final illustration = tester.widget<Image>(
+      find.byKey(const Key('welcome-friends-phone-illustration')),
+    );
+    expect(
+      (illustration.image as AssetImage).assetName,
+      'assets/onboarding/friends-phone-cream-20461.png',
+    );
+    expect(illustration.fit, BoxFit.contain);
+    expect(illustration.excludeFromSemantics, isTrue);
 
     final languageCenter = tester.getCenter(find.text('EN'));
     expect(
