@@ -4,15 +4,16 @@ Never starts/stops containers, copies rows, invokes providers, or alters roles.
 Fixtures persist in the dedicated disposable database until its lifecycle owner removes it.
 """
 import pathlib,json,subprocess,shutil,concurrent.futures,threading,hashlib,argparse,os,re
-P=argparse.ArgumentParser();P.add_argument('--container',required=True);P.add_argument('--database',required=True);P.add_argument('--output',default='build/deep-dive-sql');P.add_argument('--application-name',default='deepdive_sql_ci');args=P.parse_args()
+P=argparse.ArgumentParser();P.add_argument('--container',required=True);P.add_argument('--database',required=True);P.add_argument('--output',default='build/deep-dive-sql');P.add_argument('--application-name',default='deepdive_sql_ci');P.add_argument('--fixture-prefix',default='da');args=P.parse_args()
 assert re.fullmatch(r'supabase_db_[A-Za-z0-9_]+',args.container)
 assert re.fullmatch(r'[A-Za-z0-9_]+',args.database)
 assert re.fullmatch(r'[A-Za-z0-9_]+',args.application_name)
+assert re.fullmatch(r'[a-f0-9]{2}',args.fixture_prefix)
 assert args.database.startswith('deepdive_test_') or (args.database=='postgres' and os.environ.get('CI')=='true'),'Dedicated disposable database required'
 R=pathlib.Path(__file__).resolve().parent.parent;C=R;O=pathlib.Path(args.output).resolve();O.mkdir(parents=True,exist_ok=True);assert shutil.disk_usage(R).free>=8*1024**3
 options='-c application_name='+args.application_name+' -c statement_timeout=20000 -c lock_timeout=2000 -c idle_in_transaction_session_timeout=30000 -c work_mem=8MB -c max_parallel_workers_per_gather=0'
 A=['docker','exec','-i','-e','PGOPTIONS='+options,args.container,'psql','-X','-h','/tmp','-U','postgres','-d',args.database,'-v','ON_ERROR_STOP=1','-qAt'];results={}
-V='da111111-1111-4111-8111-111111111111';M='da555555-5555-4555-8555-555555555555';SOURCE="'"+hashlib.sha256(b'Hola mundo').hexdigest()+"'"
+V=args.fixture_prefix+'111111-1111-4111-8111-111111111111';M=args.fixture_prefix+'555555-5555-4555-8555-555555555555';SOURCE="'"+hashlib.sha256(b'Hola mundo').hexdigest()+"'"
 def sql(name,text,ok=True):
  if shutil.disk_usage(R).free<6*1024**3:raise RuntimeError('Own tests paused: disk guard')
  p=subprocess.run(A,input=text,capture_output=True,text=True,timeout=25);(O/(name+'.out')).write_text(p.stdout);(O/(name+'.err')).write_text(p.stderr)
@@ -34,7 +35,7 @@ def finish(name,key,lease,analysis):
 # Outbound hooks are disabled ONLY in this leased fixture database; no live services redirected.
 setup="do $$begin if current_database()<>'"+args.database+"' then raise exception 'wrong database';end if;end$$;"
 sql('disable-sandbox-outbound-only',setup)
-fixture=(C/'supabase/tests/deep_dive_enrichment.sql').read_text().split('create temp table dd_test_state')[0].replace("'dd","'da");sql('concurrent-fixture',"select set_config('blab.allow_deep_dive_fixture','isolated-local-only',false);"+fixture+'alter table public.message_preparation_jobs enable trigger dispatch_message_preparation_jobs;alter table public.push_notification_events enable trigger send_push_notification_event;alter table public.stream_event_inbox enable trigger dispatch_stream_reconciliation;commit;')
+fixture=(C/'supabase/tests/deep_dive_enrichment.sql').read_text().split('create temp table dd_test_state')[0].replace("'dd","'"+args.fixture_prefix);sql('concurrent-fixture',"select set_config('blab.allow_deep_dive_fixture','isolated-local-only',false);"+fixture+'alter table public.message_preparation_jobs enable trigger dispatch_message_preparation_jobs;alter table public.push_notification_events enable trigger send_push_notification_event;alter table public.stream_event_inbox enable trigger dispatch_stream_reconciliation;commit;')
 r=roundclaims('same-context',['a','a','a']);assert [x['status'] for x in r].count('claimed')==1 and [x['status'] for x in r].count('pending')==2;r0=next(x for x in r if x['status']=='claimed');assert usage()['requests']==1;results['three_concurrent_same_key_one_charge']=r
 assert finish('complete-first','a',r0['lease'],'hello');cached=obj(sql('fresh-process-cache',service('select '+call('a'))));assert cached['status']=='cached' and cached['analysis']['meaning']=='hello' and usage()['requests']==1;results['fresh_process_durable_cache_no_charge']=True
 sql('last-shared-slot',"update public.translation_usage set minute_requests=59,day_requests=199,day_characters=99990 where user_id='"+V+"';")

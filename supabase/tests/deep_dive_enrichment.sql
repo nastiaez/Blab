@@ -48,6 +48,15 @@ do $$declare a jsonb;begin
 end$$;
 update public.profiles set primary_known_language='uk' where id='dd222222-2222-4222-8222-222222222222';
 do $$begin if public.finish_deep_dive_enrichment('dd222222-2222-4222-8222-222222222222',repeat('a',64),(select lease_token from public.message_learning_enrichments where viewer_id='dd222222-2222-4222-8222-222222222222'),'{"meaning":"stale preference"}') then raise exception 'stale preferences published';end if;end$$;
+-- Crash/orphan leases must become failed and participate in the same bounded cache pruning.
+insert into public.message_learning_enrichments(viewer_id,context_key,message_id,source_hash,known_lang,target_lang,language_revision,kind,status,lease_token,locked_until,expires_at,updated_at)
+select 'dd111111-1111-4111-8111-111111111111',md5(i::text)||md5('orphan'||i::text),'dd555555-5555-4555-8555-555555555555',(select source from dd_test_state),'en','es',1,'vocabulary','processing',gen_random_uuid(),clock_timestamp()-interval '1 minute',clock_timestamp()+interval '24 hours',clock_timestamp()-interval '61 seconds' from generate_series(1,130) i;
+-- Only this rolled-back synthetic user's counters are initialized for an independent test boundary.
+update public.translation_usage set minute_requests=0,day_requests=0,day_characters=0 where user_id='dd111111-1111-4111-8111-111111111111';
+do $$declare a jsonb;begin
+ a:=public.claim_deep_dive_enrichment('dd111111-1111-4111-8111-111111111111','dd555555-5555-4555-8555-555555555555',repeat('e',64),(select source from dd_test_state),'en','es',1,'vocabulary');
+ if a->>'status'<>'claimed' or (select count(*) from public.message_learning_enrichments where viewer_id='dd111111-1111-4111-8111-111111111111')>128 or exists(select 1 from public.message_learning_enrichments where viewer_id='dd111111-1111-4111-8111-111111111111' and status='processing' and locked_until<clock_timestamp()) then raise exception 'orphan cache bound violated';end if;
+end$$;
 update public.chat_members set history_cleared_at=clock_timestamp() where user_id='dd111111-1111-4111-8111-111111111111';
 do $$declare a jsonb;begin a:=public.claim_deep_dive_enrichment('dd111111-1111-4111-8111-111111111111','dd555555-5555-4555-8555-555555555555',repeat('a',64),(select source from dd_test_state),'en','es',1,'vocabulary');if a->>'status'<>'forbidden' then raise exception 'cleared history cache accessible';end if;end$$;
 update public.messages set body='Changed source' where id='dd555555-5555-4555-8555-555555555555';

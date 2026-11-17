@@ -47,6 +47,8 @@ begin
  -- Serializes duplicate keys and per-viewer inflight admission; same quota row lock as translations.
  perform pg_advisory_xact_lock(hashtextextended('deep-dive:'||p_viewer::text,0));
  if not public.deep_dive_context_allowed(p_viewer,p_message,p_source,p_known,p_target,p_revision,p_kind) then return jsonb_build_object('status','forbidden');end if;
+ -- Expired owners cannot publish; normalize them before capacity/pruning checks. Preserve charge/cooldown timestamps.
+ update public.message_learning_enrichments set status='failed',lease_token=null,locked_until=null,payload=null where viewer_id=p_viewer and status='processing' and locked_until<=v_now;
  select * into v_row from public.message_learning_enrichments where viewer_id=p_viewer and context_key=p_context for update;
  if found then
   if v_row.message_id<>p_message or v_row.source_hash<>p_source or v_row.known_lang<>p_known or v_row.target_lang<>p_target or v_row.language_revision<>p_revision or v_row.kind<>p_kind then return jsonb_build_object('status','forbidden');end if;
