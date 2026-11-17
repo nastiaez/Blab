@@ -4,17 +4,28 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('hosted deployment manifests cover every Edge Function', () {
-    final functionNames = Directory('supabase/functions')
-        .listSync()
-        .whereType<Directory>()
-        .where((directory) => File('${directory.path}/index.ts').existsSync())
-        .map(
-          (directory) => directory.uri.pathSegments
-              .where((segment) => segment.isNotEmpty)
-              .last,
-        )
-        .toSet();
+  test('hosted deployment manifests cover every hosted Edge Function', () {
+    // Deep Dive is a local-only candidate; it must not expand either hosted rollout.
+    const localOnlyFunctions = {'deep-dive'};
+    final functionNames =
+        Directory('supabase/functions')
+            .listSync()
+            .whereType<Directory>()
+            .where(
+              (directory) => File('${directory.path}/index.ts').existsSync(),
+            )
+            .map(
+              (directory) => directory.uri.pathSegments
+                  .where((segment) => segment.isNotEmpty)
+                  .last,
+            )
+            .toSet()
+          ..removeAll(localOnlyFunctions);
+    final localSource = File(
+      'supabase/functions/deep-dive/index.ts',
+    ).readAsStringSync();
+    expect(localSource, contains('local_only'));
+    expect(localSource, contains('BLAB_ENV'));
 
     final config = File('supabase/config.toml').readAsStringSync();
     final configuredPolicies = <String, bool>{};

@@ -1853,4 +1853,28 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get translationReportClose => 'Закрити';
+
+  @override
+  String get deepDive => 'Deep Dive';
+
+  @override
+  String get wordDetails => 'Деталі слова';
+
+  @override
+  String get moreWordDetails => 'Докладніше';
+
+  @override
+  String get whyThisMistake => 'ЧОМУ ЦЯ ПОМИЛКА?';
+
+  @override
+  String get whyThisForm => 'ЧОМУ ЦЯ ФОРМА?';
+
+  @override
+  String get wordExamples => 'ПРИКЛАДИ';
+
+  @override
+  String get learningDetailsUnavailable => 'Навчальна інформація недоступна';
+
+  @override
+  String get audioUnavailable => 'Аудіо недоступне';
 }

@@ -21,6 +21,7 @@ class MessageActionRow extends StatelessWidget {
     this.hasOriginal = false,
     this.canListen = false,
     this.canTranslate = false,
+    this.canDeepDive = false,
     this.isOriginalVisible = false,
     this.now,
     this.readOnly = false,
@@ -33,6 +34,7 @@ class MessageActionRow extends StatelessWidget {
   final bool hasOriginal;
   final bool canListen;
   final bool canTranslate;
+  final bool canDeepDive;
   final bool isOriginalVisible;
   final DateTime? now;
   final bool readOnly;
@@ -46,6 +48,7 @@ class MessageActionRow extends StatelessWidget {
       hasOriginal: hasOriginal,
       canListen: canListen,
       canTranslate: canTranslate,
+      canDeepDive: canDeepDive,
       now: now,
     );
     final eligible = actions
@@ -110,6 +113,11 @@ _ActionItem _itemFor(
   MessageAction action,
   bool isOriginalVisible,
 ) => switch (action) {
+  MessageAction.deepDive => _ActionItem(
+    'eye - 16',
+    context.l10n.deepDive,
+    action,
+  ),
   MessageAction.translate => _ActionItem(
     'translate - 16',
     context.l10n.translateMessage,

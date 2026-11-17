@@ -3311,6 +3311,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get translationReportClose;
+
+  /// No description provided for @deepDive.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Dive'**
+  String get deepDive;
+
+  /// No description provided for @wordDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Word details'**
+  String get wordDetails;
+
+  /// No description provided for @moreWordDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get moreWordDetails;
+
+  /// No description provided for @whyThisMistake.
+  ///
+  /// In en, this message translates to:
+  /// **'WHY THIS MISTAKE?'**
+  String get whyThisMistake;
+
+  /// No description provided for @whyThisForm.
+  ///
+  /// In en, this message translates to:
+  /// **'WHY THIS FORM?'**
+  String get whyThisForm;
+
+  /// No description provided for @wordExamples.
+  ///
+  /// In en, this message translates to:
+  /// **'EXAMPLES'**
+  String get wordExamples;
+
+  /// No description provided for @learningDetailsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning details unavailable'**
+  String get learningDetailsUnavailable;
+
+  /// No description provided for @audioUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio unavailable'**
+  String get audioUnavailable;
 }
 
 class _AppLocalizationsDelegate

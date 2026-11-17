@@ -28,13 +28,17 @@ const Duration _kPlayingDuration = Duration(milliseconds: 1600);
 /// a time per PRD.
 OverlayEntry? _currentEntry;
 TtsService? _currentTts;
+VoidCallback? _currentOnDismiss;
 
 void _dismissCurrent() {
   final entry = _currentEntry;
   final tts = _currentTts;
+  final onDismiss = _currentOnDismiss;
   _currentEntry = null;
   _currentTts = null;
+  _currentOnDismiss = null;
   entry?.remove();
+  onDismiss?.call();
   if (tts != null) unawaited(tts.stop());
 }
 
@@ -62,6 +66,47 @@ const double _kPopupStrokeWidth = 1;
 const Color _kPopupInk = BlabColors.warmInk;
 const Color _kPopupMuted = BlabColors.warmMuted;
 const Color _kPopupStroke = BlabColors.chatDivider;
+
+/// Reuses the existing measured/clamped popup positioning for Deep Dive.
+void showLearningWordPopup(
+  BuildContext context, {
+  required Widget card,
+  required Offset wordTopLeft,
+  required Size wordSize,
+  required TtsService tts,
+  double topInset = 0,
+  VoidCallback? onDismiss,
+}) {
+  _dismissCurrent();
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) => _PositionedPopup(
+      card: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: (MediaQuery.sizeOf(context).width - 24)
+              .clamp(1, 280)
+              .toDouble(),
+          maxHeight: (MediaQuery.sizeOf(context).height - topInset - 44)
+              .clamp(1, double.infinity)
+              .toDouble(),
+        ),
+        child: SingleChildScrollView(child: card),
+      ),
+      compactAnchor: true,
+      wordTopLeft: wordTopLeft,
+      wordSize: wordSize,
+      screen: MediaQuery.sizeOf(context),
+      topInset: topInset,
+      onTapOutside: () {
+        if (_currentEntry == entry) _dismissCurrent();
+      },
+    ),
+  );
+  _currentEntry = entry;
+  _currentTts = tts;
+  _currentOnDismiss = onDismiss;
+  Overlay.of(context, rootOverlay: true).insert(entry);
+}
 
 /// Open a word popup pointing at the supplied word rectangle.
 ///
@@ -192,7 +237,10 @@ class _PositionedPopup extends StatefulWidget {
     required this.screen,
     required this.topInset,
     required this.onTapOutside,
+    this.compactAnchor = false,
   });
+
+  final bool compactAnchor;
 
   /// Popup content. Wrapped internally in a measuring [KeyedSubtree], so the
   /// caller doesn't need to attach a key.
@@ -235,7 +283,17 @@ class _PositionedPopupState extends State<_PositionedPopup> {
 
   @override
   Widget build(BuildContext context) {
-    final card = KeyedSubtree(key: _cardKey, child: widget.card);
+    final card = NotificationListener<SizeChangedLayoutNotification>(
+      onNotification: (_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _measure();
+        });
+        return false;
+      },
+      child: SizeChangedLayoutNotifier(
+        child: KeyedSubtree(key: _cardKey, child: widget.card),
+      ),
+    );
 
     // First frame: render off-screen / invisible to measure.
     final size = _cardSize;
@@ -250,6 +308,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
       );
     }
 
+    final tailHeight = widget.compactAnchor ? 8.0 : _kTailHeight;
     final wordCenterX = widget.wordTopLeft.dx + widget.wordSize.width / 2;
     final wordTopY = widget.wordTopLeft.dy;
     final wordBottomY = widget.wordTopLeft.dy + widget.wordSize.height;
@@ -263,13 +322,17 @@ class _PositionedPopupState extends State<_PositionedPopup> {
     // The space above is measured down to [minTop], not zero — otherwise we
     // could "fit" by drawing into the header.
     final spaceAbove = wordTopY - minTop;
-    final needed = size.height + _kTailHeight + 8;
+    final needed = size.height + tailHeight + 8;
     final flipBelow = spaceAbove < needed;
 
     // Horizontal: center card on word center, clamp inside screen.
     double left = wordCenterX - size.width / 2;
-    final minLeft = _kEdgePadding;
-    final maxLeft = widget.screen.width - size.width - _kEdgePadding;
+    final edge = widget.compactAnchor ? 16.0 : _kEdgePadding;
+    final minLeft = edge;
+    final maxLeft = widget.screen.width - size.width - edge;
+    if (widget.compactAnchor) {
+      left = wordCenterX >= widget.screen.width / 2 ? maxLeft : minLeft;
+    }
     if (left < minLeft) left = minLeft;
     if (left > maxLeft) left = maxLeft;
     // If screen smaller than card+padding, just clamp to min.
@@ -278,12 +341,17 @@ class _PositionedPopupState extends State<_PositionedPopup> {
     // Vertical:
     double top;
     if (flipBelow) {
-      top = wordBottomY + _kTailHeight;
+      top = wordBottomY + (widget.compactAnchor ? -1 : tailHeight);
     } else {
-      top = wordTopY - _kTailHeight - size.height;
+      top = wordTopY - tailHeight - size.height;
     }
     // Final clamp: never let the popup draw above the safe-area top inset.
     if (top < minTop) top = minTop;
+    if (widget.compactAnchor) {
+      final maxTop =
+          widget.screen.height - size.height - tailHeight - _kEdgePadding;
+      if (maxTop >= minTop && top > maxTop) top = maxTop;
+    }
 
     // Tail position: re-anchor to word center X relative to card.
     double tailCenterInCard = wordCenterX - left;
@@ -301,7 +369,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
         onTapOutside: (_) => widget.onTapOutside(),
         child: SizedBox(
           width: size.width,
-          height: size.height + _kTailHeight - _kPopupStrokeWidth,
+          height: size.height + tailHeight - _kPopupStrokeWidth,
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -309,7 +377,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
               if (flipBelow)
                 Positioned(
                   left: 0,
-                  top: _kTailHeight - _kPopupStrokeWidth,
+                  top: tailHeight - _kPopupStrokeWidth,
                   child: card,
                 ),
               // Tail.
@@ -318,7 +386,7 @@ class _PositionedPopupState extends State<_PositionedPopup> {
                 top: flipBelow ? 0 : size.height - _kPopupStrokeWidth,
                 child: CustomPaint(
                   key: const ValueKey('word-popup-tail'),
-                  size: const Size(_kTailWidth, _kTailHeight),
+                  size: Size(_kTailWidth, tailHeight),
                   painter: _TailPainter(
                     pointDown: !flipBelow,
                     fillColor: BlabColors.chatSurface,

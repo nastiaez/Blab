@@ -272,7 +272,6 @@
   "thanksReport": "Gracias — lo revisaremos.",
   "couldNotReport": "No se pudo enviar la denuncia. Inténtalo de nuevo.",
   "couldNotSaveLearningLanguage": "No se pudo guardar el idioma. Inténtalo de nuevo.",
-  "reportMessage": "Denunciar mensaje",
   "sendInvite": "Enviar invitación",
   "pickLanguage": "Elige un idioma",
   "pickLanguageHelp": "Traduciremos todos los mensajes a este idioma. Puedes cambiarlo cuando quieras.",
@@ -653,5 +652,13 @@
   "translationReportSending": "Enviando…",
   "translationReportError": "No se pudo enviar el informe. Inténtalo de nuevo.",
   "translationReportSent": "Informe enviado",
-  "translationReportClose": "Cerrar"
+  "translationReportClose": "Cerrar",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Detalles de la palabra",
+  "moreWordDetails": "Más detalles",
+  "whyThisMistake": "¿POR QUÉ ESTE ERROR?",
+  "whyThisForm": "¿POR QUÉ ESTA FORMA?",
+  "wordExamples": "EJEMPLOS",
+  "learningDetailsUnavailable": "Información de aprendizaje no disponible",
+  "audioUnavailable": "Audio no disponible"
 }

@@ -272,7 +272,6 @@
   "thanksReport": "Danke — wir prüfen das.",
   "couldNotReport": "Die Meldung konnte nicht gesendet werden. Versuche es erneut.",
   "couldNotSaveLearningLanguage": "Die Sprache konnte nicht gespeichert werden. Versuche es erneut.",
-  "reportMessage": "Nachricht melden",
   "sendInvite": "Einladung senden",
   "pickLanguage": "Sprache wählen",
   "pickLanguageHelp": "Wir übersetzen alle Nachrichten in diese Sprache. Du kannst sie jederzeit wechseln.",
@@ -653,5 +652,13 @@
   "translationReportSending": "Wird gesendet…",
   "translationReportError": "Meldung konnte nicht gesendet werden. Versuch es erneut.",
   "translationReportSent": "Meldung gesendet",
-  "translationReportClose": "Schließen"
+  "translationReportClose": "Schließen",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Wortdetails",
+  "moreWordDetails": "Mehr Details",
+  "whyThisMistake": "WARUM DIESER FEHLER?",
+  "whyThisForm": "WARUM DIESE FORM?",
+  "wordExamples": "BEISPIELE",
+  "learningDetailsUnavailable": "Lerninformationen nicht verfügbar",
+  "audioUnavailable": "Audio nicht verfügbar"
 }

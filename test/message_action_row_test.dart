@@ -22,6 +22,34 @@ Message _message({
 
 void main() {
   testWidgets(
+    'integration keeps Deep Dive, translation report and abuse report distinct',
+    (tester) async {
+      final actions = <MessageAction>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MessageActionRow(
+              message: _message(isOutgoing: false),
+              canDeepDive: true,
+              onAction: actions.add,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('message-action-deepDive')));
+      await tester.tap(
+        find.byKey(const ValueKey('message-action-reportTranslation')),
+      );
+      await tester.tap(find.byKey(const ValueKey('message-action-report')));
+      expect(actions, [
+        MessageAction.deepDive,
+        MessageAction.reportTranslation,
+        MessageAction.report,
+      ]);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'Practice Listen is first; five rows have four dividers and measured height',
     (tester) async {
       final now = DateTime.utc(2026, 10, 26);

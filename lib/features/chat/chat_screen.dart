@@ -1,3 +1,4 @@
+import 'deep_dive_live_screen.dart';
 import 'widgets/message_link_anchor.dart';
 import 'translation_anchor_controller.dart';
 import 'widgets/message_link_text.dart';
@@ -957,6 +958,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     String learningLanguageCode,
   ) {
     switch (action) {
+      case MessageAction.deepDive:
+        break;
       case MessageAction.reportTranslation:
         _reportTranslation(message, presentation, learningLanguageCode);
         break;
@@ -2321,6 +2324,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               maintainAnimation: true,
                               maintainSize: true,
                               child: MessageActionRow(
+                                canDeepDive: true,
                                 message: _panelMessage!,
                                 readOnly: chat.isLeft,
                                 accountDeleted: chat.partnerAccountDeleted,
@@ -2340,6 +2344,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 isOriginalVisible: _showSelectedOriginal,
                                 onAction: (action) {
                                   final message = _panelMessage!;
+                                  if (action == MessageAction.deepDive) {
+                                    final screen = DeepDiveLiveScreen(
+                                      viewerId:
+                                          ref.read(currentUserIdProvider) ?? '',
+                                      message: message,
+                                      chat: chat,
+                                      languageRevision: eraForMessage(
+                                        message,
+                                      ).revision,
+                                      learningLanguageCode: eraForMessage(
+                                        message,
+                                      ).languageCode,
+                                    );
+                                    _closeSelection();
+                                    Navigator.of(
+                                      context,
+                                    ).push(telegramRoute<void>(screen));
+                                    return;
+                                  }
                                   if (action == MessageAction.translate) {
                                     _toggleTranslation(
                                       message,

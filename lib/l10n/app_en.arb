@@ -342,7 +342,6 @@
   "thanksReport": "Thanks — we'll review this.",
   "couldNotReport": "Couldn't send the report. Try again.",
   "couldNotSaveLearningLanguage": "Couldn't save language. Try again.",
-  "reportMessage": "Report message",
   "sendInvite": "Send invite",
   "pickLanguage": "Pick a language",
   "pickLanguageHelp": "We'll translate all messages into this language. Switch it whenever you like.",
@@ -793,5 +792,13 @@
   "translationReportSending": "Sending...",
   "translationReportError": "Couldn’t send report. Try again.",
   "translationReportSent": "Report sent",
-  "translationReportClose": "Close"
+  "translationReportClose": "Close",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Word details",
+  "moreWordDetails": "More details",
+  "whyThisMistake": "WHY THIS MISTAKE?",
+  "whyThisForm": "WHY THIS FORM?",
+  "wordExamples": "EXAMPLES",
+  "learningDetailsUnavailable": "Learning details unavailable",
+  "audioUnavailable": "Audio unavailable"
 }

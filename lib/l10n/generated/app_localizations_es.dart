@@ -1859,4 +1859,29 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get translationReportClose => 'Cerrar';
+
+  @override
+  String get deepDive => 'Deep Dive';
+
+  @override
+  String get wordDetails => 'Detalles de la palabra';
+
+  @override
+  String get moreWordDetails => 'Más detalles';
+
+  @override
+  String get whyThisMistake => '¿POR QUÉ ESTE ERROR?';
+
+  @override
+  String get whyThisForm => '¿POR QUÉ ESTA FORMA?';
+
+  @override
+  String get wordExamples => 'EJEMPLOS';
+
+  @override
+  String get learningDetailsUnavailable =>
+      'Información de aprendizaje no disponible';
+
+  @override
+  String get audioUnavailable => 'Audio no disponible';
 }

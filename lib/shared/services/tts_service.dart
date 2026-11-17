@@ -91,6 +91,29 @@ class TtsService {
     }
   }
 
+  /// Deep Dive needs independent error/retry state and real completion.
+  Future<bool> speakWithStatus(String text, String languageCode) async {
+    final locale = localeFor(languageCode);
+    if (locale == null) return false;
+    final generation = ++_playbackGeneration;
+    try {
+      await _tts.stop();
+      if (generation != _playbackGeneration) return false;
+      final selected = await _tts.setLanguage(locale);
+      if (generation != _playbackGeneration || selected != 1) return false;
+      await _tts.awaitSpeakCompletion(true);
+      if (generation != _playbackGeneration) return false;
+      final result = await _tts.speak(text);
+      return result == 1 && generation == _playbackGeneration;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void invalidateLanguageAvailability(String languageCode) {
+    _availabilityCache.remove(languageCode);
+  }
+
   /// Stops any in-flight speech.
   Future<void> stop() async {
     _playbackGeneration++;

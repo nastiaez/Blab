@@ -272,7 +272,6 @@
   "thanksReport": "Дякуємо — ми це перевіримо.",
   "couldNotReport": "Не вдалося надіслати скаргу. Спробуй ще раз.",
   "couldNotSaveLearningLanguage": "Не вдалося зберегти мову. Спробуй ще раз.",
-  "reportMessage": "Поскаржитися на повідомлення",
   "sendInvite": "Надіслати запрошення",
   "pickLanguage": "Вибери мову",
   "pickLanguageHelp": "Ми перекладатимемо всі повідомлення цією мовою. Ти можеш змінити її будь-коли.",
@@ -653,5 +652,13 @@
   "translationReportSending": "Надсилання…",
   "translationReportError": "Не вдалося надіслати звіт. Спробуй ще раз.",
   "translationReportSent": "Звіт надіслано",
-  "translationReportClose": "Закрити"
+  "translationReportClose": "Закрити",
+  "deepDive": "Deep Dive",
+  "wordDetails": "Деталі слова",
+  "moreWordDetails": "Докладніше",
+  "whyThisMistake": "ЧОМУ ЦЯ ПОМИЛКА?",
+  "whyThisForm": "ЧОМУ ЦЯ ФОРМА?",
+  "wordExamples": "ПРИКЛАДИ",
+  "learningDetailsUnavailable": "Навчальна інформація недоступна",
+  "audioUnavailable": "Аудіо недоступне"
 }
