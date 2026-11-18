@@ -59,7 +59,7 @@ for role in ['anon','authenticated']:
 
 # Separate owned 141 SQL mock fixture; never provider proof.
 V=V.replace('de','df',1);B=B.replace('de','df',1);C=C.replace('de','df',1);M=M.replace('de','df',1);R=R.replace('de','df',1)
-f=fixture.replace('de111111','df111111').replace('de222222','df222222').replace('de333333','df333333').replace('de444444','df444444').replace('de555555','df555555')
+f=fixture.replace('de111111','df111111').replace('de222222','df222222').replace('de333333','df333333').replace('de444444','df444444').replace('de555555','df555555').replace('de-a@blab.test','df-a@blab.test').replace('de-b@blab.test','df-b@blab.test').replace('de-c@blab.test','df-c@blab.test')
 sql('resume-fixture',"select set_config('blab.allow_deep_dive_fixture','isolated-local-only',false);"+f+f"insert into blab_qa.actors values('{V}'),('{B}');insert into blab_qa.runs(id,project,state) values('{R}','tpfksdljkfnenjfdbane','open');insert into blab_qa.subjects(actor,run_id,chat_id,message_id,source_hash,base_viewer,vocabulary_key,correction_key) values('{V}','{R}','{C}','{M}','{H}',true,repeat('a',64),repeat('b',64));insert into blab_qa.slots(run_id,kind,reservation_nano) values('{R}','base',12000000),('{R}','vocabulary',10000000),('{R}','correction',10000000);commit;")
 def claim(kind,key,viewer=None,source=H):return f"select public.claim_hosted_qa_deep_dive_enrichment('{viewer or V}','{M}',repeat('{key}',64),'{source}','en','es',1,'{kind}',false)"
 job=json.loads(val(sql('resume-job',f"update public.message_preparation_jobs set status='processing',locked_at=clock_timestamp(),lease_token=gen_random_uuid() where message_id='{M}' and viewer_id='{V}' returning json_build_object('id',id,'lease',lease_token);")));J=job['id'];L=job['lease']
