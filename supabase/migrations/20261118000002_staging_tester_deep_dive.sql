@@ -76,7 +76,8 @@ begin
  select id into r from blab_staging.rollouts where project='tpfksdljkfnenjfdbane' and revision=p_release and deactivated_at is null for share;
  if not found or not blab_staging.nonqa(p_viewer,p_message) or not blab_staging.eligible(p_viewer) then return false;end if;
  select * into e from public.message_learning_enrichments where viewer_id=p_viewer and context_key=p_context for update;
- if not found or e.status<>'processing' or e.lease_token is distinct from p_lease
+ if not found or p_lease is null or e.status<>'processing' or e.lease_token is distinct from p_lease
+ or e.locked_until is null or e.expires_at is null
  or e.locked_until<=clock_timestamp() or e.expires_at<=clock_timestamp()
  or e.message_id is distinct from p_message or e.source_hash is distinct from p_source
  or e.known_lang is distinct from p_known or e.target_lang is distinct from p_target
