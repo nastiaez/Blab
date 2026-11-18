@@ -291,7 +291,9 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
       for (var tokenIndex = 0; tokenIndex < words.length; tokenIndex++) {
         final token = words[tokenIndex];
         final i = index++, start = displayOffset;
-        if (!segment.struck) displayOffset += token.text.length;
+        if (!segment.struck && !segment.presentationOnly) {
+          displayOffset += token.text.length;
+        }
         final mistakeIndex = segment.struck || segment.corrected
             ? activeMistake
             : null;

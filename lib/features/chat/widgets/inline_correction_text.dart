@@ -15,11 +15,15 @@ class CorrectionSegment {
     this.text, {
     this.struck = false,
     this.corrected = false,
+    this.presentationOnly = false,
   });
 
   final String text;
   final bool struck;
   final bool corrected;
+
+  /// A visual separator, absent from the accepted translation and its offsets.
+  final bool presentationOnly;
 }
 
 class _Word {
@@ -146,7 +150,7 @@ List<CorrectionSegment> correctionSegments(
         inserted.isNotEmpty &&
         _containsWord(deleted) &&
         _containsWord(inserted)) {
-      append(' ');
+      segments.add(const CorrectionSegment(' ', presentationOnly: true));
     }
     append(inserted, corrected: true);
     append(suffixText);
