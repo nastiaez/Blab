@@ -56,3 +56,47 @@ for role in ['anon','authenticated','service_role']:
 for role in ['anon','authenticated']:
  assert sql('rpc-acl-'+role,'begin;set local role '+role+';'+reserve+';rollback;',False).returncode!=0
 (o/'PASS.json').write_text(json.dumps({'parallelBaseReservation':1,'parallelDispatchPerKind':1,'restartCache':True,'wrongActorSourceLeaseClosedDenied':True,'aclDenied':5,'maximumAdditionalNanoUSD':32000000,'maximumTotalNanoUSD':79504985,'snapshot':snap,'providerCalls':0,'hostedWrites':False,'mockSQLOnlyNotProviderProof':True},indent=2));print((o/'PASS.json').read_text())
+
+# Separate owned 141 SQL mock fixture; never provider proof.
+V=V.replace('de','df',1);B=B.replace('de','df',1);C=C.replace('de','df',1);M=M.replace('de','df',1);R=R.replace('de','df',1)
+f=fixture.replace('de111111','df111111').replace('de222222','df222222').replace('de333333','df333333').replace('de444444','df444444').replace('de555555','df555555')
+sql('resume-fixture',"select set_config('blab.allow_deep_dive_fixture','isolated-local-only',false);"+f+f"insert into blab_qa.actors values('{V}'),('{B}');insert into blab_qa.runs(id,project,state) values('{R}','tpfksdljkfnenjfdbane','open');insert into blab_qa.subjects(actor,run_id,chat_id,message_id,source_hash,base_viewer,vocabulary_key,correction_key) values('{V}','{R}','{C}','{M}','{H}',true,repeat('a',64),repeat('b',64));insert into blab_qa.slots(run_id,kind,reservation_nano) values('{R}','base',12000000),('{R}','vocabulary',10000000),('{R}','correction',10000000);commit;")
+def claim(kind,key,viewer=None,source=H):return f"select public.claim_hosted_qa_deep_dive_enrichment('{viewer or V}','{M}',repeat('{key}',64),'{source}','en','es',1,'{kind}',false)"
+job=json.loads(val(sql('resume-job',f"update public.message_preparation_jobs set status='processing',locked_at=clock_timestamp(),lease_token=gen_random_uuid() where message_id='{M}' and viewer_id='{V}' returning json_build_object('id',id,'lease',lease_token);")));J=job['id'];L=job['lease']
+nonce=val(sql('resume-base-reserve',service(f"select public.qa_reserve_worker_slot('{J}','{L}')")))
+assert val(sql('resume-base-dispatch',service(dispatch('base','',nonce,f"'{J}'",f"'{L}'"))))=='t'
+sql('resume-base-ready-SQL-MOCK',f"update public.message_preparation_jobs set status='ready',lease_token=null where id='{J}';insert into public.message_prepared_packages(message_id,chat_id,viewer_id,learning_language,primary_known_language,language_revision,source_version,status,translation_text) values('{M}','{C}','{V}','es','en',1,'{H}','ready','SQL MOCK ONLY');")
+word=json.loads(val(sql('resume-original-word',service(claim('vocabulary','a')))));assert word['status']=='claimed';W=word['qaNonce']
+assert val(sql('resume-original-failure',service(f"select public.finish_deep_dive_enrichment('{V}',repeat('a',64),'{word['lease']}',null)")))=='t'
+def snapshot(name):
+ return json.loads(val(sql(name,f"select json_build_object('reserved',r.reserved_nano,'state',r.state,'requests',u.day_requests,'characters',u.day_characters,'nonce',s.nonce,'dispatched',s.dispatched_at is not null) from blab_qa.runs r join blab_qa.slots s on s.run_id=r.id and s.kind='vocabulary' cross join public.translation_usage u where r.id='{R}' and u.user_id='{V}';")))
+before=snapshot('resume-before');assert before==dict(reserved=22000000,state='closed',requests=1,characters=22,nonce=W,dispatched=False),before
+assert json.loads(val(sql('resume-no-authorization',service(claim('vocabulary','a')))))['status']=='forbidden'
+def authorize(actor=None,source=H,context='a',nonce=None,approval='20737'):
+ return f"select blab_qa.authorize_resume('{R}','{actor or V}','{M}','{source}',repeat('{context}',64),'{nonce or W}','{approval}','SQL MOCK approval20737 private receipt')"
+for name,q in [('actor',authorize(B)),('source',authorize(source='c'*64)),('context',authorize(context='c')),('nonce',authorize(nonce='00000000-0000-0000-0000-000000000000')),('approval',authorize(approval='20693'))]:
+ assert sql('resume-denied-'+name,q,False).returncode!=0
+for role in ['anon','authenticated','service_role']:
+ assert sql('resume-authorizer-acl-'+role,'begin;set local role '+role+';'+authorize()+';rollback;',False).returncode!=0
+for name,mutation in [('dispatched',f"update blab_qa.slots set dispatched_at=clock_timestamp() where run_id='{R}' and kind='vocabulary';"),('base',f"update public.message_preparation_jobs set status='failed' where id='{J}';"),('source-change',f"update public.messages set body='Changed source' where id='{M}';")]:
+ assert sql('resume-state-denied-'+name,'begin;'+mutation+authorize()+';rollback;',False).returncode!=0
+sql('resume-authorize',authorize())
+assert sql('resume-repeated-authorization',authorize(),False).returncode!=0
+for name,q in [('actor',claim('vocabulary','a',B)),('source',claim('vocabulary','a',source='c'*64)),('context',claim('vocabulary','c')),('known',claim('vocabulary','a').replace("'en'","'fr'"))]:
+ assert json.loads(val(sql('resume-claim-denied-'+name,service(q))))['status']=='forbidden'
+z=parallel('resume-parallel-claim-',claim('vocabulary','a'));got=[json.loads(val(t)) for t in z]
+assert sorted(v['status'] for v in got)==['claimed']+['pending']*7,got
+resumed=next(v for v in got if v['status']=='claimed');assert resumed['qaNonce']==W and resumed['lease']!=word['lease']
+after=snapshot('resume-after-lease');assert after==dict(before,state='open'),after
+z=parallel('resume-parallel-dispatch-',dispatch('vocabulary','a',W));assert sum(val(t)=='t' for t in z)==1
+payload=json.dumps({'meaning':'SQL MOCK ONLY'})
+assert val(sql('resume-word-finish',service(f"select public.finish_deep_dive_enrichment('{V}',repeat('a',64),'{resumed['lease']}', '{payload}')")))=='t'
+assert json.loads(val(sql('resume-cache',service(claim('vocabulary','a')))))['status']=='cached'
+correction=json.loads(val(sql('resume-correction',service(claim('correction','b')))));assert correction['status']=='claimed'
+assert val(sql('resume-correction-dispatch',service(dispatch('correction','b',correction['qaNonce']))))=='t'
+final=snapshot('resume-final');assert final['reserved']==32000000 and final['requests']==2 and final['characters']==44,final
+assert val(sql('resume-new-failure',service(f"select public.finish_deep_dive_enrichment('{V}',repeat('b',64),'{correction['lease']}',null)")))=='t'
+assert json.loads(val(sql('resume-after-new-failure',service(claim('vocabulary','a')))))['status']=='forbidden'
+assert sql('resume-reauthorize-after-failure',authorize(),False).returncode!=0
+(o/'RESUME-PASS.json').write_text(json.dumps({'migrationCount':141,'claimed':1,'pending':7,'wordDispatchCAS':1,'sameNonce':W==resumed['qaNonce'],'before':before,'afterLease':after,'final':final,'maximumTotalNanoUSD':79504985,'providerCalls':0,'hostedWrites':False,'mockSQLOnlyNotProviderProof':True},indent=2))
+print((o/'RESUME-PASS.json').read_text())
