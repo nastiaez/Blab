@@ -1,3 +1,4 @@
+import { assertQaBody } from "../_shared/qa_budget.ts";
 import { OPENROUTER_PROVIDER, type ProviderCredential } from "./contract.ts";
 
 export class ProviderFetchError extends Error {
@@ -84,6 +85,22 @@ export async function fetchChatCompletion(
     onMetric?: (metric: ProviderMetric) => void;
   } = {},
 ): Promise<Response> {
+  const serializedBody = {
+    ...normalizeProviderBody(credential, body),
+    model: credential.model,
+    ...(credential.provider === "openrouter" &&
+        credential.useOpenRouterProviderPolicy
+      ? { provider: OPENROUTER_PROVIDER }
+      : {}),
+  };
+  if (credential.dispatchGuard?.bounded) {
+    assertQaBody(
+      serializedBody,
+      credential.model,
+      credential.dispatchGuard.kind,
+    );
+  }
+  await credential.dispatchGuard?.authorize();
   const started = performance.now();
   if (
     credential.signal?.aborted ||
@@ -118,14 +135,7 @@ export async function fetchChatCompletion(
       signal: credential.signal
         ? AbortSignal.any([controller.signal, credential.signal])
         : controller.signal,
-      body: JSON.stringify({
-        ...normalizeProviderBody(credential, body),
-        model: credential.model,
-        ...(credential.provider === "openrouter" &&
-            credential.useOpenRouterProviderPolicy
-          ? { provider: OPENROUTER_PROVIDER }
-          : {}),
-      }),
+      body: JSON.stringify(serializedBody),
     });
     if (
       (response.status === 429 || response.status === 402) && credential.backoff

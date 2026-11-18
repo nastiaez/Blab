@@ -84,6 +84,7 @@ export type ProviderCredential = {
   timeoutMs?: number;
   signal?: AbortSignal;
   backoff?: { untilMs: number };
+  dispatchGuard?: import("../_shared/qa_budget.ts").DispatchGuard;
 };
 
 export type TranslationContextMessage = {

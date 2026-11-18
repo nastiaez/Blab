@@ -1,3 +1,4 @@
+import { dispatchGuard } from "../_shared/qa_budget.ts";
 import { withLeaseGuard } from "./lease_guard.ts";
 import { isMentionIntegrityFailure } from "../translate-message/mention_identity.ts";
 import { commitGroupViewers, commitViewers } from "./commit_viewers.ts";
@@ -38,6 +39,8 @@ export async function runMessageBatch(
   generateOverride?: Generator,
   deadlineMs = performance.now() + 80_000,
 ) {
+  let qa = false;
+  let qaNonce: unknown = null;
   const pending: Array<{ job: LeasedJob; viewer: PreparedViewer }> = [];
   const backoff = { untilMs: 0 };
   const integrityFailures = new Map<string, string>();
@@ -87,6 +90,45 @@ export async function runMessageBatch(
       });
     }
     if (!pending.length) return;
+    const scope = await admin.rpc("qa_translation_scope", {
+      p_message: jobs[0].message_id,
+    });
+    if (scope.error || typeof scope.data !== "boolean") {
+      throw new Error("qa_policy_unavailable");
+    }
+    qa = scope.data;
+    if (qa) {
+      for (let i = pending.length - 1; i >= 0; i--) {
+        const allowed = await admin.rpc("qa_worker_allowed", {
+          p_job: pending[i].job.id,
+        });
+        if (allowed.error) throw new Error("qa_policy_unavailable");
+        if (allowed.data !== true) {
+          const denied = pending.splice(i, 1)[0].job;
+          await admin.rpc("leased_translation_action", {
+            p_job_id: denied.id,
+            p_lease_token: denied.lease_token,
+            p_action: "finish",
+            p_payload: {
+              outcome: "failed",
+              reason: "qa_viewer_denied",
+              delaySeconds: 0,
+            },
+          });
+        }
+      }
+      if (!pending.length) return;
+      if (pending.length !== 1) throw new Error("qa_batch_denied");
+      const job = pending[0].job;
+      const reservation = await admin.rpc("qa_reserve_worker_slot", {
+        p_job: job.id,
+        p_lease: job.lease_token,
+      });
+      if (reservation.error || typeof reservation.data !== "string") {
+        throw new Error("qa_reservation_denied");
+      }
+      qaNonce = reservation.data;
+    }
     const viewers = pending.map((p) => p.viewer);
     const deferred = new Set<string>();
     const generate = async (vs: PreparedViewer[]) => {
@@ -107,6 +149,14 @@ export async function runMessageBatch(
           openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
         })[0];
         if (!credential) throw new Error("missing_provider_key");
+        credential.dispatchGuard = dispatchGuard(admin.rpc.bind(admin), {
+          p_message: jobs[0].message_id,
+          p_source: jobs[0].source_version,
+          p_kind: "base",
+          p_nonce: qaNonce,
+          p_job: pending[0].job.id,
+          p_lease: pending[0].job.lease_token,
+        }, qa);
         credential.backoff = backoff;
         if (signal) {
           credential.signal = signal;
@@ -235,7 +285,7 @@ export async function runMessageBatch(
         p_lease_token: job.lease_token,
         p_action: "finish",
         p_payload: {
-          outcome: outcome.kind,
+          outcome: qa ? "failed" : outcome.kind,
           reason: completion.error,
           delaySeconds: outcome.kind === "retry" ? outcome.delaySeconds : 0,
         },
@@ -277,7 +327,7 @@ export async function runMessageBatch(
         p_lease_token: job.lease_token,
         p_action: "finish",
         p_payload: {
-          outcome: outcome.kind,
+          outcome: qa ? "failed" : outcome.kind,
           reason: jobReason,
           delaySeconds: outcome.kind === "retry" ? outcome.delaySeconds : 0,
         },
