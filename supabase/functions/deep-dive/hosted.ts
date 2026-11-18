@@ -54,7 +54,7 @@ export class HostedEnrichment {
     private key: string,
   ) {}
   async claim(): Promise<Analysis | null> {
-    const { data, error } = await this.rpc("claim_deep_dive_enrichment", {
+    const { data, error } = await this.rpc("claim_hosted_qa_deep_dive_enrichment", {
       p_viewer: this.c.viewerId,
       p_message: this.r.messageId,
       p_context: this.key,

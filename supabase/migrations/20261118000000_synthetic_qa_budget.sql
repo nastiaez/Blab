@@ -39,6 +39,10 @@ create function public.claim_deep_dive_enrichment(p_viewer uuid,p_message uuid,p
 declare v jsonb;n uuid;
 begin
 if auth.role() is distinct from 'service_role' then raise insufficient_privilege;end if;
+-- Unscoped canonical local callers retain the original quota/cache/retry behavior.
+if not public.qa_translation_scope(p_message) and not exists(select 1 from blab_qa.actors where actor=p_viewer) and not exists(select 1 from blab_qa.subjects where actor=p_viewer) then
+return public.claim_deep_dive_enrichment_unbudgeted(p_viewer,p_message,p_context,p_source,p_known,p_target,p_revision,p_kind,p_retry);
+end if;
 if not exists(select 1 from blab_qa.subjects s join blab_qa.runs r on r.id=s.run_id where s.actor=p_viewer and s.base_viewer and s.message_id=p_message and s.source_hash=p_source and r.state='open' and case p_kind when 'vocabulary' then s.vocabulary_key=p_context when 'correction' then s.correction_key=p_context else false end) then return jsonb_build_object('status','forbidden');end if;
 v:=public.claim_deep_dive_enrichment_unbudgeted(p_viewer,p_message,p_context,p_source,p_known,p_target,p_revision,p_kind,false);
 if v->>'status'='claimed' then
@@ -47,6 +51,15 @@ v:=v||jsonb_build_object('qaNonce',n);
 end if;
 return v;
 end $$;
+-- Hosted admission is strict even before any QA policy is seeded.
+create function public.claim_hosted_qa_deep_dive_enrichment(p_viewer uuid,p_message uuid,p_context text,p_source text,p_known text,p_target text,p_revision bigint,p_kind text,p_retry boolean default false) returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+if auth.role() is distinct from 'service_role' then raise insufficient_privilege;end if;
+if not exists(select 1 from blab_qa.subjects s join blab_qa.runs r on r.id=s.run_id where s.actor=p_viewer and s.base_viewer and s.message_id=p_message and s.source_hash=p_source and r.state='open' and case p_kind when 'vocabulary' then s.vocabulary_key=p_context when 'correction' then s.correction_key=p_context else false end) then return jsonb_build_object('status','forbidden');end if;
+return public.claim_deep_dive_enrichment(p_viewer,p_message,p_context,p_source,p_known,p_target,p_revision,p_kind,false);
+end $$;
+revoke all on function public.claim_hosted_qa_deep_dive_enrichment(uuid,uuid,text,text,text,text,bigint,text,boolean) from public,anon,authenticated;
+grant execute on function public.claim_hosted_qa_deep_dive_enrichment(uuid,uuid,text,text,text,text,bigint,text,boolean) to service_role;
 revoke all on function public.claim_deep_dive_enrichment_unbudgeted(uuid,uuid,text,text,text,text,bigint,text,boolean) from public,anon,authenticated,service_role;
 create function public.qa_provider_dispatch(p_message uuid,p_source text,p_kind text,p_nonce uuid,p_job uuid default null,p_lease uuid default null) returns boolean language plpgsql security definer set search_path=public,pg_temp as $$
 declare r uuid;
@@ -58,10 +71,10 @@ select run_id into r from blab_qa.slots where nonce=p_nonce;
 perform 1 from blab_qa.runs where id=r and state='open' for update;
 if not found then return false;end if;
 if p_kind='base' then
-perform 1 from public.message_preparation_jobs where id=p_job and lease_token=p_lease and status='processing' and locked_at>clock_timestamp()-interval '45 seconds' for update;
+perform 1 from public.message_preparation_jobs j join blab_qa.slots slot on slot.run_id=r and slot.kind='base' and slot.nonce=p_nonce and slot.job_id=j.id and slot.lease=j.lease_token and slot.actor=j.viewer_id and slot.message_id=j.message_id and slot.source_hash=j.source_version where j.id=p_job and j.lease_token=p_lease and j.message_id=p_message and j.source_version=p_source and j.status='processing' and j.locked_at>clock_timestamp()-interval '45 seconds' for update of j;
 if not found then return false;end if;
 end if;
-update blab_qa.slots set dispatched_at=clock_timestamp() where run_id=r and kind=p_kind and nonce=p_nonce and message_id=p_message and source_hash=p_source and dispatched_at is null;
+update blab_qa.slots set dispatched_at=clock_timestamp() where run_id=r and kind=p_kind and nonce=p_nonce and message_id=p_message and source_hash=p_source and dispatched_at is null and (p_kind<>'base' or (job_id=p_job and lease=p_lease));
 return found;
 end $$;
 revoke all on function public.qa_translation_scope(uuid) from public,anon,authenticated;
@@ -112,7 +125,7 @@ create trigger qa_close_worker_failure after update on public.message_preparatio
 create trigger qa_close_deep_failure after update on public.message_learning_enrichments for each row execute function public.qa_close_failure();
 create function public.qa_fence_enrichment() returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
-if new.status='ready' then
+if public.qa_translation_scope(new.message_id) and new.status='ready' then
  perform 1 from blab_qa.runs r join blab_qa.subjects s on s.run_id=r.id where r.state='open' and s.actor=new.viewer_id and s.message_id=new.message_id for update of r;
  if not found then raise exception 'qa_publication_denied';end if;
 end if;return new;

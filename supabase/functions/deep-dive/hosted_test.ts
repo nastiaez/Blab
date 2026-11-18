@@ -86,7 +86,7 @@ Deno.test("cached normalized result makes no lease publication or second admissi
   let calls = 0;
   const rpc: Rpc = async (name) => {
     calls++;
-    assert(name === "claim_deep_dive_enrichment");
+    assert(name === "claim_hosted_qa_deep_dive_enrichment");
     return {
       data: { status: "cached", analysis: { meaning: "hello" } },
       error: null,
@@ -128,7 +128,7 @@ Deno.test("service arguments derive authenticated context, explicit retry only; 
     async (name, args) => {
       calls.push({ name, args });
       return {
-        data: name === "claim_deep_dive_enrichment"
+        data: name === "claim_hosted_qa_deep_dive_enrichment"
           ? { status: "claimed", lease }
           : true,
         error: null,
@@ -157,7 +157,7 @@ Deno.test("late lease completion rejected; failure uses original owned lease and
     async (name, args) => {
       calls.push(args);
       return {
-        data: name === "claim_deep_dive_enrichment"
+        data: name === "claim_hosted_qa_deep_dive_enrichment"
           ? { status: "claimed", lease }
           : false,
         error: null,
@@ -202,4 +202,22 @@ Deno.test("retry flag rejects nonboolean request data", () => {
     assert(failed);
   }
   assert(parseRequest({ ...r, retry: true }).retry === true);
+});
+
+Deno.test("hosted policy refusal never falls back to canonical local admission", async () => {
+  const names: string[] = [];
+  const store = new HostedEnrichment(
+    async (name) => {
+      names.push(name);
+      return { data: { status: "forbidden" }, error: null };
+    },
+    r,
+    c,
+    "context",
+  );
+  await rejects(() => store.claim(), "forbidden");
+  await store.fail();
+  assert(
+    names.length === 1 && names[0] === "claim_hosted_qa_deep_dive_enrichment",
+  );
 });
