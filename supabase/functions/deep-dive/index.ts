@@ -192,6 +192,7 @@ export async function handle(request: Request): Promise<Response> {
         r,
         c,
         await enrichmentKey(r, c),
+        Deno.env.get("BLAB_DEEP_DIVE_RELEASE_REVISION") ?? "",
       );
       analysis = await hosted.claim();
     }
@@ -201,12 +202,14 @@ export async function handle(request: Request): Promise<Response> {
         throw new DiveError("analysis_provider_unavailable", 503);
       }
       if (providerRpc) {
-        credential.dispatchGuard = dispatchGuard(providerRpc, {
-          p_message: r.messageId,
-          p_source: hash,
-          p_kind: r.kind,
-          p_nonce: hosted?.qaNonce ?? null,
-        }, true);
+        credential.dispatchGuard = hosted
+          ? hosted.dispatch(providerRpc)
+          : dispatchGuard(providerRpc, {
+            p_message: r.messageId,
+            p_source: hash,
+            p_kind: r.kind,
+            p_nonce: null,
+          }, true);
       }
       const response = await fetchChatCompletion(credential, {
         messages,

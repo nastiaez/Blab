@@ -86,9 +86,13 @@ Deno.test("cached normalized result makes no lease publication or second admissi
   let calls = 0;
   const rpc: Rpc = async (name) => {
     calls++;
-    assert(name === "claim_hosted_qa_deep_dive_enrichment");
+    assert(name === "claim_hosted_deep_dive_enrichment");
     return {
-      data: { status: "cached", analysis: { meaning: "hello" } },
+      data: {
+        status: "cached",
+        admissionClass: "tester",
+        analysis: { meaning: "hello" },
+      },
       error: null,
     };
   };
@@ -128,8 +132,8 @@ Deno.test("service arguments derive authenticated context, explicit retry only; 
     async (name, args) => {
       calls.push({ name, args });
       return {
-        data: name === "claim_hosted_qa_deep_dive_enrichment"
-          ? { status: "claimed", lease }
+        data: name === "claim_hosted_deep_dive_enrichment"
+          ? { status: "claimed", lease, admissionClass: "tester" }
           : true,
         error: null,
       };
@@ -157,8 +161,8 @@ Deno.test("late lease completion rejected; failure uses original owned lease and
     async (name, args) => {
       calls.push(args);
       return {
-        data: name === "claim_hosted_qa_deep_dive_enrichment"
-          ? { status: "claimed", lease }
+        data: name === "claim_hosted_deep_dive_enrichment"
+          ? { status: "claimed", lease, admissionClass: "tester" }
           : false,
         error: null,
       };
@@ -177,7 +181,10 @@ Deno.test("late lease completion rejected; failure uses original owned lease and
 });
 Deno.test("malformed cache and unavailable RPC never produce successful metadata", async () => {
   const store = new HostedEnrichment(
-    async () => ({ data: { status: "cached", analysis: {} }, error: null }),
+    async () => ({
+      data: { status: "cached", admissionClass: "tester", analysis: {} },
+      error: null,
+    }),
     r,
     c,
     "k",
@@ -218,6 +225,69 @@ Deno.test("hosted policy refusal never falls back to canonical local admission",
   await rejects(() => store.claim(), "forbidden");
   await store.fail();
   assert(
-    names.length === 1 && names[0] === "claim_hosted_qa_deep_dive_enrichment",
+    names.length === 1 && names[0] === "claim_hosted_deep_dive_enrichment",
   );
+});
+Deno.test("SQL admission class selects QA or ordinary lease dispatch", async () => {
+  for (const admissionClass of ["qa", "tester"]) {
+    const store = new HostedEnrichment(
+      async () => ({
+        data: {
+          status: "claimed",
+          lease,
+          admissionClass,
+          ...(admissionClass === "qa" ? { qaNonce: lease } : {}),
+        },
+        error: null,
+      }),
+      r,
+      c,
+      "context",
+      "a".repeat(40),
+    );
+    await store.claim();
+    const calls: { name: string; args: Record<string, unknown> }[] = [];
+    const guard = store.dispatch(async (name, args) => {
+      calls.push({ name, args });
+      return { data: true, error: null };
+    });
+    assert(guard.bounded === (admissionClass === "qa"));
+    await guard.authorize();
+    assert(
+      calls[0].name ===
+        (admissionClass === "qa"
+          ? "qa_provider_dispatch"
+          : "staging_deep_dive_dispatch"),
+    );
+    assert(
+      admissionClass === "qa"
+        ? calls[0].args.p_nonce === lease
+        : calls[0].args.p_lease === lease && !("p_nonce" in calls[0].args),
+    );
+  }
+});
+Deno.test("unknown admission class and contradictory nonce fail closed", async () => {
+  for (
+    const extra of [
+      {},
+      { admissionClass: "unknown" },
+      { admissionClass: "qa" },
+      { admissionClass: "tester", qaNonce: lease },
+    ]
+  ) {
+    const store = new HostedEnrichment(
+      async () => ({
+        data: { status: "claimed", lease, ...extra },
+        error: null,
+      }),
+      r,
+      c,
+      "k",
+    );
+    await rejects(() => store.claim(), "analysis_unavailable");
+    await rejects(
+      () => store.dispatch(async () => ({ data: true, error: null })),
+      "analysis_unavailable",
+    );
+  }
 });

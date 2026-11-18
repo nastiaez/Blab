@@ -137,6 +137,10 @@ jobs:
           docker exec -i "supabase_db_${project_id}" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/synthetic_qa_budget.sql
           docker exec -i "supabase_db_${project_id}" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/synthetic_qa_resume.sql
           CI=true python3 scripts/test_synthetic_qa_budget.py --container "supabase_db_${project_id}" --output build/qa-budget-sql
+      - name: Verify default-closed staging tester admission (offline SQL mock)
+        run: |
+          project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
+          docker exec -i -e PGOPTIONS='-c blab.allow_deep_dive_fixture=isolated-local-only' "supabase_db_${project_id}" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/staging_tester_deep_dive.sql
       - name: Retain SQL guard proof
         if: always()
         uses: actions/upload-artifact@v7
