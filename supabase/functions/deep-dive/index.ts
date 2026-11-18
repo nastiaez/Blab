@@ -3,7 +3,7 @@ import { enrichmentKey, HostedEnrichment, runtimeMode } from "./hosted.ts";
 import { acceptedContext, historicalEra } from "./accepted_context.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { BodyTooLarge, readBoundedBody } from "../_shared/bounded_body.ts";
-import { providerCredentials } from "../translate-message/contract.ts";
+import { deepDiveProvider } from "./provider_config.ts";
 import { fetchChatCompletion } from "../translate-message/provider.ts";
 import {
   analysisMessages,
@@ -196,15 +196,7 @@ export async function handle(request: Request): Promise<Response> {
       analysis = await hosted.claim();
     }
     if (!analysis) {
-      const credential = providerCredentials({
-        provider: Deno.env.get("TRANSLATION_PROVIDER"),
-        openRouterKey: Deno.env.get("OPEN_ROUTER_KEY"),
-        openAiKey: Deno.env.get("OPENAI_API_KEY"),
-        openRouterModel: Deno.env.get("OPENROUTER_MODEL"),
-        openAiModel: Deno.env.get("OPENAI_MODEL"),
-        openRouterProviderPolicy: Deno.env.get("OPENROUTER_PROVIDER_POLICY"),
-        environment: mode === "local" ? "local" : "staging",
-      })[0];
+      const credential = deepDiveProvider((name) => Deno.env.get(name), mode);
       if (!credential) {
         throw new DiveError("analysis_provider_unavailable", 503);
       }
