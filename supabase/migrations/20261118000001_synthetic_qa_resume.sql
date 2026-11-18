@@ -76,3 +76,13 @@ begin
 end $$;
 revoke all on function blab_qa.fence_resume_receipt() from public,anon,authenticated,service_role;
 create trigger fence_resume_receipt before update or delete on blab_qa.resume_permissions for each row execute function blab_qa.fence_resume_receipt();
+
+-- Recompile the hosted caller after the canonical OID rename on live upgrades.
+create or replace function public.claim_hosted_qa_deep_dive_enrichment(p_viewer uuid,p_message uuid,p_context text,p_source text,p_known text,p_target text,p_revision bigint,p_kind text,p_retry boolean default false) returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
+begin
+if auth.role() is distinct from 'service_role' then raise insufficient_privilege;end if;
+if not exists(select 1 from blab_qa.subjects s join blab_qa.runs r on r.id=s.run_id where s.actor=p_viewer and s.base_viewer and s.message_id=p_message and s.source_hash=p_source and r.state='open' and case p_kind when 'vocabulary' then s.vocabulary_key=p_context when 'correction' then s.correction_key=p_context else false end) then return jsonb_build_object('status','forbidden');end if;
+return public.claim_deep_dive_enrichment(p_viewer,p_message,p_context,p_source,p_known,p_target,p_revision,p_kind,false);
+end $$;
+revoke all on function public.claim_hosted_qa_deep_dive_enrichment(uuid,uuid,text,text,text,text,bigint,text,boolean) from public,anon,authenticated;
+grant execute on function public.claim_hosted_qa_deep_dive_enrichment(uuid,uuid,text,text,text,text,bigint,text,boolean) to service_role;
