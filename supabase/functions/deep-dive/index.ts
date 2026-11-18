@@ -1,3 +1,4 @@
+import { dispatchGuard, type QaRpc } from "../_shared/qa_budget.ts";
 import { enrichmentKey, HostedEnrichment, runtimeMode } from "./hosted.ts";
 import { acceptedContext, historicalEra } from "./accepted_context.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -176,6 +177,7 @@ export async function handle(request: Request): Promise<Response> {
     if (new TextEncoder().encode(JSON.stringify(messages)).length > 10000) {
       throw new DiveError("invalid_request", 400);
     }
+    let providerRpc: QaRpc | undefined;
     let analysis;
     if (mode === "hosted") {
       const service = Deno.env.get("BLAB_SUPABASE_SERVICE_ROLE_KEY") ||
@@ -184,6 +186,7 @@ export async function handle(request: Request): Promise<Response> {
       const admin = createClient(url, service, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
+      providerRpc = async (name, args) => await admin.rpc(name, args);
       hosted = new HostedEnrichment(
         async (name, args) => await admin.rpc(name, args),
         r,
@@ -204,6 +207,14 @@ export async function handle(request: Request): Promise<Response> {
       })[0];
       if (!credential) {
         throw new DiveError("analysis_provider_unavailable", 503);
+      }
+      if (providerRpc) {
+        credential.dispatchGuard = dispatchGuard(providerRpc, {
+          p_message: r.messageId,
+          p_source: hash,
+          p_kind: r.kind,
+          p_nonce: hosted?.qaNonce ?? null,
+        }, true);
       }
       const response = await fetchChatCompletion(credential, {
         messages,

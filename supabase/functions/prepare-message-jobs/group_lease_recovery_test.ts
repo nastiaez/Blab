@@ -14,6 +14,9 @@ Deno.test("group generation honors invocation deadline and never commits late ou
   await runMessageBatch(
     {
       rpc: async (name, args) => {
+        if (name === "qa_translation_scope") {
+          return { data: false, error: null };
+        }
         if (name === "prepare_translation_viewers") {
           return {
             data: [{
@@ -81,6 +84,7 @@ Deno.test("group loses ownership after generation and cannot publish artifact or
   const reasons: string[] = [];
   await runMessageBatch({
     rpc: async (name, args) => {
+      if (name === "qa_translation_scope") return { data: false, error: null };
       if (name === "prepare_translation_viewers") {
         return {
           data: [{

@@ -40,6 +40,9 @@ for (const group of [false, true]) {
       const finishes: any[] = [], commits: any[] = [];
       const admin = {
         rpc: async (name: string, args: any) => {
+          if (name === "qa_translation_scope") {
+            return { data: false, error: null };
+          }
           if (name === "prepare_translation_viewers") {
             return {
               error: null,
@@ -184,6 +187,7 @@ Deno.test("later group transport failure cannot requeue earlier integrity failur
   const langs = ["de", "uk", "fr", "es", "it", "de"];
   const admin = {
     rpc: async (name: string, args: any) => {
+      if (name === "qa_translation_scope") return { data: false, error: null };
       if (name === "prepare_translation_viewers") {
         return {
           error: null,

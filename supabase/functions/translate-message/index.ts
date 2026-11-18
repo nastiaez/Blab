@@ -1,3 +1,4 @@
+import { dispatchGuard } from "../_shared/qa_budget.ts";
 import { serializeGeneration } from "./correction_provenance.ts";
 import { isMentionIntegrityFailure } from "./mention_identity.ts";
 // Server-authoritative real-chat translator. The client supplies only a
@@ -925,6 +926,18 @@ Deno.serve(async (req) => {
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  for (const credential of providerKeys) {
+    credential.dispatchGuard = dispatchGuard(
+      async (name, args) => await admin.rpc(name, args),
+      {
+        p_message: messageId,
+        p_source: sourceHash,
+        p_kind: "direct",
+        p_nonce: null,
+      },
+      false,
+    );
+  }
   if (result === null) {
     const mentionRow = await admin.from("messages").select("body,mentions").eq(
       "id",

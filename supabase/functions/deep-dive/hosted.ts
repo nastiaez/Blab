@@ -46,6 +46,7 @@ export type Rpc = (
 ) => Promise<{ data: unknown; error: unknown }>;
 export class HostedEnrichment {
   private lease: string | null = null;
+  qaNonce: string | null = null;
   constructor(
     private rpc: Rpc,
     private r: DiveRequest,
@@ -76,6 +77,7 @@ export class HostedEnrichment {
       /^[0-9a-f-]{36}$/i.test(value.lease)
     ) {
       this.lease = value.lease;
+      this.qaNonce = typeof value.qaNonce === "string" ? value.qaNonce : null;
       return null;
     }
     if (value.status === "rate_limited") {
