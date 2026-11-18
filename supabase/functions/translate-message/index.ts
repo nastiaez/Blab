@@ -767,6 +767,23 @@ Deno.serve(async (req) => {
     if (userError || !userData.user) {
       return json({ error: "authentication_required" }, 401);
     }
+    // Scoped QA uses the durable worker and read-only accepted-package path only.
+    // Reject legacy admission before it can debit quota or force-refresh a cache.
+    const visible = await userClient.from("messages").select("id")
+      .eq("id", messageId).maybeSingle();
+    if (visible.error) return json({ error: "translation_unavailable" }, 503);
+    if (visible.data) {
+      const guardAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const scope = await guardAdmin.rpc("qa_translation_scope", {
+        p_message: messageId,
+      });
+      if (scope.error || typeof scope.data !== "boolean") {
+        return json({ error: "translation_unavailable" }, 503);
+      }
+      if (scope.data) return json({ error: "translation_pending" }, 409);
+    }
     requesterId = userData.user.id;
     const forceRefresh = body.forceRefresh === true;
     if (body.targetLang !== undefined && typeof body.targetLang !== "string") {

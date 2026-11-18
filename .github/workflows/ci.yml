@@ -46,7 +46,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Verify translation policy and generated rulebook
-        run: deno test --allow-env --allow-read supabase/functions/translate-message/*test.ts supabase/functions/prepare-message-jobs/*test.ts supabase/functions/deep-dive/*test.ts
+        run: deno test --allow-env --allow-read supabase/functions/translate-message/*test.ts supabase/functions/prepare-message-jobs/*test.ts supabase/functions/deep-dive/*test.ts supabase/functions/_shared/qa_budget_test.ts
       - name: Verify shell syntax
         run: bash -n scripts/*.sh
       - name: Analyze
@@ -131,6 +131,19 @@ jobs:
         run: |
           project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
           python3 scripts/test_deep_dive_concurrency.py --container "supabase_db_${project_id}" --database postgres --output build/deep-dive-sql
+      - name: Verify synthetic QA budget ACL and concurrent dispatch
+        run: |
+          project_id=$(sed -nE 's/^project_id = "([^"]+)"/\1/p' supabase/config.toml | head -n 1)
+          docker exec -i "supabase_db_${project_id}" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/synthetic_qa_budget.sql
+          CI=true python3 scripts/test_synthetic_qa_budget.py --container "supabase_db_${project_id}" --output build/qa-budget-sql
+      - name: Retain SQL guard proof
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: synthetic-qa-budget-sql
+          path: build/qa-budget-sql
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Stop disposable backend
         if: always()
         run: supabase stop --no-backup
