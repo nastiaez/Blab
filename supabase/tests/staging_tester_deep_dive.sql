@@ -56,7 +56,7 @@ do $$declare v jsonb;l uuid;begin
  if (select day_requests from public.translation_usage where user_id='e2111111-1111-4111-8111-111111111111')<>1 then raise exception 'pending charged';end if;
 end$$;
 -- Normal publication/cache do not charge again; ordinary failed admission retains cooldown.
-do $declare v jsonb;begin
+do $$declare v jsonb;begin
  if not public.finish_deep_dive_enrichment('e2111111-1111-4111-8111-111111111111',repeat('a',64),(select lease from e2_test_state),'{"meaning":"OFFLINE MOCK cached"}') then raise exception 'completion failed';end if;
  if pg_temp.claim142()->>'status'<>'cached' then raise exception 'cache miss';end if;
  if (select day_requests from public.translation_usage where user_id='e2111111-1111-4111-8111-111111111111')<>1 then raise exception 'cache charged';end if;
@@ -65,7 +65,7 @@ do $declare v jsonb;begin
  perform public.finish_deep_dive_enrichment('e2111111-1111-4111-8111-111111111111',repeat('b',64),(v->>'lease')::uuid,null);
  if pg_temp.claim142(repeat('b',64))->>'status'<>'failed' then raise exception 'implicit retry granted';end if;
  if (select day_requests from public.translation_usage where user_id='e2111111-1111-4111-8111-111111111111')<>2 then raise exception 'failure refunded';end if;
-end$;
+end$$;
 -- Closed QA actors always take strict141 path, even during an active operational rollout.
 insert into blab_qa.actors values('e2111111-1111-4111-8111-111111111111');
 do $$begin
