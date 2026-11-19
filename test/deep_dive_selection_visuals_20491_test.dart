@@ -112,7 +112,7 @@ void main() {
       expect(fill(), Colors.transparent);
       await tester.tap(find.byTooltip('Translate'));
       await tester.pump();
-      await tester.tap(find.text('bin').first);
+      await tester.tap(find.text('bing').first);
       await tester.pump();
       expect(button().isSelected, false);
       expect(fill(), Colors.transparent);

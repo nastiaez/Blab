@@ -166,6 +166,17 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
     dismissWordPopup();
     _audioGeneration++;
     unawaited(_tts.stop());
+    if (!retry &&
+        _selection.slot == DeepDiveLowerSlot.mistake &&
+        _selection.mistakeIndex == index) {
+      setState(() {
+        _selection.clear();
+        _mistake = null;
+        _selectedWord = null;
+        _playing = false;
+      });
+      return;
+    }
     final c = widget.corrections[index];
     _selection.selectMistake(index);
     setState(() {
@@ -197,6 +208,10 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
     if (box == null) return;
     _audioGeneration++;
     unawaited(_tts.stop());
+    if (_selection.slot == DeepDiveLowerSlot.mistake) {
+      _selection.clear();
+      _mistake = null;
+    }
     _selection.beginWordSelection();
     setState(() {
       _selectedWord = index;
@@ -294,9 +309,9 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
         if (!segment.struck && !segment.presentationOnly) {
           displayOffset += token.text.length;
         }
-        final mistakeIndex = segment.struck || segment.corrected
-            ? activeMistake
-            : null;
+        // Only the authored mistake opens its explanation. Replacement words
+        // keep the normal per-word lookup and accepted-text offsets (BLA-57).
+        final mistakeIndex = segment.struck ? activeMistake : null;
         final selectable =
             widget.aidsEnabled &&
             token.isContent &&
@@ -608,19 +623,37 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
                           children: [
                             Semantics(
                               label:
-                                  widget
-                                      .corrections[_selection
-                                          .mistakeIndex!]['replacement']
-                                      ?.toString() ??
-                                  '',
+                                  '${widget.corrections[_selection.mistakeIndex!]['original'] ?? ''} → '
+                                  '${widget.corrections[_selection.mistakeIndex!]['replacement'] ?? ''}',
                               excludeSemantics: true,
-                              child: Text(
-                                deepDiveCorrectionHeading(
-                                  widget
-                                          .corrections[_selection
-                                              .mistakeIndex!]['replacement']
-                                          ?.toString() ??
-                                      '',
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text:
+                                          widget
+                                              .corrections[_selection
+                                                  .mistakeIndex!]['original']
+                                              ?.toString() ??
+                                          '',
+                                      style: const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                    const TextSpan(text: ' → '),
+                                    TextSpan(
+                                      text: deepDiveCorrectionHeading(
+                                        widget
+                                                .corrections[_selection
+                                                    .mistakeIndex!]['replacement']
+                                                ?.toString() ??
+                                            '',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                key: const ValueKey(
+                                  'deep-dive-mistake-heading',
                                 ),
                                 style: const TextStyle(
                                   fontSize: 16,

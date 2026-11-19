@@ -99,10 +99,10 @@ void main() {
       await tester.tap(find.byTooltip('Translate'));
       await tester.pump();
       expect(find.text('Translation'), findsOneWidget);
-      await tester.tap(find.text('bin').first);
+      await tester.tap(find.text('bing').first);
       await tester.pump();
       expect(find.text('Translation'), findsNothing);
-      await tester.tap(find.text('bin').at(1));
+      await tester.tap(find.text('bing').at(1));
       await tester.pump();
       expect(starts, [4, 9]);
       pending[1].complete({
@@ -214,7 +214,7 @@ void main() {
       );
       final speech = FakeSpeech();
       await tester.pumpWidget(harness(service: service, speech: speech));
-      await tester.tap(find.text('bin').first);
+      await tester.tap(find.text('bing').first);
       await tester.pump();
       expect(find.text('WHY THIS MISTAKE?'), findsOneWidget);
       await tester.pumpWidget(
