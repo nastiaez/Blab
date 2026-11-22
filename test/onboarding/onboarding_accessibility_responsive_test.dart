@@ -238,7 +238,9 @@ void main() {
     );
 
     expect(find.text('Du lernst Englisch'), findsOneWidget);
-    expect(find.byTooltip('Anhören: exquisite'), findsOneWidget);
+    expect(find.byKey(const Key('vocabulary-popup')), findsNothing);
+    expect(find.bySemanticsLabel('Interface language'), findsNothing);
+    expect(find.byKey(const Key('demo1-composer')), findsOneWidget);
     semantics.dispose();
   });
 }

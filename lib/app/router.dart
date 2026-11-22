@@ -291,6 +291,8 @@ final GoRouter blabRouter = GoRouter(
             interfaceLanguageCode: locale.code,
             onBack: () => context.go('/onboarding/welcome'),
             onContinue: () => _completeLearningIntro(context, ref),
+            // Bypass all demos via the established resolver; keep preferences.
+            onSkip: () => _completeLearningIntro(context, ref),
             onChangeInterfaceLanguage: (code) => ref
                 .read(interfaceLanguageProvider.notifier)
                 .set(interfaceLanguageForCode(code)),
