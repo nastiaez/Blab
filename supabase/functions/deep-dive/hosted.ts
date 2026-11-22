@@ -14,12 +14,16 @@ export function runtimeMode(
   environment: string | undefined,
   url: string | undefined,
   enabled: string | undefined,
-): "local" | "hosted" {
+): "local" | "hosted" | "production" {
   if (environment === "local") return "local";
   if (
     environment === "staging" && enabled === "true" &&
     url === "https://tpfksdljkfnenjfdbane.supabase.co"
   ) return "hosted";
+  if (
+    environment === "production" && enabled === "true" &&
+    url === "https://bhzcexhebjszwyqvcsxs.supabase.co"
+  ) return "production";
   throw new DiveError("local_only", 503);
 }
 export async function enrichmentKey(r: DiveRequest, c: Context) {
@@ -59,10 +63,13 @@ export class HostedEnrichment {
     private c: Context,
     private key: string,
     private release: string = "",
+    private production = false,
   ) {}
   async claim(): Promise<Analysis | null> {
     const { data, error } = await this.rpc(
-      "claim_hosted_deep_dive_enrichment",
+      this.production
+        ? "claim_production_deep_dive_enrichment"
+        : "claim_hosted_deep_dive_enrichment",
       {
         p_viewer: this.c.viewerId,
         p_message: this.r.messageId,
@@ -80,6 +87,9 @@ export class HostedEnrichment {
       throw new DiveError("analysis_unavailable", 503);
     }
     const value = data as Record<string, unknown>;
+    if (this.production && value.admissionClass === "qa") {
+      throw new DiveError("forbidden", 403);
+    }
     if (value.status === "cached") {
       if (value.admissionClass !== "qa" && value.admissionClass !== "tester") {
         throw new DiveError("analysis_unavailable", 503);
@@ -130,18 +140,23 @@ export class HostedEnrichment {
       bounded: false,
       kind: this.r.kind,
       authorize: async () => {
-        const reply = await rpc("staging_deep_dive_dispatch", {
-          p_viewer: this.c.viewerId,
-          p_message: this.r.messageId,
-          p_context: this.key,
-          p_source: this.c.sourceVersion,
-          p_known: this.c.knownLang,
-          p_target: this.c.targetLang,
-          p_revision: this.c.revision,
-          p_kind: this.r.kind,
-          p_release: this.release,
-          p_lease: this.lease,
-        });
+        const reply = await rpc(
+          this.production
+            ? "production_deep_dive_dispatch"
+            : "staging_deep_dive_dispatch",
+          {
+            p_viewer: this.c.viewerId,
+            p_message: this.r.messageId,
+            p_context: this.key,
+            p_source: this.c.sourceVersion,
+            p_known: this.c.knownLang,
+            p_target: this.c.targetLang,
+            p_revision: this.c.revision,
+            p_kind: this.r.kind,
+            p_release: this.release,
+            p_lease: this.lease,
+          },
+        );
         if (reply.error || reply.data !== true) {
           throw new DiveError(
             "forbidden",

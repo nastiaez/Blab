@@ -29,7 +29,7 @@ export async function handle(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
   }
-  let mode: "local" | "hosted";
+  let mode: ReturnType<typeof runtimeMode>;
   try {
     mode = runtimeMode(
       Deno.env.get("DEEP_DIVE_ENVIRONMENT") || Deno.env.get("BLAB_ENV"),
@@ -179,7 +179,7 @@ export async function handle(request: Request): Promise<Response> {
     }
     let providerRpc: QaRpc | undefined;
     let analysis;
-    if (mode === "hosted") {
+    if (mode !== "local") {
       const service = Deno.env.get("BLAB_SUPABASE_SERVICE_ROLE_KEY") ||
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (!service) throw new DiveError("analysis_provider_unavailable", 503);
@@ -193,11 +193,15 @@ export async function handle(request: Request): Promise<Response> {
         c,
         await enrichmentKey(r, c),
         Deno.env.get("BLAB_DEEP_DIVE_RELEASE_REVISION") ?? "",
+        mode === "production",
       );
       analysis = await hosted.claim();
     }
     if (!analysis) {
-      const credential = deepDiveProvider((name) => Deno.env.get(name), mode);
+      const credential = deepDiveProvider(
+        (name) => Deno.env.get(name),
+        mode === "local" ? "local" : "hosted",
+      );
       if (!credential) {
         throw new DiveError("analysis_provider_unavailable", 503);
       }

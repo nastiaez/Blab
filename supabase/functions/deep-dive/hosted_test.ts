@@ -44,7 +44,7 @@ const c: Context = {
   tokens: [],
 };
 const lease = "11111111-1111-4111-8111-111111111111";
-Deno.test("hosted activation only exact staging opt-in; production/foreign/local URLs refused", async () => {
+Deno.test("hosted activation requires the exact project and opt-in for each environment", async () => {
   assert(runtimeMode("local", "http://127.0.0.1", "false") === "local");
   assert(
     runtimeMode(
@@ -53,9 +53,19 @@ Deno.test("hosted activation only exact staging opt-in; production/foreign/local
       "true",
     ) === "hosted",
   );
+  assert(
+    runtimeMode(
+      "production",
+      "https://bhzcexhebjszwyqvcsxs.supabase.co",
+      "true",
+    ) ===
+      "production",
+  );
   for (
     const [env, url, flag] of [
-      ["production", "https://bhzcexhebjszwyqvcsxs.supabase.co", "true"],
+      ["production", "https://bhzcexhebjszwyqvcsxs.supabase.co", "false"],
+      ["production", "https://tpfksdljkfnenjfdbane.supabase.co", "true"],
+      ["staging", "https://bhzcexhebjszwyqvcsxs.supabase.co", "true"],
       ["staging", "https://tpfksdljkfnenjfdbane.supabase.co", "false"],
       ["staging", "http://127.0.0.1", "true"],
       ["staging", "https://foreign.supabase.co", "true"],
@@ -290,4 +300,33 @@ Deno.test("unknown admission class and contradictory nonce fail closed", async (
       "analysis_unavailable",
     );
   }
+});
+
+Deno.test("production only claims and dispatches via production gates", async () => {
+  const calls: string[] = [];
+  const store = new HostedEnrichment(
+    async (name) => {
+      calls.push(name);
+      return {
+        data: calls.length === 1
+          ? { status: "claimed", lease, admissionClass: "tester" }
+          : true,
+        error: null,
+      };
+    },
+    r,
+    c,
+    "context",
+    "a".repeat(40),
+    true,
+  );
+  assert(await store.claim() === null);
+  await store.dispatch(async (name) => {
+    calls.push(name);
+    return { data: true, error: null };
+  }).authorize();
+  assert(
+    calls.join(",") ===
+      "claim_production_deep_dive_enrichment,production_deep_dive_dispatch",
+  );
 });
