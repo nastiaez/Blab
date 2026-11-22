@@ -1,7 +1,7 @@
 import { providerCredentials } from "../translate-message/contract.ts";
 export function deepDiveProvider(
   get: (name: string) => string | undefined,
-  mode: "local" | "hosted",
+  mode: "local" | "hosted" | "production",
 ) {
   return providerCredentials({
     provider: get("BLAB_TRANSLATION_PROVIDER"),
@@ -10,6 +10,6 @@ export function deepDiveProvider(
     openRouterModel: get("OPENROUTER_MODEL"),
     openAiModel: get("OPENAI_MODEL"),
     openRouterProviderPolicy: get("OPENROUTER_PROVIDER_POLICY"),
-    environment: mode === "local" ? "local" : "staging",
+    environment: mode === "hosted" ? "staging" : mode,
   })[0];
 }

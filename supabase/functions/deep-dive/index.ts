@@ -200,7 +200,7 @@ export async function handle(request: Request): Promise<Response> {
     if (!analysis) {
       const credential = deepDiveProvider(
         (name) => Deno.env.get(name),
-        mode === "local" ? "local" : "hosted",
+        mode,
       );
       if (!credential) {
         throw new DiveError("analysis_provider_unavailable", 503);
