@@ -75,7 +75,7 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile(
-          '../../docs/qa/onboarding-approved-21796/learn-reduced-motion.png',
+          '../../docs/qa/onboarding-released-fit-21905/learn-reduced-motion.png',
         ),
       );
 

@@ -64,6 +64,28 @@ void main() {
         ),
       );
       await tester.pump(const Duration(milliseconds: 500));
+      await tester.drag(
+        find.byKey(const Key('demo-swipe-region')),
+        const Offset(-160, 0),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(
+        blabRouter.routeInformationProvider.value.uri.path,
+        '/onboarding/context',
+      );
+      expect(find.bySemanticsLabel('Demo 2 of 3'), findsOneWidget);
+      await tester.drag(
+        find.byKey(const Key('demo-swipe-region')),
+        const Offset(160, 0),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(
+        blabRouter.routeInformationProvider.value.uri.path,
+        '/onboarding/learn',
+      );
+      expect(find.bySemanticsLabel('Demo 1 of 3'), findsOneWidget);
       await tester.tap(find.text('Continue'));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 250));

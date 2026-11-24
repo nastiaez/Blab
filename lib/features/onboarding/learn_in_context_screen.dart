@@ -79,6 +79,7 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
   final _demoScroll = ScrollController();
   final Set<int> _heldPointers = {};
   bool _foreground = true;
+  double _swipeDistance = 0;
   @override
   void initState() {
     super.initState();
@@ -181,105 +182,167 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
             ),
           ),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, bounds) {
-                final content = Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        widget.demoStep == 3
-                            ? 'Make sense of grammar'
-                            : widget.demoStep == 2
-                            ? 'Learn words in context'
-                            : context.l10n.onboardingLearnTitle,
-                        textAlign: TextAlign.center,
-                        style: OnboardingTheme.headline.copyWith(
-                          fontSize: 34,
-                          height: 1.08,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        widget.demoStep == 3
-                            ? 'Explore your sentence with Deep Dive.'
-                            : widget.demoStep == 2
-                            ? 'Long press a message to translate.'
-                            : context.l10n.onboardingLearningStatus,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: OnboardingTheme.muted,
-                          fontSize: 14,
-                          height: 20 / 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: large ? math.min(bounds.maxWidth - 32, 390) : 306,
-                      height: large
-                          ? (widget.demoStep == 2 ? 1100 : 800)
-                          : _normalDemoPhoneHeight(context, bounds.maxHeight),
-                      child: Listener(
-                        key: const Key('learning-animation-hold-target'),
-                        behavior: HitTestBehavior.translucent,
-                        onPointerDown: (event) {
-                          _heldPointers.add(event.pointer);
-                          _controller.stop();
-                        },
-                        onPointerUp: (event) => _release(event.pointer),
-                        onPointerCancel: (event) => _release(event.pointer),
-                        child: AnimatedBuilder(
-                          animation: _controller,
-                          builder: (context, _) => widget.demoStep == 3
-                              ? Demo3Phone(
-                                  reviewScroll: _demoScroll,
-                                  milliseconds:
-                                      (_controller.value *
-                                              demo3Cycle.inMilliseconds)
-                                          .round(),
-                                  reduced: MediaQuery.disableAnimationsOf(
-                                    context,
-                                  ),
-                                  large: large,
-                                )
-                              : widget.demoStep == 2
-                              ? Demo2Phone(
-                                  reviewScroll: _demoScroll,
-                                  milliseconds:
-                                      (_controller.value *
-                                              demo2Cycle.inMilliseconds)
-                                          .round(),
-                                  reduced: MediaQuery.disableAnimationsOf(
-                                    context,
-                                  ),
-                                  large: large,
-                                )
-                              : DemoConversationPhone(
-                                  milliseconds:
-                                      (_controller.value *
-                                              demo1Cycle.inMilliseconds)
-                                          .round(),
-                                  reduced: MediaQuery.disableAnimationsOf(
-                                    context,
-                                  ),
-                                  large: large,
-                                ),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-                return SingleChildScrollView(
-                  controller: widget.demoStep == 2 ? _demoScroll : null,
-                  padding: const EdgeInsets.only(top: 28, bottom: 20),
-                  child: SizedBox(width: bounds.maxWidth, child: content),
-                );
+            child: GestureDetector(
+              key: const Key('demo-swipe-region'),
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragStart: (_) => _swipeDistance = 0,
+              onHorizontalDragUpdate: (event) =>
+                  _swipeDistance += event.delta.dx,
+              onHorizontalDragEnd: (_) {
+                if (_swipeDistance < -48 && widget.demoStep < 3) {
+                  widget.onContinue();
+                } else if (_swipeDistance > 48 && widget.demoStep > 1) {
+                  widget.onBack();
+                }
+                _swipeDistance = 0;
               },
+              onHorizontalDragCancel: () => _swipeDistance = 0,
+              child: LayoutBuilder(
+                builder: (context, bounds) {
+                  final titles = [
+                    context.l10n.onboardingLearnTitle,
+                    'Learn words in context',
+                    'Make sense of grammar',
+                  ];
+                  final baseStyle = DefaultTextStyle.of(context).style.merge(
+                    OnboardingTheme.headline.copyWith(
+                      fontSize: 34,
+                      height: 1.08,
+                    ),
+                  );
+                  bool titlesFit(double size) {
+                    var fits = true;
+                    for (final title in titles) {
+                      final painter = TextPainter(
+                        text: TextSpan(
+                          text: title,
+                          style: baseStyle.copyWith(fontSize: size),
+                        ),
+                        textScaler: MediaQuery.textScalerOf(context),
+                        textDirection: Directionality.of(context),
+                      )..layout(maxWidth: bounds.maxWidth - 40);
+                      fits = fits && painter.computeLineMetrics().length == 1;
+                      painter.dispose();
+                    }
+                    return fits;
+                  }
+
+                  var titleSize = 34.0;
+                  if (!large && !titlesFit(titleSize)) {
+                    var low = 0.0;
+                    var high = titleSize;
+                    for (var i = 0; i < 24; i++) {
+                      final mid = (low + high) / 2;
+                      if (titlesFit(mid)) {
+                        low = mid;
+                      } else {
+                        high = mid;
+                      }
+                    }
+                    titleSize = (low * 100).floorToDouble() / 100;
+                  }
+                  final content = Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          widget.demoStep == 3
+                              ? 'Make sense of grammar'
+                              : widget.demoStep == 2
+                              ? 'Learn words in context'
+                              : context.l10n.onboardingLearnTitle,
+                          textAlign: TextAlign.center,
+                          maxLines: large ? null : 1,
+                          softWrap: large,
+                          style: OnboardingTheme.headline.copyWith(
+                            fontSize: titleSize,
+                            height: 1.08,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          widget.demoStep == 3
+                              ? 'Explore your sentence with Deep Dive.'
+                              : widget.demoStep == 2
+                              ? 'Long press a message to translate.'
+                              : context.l10n.onboardingLearningStatus,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: OnboardingTheme.muted,
+                            fontSize: 14,
+                            height: 20 / 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: large
+                            ? math.min(bounds.maxWidth - 32, 390)
+                            : 306,
+                        height: large
+                            ? (widget.demoStep == 2 ? 1100 : 800)
+                            : _normalDemoPhoneHeight(context, bounds.maxHeight),
+                        child: Listener(
+                          key: const Key('learning-animation-hold-target'),
+                          behavior: HitTestBehavior.translucent,
+                          onPointerDown: (event) {
+                            _heldPointers.add(event.pointer);
+                            _controller.stop();
+                          },
+                          onPointerUp: (event) => _release(event.pointer),
+                          onPointerCancel: (event) => _release(event.pointer),
+                          child: AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, _) => widget.demoStep == 3
+                                ? Demo3Phone(
+                                    reviewScroll: _demoScroll,
+                                    milliseconds:
+                                        (_controller.value *
+                                                demo3Cycle.inMilliseconds)
+                                            .round(),
+                                    reduced: MediaQuery.disableAnimationsOf(
+                                      context,
+                                    ),
+                                    large: large,
+                                  )
+                                : widget.demoStep == 2
+                                ? Demo2Phone(
+                                    reviewScroll: _demoScroll,
+                                    milliseconds:
+                                        (_controller.value *
+                                                demo2Cycle.inMilliseconds)
+                                            .round(),
+                                    reduced: MediaQuery.disableAnimationsOf(
+                                      context,
+                                    ),
+                                    large: large,
+                                  )
+                                : DemoConversationPhone(
+                                    milliseconds:
+                                        (_controller.value *
+                                                demo1Cycle.inMilliseconds)
+                                            .round(),
+                                    reduced: MediaQuery.disableAnimationsOf(
+                                      context,
+                                    ),
+                                    large: large,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                  return SingleChildScrollView(
+                    controller: widget.demoStep == 2 ? _demoScroll : null,
+                    padding: const EdgeInsets.only(top: 28, bottom: 20),
+                    child: SizedBox(width: bounds.maxWidth, child: content),
+                  );
+                },
+              ),
             ),
           ),
           Padding(

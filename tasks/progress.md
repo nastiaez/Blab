@@ -1,3 +1,6 @@
+## Demo title and swipe21914 - in progress
+- Exact21905 approved21911; integration/Android delivery authorized21914. Native candidate accepted; integrated signed Android and delivery pending. No backend/iOS release. <!-- project: github.com/aswinckr/clawdbot -->
+
 ## BLA-57 · Corrected-word tap targets · [ ] ← in progress
 - Scope approved Nastia topic7420/20870+20872: struck originals open mistake explanations; bold replacements open normal word meaning, one tapped word at a time. Chat bubble selection, translation policy and BLA59 offsets remain unchanged.
 - Current-main isolated candidate; full client1474 pass/36 skipped, focused producer-provenance4-case red-green, analysis clean. Actual Android offline synthetic taps,5 screenshots and21.7862s recording inspected; visual/journey approval pending. iOS paused. Evidence: `qa-artifacts/bla57/RESULT.md` (local only).
