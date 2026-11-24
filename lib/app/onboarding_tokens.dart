@@ -15,6 +15,8 @@ abstract final class OnboardingTheme {
   static const error = Color(0xFFB83A35);
   static const selectedTint = Color(0xFFF7EFE5);
 
+  // Existing 16-unit message spacing, shared by every demo bubble edge.
+  static const demoMessageGap = 16.0;
   static const horizontalGutter = 20.0;
   static const controlHeight = 56.0;
   static const controlRadius = 16.0;

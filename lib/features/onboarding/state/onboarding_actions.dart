@@ -10,7 +10,8 @@ final confirmOnboardingNameActionProvider =
     Provider<ConfirmOnboardingNameAction>(
       (ref) => (name) async {
         await ref.read(profileServiceProvider).confirmOnboardingName(name);
-        ref.invalidate(currentProfileProvider);
+        // The route refreshes after delivering its completion navigation.
+        // Refreshing here can dispose the awaiting form first.
       },
     );
 

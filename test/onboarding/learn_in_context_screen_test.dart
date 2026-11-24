@@ -1,266 +1,154 @@
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/onboarding/learn_in_context_screen.dart';
+import 'package:blab/features/onboarding/widgets/onboarding_top_bar.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _app({
-  required VoidCallback onContinue,
-  bool reducedMotion = false,
-  TextScaler textScaler = TextScaler.noScaling,
-  Future<void> Function(String)? onLanguage,
-  Future<void> Function()? onPlayAudio,
-  Future<void> Function()? onStopAudio,
-}) {
-  return MaterialApp(
-    theme: blabTheme,
-    supportedLocales: AppLocalizations.supportedLocales,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(disableAnimations: reducedMotion, textScaler: textScaler),
-      child: child!,
+Widget app({
+  bool reduced = false,
+  double scale = 1,
+  VoidCallback? onContinue,
+  VoidCallback? onBack,
+}) => MaterialApp(
+  theme: blabTheme,
+  supportedLocales: AppLocalizations.supportedLocales,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(
+      disableAnimations: reduced,
+      textScaler: TextScaler.linear(scale),
     ),
-    home: LearnInContextScreen(
-      interfaceLanguageCode: 'en',
-      onBack: () {},
-      onContinue: onContinue,
-      onChangeInterfaceLanguage: onLanguage ?? (_) async {},
-      onPlayAudio: onPlayAudio ?? () async {},
-      onStopAudio: onStopAudio ?? () async {},
-    ),
-  );
-}
-
+    child: child!,
+  ),
+  home: LearnInContextScreen(
+    interfaceLanguageCode: 'en',
+    onBack: onBack ?? () {},
+    onContinue: onContinue ?? () {},
+    onChangeInterfaceLanguage: (_) async {},
+    onPlayAudio: () async {},
+    onStopAudio: () async {},
+  ),
+);
 void main() {
-  testWidgets('holding pauses reading and release resumes without restarting', (
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    final loader = FontLoader('Roboto')
+      ..addFont(rootBundle.load('assets/fonts/deep_dive/Roboto-Variable.ttf'));
+    await loader.load();
+  });
+  testWidgets(
+    'Paper phone, real mode toggle, composer and no withdrawn chrome at every stage',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(app());
+      for (var t = 0; t < 14000; t += 250) {
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(find.byType(OnboardingTopBar), findsNothing);
+        expect(find.text('EN'), findsNothing);
+        expect(find.byKey(const Key('vocabulary-popup')), findsNothing);
+        expect(find.byKey(const Key('vocabulary-anchor')), findsNothing);
+        expect(find.text('vorzüglich'), findsNothing);
+        for (final key in [
+          'demo1-phone-frame',
+          'demo1-chat-header',
+          'demo1-composer',
+          'demo1-send',
+          'mode-toggle',
+        ]) {
+          expect(find.byKey(Key(key)), findsOneWidget);
+        }
+        expect(find.text('Bestie'), findsOneWidget);
+        expect(find.text('Practice'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+  testWidgets(
+    'English draft types in composer then clears into German sent bubble',
+    (tester) async {
+      await tester.pumpWidget(app());
+      await tester.pump(const Duration(milliseconds: 10000));
+      expect(find.text('I’m looking forward to it!'), findsOneWidget);
+      expect(find.byKey(const Key('demo1-sent-translation')), findsNothing);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('I’m looking forward to it!'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(find.text('I’m looking forward to it!'), findsNothing);
+      expect(find.text('Ich freue mich darauf!'), findsOneWidget);
+      expect(
+        find.byKey(const Key('learning-incoming-message')),
+        findsOneWidget,
+      );
+    },
+  );
+  testWidgets('hold pauses draft and release resumes same position', (
     tester,
   ) async {
-    var continued = false;
-    await tester.pumpWidget(_app(onContinue: () => continued = true));
-    await tester.pump(const Duration(milliseconds: 9610));
-    expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      1,
-    );
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(milliseconds: 8600));
+    final before = tester
+        .widget<Text>(find.byKey(const Key('demo1-draft')))
+        .data;
     final hold = await tester.startGesture(
-      tester.getCenter(find.byKey(const Key('learning-animation-hold-target'))),
-    );
-    await tester.pump(const Duration(seconds: 5));
-    expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      1,
-    );
-    await hold.up();
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      1,
-      reason: 'Resume must keep the current popup, not restart the loop',
+      tester.getCenter(find.byKey(const Key('demo1-composer'))),
     );
     await tester.pump(const Duration(seconds: 4));
     expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      0,
+      tester.widget<Text>(find.byKey(const Key('demo1-draft'))).data,
+      before,
+    );
+    await hold.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      tester.widget<Text>(find.byKey(const Key('demo1-draft'))).data,
+      isNot(before),
+    );
+  });
+  testWidgets('reduced motion stays at final three-message state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(reduced: true));
+    expect(find.byKey(const Key('demo1-sent-translation')), findsOneWidget);
+    expect(find.byKey(const Key('vocabulary-popup')), findsNothing);
+    await tester.pump(const Duration(seconds: 20));
+    expect(find.byKey(const Key('demo1-sent-translation')), findsOneWidget);
+  });
+  testWidgets('Back and Continue never wait for teaching sequence', (
+    tester,
+  ) async {
+    var continued = 0, back = 0;
+    await tester.pumpWidget(
+      app(onContinue: () => continued++, onBack: () => back++),
     );
     await tester.tap(find.text('Continue'));
-    expect(continued, isTrue);
+    await tester.tap(find.byTooltip('Back'));
+    expect(continued, 1);
+    expect(back, 1);
   });
-
-  testWidgets('canceling a hold resumes motion and keeps navigation usable', (
+  testWidgets('360 390 430 and 200 percent remain reachable without overflow', (
     tester,
   ) async {
-    await tester.pumpWidget(_app(onContinue: () {}));
-    await tester.pump(const Duration(milliseconds: 9610));
-    final hold = await tester.startGesture(
-      tester.getCenter(find.byKey(const Key('learning-animation-hold-target'))),
-    );
-    await tester.pump(const Duration(seconds: 5));
-    expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      1,
-    );
-    await hold.cancel();
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 5));
-    expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      0,
-    );
-  });
-
-  testWidgets('renders the approved content and Continue never waits', (
-    tester,
-  ) async {
-    var calls = 0;
-    await tester.pumpWidget(_app(onContinue: () => calls++));
-
-    expect(
-      find.text('Learn words in context. Build natural sentences'),
-      findsOneWidget,
-    );
-    expect(find.text('You’re learning English'), findsOneWidget);
-    expect(find.text('Continue'), findsOneWidget);
-
-    await tester.tap(find.text('Continue'));
-    expect(calls, 1);
-  });
-
-  testWidgets('reduced motion renders corrected messages and popup once', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(430, 932);
     tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(_app(onContinue: () {}, reducedMotion: true));
-
-    expect(find.byKey(const Key('learning-outgoing-message')), findsOneWidget);
-    expect(find.byKey(const Key('learning-incoming-message')), findsOneWidget);
-    expect(
-      tester
-          .widget<AnimatedOpacity>(find.byKey(const Key('vocabulary-popup')))
-          .opacity,
-      1,
-    );
-    expect(find.text('exquisite'), findsNWidgets(2));
-    expect(find.text('vorzüglich'), findsOneWidget);
-
-    final popupSize = tester.getSize(find.byKey(const Key('vocabulary-popup')));
-    expect(popupSize.width, 160);
-    expect(
-      popupSize.height,
-      lessThan(200),
-      reason: 'The vocabulary popup must remain a compact anchored card.',
-    );
-    final popupRect = tester.getRect(find.byKey(const Key('vocabulary-popup')));
-    final anchorRect = tester.getRect(
-      find.byKey(const Key('vocabulary-anchor')),
-    );
-    expect(popupRect.bottom, lessThanOrEqualTo(anchorRect.top - 9));
-  });
-
-  testWidgets('reshapes the outgoing bubble once while text stays hidden', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(430, 932);
-    tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(_app(onContinue: () {}));
-    await tester.pump(const Duration(milliseconds: 3460));
-    final authoredRect = tester.getRect(
-      find.byKey(const Key('learning-outgoing-message')),
-    );
-
-    await tester.pump(const Duration(milliseconds: 60));
-    final clearingRect = tester.getRect(
-      find.byKey(const Key('learning-outgoing-message')),
-    );
-    expect(clearingRect.size, authoredRect.size);
-
-    await tester.pump(const Duration(milliseconds: 130));
-    await tester.pump(const Duration(milliseconds: 150));
-    final reshapedRect = tester.getRect(
-      find.byKey(const Key('learning-outgoing-message')),
-    );
-    await tester.pump(const Duration(milliseconds: 220));
-    expect(
-      tester.getRect(find.byKey(const Key('learning-outgoing-message'))).size,
-      reshapedRect.size,
-      reason: 'The bubble must be settled before the corrected text lands.',
-    );
-  });
-
-  testWidgets('200% text keeps the vocabulary popup below the status', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(430, 932);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      _app(
-        onContinue: () {},
-        reducedMotion: true,
-        textScaler: const TextScaler.linear(2),
-      ),
-    );
-
-    final popupRect = tester.getRect(find.byKey(const Key('vocabulary-popup')));
-    final anchorRect = tester.getRect(
-      find.byKey(const Key('vocabulary-anchor')),
-    );
-    final statusRect = tester.getRect(find.text('You’re learning English'));
-
-    expect(popupRect.left, greaterThanOrEqualTo(12));
-    expect(popupRect.right, lessThanOrEqualTo(418));
-    expect(popupRect.top, greaterThanOrEqualTo(statusRect.bottom));
-    expect(popupRect.bottom, lessThanOrEqualTo(anchorRect.top - 9));
-  });
-
-  testWidgets('language control changes the interface language', (
-    tester,
-  ) async {
-    String? selected;
-    await tester.pumpWidget(
-      _app(
-        onContinue: () {},
-        reducedMotion: true,
-        onLanguage: (value) async => selected = value,
-      ),
-    );
-
-    await tester.tap(find.text('EN'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Deutsch'));
-    await tester.pumpAndSettle();
-
-    expect(selected, 'de');
-  });
-
-  testWidgets('audio failure is non-blocking and route disposal stops speech', (
-    tester,
-  ) async {
-    var stops = 0;
-    await tester.pumpWidget(
-      _app(
-        onContinue: () {},
-        reducedMotion: true,
-        onPlayAudio: () async => throw StateError('tts unavailable'),
-        onStopAudio: () async => stops++,
-      ),
-    );
-
-    final audioButton = tester.widget<IconButton>(
-      find.descendant(
-        of: find.byKey(const Key('vocabulary-popup')),
-        matching: find.byType(IconButton),
-      ),
-    );
-    audioButton.onPressed!();
-    await tester.pump();
-    expect(tester.takeException(), isNull);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-    expect(stops, 1);
+    for (final width in [360.0, 390.0, 430.0]) {
+      for (final scale in [1.0, 2.0]) {
+        tester.view.physicalSize = Size(width, 844);
+        await tester.pumpWidget(app(reduced: true, scale: scale));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        await tester.ensureVisible(find.byKey(const Key('demo1-composer')));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Continue').hitTestable(), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      }
+    }
   });
 }

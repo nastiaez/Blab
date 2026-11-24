@@ -2,6 +2,8 @@ import 'package:blab/app/theme.dart';
 import 'package:blab/features/onboarding/welcome_screen.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:blab/features/onboarding/widgets/onboarding_top_bar.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _app({required VoidCallback onContinue}) {
@@ -18,6 +20,30 @@ Widget _app({required VoidCallback onContinue}) {
 }
 
 void main() {
+  testWidgets(
+    '21587 official supplied black vector, unchanged shared header dimensions',
+    (tester) async {
+      await tester.pumpWidget(_app(onContinue: () {}));
+      await tester.pumpAndSettle();
+      final logo = tester.widget<SvgPicture>(
+        find
+            .descendant(
+              of: find.byType(OnboardingTopBar),
+              matching: find.byType(SvgPicture),
+            )
+            .first,
+      );
+      expect(
+        (logo.bytesLoader as SvgAssetLoader).assetName,
+        'assets/onboarding/blab-logo-official-black.svg',
+      );
+      expect(logo.width, 104);
+      expect(logo.height, isNull);
+      expect(tester.getSize(find.byType(OnboardingTopBar)).height, 68);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('renders the approved Welcome composition at 430 x 932', (
     tester,
   ) async {

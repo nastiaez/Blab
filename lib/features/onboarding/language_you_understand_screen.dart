@@ -14,12 +14,18 @@ class LanguageYouUnderstandScreen extends ConsumerStatefulWidget {
     required this.onBack,
     required this.onComplete,
     this.initialLanguageCode,
+    this.learningLanguage = false,
+    this.onConfirm,
+    this.onSelectionChanged,
     super.key,
   });
 
   final VoidCallback onBack;
   final VoidCallback onComplete;
   final String? initialLanguageCode;
+  final bool learningLanguage;
+  final Future<void> Function(String)? onConfirm;
+  final ValueChanged<String>? onSelectionChanged;
 
   @override
   ConsumerState<LanguageYouUnderstandScreen> createState() =>
@@ -40,7 +46,12 @@ class _LanguageYouUnderstandScreenState
       _error = null;
     });
     try {
-      await ref.read(confirmOnboardingLanguageActionProvider)(selected);
+      final ConfirmOnboardingLanguageAction action =
+          widget.onConfirm ??
+          ref.read<ConfirmOnboardingLanguageAction>(
+            confirmOnboardingLanguageActionProvider,
+          );
+      await action(selected);
       if (mounted) widget.onComplete();
     } catch (_) {
       if (mounted) {
@@ -62,7 +73,9 @@ class _LanguageYouUnderstandScreenState
         body: Column(
           children: [
             OnboardingFormTopBar(
-              title: context.l10n.languageYouUnderstandTitle,
+              title: widget.learningLanguage
+                  ? context.l10n.onboardingLearningLanguageTitle
+                  : context.l10n.languageYouUnderstandTitle,
               onBack: widget.onBack,
               centerTitle: true,
             ),
@@ -71,7 +84,9 @@ class _LanguageYouUnderstandScreenState
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  context.l10n.languageYouUnderstandSubtitle,
+                  widget.learningLanguage
+                      ? context.l10n.onboardingLearningLanguageSubtitle
+                      : context.l10n.languageYouUnderstandSubtitle,
                   style: const TextStyle(
                     color: OnboardingTheme.muted,
                     fontSize: 14,
@@ -88,6 +103,9 @@ class _LanguageYouUnderstandScreenState
                     : (value) => setState(() {
                         _selected = value;
                         _error = null;
+                        if (value != null) {
+                          widget.onSelectionChanged?.call(value);
+                        }
                       }),
                 child: ListView.builder(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -100,6 +118,7 @@ class _LanguageYouUnderstandScreenState
                       language.code,
                     );
                     void select() {
+                      widget.onSelectionChanged?.call(language.code);
                       setState(() {
                         _selected = language.code;
                         _error = null;
@@ -189,7 +208,7 @@ class _LanguageYouUnderstandScreenState
                 16 + MediaQuery.paddingOf(context).bottom,
               ),
               child: BlabButton.onboarding(
-                label: context.l10n.startChatting,
+                label: context.l10n.continueAction,
                 onPressed: _selected == null ? null : _submit,
                 loading: _busy,
               ),

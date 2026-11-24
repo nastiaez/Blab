@@ -740,15 +740,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Turn chats with friends into language practice';
 
   @override
-  String get onboardingLearnTitle =>
-      'Learn words in context. Build natural sentences';
+  String get onboardingLearnTitle => 'Build natural sentences';
 
   @override
-  String get onboardingLearningStatus => 'You’re learning English';
+  String get onboardingLearningStatus =>
+      'Chat with friends. Blab corrects and translates.';
 
   @override
   String get onboardingLearningConversationSemantics =>
-      'English practice conversation with a correction and translation';
+      'German practice conversation with a word-order correction and translation from English';
 
   @override
   String get signupMethodTitle => 'Sign up to\nstart learning';
@@ -792,6 +792,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextAction => 'Next';
+
+  @override
+  String get onboardingLearningLanguageTitle => 'Language you want to learn';
+
+  @override
+  String get onboardingLearningLanguageSubtitle =>
+      'Choose the language you want to practise in your chats. You can change it later.';
 
   @override
   String get languageYouUnderstandTitle => 'Language you understand';

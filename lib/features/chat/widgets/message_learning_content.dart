@@ -82,9 +82,11 @@ class MessageLearningContent extends StatelessWidget {
     this.groupConversation = false,
     this.mentions = const [],
     this.viewerId,
+    this.staticLearningText = false,
   });
 
   final bool groupConversation;
+  final bool staticLearningText;
   final List<MessageMention> mentions;
   final String? viewerId;
   final String authoredText;
@@ -176,6 +178,9 @@ class MessageLearningContent extends StatelessWidget {
       List<MessageToken> tokens,
       TextStyle style,
     ) {
+      if (staticLearningText) {
+        return authored(text, style);
+      }
       final spans =
           translation?.value?.mentionSpans[text] ??
           (text == authoredText ? mentions : const <MessageMention>[]);

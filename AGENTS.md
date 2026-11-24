@@ -122,6 +122,10 @@ Hygiene:
 Follow [`.codex/instructions.md`](./.codex/instructions.md) whenever work matches a task in the owner-facing Play Store tracker. A tracker checkbox may be committed as complete only after the owner explicitly confirms the matching manual test passed.
 
 
+## Approval authority — Ash6293335913, 24 November 2026, topic7501/message21764
+
+Ash explicitly stated: "Nastia has all approvals for everything related to Blab". Nastia356111473 approvals cover Blab design, implementation, commit, main integration, backend deployment and app release. This supersedes Ash-only confirmation language below and the earlier narrower delegation. Do not request Ash confirmation again when Nastia approved the scope. Preserve actual visual/workflow approval, required testing, environment/signing, private-audience and user-data gates; do not infer public-store rollout, expanded audiences or unrelated migrations. <!-- project: github.com/aswinckr/clawdbot -->
+
 ## Owner-approved delivery workflow (13 October 2026)
 
 - Always work in a dedicated Git worktree based on current remote main; do not implement directly on main.

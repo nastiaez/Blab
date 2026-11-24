@@ -21,6 +21,8 @@ const String kPendingInterfaceLanguageSyncKey =
 const String kPendingInterfaceLanguageSyncUserIdKey =
     'interface_language:pending_sync_user_id';
 const String kAccountInterfaceLanguageKeyPrefix = 'interface_language:account:';
+const String kAccountOnboardingLanguagesKeyPrefix =
+    'onboarding:language-default:account:';
 const String kNotificationPermissionRequestedKey =
     'notifications_permission_requested';
 const String kNotificationReminderDismissedKey =
