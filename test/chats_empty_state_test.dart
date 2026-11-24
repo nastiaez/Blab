@@ -1,3 +1,4 @@
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/chats/chats_screen.dart';
 import 'package:blab/l10n/l10n.dart';
@@ -57,6 +58,19 @@ Future<void> _pumpChats(WidgetTester tester, List<Chat> chats) async {
 }
 
 void main() {
+  testWidgets('Chats uses official untinted onboarding logo in existing slot', (
+    tester,
+  ) async {
+    await _pumpChats(tester, const <Chat>[]);
+    final logo = tester.widget<SvgPicture>(find.byType(SvgPicture).first);
+    expect(
+      (logo.bytesLoader as SvgAssetLoader).assetName,
+      'assets/onboarding/blab-logo-official-black.svg',
+    );
+    expect(logo.height, 22);
+    expect(logo.colorFilter, isNull);
+  });
+
   testWidgets('keyboard insets never lift the Chats plus button', (
     tester,
   ) async {

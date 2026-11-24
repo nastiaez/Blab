@@ -91,7 +91,10 @@ class ChatsScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        title: SvgPicture.asset('assets/blab-logo 2.svg', height: 22),
+        title: SvgPicture.asset(
+          'assets/onboarding/blab-logo-official-black.svg',
+          height: 22,
+        ),
       ),
       body: Column(
         children: [
