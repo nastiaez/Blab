@@ -74,7 +74,9 @@ void main() {
       await tester.pump();
       await expectLater(
         find.byType(MaterialApp),
-        matchesGoldenFile('../../docs/qa/demo1-21344/learn-reduced-motion.png'),
+        matchesGoldenFile(
+          '../../docs/qa/onboarding-approved-21796/learn-reduced-motion.png',
+        ),
       );
 
       await tester.pumpWidget(

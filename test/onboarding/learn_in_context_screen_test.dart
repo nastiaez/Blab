@@ -89,6 +89,10 @@ void main() {
   testWidgets('hold pauses draft and release resumes same position', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(app());
     await tester.pump(const Duration(milliseconds: 8600));
     final before = tester
