@@ -14,6 +14,43 @@ export 'widgets/demo_conversation_phone.dart' show demo1ComposerText;
 
 const demo1Cycle = Duration(milliseconds: 14000);
 
+double _normalDemoPhoneHeight(BuildContext context, double available) {
+  double measure(String text, double size, double height, double width) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(fontSize: size, height: height),
+      ),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: Directionality.of(context),
+    )..layout(maxWidth: width);
+    final result = painter.height;
+    painter.dispose();
+    return result;
+  }
+
+  final body =
+      44 +
+      measure('Was wir kochen kochen wir heute Abend?', 15, 1.4, 226) +
+      20 +
+      16 +
+      measure(demo2German, 16, 1.4, 218) +
+      measure(demo2English, 14, 1.4, 218) +
+      17 +
+      22 +
+      2 +
+      measure(context.l10n.hideMessageTranslation, 14, 1.25, 244) +
+      2 +
+      16 +
+      measure('Ich freue mich darauf!', 15, 1.4, 226) +
+      20 +
+      12;
+  return math.max(
+    math.min(468, math.max(360, available - 126)),
+    body + 64 + 56 + 2,
+  );
+}
+
 class LearnInContextScreen extends StatefulWidget {
   const LearnInContextScreen({
     required this.interfaceLanguageCode,
@@ -186,10 +223,7 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
                       width: large ? math.min(bounds.maxWidth - 32, 390) : 306,
                       height: large
                           ? (widget.demoStep == 2 ? 1100 : 800)
-                          : math.min(
-                              468,
-                              math.max(360, bounds.maxHeight - 126),
-                            ),
+                          : _normalDemoPhoneHeight(context, bounds.maxHeight),
                       child: Listener(
                         key: const Key('learning-animation-hold-target'),
                         behavior: HitTestBehavior.translucent,

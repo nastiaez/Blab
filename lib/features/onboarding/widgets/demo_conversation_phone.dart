@@ -313,20 +313,17 @@ class _OutgoingBubble extends StatelessWidget {
       text = Opacity(opacity: 0, child: correctedText);
     } else if (phase == LearningDialoguePhase.landing) {
       final progress = learningDialoguePhaseProgress(elapsed, 2230, 220);
-      text = Transform.translate(
-        offset: Offset(0, 2 * (1 - progress)),
-        child: _HorizontalTextMask(
-          progress: progress,
-          revealing: true,
-          child: correctedText,
-        ),
+      text = _HorizontalTextMask(
+        progress: progress,
+        revealing: true,
+        child: correctedText,
       );
     }
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 150),
       curve: const Cubic(0.22, 0.72, 0.24, 1),
-      alignment: Alignment.centerRight,
+      alignment: Alignment.topRight,
       clipBehavior: Clip.none,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 250),

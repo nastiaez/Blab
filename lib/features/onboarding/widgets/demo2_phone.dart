@@ -165,7 +165,6 @@ class _Demo2PhoneState extends State<Demo2Phone> {
           reduced: true,
           large: widget.large,
           bodyKey: _body,
-          conversationTop: 24,
           incomingContent: KeyedSubtree(
             key: const Key('learning-incoming-message'),
             child: Semantics(

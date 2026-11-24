@@ -161,7 +161,6 @@ class _Demo3PhoneState extends State<Demo3Phone> {
           reduced: true,
           large: widget.large,
           bodyKey: _body,
-          conversationTop: 64,
           outgoingWrapper: (child) => GestureDetector(
             onLongPress: _open,
             child: KeyedSubtree(key: _bubble, child: child),
