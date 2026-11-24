@@ -73,7 +73,9 @@ class _OnboardingBootstrapScreenState
         destination.asData?.value == OnboardingDestination.retry) {
       ref.read(openingDestinationReadyProvider)?.call();
     }
-    destination.whenData(_deliverWhenReady);
+    // A refreshed provider retains its previous value while loading. Never
+    // navigate back to that stale setup stage after name/language confirmation.
+    if (!destination.isLoading) destination.whenData(_deliverWhenReady);
 
     return OnboardingScaffold(
       body: Center(

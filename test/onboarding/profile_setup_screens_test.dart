@@ -142,7 +142,7 @@ void main() {
     expect(germanSemantics.flagsCollection.isChecked, isNot(CheckedState.none));
     expect(germanSemantics.flagsCollection.isInMutuallyExclusiveGroup, isTrue);
     final disabled = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Start chatting'),
+      find.widgetWithText(FilledButton, 'Continue'),
     );
     expect(disabled.onPressed, isNull);
 
@@ -151,7 +151,7 @@ void main() {
 
     await tester.tap(find.text('German'));
     await tester.pump();
-    await tester.tap(find.text('Start chatting'));
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     expect(confirmed, 'de');
     semantics.dispose();

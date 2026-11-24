@@ -31,6 +31,7 @@ class LocalAccountDataStore {
           key.startsWith('$kPrivacyTypingIndicatorsKey:account:') ||
           key.startsWith('$kPrivacyReadReceiptsKey:account:') ||
           key.startsWith(kAccountInterfaceLanguageKeyPrefix) ||
+          key.startsWith(kAccountOnboardingLanguagesKeyPrefix) ||
           key.startsWith(kPendingSendsKeyPrefix) ||
           key.startsWith(kCachedChatsKeyPrefix) ||
           key.startsWith(kCachedProfileKeyPrefix) ||
@@ -84,6 +85,7 @@ class LocalAccountDataStore {
   static bool _belongsToOwner(String key, String owner) {
     const prefixes = [
       kAccountInterfaceLanguageKeyPrefix,
+      kAccountOnboardingLanguagesKeyPrefix,
       kPendingSendsKeyPrefix,
       kCachedChatsKeyPrefix,
       kCachedProfileKeyPrefix,

@@ -271,6 +271,33 @@ class ProfileService {
     return progress;
   }
 
+  Future<OnboardingProgress> confirmOnboardingLanguages({
+    required String learningLanguage,
+    required String knownLanguage,
+    int version = currentOnboardingVersion,
+  }) async {
+    final account = _client.auth.currentUser?.id;
+    final value = await _client.rpc(
+      'confirm_my_onboarding_languages',
+      params: {
+        'p_version': version,
+        'p_learning_language': learningLanguage,
+        'p_known_language': knownLanguage,
+      },
+    );
+    final progress = _onboardingProgress(value);
+    if (progress.version != version ||
+        progress.stage != OnboardingStage.complete ||
+        value is! Map ||
+        !kBlabLanguages.any(
+          (language) => language.code == value['defaultLearningLanguage'],
+        )) {
+      throw StateError('invalid_onboarding_confirmation');
+    }
+    await _invalidateCachedProfile(account);
+    return progress;
+  }
+
   Future<OnboardingProgress> confirmOnboardingLanguage(
     String languageCode, {
     int version = currentOnboardingVersion,

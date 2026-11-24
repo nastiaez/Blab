@@ -125,12 +125,12 @@ void main() {
 
     await tester.tap(find.text('German'));
     await tester.pump();
-    await tester.tap(find.text('Start chatting'));
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     expect(find.text("Couldn't save language. Try again."), findsOneWidget);
     expect(completions, 0);
 
-    await tester.tap(find.text('Start chatting'));
+    await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     expect(attempts, 2);
     expect(completions, 1);

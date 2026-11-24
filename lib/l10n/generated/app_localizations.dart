@@ -1437,19 +1437,19 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingLearnTitle.
   ///
   /// In en, this message translates to:
-  /// **'Learn words in context. Build natural sentences'**
+  /// **'Build natural sentences'**
   String get onboardingLearnTitle;
 
   /// No description provided for @onboardingLearningStatus.
   ///
   /// In en, this message translates to:
-  /// **'You’re learning English'**
+  /// **'Chat with friends. Blab corrects and translates.'**
   String get onboardingLearningStatus;
 
   /// No description provided for @onboardingLearningConversationSemantics.
   ///
   /// In en, this message translates to:
-  /// **'English practice conversation with a correction and translation'**
+  /// **'German practice conversation with a word-order correction and translation from English'**
   String get onboardingLearningConversationSemantics;
 
   /// No description provided for @signupMethodTitle.
@@ -1535,6 +1535,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next'**
   String get nextAction;
+
+  /// No description provided for @onboardingLearningLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language you want to learn'**
+  String get onboardingLearningLanguageTitle;
+
+  /// No description provided for @onboardingLearningLanguageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the language you want to practise in your chats. You can change it later.'**
+  String get onboardingLearningLanguageSubtitle;
 
   /// No description provided for @languageYouUnderstandTitle.
   ///

@@ -26,6 +26,7 @@ class MessageActionRow extends StatelessWidget {
     this.now,
     this.readOnly = false,
     this.accountDeleted = false,
+    this.visibleActions,
   });
 
   final Message message;
@@ -40,6 +41,9 @@ class MessageActionRow extends StatelessWidget {
   final bool readOnly;
   final bool accountDeleted;
 
+  /// Optional presentation subset. Null retains every production-eligible action.
+  final Set<MessageAction>? visibleActions;
+
   @override
   Widget build(BuildContext context) {
     final actions = actionsForMessage(
@@ -52,6 +56,7 @@ class MessageActionRow extends StatelessWidget {
       now: now,
     );
     final eligible = actions
+        .where((action) => visibleActions?.contains(action) ?? true)
         .where(
           (action) =>
               !accountDeleted ||

@@ -802,6 +802,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get nextAction => 'Weiter';
 
   @override
+  String get onboardingLearningLanguageTitle => 'Language you want to learn';
+
+  @override
+  String get onboardingLearningLanguageSubtitle =>
+      'Choose the language you want to practise in your chats. You can change it later.';
+
+  @override
   String get languageYouUnderstandTitle => 'Sprache, die du verstehst';
 
   @override

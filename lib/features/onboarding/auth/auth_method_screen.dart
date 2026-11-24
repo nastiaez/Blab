@@ -129,64 +129,79 @@ class _AuthMethodScreenState extends State<AuthMethodScreen> {
         ),
       ),
     ];
-    return OnboardingScaffold(
-      body: Column(
-        children: [
-          OnboardingTopBar(
-            languageCode: widget.interfaceLanguageCode,
-            onBack: widget.onBack,
-            onLanguagePressed: _changeLanguage,
-          ),
-          Expanded(
-            child: largeText
-                ? SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    padding: EdgeInsets.fromLTRB(
-                      OnboardingTheme.horizontalGutter,
-                      40,
-                      OnboardingTheme.horizontalGutter,
-                      20 + MediaQuery.paddingOf(context).bottom,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ...methodControls,
-                        if (isSignUp) ...[
-                          const SizedBox(height: 40),
-                          _LegalLinks(
-                            onTerms: widget.onTerms,
-                            onPrivacy: widget.onPrivacy,
-                          ),
-                        ],
-                      ],
-                    ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: OnboardingTheme.horizontalGutter,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Spacer(flex: 5),
-                        ...methodControls,
-                        const Spacer(flex: 4),
-                        if (isSignUp)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: 20 + MediaQuery.paddingOf(context).bottom,
-                            ),
-                            child: _LegalLinks(
+    final screen = PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_busy) widget.onBack();
+      },
+      child: OnboardingScaffold(
+        body: Column(
+          children: [
+            OnboardingTopBar(
+              languageCode: widget.interfaceLanguageCode,
+              onBack: widget.onBack,
+              onLanguagePressed: _changeLanguage,
+            ),
+            Expanded(
+              child: largeText
+                  ? SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        OnboardingTheme.horizontalGutter,
+                        40,
+                        OnboardingTheme.horizontalGutter,
+                        20 + MediaQuery.paddingOf(context).bottom,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ...methodControls,
+                          if (isSignUp) ...[
+                            const SizedBox(height: 40),
+                            _LegalLinks(
                               onTerms: widget.onTerms,
                               onPrivacy: widget.onPrivacy,
                             ),
-                          ),
-                      ],
+                          ],
+                        ],
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: OnboardingTheme.horizontalGutter,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Spacer(flex: 5),
+                          ...methodControls,
+                          const Spacer(flex: 4),
+                          if (isSignUp)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    20 + MediaQuery.paddingOf(context).bottom,
+                              ),
+                              child: _LegalLinks(
+                                onTerms: widget.onTerms,
+                                onPrivacy: widget.onPrivacy,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
+    );
+    if (Router.maybeOf(context) == null) return screen;
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (!_busy) widget.onBack();
+        return true;
+      },
+      child: screen,
     );
   }
 

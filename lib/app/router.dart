@@ -30,6 +30,8 @@ import '../features/onboarding/auth/email_auth_screen.dart';
 import '../features/onboarding/auth/reset_link_invalid_screen.dart';
 import '../features/onboarding/confirm_name_screen.dart';
 import '../features/onboarding/language_you_understand_screen.dart';
+import '../features/onboarding/learning_language_screen.dart';
+import '../features/onboarding/state/language_draft.dart';
 import '../features/onboarding/learn_in_context_screen.dart';
 import '../features/onboarding/onboarding_bootstrap_screen.dart';
 import '../features/onboarding/state/learning_audio.dart';
@@ -62,6 +64,10 @@ const _publicPaths = <String>{
   '/bootstrap',
   '/onboarding/welcome',
   '/onboarding/learn',
+  '/onboarding/context',
+  '/onboarding/grammar',
+  '/onboarding/learning-language',
+  '/onboarding/understood-language',
   '/auth',
   '/auth/forgot',
   '/auth/forgot/sent',
@@ -172,7 +178,7 @@ GoRoute _blabRoute({
 final GoRouter blabRouter = GoRouter(
   initialLocation: '/bootstrap',
   observers: [appSnackRouteObserver],
-  redirect: (context, state) {
+  redirect: (context, state) async {
     final loc = state.matchedLocation;
     // Custom-scheme deep links land here as `blab://auth/...` because
     // Flutter feeds the full URI to go_router. Parse and bounce to the
@@ -184,6 +190,12 @@ final GoRouter blabRouter = GoRouter(
       }
     }
     final signedIn = _currentSessionOrNull() != null;
+    if (!signedIn &&
+        (loc == '/auth/signup' || loc.startsWith('/auth/signup/'))) {
+      final draft = await LanguageDraftStore().guest();
+      if (draft.learning == null) return '/onboarding/learning-language';
+      if (draft.understood == null) return '/onboarding/understood-language';
+    }
     if (!signedIn && !_isPublic(loc)) {
       return '/onboarding/welcome';
     }
@@ -290,7 +302,9 @@ final GoRouter blabRouter = GoRouter(
           return LearnInContextScreen(
             interfaceLanguageCode: locale.code,
             onBack: () => context.go('/onboarding/welcome'),
-            onContinue: () => _completeLearningIntro(context, ref),
+            onContinue: () => context.go('/onboarding/context'),
+            // Bypass all demos via the established resolver; keep preferences.
+            onSkip: () => _completeLearningIntro(context, ref),
             onChangeInterfaceLanguage: (code) => ref
                 .read(interfaceLanguageProvider.notifier)
                 .set(interfaceLanguageForCode(code)),
@@ -299,6 +313,56 @@ final GoRouter blabRouter = GoRouter(
           );
         },
       ),
+    ),
+    _blabRoute(
+      path: '/onboarding/context',
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) {
+          final locale = ref.watch(interfaceLanguageProvider);
+          final audio = ref.watch(learningAudioProvider);
+          return LearnInContextScreen(
+            demoStep: 2,
+            interfaceLanguageCode: locale.code,
+            onBack: () => context.go('/onboarding/learn'),
+            onContinue: () => context.go('/onboarding/grammar'),
+            onSkip: () => _completeLearningIntro(context, ref),
+            onChangeInterfaceLanguage: (code) => ref
+                .read(interfaceLanguageProvider.notifier)
+                .set(interfaceLanguageForCode(code)),
+            onPlayAudio: audio.speakExquisite,
+            onStopAudio: audio.stop,
+          );
+        },
+      ),
+    ),
+    _blabRoute(
+      path: '/onboarding/grammar',
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) {
+          final locale = ref.watch(interfaceLanguageProvider);
+          final audio = ref.watch(learningAudioProvider);
+          return LearnInContextScreen(
+            demoStep: 3,
+            interfaceLanguageCode: locale.code,
+            onBack: () => context.go('/onboarding/context'),
+            onContinue: () => _completeLearningIntro(context, ref),
+            onSkip: () => _completeLearningIntro(context, ref),
+            onChangeInterfaceLanguage: (code) => ref
+                .read(interfaceLanguageProvider.notifier)
+                .set(interfaceLanguageForCode(code)),
+            onPlayAudio: audio.speakExquisite,
+            onStopAudio: audio.stop,
+          );
+        },
+      ),
+    ),
+    _blabRoute(
+      path: '/onboarding/learning-language',
+      builder: (context, state) => const _GuestLanguageRoute(learning: true),
+    ),
+    _blabRoute(
+      path: '/onboarding/understood-language',
+      builder: (context, state) => const _GuestLanguageRoute(learning: false),
     ),
     _blabRoute(
       path: '/auth/signup',
@@ -558,6 +622,10 @@ Future<void> _openOnboardingDestination(
     OnboardingDestination.bootstrap || OnboardingDestination.retry => null,
     OnboardingDestination.pendingInvite => null,
   };
+  if (destination == OnboardingDestination.chats ||
+      destination == OnboardingDestination.pendingInvite) {
+    ProviderScope.containerOf(context).invalidate(currentProfileProvider);
+  }
   if (destination == OnboardingDestination.pendingInvite) {
     final token = await loadPendingInvite();
     if (!context.mounted) return;
@@ -572,11 +640,85 @@ Future<void> _openOnboardingDestination(
 }
 
 Future<void> _completeLearningIntro(BuildContext context, WidgetRef ref) async {
-  if (ref.read(supabaseAuthServiceProvider).currentSession == null) {
-    if (context.mounted) context.go('/auth/signup');
-    return;
+  if (context.mounted) context.go('/onboarding/learning-language');
+}
+
+Future<void> _bindGuestLanguageChoices(User? user) async {
+  await LanguageDraftStore().bindNewAccount(
+    userId: user?.id,
+    isNewAccount:
+        user != null &&
+        isNewAuthAccount(
+          createdAt: user.createdAt,
+          lastSignInAt: user.lastSignInAt,
+        ),
+  );
+}
+
+class _GuestLanguageRoute extends ConsumerWidget {
+  const _GuestLanguageRoute({required this.learning});
+  final bool learning;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref
+        .watch(languageDraftProvider)
+        .when(
+          loading: () => const _ProfileLoadingScreen(),
+          error: (_, _) => _ProfileLoadingScreen(
+            error: true,
+            onRetry: () => ref.invalidate(languageDraftProvider),
+          ),
+          data: (draft) {
+            Future<void> save(String code) => ref
+                .read(languageDraftProvider.notifier)
+                .choose(
+                  learning: learning ? code : null,
+                  understood: learning ? null : code,
+                );
+            void selection(String code) {
+              unawaited(save(code).catchError((Object _) {}));
+            }
+
+            void back() => context.go(
+              learning
+                  ? '/onboarding/grammar'
+                  : '/onboarding/learning-language',
+            );
+            void next() {
+              if (learning) {
+                context.go('/onboarding/understood-language');
+                return;
+              }
+              if (draft.learning == null) {
+                context.go('/onboarding/learning-language');
+                return;
+              }
+              if (ref.read(supabaseAuthServiceProvider).currentSession ==
+                  null) {
+                context.go('/auth/signup');
+              } else {
+                unawaited(_acknowledgeIntroAndResolve(context, ref));
+              }
+            }
+
+            return learning
+                ? LearningLanguageScreen(
+                    initialLanguageCode: draft.learning,
+                    onBack: back,
+                    onComplete: next,
+                    onConfirm: save,
+                    onSelectionChanged: selection,
+                  )
+                : LanguageYouUnderstandScreen(
+                    initialLanguageCode: draft.understood,
+                    onBack: back,
+                    onComplete: next,
+                    onConfirm: save,
+                    onSelectionChanged: selection,
+                  );
+          },
+        );
   }
-  await _acknowledgeIntroAndResolve(context, ref);
 }
 
 Future<void> _acknowledgeIntroAndResolve(
@@ -603,7 +745,7 @@ Widget _authMethodRoute({
       return AuthMethodScreen(
         mode: mode,
         interfaceLanguageCode: locale.code,
-        onBack: () => context.go('/onboarding/learn'),
+        onBack: () => context.go('/onboarding/understood-language'),
         onGoogle: () async {
           await ref.read(socialAuthActionProvider)('google');
           final user = ref.read(supabaseAuthServiceProvider).currentUser;
@@ -616,6 +758,8 @@ Widget _authMethodRoute({
                 ),
             userId: user?.id,
           );
+          await _bindGuestLanguageChoices(user);
+          ref.invalidate(languageDraftProvider);
           if (context.mounted) {
             await _acknowledgeIntroAndResolve(context, ref);
           }
@@ -632,6 +776,8 @@ Widget _authMethodRoute({
                 ),
             userId: user?.id,
           );
+          await _bindGuestLanguageChoices(user);
+          ref.invalidate(languageDraftProvider);
           if (context.mounted) {
             await _acknowledgeIntroAndResolve(context, ref);
           }
@@ -668,6 +814,10 @@ Widget _emailAuthRoute({
         isNewAccount: mode == AuthMode.signUp,
         userId: container.read(supabaseAuthServiceProvider).currentUser?.id,
       );
+      await _bindGuestLanguageChoices(
+        container.read(supabaseAuthServiceProvider).currentUser,
+      );
+      container.invalidate(languageDraftProvider);
       try {
         await container.read(profileServiceProvider).acknowledgeOnboarding();
       } catch (_) {
@@ -714,8 +864,9 @@ class _ConfirmNameRoute extends ConsumerWidget {
           ),
           onBack: () => context.go('/onboarding/learn'),
           onComplete: () {
-            ref.invalidate(onboardingDestinationProvider);
             context.go('/bootstrap');
+            ref.invalidate(currentProfileProvider);
+            ref.invalidate(onboardingDestinationProvider);
           },
         );
       },

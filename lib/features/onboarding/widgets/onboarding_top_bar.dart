@@ -35,8 +35,8 @@ class OnboardingTopBar extends StatelessWidget {
               ),
             ),
           SvgPicture.asset(
-            'assets/onboarding/blab-logo-black.svg',
-            width: 56,
+            'assets/onboarding/blab-logo-official-black.svg',
+            width: 104,
             excludeFromSemantics: true,
           ),
           Positioned(

@@ -40,6 +40,20 @@ String deepDiveCorrectionHeading(String text) {
   return text;
 }
 
+/// Preloaded, local onboarding content. Live message routes never supply this.
+@immutable
+class DeepDiveLesson {
+  const DeepDiveLesson({
+    required this.heading,
+    required this.explanation,
+    required this.onBack,
+    this.compactSpacing = false,
+  });
+  final String heading, explanation;
+  final VoidCallback onBack;
+  final bool compactSpacing;
+}
+
 /// Immutable viewer-resolved snapshot. Never guesses a language from an author.
 class DeepDiveScreen extends ConsumerStatefulWidget {
   const DeepDiveScreen({
@@ -59,6 +73,7 @@ class DeepDiveScreen extends ConsumerStatefulWidget {
     this.segments,
     this.corrections = const [],
     this.onRetryTranslation,
+    this.lesson,
   });
   final String messageId,
       authoredText,
@@ -74,6 +89,7 @@ class DeepDiveScreen extends ConsumerStatefulWidget {
   final List<CorrectionSegment>? segments;
   final List<Map<String, dynamic>> corrections;
   final VoidCallback? onRetryTranslation;
+  final DeepDiveLesson? lesson;
   @override
   ConsumerState<DeepDiveScreen> createState() => _DeepDiveScreenState();
 }
@@ -92,6 +108,7 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
   void initState() {
     super.initState();
     _tts = ref.read(ttsServiceProvider);
+    if (widget.lesson != null) _selection.selectMistake(0);
   }
 
   @override
@@ -314,6 +331,7 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
         final mistakeIndex = segment.struck ? activeMistake : null;
         final selectable =
             widget.aidsEnabled &&
+            widget.lesson == null &&
             token.isContent &&
             (mistakeIndex != null ||
                 (widget.wordLookupEnabled &&
@@ -337,9 +355,13 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
           color: _selectedWord == i
               ? BlabColors.chatSurface
               : segment.struck
-              ? const Color(0xFF756E67)
+              ? (widget.lesson != null
+                    ? const Color(0xAD231208)
+                    : const Color(0xFF756E67))
               : const Color(0xFF231208),
-          fontWeight: segment.corrected ? FontWeight.w600 : FontWeight.w400,
+          fontWeight: segment.corrected
+              ? (widget.lesson != null ? FontWeight.w700 : FontWeight.w600)
+              : FontWeight.w400,
           backgroundColor: selected ? BlabColors.selectedTint : null,
           decoration: segment.struck
               ? TextDecoration.lineThrough
@@ -347,7 +369,12 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
           decorationStyle: segment.struck
               ? TextDecorationStyle.solid
               : TextDecorationStyle.dotted,
-          decorationColor: const Color(0xFFB6A89D),
+          decorationColor: widget.lesson != null && segment.struck
+              ? const Color(0xAD231208)
+              : const Color(0xFFB6A89D),
+          decorationThickness: widget.lesson != null && segment.struck
+              ? 2
+              : null,
         );
         if (!selectable) {
           for (final part in RegExp(
@@ -489,13 +516,27 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(
           kToolbarHeight +
-              deepDiveTopChromeGap(MediaQuery.paddingOf(context).top),
+              (widget.lesson != null
+                  ? 0
+                  : deepDiveTopChromeGap(MediaQuery.paddingOf(context).top)),
         ),
         child: Padding(
           padding: EdgeInsets.only(
-            top: deepDiveTopChromeGap(MediaQuery.paddingOf(context).top),
+            top: (widget.lesson != null
+                ? 0
+                : deepDiveTopChromeGap(MediaQuery.paddingOf(context).top)),
           ),
           child: BlabAppBar(
+            leading: widget.lesson == null
+                ? null
+                : IconButton(
+                    key: const Key('demo3-close'),
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).backButtonTooltip,
+                    onPressed: widget.lesson!.onBack,
+                    icon: const Icon(Icons.arrow_back),
+                  ),
             title: Text(
               context.l10n.deepDive,
               style: const TextStyle(
@@ -514,13 +555,21 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
           return false;
         },
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            widget.lesson?.compactSpacing == true ? 16 : 24,
+            24,
+            24,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _messageContent(),
               if (widget.aidsEnabled) ...[
-                const SizedBox(height: 20),
+                SizedBox(
+                  key: const Key('deep-dive-message-actions-gap'),
+                  height: widget.lesson?.compactSpacing == true ? 12 : 20,
+                ),
                 Row(
                   children: [
                     IconButton(
@@ -603,7 +652,10 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
                     ),
                 ],
                 if (_selection.slot == DeepDiveLowerSlot.mistake) ...[
-                  const SizedBox(height: 20),
+                  SizedBox(
+                    key: const Key('deep-dive-actions-lesson-gap'),
+                    height: widget.lesson?.compactSpacing == true ? 12 : 20,
+                  ),
                   Text(
                     context.l10n.whyThisMistake,
                     style: const TextStyle(
@@ -621,37 +673,9 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Semantics(
-                              label:
-                                  '${widget.corrections[_selection.mistakeIndex!]['original'] ?? ''} → '
-                                  '${widget.corrections[_selection.mistakeIndex!]['replacement'] ?? ''}',
-                              excludeSemantics: true,
-                              child: Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text:
-                                          widget
-                                              .corrections[_selection
-                                                  .mistakeIndex!]['original']
-                                              ?.toString() ??
-                                          '',
-                                      style: const TextStyle(
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
-                                    ),
-                                    const TextSpan(text: ' → '),
-                                    TextSpan(
-                                      text: deepDiveCorrectionHeading(
-                                        widget
-                                                .corrections[_selection
-                                                    .mistakeIndex!]['replacement']
-                                                ?.toString() ??
-                                            '',
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            if (widget.lesson != null)
+                              Text(
+                                widget.lesson!.heading,
                                 key: const ValueKey(
                                   'deep-dive-mistake-heading',
                                 ),
@@ -660,50 +684,101 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
                                   height: 1.5,
                                   fontWeight: FontWeight.w600,
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            FutureBuilder<Map<String, dynamic>>(
-                              key: ValueKey(_mistake),
-                              future: _mistake,
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState !=
-                                    ConnectionState.done) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-                                if (snapshot.hasError) {
-                                  return Row(
+                              )
+                            else
+                              Semantics(
+                                label:
+                                    '${widget.corrections[_selection.mistakeIndex!]['original'] ?? ''} → '
+                                    '${widget.corrections[_selection.mistakeIndex!]['replacement'] ?? ''}',
+                                excludeSemantics: true,
+                                child: Text.rich(
+                                  TextSpan(
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          context
-                                              .l10n
-                                              .learningDetailsUnavailable,
+                                      TextSpan(
+                                        text:
+                                            widget
+                                                .corrections[_selection
+                                                    .mistakeIndex!]['original']
+                                                ?.toString() ??
+                                            '',
+                                        style: const TextStyle(
+                                          decoration:
+                                              TextDecoration.lineThrough,
                                         ),
                                       ),
-                                      TextButton(
-                                        onPressed: () => _selectMistake(
-                                          _selection.mistakeIndex!,
-                                          retry: true,
+                                      const TextSpan(text: ' → '),
+                                      TextSpan(
+                                        text: deepDiveCorrectionHeading(
+                                          widget
+                                                  .corrections[_selection
+                                                      .mistakeIndex!]['replacement']
+                                                  ?.toString() ??
+                                              '',
                                         ),
-                                        child: Text(context.l10n.retry),
                                       ),
                                     ],
-                                  );
-                                }
-                                final value = snapshot.data!;
-                                return Text(
-                                  value['explanation']?.toString() ??
-                                      context.l10n.learningDetailsUnavailable,
+                                  ),
+                                  key: const ValueKey(
+                                    'deep-dive-mistake-heading',
+                                  ),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     height: 1.5,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              ),
+                            const SizedBox(height: 12),
+                            if (widget.lesson != null)
+                              Text(
+                                widget.lesson!.explanation,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  height: 1.5,
+                                ),
+                              )
+                            else
+                              FutureBuilder<Map<String, dynamic>>(
+                                key: ValueKey(_mistake),
+                                future: _mistake,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState !=
+                                      ConnectionState.done) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
+                                  if (snapshot.hasError) {
+                                    return Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            context
+                                                .l10n
+                                                .learningDetailsUnavailable,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => _selectMistake(
+                                            _selection.mistakeIndex!,
+                                            retry: true,
+                                          ),
+                                          child: Text(context.l10n.retry),
+                                        ),
+                                      ],
+                                    );
+                                  }
+                                  final value = snapshot.data!;
+                                  return Text(
+                                    value['explanation']?.toString() ??
+                                        context.l10n.learningDetailsUnavailable,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      height: 1.5,
+                                    ),
+                                  );
+                                },
+                              ),
                           ],
                         ),
                       ),
