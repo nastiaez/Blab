@@ -1,3 +1,6 @@
+## Invitation logo21955 - in progress
+- Both static invitation routes now use the byte-exact official black wordmark in the unchanged 99×36 slot with contain fitting; copy, routes, token forwarding and store links unchanged. Actual 390×844 mobile and 1440×900 desktop browser screenshots inspected; Nastia approved both screenshots21958/21959 in message21962 and authorized canonical website release; integration/deployment verification in progress. No Android/iOS/backend change. <!-- project: github.com/aswinckr/clawdbot -->
+
 ## Demo title and swipe21914 - in progress
 - Exact21905 approved21911; integration/Android delivery authorized21914. Native candidate accepted; integrated signed Android and delivery pending. No backend/iOS release. <!-- project: github.com/aswinckr/clawdbot -->
 
