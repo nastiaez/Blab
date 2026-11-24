@@ -22,8 +22,18 @@ void main() {
     expect(html, isNot(contains('Pick a language')));
   });
   test('nested invite URL loads the approved logo from the site root', () {
-    final html = File('web/i.html').readAsStringSync();
-    expect(html, contains('src="/blab-logo_black.svg"'));
-    expect(File('web/blab-logo_black.svg').existsSync(), isTrue);
+    final canonical = File(
+      'assets/onboarding/blab-logo-official-black.svg',
+    ).readAsBytesSync();
+    expect(
+      File('web/blab-logo-official-black.svg').readAsBytesSync(),
+      orderedEquals(canonical),
+    );
+    for (final route in ['i', 'i-test']) {
+      final html = File('web/$route.html').readAsStringSync();
+      expect(html, contains('src="/blab-logo-official-black.svg"'));
+      expect(html, contains('width: 99px; height: 36px; object-fit: contain;'));
+      expect(html, isNot(contains('src="/blab-logo_black.svg"')));
+    }
   });
 }
