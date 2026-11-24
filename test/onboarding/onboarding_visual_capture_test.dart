@@ -54,7 +54,7 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile(
-          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/welcome.png',
+          '../../docs/qa/onboarding-approved-21764/welcome.png',
         ),
       );
 
@@ -96,7 +96,7 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile(
-          '../../docs/qa/2026-09-30-onboarding-auth-refresh/430/signup-method.png',
+          '../../docs/qa/onboarding-approved-21764/signup-method.png',
         ),
       );
 
@@ -129,7 +129,9 @@ void main() {
       await tester.pumpAndSettle();
       await expectLater(
         find.byType(MaterialApp),
-        matchesGoldenFile('../../docs/qa/16713/language-onboarding.png'),
+        matchesGoldenFile(
+          '../../docs/qa/onboarding-approved-21764/language-onboarding.png',
+        ),
       );
     },
     // These reviewed baselines use macOS font rasterization.
