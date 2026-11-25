@@ -40,3 +40,22 @@ Actual Android production-sheet/ChatService → normal Alice password auth → i
 
 ## Before deployment
 Execute isolated migration/RLS/concurrency tests; review account-erasure/retention treatment for shared report content; configure trusted environment; preserve the approved separate menu actions; authenticate real Alice/Bob clients; inspect native Android+iOS screenshots and motion against Paper; obtain visual/workflow approval. Inbox implementation does not mean it is live or staffed. No automatic fix, merge, push, production write or tester delivery authorized here.
+
+## BLA-61: backend-only Linear delivery
+
+No web inbox is required. The existing submit action and its receipt are unchanged.
+New production reports queue in the same transaction. The worker sends only the reason and
+opaque report UUID to Linear, using that UUID as the issue ID. Notes, message
+content, translations, and personal details remain in Supabase; authorized
+operators can use the UUID to look up the report. Existing reports are not queued.
+
+Deploy the delivery migration and `deliver-translation-reports` with JWT verification.
+Set the worker's `BLAB_TRANSLATION_LINEAR_API_KEY` (a scoped Linear key with issue
+creation and lookup access) and `BLAB_TRANSLATION_LINEAR_TEAM_ID` on the new
+production Blab project only. Verify its report intake is set to `production`.
+Configure `blab_translation_report_linear_worker_url` in Vault to the exact
+function URL on that same project; dispatch uses the existing
+`blab_worker_service_role_key` Vault secret. The scheduler accepts only the new
+production project’s worker URL and runs once per minute; failed deliveries
+retry with capped backoff. The outbox's delivered timestamp and Linear identifier
+are the delivery receipt, separate from the app's submission receipt.
