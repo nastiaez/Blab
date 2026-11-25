@@ -88,7 +88,7 @@ if [[ "$environment" == 'staging' ]]; then
 else
   [[ "$app_channel" == 'public' ]] || fail 'Production requires the public app channel.'
 fi
-production_ref='bhzcexhebjszwyqvcsxs'
+production_ref='lwsscssuktjlmiqryfnq'
 if [[ "$environment" == 'production' ]]; then
   [[ "$project_ref" == "$production_ref" ]] || fail 'Production project ref is not approved.'
   [[ "$sentry_dsn" == https://* ]] || fail 'Production SENTRY_DSN is required.'

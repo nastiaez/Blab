@@ -20,7 +20,7 @@ def validate(env):
         raise ValueError("Native identity differs from Dart environment; run prepare_ios.py")
     if defines.get("BLAB_APP_CHANNEL", "public") != ("test" if test else "public"):
         raise ValueError("App channel differs from native identity")
-    expected_ref = "tpfksdljkfnenjfdbane" if test else "bhzcexhebjszwyqvcsxs"
+    expected_ref = "tpfksdljkfnenjfdbane" if test else "lwsscssuktjlmiqryfnq"
     if defines.get("SUPABASE_PROJECT_REF") != expected_ref:
         raise ValueError("Backend project differs from native identity")
     config = plistlib.loads((Path(env["SRCROOT"]) / "Runner/GoogleService-Info.plist").read_bytes())

@@ -1,6 +1,6 @@
 {
   "environment": "production",
-  "project_ref": "bhzcexhebjszwyqvcsxs",
+  "project_ref": "lwsscssuktjlmiqryfnq",
   "region": "eu-west-1",
   "functions": {
     "delete-account": true,

@@ -5,7 +5,7 @@ enum BlabEnvironment { local, staging, production }
 class SupabaseConfig {
   const SupabaseConfig._();
 
-  static const String productionProjectRef = 'bhzcexhebjszwyqvcsxs';
+  static const String productionProjectRef = 'lwsscssuktjlmiqryfnq';
 
   static const String environmentName = String.fromEnvironment('BLAB_ENV');
   static const String projectRef = String.fromEnvironment(

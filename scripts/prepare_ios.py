@@ -16,7 +16,7 @@ bundle = "blab.nastia.ez.test" if test else "blab.nastia.ez"
 channel = "test" if test else "public"
 assert config["BLAB_ENV"] == args.environment
 assert config.get("BLAB_APP_CHANNEL", "public") == channel
-assert (config["SUPABASE_PROJECT_REF"] == "bhzcexhebjszwyqvcsxs") == (not test)
+assert (config["SUPABASE_PROJECT_REF"] == "lwsscssuktjlmiqryfnq") == (not test)
 firebase_path = args.config_root / "firebase" / args.environment / "GoogleService-Info.plist"
 firebase = plistlib.loads(firebase_path.read_bytes())
 assert firebase["BUNDLE_ID"] == bundle

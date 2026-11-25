@@ -273,7 +273,7 @@ void main() {
     expect(migration, contains('when others then'));
     expect(migration, contains('return new;'));
     expect(migration, isNot(contains('PUSH_WEBHOOK_SECRET=')));
-    expect(migration, isNot(contains('bhzcexhebjszwyqvcsxs')));
+    expect(migration, isNot(contains('lwsscssuktjlmiqryfnq')));
   });
 
   test('push worker records post-claim Firebase authentication failures', () {
@@ -328,7 +328,7 @@ void main() {
     final rootGitignore = File('.gitignore').readAsStringSync();
 
     expect(config, isNot(contains('productionPublishableKey')));
-    expect(config, isNot(contains('https://bhzcexhebjszwyqvcsxs')));
+    expect(config, isNot(contains('https://lwsscssuktjlmiqryfnq')));
     expect(
       config,
       contains('Staging builds cannot use the production project'),

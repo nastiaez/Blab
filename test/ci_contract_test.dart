@@ -47,7 +47,7 @@ void main() {
         'firebase deploy',
         'env/staging.json',
         'env/production.json',
-        'bhzcexhebjszwyqvcsxs',
+        'lwsscssuktjlmiqryfnq',
       ]) {
         expect(
           workflow,
