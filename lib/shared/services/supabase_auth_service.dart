@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -146,6 +147,10 @@ class SupabaseAuthService {
     final google = GoogleSignIn(
       serverClientId: SupabaseConfig.googleWebClientId,
     );
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      // Clear the SDK's remembered selection, not the device accounts or grants.
+      await google.signOut();
+    }
     final account = await google.signIn();
     if (account == null) {
       throw const SocialSignInCancelled();
