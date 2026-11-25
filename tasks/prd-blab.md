@@ -441,7 +441,7 @@ This document captures the full scope as prototyped across 4 phone flows.
 **Description:** As an invited user, I want to create an account and join the chat without friction.
 
 **Acceptance Criteria:**
-- [ ] The recipient uses the standard email sign-up or login page; no invite-specific account page, account-confirmation prompt, or phone-number flow is added
+- [ ] A signed-out recipient whose valid direct or group invite reaches the app enters standard onboarding and uses its normal sign-up or login options; no invite-specific account page, account-confirmation prompt, or phone-number flow is added
 - [ ] Opening a valid link while signed out preserves the most recently opened invite through sign-up, login, app close, and return
 - [ ] After successful authentication, Blab claims the saved invite and opens Chats without a practice-language prompt. The new connection remains unread; tapping that chat opens its required language choice. Explicit signed-in invite-link navigation may still open its specific chat directly (BLA-6 clarification, topic8856,21 October).
 - [ ] If two links are opened before authentication, only the most recently opened link is claimed; earlier links remain valid

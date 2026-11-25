@@ -2699,3 +2699,7 @@ BLA58 22120 regression checkpoint:1542 Flutter PASS/36existing skips after updat
 BLA58 22157 authorization: Nastia explicitly approves staging-only short/full real-provider accuracy, timing, cache/request and compatibility tests with NEW maximum USD0.10 budget. Production untouched; no public/app distribution implied. Existing exhausted ledgers must remain immutable; fresh bounded admission required before any provider call. Preflight in progress. <!-- project: github.com/aswinckr/clawdbot -->
 
 BLA58 22333 continuation: approved baseline now based on migrated main 6d9f074; 347 backend and 18 focused Flutter tests passed locally. Existing rollout guards preserved. Live Deep Dive verification on the fresh backend remains open; no merge, deployment or release. <!-- project: github.com/aswinckr/clawdbot -->
+
+## BLA-65 — Standard onboarding for signed-out invitees · 25 November 2026 ← in progress
+- Scope: US-025 / FR-1 / FR-2B. Save a valid direct or group invite before handing off to normal onboarding. After required account setup, continue the saved invitation. No changes to the browser landing, store handoff, signed-in invite behavior, or screen design.
+- Done when: signed-out recipients see Welcome, then standard sign-up or login; after closing and reopening the app, the saved invite still continues. Verify installed-app and fresh-install paths separately, and keep owner acceptance open until the journey is manually confirmed.

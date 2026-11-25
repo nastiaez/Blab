@@ -1,11 +1,17 @@
 import 'dart:async';
 
+import 'package:blab/app/router.dart';
+import 'package:blab/app/theme.dart';
+import 'package:blab/features/auth/auth_screen.dart';
 import 'package:blab/features/invite/invite_continuation.dart';
+import 'package:blab/features/onboarding/onboarding_bootstrap_screen.dart';
+import 'package:blab/features/onboarding/welcome_screen.dart';
 import 'package:blab/features/invite/invite_resolver_screen.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination.dart';
 import 'package:blab/features/onboarding/state/onboarding_destination_state.dart';
 import 'package:blab/l10n/generated/app_localizations.dart';
 import 'package:blab/shared/services/chat_service.dart';
+import 'package:blab/shared/services/supabase_auth_service.dart';
 import 'package:blab/shared/state/auth_state.dart';
 import 'package:blab/shared/state/chat_list_state.dart';
 import 'package:blab/shared/state/connectivity_state.dart';
@@ -15,6 +21,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+class _UnusedClient implements SupabaseClient {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SignedOutAuth extends SupabaseAuthService {
+  _SignedOutAuth(super.client);
+
+  @override
+  Session? get currentSession => null;
+  @override
+  User? get currentUser => null;
+  @override
+  Stream<AuthState> get onAuthStateChange => const Stream.empty();
+}
 
 class _Invites extends ChatService {
   _Invites(this.lookup, {this.groupLookup, this.onRegister})
@@ -172,6 +194,103 @@ void _expectCloseAction(WidgetTester tester) {
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  for (final group in [false, true]) {
+    testWidgets(
+      'signed-out ${group ? 'group' : 'direct'} invite uses normal onboarding',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final service = _Invites(
+          (token) async => group ? null : _metadata(token),
+          groupLookup: (token) async => GroupInviteMetadata(
+            token: token,
+            chatId: 'group',
+            groupName: 'Weekend',
+            memberCount: 1,
+            status: 'valid',
+            isMember: false,
+          ),
+          onRegister: (_) async => fail('No group registration before login'),
+        );
+        final auth = _SignedOutAuth(_UnusedClient());
+        String route() => blabRouter.routeInformationProvider.value.uri.path;
+        Future<void> settle() async {
+          // Intro demos animate continuously, so use bounded frames.
+          for (var i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 150));
+          }
+        }
+
+        Future<void> open(String path) async {
+          blabRouter.go(path);
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                openingAnimationGateProvider.overrideWithValue(
+                  OpeningAnimationGate()..claim(),
+                ),
+                chatServiceProvider.overrideWithValue(service),
+                supabaseAuthServiceProvider.overrideWithValue(auth),
+                currentUserIdProvider.overrideWithValue(null),
+                onlineProvider.overrideWith((_) => Stream.value(true)),
+                inviteClaimActionProvider.overrideWithValue(
+                  (_) async => fail('No personal claim before login'),
+                ),
+              ],
+              child: MaterialApp.router(
+                theme: blabTheme,
+                routerConfig: blabRouter,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+              ),
+            ),
+          );
+          await settle();
+        }
+
+        Future<void> tap(String label) async {
+          await tester.tap(find.text(label));
+          await settle();
+        }
+
+        Future<void> close() async {
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump();
+        }
+
+        await open('/i/friend-link');
+        expect(route(), '/onboarding/welcome');
+        expect(find.byType(WelcomeScreen), findsOneWidget);
+        expect(find.byType(AuthScreen), findsNothing);
+        expect(await loadPendingInvite(), 'friend-link');
+
+        await tap('Get started');
+        expect(route(), '/onboarding/learn');
+        await tap('Skip');
+        await tap('German');
+        await tap('Continue');
+        await tap('English');
+        await tap('Continue');
+        expect(route(), '/auth/signup');
+        expect(find.text('Continue with email'), findsOneWidget);
+        expect(await loadPendingInvite(), 'friend-link');
+
+        await tap('Already have an account? Log in');
+        expect(route(), '/auth/login');
+        expect(await loadPendingInvite(), 'friend-link');
+        await close();
+
+        // A fresh provider tree resumes normal entry without another deep link.
+        await open('/bootstrap');
+        expect(route(), '/onboarding/welcome');
+        expect(await loadPendingInvite(), 'friend-link');
+        await close();
+      },
+    );
+  }
 
   for (final used in [false, true]) {
     testWidgets('post-login invitation lands in Chats (used: $used)', (
@@ -521,7 +640,8 @@ void main() {
     await tester.pumpAndSettle();
     first.complete(_metadata('first'));
     await tester.pumpAndSettle();
-    expect(find.text('auth:second'), findsOneWidget);
+    expect(find.text('onboarding-bootstrap'), findsOneWidget);
+    expect(find.text('auth:second'), findsNothing);
     expect(await loadPendingInvite(), 'second');
   });
 
