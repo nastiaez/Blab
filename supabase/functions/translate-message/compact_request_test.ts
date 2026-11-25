@@ -39,7 +39,7 @@ const viewers: PreparedViewer[] = [
     },
   },
 ];
-Deno.test("word meanings use the same contextual rule in generation and metadata repair", () => {
+Deno.test("Chat does not request glosses; explicit metadata repair keeps its contextual rule", () => {
   for (
     const [targetLang, interfaceLang] of [["en", "uk"], ["de", "es"], [
       "ta",
@@ -57,7 +57,11 @@ Deno.test("word meanings use the same contextual rule in generation and metadata
       interfaceLang,
       "accepted sentence",
     );
-    assert(generation.includes(WORD_HELP_POLICY.rule));
+    assert(!generation.includes(WORD_HELP_POLICY.rule));
+    assert(generation.includes("Do not generate word meanings or glosses"));
+    const schema = JSON.stringify(request.response_format);
+    assert(!schema.includes('"gloss"'));
+    assert(schema.includes('"roman"') === (targetLang === "ta"));
     assert(repair.includes(WORD_HELP_POLICY.rule));
     assert(
       WORD_HELP_POLICY.rule.includes("briefly explain its grammatical role"),

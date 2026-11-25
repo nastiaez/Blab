@@ -19,6 +19,50 @@ class Speech extends TtsService {
 }
 
 void main() {
+  testWidgets('Deep Dive fetches a word meaning on tap without Chat tokens', (
+    tester,
+  ) async {
+    final requests = <Map<String, dynamic>>[];
+    final service = DeepDiveService(
+      viewerId: () => 'bob',
+      invoke: (r) async {
+        requests.add(r);
+        return {'meaning': 'Today'};
+      },
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          deepDiveServiceProvider.overrideWithValue(service),
+          ttsServiceProvider.overrideWithValue(Speech()),
+        ],
+        child: MaterialApp(
+          theme: blabTheme,
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const DeepDiveScreen(
+            messageId: 'm',
+            authoredText: 'Hoy',
+            displayText: 'Hoy',
+            learningLanguageCode: 'es',
+            knownLanguageCode: 'en',
+            aidsEnabled: true,
+            tokens: [],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(requests, isEmpty);
+    await tester.tap(find.text('Hoy'));
+    await tester.pumpAndSettle();
+    expect(requests, hasLength(1));
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('More details'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets(
     'unverified English metadata never leaks during Known Ukrainian lookup lifecycle',
     (tester) async {
