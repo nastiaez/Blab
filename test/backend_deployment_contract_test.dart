@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('hosted deployment manifests cover every hosted Edge Function', () {
-    // Explicit staged-only rollout. Production must not silently gain this function.
+    // Explicit rollout boundaries. Neither environment should silently gain
+    // the other environment's functions.
     const stagingOnlyFunctions = {'deep-dive'};
+    const productionOnlyFunctions = {'deliver-translation-reports'};
     final functionNames = Directory('supabase/functions')
         .listSync()
         .whereType<Directory>()
@@ -58,10 +60,11 @@ void main() {
         (name, verifyJwt) => MapEntry(name, verifyJwt as bool),
       );
       final expected = Map<String, bool>.from(configuredPolicies);
-      if (environment == 'production') {
-        for (final name in stagingOnlyFunctions) {
-          expected.remove(name);
-        }
+      for (final name
+          in environment == 'production'
+              ? stagingOnlyFunctions
+              : productionOnlyFunctions) {
+        expected.remove(name);
       }
       expect(functions, expected, reason: environment);
       expect(functions.containsKey('deep-dive'), environment == 'staging');

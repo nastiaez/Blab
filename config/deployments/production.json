@@ -14,7 +14,8 @@
     "stream-message": true,
     "stream-media": true,
     "stream-activity": true,
-    "stream-device": true
+    "stream-device": true,
+    "deliver-translation-reports": true
   },
   "required_secrets": [
     "OPENAI_API_KEY",
@@ -28,6 +29,8 @@
     "BLAB_SUPABASE_ANON_KEY",
     "BLAB_SUPABASE_SERVICE_ROLE_KEY",
     "STREAM_API_KEY",
-    "STREAM_API_SECRET"
+    "STREAM_API_SECRET",
+    "BLAB_TRANSLATION_LINEAR_API_KEY",
+    "BLAB_TRANSLATION_LINEAR_TEAM_ID"
   ]
 }
