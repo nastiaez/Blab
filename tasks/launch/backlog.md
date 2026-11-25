@@ -262,3 +262,7 @@ phone/iOS/hosted acceptance remains open; the launch tracker stays unchecked.
 
 ## BLA-36 first-name mentions · Later ·29 October2026
 Implementation authorized16544; screenshot review and manual two-viewer acceptance pending. No merge/release.
+
+### BLA-65 — Standard onboarding for signed-out invitees
+
+High priority, in progress. Replace the legacy in-app auth entry reached by direct and group links with standard onboarding. Verify the saved invite after sign-up or login and reopening Blab; installed and store-install link handoffs remain separate manual checks. The release tracker remains unchecked pending owner confirmation.
