@@ -22,7 +22,7 @@ export function runtimeMode(
   ) return "hosted";
   if (
     environment === "production" && enabled === "true" &&
-    url === "https://bhzcexhebjszwyqvcsxs.supabase.co"
+    url === "https://lwsscssuktjlmiqryfnq.supabase.co"
   ) return "production";
   throw new DiveError("local_only", 503);
 }

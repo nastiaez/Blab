@@ -56,16 +56,17 @@ Deno.test("hosted activation requires the exact project and opt-in for each envi
   assert(
     runtimeMode(
       "production",
-      "https://bhzcexhebjszwyqvcsxs.supabase.co",
+      "https://lwsscssuktjlmiqryfnq.supabase.co",
       "true",
     ) ===
       "production",
   );
   for (
     const [env, url, flag] of [
-      ["production", "https://bhzcexhebjszwyqvcsxs.supabase.co", "false"],
+      ["production", "https://lwsscssuktjlmiqryfnq.supabase.co", "false"],
+      ["production", "https://bhzcexhebjszwyqvcsxs.supabase.co", "true"],
       ["production", "https://tpfksdljkfnenjfdbane.supabase.co", "true"],
-      ["staging", "https://bhzcexhebjszwyqvcsxs.supabase.co", "true"],
+      ["staging", "https://lwsscssuktjlmiqryfnq.supabase.co", "true"],
       ["staging", "https://tpfksdljkfnenjfdbane.supabase.co", "false"],
       ["staging", "http://127.0.0.1", "true"],
       ["staging", "https://foreign.supabase.co", "true"],
