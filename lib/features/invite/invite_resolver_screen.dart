@@ -221,7 +221,7 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
       if (!mounted || !isCurrent()) return;
       if (userId == null) {
         _finished = true;
-        context.go(InviteContinuation(token: token).authLocation());
+        context.go('/bootstrap');
         return;
       }
       if (!await _canContinueForSignedInUser(
@@ -293,7 +293,7 @@ class _InviteResolverScreenState extends ConsumerState<InviteResolverScreen>
     if (!mounted || generation != _generation) return;
     if (userId == null) {
       _finished = true;
-      context.go(InviteContinuation(token: token).authLocation());
+      context.go('/bootstrap');
       return;
     }
     if (!await _canContinueForSignedInUser(
