@@ -86,13 +86,11 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
     WidgetsBinding.instance.addObserver(this);
     _controller = AnimationController(
       vsync: this,
-      duration:
-          (widget.demoStep == 3
-              ? demo3Cycle
-              : widget.demoStep == 2
-              ? demo2Cycle
-              : demo1Cycle) *
-          0.9,
+      duration: switch (widget.demoStep) {
+        2 => demo2Cycle * 0.78,
+        3 => demo3Cycle * 0.78,
+        _ => demo1Cycle * 0.9,
+      },
     );
   }
 

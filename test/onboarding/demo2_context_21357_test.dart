@@ -47,7 +47,7 @@ Widget app({
   ),
 );
 Future<void> frames(WidgetTester t, [int ms = 200]) async {
-  await t.pump(Duration(microseconds: ms * 900));
+  await t.pump(Duration(microseconds: ms * 780));
   await t.pump();
   await t.pump();
 }
