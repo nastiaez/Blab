@@ -47,6 +47,11 @@ jobs:
           deno-version: v2.x
       - name: Verify translation policy and generated rulebook
         run: deno test --allow-env --allow-read supabase/functions/translate-message/*test.ts supabase/functions/prepare-message-jobs/*test.ts supabase/functions/deep-dive/*test.ts supabase/functions/_shared/qa_budget_test.ts
+      - name: Verify translation report delivery
+        working-directory: supabase/functions/deliver-translation-reports
+        run: |
+          deno check --frozen --config deno.json index.ts
+          deno test --frozen --config deno.json linear_test.ts
       - name: Verify shell syntax
         run: bash -n scripts/*.sh
       - name: Analyze
