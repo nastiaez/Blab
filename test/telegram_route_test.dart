@@ -5,7 +5,7 @@ import 'package:blab/app/router.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
-  testWidgets('every registered pushed page uses the shared route', (
+  testWidgets('registered pages use the transition for their flow', (
     tester,
   ) async {
     late BuildContext context;
@@ -39,6 +39,13 @@ void main() {
           final page = route.pageBuilder!(context, state);
           if (['/', '/chats', '/profile'].contains(path)) {
             expect(page, isA<NoTransitionPage<void>>(), reason: path);
+          } else if (path.startsWith('/onboarding/')) {
+            expect(page, isA<CustomTransitionPage<void>>(), reason: path);
+            expect(
+              (page as CustomTransitionPage<void>).transitionDuration,
+              const Duration(milliseconds: 240),
+              reason: path,
+            );
           } else {
             expect(page, isA<TelegramPage<void>>(), reason: path);
             final created = page.createRoute(context);
