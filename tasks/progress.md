@@ -2662,3 +2662,7 @@ Asset-only new full-quality illustration with two notes recolored actual onboard
 -21937 final fullFlutter1532PASS/36skip/EXIT0; focused15/analyze/diff PASS; no jobs/claims left. Review approval remains OPEN and release21923 HOLD unchanged. <!-- project: github.com/aswinckr/clawdbot -->
 
 -21947 Nastia approved final21941: Yes looks all good. We can commit, deploy it. Supersedes21923 pause only for approved combined title/swipe and empty-chat artwork/official black logo. Exact asset SHA256022a67551be58340df29baf3a7be081c476a85d8cbe6553c21f35de0dbc24bd1. Integrated signed Android/upload pending; exact notes plus previous125 ten-recipient notification approval REQUIRED before distribution.126 superseded NEVER distribute. No backend/onboarding palette/iOS changes. <!-- project: github.com/aswinckr/clawdbot -->
+
+## BLA-61 — Translation reports to Linear ← in progress
+- Backend-only candidate from migrated `main` (`6d9f074`), for the regular Blab app only. No inbox, UI changes, staging rollout, or historical backfill. Linear receives only the reason and an opaque report reference.
+- Local worker checks and isolated PostgreSQL fixture passed (hosted extensions stubbed). Done when one approved synthetic report in regular Blab produces exactly one ticket in the intended Linear team, including after a retry. Production rollout approved. Scoped Linear configuration and live verification remain open; leave main unchanged until the journey is verified.

@@ -454,3 +454,9 @@ entrypoint = "./functions/stream-device/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/deep-dive/index.ts"
+
+[functions.deliver-translation-reports]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deliver-translation-reports/deno.json"
+entrypoint = "./functions/deliver-translation-reports/index.ts"
