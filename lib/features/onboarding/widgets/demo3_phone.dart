@@ -67,6 +67,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
       _actions = GlobalKey(),
       _hideButton = GlobalKey();
   Rect? _viewport, _bubbleRect, _translateRect, _hideRect;
+  Offset? _lastMenuTarget;
   Demo3Phase? _manual;
   bool _largeMessageRevealed = false;
   @override
@@ -132,6 +133,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
         _viewport = viewport;
         _bubbleRect = bubble;
         _translateRect = translate;
+        if (translate != null) _lastMenuTarget = translate.center;
         _hideRect = hide;
       });
     }
@@ -152,6 +154,14 @@ class _Demo3PhoneState extends State<Demo3Phone> {
     final translated =
         phase == Demo3Phase.translated || phase == Demo3Phase.hideTap;
     final bubble = _bubbleRect, viewport = _viewport;
+    const backTarget = Offset(28, 28);
+    final travel = Curves.easeInOutCubic.transform(
+      ((t - 15300) / 1200).clamp(0.0, 1.0),
+    );
+    final cursor = _manual == null
+        ? Offset.lerp(_lastMenuTarget ?? backTarget, backTarget, travel)!
+        : backTarget;
+    final press = _manual == null ? ((t - 17700) / 300).clamp(0.0, 1.0) : 0.0;
     return Stack(
       key: _root,
       clipBehavior: Clip.none,
@@ -219,11 +229,14 @@ class _Demo3PhoneState extends State<Demo3Phone> {
           ),
         if (!widget.reduced && translated)
           Positioned(
-            left: 10,
-            top: 10,
-            child: Demo3PressIndicator(
-              key: const Key('demo3-close-tap'),
-              label: 'Close Deep Dive',
+            left: cursor.dx - 18,
+            top: cursor.dy - 18,
+            child: Transform.scale(
+              scale: 1 - 0.22 * press,
+              child: Demo3PressIndicator(
+                key: const Key('demo3-close-tap'),
+                label: 'Close Deep Dive',
+              ),
             ),
           ),
         if (!widget.reduced && menu && _translateRect != null)

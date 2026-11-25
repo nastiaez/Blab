@@ -354,9 +354,12 @@ class _LearnInContextScreenState extends State<LearnInContextScreen>
               20,
               16 + MediaQuery.paddingOf(context).bottom,
             ),
-            child: BlabButton.onboarding(
-              label: context.l10n.continueAction,
-              onPressed: widget.onContinue,
+            child: Hero(
+              tag: 'onboarding-demo-continue',
+              child: BlabButton.onboarding(
+                label: context.l10n.continueAction,
+                onPressed: widget.onContinue,
+              ),
             ),
           ),
         ],

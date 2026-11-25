@@ -15,7 +15,7 @@ import '../../chat/widgets/message_learning_content.dart';
 import 'demo_conversation_phone.dart';
 
 const demo2PanelScale = 0.9;
-const demo2Cycle = Duration(milliseconds: 16000);
+const demo2Cycle = Duration(milliseconds: 15000);
 const demo2German = 'Ich kann ein vorzügliches Pilzrisotto machen.';
 const demo2English = 'I can make an exquisite mushroom risotto.';
 
@@ -30,12 +30,12 @@ enum Demo2Phase {
 }
 
 Demo2Phase demo2PhaseAt(int t) {
-  if (t < 2500) return Demo2Phase.conversation;
-  if (t < 3900) return Demo2Phase.pressHold;
+  if (t < 2150) return Demo2Phase.conversation;
+  if (t < 3350) return Demo2Phase.pressHold;
   if (t < 7000) return Demo2Phase.menu;
   if (t < 8000) return Demo2Phase.translateTap;
-  if (t < 12500) return Demo2Phase.translated;
-  if (t < 13500) return Demo2Phase.hideTap;
+  if (t < 11900) return Demo2Phase.translated;
+  if (t < 12800) return Demo2Phase.hideTap;
   return Demo2Phase.collapsed;
 }
 
