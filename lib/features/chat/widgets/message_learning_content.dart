@@ -59,7 +59,6 @@ class MessageLearningContent extends StatelessWidget {
     required this.learningLanguageCode,
     required this.isOutgoing,
     this.languagesMatchedAtSend = false,
-    required this.popupTopInset,
     required this.unavailableText,
     required this.retryText,
     required this.mode,
@@ -95,7 +94,6 @@ class MessageLearningContent extends StatelessWidget {
   final String learningLanguageCode;
   final bool isOutgoing;
   final bool languagesMatchedAtSend;
-  final double popupTopInset;
   final String unavailableText;
   final String retryText;
   final VoidCallback? onRetry;
@@ -190,11 +188,10 @@ class MessageLearningContent extends StatelessWidget {
       );
       return MessageText(
         isOutgoing: isOutgoing,
-        enableWordLookup: false,
+
         text: presentation.text,
         tokens: presentation.tokens,
-        languageCode: generatedLanguageCode,
-        popupTopInset: popupTopInset,
+
         style: style,
       );
     }
@@ -380,22 +377,18 @@ class MessageLearningContent extends StatelessWidget {
               translatedProvenance!,
             ),
             style: primaryStyle,
-            learningLanguageCode: generatedLanguageCode,
-            popupTopInset: popupTopInset,
+
             isOutgoing: isOutgoing,
-            enableWordLookup: false,
           )
         : showCorrectionMarks && !value.sourceScopedGeneration
         ? (() {
             final corrected = presentGenerated(value.translation, value.tokens);
             return InlineCorrectionText(
               isOutgoing: isOutgoing,
-              enableWordLookup: false,
+
               originalText: authoredText,
               correctedText: corrected.text,
-              correctedTokens: corrected.tokens,
-              learningLanguageCode: generatedLanguageCode,
-              popupTopInset: popupTopInset,
+
               style: primaryStyle,
             );
           })()
@@ -427,9 +420,7 @@ class MessageLearningContent extends StatelessWidget {
             correctedText: provenance!['correctionText'] as String,
             segments: sourceSegments,
             isOutgoing: isOutgoing,
-            enableWordLookup: false,
-            learningLanguageCode: generatedLanguageCode,
-            popupTopInset: popupTopInset,
+
             style: primaryStyle,
           ),
         if (expanded) ...[

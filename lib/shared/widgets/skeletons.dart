@@ -103,6 +103,50 @@ class ChatViewSkeleton extends StatelessWidget {
   }
 }
 
+/// A single text placeholder using the existing chat skeleton style.
+class SkeletonTextLine extends StatelessWidget {
+  const SkeletonTextLine({super.key, required this.loadingLabel});
+
+  final String loadingLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context);
+    final rowHeight = textScale.scale(16) * 1.5;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Semantics(
+      label: loadingLabel,
+      liveRegion: true,
+      child: ExcludeSemantics(
+        child: SizedBox(
+          height: rowHeight,
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: reduceMotion
+                ? Text(
+                    loadingLabel,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: Color(0xFF231208),
+                    ),
+                  )
+                : Shimmer.fromColors(
+                    baseColor: _skeletonBase,
+                    highlightColor: _skeletonHighlight,
+                    child: const _SkeletonBlock(
+                      width: 120,
+                      height: 14,
+                      radius: 4,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SkeletonBlock extends StatelessWidget {
   const _SkeletonBlock({
     required this.width,

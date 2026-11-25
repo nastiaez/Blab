@@ -660,5 +660,7 @@
   "whyThisForm": "¿POR QUÉ ESTA FORMA?",
   "wordExamples": "EJEMPLOS",
   "learningDetailsUnavailable": "Información de aprendizaje no disponible",
-  "audioUnavailable": "Audio no disponible"
+  "audioUnavailable": "Audio no disponible",
+  "wordMeaningLoading": "Cargando…",
+  "couldntLoadDetailsRetry": "No se pudieron cargar los detalles · Reintentar"
 }

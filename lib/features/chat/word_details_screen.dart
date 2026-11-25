@@ -1,3 +1,4 @@
+import '../../shared/widgets/message_status_notice.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,15 +21,47 @@ class WordDetailsScreen extends ConsumerStatefulWidget {
     super.key,
     required this.word,
     required this.languageCode,
+    this.load,
   });
   final Map<String, dynamic> word;
   final String languageCode;
+  final Future<Map<String, dynamic>> Function(bool retry)? load;
   @override
   ConsumerState<WordDetailsScreen> createState() => _WordDetailsScreenState();
 }
 
 class _WordDetailsScreenState extends ConsumerState<WordDetailsScreen> {
   late final TtsService _tts;
+  late Map<String, dynamic> _word;
+  bool _loading = false, _failed = false;
+  int _loadGeneration = 0;
+
+  Future<void> _load(bool retry) async {
+    final load = widget.load;
+    if (load == null) return;
+    final generation = ++_loadGeneration;
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
+    try {
+      final result = await load(retry);
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _word = result['word'] is Map
+            ? Map<String, dynamic>.from(result['word'] as Map)
+            : result;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted || generation != _loadGeneration) return;
+      setState(() {
+        _loading = false;
+        _failed = true;
+      });
+    }
+  }
+
   bool _audioFailed = false;
   int _audioGeneration = 0;
   bool _audioLoading = false, _playing = false;
@@ -47,8 +80,7 @@ class _WordDetailsScreenState extends ConsumerState<WordDetailsScreen> {
     }
     final generation = ++_audioGeneration;
     final language = widget.languageCode;
-    final text = (widget.word['spokenText'] ?? widget.word['text'] ?? '')
-        .toString();
+    final text = (_word['spokenText'] ?? _word['text'] ?? '').toString();
     bool ownsPlayback() => mounted && generation == _audioGeneration;
     setState(() {
       _audioFailed = false;
@@ -91,13 +123,19 @@ class _WordDetailsScreenState extends ConsumerState<WordDetailsScreen> {
   void initState() {
     super.initState();
     _tts = ref.read(ttsServiceProvider);
+    _word = widget.word;
+    _load(false);
   }
 
   @override
   void didUpdateWidget(covariant WordDetailsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.word != widget.word ||
-        oldWidget.languageCode != widget.languageCode) {
+        oldWidget.languageCode != widget.languageCode ||
+        oldWidget.load != widget.load) {
+      ++_loadGeneration;
+      _word = widget.word;
+      _load(false);
       _cancelAudio();
       _audioFailed = false;
     }
@@ -105,13 +143,14 @@ class _WordDetailsScreenState extends ConsumerState<WordDetailsScreen> {
 
   @override
   void dispose() {
+    ++_loadGeneration;
     _cancelAudio();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final w = widget.word;
+    final w = _word;
     final color = wordGenderColor(w['gender']);
     final forms = w['forms'] is List ? w['forms'] as List : const [];
     final examples = w['examples'] is List ? w['examples'] as List : const [];
@@ -222,6 +261,17 @@ class _WordDetailsScreenState extends ConsumerState<WordDetailsScreen> {
                       child: Text(context.l10n.retry),
                     ),
                   ],
+                ),
+              if (_loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: LinearProgressIndicator(),
+                ),
+              if (_failed)
+                MessageStatusNotice(
+                  text: context.l10n.couldntLoadDetailsRetry,
+                  onTap: () => _load(true),
+                  alignRight: false,
                 ),
               if (w['dictionaryForm'] case final String dictionaryForm)
                 if (dictionaryForm != w['text'])

@@ -660,5 +660,7 @@
   "whyThisForm": "WARUM DIESE FORM?",
   "wordExamples": "BEISPIELE",
   "learningDetailsUnavailable": "Lerninformationen nicht verfügbar",
-  "audioUnavailable": "Audio nicht verfügbar"
+  "audioUnavailable": "Audio nicht verfügbar",
+  "wordMeaningLoading": "Wird geladen…",
+  "couldntLoadDetailsRetry": "Details konnten nicht geladen werden · Erneut versuchen"
 }

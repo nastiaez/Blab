@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:blab/shared/widgets/skeletons.dart';
 import 'package:blab/app/theme.dart';
 import 'package:blab/features/chat/deep_dive_screen.dart';
 import 'package:blab/features/chat/widgets/deep_dive_word_popup.dart';
@@ -58,14 +59,15 @@ void main() {
       await tester.tap(find.text('Hoy'));
       await tester.pump();
       expect(find.text('Today'), findsNothing);
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(SkeletonTextLine), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(requests.single['knownLang'], 'uk');
       expect(requests.single['targetLang'], 'es');
       pending.single.completeError(const DeepDiveUnavailable());
       await tester.pumpAndSettle();
       expect(find.text('Today'), findsNothing);
-      expect(find.text('Learning details unavailable'), findsOneWidget);
-      await tester.tap(find.text('Retry'));
+      expect(find.text('Couldn’t translate · Retry'), findsOneWidget);
+      await tester.tap(find.text('Couldn’t translate · Retry'));
       await tester.pump();
       expect(find.text('Today'), findsNothing);
       pending.last.complete({'meaning': 'Сьогодні'});
@@ -120,7 +122,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final error = find.text('Lerninformationen nicht verfügbar');
+        final error = find.text('Übersetzung fehlgeschlagen · Erneut versuchen');
         expect(error, findsOneWidget);
         expect(tester.getSize(error).width, 220);
         final paragraph = tester.renderObject<RenderParagraph>(
@@ -129,15 +131,15 @@ void main() {
         if (scale == 1) {
           expect(
             paragraph.getBoxesForSelection(
-              const TextSelection(baseOffset: 0, extentOffset: 17),
+              const TextSelection(baseOffset: 0, extentOffset: 11),
             ),
             hasLength(1),
             reason:
-                'Lerninformationen must not be split by the adjacent retry target',
+                'Übersetzung must remain intact in the shared tappable notice',
           );
         }
         expect(tester.getSize(find.byType(DeepDiveWordPopup)).width, 254);
-        final retry = find.text('Erneut versuchen');
+        final retry = find.text('Übersetzung fehlgeschlagen · Erneut versuchen');
         await tester.ensureVisible(retry);
         await tester.tap(retry);
         await tester.pumpAndSettle();

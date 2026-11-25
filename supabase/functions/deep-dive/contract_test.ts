@@ -360,3 +360,51 @@ Deno.test("sentence grammar stays within saved selected mistake explanation", ()
     "invalid_analysis",
   );
 });
+
+Deno.test("short mode is additive, exact occurrence data and strict meaning only", () => {
+  const short = parseRequest({ ...r, mode: "short" });
+  validateContext(short, c);
+  const messages = analysisMessages(short, c);
+  assert(messages[0].content.includes('Return only JSON: {"meaning":string}.'));
+  assert(messages[0].content.includes("Primary Known Language: Ukrainian."));
+  assert(
+    JSON.stringify(JSON.parse(messages[1].content)) ===
+      JSON.stringify({
+        acceptedTranslation: c.translation,
+        selectionText: r.text,
+        start: 4,
+        end: 7,
+      }),
+  );
+  assert(
+    parseAnalysis({ meaning: "бути" }, "vocabulary", "short").meaning ===
+      "бути",
+  );
+  for (
+    const value of [
+      { meaning: "" },
+      { meaning: "x", explanation: "extra" },
+      { meaning: "x", examples: [] },
+      { meaning: "x".repeat(1001) },
+      { meaning: 2 },
+    ]
+  ) {
+    rejects(
+      () => parseAnalysis(value, "vocabulary", "short"),
+      "invalid_analysis",
+    );
+  }
+  rejects(
+    () => parseRequest({ ...r, mode: "short", kind: "correction" }),
+    "invalid_request",
+  );
+  rejects(() => parseRequest({ ...r, mode: "unknown" }), "invalid_request");
+  assert(
+    JSON.stringify(analysisMessages(r, c)) ===
+      JSON.stringify(analysisMessages({ ...r, mode: "full" }, c)),
+  );
+  assert(
+    parseAnalysis({ meaning: "x", explanation: "retained" }, "vocabulary")
+      .explanation === "retained",
+  );
+});

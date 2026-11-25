@@ -178,17 +178,19 @@ void main() {
       final speech = FakeSpeech();
       final service = DeepDiveService(
         viewerId: () => 'a',
-        invoke: (request) async => {
-          'meaning': 'I',
-          'gender': 'neuter',
-          'pronunciation': '/test/',
-          'grammarTable': [
-            {'label': 'First person', 'value': 'ich'},
-          ],
-          'examples': [
-            {'text': 'Ich lerne.', 'translation': 'I learn.'},
-          ],
-        },
+        invoke: (request) async => request['mode'] == 'short'
+            ? {'meaning': 'I'}
+            : {
+                'meaning': 'I',
+                'gender': 'neuter',
+                'pronunciation': '/test/',
+                'grammarTable': [
+                  {'label': 'First person', 'value': 'ich'},
+                ],
+                'examples': [
+                  {'text': 'Ich lerne.', 'translation': 'I learn.'},
+                ],
+              },
       );
       await tester.pumpWidget(harness(service: service, speech: speech));
       await tester.tap(find.text('Ich'));

@@ -1,46 +1,13 @@
-import 'package:blab/app/theme.dart';
-import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/features/chat/widgets/word_popup.dart';
-import 'package:blab/shared/models/message.dart';
-import 'package:blab/shared/models/message_token.dart';
 import 'package:blab/shared/services/tts_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Stand-in [TtsService] that never hits platform channels — keeps the
-/// widget test free of `MissingPluginException`s.
-class _FakeTtsService implements TtsService {
-  @override
-  Future<bool> isLanguageAvailable(String languageCode) async => false;
-
-  @override
-  Future<void> speak(String text, String languageCode) async {}
-
-  @override
-  Future<void> stop() async {}
-
-  // Unused but required by interface.
-  @override
-  // ignore: unused_field
-  // ignore: invalid_override
-  dynamic noSuchMethod(Invocation invocation) => null;
-}
-
-class _RecordingTtsService implements TtsService {
-  final List<String> events = <String>[];
-
-  @override
-  Future<bool> isLanguageAvailable(String languageCode) async => true;
-
-  @override
-  Future<void> speak(String text, String languageCode) async {
-    events.add('speak:$languageCode:$text');
-  }
-
+class _Tts implements TtsService {
+  int stops = 0;
   @override
   Future<void> stop() async {
-    events.add('stop');
+    stops++;
   }
 
   @override
@@ -48,533 +15,90 @@ class _RecordingTtsService implements TtsService {
 }
 
 void main() {
-  testWidgets('open popup gains late word help without a second tap', (
+  for (final anchor in [const Offset(0, 60), const Offset(370, 700)]) {
+    testWidgets('shared popup clamps and dismisses at $anchor', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final tts = _Tts();
+      var dismissed = 0;
+      late BuildContext host;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                host = context;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      showLearningWordPopup(
+        host,
+        card: const SizedBox(
+          width: 280,
+          height: 130,
+          child: Text('shared details'),
+        ),
+        wordTopLeft: anchor,
+        wordSize: const Size(20, 20),
+        tts: tts,
+        topInset: 50,
+        onDismiss: () => dismissed++,
+      );
+      await tester.pumpAndSettle();
+      final rect = tester.getRect(find.text('shared details'));
+      expect(rect.left, greaterThanOrEqualTo(12));
+      expect(rect.right, lessThanOrEqualTo(378));
+      expect(rect.top, greaterThanOrEqualTo(50));
+      await tester.tapAt(const Offset(195, 820));
+      await tester.pumpAndSettle();
+      expect(find.text('shared details'), findsNothing);
+      expect(dismissed, 1);
+      expect(tts.stops, 1);
+    });
+  }
+  testWidgets('replacement and lifecycle dismissal close only current popup', (
     tester,
   ) async {
-    final metadata = ValueNotifier<List<MessageToken>>([]);
-    addTearDown(metadata.dispose);
+    late BuildContext host;
+    final tts = _Tts();
+    var dismissed = 0;
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: MaterialApp(
-          home: Scaffold(
-            body: ValueListenableBuilder<List<MessageToken>>(
-              valueListenable: metadata,
-              builder: (_, tokens, _) => MessageText(
-                text: 'schnell',
-                tokens: tokens,
-                languageCode: 'de',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              host = context;
+              return const SizedBox.expand();
+            },
           ),
         ),
       ),
     );
-    await tester.tap(find.text('schnell'));
+    void open(String text) => showLearningWordPopup(
+      host,
+      card: SizedBox(width: 250, height: 120, child: Text(text)),
+      wordTopLeft: const Offset(100, 300),
+      wordSize: const Size(30, 20),
+      tts: tts,
+      onDismiss: () => dismissed++,
+    );
+    open('first');
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('word-help-pending')), findsOneWidget);
-    metadata.value = [const MessageToken(text: 'schnell', gloss: 'fast')];
+    open('second');
     await tester.pumpAndSettle();
-    expect(find.text('fast'), findsOneWidget);
-    expect(find.byKey(const ValueKey('word-help-pending')), findsNothing);
-  });
-
-  testWidgets('tapping a content token opens the word popup', (tester) async {
-    final message = Message(
-      id: 'm1',
-      chatId: 'aswin',
-      isOutgoing: false,
-      originalText: 'காலை எப்படி',
-      translation: 'morning how',
-      sentAt: DateTime(2026, 5, 25, 9, 30),
-      status: MessageStatus.delivered,
-      tokens: const [
-        MessageToken(text: 'காலை', romanization: 'kālai', gloss: 'morning'),
-        MessageToken(text: ' ', isContent: false),
-        MessageToken(text: 'எப்படி', romanization: 'eppadi', gloss: 'how'),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: message.originalText,
-                tokens: message.tokens,
-                languageCode: 'ta',
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    // Popup not yet visible.
-    expect(find.text('morning'), findsNothing);
-
-    // Tap the first content word.
-    await tester.tap(find.text('காலை'));
-    await tester.pumpAndSettle();
-
-    // Popup card surfaces the romanization + English gloss.
-    expect(find.text('kālai'), findsOneWidget);
-    expect(find.text('morning'), findsOneWidget);
-    expect(find.byKey(const ValueKey('word-popup-sound-base')), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('word-popup-sound-wave-1')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('word-popup-sound-wave-2')),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('tapping another word replaces the open popup in one tap', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'Hallo Welt',
-                tokens: [
-                  MessageToken(
-                    text: 'Hallo',
-                    romanization: 'Hallo',
-                    gloss: 'hello',
-                  ),
-                  MessageToken(text: ' ', isContent: false),
-                  MessageToken(
-                    text: 'Welt',
-                    romanization: 'Welt',
-                    gloss: 'world',
-                  ),
-                ],
-                languageCode: 'de',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Hallo'));
-    await tester.pumpAndSettle();
-    expect(find.text('hello'), findsOneWidget);
-
-    await tester.tap(find.text('Welt'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('hello'), findsNothing);
-    expect(find.text('world'), findsOneWidget);
-  });
-
-  testWidgets('word popup hides romanization identical to a Latin word', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'bloemenmarkt',
-                tokens: [
-                  MessageToken(
-                    text: 'bloemenmarkt',
-                    romanization: 'bloemenmarkt',
-                    gloss: 'flower market',
-                  ),
-                ],
-                languageCode: 'nl',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('bloemenmarkt'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('bloemenmarkt'), findsNWidgets(2));
-    expect(find.text('flower market'), findsOneWidget);
-  });
-
-  testWidgets('word popup uses the approved left-aligned hierarchy', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'காலை',
-                tokens: [
-                  MessageToken(
-                    text: 'காலை',
-                    romanization: 'kālai',
-                    gloss: 'morning',
-                  ),
-                ],
-                languageCode: 'ta',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('காலை'));
-    await tester.pumpAndSettle();
-
-    final popupWord = tester.widgetList<Text>(find.text('காலை')).last;
-    final transliteration = tester.widget<Text>(find.text('kālai'));
-    final translation = tester.widget<Text>(find.text('morning'));
-
-    expect(popupWord.style?.fontSize, 22);
-    expect(popupWord.style?.fontWeight, FontWeight.w800);
-    expect(popupWord.style?.color, BlabColors.warmInk);
-    expect(transliteration.style?.fontSize, 13);
-    expect(transliteration.style?.fontWeight, FontWeight.w400);
-    expect(transliteration.style?.color, BlabColors.warmMuted);
-    expect(translation.style?.fontSize, 14);
-    expect(translation.style?.fontWeight, FontWeight.w600);
-    expect(translation.style?.color, BlabColors.warmInk);
-
-    final divider = tester.widget<Container>(
-      find.byKey(const ValueKey('word-popup-divider')),
-    );
-    expect(divider.constraints?.minHeight, 1);
-    expect(divider.color, BlabColors.chatDivider);
-
-    final card = tester.widget<Container>(
-      find.byKey(const ValueKey('word-popup-card')),
-    );
-    final decoration = card.decoration! as BoxDecoration;
-    final border = decoration.border! as Border;
-    expect(decoration.color, BlabColors.chatSurface);
-    expect(border.top.color, BlabColors.chatDivider);
-    expect(border.top.width, 1);
-
-    final wordTopLeft = tester.getTopLeft(find.text('காலை').last);
-    final iconTopLeft = tester.getTopLeft(
-      find.byKey(const ValueKey('word-popup-sound-base')),
-    );
-    expect(iconTopLeft.dx, greaterThan(wordTopLeft.dx));
-    expect(iconTopLeft.dy, lessThanOrEqualTo(wordTopLeft.dy + 4));
-
-    final tail = tester.widget<CustomPaint>(
-      find.byKey(const ValueKey('word-popup-tail')),
-    );
-    final dynamic painter = tail.painter;
-    expect(painter.fillColor, BlabColors.chatSurface);
-    expect(painter.strokeColor, BlabColors.chatDivider);
-    expect(painter.drawsBaseEdge, isFalse);
-  });
-
-  // Mode-display-fixes spec § 2: the padding that used to sit around each
-  // word is gone (it inflated the line box). Tap targets must not shrink
-  // with it — each word's box still spans the full line height, and a tap
-  // away from the word's vertical centre still opens its popup.
-  testWidgets('a word keeps a full-line-height tap target', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'காலை எப்படி',
-                tokens: [
-                  MessageToken(
-                    text: 'காலை',
-                    romanization: 'kālai',
-                    gloss: 'morning',
-                  ),
-                  MessageToken(text: ' ', isContent: false),
-                  MessageToken(
-                    text: 'எப்படி',
-                    romanization: 'eppadi',
-                    gloss: 'how',
-                  ),
-                ],
-                languageCode: 'ta',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final wordRect = tester.getRect(find.text('காலை'));
-    final lineRect = tester.getRect(find.byType(MessageText));
-    expect(wordRect.height, lineRect.height);
-
-    await tester.tapAt(Offset(wordRect.center.dx, wordRect.top + 5));
-    await tester.pumpAndSettle();
-
-    expect(find.text('kālai'), findsOneWidget);
-    expect(find.text('morning'), findsOneWidget);
-  });
-
-  testWidgets('splits visible text into tappable words without metadata', (
-    tester,
-  ) async {
-    final message = Message(
-      id: 'm2',
-      chatId: 'aswin',
-      isOutgoing: true,
-      originalText: 'Hello world',
-      translation: '',
-      sentAt: DateTime(2026, 5, 25, 9, 31),
-      status: MessageStatus.read,
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: MaterialApp(
-          home: Scaffold(
-            body: MessageText(
-              text: message.originalText,
-              tokens: message.tokens,
-              languageCode: 'en',
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Hello'), findsOneWidget);
-    expect(find.text('world'), findsOneWidget);
-
-    await tester.tap(find.text('world'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('world'), findsWidgets);
-  });
-
-  testWidgets('phrase-sized token metadata still leaves words tappable', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: MessageText(
-              text: 'You can use Google speech.',
-              tokens: [
-                MessageToken(
-                  text: 'You can use Google speech',
-                  gloss: 'whole phrase',
-                ),
-                MessageToken(text: '.', isContent: false),
-              ],
-              languageCode: 'en',
-              style: TextStyle(fontSize: 16),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('You'), findsOneWidget);
-    expect(find.text('Google'), findsOneWidget);
-    expect(find.text('speech'), findsOneWidget);
-
-    await tester.tap(find.text('Google'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Google'), findsWidgets);
-    expect(find.text('whole phrase'), findsNothing);
-  });
-
-  testWidgets('dismissWordPopup closes an open popup', (tester) async {
-    final message = Message(
-      id: 'm1',
-      chatId: 'aswin',
-      isOutgoing: false,
-      originalText: 'காலை எப்படி',
-      translation: 'morning how',
-      sentAt: DateTime(2026, 5, 25, 9, 30),
-      status: MessageStatus.delivered,
-      tokens: const [
-        MessageToken(text: 'காலை', romanization: 'kālai', gloss: 'morning'),
-        MessageToken(text: ' ', isContent: false),
-        MessageToken(text: 'எப்படி', romanization: 'eppadi', gloss: 'how'),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(_FakeTtsService())],
-        child: MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: message.originalText,
-                tokens: message.tokens,
-                languageCode: 'ta',
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('காலை'));
-    await tester.pumpAndSettle();
-    expect(find.text('morning'), findsOneWidget);
-
-    // Design spec § Bubble layout: switching modes closes any open word
-    // popup. ModeToggle calls this directly (Task 10 fix) — exercise the
-    // exported function itself here rather than round-tripping through a
-    // full chat screen.
+    expect(find.text('first'), findsNothing);
+    expect(find.text('second'), findsOneWidget);
+    expect(dismissed, 1);
     dismissWordPopup();
     await tester.pumpAndSettle();
-
-    expect(find.text('morning'), findsNothing);
-  });
-
-  testWidgets('speaker tap starts audio without an outside-tap stop race', (
-    tester,
-  ) async {
-    final tts = _RecordingTtsService();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(tts)],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'Hola',
-                tokens: [
-                  MessageToken(
-                    text: 'Hola',
-                    romanization: 'Hola',
-                    gloss: 'Hello',
-                  ),
-                ],
-                languageCode: 'es',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Hola'));
-    await tester.pumpAndSettle();
-    tts.events.clear();
-
-    await tester.tap(find.byType(InkWell).last);
-    await tester.pump();
-
-    expect(tts.events, ['speak:es:Hola']);
-  });
-
-  testWidgets('tapping outside an open popup stops audio and dismisses it', (
-    tester,
-  ) async {
-    final tts = _RecordingTtsService();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(tts)],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'Hallo',
-                tokens: [
-                  MessageToken(
-                    text: 'Hallo',
-                    romanization: 'Hallo',
-                    gloss: 'Hello',
-                  ),
-                ],
-                languageCode: 'de',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Hallo'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(InkWell).last);
-    await tester.pump();
-    tts.events.clear();
-
-    await tester.tapAt(const Offset(5, 5));
-    await tester.pumpAndSettle();
-
-    expect(tts.events, ['stop']);
-    expect(find.text('Hello'), findsNothing);
-  });
-
-  testWidgets('English-letter word popup retains native hierarchy and speech', (
-    tester,
-  ) async {
-    final tts = _RecordingTtsService();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [ttsServiceProvider.overrideWithValue(tts)],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: MessageText(
-                text: 'vanakkam',
-                tokens: [
-                  MessageToken(
-                    text: 'vanakkam',
-                    romanization: 'வணக்கம்',
-                    nativeText: 'வணக்கம்',
-                    gloss: 'hello',
-                  ),
-                ],
-                languageCode: 'ta',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('vanakkam'));
-    await tester.pumpAndSettle();
-
-    final primary = tester.widgetList<Text>(find.text('vanakkam')).last;
-    final secondary = tester.widget<Text>(find.text('வணக்கம்'));
-    expect(primary.style?.fontSize, 22);
-    expect(secondary.style?.fontSize, 13);
-
-    tts.events.clear();
-    await tester.tap(find.byType(InkWell).last);
-    await tester.pump();
-    expect(tts.events, ['speak:ta:வணக்கம்']);
+    dismissWordPopup();
+    expect(find.text('second'), findsNothing);
+    expect(dismissed, 2);
+    expect(tts.stops, 2);
   });
 }

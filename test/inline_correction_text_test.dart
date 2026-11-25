@@ -5,9 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Stand-in [TtsService] that never hits platform channels — keeps the
-/// widget test free of `MissingPluginException`s. Mirrors the fake used in
-/// test/word_gesture_test.dart / test/word_popup_test.dart.
 class _FakeTtsService implements TtsService {
   @override
   Future<bool> isLanguageAvailable(String languageCode) async => false;
@@ -37,9 +34,7 @@ void main() {
           body: InlineCorrectionText(
             originalText: originalText,
             correctedText: correctedText,
-            learningLanguageCode: 'en',
-            popupTopInset: 0,
-            correctedTokens: correctedTokens,
+
             style: const TextStyle(fontSize: 16, color: Colors.black),
           ),
         ),
@@ -47,33 +42,28 @@ void main() {
     );
   }
 
-  /// Dismiss the currently-open popup by tapping its barrier, clear of
-  /// where a small test-fixture card would land.
   Future<void> dismiss(WidgetTester tester) async {
     await tester.tapAt(const Offset(780, 580));
     await tester.pumpAndSettle();
   }
 
-  testWidgets('tapping corrected text opens the word popup', (tester) async {
-    // 'shop' -> 'store' is a trailing single-word replacement, so the
-    // corrected word is its own isolated segment already; this covers the
-    // simple case before the merged-run regression test below.
+  testWidgets('tapping corrected chat text never opens word help', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       harness(originalText: 'I go to shop', correctedText: 'I go to store'),
     );
 
-    // Just the inline word, no popup yet.
     expect(find.text('store'), findsOneWidget);
 
     await tester.tap(find.text('store'));
     await tester.pumpAndSettle();
 
-    // Inline word + popup echo.
-    expect(find.text('store'), findsNWidgets(2));
+    expect(find.text('store'), findsOneWidget);
     expect(find.text(explanationText), findsNothing);
   });
 
-  testWidgets('corrected word keeps gloss from spaced provider token', (
+  testWidgets('corrected chat words do not expose provider gloss', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -92,7 +82,7 @@ void main() {
     await tester.tap(find.text('bin'));
     await tester.pumpAndSettle();
 
-    expect(find.text('am'), findsOneWidget);
+    expect(find.text('am'), findsNothing);
   });
 
   testWidgets('corrected word uses semibold emphasis', (tester) async {
@@ -122,26 +112,17 @@ void main() {
     );
 
     expect(find.text(explanationText), findsNothing);
-    // Just the inline corrected word before any tap.
     expect(find.text('went'), findsOneWidget);
 
     await tester.tap(find.text('goed'));
     await tester.pumpAndSettle();
 
     expect(find.text(explanationText), findsNothing);
-    // The corrected word is still only the inline span. Struck text has no
-    // interaction of its own.
     expect(find.text('went'), findsOneWidget);
   });
 
-  testWidgets('every word in a merged corrected run gets its own tap target '
+  testWidgets('every word in a merged corrected run remains non-interactive '
       '(regression)', (tester) async {
-    // Regression for the bug the plan's own pseudocode had: a single
-    // mistake in the middle of an otherwise-correct sentence leaves
-    // correctionSegments() merging everything after it — "went to the
-    // shop yesterday" — into ONE non-struck CorrectionSegment. Tapping
-    // "shop" must still open a popup for just "shop", not hand the
-    // whole five-word phrase to showWordPopup as a single "word".
     await tester.pumpWidget(
       harness(
         originalText: 'I goed to shop yesterday',
@@ -149,42 +130,29 @@ void main() {
       ),
     );
 
-    // Every word in the merged run is independently present as its own
-    // tappable span, not fused into a single multi-word text node.
     for (final word in ['went', 'to', 'the', 'shop', 'yesterday']) {
       expect(
         find.text(word),
         findsOneWidget,
-        reason: '"$word" should be its own tap target',
+        reason: '"$word" retains its existing paint span',
       );
     }
-    // The merged phrase must never appear as a single text node.
     expect(find.text('went to the shop yesterday'), findsNothing);
 
     await tester.tap(find.text('shop'));
     await tester.pumpAndSettle();
 
-    // Popup echoes just "shop" — inline span + popup headline.
-    expect(find.text('shop'), findsNWidgets(2));
-    // Neighboring words are untouched — still exactly one inline span
-    // each, no popup echoing the whole phrase.
+    expect(find.text('shop'), findsOneWidget);
     expect(find.text('went'), findsOneWidget);
     expect(find.text('yesterday'), findsOneWidget);
     expect(find.text('went to the shop yesterday'), findsNothing);
   });
 
-  testWidgets('every non-whitespace segment gets its own tap target', (
-    tester,
-  ) async {
-    // 'a b c d' -> 'x b y d' produces four CorrectionSegments: struck 'a',
-    // corrected ' x b ', struck 'c', corrected ' y d'. Each single-letter
-    // struck run AND each single-letter word inside a corrected run must
-    // be independently tappable — not merged, not sharing a recognizer.
+  testWidgets('all correction runs remain non-interactive', (tester) async {
     await tester.pumpWidget(
       harness(originalText: 'a b c d', correctedText: 'x b y d'),
     );
 
-    // Struck segments have no interaction.
     await tester.tap(find.text('a'));
     await tester.pumpAndSettle();
     expect(find.text(explanationText), findsNothing);
@@ -193,31 +161,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(explanationText), findsNothing);
 
-    // First word of the corrected run ' x b '.
     await tester.tap(find.text('x'));
     await tester.pumpAndSettle();
-    expect(find.text('x'), findsNWidgets(2));
+    expect(find.text('x'), findsOneWidget);
     await dismiss(tester);
 
-    // Second, independent word of the same corrected run — proves the run
-    // wasn't fused into one "x b" tap target.
     await tester.tap(find.text('b'));
     await tester.pumpAndSettle();
-    expect(find.text('b'), findsNWidgets(2));
+    expect(find.text('b'), findsOneWidget);
     await dismiss(tester);
 
-    // Words from the other corrected run, ' y d'.
     await tester.tap(find.text('y'));
     await tester.pumpAndSettle();
-    expect(find.text('y'), findsNWidgets(2));
+    expect(find.text('y'), findsOneWidget);
     await dismiss(tester);
 
     await tester.tap(find.text('d'));
     await tester.pumpAndSettle();
-    expect(find.text('d'), findsNWidgets(2));
+    expect(find.text('d'), findsOneWidget);
   });
 
-  testWidgets('romanized correction popup keeps native word as reference', (
+  testWidgets('romanized chat correction never opens native reference', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -237,7 +201,7 @@ void main() {
 
     await tester.tap(find.text('vanakkam'));
     await tester.pumpAndSettle();
-    expect(find.text('வணக்கம்'), findsOneWidget);
-    expect(find.text('hello'), findsOneWidget);
+    expect(find.text('வணக்கம்'), findsNothing);
+    expect(find.text('hello'), findsNothing);
   });
 }

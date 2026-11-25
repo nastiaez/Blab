@@ -52,7 +52,6 @@ class ChatTimeline extends ConsumerWidget {
     required this.hasOlderMessages,
     required this.isLoadingOlder,
     required this.deferTranslationResolve,
-    required this.popupTopInset,
     required this.onLongPress,
     required this.onReply,
     required this.onJumpToMessage,
@@ -90,7 +89,6 @@ class ChatTimeline extends ConsumerWidget {
   final bool hasOlderMessages;
   final bool isLoadingOlder;
   final bool deferTranslationResolve;
-  final double popupTopInset;
   final void Function(Message, Rect, Offset) onLongPress;
   final void Function(Message) onReply;
   final void Function(Message) onJumpToMessage;
@@ -307,7 +305,6 @@ class ChatTimeline extends ConsumerWidget {
             shouldTranslate: languageTimelineReady && !practiceSetupRequired,
             practiceSetupRequired: practiceSetupRequired,
             translationCutoffAt: null,
-            popupTopInset: popupTopInset,
             deferTranslationResolve: deferTranslationResolve,
             isSelected: selectedMessageId == item.message.id,
             showOriginal:

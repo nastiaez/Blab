@@ -1,13 +1,9 @@
 import 'message_link_text.dart';
 import 'dart:typed_data';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/message_token.dart';
-import '../../../shared/services/tts_service.dart';
-import 'word_popup.dart';
 
 @immutable
 class CorrectionSegment {
@@ -176,144 +172,48 @@ List<CorrectionSegment> correctionSegments(
   return segments;
 }
 
-/// Renders a word-level correction diff. Corrected and unchanged words open
-/// the standard word popup (PRD US-018, FR-12); struck-through text is purely
-/// visual and has no interaction.
-class InlineCorrectionText extends ConsumerStatefulWidget {
+/// Non-interactive chat correction diff. Deep Dive owns word help.
+class InlineCorrectionText extends StatelessWidget {
   const InlineCorrectionText({
     super.key,
     required this.originalText,
     required this.correctedText,
     required this.style,
-    required this.learningLanguageCode,
-    required this.popupTopInset,
-    this.correctedTokens = const [],
     this.segments,
-    this.enableWordLookup = true,
     this.isOutgoing = false,
   });
 
   final List<CorrectionSegment>? segments;
-  final bool enableWordLookup;
   final bool isOutgoing;
   final String originalText;
   final String correctedText;
   final TextStyle style;
 
-  /// Target-language Blab code used to pick a TTS voice for the corrected
-  /// (non-struck) segments' word popup.
-  final String learningLanguageCode;
-
-  /// Minimum top-Y the word popup is allowed to occupy (global coords). Used
-  /// to keep popups from drawing over the chat header. BUG-009.
-  final double popupTopInset;
-
-  /// Metadata for the generated correction as currently presented. This
-  /// keeps English-letter corrections linked to native spelling and audio.
-  final List<MessageToken> correctedTokens;
-
-  @override
-  ConsumerState<InlineCorrectionText> createState() =>
-      _InlineCorrectionTextState();
-}
-
-class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
-  final Map<int, GlobalKey> _keys = <int, GlobalKey>{};
-  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
-
-  /// Flat counter assigning each tappable unit (one per struck run, one per
-  /// word inside a non-struck run) a unique, stable-within-a-build [_keys]
-  /// index. Reset to 0 at the start of every [build].
-  int _nextKeyIndex = 0;
-
-  @override
-  void dispose() {
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    super.dispose();
-  }
-
-  void _resetRecognizers() {
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    _recognizers.clear();
-  }
-
-  void _onCorrectedTap(int index, MessageToken token) {
-    final ctx = _keys[index]?.currentContext;
-    if (ctx == null) return;
-    final box = ctx.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final tts = ref.read(ttsServiceProvider);
-    showWordPopup(
-      context,
-      token: token,
-      wordTopLeft: box.localToGlobal(Offset.zero),
-      wordSize: box.size,
-      languageCode: widget.learningLanguageCode,
-      tts: tts,
-      topInset: widget.popupTopInset,
-    );
-  }
-
-  /// Builds one tappable [WidgetSpan] and registers its recognizer + key
-  /// under a fresh, flat index shared across the whole widget (not scoped
-  /// per [CorrectionSegment]) so every word across every segment gets its
-  /// own independent hit area.
-  InlineSpan _tappableSpan({
-    required String text,
-    required TextStyle style,
-    MessageToken? popupToken,
-  }) {
-    final index = _nextKeyIndex++;
-    final key = _keys.putIfAbsent(index, () => GlobalKey());
-    final recognizer = TapGestureRecognizer()
-      ..onTap = !widget.enableWordLookup
-          ? null
-          : () => _onCorrectedTap(
-              index,
-              popupToken ?? MessageToken(text: text, isContent: true),
-            );
-    _recognizers.add(recognizer);
-
-    return WidgetSpan(
-      alignment: PlaceholderAlignment.baseline,
-      baseline: TextBaseline.alphabetic,
-      child: Padding(
-        // Extra vertical padding gives tap targets breathing room on
-        // wrapped lines, same as MessageText's per-word spans.
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Text.rich(
-          TextSpan(
-            text: text,
-            recognizer: widget.enableWordLookup ? recognizer : null,
-            style: style,
-          ),
-          key: key,
+  // Preserve per-word paint geometry; message containers own gestures.
+  InlineSpan _wordSpan({required String text, required TextStyle style}) =>
+      WidgetSpan(
+        alignment: PlaceholderAlignment.baseline,
+        baseline: TextBaseline.alphabetic,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text.rich(TextSpan(text: text, style: style)),
         ),
-      ),
-    );
-  }
+      );
 
   @override
   Widget build(BuildContext context) {
-    final struckColor = widget.style.color?.withValues(alpha: 0.68);
-    _resetRecognizers();
-    _nextKeyIndex = 0;
+    final struckColor = style.color?.withValues(alpha: 0.68);
 
-    final struckStyle = widget.style.copyWith(
+    final struckStyle = style.copyWith(
       color: struckColor,
       decoration: TextDecoration.lineThrough,
       decorationColor: struckColor,
       decorationThickness: 2,
     );
-    final correctedStyle = widget.style.copyWith(fontWeight: FontWeight.w600);
+    final correctedStyle = style.copyWith(fontWeight: FontWeight.w600);
 
     final sourceSegments =
-        widget.segments ??
-        correctionSegments(widget.originalText, widget.correctedText);
+        this.segments ?? correctionSegments(originalText, correctedText);
     // Provenance runs preserve exact source/replacement bytes. Add the visual
     // separator here, not to the correction metadata or reconstructed sentence.
     final segments = <CorrectionSegment>[];
@@ -332,13 +232,12 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
       segments.add(segment);
     }
 
-    if (!widget.enableWordLookup &&
-        (messageLinks(widget.correctedText).isNotEmpty ||
-            messageLinks(widget.originalText).isNotEmpty)) {
+    if ((messageLinks(correctedText).isNotEmpty ||
+        messageLinks(originalText).isNotEmpty)) {
       return MessageLinkText(
         key: const ValueKey('inline-correction'),
-        style: widget.style,
-        isOutgoing: widget.isOutgoing,
+        style: style,
+        isOutgoing: isOutgoing,
         spans: [
           for (final segment in segments)
             TextSpan(
@@ -347,24 +246,11 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
                   ? struckStyle
                   : segment.corrected
                   ? correctedStyle
-                  : widget.style,
+                  : style,
             ),
         ],
       );
     }
-    final metadataByWord = <String, List<MessageToken>>{};
-    for (final token in messageTokensForText(
-      widget.correctedText,
-      metadata: widget.correctedTokens,
-    ).where((token) => token.isContent)) {
-      metadataByWord.putIfAbsent(token.text, () => []).add(token);
-    }
-    MessageToken metadataFor(String word) {
-      final matches = metadataByWord[word];
-      if (matches != null && matches.isNotEmpty) return matches.removeAt(0);
-      return MessageToken(text: word, isContent: true);
-    }
-
     final spans = <InlineSpan>[];
     for (final segment in segments) {
       if (segment.struck) {
@@ -383,39 +269,31 @@ class _InlineCorrectionTextState extends ConsumerState<InlineCorrectionText> {
         continue;
       }
 
-      // Non-struck (corrected/unchanged) segment: correctionSegments()
-      // merges consecutive non-struck words into one run, but each word
-      // still needs its own word-popup tap target — the same granularity
-      // MessageText gives a plain message. Split via messageTokensForText,
-      // the same word-splitting MessageText already uses, so a corrected
-      // word behaves identically to any other tappable word (FR-12).
-      // Non-word characters (spaces, punctuation) render as plain,
-      // non-tappable text.
+      // Preserve word boundaries and geometry without recognizers.
       for (final token in messageTokensForText(segment.text)) {
         if (!token.isContent) {
           spans.add(
             TextSpan(
               text: token.text,
-              style: segment.corrected ? correctedStyle : widget.style,
+              style: segment.corrected ? correctedStyle : style,
             ),
           );
           continue;
         }
         spans.add(
-          _tappableSpan(
+          _wordSpan(
             text: token.text,
-            style: segment.corrected ? correctedStyle : widget.style,
-            popupToken: metadataFor(token.text),
+            style: segment.corrected ? correctedStyle : style,
           ),
         );
       }
     }
 
     return Semantics(
-      label: widget.correctedText,
+      label: correctedText,
       child: ExcludeSemantics(
         child: Text.rich(
-          TextSpan(style: widget.style, children: spans),
+          TextSpan(style: style, children: spans),
           key: const ValueKey('inline-correction'),
         ),
       ),

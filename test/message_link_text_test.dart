@@ -660,7 +660,6 @@ void main() {
                 learningLanguageCode: 'de',
                 isOutgoing: outgoing,
                 languagesMatchedAtSend: true,
-                popupTopInset: 0,
                 unavailableText: 'Unavailable',
                 retryText: 'Retry',
                 mode: ChatMode.practice,

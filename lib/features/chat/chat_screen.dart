@@ -1,3 +1,6 @@
+import '../../shared/widgets/message_status_notice.dart';
+export '../../shared/widgets/message_status_notice.dart'
+    show MessageStatusNotice;
 import 'deep_dive_live_screen.dart';
 import 'widgets/message_link_anchor.dart';
 import 'translation_anchor_controller.dart';
@@ -1930,13 +1933,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                       isLoadingOlder: pagination.isLoading,
                                       deferTranslationResolve:
                                           _translationResolveDeferred,
-                                      // BUG-009: keep the word popup from drawing on
-                                      // top of the chat header. Account for the
-                                      // safe-area notch as well.
-                                      popupTopInset: _renderedHeaderBottom(
-                                        context,
-                                        chat,
-                                      ),
                                       translationVisibility:
                                           _translationVisibility,
                                       translationLeadingSpace:

@@ -3371,6 +3371,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Audio unavailable'**
   String get audioUnavailable;
+
+  /// No description provided for @wordMeaningLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get wordMeaningLoading;
+
+  /// No description provided for @couldntLoadDetailsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load details · Retry'**
+  String get couldntLoadDetailsRetry;
 }
 
 class _AppLocalizationsDelegate

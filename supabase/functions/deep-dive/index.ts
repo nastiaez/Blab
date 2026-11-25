@@ -218,13 +218,14 @@ export async function handle(request: Request): Promise<Response> {
       const response = await fetchChatCompletion(credential, {
         messages,
         response_format: { type: "json_object" },
-        max_completion_tokens: 1600,
+        max_completion_tokens: r.mode === "short" ? 256 : 1600,
       });
       if (!response.ok) throw new DiveError("analysis_unavailable", 502);
       const payload = await response.json();
       analysis = parseAnalysis(
         JSON.parse(payload.choices?.[0]?.message?.content),
         r.kind,
+        r.mode,
       );
     }
     // Generation/cache access can outlive an edit, account deletion or membership change.
@@ -258,6 +259,7 @@ export async function handle(request: Request): Promise<Response> {
     return json({
       ...analysis,
       kind: r.kind,
+      ...(r.mode === "short" ? { mode: "short" } : {}),
       explanationLanguage: c.knownLang,
       audio: {
         text: r.kind === "correction"

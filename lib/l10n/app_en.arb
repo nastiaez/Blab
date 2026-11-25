@@ -802,5 +802,7 @@
   "whyThisForm": "WHY THIS FORM?",
   "wordExamples": "EXAMPLES",
   "learningDetailsUnavailable": "Learning details unavailable",
-  "audioUnavailable": "Audio unavailable"
+  "audioUnavailable": "Audio unavailable",
+  "wordMeaningLoading": "Loading…",
+  "couldntLoadDetailsRetry": "Couldn’t load details · Retry"
 }

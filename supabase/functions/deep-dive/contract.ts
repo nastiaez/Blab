@@ -1,4 +1,7 @@
-import { LANG_NAMES } from "../translate-message/rulebook.ts";
+import {
+  LANG_NAMES,
+  shortMeaningPrompt,
+} from "../translate-message/rulebook.ts";
 import {
   anchoredCorrections,
   correctedSource,
@@ -19,6 +22,7 @@ export type DiveRequest = {
   knownLang: string;
   aidsEnabled: boolean;
   retry?: boolean;
+  mode?: "short" | "full";
   replacement?: string;
   acceptedText?: string;
   sourceText?: string;
@@ -73,6 +77,10 @@ export function parseRequest(x: unknown): DiveRequest {
         Number(x.languageRevision) < 1)) ||
     (x.replacement !== undefined &&
       (typeof x.replacement !== "string" || x.replacement.length > 2000))
+  ) throw new DiveError("invalid_request", 400);
+  if (
+    (x.mode !== undefined && x.mode !== "short" && x.mode !== "full") ||
+    (x.mode === "short" && x.kind !== "vocabulary")
   ) throw new DiveError("invalid_request", 400);
   if (x.retry !== undefined && typeof x.retry !== "boolean") {
     throw new DiveError("invalid_request", 400);
@@ -134,7 +142,19 @@ export function validateContext(r: DiveRequest, c: Context) {
     )
   ) throw new DiveError("invalid_correction_span");
 }
-export function parseAnalysis(x: unknown, kind: DiveRequest["kind"]): Analysis {
+export function parseAnalysis(
+  x: unknown,
+  kind: DiveRequest["kind"],
+  mode?: DiveRequest["mode"],
+): Analysis {
+  if (mode === "short") {
+    if (
+      !record(x) || Object.keys(x).length !== 1 ||
+      typeof x.meaning !== "string" || !x.meaning.trim() ||
+      x.meaning.length > 1000
+    ) throw new DiveError("invalid_analysis", 502);
+    return { meaning: x.meaning };
+  }
   const short = (v: unknown) =>
     typeof v === "string" && v.trim().length > 0 && v.length <= 4000;
   if (
@@ -168,6 +188,20 @@ export function parseAnalysis(x: unknown, kind: DiveRequest["kind"]): Analysis {
   return result;
 }
 export function analysisMessages(r: DiveRequest, c: Context) {
+  if (r.mode === "short") {
+    return [{
+      role: "system",
+      content: shortMeaningPrompt(LANG_NAMES[c.knownLang]),
+    }, {
+      role: "user",
+      content: JSON.stringify({
+        acceptedTranslation: c.translation,
+        selectionText: r.text,
+        start: r.start,
+        end: r.end,
+      }),
+    }];
+  }
   return [{
     role: "system",
     content:

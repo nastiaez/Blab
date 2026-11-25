@@ -92,3 +92,89 @@ Deno.test("QA denial or unavailable policy never reaches network", async () => {
     assert(calls === 0);
   }
 });
+
+Deno.test("QA short vocabulary retains atomic dispatch and smaller output cap", async () => {
+  let grants = 0, calls = 0;
+  const c = credential();
+  c.dispatchGuard = dispatchGuard(
+    async () => {
+      grants++;
+      return { data: true, error: null };
+    },
+    { p_kind: "vocabulary" },
+    true,
+  );
+  await fetchChatCompletion(c, { messages: [], max_completion_tokens: 256 }, {
+    fetchImpl: async () => {
+      calls++;
+      return new Response("{}", {
+        headers: { "content-type": "application/json" },
+      });
+    },
+    onMetric: () => {},
+  });
+  assert(grants === 1 && calls === 1);
+});
+
+Deno.test("QA short cap rejects other kinds and arbitrary caps before admission", async () => {
+  for (
+    const [kind, cap] of [["base", 256], ["correction", 256], [
+      "vocabulary",
+      257,
+    ], ["vocabulary", 2500]] as const
+  ) {
+    let grants = 0, calls = 0;
+    const c = credential();
+    c.dispatchGuard = dispatchGuard(
+      async () => {
+        grants++;
+        return { data: true, error: null };
+      },
+      { p_kind: kind },
+      true,
+    );
+    let denied = false;
+    try {
+      await fetchChatCompletion(
+        c,
+        { messages: [], max_completion_tokens: cap },
+        {
+          fetchImpl: async () => {
+            calls++;
+            return new Response("{}");
+          },
+        },
+      );
+    } catch (e) {
+      denied = (e as Error).message === "qa_request_bound_denied";
+    }
+    assert(denied && grants === 0 && calls === 0);
+  }
+});
+Deno.test("QA short vocabulary cannot dispatch twice", async () => {
+  let consumed = false, calls = 0;
+  const c = credential();
+  c.dispatchGuard = dispatchGuard(
+    async () => {
+      if (consumed) return { data: false, error: null };
+      consumed = true;
+      return { data: true, error: null };
+    },
+    { p_kind: "vocabulary" },
+    true,
+  );
+  const run = () =>
+    fetchChatCompletion(c, { messages: [], max_completion_tokens: 256 }, {
+      fetchImpl: async () => {
+        calls++;
+        return new Response("{}", {
+          headers: { "content-type": "application/json" },
+        });
+      },
+      onMetric: () => {},
+    });
+  const results = await Promise.allSettled([run(), run()]);
+  assert(
+    calls === 1 && results.filter((r) => r.status === "fulfilled").length === 1,
+  );
+});

@@ -42,7 +42,6 @@ void main() {
                     learningLanguageCode: viewer['targetLang'] as String,
                     isOutgoing: outgoing,
                     languagesMatchedAtSend: true,
-                    popupTopInset: 0,
                     unavailableText: 'Unavailable',
                     retryText: 'Retry',
                     mode: ChatMode.practice,

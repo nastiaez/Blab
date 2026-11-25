@@ -5,6 +5,7 @@ import '../data/local_storage_keys.dart';
 import 'local_profile_cache.dart';
 import 'blab_local_notifications.dart';
 import 'local_chat_signals_cache.dart';
+import 'short_meaning_cache.dart';
 
 /// Removes only data owned by the deleted Blab account.
 class LocalAccountDataStore {
@@ -21,6 +22,7 @@ class LocalAccountDataStore {
   Future<void> clearForOwner(String owner) => _clear(owner: owner);
 
   Future<void> _clear({String? owner}) async {
+    if (owner != null) await ShortMeaningCache.clearOwner(owner);
     LocalProfileCache.invalidateAll();
     LocalChatSignalsCache.invalidateAll();
     final preferences = await SharedPreferences.getInstance();
@@ -39,6 +41,7 @@ class LocalAccountDataStore {
           key.startsWith(kCachedChatModeKeyPrefix) ||
           key.startsWith(kCachedMessagesKeyPrefix) ||
           key.startsWith(kCachedLanguageTimelineKeyPrefix) ||
+          key.startsWith(ShortMeaningCache.prefix) ||
           key.startsWith('cached_deleted_identity:') ||
           key.startsWith('cached_group_members:') ||
           key.startsWith('cached_group_photos:') ||
@@ -98,6 +101,7 @@ class LocalAccountDataStore {
       kCachedAttachmentPreviewKeyPrefix,
       kCachedAttachmentIndexKeyPrefix,
       kModeTipSeenKeyPrefix,
+      ShortMeaningCache.prefix,
       'cached_deleted_identity:',
       'cached_group_members:',
       'cached_group_photos:',

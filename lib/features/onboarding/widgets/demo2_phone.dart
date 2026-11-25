@@ -319,7 +319,6 @@ class Demo2TranslationBubble extends StatelessWidget {
               learningLanguageCode: 'de',
               translationLanguageCode: 'de',
               isOutgoing: false,
-              popupTopInset: 0,
               unavailableText: 'Translation unavailable',
               retryText: 'Retry',
               mode: ChatMode.practice,

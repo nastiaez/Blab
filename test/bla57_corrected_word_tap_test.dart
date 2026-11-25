@@ -29,7 +29,8 @@ void main() {
                       requests.add(r);
                       return {
                         'meaning': 'Synthetic word meaning',
-                        'explanation': 'Synthetic mistake explanation',
+                        if (r['mode'] != 'short')
+                          'explanation': 'Synthetic mistake explanation',
                       };
                     },
                   ),
@@ -100,6 +101,7 @@ void main() {
             await tester.pumpAndSettle();
             if (enabled) {
               expect(requests.last['kind'], 'vocabulary');
+              expect(requests.last['mode'], 'short');
               expect(
                 target.substring(
                   requests.last['start'] as int,

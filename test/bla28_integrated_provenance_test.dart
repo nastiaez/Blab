@@ -59,7 +59,6 @@ Widget host(
         learningLanguageCode: learning,
         isOutgoing: outgoing,
         languagesMatchedAtSend: matched,
-        popupTopInset: 0,
         unavailableText: 'Unavailable',
         retryText: 'Retry',
         mode: mode,

@@ -1884,4 +1884,11 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get audioUnavailable => 'Аудіо недоступне';
+
+  @override
+  String get wordMeaningLoading => 'Завантаження…';
+
+  @override
+  String get couldntLoadDetailsRetry =>
+      'Не вдалося завантажити подробиці · Повторити';
 }

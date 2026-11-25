@@ -101,6 +101,9 @@ class DeepDiveLiveScreen extends ConsumerWidget {
           presentation.translationDelayed,
       listenText: presentation.listenText,
       tokens: snapshot.tokens,
+      tokenGlossLanguageCode: value?.value?.wordMetadataReady == true
+          ? value?.value?.interfaceLang
+          : null,
       segments: snapshot.segments,
       corrections: snapshot.corrections,
       onRetryTranslation: !aids

@@ -70,6 +70,7 @@ class DeepDiveScreen extends ConsumerStatefulWidget {
     this.translation,
     this.listenText,
     this.tokens = const [],
+    this.tokenGlossLanguageCode,
     this.segments,
     this.corrections = const [],
     this.onRetryTranslation,
@@ -86,6 +87,10 @@ class DeepDiveScreen extends ConsumerStatefulWidget {
   final int? languageRevision;
   final String? translation, listenText;
   final List<MessageToken> tokens;
+
+  /// Explanation language verified by the accepted viewer-scoped package.
+  /// Raw optional token strings alone never establish language ownership.
+  final String? tokenGlossLanguageCode;
   final List<CorrectionSegment>? segments;
   final List<Map<String, dynamic>> corrections;
   final VoidCallback? onRetryTranslation;
@@ -235,6 +240,43 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
       _playing = false;
     });
     final service = ref.read(deepDiveServiceProvider);
+    // Reuse only metadata from this exact accepted sentence and occurrence.
+    final preparedTokens =
+        widget.tokenGlossLanguageCode == widget.knownLanguageCode
+        ? sanitizeMessageTokens(widget.tokens, widget.displayText)
+        : const <MessageToken>[];
+    var offset = 0;
+    MessageToken? prepared;
+    for (final candidate in preparedTokens) {
+      if (offset == start && candidate.text == token.text) {
+        prepared = candidate;
+        break;
+      }
+      offset += candidate.text.length;
+    }
+    final preparedWord = <String, dynamic>{
+      'text': token.text,
+      if (prepared?.gloss?.trim().isNotEmpty == true)
+        'translation': prepared!.gloss,
+      if (prepared != null) 'spokenText': prepared.spokenText,
+    };
+    final snapshot = widget;
+    Future<Map<String, dynamic>> load(bool retry, {bool shortOnly = false}) =>
+        service.lookup(
+          messageId: snapshot.messageId,
+          kind: 'word',
+          text: snapshot.displayText,
+          start: start,
+          end: start + token.text.length,
+          targetLang: snapshot.learningLanguageCode,
+          knownLang: snapshot.knownLanguageCode,
+          aidsEnabled: snapshot.aidsEnabled,
+          acceptedText: snapshot.displayText,
+          sourceText: snapshot.authoredText,
+          languageRevision: snapshot.languageRevision,
+          retry: retry,
+          shortOnly: shortOnly,
+        );
     showLearningWordPopup(
       context,
       wordTopLeft: box.localToGlobal(Offset.zero),
@@ -251,26 +293,15 @@ class _DeepDiveScreenState extends ConsumerState<DeepDiveScreen> {
         text: token.text,
         languageCode: widget.learningLanguageCode,
         tts: _tts,
-        load: (retry) => service.lookup(
-          messageId: widget.messageId,
-          kind: 'word',
-          text: widget.displayText,
-          start: start,
-          end: start + token.text.length,
-          targetLang: widget.learningLanguageCode,
-          knownLang: widget.knownLanguageCode,
-          aidsEnabled: widget.aidsEnabled,
-          acceptedText: widget.displayText,
-          sourceText: widget.authoredText,
-          languageRevision: widget.languageRevision,
-          retry: retry,
-        ),
+        preparedWord: preparedWord,
+        load: (retry) => load(retry, shortOnly: true),
         onDetails: (word) {
           dismissWordPopup();
           Navigator.of(context).push(
             telegramRoute<void>(
               WordDetailsScreen(
                 word: word,
+                load: load,
                 languageCode: widget.learningLanguageCode,
               ),
             ),

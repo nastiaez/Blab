@@ -29,7 +29,7 @@ export function runtimeMode(
 export async function enrichmentKey(r: DiveRequest, c: Context) {
   const bytes = new TextEncoder().encode(
     JSON.stringify([
-      "deep-dive-v1",
+      r.mode === "short" ? "deep-dive-short-v1" : "deep-dive-v1",
       c.viewerId,
       r.messageId,
       c.sourceVersion,
@@ -94,7 +94,7 @@ export class HostedEnrichment {
       if (value.admissionClass !== "qa" && value.admissionClass !== "tester") {
         throw new DiveError("analysis_unavailable", 503);
       }
-      return parseAnalysis(value.analysis, this.r.kind);
+      return parseAnalysis(value.analysis, this.r.kind, this.r.mode);
     }
     if (
       value.status === "claimed" && typeof value.lease === "string" &&

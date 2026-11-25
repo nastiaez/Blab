@@ -660,5 +660,7 @@
   "whyThisForm": "ЧОМУ ЦЯ ФОРМА?",
   "wordExamples": "ПРИКЛАДИ",
   "learningDetailsUnavailable": "Навчальна інформація недоступна",
-  "audioUnavailable": "Аудіо недоступне"
+  "audioUnavailable": "Аудіо недоступне",
+  "wordMeaningLoading": "Завантаження…",
+  "couldntLoadDetailsRetry": "Не вдалося завантажити подробиці · Повторити"
 }

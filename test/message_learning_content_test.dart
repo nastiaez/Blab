@@ -45,7 +45,6 @@ void main() {
                   showTranslation: true,
                   learningLanguageCode: 'de',
                   isOutgoing: outgoing,
-                  popupTopInset: 0,
                   unavailableText: 'Unavailable',
                   retryText: 'Retry',
                   mode: ChatMode.practice,
@@ -60,7 +59,7 @@ void main() {
           ),
         );
         final learning = tester.widget<MessageText>(find.byType(MessageText));
-        expect(learning.enableWordLookup, isFalse);
+        expect(learning, isA<MessageText>());
         expect(
           learning.tokens!.where((t) => t.mentionUserId == 'viewer'),
           hasLength(1),
@@ -189,7 +188,6 @@ void main() {
           learningLanguageCode: learningCode,
           isOutgoing: isOutgoing,
           languagesMatchedAtSend: languagesMatchedAtSend,
-          popupTopInset: 0,
           unavailableText: 'Translation unavailable',
           retryText: 'Retry',
           onRetry: onRetry,
@@ -814,7 +812,6 @@ void main() {
                 showTranslation: true,
                 learningLanguageCode: 'ta',
                 isOutgoing: false,
-                popupTopInset: 0,
                 unavailableText: 'Translation unavailable',
                 retryText: 'Retry',
                 mode: ChatMode.practice,
@@ -1051,7 +1048,6 @@ void main() {
                   showTranslation: true,
                   learningLanguageCode: 'de',
                   isOutgoing: false,
-                  popupTopInset: 0,
                   unavailableText: 'Translation unavailable',
                   retryText: 'Retry',
                   mode: mode,

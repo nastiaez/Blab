@@ -1,8 +1,10 @@
+import '../../../shared/widgets/message_status_notice.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../l10n/l10n.dart';
 import '../../../shared/services/tts_service.dart';
 import '../../../shared/widgets/blab_icon.dart';
+import '../../../shared/widgets/skeletons.dart';
 import '../word_details_screen.dart';
 import '../deep_dive_typography.dart';
 
@@ -14,8 +16,10 @@ class DeepDiveWordPopup extends StatefulWidget {
     required this.tts,
     required this.languageCode,
     required this.onDetails,
+    this.preparedWord,
   });
   final String text;
+  final Map<String, dynamic>? preparedWord;
   final Future<Map<String, dynamic>> Function(bool retry) load;
   final TtsService tts;
   final String languageCode;
@@ -30,7 +34,9 @@ class _DeepDiveWordPopupState extends State<DeepDiveWordPopup> {
   @override
   void initState() {
     super.initState();
-    _load(false);
+    _word = widget.preparedWord;
+    _loading = _word?['translation'] == null;
+    if (_loading) _load(false);
   }
 
   int _loadGeneration = 0;
@@ -126,8 +132,10 @@ class _DeepDiveWordPopupState extends State<DeepDiveWordPopup> {
       ++_audioGeneration;
       unawaited(oldWidget.tts.stop());
       _audioLoading = _playing = _audioFailed = false;
-      _word = null;
-      _load(false);
+      _word = widget.preparedWord;
+      _failed = false;
+      _loading = _word?['translation'] == null;
+      if (_loading) _load(false);
     }
   }
 
@@ -214,20 +222,12 @@ class _DeepDiveWordPopupState extends State<DeepDiveWordPopup> {
                   ),
                 ),
               if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: LinearProgressIndicator(),
-                ),
+                SkeletonTextLine(loadingLabel: context.l10n.wordMeaningLoading),
               if (_failed)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(context.l10n.learningDetailsUnavailable),
-                    TextButton(
-                      onPressed: () => _load(true),
-                      child: Text(context.l10n.retry),
-                    ),
-                  ],
+                MessageStatusNotice(
+                  text: context.l10n.couldntTranslateRetry,
+                  onTap: () => _load(true),
+                  alignRight: false,
                 ),
               if (_audioFailed)
                 Column(
@@ -243,12 +243,10 @@ class _DeepDiveWordPopupState extends State<DeepDiveWordPopup> {
               const SizedBox(height: 8),
               const Divider(height: 1, thickness: 1, color: Color(0xFFE1DAD2)),
               TextButton(
-                onPressed: _word == null
-                    ? null
-                    : () {
-                        _cancelAudio();
-                        widget.onDetails(_word!);
-                      },
+                onPressed: () {
+                  _cancelAudio();
+                  widget.onDetails(_word ?? {'text': widget.text});
+                },
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(0, 43),

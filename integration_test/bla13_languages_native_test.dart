@@ -219,7 +219,6 @@ void main() {
                     showTranslation: true,
                     learningLanguageCode: code,
                     isOutgoing: false,
-                    popupTopInset: 0,
                     unavailableText: 'Unavailable',
                     retryText: 'Retry',
                     mode: ChatMode.practice,

@@ -1,3 +1,4 @@
+import 'package:blab/features/chat/widgets/inline_correction_text.dart';
 import 'package:blab/features/chat/widgets/message_interaction_target.dart';
 import 'package:blab/features/chat/widgets/message_text.dart';
 import 'package:blab/shared/models/message_token.dart';
@@ -38,7 +39,6 @@ Widget _harness({
               key: ValueKey('message-padding'),
               padding: EdgeInsets.all(20),
               child: MessageText(
-                enableWordLookup: false,
                 text: 'காலை எப்படி',
                 tokens: [
                   MessageToken(
@@ -53,7 +53,7 @@ Widget _harness({
                     gloss: 'how',
                   ),
                 ],
-                languageCode: 'ta',
+
                 style: TextStyle(fontSize: 16, color: Colors.black),
               ),
             ),
@@ -233,6 +233,42 @@ void main() {
             .cursor,
         SystemMouseCursors.click,
       );
+    },
+  );
+  testWidgets(
+    'corrected chat words have no lookup and retain parent held actions',
+    (tester) async {
+      var held = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MessageInteractionTarget(
+              isFailed: false,
+              onFailedTap: () {},
+              onLongPress: (_, _) => held++,
+              child: const InlineCorrectionText(
+                originalText: 'I goed home',
+                correctedText: 'I went home',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('went'));
+      await tester.pumpAndSettle();
+      expect(held, 0);
+      expect(find.text('went'), findsOneWidget);
+      final text = tester.widget<Text>(find.text('went'));
+      expect((text.textSpan! as TextSpan).recognizer, isNull);
+      await tester.longPress(find.text('went'));
+      await tester.pumpAndSettle();
+      expect(held, 1);
+      expect(find.text('went'), findsOneWidget);
+      await tester.longPress(find.text('goed'));
+      await tester.pumpAndSettle();
+      expect(held, 2);
+      expect(tester.takeException(), isNull);
     },
   );
 }

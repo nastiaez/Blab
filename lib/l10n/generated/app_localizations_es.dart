@@ -1891,4 +1891,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get audioUnavailable => 'Audio no disponible';
+
+  @override
+  String get wordMeaningLoading => 'Cargando…';
+
+  @override
+  String get couldntLoadDetailsRetry =>
+      'No se pudieron cargar los detalles · Reintentar';
 }

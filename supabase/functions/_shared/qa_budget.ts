@@ -32,7 +32,8 @@ export function assertQaBody(
 ) {
   if (
     model !== "gpt-6-luna" ||
-    body.max_completion_tokens !== (kind === "base" ? 2500 : 1600) ||
+    (body.max_completion_tokens !== (kind === "base" ? 2500 : 1600) &&
+      !(kind === "vocabulary" && body.max_completion_tokens === 256)) ||
     new TextEncoder().encode(JSON.stringify(body)).length > 10000 ||
     body.tools || body.stream
   ) throw new Error("qa_request_bound_denied");

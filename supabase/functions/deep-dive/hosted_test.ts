@@ -331,3 +331,21 @@ Deno.test("production only claims and dispatches via production gates", async ()
       "claim_production_deep_dive_enrichment,production_deep_dive_dispatch",
   );
 });
+
+Deno.test("short cache separates full keys and refuses full payload on short hit", async () => {
+  const full = await enrichmentKey(r, c);
+  assert(full === await enrichmentKey({ ...r, mode: "full" }, c));
+  assert(full !== await enrichmentKey({ ...r, mode: "short" }, c));
+  const short = { ...r, mode: "short" as const };
+  const hit = (analysis: unknown): Rpc => async () => ({
+    data: { status: "cached", admissionClass: "tester", analysis },
+    error: null,
+  });
+  const instance = (analysis: unknown) =>
+    new HostedEnrichment(hit(analysis), short, c, "short-key");
+  assert((await instance({ meaning: "hello" }).claim())?.meaning === "hello");
+  await rejects(
+    () => instance({ meaning: "hello", explanation: "full" }).claim(),
+    "invalid_analysis",
+  );
+});

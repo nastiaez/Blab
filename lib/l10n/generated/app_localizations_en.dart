@@ -1867,4 +1867,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioUnavailable => 'Audio unavailable';
+
+  @override
+  String get wordMeaningLoading => 'Loading…';
+
+  @override
+  String get couldntLoadDetailsRetry => 'Couldn’t load details · Retry';
 }

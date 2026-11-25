@@ -686,7 +686,7 @@ class _MessageFixture extends StatelessWidget {
             MessageText(
               text: text,
               tokens: const [],
-              languageCode: 'es',
+
               style: TextStyle(
                 color: outgoing ? BlabColors.bubbleInk : BlabColors.textPrimary,
                 fontSize: 15,

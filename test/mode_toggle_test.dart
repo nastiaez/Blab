@@ -1,9 +1,9 @@
-import 'package:blab/features/chat/widgets/message_text.dart';
+import 'package:blab/features/chat/widgets/word_popup.dart';
 import 'package:blab/features/chat/widgets/mode_toggle.dart';
 import 'package:blab/features/chat/state/chat_state.dart';
 import 'package:blab/l10n/l10n.dart';
 import 'package:blab/shared/models/chat.dart';
-import 'package:blab/shared/models/message_token.dart';
+
 import 'package:blab/shared/services/tts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -239,12 +239,7 @@ void main() {
             body: Column(
               children: [
                 const ModeToggle(chatId: 'chat-1'),
-                MessageText(
-                  text: 'hallo',
-                  tokens: const [MessageToken(text: 'hallo', gloss: 'hello')],
-                  languageCode: 'de',
-                  style: const TextStyle(fontSize: 16),
-                ),
+                const Text('hallo'),
               ],
             ),
           ),
@@ -253,7 +248,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('hallo'));
+    showLearningWordPopup(
+      tester.element(find.text('hallo')),
+      card: const SizedBox(width: 250, height: 100, child: Text('hello')),
+      wordTopLeft: const Offset(100, 300),
+      wordSize: const Size(30, 20),
+      tts: _FakeTtsService(),
+    );
     await tester.pumpAndSettle();
     expect(find.text('hello'), findsOneWidget); // popup open
 

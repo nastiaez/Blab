@@ -17,7 +17,6 @@ class MessageBubble extends ConsumerStatefulWidget {
     required this.knownLanguageCodes,
     required this.shouldTranslate,
     required this.replyToShouldTranslate,
-    required this.popupTopInset,
     required this.deferTranslationResolve,
     required this.onReact,
     this.onDoubleTapHeart,
@@ -68,7 +67,6 @@ class MessageBubble extends ConsumerStatefulWidget {
   final List<String> knownLanguageCodes;
   final bool shouldTranslate;
   final bool replyToShouldTranslate;
-  final double popupTopInset;
   final bool deferTranslationResolve;
 
   /// [MessageInteractionTarget]'s gesture-surface inputs — applied inside
@@ -141,7 +139,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
     final knownLanguageCodes = widget.knownLanguageCodes;
     final shouldTranslate = widget.shouldTranslate;
     final replyToShouldTranslate = widget.replyToShouldTranslate;
-    final popupTopInset = widget.popupTopInset;
     final onReact = widget.onReact;
     final isFailed = widget.isFailed;
     final onLongPress = widget.onLongPress;
@@ -404,7 +401,6 @@ class _BubbleState extends ConsumerState<MessageBubble> {
         readingScript: readingScript,
         isOutgoing: isOut,
         languagesMatchedAtSend: message.languagesMatchedAtSend,
-        popupTopInset: popupTopInset,
         mode: mode,
         knownLanguageCodes: knownLanguageCodes,
         resolvedSourceLang: resolvedSourceLang,

@@ -3,116 +3,40 @@ import '../../../l10n/l10n.dart';
 import 'deleted_identity_scope.dart';
 import '../../../shared/state/auth_state.dart';
 import 'mention_text.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/message_token.dart';
-import '../../../shared/services/tts_service.dart';
-import 'word_popup.dart';
 
 /// PRD US-018, FR-12.
 ///
 /// Renders the learning-language portion of a message. The visible text is
-/// split locally so each word becomes an independently tappable inline span.
+/// split locally to preserve word layout without tap handlers.
 /// Provider [tokens] are optional enrichment for romanization/gloss only.
-class MessageText extends ConsumerStatefulWidget {
+class MessageText extends ConsumerWidget {
   const MessageText({
     super.key,
     required this.text,
     required this.tokens,
-    required this.languageCode,
     required this.style,
-    this.popupTopInset = 0,
     this.isOutgoing = false,
-    this.enableWordLookup = true,
   });
 
   /// Visible learning-language text.
-  final bool enableWordLookup;
   final String text;
   final bool isOutgoing;
 
   /// Optional metadata for the learning-language version of the message.
   final List<MessageToken>? tokens;
 
-  /// Target-language Blab code (e.g. `ta`) used to pick a TTS voice.
-  final String languageCode;
-
   /// Base text style — caller controls color + size so this widget can be
   /// dropped into either an incoming (dark) or outgoing (white) bubble.
   final TextStyle style;
 
-  /// Minimum top-Y the word popup is allowed to occupy (global coords).
-  /// Used to keep the popup from drawing over the chat header. BUG-009.
-  final double popupTopInset;
-
   @override
-  ConsumerState<MessageText> createState() => _MessageTextState();
-}
-
-class _MessageTextState extends ConsumerState<MessageText> {
-  void Function(MessageToken?)? _updatePopup;
-  int? _selectedWord;
-
-  @override
-  void didUpdateWidget(covariant MessageText oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final update = _updatePopup;
-    final selected = _selectedWord;
-    if (update == null || selected == null) return;
-    final tokens = messageTokensForText(widget.text, metadata: widget.tokens);
-    final token = oldWidget.text == widget.text && selected < tokens.length
-        ? tokens[selected]
-        : null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) update(token);
-    });
-  }
-
-  final Map<int, GlobalKey> _wordKeys = <int, GlobalKey>{};
-  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
-
-  @override
-  void dispose() {
-    _updatePopup?.call(null);
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    super.dispose();
-  }
-
-  void _resetRecognizers() {
-    for (final r in _recognizers) {
-      r.dispose();
-    }
-    _recognizers.clear();
-  }
-
-  void _onWordTap(int index, MessageToken token) {
-    final keyCtx = _wordKeys[index]?.currentContext;
-    if (keyCtx == null) return;
-    final box = keyCtx.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return;
-    final topLeft = box.localToGlobal(Offset.zero);
-
-    final tts = ref.read(ttsServiceProvider);
-    _selectedWord = index;
-    _updatePopup = showWordPopup(
-      context,
-      token: token,
-      wordTopLeft: topLeft,
-      wordSize: box.size,
-      languageCode: widget.languageCode,
-      tts: tts,
-      topInset: widget.popupTopInset,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = messageTokensForText(widget.text, metadata: widget.tokens);
-    if (!widget.enableWordLookup && messageLinks(widget.text).isNotEmpty) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = messageTokensForText(text, metadata: this.tokens);
+    if (messageLinks(text).isNotEmpty) {
       final spans = <InlineSpan>[];
       var plain = '';
       for (final token in tokens) {
@@ -132,10 +56,7 @@ class _MessageTextState extends ConsumerState<MessageText> {
               selected: token.mentionUserId == ref.watch(currentUserIdProvider),
               child: Text(
                 token.text,
-                style: MentionColors.style(
-                  widget.style,
-                  outgoing: widget.isOutgoing,
-                ),
+                style: MentionColors.style(style, outgoing: isOutgoing),
               ),
             ),
           ),
@@ -143,17 +64,15 @@ class _MessageTextState extends ConsumerState<MessageText> {
       }
       if (plain.isNotEmpty) spans.add(TextSpan(text: plain));
       return MessageLinkText(
-        style: widget.style,
-        isOutgoing: widget.isOutgoing,
+        style: style,
+        isOutgoing: isOutgoing,
         spans: spans,
       );
     }
     if (tokens.isEmpty ||
         !tokens.any((t) => t.isContent || t.mentionUserId != null)) {
-      return Text(widget.text, style: widget.style);
+      return Text(text, style: style);
     }
-
-    _resetRecognizers();
 
     final children = <InlineSpan>[];
     for (int i = 0; i < tokens.length; i++) {
@@ -170,10 +89,7 @@ class _MessageTextState extends ConsumerState<MessageText> {
                 DeletedIdentityScope.of(context).contains(t.mentionUserId)
                     ? context.l10n.deletedAccount
                     : t.text,
-                style: MentionColors.style(
-                  widget.style,
-                  outgoing: widget.isOutgoing,
-                ),
+                style: MentionColors.style(style, outgoing: isOutgoing),
               ),
             ),
           ),
@@ -181,14 +97,9 @@ class _MessageTextState extends ConsumerState<MessageText> {
         continue;
       }
       if (!t.isContent) {
-        children.add(TextSpan(text: t.text, style: widget.style));
+        children.add(TextSpan(text: t.text, style: style));
         continue;
       }
-
-      final key = _wordKeys.putIfAbsent(i, () => GlobalKey());
-      final recognizer = TapGestureRecognizer();
-      if (widget.enableWordLookup) recognizer.onTap = () => _onWordTap(i, t);
-      _recognizers.add(recognizer);
 
       children.add(
         WidgetSpan(
@@ -197,21 +108,12 @@ class _MessageTextState extends ConsumerState<MessageText> {
           // No padding around the word: it grew every word's painted box,
           // which compounded into a visibly taller line box than the same
           // message rendered as plain text in normal mode (mode-display-
-          // fixes spec § 2). Tap targets are unaffected — each word's box
-          // is a full line tall on its own, so taps anywhere on the line
-          // still land on the word under them.
-          child: Text.rich(
-            TextSpan(
-              text: t.text,
-              style: widget.style,
-              recognizer: widget.enableWordLookup ? recognizer : null,
-            ),
-            key: key,
-          ),
+          // fixes spec § 2). Parent message gestures remain unchanged.
+          child: Text.rich(TextSpan(text: t.text, style: style)),
         ),
       );
     }
 
-    return Text.rich(TextSpan(children: children, style: widget.style));
+    return Text.rich(TextSpan(children: children, style: style));
   }
 }

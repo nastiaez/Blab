@@ -1897,4 +1897,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get audioUnavailable => 'Audio nicht verfügbar';
+
+  @override
+  String get wordMeaningLoading => 'Wird geladen…';
+
+  @override
+  String get couldntLoadDetailsRetry =>
+      'Details konnten nicht geladen werden · Erneut versuchen';
 }
