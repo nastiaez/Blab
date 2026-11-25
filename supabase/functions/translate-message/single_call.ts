@@ -235,12 +235,14 @@ export async function generateMessageOnce(
             ? "recipient"
             : "author");
       }
-      // Version optional word help separately from the immutable sentence
-      // contract, so metadata-only repair never retranslates completed history.
+      // Preserve versioned legacy glosses, but do not mark reading-script spans
+      // or provenance-only records as containing word meanings.
       const versioned = <T>(tokens: T[]) =>
         tokens.map((token) => ({
           ...token,
-          wordHelpVersion: WORD_HELP_POLICY.version,
+          ...((token as { gloss?: unknown }).gloss
+            ? { wordHelpVersion: WORD_HELP_POLICY.version }
+            : {}),
         }));
       r.tokens = versioned(r.tokens);
       if (r.formAlternatives) {
@@ -292,7 +294,6 @@ export async function generateMessageOnce(
       } else {
         restored.tokens.push({
           blabAuthoredCorrection: envelope,
-          wordHelpVersion: WORD_HELP_POLICY.version,
         });
       }
       restored.generationEnvelope = { version: "a-v2", source: sourceOriginal };

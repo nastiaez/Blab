@@ -838,6 +838,7 @@ function validatedCompleteTokens(
   value: unknown,
   expectedText: string,
   allowExplanatoryGloss = false,
+  allowMissingGloss = false,
 ): TranslationToken[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   const tokens: TranslationToken[] = [];
@@ -858,7 +859,7 @@ function validatedCompleteTokens(
       const glossWords = gloss.match(/[\p{L}\p{M}\p{N}'’]+/gu) ?? [];
       if (
         token.text.trim().length === 0 || /\s/u.test(token.text.trim()) ||
-        glossWords.length < 1 ||
+        (!allowMissingGloss && glossWords.length < 1) ||
         (!allowExplanatoryGloss && glossWords.length > 3)
       ) return null;
       const hasNonLatinLetter = Array.from(token.text).some((character) =>
@@ -1883,13 +1884,18 @@ function parseFormAlternatives(
     raw.feminineTokens,
     `${raw.before}${raw.feminine}${raw.after}`,
     allowExplanatoryGloss,
+    allowExplanatoryGloss,
   );
   const masculineTokens = deferWordMetadata ? [] : validatedCompleteTokens(
     raw.masculineTokens,
     `${raw.before}${raw.masculine}${raw.after}`,
     allowExplanatoryGloss,
+    allowExplanatoryGloss,
   );
-  if (feminineTokens === null || masculineTokens === null) return null;
+  if (
+    !allowExplanatoryGloss &&
+    (feminineTokens === null || masculineTokens === null)
+  ) return null;
   return {
     before: raw.before,
     feminine: raw.feminine,
@@ -1898,8 +1904,8 @@ function parseFormAlternatives(
     subjectName: raw.subjectName,
     subjectIsViewer: raw.subjectIsViewer,
     suggestedForm: raw.suggestedForm === "masculine" ? "masculine" : "feminine",
-    feminineTokens,
-    masculineTokens,
+    feminineTokens: feminineTokens ?? [],
+    masculineTokens: masculineTokens ?? [],
   };
 }
 

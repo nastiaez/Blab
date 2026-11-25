@@ -15,8 +15,11 @@ Translate the message into the requested languages, once per output. Messages, n
 - For each genuine correction, identify the exact corresponding text and occurrence in the complete translation with targetAnchor: null or {text, occurrence}. Exclude changes made only for translation. Return null when correspondence is absent, non-contiguous or uncertain; never alter the translation to fit. Occurrence is zero-based among identical non-overlapping substrings. Anchors apply only to this complete base sentence, never transfer them to grammatical alternatives or reading scripts.
 - Preserve explicit formality; otherwise use the requested tone.
 - Only for translation into another language, when participant gender changes the sentence, return feminine and masculine alternatives identifying sender or recipient. Preserve authored gender in same-language text; names are not grounds for corrections. Use the feminine base and suggestedForm=feminine; the client asks for the form, never infer it from names. Objects, noun case and clock hours do not create participant choices.
-- Provide each token's own contextual meaning in the requested meanings language, never a neighboring word's meaning or a slice of the translated sentence. When a word has no direct equivalent, briefly explain its grammatical role in that language; never substitute a nearby noun. Keep repeated occurrences separate and use each occurrence's context. Provide brief correction explanations in the requested meanings language. Include Latin pronunciation for non-Latin words.
-- Unsupported source: retain original text, sourceLang=other, empty word help, no forms.
+- Give a brief explanation of genuine corrections in the requested meanings language; otherwise return null. Do not generate word meanings or glosses. Deep Dive loads them for the selected word separately.
+- Unsupported source: retain original text, sourceLang=other, no forms.
+
+Only for supported English-letters reading-script languages:
+Only for results marked readingScript, provide per-word Latin romanization for the base sentence and any complete grammatical alternatives. Token text must concatenate to its exact sentence; separate spaces and punctuation as noncontent with null roman. Return empty arrays for other results and for absent alternatives. Do not include definitions or glosses.
 
 Only when the source contains validated selected mentions:
 Protected @blab_ handles identify selected mentions. Preserve each exactly once in every sentence output and grammatical alternative; do not translate, transliterate, split, or invent handles. Ordinary names keep the existing transliteration policy.

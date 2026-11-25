@@ -2703,3 +2703,7 @@ BLA58 22333 continuation: approved baseline now based on migrated main 6d9f074; 
 ## BLA-65 — Standard onboarding for signed-out invitees · 25 November 2026 ← in progress
 - Scope: US-025 / FR-1 / FR-2B. Save a valid direct or group invite before handing off to normal onboarding. After required account setup, continue the saved invitation. No changes to the browser landing, store handoff, signed-in invite behavior, or screen design.
 - Done when: signed-out recipients see Welcome, then standard sign-up or login; after closing and reopening the app, the saved invite still continues. Verify installed-app and fresh-install paths separately, and keep owner acceptance open until the journey is manually confirmed.
+
+## BLA-58 — Stop pre-generating word descriptions in Chat · 25 November 2026 ← in progress
+- Scope: US-015 / US-022 / US-046. Keep sentence translations, corrections, grammatical forms and Latin-letter readings. Deep Dive retrieves meanings when a word is selected; no history rewrite or reasoning change.
+- Done when: new Chat translation requests omit word descriptions, existing sentence behavior is preserved, and Deep Dive can still retrieve a selected word's meaning. Verify production activation separately from automated checks.

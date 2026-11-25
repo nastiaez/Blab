@@ -1,5 +1,6 @@
 import { LANG_NAMES, TRANSLATION_RESPONSE_FORMAT } from "./contract.ts";
 import {
+  COMPACT_READING_SCRIPT_RULE,
   COMPACT_TRANSLATION_RULES,
   GROUP_TRANSLATION_RULE,
   SELECTED_MENTION_RULE,
@@ -10,7 +11,12 @@ import type { PreparedViewer } from "./single_call.ts";
 type ContextLine = { sender: string; message: string };
 type Context = { previous?: ContextLine[]; reply_to?: ContextLine };
 type Sentence = { id: string; language: string; tone: string; context: string };
-type Help = { id: string; sentence: string; words: string; meanings: string };
+type Help = {
+  id: string;
+  sentence: string;
+  meanings: string;
+  readingScript?: true;
+};
 type Binding = { sentence: string; secondary: string; help: string };
 const object = (properties: Record<string, unknown>) => ({
   type: "object",
@@ -19,106 +25,108 @@ const object = (properties: Record<string, unknown>) => ({
   required: Object.keys(properties),
 });
 const base = TRANSLATION_RESPONSE_FORMAT.json_schema.schema.properties;
-const tokenArray = {
-  ...base.tokens,
-  minItems: 0,
-  description:
-    "Token text is from the referenced sentence in words language, NOT meanings language. Every content word/term (including URLs/handles/tags) needs a short gloss in meanings language. Spaces/punctuation/emoji are noncontent with null gloss. Concatenate to the entire sentence exactly.",
+// Only the English-letters reading option requires model-generated word spans.
+const readingScriptLanguages = new Set(["hi", "mr", "ta"]);
+const romanizationTokens = {
+  type: "array",
+  items: object({
+    text: { type: "string" },
+    roman: { type: ["string", "null"] },
+    isContent: { type: "boolean" },
+  }),
 };
-// This schema is identical for every language combination and message.
-export const COMPACT_RESPONSE_FORMAT = {
-  type: "json_schema",
-  json_schema: {
-    name: "blab_translation_bundle",
-    strict: true,
-    schema: object({
-      sentences: {
-        type: "array",
-        items: object({
-          id: { type: "string" },
-          corrections: {
-            description:
-              "Genuine authored mistakes only. Check subject/verb agreement in the original even when meaning is clear. When correcting the same-language sentence, enumerate each genuine edit here and anchor its replacement in text; never use an empty array for a sentence whose grammatical mistakes you corrected. Optional metadata must not change sentence acceptance.",
-            type: "array",
-            items: object({
-              original: { type: "string" },
-              occurrence: { type: "integer", minimum: 0 },
-              replacement: { type: "string" },
-              targetAnchor: {
-                anyOf: [
-                  { type: "null" },
-                  object({
-                    text: { type: "string" },
-                    occurrence: { type: "integer", minimum: 0 },
-                  }),
-                ],
-              },
-            }),
-          },
-          sourceLang: base.sourceLang,
-          mode: {
-            ...base.mode,
-            description:
-              "correction when genuine authored mistakes are present; otherwise translation when translation is needed; otherwise none.",
-          },
-          text: {
-            type: "string",
-            description:
-              "Complete natural message in the requested language, independent of correction metadata.",
-          },
-          confidence: {
-            ...base.confidence,
-            description: "Correction confidence only; null otherwise.",
-          },
-          forms: {
-            type: ["object", "null"],
-            additionalProperties: false,
-            properties: {
-              before: { type: "string" },
-              feminine: { type: "string" },
-              masculine: { type: "string" },
-              after: { type: "string" },
-              subject: { type: "string", enum: ["sender", "recipient"] },
-              suggestedForm: base.formAlternatives.properties.suggestedForm,
+function compactResponseFormat(includeReadingScript: boolean) {
+  return {
+    type: "json_schema",
+    json_schema: {
+      name: "blab_translation_bundle",
+      strict: true,
+      schema: object({
+        sentences: {
+          type: "array",
+          items: object({
+            id: { type: "string" },
+            corrections: {
+              description:
+                "Genuine authored mistakes only. Check subject/verb agreement in the original even when meaning is clear. When correcting the same-language sentence, enumerate each genuine edit here and anchor its replacement in text; never use an empty array for a sentence whose grammatical mistakes you corrected. Optional metadata must not change sentence acceptance.",
+              type: "array",
+              items: object({
+                original: { type: "string" },
+                occurrence: { type: "integer", minimum: 0 },
+                replacement: { type: "string" },
+                targetAnchor: {
+                  anyOf: [
+                    { type: "null" },
+                    object({
+                      text: { type: "string" },
+                      occurrence: { type: "integer", minimum: 0 },
+                    }),
+                  ],
+                },
+              }),
             },
-            required: [
-              "before",
-              "feminine",
-              "masculine",
-              "after",
-              "subject",
-              "suggestedForm",
-            ],
-            description:
-              "Participant gender differences required by the complete translation; preserve explicit authored gender. before+feminine+after equals text; masculine replaces the complete affected fragment.",
-          },
-        }),
-      },
-      help: {
-        type: "array",
-        items: object({
-          id: { type: "string" },
-          explanation: {
-            ...base.explanation,
-            description:
-              "Brief explanation of genuine authored mistakes only, in the requested meanings language; null when no genuine mistakes are present.",
-          },
-          tokens: tokenArray,
-          feminineTokens: {
-            ...tokenArray,
-            description:
-              "Entire feminine sentence tokens when forms exist, otherwise empty.",
-          },
-          masculineTokens: {
-            ...tokenArray,
-            description:
-              "Entire masculine sentence tokens when forms exist, otherwise empty.",
-          },
-        }),
-      },
-    }),
-  },
-};
+            sourceLang: base.sourceLang,
+            mode: {
+              ...base.mode,
+              description:
+                "correction when genuine authored mistakes are present; otherwise translation when translation is needed; otherwise none.",
+            },
+            text: {
+              type: "string",
+              description:
+                "Complete natural message in the requested language, independent of correction metadata.",
+            },
+            confidence: {
+              ...base.confidence,
+              description: "Correction confidence only; null otherwise.",
+            },
+            forms: {
+              type: ["object", "null"],
+              additionalProperties: false,
+              properties: {
+                before: { type: "string" },
+                feminine: { type: "string" },
+                masculine: { type: "string" },
+                after: { type: "string" },
+                subject: { type: "string", enum: ["sender", "recipient"] },
+                suggestedForm: base.formAlternatives.properties.suggestedForm,
+              },
+              required: [
+                "before",
+                "feminine",
+                "masculine",
+                "after",
+                "subject",
+                "suggestedForm",
+              ],
+              description:
+                "Participant gender differences required by the complete translation; preserve explicit authored gender. before+feminine+after equals text; masculine replaces the complete affected fragment.",
+            },
+          }),
+        },
+        help: {
+          type: "array",
+          items: object({
+            id: { type: "string" },
+            explanation: {
+              ...base.explanation,
+              description:
+                "Brief explanation of genuine authored mistakes only, in the requested meanings language; null when no genuine mistakes are present.",
+            },
+            ...(includeReadingScript
+              ? {
+                tokens: romanizationTokens,
+                feminineTokens: romanizationTokens,
+                masculineTokens: romanizationTokens,
+              }
+              : {}),
+          }),
+        },
+      }),
+    },
+  };
+}
+export const COMPACT_RESPONSE_FORMAT = compactResponseFormat(false);
 
 function contextFor(v: PreparedViewer): Context {
   const f = (v.formContext ?? {}) as Record<string, unknown>;
@@ -227,7 +235,9 @@ export function compactPlan(
     help.set(helpId, {
       id: helpId,
       sentence: primary,
-      words: LANG_NAMES[v.targetLang],
+      ...(readingScriptLanguages.has(v.targetLang)
+        ? { readingScript: true }
+        : {}),
       meanings: LANG_NAMES[v.interfaceLang],
     });
     bindings[v.key] = { sentence: primary, secondary, help: helpId };
@@ -236,6 +246,7 @@ export function compactPlan(
     sentences: [...sentences.values()].sort((a, b) => a.id.localeCompare(b.id)),
     help: [...help.values()].sort((a, b) => a.id.localeCompare(b.id)),
   };
+  const includeReadingScript = requested.help.some((h) => h.readingScript);
   const nonemptyContexts = Object.fromEntries(
     Object.entries(contexts).filter(([, c]) => Object.keys(c).length),
   );
@@ -247,6 +258,7 @@ export function compactPlan(
         {
           role: "system",
           content: COMPACT_TRANSLATION_RULES +
+            (includeReadingScript ? "\n" + COMPACT_READING_SCRIPT_RULE : "") +
             (hasSelectedMentions ? "\n" + SELECTED_MENTION_RULE : "") +
             (viewers.some((v) =>
                 (v.formContext as Record<string, unknown>)?.group === true
@@ -271,7 +283,9 @@ export function compactPlan(
         SINGLE_CALL_POLICY.maxOutputTokens,
         Math.max(2500, viewers[0].text.length * 30) * help.size,
       ),
-      response_format: COMPACT_RESPONSE_FORMAT,
+      response_format: includeReadingScript
+        ? compactResponseFormat(true)
+        : COMPACT_RESPONSE_FORMAT,
     },
   };
 }
@@ -333,11 +347,11 @@ export function expandCompactResponse(
           (key) => typeof s.forms[key] === "string",
         ))
       ) s.forms = null;
-      for (const key of ["feminineTokens", "masculineTokens"]) {
+      for (const key of ["tokens", "feminineTokens", "masculineTokens"]) {
         if (Array.isArray(h[key])) {
           h[key] = h[key].filter(
             (t: any) => t && typeof t.text === "string",
-          );
+          ).map((t: any) => ({ ...t, gloss: t.gloss ?? null }));
         }
       }
     }

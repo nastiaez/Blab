@@ -498,6 +498,66 @@ Deno.test("nonempty acceptance does not veto copied text, changed literals or co
   }
 });
 
+Deno.test("sentence-only Chat response retains both lanes, corrections, and gender alternatives", async () => {
+  const spanish = { ...viewer, targetLang: "es", text: "I is tired." };
+  const plan = compactPlan([spanish]);
+  const binding = plan.bindings.v0;
+  const data = {
+    sentences: [
+      {
+        id: binding.sentence,
+        text: "Estoy cansada.",
+        sourceLang: "en",
+        mode: "correction",
+        corrections: [{
+          original: "is",
+          occurrence: 0,
+          replacement: "am",
+          targetAnchor: { text: "Estoy", occurrence: 0 },
+        }],
+        confidence: 1,
+        forms: {
+          before: "Estoy ",
+          feminine: "cansada",
+          masculine: "cansado",
+          after: ".",
+          subject: "sender",
+          suggestedForm: "feminine",
+        },
+      },
+      {
+        id: binding.secondary,
+        text: "I am tired.",
+        sourceLang: "en",
+        mode: "correction",
+        confidence: 1,
+        forms: null,
+      },
+    ],
+    help: [{ id: binding.help, explanation: "Use ‘am’ with ‘I’." }],
+  };
+  const { v0 } = await generateMessageOnce(
+    [spanish],
+    credential,
+    async () =>
+      Response.json({
+        choices: [{ message: { content: JSON.stringify(data) } }],
+      }),
+  );
+  assert(
+    v0.translation === "Estoy cansada." && v0.interfaceText === "I am tired.",
+  );
+  assert(v0.explanation === "Use ‘am’ with ‘I’.");
+  assert(v0.formAlternatives?.masculine === "cansado");
+  assert(v0.formAlternatives?.masculineTokens?.length === 0);
+  assert(
+    v0.tokens.every((t) =>
+      !Object.hasOwn(t as object, "gloss") &&
+      !Object.hasOwn(t as object, "wordHelpVersion")
+    ),
+  );
+});
+
 Deno.test("missing help and conflicting source labels cannot block routed nonempty sentences", async () => {
   const data = bundle([viewer], { v0: output() });
   data.help = [];
