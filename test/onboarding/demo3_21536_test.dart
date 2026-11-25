@@ -93,6 +93,8 @@ void main() {
           expect(paint.shape, BoxShape.circle);
           expect(paint.border, isNull);
           expect(paint.boxShadow, isNull);
+        } else {
+          expect(find.byKey(const Key('demo3-blue-touch-dot')), findsNothing);
         }
         if (ms == 11000) {
           final screen = t.widget<DeepDiveScreen>(find.byType(DeepDiveScreen));

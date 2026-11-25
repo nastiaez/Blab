@@ -39,17 +39,6 @@ Demo2Phase demo2PhaseAt(int t) {
   return Demo2Phase.collapsed;
 }
 
-Offset demoCursorTravel(
-  Offset from,
-  Offset to,
-  int time,
-  int start,
-  int duration,
-) {
-  final progress = ((time - start) / duration).clamp(0.0, 1.0);
-  return Offset.lerp(from, to, Curves.easeInOutCubic.transform(progress))!;
-}
-
 final demo2Bestie = Message(
   id: 'demo2-bestie',
   chatId: 'offline-onboarding',
@@ -82,7 +71,6 @@ class _Demo2PhoneState extends State<Demo2Phone> {
       _actions = GlobalKey(),
       _hideButton = GlobalKey();
   Rect? _viewport, _bubbleRect, _translateRect, _hideRect;
-  Offset? _lastTranslateTarget;
   Demo2Phase? _manual;
   bool _largeMessageRevealed = false;
   @override
@@ -148,7 +136,6 @@ class _Demo2PhoneState extends State<Demo2Phone> {
         _viewport = viewport;
         _bubbleRect = bubble;
         _translateRect = translate;
-        if (translate != null) _lastTranslateTarget = translate.center;
         _hideRect = hide;
       });
     }
@@ -165,29 +152,11 @@ class _Demo2PhoneState extends State<Demo2Phone> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
     final t = widget.reduced ? 11000 : widget.milliseconds;
     final phase = _manual ?? demo2PhaseAt(t);
+    final showCue = !widget.reduced && _manual == null;
     final menu = phase == Demo2Phase.menu || phase == Demo2Phase.translateTap;
     final translated =
         phase == Demo2Phase.translated || phase == Demo2Phase.hideTap;
     final bubble = _bubbleRect, viewport = _viewport;
-    final message = bubble == null
-        ? Offset.zero
-        : Offset(bubble.right - 27, bubble.center.dy);
-    final translate = _translateRect?.center ?? _lastTranslateTarget ?? message;
-    final hide = _hideRect?.center ?? translate;
-    final aside = Offset(
-      (hide.dx + 58).clamp(18.0, (viewport?.right ?? hide.dx + 76) - 4),
-      hide.dy - 8,
-    );
-    final menuCursor = _manual != null
-        ? translate
-        : demoCursorTravel(message, translate, t, 3350, 900);
-    final hideCursor = _manual != null
-        ? hide
-        : t < 8650
-        ? demoCursorTravel(translate, hide, t, 8000, 650)
-        : t < 11000
-        ? demoCursorTravel(hide, aside, t, 8900, 700)
-        : demoCursorTravel(aside, hide, t, 11000, 900);
     return Stack(
       key: _root,
       clipBehavior: Clip.none,
@@ -244,10 +213,7 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               ),
             ),
           ),
-        if (!widget.reduced &&
-            bubble != null &&
-            (!menu || _translateRect == null) &&
-            (!translated || _hideRect == null))
+        if (showCue && phase == Demo2Phase.pressHold && bubble != null)
           Positioned(
             left: bubble.right - 45,
             top: bubble.center.dy - 18,
@@ -256,19 +222,21 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               label: 'Press and hold Bestie’s message',
             ),
           ),
-        if (!widget.reduced && translated && _hideRect != null)
+        if (showCue && phase == Demo2Phase.hideTap && _hideRect != null)
           Positioned(
-            left: hideCursor.dx - 18,
-            top: hideCursor.dy - 18,
+            left: _hideRect!.center.dx - 18,
+            top: _hideRect!.center.dy - 18,
             child: DemoPressIndicator(
               key: const Key('demo2-hide-tap'),
               label: 'Select Hide translation',
             ),
           ),
-        if (!widget.reduced && menu && _translateRect != null)
+        if (showCue &&
+            phase == Demo2Phase.translateTap &&
+            _translateRect != null)
           Positioned(
-            left: menuCursor.dx - 18,
-            top: menuCursor.dy - 18,
+            left: _translateRect!.center.dx - 18,
+            top: _translateRect!.center.dy - 18,
             child: DemoPressIndicator(
               key: const Key('demo2-translate-tap'),
               label: 'Select Translate',

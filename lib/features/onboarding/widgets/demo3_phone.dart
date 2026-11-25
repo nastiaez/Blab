@@ -6,8 +6,7 @@ import '../../chat/widgets/floating_reaction_row.dart';
 import '../../chat/widgets/message_action_row.dart';
 import 'demo_conversation_phone.dart';
 import '../../chat/deep_dive_screen.dart';
-import 'demo2_phone.dart' show Demo2MessagePanels, demoCursorTravel;
-import '../../../l10n/l10n.dart';
+import 'demo2_phone.dart' show Demo2MessagePanels;
 import '../../chat/widgets/inline_correction_text.dart';
 
 const demo3Cycle = Duration(milliseconds: 20000);
@@ -68,8 +67,6 @@ class _Demo3PhoneState extends State<Demo3Phone> {
       _actions = GlobalKey(),
       _hideButton = GlobalKey();
   Rect? _viewport, _bubbleRect, _translateRect, _hideRect;
-  final _grammarPage = GlobalKey();
-  Offset? _grammarTranslateTarget;
   Offset? _lastMenuTarget;
   Demo3Phase? _manual;
   bool _largeMessageRevealed = false;
@@ -107,18 +104,6 @@ class _Demo3PhoneState extends State<Demo3Phone> {
     final body = _rect(_body.currentContext);
     final bubble = _rect(_bubble.currentContext);
     final translate = _findTranslate();
-    Offset? iconTarget;
-    void locateIcon(Element element) {
-      final button = element.widget;
-      if (button is IconButton &&
-          button.tooltip == context.l10n.translateMessage) {
-        iconTarget = _rect(element)?.center;
-        return;
-      }
-      element.visitChildren(locateIcon);
-    }
-
-    _grammarPage.currentContext?.visitChildElements(locateIcon);
     final hide = _rect(_hideButton.currentContext);
     if (widget.large &&
         !_largeMessageRevealed &&
@@ -140,13 +125,11 @@ class _Demo3PhoneState extends State<Demo3Phone> {
     final viewport = body == null
         ? null
         : Rect.fromLTRB(body.left + 12, body.top, body.right - 12, body.bottom);
-    if (iconTarget != _grammarTranslateTarget ||
-        viewport != _viewport ||
+    if (viewport != _viewport ||
         bubble != _bubbleRect ||
         translate != _translateRect ||
         hide != _hideRect) {
       setState(() {
-        _grammarTranslateTarget = iconTarget;
         _viewport = viewport;
         _bubbleRect = bubble;
         _translateRect = translate;
@@ -167,19 +150,18 @@ class _Demo3PhoneState extends State<Demo3Phone> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
     final t = widget.reduced ? 11000 : widget.milliseconds;
     final phase = _manual ?? demo3PhaseAt(t);
+    final showCue = !widget.reduced && _manual == null;
     final menu = phase == Demo3Phase.menu || phase == Demo3Phase.translateTap;
     final translated =
         phase == Demo3Phase.translated || phase == Demo3Phase.hideTap;
     final bubble = _bubbleRect, viewport = _viewport;
     const backTarget = Offset(28, 28);
-    final start = _lastMenuTarget ?? backTarget;
-    final nearTranslate =
-        (_grammarTranslateTarget ?? start) + const Offset(16, 8);
-    final cursor = _manual != null
-        ? backTarget
-        : t < 15300
-        ? demoCursorTravel(start, nearTranslate, t, 9300, 1100)
-        : demoCursorTravel(nearTranslate, backTarget, t, 15300, 1200);
+    final travel = Curves.easeInOutCubic.transform(
+      ((t - 16300) / 1100).clamp(0.0, 1.0),
+    );
+    final cursor = _manual == null
+        ? Offset.lerp(_lastMenuTarget ?? backTarget, backTarget, travel)!
+        : backTarget;
     final press = _manual == null ? ((t - 17700) / 300).clamp(0.0, 1.0) : 0.0;
     return Stack(
       key: _root,
@@ -225,10 +207,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               ),
             ),
           ),
-        if (!widget.reduced &&
-            bubble != null &&
-            (!menu || _translateRect == null) &&
-            !translated)
+        if (showCue && phase == Demo3Phase.pressHold && bubble != null)
           Positioned(
             left: bubble.right - 45,
             top: bubble.center.dy - 18,
@@ -242,12 +221,11 @@ class _Demo3PhoneState extends State<Demo3Phone> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(26),
               child: Demo3GrammarPage(
-                key: _grammarPage,
                 onBack: () => setState(() => _manual = Demo3Phase.collapsed),
               ),
             ),
           ),
-        if (!widget.reduced && translated)
+        if (showCue && translated && t >= 16300)
           Positioned(
             left: cursor.dx - 18,
             top: cursor.dy - 18,
@@ -259,7 +237,9 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               ),
             ),
           ),
-        if (!widget.reduced && menu && _translateRect != null)
+        if (showCue &&
+            phase == Demo3Phase.translateTap &&
+            _translateRect != null)
           Positioned(
             left: _translateRect!.center.dx - 18,
             top: _translateRect!.center.dy - 18,

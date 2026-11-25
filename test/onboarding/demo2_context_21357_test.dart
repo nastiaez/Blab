@@ -530,7 +530,7 @@ void main() {
         cursor = ms;
         expect(find.byType(CircularProgressIndicator), findsNothing);
         expect(find.byType(LinearProgressIndicator), findsNothing);
-        if ((ms >= 2750 && ms <= 3750) ||
+        if ((ms >= 2750 && ms <= 3250) ||
             (ms >= 7250 && ms <= 7750) ||
             (ms >= 12500 && ms <= 12700)) {
           final f = find.byKey(const Key('demo2-orange-touch-dot'));
@@ -542,6 +542,8 @@ void main() {
           expect(box.boxShadow, isNull);
           expect(box.gradient, isNull);
           expect(visualRect(tester, f).size, const Size(26, 26));
+        } else {
+          expect(find.byKey(const Key('demo2-orange-touch-dot')), findsNothing);
         }
         expect(tester.takeException(), isNull);
       }
