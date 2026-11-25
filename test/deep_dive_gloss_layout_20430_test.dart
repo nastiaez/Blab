@@ -122,7 +122,9 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        final error = find.text('Übersetzung fehlgeschlagen · Erneut versuchen');
+        final error = find.text(
+          'Übersetzung fehlgeschlagen · Erneut versuchen',
+        );
         expect(error, findsOneWidget);
         expect(tester.getSize(error).width, 220);
         final paragraph = tester.renderObject<RenderParagraph>(
@@ -139,7 +141,9 @@ void main() {
           );
         }
         expect(tester.getSize(find.byType(DeepDiveWordPopup)).width, 254);
-        final retry = find.text('Übersetzung fehlgeschlagen · Erneut versuchen');
+        final retry = find.text(
+          'Übersetzung fehlgeschlagen · Erneut versuchen',
+        );
         await tester.ensureVisible(retry);
         await tester.tap(retry);
         await tester.pumpAndSettle();
