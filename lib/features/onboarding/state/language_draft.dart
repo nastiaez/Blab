@@ -66,6 +66,12 @@ class LanguageDraftStore {
     if (p.containsKey(accountKey(userId))) return;
     final draft = LanguageDraft.decode(p.getString(guestKey));
     if (!draft.complete) return;
+    await bindSelectedLanguages(userId, draft);
+  }
+
+  Future<void> bindSelectedLanguages(String userId, LanguageDraft draft) async {
+    if (!draft.complete) return;
+    final p = await SharedPreferences.getInstance();
     if (!await p.setString(
       accountKey(userId),
       jsonEncode({

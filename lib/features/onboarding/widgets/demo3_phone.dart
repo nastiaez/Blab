@@ -67,6 +67,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
       _actions = GlobalKey(),
       _hideButton = GlobalKey();
   Rect? _viewport, _bubbleRect, _translateRect, _hideRect;
+  Offset? _lastMenuTarget;
   Demo3Phase? _manual;
   bool _largeMessageRevealed = false;
   @override
@@ -132,6 +133,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
         _viewport = viewport;
         _bubbleRect = bubble;
         _translateRect = translate;
+        if (translate != null) _lastMenuTarget = translate.center;
         _hideRect = hide;
       });
     }
@@ -148,10 +150,19 @@ class _Demo3PhoneState extends State<Demo3Phone> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
     final t = widget.reduced ? 11000 : widget.milliseconds;
     final phase = _manual ?? demo3PhaseAt(t);
+    final showCue = !widget.reduced && _manual == null;
     final menu = phase == Demo3Phase.menu || phase == Demo3Phase.translateTap;
     final translated =
         phase == Demo3Phase.translated || phase == Demo3Phase.hideTap;
     final bubble = _bubbleRect, viewport = _viewport;
+    const backTarget = Offset(28, 28);
+    final travel = Curves.easeInOutCubic.transform(
+      ((t - 16300) / 1100).clamp(0.0, 1.0),
+    );
+    final cursor = _manual == null
+        ? Offset.lerp(_lastMenuTarget ?? backTarget, backTarget, travel)!
+        : backTarget;
+    final press = _manual == null ? ((t - 17700) / 300).clamp(0.0, 1.0) : 0.0;
     return Stack(
       key: _root,
       clipBehavior: Clip.none,
@@ -196,7 +207,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               ),
             ),
           ),
-        if (phase == Demo3Phase.pressHold && bubble != null)
+        if (showCue && phase == Demo3Phase.pressHold && bubble != null)
           Positioned(
             left: bubble.right - 45,
             top: bubble.center.dy - 18,
@@ -214,16 +225,21 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               ),
             ),
           ),
-        if (phase == Demo3Phase.hideTap)
+        if (showCue && translated && t >= 16300)
           Positioned(
-            left: 10,
-            top: 10,
-            child: Demo3PressIndicator(
-              key: const Key('demo3-close-tap'),
-              label: 'Close Deep Dive',
+            left: cursor.dx - 18,
+            top: cursor.dy - 18,
+            child: Transform.scale(
+              scale: 1 - 0.22 * press,
+              child: Demo3PressIndicator(
+                key: const Key('demo3-close-tap'),
+                label: 'Close Deep Dive',
+              ),
             ),
           ),
-        if (phase == Demo3Phase.translateTap && _translateRect != null)
+        if (showCue &&
+            phase == Demo3Phase.translateTap &&
+            _translateRect != null)
           Positioned(
             left: _translateRect!.center.dx - 18,
             top: _translateRect!.center.dy - 18,

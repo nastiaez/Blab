@@ -15,7 +15,7 @@ import '../../chat/widgets/message_learning_content.dart';
 import 'demo_conversation_phone.dart';
 
 const demo2PanelScale = 0.9;
-const demo2Cycle = Duration(milliseconds: 16000);
+const demo2Cycle = Duration(milliseconds: 15000);
 const demo2German = 'Ich kann ein vorzügliches Pilzrisotto machen.';
 const demo2English = 'I can make an exquisite mushroom risotto.';
 
@@ -30,12 +30,12 @@ enum Demo2Phase {
 }
 
 Demo2Phase demo2PhaseAt(int t) {
-  if (t < 2500) return Demo2Phase.conversation;
-  if (t < 3900) return Demo2Phase.pressHold;
+  if (t < 2150) return Demo2Phase.conversation;
+  if (t < 3350) return Demo2Phase.pressHold;
   if (t < 7000) return Demo2Phase.menu;
   if (t < 8000) return Demo2Phase.translateTap;
-  if (t < 12500) return Demo2Phase.translated;
-  if (t < 13500) return Demo2Phase.hideTap;
+  if (t < 11900) return Demo2Phase.translated;
+  if (t < 12800) return Demo2Phase.hideTap;
   return Demo2Phase.collapsed;
 }
 
@@ -152,6 +152,7 @@ class _Demo2PhoneState extends State<Demo2Phone> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
     final t = widget.reduced ? 11000 : widget.milliseconds;
     final phase = _manual ?? demo2PhaseAt(t);
+    final showCue = !widget.reduced && _manual == null;
     final menu = phase == Demo2Phase.menu || phase == Demo2Phase.translateTap;
     final translated =
         phase == Demo2Phase.translated || phase == Demo2Phase.hideTap;
@@ -212,7 +213,7 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               ),
             ),
           ),
-        if (phase == Demo2Phase.pressHold && bubble != null)
+        if (showCue && phase == Demo2Phase.pressHold && bubble != null)
           Positioned(
             left: bubble.right - 45,
             top: bubble.center.dy - 18,
@@ -221,7 +222,7 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               label: 'Press and hold Bestie’s message',
             ),
           ),
-        if (phase == Demo2Phase.hideTap && _hideRect != null)
+        if (showCue && phase == Demo2Phase.hideTap && _hideRect != null)
           Positioned(
             left: _hideRect!.center.dx - 18,
             top: _hideRect!.center.dy - 18,
@@ -230,7 +231,9 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               label: 'Select Hide translation',
             ),
           ),
-        if (phase == Demo2Phase.translateTap && _translateRect != null)
+        if (showCue &&
+            phase == Demo2Phase.translateTap &&
+            _translateRect != null)
           Positioned(
             left: _translateRect!.center.dx - 18,
             top: _translateRect!.center.dy - 18,

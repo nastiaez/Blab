@@ -169,10 +169,33 @@ GoRoute _blabRoute({
       pageBuilder ??
       (builder == null
           ? null
-          : (context, state) => TelegramPage<void>(
-              key: state.pageKey,
-              child: builder(context, state),
-            )),
+          : (context, state) => path.startsWith('/onboarding/')
+                ? CustomTransitionPage<void>(
+                    key: state.pageKey,
+                    transitionDuration: const Duration(milliseconds: 240),
+                    child: builder(context, state),
+                    transitionsBuilder: (context, animation, _, child) {
+                      if (MediaQuery.disableAnimationsOf(context)) return child;
+                      return SlideTransition(
+                        position: animation
+                            .drive(CurveTween(curve: Curves.easeOutCubic))
+                            .drive(
+                              Tween<Offset>(
+                                begin: Offset(
+                                  state.extra == 'onboarding-back' ? -1 : 1,
+                                  0,
+                                ),
+                                end: Offset.zero,
+                              ),
+                            ),
+                        child: child,
+                      );
+                    },
+                  )
+                : TelegramPage<void>(
+                    key: state.pageKey,
+                    child: builder(context, state),
+                  )),
 );
 
 final GoRouter blabRouter = GoRouter(
@@ -301,7 +324,8 @@ final GoRouter blabRouter = GoRouter(
           final audio = ref.watch(learningAudioProvider);
           return LearnInContextScreen(
             interfaceLanguageCode: locale.code,
-            onBack: () => context.go('/onboarding/welcome'),
+            onBack: () =>
+                context.go('/onboarding/welcome', extra: 'onboarding-back'),
             onContinue: () => context.go('/onboarding/context'),
             // Bypass all demos via the established resolver; keep preferences.
             onSkip: () => _completeLearningIntro(context, ref),
@@ -323,7 +347,8 @@ final GoRouter blabRouter = GoRouter(
           return LearnInContextScreen(
             demoStep: 2,
             interfaceLanguageCode: locale.code,
-            onBack: () => context.go('/onboarding/learn'),
+            onBack: () =>
+                context.go('/onboarding/learn', extra: 'onboarding-back'),
             onContinue: () => context.go('/onboarding/grammar'),
             onSkip: () => _completeLearningIntro(context, ref),
             onChangeInterfaceLanguage: (code) => ref
@@ -344,7 +369,8 @@ final GoRouter blabRouter = GoRouter(
           return LearnInContextScreen(
             demoStep: 3,
             interfaceLanguageCode: locale.code,
-            onBack: () => context.go('/onboarding/context'),
+            onBack: () =>
+                context.go('/onboarding/context', extra: 'onboarding-back'),
             onContinue: () => _completeLearningIntro(context, ref),
             onSkip: () => _completeLearningIntro(context, ref),
             onChangeInterfaceLanguage: (code) => ref
@@ -643,15 +669,19 @@ Future<void> _completeLearningIntro(BuildContext context, WidgetRef ref) async {
   if (context.mounted) context.go('/onboarding/learning-language');
 }
 
-Future<void> _bindGuestLanguageChoices(User? user) async {
+Future<void> _bindGuestLanguageChoices(
+  User? user, {
+  bool emailSignup = false,
+}) async {
   await LanguageDraftStore().bindNewAccount(
     userId: user?.id,
     isNewAccount:
         user != null &&
-        isNewAuthAccount(
-          createdAt: user.createdAt,
-          lastSignInAt: user.lastSignInAt,
-        ),
+        (emailSignup ||
+            isNewAuthAccount(
+              createdAt: user.createdAt,
+              lastSignInAt: user.lastSignInAt,
+            )),
   );
 }
 
@@ -683,6 +713,7 @@ class _GuestLanguageRoute extends ConsumerWidget {
               learning
                   ? '/onboarding/grammar'
                   : '/onboarding/learning-language',
+              extra: 'onboarding-back',
             );
             void next() {
               if (learning) {
@@ -713,7 +744,26 @@ class _GuestLanguageRoute extends ConsumerWidget {
                     initialLanguageCode: draft.understood,
                     onBack: back,
                     onComplete: next,
-                    onConfirm: save,
+                    onConfirm: (code) async {
+                      final auth = ref.read(supabaseAuthServiceProvider);
+                      final userId = auth.currentUser?.id;
+                      final store = ref.read(languageDraftStoreProvider);
+                      await save(code);
+                      if (userId == null) return;
+                      if (auth.currentUser?.id != userId) {
+                        throw StateError('account_changed');
+                      }
+                      await store.bindSelectedLanguages(
+                        userId,
+                        LanguageDraft(
+                          learning: draft.learning,
+                          understood: code,
+                        ),
+                      );
+                      if (auth.currentUser?.id != userId) {
+                        throw StateError('account_changed');
+                      }
+                    },
                     onSelectionChanged: selection,
                   );
           },
@@ -745,7 +795,10 @@ Widget _authMethodRoute({
       return AuthMethodScreen(
         mode: mode,
         interfaceLanguageCode: locale.code,
-        onBack: () => context.go('/onboarding/understood-language'),
+        onBack: () => context.go(
+          '/onboarding/understood-language',
+          extra: 'onboarding-back',
+        ),
         onGoogle: () async {
           await ref.read(socialAuthActionProvider)('google');
           final user = ref.read(supabaseAuthServiceProvider).currentUser;
@@ -816,6 +869,7 @@ Widget _emailAuthRoute({
       );
       await _bindGuestLanguageChoices(
         container.read(supabaseAuthServiceProvider).currentUser,
+        emailSignup: mode == AuthMode.signUp,
       );
       container.invalidate(languageDraftProvider);
       try {
@@ -862,7 +916,8 @@ class _ConfirmNameRoute extends ConsumerWidget {
             startBlank:
                 blankEmailName && value.onboardingStage == OnboardingStage.name,
           ),
-          onBack: () => context.go('/onboarding/learn'),
+          onBack: () =>
+              context.go('/onboarding/learn', extra: 'onboarding-back'),
           onComplete: () {
             context.go('/bootstrap');
             ref.invalidate(currentProfileProvider);
@@ -890,7 +945,7 @@ class _LanguageSetupRoute extends ConsumerWidget {
         initialLanguageCode: value.hasExplicitTranslationLanguage
             ? value.primaryKnownLanguage
             : null,
-        onBack: () => context.go('/onboarding/name'),
+        onBack: () => context.go('/onboarding/name', extra: 'onboarding-back'),
         onComplete: () {
           ref.invalidate(onboardingDestinationProvider);
           context.go('/bootstrap');

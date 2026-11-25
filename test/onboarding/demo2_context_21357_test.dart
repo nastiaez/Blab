@@ -47,7 +47,7 @@ Widget app({
   ),
 );
 Future<void> frames(WidgetTester t, [int ms = 200]) async {
-  await t.pump(Duration(milliseconds: ms));
+  await t.pump(Duration(microseconds: ms * 780));
   await t.pump();
   await t.pump();
 }
@@ -427,15 +427,15 @@ void main() {
               7500,
               11000,
               12500,
-              13000,
+              12700,
               13750,
               14500,
-              15900,
+              14900,
             ]) {
               await frames(tester, ms - cursor);
               cursor = ms;
               expect(find.text('Show translation'), findsNothing);
-              if (ms == 11000 || ms == 12500 || ms == 13000) {
+              if (ms == 11000 || ms == 12500 || ms == 12700) {
                 final f = find.byKey(const Key('demo2-hide-translation'));
                 expect(f, findsOneWidget);
                 final notice = tester.widget<MessageStatusNotice>(f);
@@ -449,7 +449,7 @@ void main() {
                 expect(text.style!.fontWeight, FontWeight.w500);
                 expect(find.text(demo2English), findsOneWidget);
               }
-              if (ms == 12500 || ms == 13000) {
+              if (ms == 12500 || ms == 12700) {
                 expect(find.byKey(const Key('demo2-hide-tap')), findsOneWidget);
               }
               if (ms >= 13750) {
@@ -522,17 +522,17 @@ void main() {
         7750,
         11000,
         12500,
-        13000,
+        12700,
         14000,
-        15900,
+        14900,
       ]) {
         await frames(tester, ms - cursor);
         cursor = ms;
         expect(find.byType(CircularProgressIndicator), findsNothing);
         expect(find.byType(LinearProgressIndicator), findsNothing);
-        if ((ms >= 2750 && ms <= 3750) ||
+        if ((ms >= 2750 && ms <= 3250) ||
             (ms >= 7250 && ms <= 7750) ||
-            (ms >= 12500 && ms <= 13000)) {
+            (ms >= 12500 && ms <= 12700)) {
           final f = find.byKey(const Key('demo2-orange-touch-dot'));
           expect(f, findsOneWidget);
           final box = tester.widget<Container>(f).decoration! as BoxDecoration;
@@ -542,6 +542,8 @@ void main() {
           expect(box.boxShadow, isNull);
           expect(box.gradient, isNull);
           expect(visualRect(tester, f).size, const Size(26, 26));
+        } else {
+          expect(find.byKey(const Key('demo2-orange-touch-dot')), findsNothing);
         }
         expect(tester.takeException(), isNull);
       }

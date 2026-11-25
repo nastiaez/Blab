@@ -47,6 +47,31 @@ void main() {
     },
   );
   test(
+    'signed-in onboarding carries both explicit choices through name setup',
+    () async {
+      final store = LanguageDraftStore();
+      const choices = LanguageDraft(learning: 'de', understood: 'uk');
+      await store.saveGuest(choices);
+      await store.bindSelectedLanguages('current', choices);
+      expect((await store.guest()).complete, isFalse);
+      expect(await store.pendingUnderstood('other'), isNull);
+      expect(
+        await confirmBoundTranslationDraft(
+          store: store,
+          userId: 'current',
+          activeUserId: () => 'current',
+          eligible: true,
+          confirm: (_) async => fail('must save the pair'),
+          confirmLanguages: (learning, understood) async {
+            expect([learning, understood], ['de', 'uk']);
+          },
+        ),
+        isTrue,
+      );
+      expect(await store.pendingUnderstood('current'), isNull);
+    },
+  );
+  test(
     'existing login never imports stale guest choices or another account default',
     () async {
       final s = LanguageDraftStore();
