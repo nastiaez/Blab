@@ -34,6 +34,15 @@ Deno.serve(async (request) => {
   } catch {
     return json({ error: "invalid_json" }, 400);
   }
+  const messageId = input && typeof input === "object" && "messageId" in input
+    ? input.messageId
+    : undefined;
+  if (
+    messageId !== undefined && (typeof messageId !== "string" ||
+      !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(messageId))
+  ) {
+    return json({ error: "invalid_message_id" }, 400);
+  }
   const limit = workerBatchLimit(input);
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -58,8 +67,10 @@ Deno.serve(async (request) => {
     };
     while (claimed < limit && Date.now() < deadline - 15_000) {
       const { data, error } = await boundedAdmin.rpc(
-        "claim_message_preparation_jobs_for_worker",
-        { p_limit: limit - claimed },
+        messageId
+          ? "claim_translation_for_message"
+          : "claim_message_preparation_jobs_for_worker",
+        messageId ? { p_message_id: messageId } : { p_limit: limit - claimed },
       );
       if (error) throw new Error("claim_failed");
       const jobs = (Array.isArray(data) ? data : []) as LeasedJob[];
