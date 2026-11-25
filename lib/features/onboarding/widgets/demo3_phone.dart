@@ -196,7 +196,10 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               ),
             ),
           ),
-        if (phase == Demo3Phase.pressHold && bubble != null)
+        if (!widget.reduced &&
+            bubble != null &&
+            (!menu || _translateRect == null) &&
+            !translated)
           Positioned(
             left: bubble.right - 45,
             top: bubble.center.dy - 18,
@@ -214,7 +217,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               ),
             ),
           ),
-        if (phase == Demo3Phase.hideTap)
+        if (!widget.reduced && translated)
           Positioned(
             left: 10,
             top: 10,
@@ -223,7 +226,7 @@ class _Demo3PhoneState extends State<Demo3Phone> {
               label: 'Close Deep Dive',
             ),
           ),
-        if (phase == Demo3Phase.translateTap && _translateRect != null)
+        if (!widget.reduced && menu && _translateRect != null)
           Positioned(
             left: _translateRect!.center.dx - 18,
             top: _translateRect!.center.dy - 18,

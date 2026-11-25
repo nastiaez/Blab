@@ -212,7 +212,10 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               ),
             ),
           ),
-        if (phase == Demo2Phase.pressHold && bubble != null)
+        if (!widget.reduced &&
+            bubble != null &&
+            (!menu || _translateRect == null) &&
+            (!translated || _hideRect == null))
           Positioned(
             left: bubble.right - 45,
             top: bubble.center.dy - 18,
@@ -221,7 +224,7 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               label: 'Press and hold Bestie’s message',
             ),
           ),
-        if (phase == Demo2Phase.hideTap && _hideRect != null)
+        if (!widget.reduced && translated && _hideRect != null)
           Positioned(
             left: _hideRect!.center.dx - 18,
             top: _hideRect!.center.dy - 18,
@@ -230,7 +233,7 @@ class _Demo2PhoneState extends State<Demo2Phone> {
               label: 'Select Hide translation',
             ),
           ),
-        if (phase == Demo2Phase.translateTap && _translateRect != null)
+        if (!widget.reduced && menu && _translateRect != null)
           Positioned(
             left: _translateRect!.center.dx - 18,
             top: _translateRect!.center.dy - 18,

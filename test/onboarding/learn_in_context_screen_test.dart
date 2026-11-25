@@ -72,12 +72,12 @@ void main() {
     'English draft types in composer then clears into German sent bubble',
     (tester) async {
       await tester.pumpWidget(app());
-      await tester.pump(const Duration(milliseconds: 10000));
+      await tester.pump(const Duration(milliseconds: 9000));
       expect(find.text('I’m looking forward to it!'), findsOneWidget);
       expect(find.byKey(const Key('demo1-sent-translation')), findsNothing);
-      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 540));
       expect(find.text('I’m looking forward to it!'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pump(const Duration(milliseconds: 630));
       expect(find.text('I’m looking forward to it!'), findsNothing);
       expect(find.text('Ich freue mich darauf!'), findsOneWidget);
       expect(
