@@ -275,6 +275,10 @@ class _PrimaryKnownLanguageChatService implements ChatService {
   }
 
   @override
+  Future<String> initializeChatLanguage(String chatId) async =>
+      learningLanguageCode;
+
+  @override
   Future<void> setLearningLanguage({
     required String chatId,
     required String langCode,
@@ -1117,7 +1121,23 @@ void main() {
     },
   );
 
-  testWidgets('first message stays authored behind required language setup', (
+  testWidgets('unset group chat still opens the language picker', (
+    tester,
+  ) async {
+    final container = _containerForHeader(
+      _PrimaryKnownLanguageChatService(
+        needsPracticeLanguageSelection: true,
+        groupAiStartedAt: DateTime.utc(2026, 8, 3),
+      ),
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(_host(container));
+    await _settle(tester);
+    expect(find.text('I want to learn...'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('first open does not show the practice language picker', (
     tester,
   ) async {
     final container = _containerForHeader(
@@ -1126,9 +1146,7 @@ void main() {
     addTearDown(container.dispose);
     await tester.pumpWidget(_host(container));
     await _settle(tester);
-    expect(find.text('I want to learn...'), findsOneWidget);
-    expect(find.text('Hallo'), findsOneWidget);
-    expect(find.text('Привіт'), findsNothing);
+    expect(find.text('I want to learn...'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -2987,7 +3005,6 @@ class _PracticeEntryService extends _PrimaryKnownLanguageChatService {
       );
   String? savedLanguage;
   int attempts = 0;
-  bool failNextSave = false;
   int claims = 0;
   @override
   Future<InviteMetadata?> getInvite(String token) async => InviteMetadata(
@@ -3013,16 +3030,9 @@ class _PracticeEntryService extends _PrimaryKnownLanguageChatService {
   }
 
   @override
-  Future<void> setLearningLanguage({
-    required String chatId,
-    required String langCode,
-  }) async {
+  Future<String> initializeChatLanguage(String chatId) async {
     attempts++;
-    if (failNextSave) {
-      failNextSave = false;
-      throw StateError('injected save failure');
-    }
-    savedLanguage = langCode;
+    return savedLanguage = 'de';
   }
 }
 
@@ -3084,45 +3094,8 @@ Future<void> runPracticeEntryJourney(
   if (capture != null) await capture('01-chats-no-language-prompt');
   await tester.tap(find.text('Bob'));
   await _settle(tester);
-  expect(find.text('I want to learn...'), findsOneWidget);
-  expect(
-    tester
-        .widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Start practicing'),
-        )
-        .onPressed,
-    isNull,
-  );
-  if (capture != null) await capture('02-choose-inside-chat');
-  await tester.tap(find.text('English'));
-  await _settle(tester);
-  expect(service.attempts, 0);
-  await tester.binding.handlePopRoute();
-  await _settle(tester);
-  expect(find.byType(ChatsScreen), findsOneWidget);
-  expect(service.savedLanguage, isNull);
-  await tester.tap(find.text('Bob'));
-  await _settle(tester);
-  expect(
-    tester
-        .widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Start practicing'),
-        )
-        .onPressed,
-    isNull,
-  );
-  await tester.tap(find.text('English'));
-  await _settle(tester);
-  service.failNextSave = true;
-  await tester.tap(find.text('Start practicing'));
-  await _settle(tester);
-  expect(find.text('I want to learn...'), findsOneWidget);
-  expect(service.savedLanguage, isNull);
-  if (capture != null) await capture('03-injected-save-failure');
-  await tester.tap(find.text('Start practicing'));
-  await _settle(tester);
-  expect(service.savedLanguage, 'en');
-  expect(service.attempts, 2);
+  expect(service.savedLanguage, 'de');
+  expect(service.attempts, 1);
   expect(find.text('I want to learn...'), findsNothing);
   expect(find.byType(ChatScreen), findsOneWidget);
   await tester.pump(const Duration(seconds: 5));
@@ -3136,7 +3109,7 @@ Future<void> runPracticeEntryJourney(
   await _settle(tester);
   expect(find.byType(ChatScreen), findsOneWidget);
   expect(find.text('I want to learn...'), findsNothing);
-  expect(service.attempts, 2);
+  expect(service.attempts, 1);
   if (capture != null) await capture('05-reopened-no-repeat');
   await tester.pumpWidget(const SizedBox.shrink());
   router.dispose();

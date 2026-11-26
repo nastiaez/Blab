@@ -1029,6 +1029,22 @@ final editingProvider =
       EditingNotifier.new,
     );
 
+// Older memberships can still be unset on first open after signing back in.
+final initializeChatLanguageProvider = FutureProvider.autoDispose
+    .family<void, String>((ref, chatId) async {
+      final viewer = ref.watch(currentUserIdProvider);
+      if (viewer == null) return;
+      final code = await ref
+          .watch(chatServiceProvider)
+          .initializeChatLanguage(chatId);
+      if (!ref.mounted || ref.read(currentUserIdProvider) != viewer) return;
+      final language = kBlabLanguages.firstWhere((item) => item.code == code);
+      ref
+          .read(chatListProvider.notifier)
+          .confirmPracticeLanguageSelection(chatId, language);
+      ref.invalidate(chatLanguageTimelineProvider(chatId));
+    });
+
 /// Per-chat learning language. Seeded from the live chat list — when the
 /// chat row is present we use its `learningLanguage`, otherwise we fall
 /// back to English. Mutating this updates only the chat with the matching

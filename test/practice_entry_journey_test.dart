@@ -17,7 +17,7 @@ void main() {
     await journey.runPracticeEntryJourney(tester, afterLogin: true);
   });
   testWidgets(
-    'BLA-6 list, first entry, Back, failure, retry and reopen',
+    'BLA-67 first open initializes once and reopen keeps the chat language',
     journey.runPracticeEntryJourney,
   );
 }

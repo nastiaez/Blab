@@ -1135,6 +1135,13 @@ class ChatService {
     return controller.stream;
   }
 
+  Future<String> initializeChatLanguage(String chatId) async =>
+      await _client.rpc(
+            'initialize_chat_learning_language',
+            params: {'p_chat_id': chatId},
+          )
+          as String;
+
   /// Persist a new learning language on the caller's chat_members row.
   /// PRD US-022 — picking a language in the ⋯ menu must survive cold
   /// start and any realtime refresh of `chat_list`.
