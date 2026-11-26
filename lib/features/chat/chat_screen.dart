@@ -1211,13 +1211,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final incomingContact =
         pendingContact &&
         memberRequest['recipient_id'] == ref.watch(currentUserIdProvider);
-    final requestState = chat.isGroup
-        ? null
-        : ref.watch(memberRequestProvider(widget.chatId));
-    if (chat.isGroup ||
-        requestState?.hasValue == true ||
-        requestState?.hasError == true) {
-      _showRequiredLanguageSheetIfNeeded(chat, previewRequest: incomingContact);
+    if (chat.isGroup) {
+      _showRequiredLanguageSheetIfNeeded(chat);
+    } else if (chat.needsPracticeLanguageSelection &&
+        !chat.isLeft &&
+        !chat.partnerAccountDeleted) {
+      ref.watch(initializeChatLanguageProvider(chat.id));
     }
     final waitingContact =
         pendingContact &&
